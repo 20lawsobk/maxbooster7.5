@@ -4,7 +4,7 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { careerCoachService } from "../services/careerCoachService";
 import { logger } from "../logger";
 import { z } from "zod";
-import { requireSafeParam } from "../middleware/requestValidation.js";
+import { requireSafeParam } from "../middleware/requestValidation?.js";
 import { db } from "../db";
 import {
   analytics,
@@ -14,237 +14,237 @@ import {
 } from "../../shared/schema";
 import { eq, and, gte, lte, sum } from "drizzle-orm";
 
-const router = Router();
+const _router = Router();
 
-const createGoalSchema = z.object({
-  goalType: z.string().min(1),
-  title: z.string().min(1).max(200),
-  description: z.string().optional(),
-  targetValue: z.number().positive(),
-  unit: z.string().optional(),
-  deadline: z.string().datetime().optional(),
+const _createGoalSchema = z?.object({
+  goalType: z?.string().min(1),
+  title: z?.string().min(1).max(200),
+  description: z?.string().optional(),
+  targetValue: z?.number().positive(),
+  unit: z?.string().optional(),
+  deadline: z?.string().datetime().optional(),
 });
 
-router.get(
+router?.get(
   "/recommendations",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
 
-      logger.info(`Fetching career coach recommendations for user ${userId}`);
+      logger?.info(`Fetching career coach recommendations for user ${userId}`);
 
       let recommendations =
-        await careerCoachService.getActiveRecommendations(userId);
+        await careerCoachService?.getActiveRecommendations(userId);
 
-      if (recommendations.length === 0) {
+      if (recommendations?.length === 0) {
         recommendations =
-          await careerCoachService.generateDailyRecommendations(userId);
+          await careerCoachService?.generateDailyRecommendations(userId);
       }
 
-      res.json({
+      res?.json({
         success: true,
         data: {
           recommendations,
           dailyTip: recommendations[0] || null,
-          totalActive: recommendations.length,
+          totalActive: recommendations?.length,
           lastAnalyzed: new Date().toISOString(),
         },
       });
     } catch (error) {
-      logger.warn(
+      logger?.warn(
         "Error fetching career coach recommendations:",
         error?.message,
       );
-      res.status(500).json({ error: "Failed to process request" });
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.post(
+router?.post(
   "/dismiss/:id",
   requireAuth,
   requireSafeParam("id"),
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const recommendationId = req.params.id;
+      const _userId = req?.user!.id;
+      const _recommendationId = req?.params.id;
 
-      logger.info(
+      logger?.info(
         `Dismissing recommendation ${recommendationId} for user ${userId}`,
       );
 
-      const success = await careerCoachService.dismissRecommendation(
+      const _success = await careerCoachService?.dismissRecommendation(
         userId,
         recommendationId,
       );
 
       if (!success) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           message: "Recommendation not found",
         });
       }
 
-      res.json({
+      res?.json({
         success: true,
         message: "Recommendation dismissed",
       });
     } catch (error) {
-      logger.warn("Error dismissing recommendation:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error dismissing recommendation:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.post(
+router?.post(
   "/complete/:id",
   requireAuth,
   requireSafeParam("id"),
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const recommendationId = req.params.id;
+      const _userId = req?.user!.id;
+      const _recommendationId = req?.params.id;
 
-      logger.info(
+      logger?.info(
         `Completing recommendation ${recommendationId} for user ${userId}`,
       );
 
-      const success = await careerCoachService.completeRecommendation(
+      const _success = await careerCoachService?.completeRecommendation(
         userId,
         recommendationId,
       );
 
       if (!success) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           message: "Recommendation not found",
         });
       }
 
-      res.json({
+      res?.json({
         success: true,
         message: "Recommendation marked as completed",
       });
     } catch (error) {
-      logger.warn("Error completing recommendation:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error completing recommendation:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/goals",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
 
-      logger.info(`Fetching career goals for user ${userId}`);
+      logger?.info(`Fetching career goals for user ${userId}`);
 
-      const goals = await careerCoachService.getGoals(userId);
+      const _goals = await careerCoachService?.getGoals(userId);
 
-      const activeGoals = goals.filter((g) => g.status === "active");
-      const completedGoals = goals.filter((g) => g.status === "completed");
+      const _activeGoals = goals?.filter((g) => g?.status === "active");
+      const _completedGoals = goals?.filter((g) => g?.status === "completed");
 
-      res.json({
+      res?.json({
         success: true,
         data: {
           goals,
           summary: {
-            total: goals.length,
-            active: activeGoals.length,
-            completed: completedGoals.length,
+            total: goals?.length,
+            active: activeGoals?.length,
+            completed: completedGoals?.length,
           },
         },
       });
     } catch (error) {
-      logger.warn("Error fetching career goals:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error fetching career goals:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.post(
+router?.post(
   "/goals",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
 
-      logger.info(`Creating career goal for user ${userId}`);
+      logger?.info(`Creating career goal for user ${userId}`);
 
-      const validation = createGoalSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({
+      const _validation = createGoalSchema?.safeParse(req?.body);
+      if (!validation?.success) {
+        return res?.status(400).json({
           success: false,
           message: "Invalid goal data",
-          errors: validation.error.flatten().fieldErrors,
+          errors: validation?.error.flatten().fieldErrors,
         });
       }
 
-      const { deadline, ...goalData } = validation.data;
+      const { deadline, ...goalData } = validation?.data;
 
-      const goal = await careerCoachService.createGoal(userId, {
+      const _goal = await careerCoachService?.createGoal(userId, {
         ...goalData,
         deadline: deadline ? new Date(deadline) : undefined,
       });
 
-      res.status(201).json({
+      res?.status(201).json({
         success: true,
         data: goal,
       });
     } catch (error) {
-      logger.warn("Error creating career goal:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error creating career goal:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.delete(
+router?.delete(
   "/goals/:id",
   requireAuth,
   requireSafeParam("id"),
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const goalId = req.params.id;
+      const _userId = req?.user!.id;
+      const _goalId = req?.params.id;
 
-      const success = await careerCoachService.deleteGoal(userId, goalId);
+      const _success = await careerCoachService?.deleteGoal(userId, goalId);
       if (!success) {
         return res
           .status(404)
           .json({ success: false, message: "Goal not found" });
       }
-      res.json({ success: true, message: "Goal deleted" });
+      res?.json({ success: true, message: "Goal deleted" });
     } catch (error) {
-      logger.warn("Error deleting career goal:", error?.message);
-      res.status(500).json({ error: "Failed to delete goal" });
+      logger?.warn("Error deleting career goal:", error?.message);
+      res?.status(500).json({ error: "Failed to delete goal" });
     }
   }),
 );
 
-router.put(
+router?.put(
   "/goals/:id",
   requireAuth,
   requireSafeParam("id"),
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const goalId = req.params.id;
+      const _userId = req?.user!.id;
+      const _goalId = req?.params.id;
 
-      const validation = createGoalSchema.partial().safeParse(req.body);
-      if (!validation.success) {
+      const _validation = createGoalSchema?.partial().safeParse(req?.body);
+      if (!validation?.success) {
         return res
           .status(400)
           .json({
             success: false,
-            errors: validation.error.flatten().fieldErrors,
+            errors: validation?.error.flatten().fieldErrors,
           });
       }
 
-      const { deadline, ...rest } = validation.data;
-      const goal = await careerCoachService.updateGoal(userId, goalId, {
+      const { deadline, ...rest } = validation?.data;
+      const _goal = await careerCoachService?.updateGoal(userId, goalId, {
         ...rest,
         ...(deadline !== undefined ? { deadline: new Date(deadline) } : {}),
       });
@@ -254,106 +254,106 @@ router.put(
           .status(404)
           .json({ success: false, message: "Goal not found" });
       }
-      res.json({ success: true, data: goal });
+      res?.json({ success: true, data: goal });
     } catch (error) {
-      logger.warn("Error updating career goal:", error?.message);
-      res.status(500).json({ error: "Failed to update goal" });
+      logger?.warn("Error updating career goal:", error?.message);
+      res?.status(500).json({ error: "Failed to update goal" });
     }
   }),
 );
 
-const smartGoalTypeSchema = z
+const _smartGoalTypeSchema = z
   .enum(["streams", "followers", "revenue", "releases", "posts", "playlists"])
   .default("streams");
 
-router.post(
+router?.post(
   "/goals/smart",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const parsed = smartGoalTypeSchema.safeParse(req.body.type);
-      const type = parsed.success ? parsed.data : "streams";
+      const _userId = req?.user!.id;
+      const _parsed = smartGoalTypeSchema?.safeParse(req?.body.type);
+      const _type = parsed?.success ? parsed?.data : "streams";
 
-      logger.info(`Creating SMART goal (type: ${type}) for user ${userId}`);
+      logger?.info(`Creating SMART goal (type: ${type}) for user ${userId}`);
 
-      const goal = await careerCoachService.createSmartGoal(userId, type);
+      const _goal = await careerCoachService?.createSmartGoal(userId, type);
 
       if (!goal) {
-        return res.status(400).json({
+        return res?.status(400).json({
           success: false,
           message: "Could not generate goal suggestion",
         });
       }
 
-      res.status(201).json({
+      res?.status(201).json({
         success: true,
         data: goal,
       });
     } catch (error) {
-      logger.warn("Error creating SMART goal:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error creating SMART goal:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.patch(
+router?.patch(
   "/goals/:id/progress",
   requireAuth,
   requireSafeParam("id"),
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const goalId = req.params.id;
-      const { currentValue } = req.body;
+      const _userId = req?.user!.id;
+      const _goalId = req?.params.id;
+      const { currentValue } = req?.body;
 
       if (typeof currentValue !== "number") {
-        return res.status(400).json({
+        return res?.status(400).json({
           success: false,
           message: "currentValue must be a number",
         });
       }
 
-      logger.info(
+      logger?.info(
         `Updating goal ${goalId} progress to ${currentValue} for user ${userId}`,
       );
 
-      const goal = await careerCoachService.updateGoalProgress(
+      const _goal = await careerCoachService?.updateGoalProgress(
         userId,
         goalId,
         currentValue,
       );
 
       if (!goal) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           message: "Goal not found",
         });
       }
 
-      res.json({
+      res?.json({
         success: true,
         data: goal,
       });
     } catch (error) {
-      logger.warn("Error updating goal progress:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error updating goal progress:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/analyze",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
 
-      logger.info(`Analyzing career gaps for user ${userId}`);
+      logger?.info(`Analyzing career gaps for user ${userId}`);
 
-      const gaps = await careerCoachService.analyzeCareerGaps(userId);
+      const _gaps = await careerCoachService?.analyzeCareerGaps(userId);
 
-      res.json({
+      res?.json({
         success: true,
         data: {
           gaps,
@@ -361,36 +361,36 @@ router.get(
         },
       });
     } catch (error) {
-      logger.warn("Error analyzing career gaps:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error analyzing career gaps:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/patterns",
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
-      const patterns = careerCoachService.getPatternLibrary();
-      res.json({ success: true, data: { patterns, total: patterns.length } });
+      const _patterns = careerCoachService?.getPatternLibrary();
+      res?.json({ success: true, data: { patterns, total: patterns?.length } });
     } catch (error) {
-      logger.warn("Error fetching pattern library:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error fetching pattern library:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/insights",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-      const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      const _userId = req?.user!.id;
+      const _now = new Date();
+      const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const _sixtyDaysAgo = new Date(now?.getTime() - 60 * 24 * 60 * 60 * 1000);
+      const _ninetyDaysAgo = new Date(now?.getTime() - 90 * 24 * 60 * 60 * 1000);
 
       const [
         currentAnalytics,
@@ -400,99 +400,99 @@ router.get(
         recentRevenue,
         previousRevenue,
         recentPosts,
-      ] = await Promise.all([
+      ] = await Promise?.all([
         db
           .select({
-            streams: sum(analytics.streams),
-            followers: sum(analytics.followers),
+            streams: sum(analytics?.streams),
+            followers: sum(analytics?.followers),
           })
           .from(analytics)
           .where(
             and(
-              eq(analytics.userId, userId),
-              gte(analytics.date, thirtyDaysAgo),
+              eq(analytics?.userId, userId),
+              gte(analytics?.date, thirtyDaysAgo),
             ),
           ),
         db
           .select({
-            streams: sum(analytics.streams),
-            followers: sum(analytics.followers),
+            streams: sum(analytics?.streams),
+            followers: sum(analytics?.followers),
           })
           .from(analytics)
           .where(
             and(
-              eq(analytics.userId, userId),
-              gte(analytics.date, sixtyDaysAgo),
-              lte(analytics.date, thirtyDaysAgo),
+              eq(analytics?.userId, userId),
+              gte(analytics?.date, sixtyDaysAgo),
+              lte(analytics?.date, thirtyDaysAgo),
             ),
           ),
         db
-          .select({ id: releases.id })
+          .select({ id: releases?.id })
           .from(releases)
           .where(
             and(
-              eq(releases.userId, userId),
-              gte(releases.createdAt, ninetyDaysAgo),
+              eq(releases?.userId, userId),
+              gte(releases?.createdAt, ninetyDaysAgo),
             ),
           )
           .limit(500),
         db
-          .select({ id: releases.id })
+          .select({ id: releases?.id })
           .from(releases)
           .where(
             and(
-              eq(releases.userId, userId),
+              eq(releases?.userId, userId),
               gte(
-                releases.createdAt,
-                new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000),
+                releases?.createdAt,
+                new Date(now?.getTime() - 180 * 24 * 60 * 60 * 1000),
               ),
             ),
           )
           .limit(500),
         db
-          .select({ total: sum(royaltyTransactions.amount) })
+          .select({ total: sum(royaltyTransactions?.amount) })
           .from(royaltyTransactions)
           .where(
             and(
-              eq(royaltyTransactions.userId, userId),
-              gte(royaltyTransactions.createdAt, thirtyDaysAgo),
+              eq(royaltyTransactions?.userId, userId),
+              gte(royaltyTransactions?.createdAt, thirtyDaysAgo),
             ),
           ),
         db
-          .select({ total: sum(royaltyTransactions.amount) })
+          .select({ total: sum(royaltyTransactions?.amount) })
           .from(royaltyTransactions)
           .where(
             and(
-              eq(royaltyTransactions.userId, userId),
-              gte(royaltyTransactions.createdAt, sixtyDaysAgo),
-              lte(royaltyTransactions.createdAt, thirtyDaysAgo),
+              eq(royaltyTransactions?.userId, userId),
+              gte(royaltyTransactions?.createdAt, sixtyDaysAgo),
+              lte(royaltyTransactions?.createdAt, thirtyDaysAgo),
             ),
           ),
         db
-          .select({ id: posts.id })
+          .select({ id: posts?.id })
           .from(posts)
           .where(
-            and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo)),
+            and(eq(posts?.userId, userId), gte(posts?.createdAt, thirtyDaysAgo)),
           )
           .limit(500),
       ]);
 
-      const currentStreams = Number(currentAnalytics[0]?.streams) || 0;
-      const previousStreams = Number(previousAnalytics[0]?.streams) || 0;
-      const growthRate =
+      const _currentStreams = Number(currentAnalytics[0]?.streams) || 0;
+      const _previousStreams = Number(previousAnalytics[0]?.streams) || 0;
+      const _growthRate =
         previousStreams > 0
-          ? Math.round(
+          ? Math?.round(
               ((currentStreams - previousStreams) / previousStreams) * 100,
             )
           : currentStreams > 0
             ? 100
             : 0;
 
-      const currentFollowers = Number(currentAnalytics[0]?.followers) || 0;
-      const previousFollowers = Number(previousAnalytics[0]?.followers) || 0;
-      const followersGrowth =
+      const _currentFollowers = Number(currentAnalytics[0]?.followers) || 0;
+      const _previousFollowers = Number(previousAnalytics[0]?.followers) || 0;
+      const _followersGrowth =
         previousFollowers > 0
-          ? Math.round(
+          ? Math?.round(
               ((currentFollowers - previousFollowers) / previousFollowers) *
                 100,
             )
@@ -500,41 +500,41 @@ router.get(
             ? 100
             : 0;
 
-      const currentRevenue = Number(recentRevenue[0]?.total) || 0;
-      const prevRevenue = Number(previousRevenue[0]?.total) || 0;
-      const revenueTrend =
+      const _currentRevenue = Number(recentRevenue[0]?.total) || 0;
+      const _prevRevenue = Number(previousRevenue[0]?.total) || 0;
+      const _revenueTrend =
         prevRevenue > 0
-          ? Math.round(((currentRevenue - prevRevenue) / prevRevenue) * 100)
+          ? Math?.round(((currentRevenue - prevRevenue) / prevRevenue) * 100)
           : currentRevenue > 0
             ? 100
             : 0;
 
-      const releasesLast90 = recentReleases.length;
-      const releaseVelocity = Math.round((releasesLast90 / 3) * 10) / 10;
+      const _releasesLast90 = recentReleases?.length;
+      const _releaseVelocity = Math?.round((releasesLast90 / 3) * 10) / 10;
 
-      const postingFrequency = recentPosts.length;
-      const engagementScore = Math.min(
+      const _postingFrequency = recentPosts?.length;
+      const _engagementScore = Math?.min(
         100,
-        Math.round(
-          (Math.min(postingFrequency, 30) / 30) * 40 +
+        Math?.round(
+          (Math?.min(postingFrequency, 30) / 30) * 40 +
             (releasesLast90 > 0 ? 30 : 0) +
             (currentStreams > 1000 ? 30 : currentStreams > 100 ? 15 : 5),
         ),
       );
 
       // Health score: engagement 35%, releases 25%, revenue presence 20%, growth 10%, revenue trend 10%
-      const careerHealthScore = Math.min(
+      const _careerHealthScore = Math?.min(
         100,
-        Math.round(
-          engagementScore * 0.35 +
-            Math.min(releasesLast90 * 8, 25) +
+        Math?.round(
+          engagementScore * 0?.35 +
+            Math?.min(releasesLast90 * 8, 25) +
             (currentRevenue > 0 ? 20 : 0) +
-            (growthRate > 0 ? Math.min(growthRate * 0.5, 10) : 0) +
-            (revenueTrend > 0 ? Math.min(revenueTrend * 0.5, 10) : 0),
+            (growthRate > 0 ? Math?.min(growthRate * 0?.5, 10) : 0) +
+            (revenueTrend > 0 ? Math?.min(revenueTrend * 0?.5, 10) : 0),
         ),
       );
 
-      const healthLabel =
+      const _healthLabel =
         careerHealthScore >= 80
           ? "Excellent"
           : careerHealthScore >= 60
@@ -543,7 +543,7 @@ router.get(
               ? "Fair"
               : "Needs Work";
 
-      res.json({
+      res?.json({
         insights: {
           growthRate,
           growthRateDisplay:
@@ -568,14 +568,14 @@ router.get(
         },
       });
     } catch (error) {
-      logger.warn("Error fetching career insights:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error fetching career insights:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-const chatSchema = z.object({
-  message: z.string().min(1).max(2000),
+const _chatSchema = z?.object({
+  message: z?.string().min(1).max(2000),
 });
 
 const CAREER_KNOWLEDGE: Record<
@@ -644,7 +644,7 @@ const CAREER_KNOWLEDGE: Record<
       "merchandise",
     ],
     response:
-      "Diversifying revenue is critical for music career sustainability. Streaming royalties average $0.003-0.005 per stream, so supplement with sync licensing (film, TV, ads), live performance, and merchandise. Sync placements can pay $500-50,000+ per placement. Register with ASCAP, BMI, or SESAC for performance royalties. Max Booster's Royalties section tracks your streaming income across all DSPs. Consider offering exclusive content or early access through Patreon or a fan club to build recurring revenue.",
+      "Diversifying revenue is critical for music career sustainability. Streaming royalties average $0?.003-0?.005 per stream, so supplement with sync licensing (film, TV, ads), live performance, and merchandise. Sync placements can pay $500-50,000+ per placement. Register with ASCAP, BMI, or SESAC for performance royalties. Max Booster's Royalties section tracks your streaming income across all DSPs. Consider offering exclusive content or early access through Patreon or a fan club to build recurring revenue.",
   },
   growth: {
     keywords: [
@@ -705,33 +705,33 @@ const CAREER_KNOWLEDGE: Record<
   },
 };
 
-const DEFAULT_RESPONSE =
+const _DEFAULT_RESPONSE =
   "Great question! As your AI Career Coach, I'm here to help you navigate the music industry. I can advise on topics like social media strategy, release planning, marketing campaigns, revenue diversification, audience growth, artist branding, live performance, and how to use Max Booster's tools to their full potential. What specific area of your music career would you like to focus on?";
 
-router.post(
+router?.post(
   "/chat",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const parsed = chatSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: "Message is required" });
+    const _parsed = chatSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
+      return res?.status(400).json({ error: "Message is required" });
     }
 
-    const { message } = parsed.data;
-    const lowerMsg = message.toLowerCase();
+    const { message } = parsed?.data;
+    const _lowerMsg = message?.toLowerCase();
 
     let response = DEFAULT_RESPONSE;
-    for (const [, entry] of Object.entries(CAREER_KNOWLEDGE)) {
-      if (entry.keywords.some((kw) => lowerMsg.includes(kw))) {
-        response = entry.response;
+    for (const [, entry] of Object?.entries(CAREER_KNOWLEDGE)) {
+      if (entry?.keywords.some((kw) => lowerMsg?.includes(kw))) {
+        response = entry?.response;
         break;
       }
     }
 
-    logger.info(
-      `Career coach chat for user ${req.user!.id}: "${message.slice(0, 60)}..."`,
+    logger?.info(
+      `Career coach chat for user ${req?.user!.id}: "${message?.slice(0, 60)}..."`,
     );
-    res.json({ response });
+    res?.json({ response });
   }),
 );
 

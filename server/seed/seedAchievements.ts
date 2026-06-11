@@ -1,9 +1,9 @@
 import { db } from "../db";
 import { achievements } from "../../shared/schema";
 import { count, inArray } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
-const defaultAchievements = [
+const _defaultAchievements = [
   {
     name: "First Upload",
     description: "Upload your first track to the platform",
@@ -167,51 +167,51 @@ const defaultAchievements = [
 ];
 
 export async function seedAchievements() {
-  logger.info("Seeding achievements...");
+  logger?.info("Seeding achievements...");
 
   try {
-    const names = defaultAchievements.map((a) => a.name);
+    const _names = defaultAchievements?.map((a) => a?.name);
     const [{ total }] = await db
       .select({ total: count() })
       .from(achievements)
-      .where(inArray(achievements.name, names));
+      .where(inArray(achievements?.name, names));
 
-    if (Number(total) >= names.length) {
-      logger.info("Achievements already seeded, skipping...");
-      logger.info("Achievement seeding complete!");
+    if (Number(total) >= names?.length) {
+      logger?.info("Achievements already seeded, skipping...");
+      logger?.info("Achievement seeding complete!");
       return;
     }
 
-    const existing = await db
-      .select({ name: achievements.name })
+    const _existing = await db
+      .select({ name: achievements?.name })
       .from(achievements)
-      .where(inArray(achievements.name, names));
-    const existingNames = new Set(existing.map((r) => r.name));
+      .where(inArray(achievements?.name, names));
+    const _existingNames = new Set(existing?.map((r) => r?.name));
 
-    const toInsert = defaultAchievements
-      .filter((a) => !existingNames.has(a.name))
+    const _toInsert = defaultAchievements
+      .filter((a) => !existingNames?.has(a?.name))
       .map((a) => ({ ...a, isActive: true }));
 
-    if (toInsert.length > 0) {
-      await db.insert(achievements).values(toInsert);
-      logger.info(`Created ${toInsert.length} achievement(s)`);
+    if (toInsert?.length > 0) {
+      await db?.insert(achievements).values(toInsert);
+      logger?.info(`Created ${toInsert?.length} achievement(s)`);
     }
 
-    logger.info("Achievement seeding complete!");
+    logger?.info("Achievement seeding complete!");
   } catch (error) {
-    logger.warn("Error seeding achievements:", error);
+    logger?.warn("Error seeding achievements:", error);
     throw error;
   }
 }
 
 
-const isMainModule =
-  process.argv[1] &&
-  (process.argv[1].endsWith("seedAchievements.ts") ||
-    process.argv[1].includes("seedAchievements"));
+const _isMainModule =
+  process?.argv[1] &&
+  (process?.argv[1].endsWith("seedAchievements?.ts") ||
+    process?.argv[1].includes("seedAchievements"));
 
 if (isMainModule) {
   seedAchievements()
-    .then(() => process.exit(0))
-    .catch(() => process.exit(1));
+    .then(() => process?.exit(0))
+    .catch(() => process?.exit(1));
 }

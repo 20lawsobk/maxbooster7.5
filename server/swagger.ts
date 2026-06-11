@@ -7,15 +7,15 @@
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUi from "swagger-ui-express";
 import type { Express } from "express";
-import { logger } from "./logger.js";
-import { getBaseUrl } from "./config/defaults.js";
+import { logger } from "./logger?.js";
+import { getBaseUrl } from "./config/defaults?.js";
 
-const options: swaggerJsdoc.Options = {
+const options: swaggerJsdoc?.Options = {
   definition: {
-    openapi: "3.0.0",
+    openapi: "3?.0.0",
     info: {
       title: "Max Booster API",
-      version: "1.0.0",
+      version: "1?.0.0",
       description: `
 # Max Booster API Documentation
 
@@ -54,7 +54,7 @@ All errors follow this format:
       `,
       contact: {
         name: "Max Booster Support",
-        email: "support@maxbooster.ai",
+        email: "support@maxbooster?.ai",
       },
       license: {
         name: "Proprietary",
@@ -71,7 +71,7 @@ All errors follow this format:
         sessionCookie: {
           type: "apiKey",
           in: "cookie",
-          name: "connect.sid",
+          name: "connect?.sid",
           description: "Session cookie obtained from login",
         },
       },
@@ -162,33 +162,33 @@ All errors follow this format:
       { name: "Admin", description: "Admin panel operations" },
     ],
   },
-  apis: ["./server/routes.ts", "./server/routes/*.ts"], // Path to route files
+  apis: ["./server/routes?.ts", "./server/routes/*.ts"], // Path to route files
 };
 
-const swaggerSpec = swaggerJsdoc(options);
+const _swaggerSpec = swaggerJsdoc(options);
 
 /**
  * Setup Swagger documentation for Express app
  */
 export function setupSwagger(app: Express): void {
   // Serve Swagger UI
-  app.use(
+  app?.use(
     "/api-docs",
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec, {
+    swaggerUi?.serve,
+    swaggerUi?.setup(swaggerSpec, {
       customCss: ".swagger-ui .topbar { display: none }",
       customSiteTitle: "Max Booster API Docs",
-      customfavIcon: "/favicon.ico",
+      customfavIcon: "/favicon?.ico",
     }),
   );
 
   // Serve raw OpenAPI spec
-  app.get("/api-docs.json", (_req, res) => {
-    res.setHeader("Content-Type", "application/json");
-    res.send(swaggerSpec);
+  app?.get("/api-docs?.json", (_req, res) => {
+    res?.setHeader("Content-Type", "application/json");
+    res?.send(swaggerSpec);
   });
 
-  logger.info("📚 Swagger documentation available at /api-docs");
+  logger?.info("📚 Swagger documentation available at /api-docs");
 }
 
 /**
@@ -212,7 +212,7 @@ export function setupSwagger(app: Express): void {
  *               email:
  *                 type: string
  *                 format: email
- *                 example: user@example.com
+ *                 example: user@example?.com
  *               password:
  *                 type: string
  *                 format: password

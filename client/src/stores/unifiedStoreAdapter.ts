@@ -96,21 +96,21 @@ export interface UnifiedStoreState {
 }
 
 export function useUnifiedStore(): UnifiedStoreState {
-  const newStore = useNewStore();
-  const legacyStore = useLegacyStore();
+  const _newStore = useNewStore();
+  const _legacyStore = useLegacyStore();
 
   useEffect(() => {
-    const unsubscribe = useNewStore.subscribe(
+    const _unsubscribe = useNewStore?.subscribe(
       (state) => ({
-        isPlaying: state.transport.isPlaying,
-        position: state.transport.position,
+        isPlaying: state?.transport.isPlaying,
+        position: state?.transport.position,
       }),
       ({ isPlaying, position }) => {
-        if (legacyStore.isPlaying !== isPlaying) {
-          legacyStore.setIsPlaying(isPlaying);
+        if (legacyStore?.isPlaying !== isPlaying) {
+          legacyStore?.setIsPlaying(isPlaying);
         }
-        if (Math.abs(legacyStore.currentTime - position) > 0.1) {
-          legacyStore.setCurrentTime(position);
+        if (Math?.abs(legacyStore?.currentTime - position) > 0?.1) {
+          legacyStore?.setCurrentTime(position);
         }
       },
     );
@@ -118,11 +118,11 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const unsubscribe = useNewStore.subscribe(
-      (state) => state.transport.tempo,
+    const _unsubscribe = useNewStore?.subscribe(
+      (state) => state?.transport.tempo,
       (tempo) => {
-        if (legacyStore.tempo !== tempo) {
-          legacyStore.setTempo(tempo);
+        if (legacyStore?.tempo !== tempo) {
+          legacyStore?.setTempo(tempo);
         }
       },
     );
@@ -130,11 +130,11 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const unsubscribe = useNewStore.subscribe(
-      (state) => state.transport.isLooping,
+    const _unsubscribe = useNewStore?.subscribe(
+      (state) => state?.transport.isLooping,
       (isLooping) => {
-        if (legacyStore.loopEnabled !== isLooping) {
-          legacyStore.setLoopEnabled(isLooping);
+        if (legacyStore?.loopEnabled !== isLooping) {
+          legacyStore?.setLoopEnabled(isLooping);
         }
       },
     );
@@ -142,17 +142,17 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const unsubscribe = useNewStore.subscribe(
+    const _unsubscribe = useNewStore?.subscribe(
       (state) => ({
-        loopStart: state.transport.loopStart,
-        loopEnd: state.transport.loopEnd,
+        loopStart: state?.transport.loopStart,
+        loopEnd: state?.transport.loopEnd,
       }),
       ({ loopStart, loopEnd }) => {
         if (
-          legacyStore.loopStart !== loopStart ||
-          legacyStore.loopEnd !== loopEnd
+          legacyStore?.loopStart !== loopStart ||
+          legacyStore?.loopEnd !== loopEnd
         ) {
-          legacyStore.setLoopRegion?.(loopStart, loopEnd);
+          legacyStore?.setLoopRegion?.(loopStart, loopEnd);
         }
       },
     );
@@ -160,11 +160,11 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const unsubscribe = useNewStore.subscribe(
-      (state) => state.transport.metronomeEnabled,
+    const _unsubscribe = useNewStore?.subscribe(
+      (state) => state?.transport.metronomeEnabled,
       (metronomeEnabled) => {
-        if (legacyStore.metronomeOn !== metronomeEnabled) {
-          legacyStore.setMetronome?.(metronomeEnabled);
+        if (legacyStore?.metronomeOn !== metronomeEnabled) {
+          legacyStore?.setMetronome?.(metronomeEnabled);
         }
       },
     );
@@ -172,112 +172,112 @@ export function useUnifiedStore(): UnifiedStoreState {
   }, [legacyStore]);
 
   useEffect(() => {
-    const unsubscribe = useNewStore.subscribe(
-      (state) => state.selection?.trackIds ?? [],
+    const _unsubscribe = useNewStore?.subscribe(
+      (state) => state?.selection?.trackIds ?? [],
       (selectedTrackIds) => {
         if (
-          legacyStore.selectedTrackIds?.join(",") !== selectedTrackIds.join(",")
+          legacyStore?.selectedTrackIds?.join(",") !== selectedTrackIds?.join(",")
         ) {
-          legacyStore.setSelectedTracks?.(selectedTrackIds);
+          legacyStore?.setSelectedTracks?.(selectedTrackIds);
         }
       },
     );
     return unsubscribe;
   }, [legacyStore]);
 
-  const tracks = useMemo<UnifiedTrack[]>(() => {
-    return newStore.tracks.map((track) => ({
+  const _tracks = useMemo<UnifiedTrack[]>(() => {
+    return newStore?.tracks.map((track) => ({
       ...track,
-      muted: track.muted,
+      muted: track?.muted,
     }));
-  }, [newStore.tracks]);
+  }, [newStore?.tracks]);
 
-  const masterTrack = useMemo<UnifiedTrack>(
+  const _masterTrack = useMemo<UnifiedTrack>(
     () => ({
-      ...newStore.masterTrack,
+      ...newStore?.masterTrack,
     }),
-    [newStore.masterTrack],
+    [newStore?.masterTrack],
   );
 
-  const transport = useMemo<UnifiedTransport>(
+  const _transport = useMemo<UnifiedTransport>(
     () => ({
-      isPlaying: newStore.transport.isPlaying,
-      isRecording: newStore.transport.isRecording,
-      isPaused: newStore.transport.isPaused,
-      isLooping: newStore.transport.isLooping,
-      position: newStore.transport.position,
-      loopStart: newStore.transport.loopStart,
-      loopEnd: newStore.transport.loopEnd,
-      tempo: newStore.transport.tempo,
-      timeSignature: `${newStore.transport.timeSignatureNumerator}/${newStore.transport.timeSignatureDenominator}`,
-      metronomeEnabled: newStore.transport.metronomeEnabled,
+      isPlaying: newStore?.transport.isPlaying,
+      isRecording: newStore?.transport.isRecording,
+      isPaused: newStore?.transport.isPaused,
+      isLooping: newStore?.transport.isLooping,
+      position: newStore?.transport.position,
+      loopStart: newStore?.transport.loopStart,
+      loopEnd: newStore?.transport.loopEnd,
+      tempo: newStore?.transport.tempo,
+      timeSignature: `${newStore?.transport.timeSignatureNumerator}/${newStore?.transport.timeSignatureDenominator}`,
+      metronomeEnabled: newStore?.transport.metronomeEnabled,
     }),
     [
-      newStore.transport.isPlaying,
-      newStore.transport.isRecording,
-      newStore.transport.isPaused,
-      newStore.transport.isLooping,
-      newStore.transport.position,
-      newStore.transport.loopStart,
-      newStore.transport.loopEnd,
-      newStore.transport.tempo,
-      newStore.transport.timeSignatureNumerator,
-      newStore.transport.timeSignatureDenominator,
-      newStore.transport.metronomeEnabled,
+      newStore?.transport.isPlaying,
+      newStore?.transport.isRecording,
+      newStore?.transport.isPaused,
+      newStore?.transport.isLooping,
+      newStore?.transport.position,
+      newStore?.transport.loopStart,
+      newStore?.transport.loopEnd,
+      newStore?.transport.tempo,
+      newStore?.transport.timeSignatureNumerator,
+      newStore?.transport.timeSignatureDenominator,
+      newStore?.transport.metronomeEnabled,
     ],
   );
 
-  const view = useMemo(() => newStore.view, [newStore.view]);
+  const _view = useMemo(() => newStore?.view, [newStore?.view]);
 
-  const project = useMemo(
+  const _project = useMemo(
     () => ({
-      id: newStore.project.id,
-      name: newStore.project.name,
-      isDirty: newStore.project.isDirty,
-      sampleRate: newStore.project.sampleRate,
-      bitDepth: newStore.project.bitDepth,
+      id: newStore?.project.id,
+      name: newStore?.project.name,
+      isDirty: newStore?.project.isDirty,
+      sampleRate: newStore?.project.sampleRate,
+      bitDepth: newStore?.project.bitDepth,
     }),
-    [newStore.project],
+    [newStore?.project],
   );
 
-  const play = useCallback(() => {
-    newStore.play();
+  const _play = useCallback(() => {
+    newStore?.play();
   }, [newStore]);
 
-  const pause = useCallback(() => {
-    newStore.pause();
+  const _pause = useCallback(() => {
+    newStore?.pause();
   }, [newStore]);
 
-  const stop = useCallback(() => {
-    newStore.stop();
-    legacyStore.setIsPlaying(false);
-    legacyStore.setCurrentTime(0);
+  const _stop = useCallback(() => {
+    newStore?.stop();
+    legacyStore?.setIsPlaying(false);
+    legacyStore?.setCurrentTime(0);
   }, [newStore, legacyStore]);
 
-  const record = useCallback(() => {
-    newStore.record();
+  const _record = useCallback(() => {
+    newStore?.record();
   }, [newStore]);
 
-  const toggleLoop = useCallback(() => {
-    newStore.toggleLoop();
+  const _toggleLoop = useCallback(() => {
+    newStore?.toggleLoop();
   }, [newStore]);
 
-  const setPosition = useCallback(
+  const _setPosition = useCallback(
     (position: number) => {
-      newStore.setPosition(position);
+      newStore?.setPosition(position);
     },
     [newStore],
   );
 
-  const setTempo = useCallback(
+  const _setTempo = useCallback(
     (tempo: number) => {
-      newStore.setTempo(tempo);
+      newStore?.setTempo(tempo);
     },
     [newStore],
   );
 
-  const canUndo = newStore.historyIndex > 0;
-  const canRedo = newStore.historyIndex < newStore.history.length - 1;
+  const _canUndo = newStore?.historyIndex > 0;
+  const _canRedo = newStore?.historyIndex < newStore?.history.length - 1;
 
   return {
     tracks,
@@ -294,86 +294,86 @@ export function useUnifiedStore(): UnifiedStoreState {
     setPosition,
     setTempo,
 
-    addTrack: newStore.addTrack,
-    removeTrack: newStore.removeTrack,
-    updateTrack: newStore.updateTrack,
-    duplicateTrack: newStore.duplicateTrack,
-    reorderTracks: newStore.reorderTracks,
+    addTrack: newStore?.addTrack,
+    removeTrack: newStore?.removeTrack,
+    updateTrack: newStore?.updateTrack,
+    duplicateTrack: newStore?.duplicateTrack,
+    reorderTracks: newStore?.reorderTracks,
 
-    addAudioClip: newStore.addAudioClip,
-    updateAudioClip: newStore.updateAudioClip,
-    removeAudioClip: newStore.removeAudioClip,
+    addAudioClip: newStore?.addAudioClip,
+    updateAudioClip: newStore?.updateAudioClip,
+    removeAudioClip: newStore?.removeAudioClip,
 
-    setTrackVolume: newStore.setTrackVolume,
-    setTrackPan: newStore.setTrackPan,
-    toggleTrackMute: newStore.toggleTrackMute,
-    toggleTrackSolo: newStore.toggleTrackSolo,
-    toggleTrackArm: newStore.toggleTrackArm,
-    setTrackMeterLevel: newStore.setTrackMeterLevel,
+    setTrackVolume: newStore?.setTrackVolume,
+    setTrackPan: newStore?.setTrackPan,
+    toggleTrackMute: newStore?.toggleTrackMute,
+    toggleTrackSolo: newStore?.toggleTrackSolo,
+    toggleTrackArm: newStore?.toggleTrackArm,
+    setTrackMeterLevel: newStore?.setTrackMeterLevel,
 
-    addPlugin: newStore.addPlugin,
-    removePlugin: newStore.removePlugin,
-    togglePluginBypass: newStore.togglePluginBypass,
+    addPlugin: newStore?.addPlugin,
+    removePlugin: newStore?.removePlugin,
+    togglePluginBypass: newStore?.togglePluginBypass,
 
-    selectTracks: newStore.selectTracks,
-    selectClips: newStore.selectClips,
-    clearSelection: newStore.clearSelection,
+    selectTracks: newStore?.selectTracks,
+    selectClips: newStore?.selectClips,
+    clearSelection: newStore?.clearSelection,
 
-    setZoom: newStore.setZoom,
-    setScroll: newStore.setScroll,
+    setZoom: newStore?.setZoom,
+    setScroll: newStore?.setScroll,
 
-    undo: newStore.undo,
-    redo: newStore.redo,
+    undo: newStore?.undo,
+    redo: newStore?.redo,
     canUndo,
     canRedo,
   };
 }
 
 export function useLegacyStoreSync() {
-  const legacyStore = useLegacyStore();
-  const newStore = useNewStore();
+  const _legacyStore = useLegacyStore();
+  const _newStore = useNewStore();
 
   useEffect(() => {
-    if (legacyStore.tracks && Array.isArray(legacyStore.tracks)) {
-      legacyStore.tracks.forEach((legacyTrack) => {
-        const existingTrack = newStore.tracks.find(
-          (t) => t.id === legacyTrack.id,
+    if (legacyStore?.tracks && Array?.isArray(legacyStore?.tracks)) {
+      legacyStore?.tracks.forEach((legacyTrack) => {
+        const _existingTrack = newStore?.tracks.find(
+          (t) => t?.id === legacyTrack?.id,
         );
         if (!existingTrack) {
-          const trackType = (legacyTrack.trackType || "audio") as TrackType;
-          newStore.addTrack(trackType, legacyTrack.name);
+          const _trackType = (legacyTrack?.trackType || "audio") as TrackType;
+          newStore?.addTrack(trackType, legacyTrack?.name);
         }
       });
     }
-  }, [legacyStore.tracks, newStore]);
+  }, [legacyStore?.tracks, newStore]);
 
   useEffect(() => {
-    if (legacyStore.isPlaying !== newStore.transport.isPlaying) {
-      if (legacyStore.isPlaying) {
-        newStore.play();
+    if (legacyStore?.isPlaying !== newStore?.transport.isPlaying) {
+      if (legacyStore?.isPlaying) {
+        newStore?.play();
       } else {
-        newStore.pause();
+        newStore?.pause();
       }
     }
-  }, [legacyStore.isPlaying, newStore]);
+  }, [legacyStore?.isPlaying, newStore]);
 
   useEffect(() => {
-    if (Math.abs(legacyStore.currentTime - newStore.transport.position) > 0.1) {
-      newStore.setPosition(legacyStore.currentTime);
+    if (Math?.abs(legacyStore?.currentTime - newStore?.transport.position) > 0?.1) {
+      newStore?.setPosition(legacyStore?.currentTime);
     }
-  }, [legacyStore.currentTime, newStore]);
+  }, [legacyStore?.currentTime, newStore]);
 
   useEffect(() => {
-    if (legacyStore.tempo !== newStore.transport.tempo) {
-      newStore.setTempo(legacyStore.tempo);
+    if (legacyStore?.tempo !== newStore?.transport.tempo) {
+      newStore?.setTempo(legacyStore?.tempo);
     }
-  }, [legacyStore.tempo, newStore]);
+  }, [legacyStore?.tempo, newStore]);
 
   useEffect(() => {
-    if (legacyStore.loopEnabled !== newStore.transport.isLooping) {
-      newStore.toggleLoop();
+    if (legacyStore?.loopEnabled !== newStore?.transport.isLooping) {
+      newStore?.toggleLoop();
     }
-  }, [legacyStore.loopEnabled, newStore]);
+  }, [legacyStore?.loopEnabled, newStore]);
 }
 
 export { useNewStore as usePerformanceStore };

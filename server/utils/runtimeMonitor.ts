@@ -38,14 +38,14 @@ class RuntimeMonitor {
     expectedRange?: { min: number; max: number }
   ): void {
     if (!isFinite(value)) {
-      if (Number.isNaN(value)) {
-        this.recordAlert("NaN", service, operation, value);
-      } else if (!Number.isFinite(value)) {
-        this.recordAlert("Infinity", service, operation, value);
+      if (Number?.isNaN(value)) {
+        this?.recordAlert("NaN", service, operation, value);
+      } else if (!Number?.isFinite(value)) {
+        this?.recordAlert("Infinity", service, operation, value);
       }
     } else if (expectedRange) {
-      if (value < expectedRange.min || value > expectedRange.max) {
-        this.recordAlert("OutOfRange", service, operation, value, {
+      if (value < expectedRange?.min || value > expectedRange?.max) {
+        this?.recordAlert("OutOfRange", service, operation, value, {
           expectedRange,
         });
       }
@@ -61,8 +61,8 @@ class RuntimeMonitor {
     operation: string,
     expectedRange?: { min: number; max: number }
   ): void {
-    arr.forEach((value, index) => {
-      this.monitorValue(value, service, `${operation}[${index}]`, expectedRange);
+    arr?.forEach((value, index) => {
+      this?.monitorValue(value, service, `${operation}[${index}]`, expectedRange);
     });
   }
 
@@ -85,15 +85,15 @@ class RuntimeMonitor {
       context,
     };
 
-    this.alerts.push(alert);
-    this.alertCounts[type]++;
+    this?.alerts.push(alert);
+    this?.alertCounts[type]++;
 
     // Log immediately
-    console.warn(`[MONITORING_ALERT] ${type} detected in ${service}.${operation}:`, alert);
+    console?.warn(`[MONITORING_ALERT] ${type} detected in ${service}.${operation}:`, alert);
 
     // Check if threshold exceeded
-    if (this.alertCounts[type] >= this.alertThresholds[type]) {
-      this.escalateAlert(type, service);
+    if (this?.alertCounts[type] >= this?.alertThresholds[type]) {
+      this?.escalateAlert(type, service);
     }
   }
 
@@ -104,7 +104,7 @@ class RuntimeMonitor {
     type: "NaN" | "Infinity" | "Negative" | "OutOfRange",
     service: string
   ): void {
-    console.error(
+    console?.error(
       `[CRITICAL_ALERT] ${type} threshold exceeded in ${service}. Recommend immediate investigation.`
     );
     // In production, this would trigger PagerDuty, Sentry, etc.
@@ -114,21 +114,21 @@ class RuntimeMonitor {
    * Get recent alerts
    */
   public getRecentAlerts(limit: number = 100): MonitoringAlert[] {
-    return this.alerts.slice(-limit);
+    return this?.alerts.slice(-limit);
   }
 
   /**
    * Get alert summary
    */
   public getAlertSummary(): Record<string, number> {
-    return { ...this.alertCounts };
+    return { ...this?.alertCounts };
   }
 
   /**
    * Reset counters
    */
   public resetCounters(): void {
-    this.alertCounts = {
+    this?.alertCounts = {
       NaN: 0,
       Infinity: 0,
       Negative: 0,
@@ -140,11 +140,11 @@ class RuntimeMonitor {
    * Export alerts for analysis
    */
   public exportAlerts(): string {
-    return JSON.stringify(
+    return JSON?.stringify(
       {
         exportedAt: new Date().toISOString(),
-        summary: this.getAlertSummary(),
-        alerts: this.alerts,
+        summary: this?.getAlertSummary(),
+        alerts: this?.alerts,
       },
       null,
       2
@@ -153,7 +153,7 @@ class RuntimeMonitor {
 }
 
 // Singleton instance
-export const runtimeMonitor = new RuntimeMonitor();
+export const _runtimeMonitor = new RuntimeMonitor();
 
 /**
  * Decorator for automatic monitoring
@@ -166,22 +166,22 @@ export function MonitorNumericOutput(
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
-    const originalMethod = descriptor.value;
+    const _originalMethod = descriptor?.value;
 
-    descriptor.value = function (...args: any[]) {
-      const result = originalMethod.apply(this, args);
+    descriptor?.value = function (...args: any[]) {
+      const _result = originalMethod?.apply(this, args);
 
       if (typeof result === "number") {
-        runtimeMonitor.monitorValue(
+        runtimeMonitor?.monitorValue(
           result,
-          target.constructor.name,
+          target?.constructor.name,
           propertyKey,
           expectedRange
         );
-      } else if (Array.isArray(result) && result.every((v) => typeof v === "number")) {
-        runtimeMonitor.monitorArray(
+      } else if (Array?.isArray(result) && result?.every((v) => typeof v === "number")) {
+        runtimeMonitor?.monitorArray(
           result,
-          target.constructor.name,
+          target?.constructor.name,
           propertyKey,
           expectedRange
         );
@@ -205,22 +205,22 @@ export function MonitorAsyncNumericOutput(
     propertyKey: string,
     descriptor: PropertyDescriptor
   ) {
-    const originalMethod = descriptor.value;
+    const _originalMethod = descriptor?.value;
 
-    descriptor.value = async function (...args: any[]) {
-      const result = await originalMethod.apply(this, args);
+    descriptor?.value = async function (...args: any[]) {
+      const _result = await originalMethod?.apply(this, args);
 
       if (typeof result === "number") {
-        runtimeMonitor.monitorValue(
+        runtimeMonitor?.monitorValue(
           result,
-          target.constructor.name,
+          target?.constructor.name,
           propertyKey,
           expectedRange
         );
-      } else if (Array.isArray(result) && result.every((v) => typeof v === "number")) {
-        runtimeMonitor.monitorArray(
+      } else if (Array?.isArray(result) && result?.every((v) => typeof v === "number")) {
+        runtimeMonitor?.monitorArray(
           result,
-          target.constructor.name,
+          target?.constructor.name,
           propertyKey,
           expectedRange
         );
@@ -237,14 +237,14 @@ export function MonitorAsyncNumericOutput(
  * Express middleware to expose monitoring data
  */
 export function monitoringMiddleware(req: any, res: any, next: any) {
-  if (req.path === "/_monitoring/alerts") {
-    return res.json({
-      summary: runtimeMonitor.getAlertSummary(),
-      recentAlerts: runtimeMonitor.getRecentAlerts(50),
+  if (req?.path === "/_monitoring/alerts") {
+    return res?.json({
+      summary: runtimeMonitor?.getAlertSummary(),
+      recentAlerts: runtimeMonitor?.getRecentAlerts(50),
     });
   }
-  if (req.path === "/_monitoring/export") {
-    return res.type("text/plain").send(runtimeMonitor.exportAlerts());
+  if (req?.path === "/_monitoring/export") {
+    return res?.type("text/plain").send(runtimeMonitor?.exportAlerts());
   }
   next();
 }

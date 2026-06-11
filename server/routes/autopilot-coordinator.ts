@@ -1,226 +1,226 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { autopilotCoordinatorService } from "../services/autopilotCoordinatorService.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { autopilotCoordinatorService } from "../services/autopilotCoordinatorService?.js";
 
-const router = Router();
+const _router = Router();
 
 function parseValidDate(raw: unknown, fallback: Date): Date {
   if (!raw) return fallback;
-  const d = new Date(raw as string);
-  return isNaN(d.getTime()) ? fallback : d;
+  const _d = new Date(raw as string);
+  return isNaN(d?.getTime()) ? fallback : d;
 }
 
-const registerPostSchema = z.object({
-  autopilotType: z.enum(["social", "advertising"]),
-  platform: z.string().min(1),
-  scheduledTime: z.string().datetime(),
-  content: z.string().optional(),
+const _registerPostSchema = z?.object({
+  autopilotType: z?.enum(["social", "advertising"]),
+  platform: z?.string().min(1),
+  scheduledTime: z?.string().datetime(),
+  content: z?.string().optional(),
 });
 
-const updatePostSchema = z.object({
-  status: z.enum(["scheduled", "posted", "failed", "cancelled"]),
-  postId: z.string().optional(),
+const _updatePostSchema = z?.object({
+  status: z?.enum(["scheduled", "posted", "failed", "cancelled"]),
+  postId: z?.string().optional(),
   performance: z
     .object({
-      likes: z.number().int().nonnegative(),
-      comments: z.number().int().nonnegative(),
-      shares: z.number().int().nonnegative(),
-      reach: z.number().int().nonnegative(),
-      engagementRate: z.number().nonnegative(),
-      impressions: z.number().int().nonnegative(),
+      likes: z?.number().int().nonnegative(),
+      comments: z?.number().int().nonnegative(),
+      shares: z?.number().int().nonnegative(),
+      reach: z?.number().int().nonnegative(),
+      engagementRate: z?.number().nonnegative(),
+      impressions: z?.number().int().nonnegative(),
     })
     .optional(),
 });
 
-const shareInsightSchema = z.object({
-  sourceAutopilot: z.enum(["social", "advertising"]),
-  insightType: z.enum([
+const _shareInsightSchema = z?.object({
+  sourceAutopilot: z?.enum(["social", "advertising"]),
+  insightType: z?.enum([
     "timing",
     "content",
     "audience",
     "platform",
     "engagement",
   ]),
-  data: z.record(z.string(), z.any()),
+  data: z?.record(z?.string(), z?.any()),
 });
 
-const scheduleFilterSchema = z.object({
-  autopilotType: z.enum(["social", "advertising"]).optional(),
-  platform: z.string().optional(),
-  status: z.enum(["scheduled", "posted", "failed", "cancelled"]).optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
+const _scheduleFilterSchema = z?.object({
+  autopilotType: z?.enum(["social", "advertising"]).optional(),
+  platform: z?.string().optional(),
+  status: z?.enum(["scheduled", "posted", "failed", "cancelled"]).optional(),
+  startDate: z?.string().datetime().optional(),
+  endDate: z?.string().datetime().optional(),
 });
 
-const insightFilterSchema = z.object({
-  sourceAutopilot: z.enum(["social", "advertising"]).optional(),
+const _insightFilterSchema = z?.object({
+  sourceAutopilot: z?.enum(["social", "advertising"]).optional(),
   insightType: z
     .enum(["timing", "content", "audience", "platform", "engagement"])
     .optional(),
-  limit: z.number().int().positive().optional(),
+  limit: z?.number().int().positive().optional(),
 });
 
-router.get("/status", requireAuth, async (req, res) => {
+router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const status = autopilotCoordinatorService.getStatus(userId);
+    const _userId = req?.user!.id;
+    const _status = autopilotCoordinatorService?.getStatus(userId);
 
-    res.json({
+    res?.json({
       success: true,
       data: status,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error getting coordinator status:");
+    logger?.warn({ err: error }, "Error getting coordinator status:");
     res
       .status(500)
       .json({ success: false, error: "Failed to get coordinator status" });
   }
 });
 
-router.get("/schedule", requireAuth, async (req, res) => {
+router?.get("/schedule", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const parsed = scheduleFilterSchema.parse(req.query);
+    const _userId = req?.user!.id;
+    const _parsed = scheduleFilterSchema?.parse(req?.query);
 
     const options: Record<string, unknown> = {};
-    if (parsed.autopilotType) options.autopilotType = parsed.autopilotType;
-    if (parsed.platform) options.platform = parsed.platform;
-    if (parsed.status) options.status = parsed.status;
-    if (parsed.startDate) options.startDate = new Date(parsed.startDate);
-    if (parsed.endDate) options.endDate = new Date(parsed.endDate);
+    if (parsed?.autopilotType) options?.autopilotType = parsed?.autopilotType;
+    if (parsed?.platform) options?.platform = parsed?.platform;
+    if (parsed?.status) options?.status = parsed?.status;
+    if (parsed?.startDate) options?.startDate = new Date(parsed?.startDate);
+    if (parsed?.endDate) options?.endDate = new Date(parsed?.endDate);
 
-    const schedule = autopilotCoordinatorService.getCoordinatedSchedule(
+    const _schedule = autopilotCoordinatorService?.getCoordinatedSchedule(
       userId,
       options,
     );
 
-    res.json({
+    res?.json({
       success: true,
       data: {
         posts: schedule,
-        total: schedule.length,
+        total: schedule?.length,
       },
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error.issues,
+          details: error?.issues,
         });
     }
-    logger.warn({ err: error }, "Error getting coordinated schedule:");
+    logger?.warn({ err: error }, "Error getting coordinated schedule:");
     res
       .status(500)
       .json({ success: false, error: "Failed to get coordinated schedule" });
   }
 });
 
-router.post("/sync", requireAuth, async (req, res) => {
+router?.post("/sync", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const result = autopilotCoordinatorService.syncInsights(userId);
+    const _userId = req?.user!.id;
+    const _result = autopilotCoordinatorService?.syncInsights(userId);
 
-    res.json({
+    res?.json({
       success: true,
       data: {
-        socialToAdvertising: result.socialToAdvertising.length,
-        advertisingToSocial: result.advertisingToSocial.length,
+        socialToAdvertising: result?.socialToAdvertising.length,
+        advertisingToSocial: result?.advertisingToSocial.length,
         syncedAt: new Date().toISOString(),
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error syncing insights:");
-    res.status(500).json({ success: false, error: "Failed to sync insights" });
+    logger?.warn({ err: error }, "Error syncing insights:");
+    res?.status(500).json({ success: false, error: "Failed to sync insights" });
   }
 });
 
-router.post("/register", requireAuth, async (req, res) => {
+router?.post("/register", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const parsed = registerPostSchema.parse(req.body);
+    const _userId = req?.user!.id;
+    const _parsed = registerPostSchema?.parse(req?.body);
 
-    const post = autopilotCoordinatorService.registerPost(
+    const _post = autopilotCoordinatorService?.registerPost(
       userId,
-      parsed.autopilotType,
-      parsed.platform,
-      new Date(parsed.scheduledTime),
-      parsed.content,
+      parsed?.autopilotType,
+      parsed?.platform,
+      new Date(parsed?.scheduledTime),
+      parsed?.content,
     );
 
     if (!post) {
-      return res.status(409).json({
+      return res?.status(409).json({
         success: false,
         error: "Time slot conflict - posts must be at least 2 hours apart",
       });
     }
 
-    res.status(201).json({
+    res?.status(201).json({
       success: true,
       data: post,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error.issues,
+          details: error?.issues,
         });
     }
-    logger.warn({ err: error }, "Error registering post:");
-    res.status(500).json({ success: false, error: "Failed to register post" });
+    logger?.warn({ err: error }, "Error registering post:");
+    res?.status(500).json({ success: false, error: "Failed to register post" });
   }
 });
 
-router.put("/posts/:postId", requireAuth, async (req, res) => {
+router?.put("/posts/:postId", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { postId } = req.params;
-    const parsed = updatePostSchema.parse(req.body);
+    const _userId = req?.user!.id;
+    const { postId } = req?.params;
+    const _parsed = updatePostSchema?.parse(req?.body);
 
-    const post = autopilotCoordinatorService.updatePostStatus(
+    const _post = autopilotCoordinatorService?.updatePostStatus(
       userId,
       postId,
-      parsed.status,
-      parsed.postId,
-      parsed.performance,
+      parsed?.status,
+      parsed?.postId,
+      parsed?.performance,
     );
 
     if (!post) {
-      return res.status(404).json({ success: false, error: "Post not found" });
+      return res?.status(404).json({ success: false, error: "Post not found" });
     }
 
-    res.json({
+    res?.json({
       success: true,
       data: post,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error.issues,
+          details: error?.issues,
         });
     }
-    logger.warn({ err: error }, "Error updating post:");
-    res.status(500).json({ success: false, error: "Failed to update post" });
+    logger?.warn({ err: error }, "Error updating post:");
+    res?.status(500).json({ success: false, error: "Failed to update post" });
   }
 });
 
-router.delete("/posts/:postId", requireAuth, async (req, res) => {
+router?.delete("/posts/:postId", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { postId } = req.params;
+    const _userId = req?.user!.id;
+    const { postId } = req?.params;
 
-    const cancelled = autopilotCoordinatorService.cancelPost(userId, postId);
+    const _cancelled = autopilotCoordinatorService?.cancelPost(userId, postId);
 
     if (!cancelled) {
       return res
@@ -228,120 +228,120 @@ router.delete("/posts/:postId", requireAuth, async (req, res) => {
         .json({ success: false, error: "Post not found or already processed" });
     }
 
-    res.json({
+    res?.json({
       success: true,
       message: "Post cancelled successfully",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error cancelling post:");
-    res.status(500).json({ success: false, error: "Failed to cancel post" });
+    logger?.warn({ err: error }, "Error cancelling post:");
+    res?.status(500).json({ success: false, error: "Failed to cancel post" });
   }
 });
 
-router.get("/next-slot", requireAuth, async (req, res) => {
+router?.get("/next-slot", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const autopilotType =
-      (req.query.autopilotType as "social" | "advertising") || "social";
-    const platform = (req.query.platform as string) || "twitter";
-    const preferredTime = req.query.preferredTime
-      ? parseValidDate(req.query.preferredTime, new Date())
+    const _userId = req?.user!.id;
+    const _autopilotType =
+      (req?.query.autopilotType as "social" | "advertising") || "social";
+    const _platform = (req?.query.platform as string) || "twitter";
+    const _preferredTime = req?.query.preferredTime
+      ? parseValidDate(req?.query.preferredTime, new Date())
       : undefined;
 
-    const slot = autopilotCoordinatorService.getNextAvailableSlot(
+    const _slot = autopilotCoordinatorService?.getNextAvailableSlot(
       userId,
       autopilotType,
       platform,
       preferredTime,
     );
 
-    res.json({
+    res?.json({
       success: true,
       data: slot,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error getting next slot:");
+    logger?.warn({ err: error }, "Error getting next slot:");
     res
       .status(500)
       .json({ success: false, error: "Failed to get next available slot" });
   }
 });
 
-router.post("/insights", requireAuth, async (req, res) => {
+router?.post("/insights", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const parsed = shareInsightSchema.parse(req.body);
+    const _userId = req?.user!.id;
+    const _parsed = shareInsightSchema?.parse(req?.body);
 
-    const insight = autopilotCoordinatorService.shareInsight(
+    const _insight = autopilotCoordinatorService?.shareInsight(
       userId,
-      parsed.sourceAutopilot,
-      parsed.insightType,
-      parsed.data,
+      parsed?.sourceAutopilot,
+      parsed?.insightType,
+      parsed?.data,
     );
 
-    res.status(201).json({
+    res?.status(201).json({
       success: true,
       data: insight,
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error.issues,
+          details: error?.issues,
         });
     }
-    logger.warn({ err: error }, "Error sharing insight:");
-    res.status(500).json({ success: false, error: "Failed to share insight" });
+    logger?.warn({ err: error }, "Error sharing insight:");
+    res?.status(500).json({ success: false, error: "Failed to share insight" });
   }
 });
 
-router.get("/insights", requireAuth, async (req, res) => {
+router?.get("/insights", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const parsed = insightFilterSchema.parse(req.query);
+    const _userId = req?.user!.id;
+    const _parsed = insightFilterSchema?.parse(req?.query);
 
-    const insights = autopilotCoordinatorService.getSharedInsights(userId, {
-      sourceAutopilot: parsed.sourceAutopilot,
-      insightType: parsed.insightType,
-      limit: parsed.limit,
+    const _insights = autopilotCoordinatorService?.getSharedInsights(userId, {
+      sourceAutopilot: parsed?.sourceAutopilot,
+      insightType: parsed?.insightType,
+      limit: parsed?.limit,
     });
 
-    res.json({
+    res?.json({
       success: true,
       data: {
         insights,
-        total: insights.length,
+        total: insights?.length,
       },
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error.issues,
+          details: error?.issues,
         });
     }
-    logger.warn({ err: error }, "Error getting insights:");
-    res.status(500).json({ success: false, error: "Failed to get insights" });
+    logger?.warn({ err: error }, "Error getting insights:");
+    res?.status(500).json({ success: false, error: "Failed to get insights" });
   }
 });
 
-router.get("/optimal-times/:platform", requireAuth, async (req, res) => {
+router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { platform } = req.params;
+    const _userId = req?.user!.id;
+    const { platform } = req?.params;
 
-    const optimalTimes = autopilotCoordinatorService.getOptimalPostingTimes(
+    const _optimalTimes = autopilotCoordinatorService?.getOptimalPostingTimes(
       userId,
       platform,
     );
 
-    res.json({
+    res?.json({
       success: true,
       data: {
         platform,
@@ -349,64 +349,64 @@ router.get("/optimal-times/:platform", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error getting optimal times:");
+    logger?.warn({ err: error }, "Error getting optimal times:");
     res
       .status(500)
       .json({ success: false, error: "Failed to get optimal posting times" });
   }
 });
 
-router.get("/conflicts", requireAuth, async (req, res) => {
+router?.get("/conflicts", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const startDate = parseValidDate(req.query.startDate, new Date());
-    const endDate = parseValidDate(
-      req.query.endDate,
-      new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    const _userId = req?.user!.id;
+    const _startDate = parseValidDate(req?.query.startDate, new Date());
+    const _endDate = parseValidDate(
+      req?.query.endDate,
+      new Date(Date?.now() + 7 * 24 * 60 * 60 * 1000),
     );
 
-    const conflicts = autopilotCoordinatorService.getPostingConflicts(
+    const _conflicts = autopilotCoordinatorService?.getPostingConflicts(
       userId,
       startDate,
       endDate,
     );
 
-    res.json({
+    res?.json({
       success: true,
       data: {
         conflicts,
-        total: conflicts.length,
+        total: conflicts?.length,
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error getting conflicts:");
+    logger?.warn({ err: error }, "Error getting conflicts:");
     res
       .status(500)
       .json({ success: false, error: "Failed to get posting conflicts" });
   }
 });
 
-router.get("/performance", requireAuth, async (req, res) => {
+router?.get("/performance", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const summary = autopilotCoordinatorService.getPerformanceSummary(userId);
+    const _userId = req?.user!.id;
+    const _summary = autopilotCoordinatorService?.getPerformanceSummary(userId);
 
-    res.json({
+    res?.json({
       success: true,
       data: summary,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error getting performance summary:");
+    logger?.warn({ err: error }, "Error getting performance summary:");
     res
       .status(500)
       .json({ success: false, error: "Failed to get performance summary" });
   }
 });
 
-router.post("/connect", requireAuth, async (req, res) => {
+router?.post("/connect", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { autopilotType } = req.body;
+    const _userId = req?.user!.id;
+    const { autopilotType } = req?.body;
 
     if (!autopilotType || !["social", "advertising"].includes(autopilotType)) {
       return res
@@ -414,24 +414,24 @@ router.post("/connect", requireAuth, async (req, res) => {
         .json({ success: false, error: "Invalid autopilot type" });
     }
 
-    autopilotCoordinatorService.connectAutopilot(userId, autopilotType);
+    autopilotCoordinatorService?.connectAutopilot(userId, autopilotType);
 
-    res.json({
+    res?.json({
       success: true,
       message: `${autopilotType} autopilot connected to coordinator`,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error connecting autopilot:");
+    logger?.warn({ err: error }, "Error connecting autopilot:");
     res
       .status(500)
       .json({ success: false, error: "Failed to connect autopilot" });
   }
 });
 
-router.post("/disconnect", requireAuth, async (req, res) => {
+router?.post("/disconnect", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { autopilotType } = req.body;
+    const _userId = req?.user!.id;
+    const { autopilotType } = req?.body;
 
     if (!autopilotType || !["social", "advertising"].includes(autopilotType)) {
       return res
@@ -439,14 +439,14 @@ router.post("/disconnect", requireAuth, async (req, res) => {
         .json({ success: false, error: "Invalid autopilot type" });
     }
 
-    autopilotCoordinatorService.disconnectAutopilot(userId, autopilotType);
+    autopilotCoordinatorService?.disconnectAutopilot(userId, autopilotType);
 
-    res.json({
+    res?.json({
       success: true,
       message: `${autopilotType} autopilot disconnected from coordinator`,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error disconnecting autopilot:");
+    logger?.warn({ err: error }, "Error disconnecting autopilot:");
     res
       .status(500)
       .json({ success: false, error: "Failed to disconnect autopilot" });

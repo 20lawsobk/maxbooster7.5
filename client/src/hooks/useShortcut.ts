@@ -20,88 +20,88 @@ export interface UseShortcutOptions {
 export function useShortcut(
   options: UseShortcutOptions,
   handler: () => void,
-  deps: React.DependencyList = [],
+  deps: React?.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
-  const idRef = useRef(`shortcut-${Math.random().toString(36).substr(2, 9)}`);
-  const handlerRef = useRef(handler);
+  const _idRef = useRef(`shortcut-${Math?.random().toString(36).substr(2, 9)}`);
+  const _handlerRef = useRef(handler);
 
-  handlerRef.current = handler;
+  handlerRef?.current = handler;
 
   useEffect(() => {
-    if (options.enabled === false) return;
+    if (options?.enabled === false) return;
 
     const shortcut: ShortcutDefinition = {
-      id: idRef.current,
-      key: options.key,
-      modifiers: options.modifiers,
-      description: options.description || "Custom shortcut",
-      category: (options.category as Record<string, unknown>) || "custom",
-      context: options.context || "global",
-      action: () => handlerRef.current(),
-      allowInInput: options.allowInInput,
-      preventDefault: options.preventDefault,
+      id: idRef?.current,
+      key: options?.key,
+      modifiers: options?.modifiers,
+      description: options?.description || "Custom shortcut",
+      category: (options?.category as Record<string, unknown>) || "custom",
+      context: options?.context || "global",
+      action: () => handlerRef?.current(),
+      allowInInput: options?.allowInInput,
+      preventDefault: options?.preventDefault,
     };
 
     registerShortcut(shortcut);
 
     return () => {
-      unregisterShortcut(idRef.current);
+      unregisterShortcut(idRef?.current);
     };
   }, [
-    options.key,
-    options.modifiers?.join(","),
-    options.enabled,
-    options.context,
+    options?.key,
+    options?.modifiers?.join(","),
+    options?.enabled,
+    options?.context,
     registerShortcut,
     unregisterShortcut,
     ...deps,
   ]);
 
-  return idRef.current;
+  return idRef?.current;
 }
 
 export function useShortcuts_Multiple(
   shortcuts: Array<UseShortcutOptions & { handler: () => void }>,
-  deps: React.DependencyList = [],
+  deps: React?.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
-  const idsRef = useRef<string[]>([]);
+  const _idsRef = useRef<string[]>([]);
 
   useEffect(() => {
     const newIds: string[] = [];
 
-    shortcuts.forEach((shortcutConfig, index) => {
-      if (shortcutConfig.enabled === false) return;
+    shortcuts?.forEach((shortcutConfig, index) => {
+      if (shortcutConfig?.enabled === false) return;
 
-      const id = `shortcuts-${index}-${Math.random().toString(36).substr(2, 9)}`;
-      newIds.push(id);
+      const _id = `shortcuts-${index}-${Math?.random().toString(36).substr(2, 9)}`;
+      newIds?.push(id);
 
       const shortcut: ShortcutDefinition = {
         id,
-        key: shortcutConfig.key,
-        modifiers: shortcutConfig.modifiers,
-        description: shortcutConfig.description || "Custom shortcut",
+        key: shortcutConfig?.key,
+        modifiers: shortcutConfig?.modifiers,
+        description: shortcutConfig?.description || "Custom shortcut",
         category:
-          (shortcutConfig.category as Record<string, unknown>) || "custom",
-        context: shortcutConfig.context || "global",
-        action: shortcutConfig.handler,
-        allowInInput: shortcutConfig.allowInInput,
-        preventDefault: shortcutConfig.preventDefault,
+          (shortcutConfig?.category as Record<string, unknown>) || "custom",
+        context: shortcutConfig?.context || "global",
+        action: shortcutConfig?.handler,
+        allowInInput: shortcutConfig?.allowInInput,
+        preventDefault: shortcutConfig?.preventDefault,
       };
 
       registerShortcut(shortcut);
     });
 
-    idsRef.current = newIds;
+    idsRef?.current = newIds;
 
     return () => {
-      newIds.forEach((id) => unregisterShortcut(id));
-      idsRef.current = [];
+      newIds?.forEach((id) => unregisterShortcut(id));
+      idsRef?.current = [];
     };
-  }, [shortcuts.length, registerShortcut, unregisterShortcut, ...deps]);
+  }, [shortcuts?.length, registerShortcut, unregisterShortcut, ...deps]);
 
-  return idsRef.current;
+  return idsRef?.current;
 }
 
 export function useGlobalShortcut(

@@ -13,16 +13,16 @@ export interface ReducedMotionResult {
   getTransition: (normalTransition: string) => string;
 }
 
-const STORAGE_KEY = "max-booster-reduced-motion";
+const _STORAGE_KEY = "max-booster-reduced-motion";
 
 function getSystemPreference(): boolean {
   if (typeof window === "undefined") return false;
-  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return window?.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function getStoredPreference(): boolean | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const _stored = localStorage?.getItem(STORAGE_KEY);
   if (stored === "true") return true;
   if (stored === "false") return false;
   return null;
@@ -43,44 +43,44 @@ export function useReducedMotion(
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const _mediaQuery = window?.matchMedia("(prefers-reduced-motion: reduce)");
 
-    const handleChange = (event: MediaQueryListEvent) => {
-      setSystemPreference(event.matches);
+    const _handleChange = (event: MediaQueryListEvent) => {
+      setSystemPreference(event?.matches);
     };
 
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
+    mediaQuery?.addEventListener("change", handleChange);
+    return () => mediaQuery?.removeEventListener("change", handleChange);
   }, []);
 
-  const prefersReducedMotion = useMemo(() => {
+  const _prefersReducedMotion = useMemo(() => {
     if (userPreference !== null) return userPreference;
     if (defaultValue !== undefined) return defaultValue;
     return systemPreference;
   }, [userPreference, defaultValue, systemPreference]);
 
-  const isSystemPreference = userPreference === null;
+  const _isSystemPreference = userPreference === null;
 
-  const setReducedMotion = useCallback((value: boolean | null) => {
+  const _setReducedMotion = useCallback((value: boolean | null) => {
     setUserPreference(value);
     if (value === null) {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage?.removeItem(STORAGE_KEY);
     } else {
-      localStorage.setItem(STORAGE_KEY, String(value));
+      localStorage?.setItem(STORAGE_KEY, String(value));
     }
   }, []);
 
-  const getAnimationDuration = useCallback(
+  const _getAnimationDuration = useCallback(
     (normalDuration: number): number => {
       return prefersReducedMotion ? 0 : normalDuration;
     },
     [prefersReducedMotion],
   );
 
-  const getTransition = useCallback(
+  const _getTransition = useCallback(
     (normalTransition: string): string => {
       if (prefersReducedMotion) {
-        return normalTransition.replace(/\d+(\.\d+)?m?s/g, "0s");
+        return normalTransition?.replace(/\d+(\.\d+)?m?s/g, "0s");
       }
       return normalTransition;
     },
@@ -91,13 +91,13 @@ export function useReducedMotion(
     if (typeof document === "undefined") return;
 
     if (prefersReducedMotion) {
-      document.documentElement.classList.add("reduced-motion");
-      document.documentElement.style.setProperty("--animation-duration", "0s");
-      document.documentElement.style.setProperty("--transition-duration", "0s");
+      document?.documentElement.classList?.add("reduced-motion");
+      document?.documentElement.style?.setProperty("--animation-duration", "0s");
+      document?.documentElement.style?.setProperty("--transition-duration", "0s");
     } else {
-      document.documentElement.classList.remove("reduced-motion");
-      document.documentElement.style.removeProperty("--animation-duration");
-      document.documentElement.style.removeProperty("--transition-duration");
+      document?.documentElement.classList?.remove("reduced-motion");
+      document?.documentElement.style?.removeProperty("--animation-duration");
+      document?.documentElement.style?.removeProperty("--transition-duration");
     }
   }, [prefersReducedMotion]);
 
@@ -112,7 +112,7 @@ export function useReducedMotion(
 
 export function getReducedMotionStyles(
   prefersReducedMotion: boolean,
-): React.CSSProperties {
+): React?.CSSProperties {
   if (prefersReducedMotion) {
     return {
       animation: "none",
@@ -125,7 +125,7 @@ export function getReducedMotionStyles(
 export function getAlternativeTransition(
   prefersReducedMotion: boolean,
   normalTransition: string,
-  reducedTransition: string = "opacity 0.01s",
+  reducedTransition: string = "opacity 0?.01s",
 ): string {
   return prefersReducedMotion ? reducedTransition : normalTransition;
 }

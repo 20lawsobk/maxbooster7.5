@@ -5,71 +5,71 @@ import {
   insertSongwritingSessionSchema,
 } from "@shared/schema";
 import { and, eq, desc, count, sql, ilike, or } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
 import { z } from "zod";
-import { parsePaginationParams } from "../middleware/pagination.js";
-import { queryCache, createCacheKey } from "../lib/queryCache.js";
-import { unifiedAIController } from "../services/unifiedAIController.js";
-import { musicIndustryContextFilter } from "../services/musicIndustryContextFilter.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
+import { queryCache, createCacheKey } from "../lib/queryCache?.js";
+import { unifiedAIController } from "../services/unifiedAIController?.js";
+import { musicIndustryContextFilter } from "../services/musicIndustryContextFilter?.js";
 
-const router = Router();
-const CACHE_TTL = 120;
+const _router = Router();
+const _CACHE_TTL = 120;
 
-const aiAssistSchema = z.object({
-  prompt: z.string().max(1000).optional(),
-  genre: z.string().max(100).optional(),
-  mood: z.string().max(100).optional(),
-  existing: z.string().max(5000).optional(),
+const _aiAssistSchema = z?.object({
+  prompt: z?.string().max(1000).optional(),
+  genre: z?.string().max(100).optional(),
+  mood: z?.string().max(100).optional(),
+  existing: z?.string().max(5000).optional(),
 });
 
-router.get("/", requireAuth, async (req, res) => {
+router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const { search, genre, mood, status } = req.query;
+    const { search, genre, mood, status } = req?.query;
 
-    const conditions = [eq(songwritingSessions.userId, req.user!.id)];
-    if (search && typeof search === "string" && search.trim()) {
+    const _conditions = [eq(songwritingSessions?.userId, req?.user!.id)];
+    if (search && typeof search === "string" && search?.trim()) {
       // Clamp search to 200 chars — an unbounded ilike pattern causes the DB
       // to do a full-table regex scan against potentially very long strings.
-      const safeSearch = search.trim().slice(0, 200);
-      conditions.push(
+      const _safeSearch = search?.trim().slice(0, 200);
+      conditions?.push(
         or(
-          ilike(songwritingSessions.title, `%${safeSearch}%`),
-          ilike(songwritingSessions.notes, `%${safeSearch}%`),
+          ilike(songwritingSessions?.title, `%${safeSearch}%`),
+          ilike(songwritingSessions?.notes, `%${safeSearch}%`),
         ) as Record<string, unknown>,
       );
     }
     if (genre && typeof genre === "string") {
-      conditions.push(eq(songwritingSessions.genre, genre));
+      conditions?.push(eq(songwritingSessions?.genre, genre));
     }
     if (mood && typeof mood === "string") {
-      conditions.push(eq(songwritingSessions.mood, mood));
+      conditions?.push(eq(songwritingSessions?.mood, mood));
     }
     if (status && typeof status === "string") {
-      conditions.push(eq(songwritingSessions.status, status));
+      conditions?.push(eq(songwritingSessions?.status, status));
     }
 
-    const sessions = await db
+    const _sessions = await db
       .select()
       .from(songwritingSessions)
       .where(and(...conditions))
-      .orderBy(desc(songwritingSessions.updatedAt))
+      .orderBy(desc(songwritingSessions?.updatedAt))
       .limit(limit)
       .offset(offset);
-    res.json(sessions);
+    res?.json(sessions);
   } catch (error) {
-    logger.warn({ err: error }, "[Songwriting] Failed to list sessions:");
-    res.status(500).json({ error: "Failed to fetch songwriting sessions" });
+    logger?.warn({ err: error }, "[Songwriting] Failed to list sessions:");
+    res?.status(500).json({ error: "Failed to fetch songwriting sessions" });
   }
 });
 
-router.get("/stats", requireAuth, async (req, res) => {
+router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const cacheKey = createCacheKey("stats:songwriting", userId);
+    const _userId = req?.user!.id;
+    const _cacheKey = createCacheKey("stats:songwriting", userId);
 
-    const stats = await queryCache.getOrCompute(
+    const _stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [totals] = await db
@@ -83,82 +83,82 @@ router.get("/stats", requireAuth, async (req, res) => {
             withLyrics: sql<number>`count(*) filter (where lyrics is not null and lyrics != '')`,
           })
           .from(songwritingSessions)
-          .where(eq(songwritingSessions.userId, userId));
+          .where(eq(songwritingSessions?.userId, userId));
 
-        const genreBreakdown = await db
+        const _genreBreakdown = await db
           .select({
-            genre: songwritingSessions.genre,
+            genre: songwritingSessions?.genre,
             count: count(),
           })
           .from(songwritingSessions)
           .where(
-            and(eq(songwritingSessions.userId, userId), sql`genre is not null`),
+            and(eq(songwritingSessions?.userId, userId), sql`genre is not null`),
           )
-          .groupBy(songwritingSessions.genre)
+          .groupBy(songwritingSessions?.genre)
           .orderBy(desc(count()))
           .limit(8);
 
         return {
-          total: Number(totals.total),
-          inProgress: Number(totals.inProgress),
-          completed: Number(totals.completed),
-          archived: Number(totals.archived),
-          aiAssisted: Number(totals.aiAssisted),
-          withCoWriters: Number(totals.withCoWriters),
-          withLyrics: Number(totals.withLyrics),
-          topGenres: genreBreakdown.map((g) => ({
-            genre: g.genre,
-            count: Number(g.count),
+          total: Number(totals?.total),
+          inProgress: Number(totals?.inProgress),
+          completed: Number(totals?.completed),
+          archived: Number(totals?.archived),
+          aiAssisted: Number(totals?.aiAssisted),
+          withCoWriters: Number(totals?.withCoWriters),
+          withLyrics: Number(totals?.withLyrics),
+          topGenres: genreBreakdown?.map((g) => ({
+            genre: g?.genre,
+            count: Number(g?.count),
           })),
         };
       },
       CACHE_TTL,
     );
 
-    res.json(stats);
+    res?.json(stats);
   } catch (error) {
-    logger.warn({ err: error }, "[Songwriting] Failed to fetch stats:");
-    res.status(500).json({ error: "Failed to fetch songwriting stats" });
+    logger?.warn({ err: error }, "[Songwriting] Failed to fetch stats:");
+    res?.status(500).json({ error: "Failed to fetch songwriting stats" });
   }
 });
 
-router.get("/:id", requireAuth, async (req, res) => {
+router?.get("/:id", requireAuth, async (req, res) => {
   try {
     const [item] = await db
       .select()
       .from(songwritingSessions)
       .where(
         and(
-          eq(songwritingSessions.id, req.params.id),
-          eq(songwritingSessions.userId, req.user!.id),
+          eq(songwritingSessions?.id, req?.params.id),
+          eq(songwritingSessions?.userId, req?.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res.status(404).json({ error: "Session not found" });
-    res.json(item);
+    if (!item) return res?.status(404).json({ error: "Session not found" });
+    res?.json(item);
   } catch (error) {
-    logger.warn({ err: error }, "[Songwriting] Failed to fetch session:");
-    res.status(500).json({ error: "Failed to fetch songwriting session" });
+    logger?.warn({ err: error }, "[Songwriting] Failed to fetch session:");
+    res?.status(500).json({ error: "Failed to fetch songwriting session" });
   }
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router?.post("/", requireAuth, async (req, res) => {
   try {
-    const data = insertSongwritingSessionSchema.parse({
-      ...req.body,
-      userId: req.user!.id,
+    const _data = insertSongwritingSessionSchema?.parse({
+      ...req?.body,
+      userId: req?.user!.id,
     });
     const [session] = await db
       .insert(songwritingSessions)
       .values(data)
       .returning();
-    await queryCache.invalidate(
-      createCacheKey("stats:songwriting", req.user!.id),
+    await queryCache?.invalidate(
+      createCacheKey("stats:songwriting", req?.user!.id),
     );
-    res.status(201).json(session);
+    res?.status(201).json(session);
   } catch (error: unknown) {
-    logger.warn({ err: error }, "[Songwriting] Failed to create session:");
-    if (error instanceof Error && error.name === "ZodError") {
+    logger?.warn({ err: error }, "[Songwriting] Failed to create session:");
+    if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
         .json({
@@ -166,46 +166,46 @@ router.post("/", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res.status(500).json({ error: "Failed to create songwriting session" });
+    res?.status(500).json({ error: "Failed to create songwriting session" });
   }
 });
 
-router.put("/:id", requireAuth, async (req, res) => {
+router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { id } = req.params;
+    const _userId = req?.user!.id;
+    const { id } = req?.params;
 
-    const existing = await db
+    const _existing = await db
       .select()
       .from(songwritingSessions)
       .where(
         and(
-          eq(songwritingSessions.id, id),
-          eq(songwritingSessions.userId, userId),
+          eq(songwritingSessions?.id, id),
+          eq(songwritingSessions?.userId, userId),
         ),
       )
       .limit(1);
 
-    if (existing.length === 0) {
-      return res.status(404).json({ error: "Session not found" });
+    if (existing?.length === 0) {
+      return res?.status(404).json({ error: "Session not found" });
     }
 
-    const data = insertSongwritingSessionSchema.partial().parse(req.body);
+    const _data = insertSongwritingSessionSchema?.partial().parse(req?.body);
     const [session] = await db
       .update(songwritingSessions)
       .set({ ...data, updatedAt: new Date() })
       .where(
         and(
-          eq(songwritingSessions.id, id),
-          eq(songwritingSessions.userId, userId),
+          eq(songwritingSessions?.id, id),
+          eq(songwritingSessions?.userId, userId),
         ),
       )
       .returning();
-    await queryCache.invalidate(createCacheKey("stats:songwriting", userId));
-    res.json(session);
+    await queryCache?.invalidate(createCacheKey("stats:songwriting", userId));
+    res?.json(session);
   } catch (error: unknown) {
-    logger.warn({ err: error }, "[Songwriting] Failed to update session:");
-    if (error instanceof Error && error.name === "ZodError") {
+    logger?.warn({ err: error }, "[Songwriting] Failed to update session:");
+    if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
         .json({
@@ -213,72 +213,72 @@ router.put("/:id", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res.status(500).json({ error: "Failed to update songwriting session" });
+    res?.status(500).json({ error: "Failed to update songwriting session" });
   }
 });
 
-router.delete("/:id", requireAuth, async (req, res) => {
+router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { id } = req.params;
+    const _userId = req?.user!.id;
+    const { id } = req?.params;
 
-    const existing = await db
+    const _existing = await db
       .select()
       .from(songwritingSessions)
       .where(
         and(
-          eq(songwritingSessions.id, id),
-          eq(songwritingSessions.userId, userId),
+          eq(songwritingSessions?.id, id),
+          eq(songwritingSessions?.userId, userId),
         ),
       )
       .limit(1);
 
-    if (existing.length === 0) {
-      return res.status(404).json({ error: "Session not found" });
+    if (existing?.length === 0) {
+      return res?.status(404).json({ error: "Session not found" });
     }
 
     await db
       .delete(songwritingSessions)
       .where(
         and(
-          eq(songwritingSessions.id, id),
-          eq(songwritingSessions.userId, userId),
+          eq(songwritingSessions?.id, id),
+          eq(songwritingSessions?.userId, userId),
         ),
       );
-    await queryCache.invalidate(createCacheKey("stats:songwriting", userId));
-    res.json({ success: true });
+    await queryCache?.invalidate(createCacheKey("stats:songwriting", userId));
+    res?.json({ success: true });
   } catch (error) {
-    logger.warn({ err: error }, "[Songwriting] Failed to delete session:");
-    res.status(500).json({ error: "Failed to delete songwriting session" });
+    logger?.warn({ err: error }, "[Songwriting] Failed to delete session:");
+    res?.status(500).json({ error: "Failed to delete songwriting session" });
   }
 });
 
-router.get("/rhyme/:word", requireAuth, async (req, res) => {
+router?.get("/rhyme/:word", requireAuth, async (req, res) => {
   try {
-    const word = req.params.word
+    const _word = req?.params.word
       .toLowerCase()
       .trim()
       .replace(/[^a-z'-]/g, "");
-    if (!word || word.length < 2) {
+    if (!word || word?.length < 2) {
       return res
         .status(400)
         .json({ error: "Word must be at least 2 characters" });
     }
-    const rhymes = getRhymes(word);
-    res.json({ word, rhymes, count: rhymes.length });
+    const _rhymes = getRhymes(word);
+    res?.json({ word, rhymes, count: rhymes?.length });
   } catch (error) {
-    logger.warn({ err: error }, "[Songwriting] Rhyme lookup error:");
-    res.status(500).json({ error: "Failed to look up rhymes" });
+    logger?.warn({ err: error }, "[Songwriting] Rhyme lookup error:");
+    res?.status(500).json({ error: "Failed to look up rhymes" });
   }
 });
 
-router.post("/ai-assist", requireAuth, async (req, res) => {
+router?.post("/ai-assist", requireAuth, async (req, res) => {
   try {
-    const parsed = aiAssistSchema.safeParse(req.body);
-    if (!parsed.success) {
+    const _parsed = aiAssistSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed.error.flatten() });
+        .json({ error: "Validation error", details: parsed?.error.flatten() });
     }
 
     const {
@@ -286,9 +286,9 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
       genre = "pop",
       mood = "uplifting",
       existing = "",
-    } = parsed.data;
-    const genreNorm = (genre || "pop").toLowerCase();
-    const moodNorm = (mood || "uplifting").toLowerCase();
+    } = parsed?.data;
+    const _genreNorm = (genre || "pop").toLowerCase();
+    const _moodNorm = (mood || "uplifting").toLowerCase();
 
     let suggestions: string[] = [];
     let rhymes: string[] = [];
@@ -296,14 +296,14 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
     // Fetch live industry context for songwriting — appended as extraContext so
     // MaxCore understands what lyrical themes and genres are culturally resonant now.
     // Falls back gracefully to undefined (no behaviour change) if filter is unavailable.
-    const _swCtx = await musicIndustryContextFilter
+    const __swCtx = await musicIndustryContextFilter
       .getContextForMode("songwriting")
       .catch(() => null);
-    const _swExtraContext = _swCtx?.contextString || undefined;
+    const __swExtraContext = _swCtx?.contextString || undefined;
 
-    const [lyricResult, rhymeResult] = await Promise.allSettled([
-      unifiedAIController.generateContent({
-        topic: `${genreNorm} song lyric ideas about "${prompt || "music"}", ${moodNorm} mood${existing ? ", continuing: " + existing.slice(0, 200) : ""}`,
+    const [lyricResult, rhymeResult] = await Promise?.allSettled([
+      unifiedAIController?.generateContent({
+        topic: `${genreNorm} song lyric ideas about "${prompt || "music"}", ${moodNorm} mood${existing ? ", continuing: " + existing?.slice(0, 200) : ""}`,
         contentType: "engagement",
         tone: "energetic",
         platform: "instagram",
@@ -312,7 +312,7 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
         extraContext: _swExtraContext,
       }),
       prompt
-        ? unifiedAIController.generateContent({
+        ? unifiedAIController?.generateContent({
             topic: `${genreNorm} lyrics with words that rhyme with "${prompt}"`,
             contentType: "engagement",
             tone: "casual",
@@ -320,56 +320,56 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
             includeHashtags: false,
             includeEmojis: false,
           })
-        : Promise.resolve(null),
+        : Promise?.resolve(null),
     ]);
 
     if (
-      lyricResult.status === "fulfilled" &&
-      lyricResult.value?.success &&
-      lyricResult.value.data
+      lyricResult?.status === "fulfilled" &&
+      lyricResult?.value?.success &&
+      lyricResult?.value.data
     ) {
-      const text: string = lyricResult.value.data.caption || "";
+      const text: string = lyricResult?.value.data?.caption || "";
       suggestions = text
         .split(/[.!?]+/)
-        .map((l: string) => l.trim())
-        .filter((l: string) => l.length > 8)
+        .map((l: string) => l?.trim())
+        .filter((l: string) => l?.length > 8)
         .slice(0, 5);
     }
 
     if (
-      rhymeResult.status === "fulfilled" &&
-      rhymeResult.value &&
-      (rhymeResult.value as Record<string, unknown>)?.success &&
-      (rhymeResult.value as Record<string, unknown>)?.data
+      rhymeResult?.status === "fulfilled" &&
+      rhymeResult?.value &&
+      (rhymeResult?.value as Record<string, unknown>)?.success &&
+      (rhymeResult?.value as Record<string, unknown>)?.data
     ) {
       const rhymeText: string =
-        (rhymeResult.value as Record<string, unknown>).data.caption || "";
-      const extracted = rhymeText
+        (rhymeResult?.value as Record<string, unknown>).data?.caption || "";
+      const _extracted = rhymeText
         .split(/[\s,;|/]+/)
-        .map((w: string) => w.replace(/[^a-zA-Z'-]/g, "").toLowerCase())
+        .map((w: string) => w?.replace(/[^a-zA-Z'-]/g, "").toLowerCase())
         .filter(
           (w: string) =>
-            w.length > 2 && w.length < 16 && w !== prompt?.toLowerCase(),
+            w?.length > 2 && w?.length < 16 && w !== prompt?.toLowerCase(),
         )
         .slice(0, 8);
-      rhymes = extracted.length > 0 ? extracted : getRhymes(prompt);
+      rhymes = extracted?.length > 0 ? extracted : getRhymes(prompt);
     } else {
       rhymes = getRhymes(prompt);
     }
 
-    if (suggestions.length === 0) {
+    if (suggestions?.length === 0) {
       suggestions = getDefaultSuggestions(prompt, genreNorm, moodNorm);
     }
 
-    res.json({
+    res?.json({
       suggestions,
       rhymes,
       chordProgression: getChordSuggestion(genreNorm, moodNorm),
       structures: getSongStructures(),
     });
   } catch (error) {
-    logger.warn({ err: error }, "[Songwriting] AI assist error:");
-    res.status(500).json({ error: "Failed to generate suggestions" });
+    logger?.warn({ err: error }, "[Songwriting] AI assist error:");
+    res?.status(500).json({ error: "Failed to generate suggestions" });
   }
 });
 
@@ -993,7 +993,7 @@ function getRhymes(word: string): string[] {
     ],
     live: ["give", "forgive", "outlive", "relive", "positive", "fugitive"],
   };
-  const w = (word || "").toLowerCase().trim();
+  const _w = (word || "").toLowerCase().trim();
   return rhymeMap[w] || ["(type a word to get rhymes)"];
 }
 
@@ -1002,7 +1002,7 @@ function getDefaultSuggestions(
   genre: string,
   mood: string,
 ): string[] {
-  const theme = prompt || "music";
+  const _theme = prompt || "music";
   return [
     `Write a ${mood} verse about ${theme} in a ${genre} style`,
     `Create a hook that captures the feeling of ${theme} — keep it under 8 bars`,
@@ -1016,9 +1016,9 @@ function getDefaultSuggestions(
 function seededIndex(seed: string, length: number): number {
   if (length <= 0) return 0;
   let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+  for (let i = 0; i < seed?.length; i++) {
+    h ^= seed?.charCodeAt(i);
+    h = Math?.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;
@@ -1181,15 +1181,15 @@ function getChordSuggestion(genre?: string, mood?: string): string {
     mysterious: "i – bVI – bVII – i",
   };
 
-  const g = (genre || "pop").toLowerCase();
-  const m = (mood || "").toLowerCase();
+  const _g = (genre || "pop").toLowerCase();
+  const _m = (mood || "").toLowerCase();
 
   if (m && moodOverrides[m]) {
     return moodOverrides[m];
   }
 
-  const options = progressions[g] || progressions["pop"];
-  return options[seededIndex(g + ":" + m, options.length)];
+  const _options = progressions[g] || progressions["pop"];
+  return options[seededIndex(g + ":" + m, options?.length)];
 }
 
 function getSongStructures(): string[] {

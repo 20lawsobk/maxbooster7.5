@@ -1,4 +1,4 @@
-export const studioOneTheme = {
+export const _studioOneTheme = {
   colors: {
     bg: {
       primary: "#1a1d24",
@@ -84,15 +84,15 @@ export const studioOneTheme = {
   },
   effects: {
     shadow: {
-      sm: "0 1px 2px rgba(0, 0, 0, 0.3)",
-      md: "0 4px 6px rgba(0, 0, 0, 0.4)",
-      lg: "0 10px 15px rgba(0, 0, 0, 0.5)",
-      inner: "inset 0 2px 4px rgba(0, 0, 0, 0.3)",
+      sm: "0 1px 2px rgba(0, 0, 0, 0?.3)",
+      md: "0 4px 6px rgba(0, 0, 0, 0?.4)",
+      lg: "0 10px 15px rgba(0, 0, 0, 0?.5)",
+      inner: "inset 0 2px 4px rgba(0, 0, 0, 0?.3)",
     },
     glow: {
-      blue: "0 0 10px rgba(122, 162, 247, 0.3)",
-      green: "0 0 10px rgba(74, 222, 128, 0.3)",
-      red: "0 0 10px rgba(239, 68, 68, 0.3)",
+      blue: "0 0 10px rgba(122, 162, 247, 0?.3)",
+      green: "0 0 10px rgba(74, 222, 128, 0?.3)",
+      red: "0 0 10px rgba(239, 68, 68, 0?.3)",
     },
   },
   transitions: {
@@ -102,50 +102,50 @@ export const studioOneTheme = {
   },
 };
 
-export const cssVariables = `
+export const _cssVariables = `
   :root {
-    --s1-bg-primary: ${studioOneTheme.colors.bg.primary};
-    --s1-bg-secondary: ${studioOneTheme.colors.bg.secondary};
-    --s1-bg-tertiary: ${studioOneTheme.colors.bg.tertiary};
-    --s1-bg-panel: ${studioOneTheme.colors.bg.panel};
-    --s1-bg-deep: ${studioOneTheme.colors.bg.deep};
-    --s1-bg-surface: ${studioOneTheme.colors.bg.surface};
-    --s1-bg-elevated: ${studioOneTheme.colors.bg.elevated};
+    --s1-bg-primary: ${studioOneTheme?.colors.bg?.primary};
+    --s1-bg-secondary: ${studioOneTheme?.colors.bg?.secondary};
+    --s1-bg-tertiary: ${studioOneTheme?.colors.bg?.tertiary};
+    --s1-bg-panel: ${studioOneTheme?.colors.bg?.panel};
+    --s1-bg-deep: ${studioOneTheme?.colors.bg?.deep};
+    --s1-bg-surface: ${studioOneTheme?.colors.bg?.surface};
+    --s1-bg-elevated: ${studioOneTheme?.colors.bg?.elevated};
     
-    --s1-border-primary: ${studioOneTheme.colors.border.primary};
-    --s1-border-secondary: ${studioOneTheme.colors.border.secondary};
-    --s1-border-subtle: ${studioOneTheme.colors.border.subtle};
-    --s1-border-accent: ${studioOneTheme.colors.border.accent};
+    --s1-border-primary: ${studioOneTheme?.colors.border?.primary};
+    --s1-border-secondary: ${studioOneTheme?.colors.border?.secondary};
+    --s1-border-subtle: ${studioOneTheme?.colors.border?.subtle};
+    --s1-border-accent: ${studioOneTheme?.colors.border?.accent};
     
-    --s1-text-primary: ${studioOneTheme.colors.text.primary};
-    --s1-text-secondary: ${studioOneTheme.colors.text.secondary};
-    --s1-text-muted: ${studioOneTheme.colors.text.muted};
-    --s1-text-accent: ${studioOneTheme.colors.text.accent};
+    --s1-text-primary: ${studioOneTheme?.colors.text?.primary};
+    --s1-text-secondary: ${studioOneTheme?.colors.text?.secondary};
+    --s1-text-muted: ${studioOneTheme?.colors.text?.muted};
+    --s1-text-accent: ${studioOneTheme?.colors.text?.accent};
     
-    --s1-accent-blue: ${studioOneTheme.colors.accent.blue};
-    --s1-accent-cyan: ${studioOneTheme.colors.accent.cyan};
-    --s1-accent-green: ${studioOneTheme.colors.accent.green};
-    --s1-accent-yellow: ${studioOneTheme.colors.accent.yellow};
-    --s1-accent-orange: ${studioOneTheme.colors.accent.orange};
-    --s1-accent-red: ${studioOneTheme.colors.accent.red};
-    --s1-accent-purple: ${studioOneTheme.colors.accent.purple};
-    --s1-accent-teal: ${studioOneTheme.colors.accent.teal};
+    --s1-accent-blue: ${studioOneTheme?.colors.accent?.blue};
+    --s1-accent-cyan: ${studioOneTheme?.colors.accent?.cyan};
+    --s1-accent-green: ${studioOneTheme?.colors.accent?.green};
+    --s1-accent-yellow: ${studioOneTheme?.colors.accent?.yellow};
+    --s1-accent-orange: ${studioOneTheme?.colors.accent?.orange};
+    --s1-accent-red: ${studioOneTheme?.colors.accent?.red};
+    --s1-accent-purple: ${studioOneTheme?.colors.accent?.purple};
+    --s1-accent-teal: ${studioOneTheme?.colors.accent?.teal};
     
-    --s1-meter-low: ${studioOneTheme.colors.meter.low};
-    --s1-meter-mid: ${studioOneTheme.colors.meter.mid};
-    --s1-meter-high: ${studioOneTheme.colors.meter.high};
-    --s1-meter-peak: ${studioOneTheme.colors.meter.peak};
-    --s1-meter-clip: ${studioOneTheme.colors.meter.clip};
+    --s1-meter-low: ${studioOneTheme?.colors.meter?.low};
+    --s1-meter-mid: ${studioOneTheme?.colors.meter?.mid};
+    --s1-meter-high: ${studioOneTheme?.colors.meter?.high};
+    --s1-meter-peak: ${studioOneTheme?.colors.meter?.peak};
+    --s1-meter-clip: ${studioOneTheme?.colors.meter?.clip};
     
-    --s1-channel-width: ${studioOneTheme.spacing.channelWidth}px;
-    --s1-channel-width-narrow: ${studioOneTheme.spacing.channelWidthNarrow}px;
-    --s1-channel-width-wide: ${studioOneTheme.spacing.channelWidthWide}px;
-    --s1-header-height: ${studioOneTheme.spacing.headerHeight}px;
-    --s1-transport-height: ${studioOneTheme.spacing.transportHeight}px;
-    --s1-browser-width: ${studioOneTheme.spacing.browserWidth}px;
-    --s1-inspector-width: ${studioOneTheme.spacing.inspectorWidth}px;
-    --s1-console-height: ${studioOneTheme.spacing.consoleHeight}px;
-    --s1-nav-column-width: ${studioOneTheme.spacing.navColumnWidth}px;
+    --s1-channel-width: ${studioOneTheme?.spacing.channelWidth}px;
+    --s1-channel-width-narrow: ${studioOneTheme?.spacing.channelWidthNarrow}px;
+    --s1-channel-width-wide: ${studioOneTheme?.spacing.channelWidthWide}px;
+    --s1-header-height: ${studioOneTheme?.spacing.headerHeight}px;
+    --s1-transport-height: ${studioOneTheme?.spacing.transportHeight}px;
+    --s1-browser-width: ${studioOneTheme?.spacing.browserWidth}px;
+    --s1-inspector-width: ${studioOneTheme?.spacing.inspectorWidth}px;
+    --s1-console-height: ${studioOneTheme?.spacing.consoleHeight}px;
+    --s1-nav-column-width: ${studioOneTheme?.spacing.navColumnWidth}px;
   }
 `;
 

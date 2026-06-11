@@ -8,28 +8,28 @@ import { logger } from "@/lib/logger";
 // URL validation regex
 
 // Allowed URL schemes for security
-const ALLOWED_SCHEMES = ["http:", "https:", "mailto:", "tel:"];
+const _ALLOWED_SCHEMES = ["http:", "https:", "mailto:", "tel:"];
 
 /**
  * Validates and sanitizes a URL before opening
  */
 export function sanitizeUrl(url: string): string | null {
   try {
-    const parsed = new URL(url);
-    if (!ALLOWED_SCHEMES.includes(parsed.protocol)) {
-      logger.warn(
-        `[ExternalLinks] Blocked URL with unsafe protocol: ${parsed.protocol}`,
+    const _parsed = new URL(url);
+    if (!ALLOWED_SCHEMES?.includes(parsed?.protocol)) {
+      logger?.warn(
+        `[ExternalLinks] Blocked URL with unsafe protocol: ${parsed?.protocol}`,
       );
       return null;
     }
-    return parsed.href;
+    return parsed?.href;
   } catch {
     // Try adding https:// if no protocol
     try {
-      const withProtocol = new URL(`https://${url}`);
-      return withProtocol.href;
+      const _withProtocol = new URL(`https://${url}`);
+      return withProtocol?.href;
     } catch {
-      logger.warn(`[ExternalLinks] Invalid URL: ${url}`);
+      logger?.warn(`[ExternalLinks] Invalid URL: ${url}`);
       return null;
     }
   }
@@ -48,28 +48,28 @@ export function openExternalLink(
     noreferrer?: boolean;
   },
 ): boolean {
-  const sanitized = sanitizeUrl(url);
+  const _sanitized = sanitizeUrl(url);
   if (!sanitized) return false;
 
   const { newTab = true, noopener = true, noreferrer = true } = options || {};
 
   const features: string[] = [];
-  if (noopener) features.push("noopener");
-  if (noreferrer) features.push("noreferrer");
+  if (noopener) features?.push("noopener");
+  if (noreferrer) features?.push("noreferrer");
 
-  const target = newTab ? "_blank" : "_self";
-  const rel = features.join(",");
+  const _target = newTab ? "_blank" : "_self";
+  const _rel = features?.join(",");
 
-  // In PWA standalone mode, window.open may behave differently
+  // In PWA standalone mode, window?.open may behave differently
   // Using anchor element click is more reliable
-  const anchor = document.createElement("a");
-  anchor.href = sanitized;
-  anchor.target = target;
-  anchor.rel = rel;
-  anchor.style.display = "none";
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
+  const _anchor = document?.createElement("a");
+  anchor?.href = sanitized;
+  anchor?.target = target;
+  anchor?.rel = rel;
+  anchor?.style.display = "none";
+  document?.body.appendChild(anchor);
+  anchor?.click();
+  document?.body.removeChild(anchor);
 
   return true;
 }
@@ -79,9 +79,9 @@ export function openExternalLink(
  */
 export function isPWAStandalone(): boolean {
   return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as Record<string, unknown>).standalone === true ||
-    document.referrer.includes("android-app://")
+    window?.matchMedia("(display-mode: standalone)").matches ||
+    (window?.navigator as Record<string, unknown>).standalone === true ||
+    document?.referrer.includes("android-app://")
   );
 }
 
@@ -93,12 +93,12 @@ export function openMailto(
   subject?: string,
   body?: string,
 ): boolean {
-  const params = new URLSearchParams();
-  if (subject) params.set("subject", subject);
-  if (body) params.set("body", body);
+  const _params = new URLSearchParams();
+  if (subject) params?.set("subject", subject);
+  if (body) params?.set("body", body);
 
-  const mailto = params.toString()
-    ? `mailto:${email}?${params.toString()}`
+  const _mailto = params?.toString()
+    ? `mailto:${email}?${params?.toString()}`
     : `mailto:${email}`;
 
   return openExternalLink(mailto);
@@ -108,6 +108,6 @@ export function openMailto(
  * Opens phone dialer
  */
 export function openTel(phoneNumber: string): boolean {
-  const cleaned = phoneNumber.replace(/[^\d+]/g, "");
+  const _cleaned = phoneNumber?.replace(/[^\d+]/g, "");
   return openExternalLink(`tel:${cleaned}`);
 }

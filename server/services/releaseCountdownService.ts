@@ -131,15 +131,15 @@ class ReleaseCountdownService {
         })
         .returning();
 
-      const tasks = this.generatePreReleaseChecklist(
-        new Date(releaseData.releaseDate),
+      const _tasks = this?.generatePreReleaseChecklist(
+        new Date(releaseData?.releaseDate),
       );
-      await this.bulkAddTasks(countdown.id, tasks);
+      await this?.bulkAddTasks(countdown?.id, tasks);
 
-      logger.info(`Created countdown ${countdown.id} for user ${userId}`);
+      logger?.info(`Created countdown ${countdown?.id} for user ${userId}`);
       return countdown;
     } catch (error) {
-      logger.warn("Error creating countdown:", error);
+      logger?.warn("Error creating countdown:", error);
       throw new Error("Failed to create countdown");
     }
   }
@@ -154,47 +154,47 @@ class ReleaseCountdownService {
         .from(releaseCountdowns)
         .where(
           and(
-            eq(releaseCountdowns.id, countdownId),
-            eq(releaseCountdowns.userId, userId),
+            eq(releaseCountdowns?.id, countdownId),
+            eq(releaseCountdowns?.userId, userId),
           ),
         )
         .limit(1);
       return countdown;
     } catch (error) {
-      logger.warn("Error fetching countdown:", error);
+      logger?.warn("Error fetching countdown:", error);
       throw new Error("Failed to fetch countdown");
     }
   }
 
   async getActiveCountdowns(userId: string): Promise<ReleaseCountdown[]> {
     try {
-      const countdowns = await db
+      const _countdowns = await db
         .select()
         .from(releaseCountdowns)
         .where(
           and(
-            eq(releaseCountdowns.userId, userId),
-            eq(releaseCountdowns.status, "active"),
+            eq(releaseCountdowns?.userId, userId),
+            eq(releaseCountdowns?.status, "active"),
           ),
         )
-        .orderBy(releaseCountdowns.releaseDate);
+        .orderBy(releaseCountdowns?.releaseDate);
       return countdowns;
     } catch (error) {
-      logger.warn("Error fetching active countdowns:", error);
+      logger?.warn("Error fetching active countdowns:", error);
       throw new Error("Failed to fetch active countdowns");
     }
   }
 
   async getAllCountdowns(userId: string): Promise<ReleaseCountdown[]> {
     try {
-      const countdowns = await db
+      const _countdowns = await db
         .select()
         .from(releaseCountdowns)
-        .where(eq(releaseCountdowns.userId, userId))
-        .orderBy(desc(releaseCountdowns.createdAt));
+        .where(eq(releaseCountdowns?.userId, userId))
+        .orderBy(desc(releaseCountdowns?.createdAt));
       return countdowns;
     } catch (error) {
-      logger.warn("Error fetching countdowns:", error);
+      logger?.warn("Error fetching countdowns:", error);
       throw new Error("Failed to fetch countdowns");
     }
   }
@@ -210,14 +210,14 @@ class ReleaseCountdownService {
         .set(data)
         .where(
           and(
-            eq(releaseCountdowns.id, countdownId),
-            eq(releaseCountdowns.userId, userId),
+            eq(releaseCountdowns?.id, countdownId),
+            eq(releaseCountdowns?.userId, userId),
           ),
         )
         .returning();
       return updated;
     } catch (error) {
-      logger.warn("Error updating countdown:", error);
+      logger?.warn("Error updating countdown:", error);
       throw new Error("Failed to update countdown");
     }
   }
@@ -227,9 +227,9 @@ class ReleaseCountdownService {
     taskData: Omit<InsertCountdownTask, "countdownId">,
   ): Promise<CountdownTask> {
     try {
-      const existingTasks = await this.getTasks(countdownId);
-      const maxOrder = existingTasks.reduce(
-        (max, t) => Math.max(max, t.order || 0),
+      const _existingTasks = await this?.getTasks(countdownId);
+      const _maxOrder = existingTasks?.reduce(
+        (max, t) => Math?.max(max, t?.order || 0),
         0,
       );
 
@@ -242,10 +242,10 @@ class ReleaseCountdownService {
         })
         .returning();
 
-      logger.info(`Added task ${task.id} to countdown ${countdownId}`);
+      logger?.info(`Added task ${task?.id} to countdown ${countdownId}`);
       return task;
     } catch (error) {
-      logger.warn("Error adding task:", error);
+      logger?.warn("Error adding task:", error);
       throw new Error("Failed to add task");
     }
   }
@@ -255,39 +255,39 @@ class ReleaseCountdownService {
     tasks: Array<Omit<InsertCountdownTask, "countdownId">>,
   ): Promise<CountdownTask[]> {
     try {
-      if (tasks.length === 0) return [];
+      if (tasks?.length === 0) return [];
 
-      const tasksToInsert = tasks.map((task, index) => ({
+      const _tasksToInsert = tasks?.map((task, index) => ({
         countdownId,
         order: index,
         ...task,
       }));
 
-      const insertedTasks = await db
+      const _insertedTasks = await db
         .insert(countdownTasks)
         .values(tasksToInsert)
         .returning();
 
-      logger.info(
-        `Added ${insertedTasks.length} tasks to countdown ${countdownId}`,
+      logger?.info(
+        `Added ${insertedTasks?.length} tasks to countdown ${countdownId}`,
       );
       return insertedTasks;
     } catch (error) {
-      logger.warn("Error bulk adding tasks:", error);
+      logger?.warn("Error bulk adding tasks:", error);
       throw new Error("Failed to add tasks");
     }
   }
 
   async getTasks(countdownId: string): Promise<CountdownTask[]> {
     try {
-      const tasks = await db
+      const _tasks = await db
         .select()
         .from(countdownTasks)
-        .where(eq(countdownTasks.countdownId, countdownId))
-        .orderBy(countdownTasks.order);
+        .where(eq(countdownTasks?.countdownId, countdownId))
+        .orderBy(countdownTasks?.order);
       return tasks;
     } catch (error) {
-      logger.warn("Error fetching tasks:", error);
+      logger?.warn("Error fetching tasks:", error);
       throw new Error("Failed to fetch tasks");
     }
   }
@@ -295,22 +295,22 @@ class ReleaseCountdownService {
   async getTasksForCountdowns(
     countdownIds: string[],
   ): Promise<Map<string, CountdownTask[]>> {
-    if (countdownIds.length === 0) return new Map();
+    if (countdownIds?.length === 0) return new Map();
     try {
-      const rows = await db
+      const _rows = await db
         .select()
         .from(countdownTasks)
-        .where(inArray(countdownTasks.countdownId, countdownIds))
-        .orderBy(countdownTasks.order);
-      const map = new Map<string, CountdownTask[]>();
+        .where(inArray(countdownTasks?.countdownId, countdownIds))
+        .orderBy(countdownTasks?.order);
+      const _map = new Map<string, CountdownTask[]>();
       for (const row of rows) {
-        const arr = map.get(row.countdownId) ?? [];
-        arr.push(row);
-        map.set(row.countdownId, arr);
+        const _arr = map?.get(row?.countdownId) ?? [];
+        arr?.push(row);
+        map?.set(row?.countdownId, arr);
       }
       return map;
     } catch (error) {
-      logger.warn("Error batch-fetching tasks:", error);
+      logger?.warn("Error batch-fetching tasks:", error);
       throw new Error("Failed to batch-fetch tasks");
     }
   }
@@ -325,16 +325,16 @@ class ReleaseCountdownService {
         .set({ completedAt: new Date() })
         .where(
           and(
-            eq(countdownTasks.id, taskId),
-            eq(countdownTasks.countdownId, countdownId),
+            eq(countdownTasks?.id, taskId),
+            eq(countdownTasks?.countdownId, countdownId),
           ),
         )
         .returning();
 
-      logger.info(`Completed task ${taskId} for countdown ${countdownId}`);
+      logger?.info(`Completed task ${taskId} for countdown ${countdownId}`);
       return task;
     } catch (error) {
-      logger.warn("Error completing task:", error);
+      logger?.warn("Error completing task:", error);
       throw new Error("Failed to complete task");
     }
   }
@@ -349,16 +349,16 @@ class ReleaseCountdownService {
         .set({ completedAt: null })
         .where(
           and(
-            eq(countdownTasks.id, taskId),
-            eq(countdownTasks.countdownId, countdownId),
+            eq(countdownTasks?.id, taskId),
+            eq(countdownTasks?.countdownId, countdownId),
           ),
         )
         .returning();
 
-      logger.info(`Uncompleted task ${taskId} for countdown ${countdownId}`);
+      logger?.info(`Uncompleted task ${taskId} for countdown ${countdownId}`);
       return task;
     } catch (error) {
-      logger.warn("Error uncompleting task:", error);
+      logger?.warn("Error uncompleting task:", error);
       throw new Error("Failed to uncomplete task");
     }
   }
@@ -367,14 +367,14 @@ class ReleaseCountdownService {
     countdownId: string,
   ): Promise<CountdownAnalytic[]> {
     try {
-      const analytics = await db
+      const _analytics = await db
         .select()
         .from(countdownAnalytics)
-        .where(eq(countdownAnalytics.countdownId, countdownId))
-        .orderBy(desc(countdownAnalytics.date));
+        .where(eq(countdownAnalytics?.countdownId, countdownId))
+        .orderBy(desc(countdownAnalytics?.date));
       return analytics;
     } catch (error) {
-      logger.warn("Error fetching analytics:", error);
+      logger?.warn("Error fetching analytics:", error);
       throw new Error("Failed to fetch analytics");
     }
   }
@@ -384,16 +384,16 @@ class ReleaseCountdownService {
     data: { presaves?: number; shares?: number; pageViews?: number },
   ): Promise<CountdownAnalytic> {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const _today = new Date();
+      today?.setHours(0, 0, 0, 0);
 
       const [existing] = await db
         .select()
         .from(countdownAnalytics)
         .where(
           and(
-            eq(countdownAnalytics.countdownId, countdownId),
-            gte(countdownAnalytics.date, today),
+            eq(countdownAnalytics?.countdownId, countdownId),
+            gte(countdownAnalytics?.date, today),
           ),
         )
         .limit(1);
@@ -402,11 +402,11 @@ class ReleaseCountdownService {
         const [updated] = await db
           .update(countdownAnalytics)
           .set({
-            presaves: (existing.presaves || 0) + (data.presaves || 0),
-            shares: (existing.shares || 0) + (data.shares || 0),
-            pageViews: (existing.pageViews || 0) + (data.pageViews || 0),
+            presaves: (existing?.presaves || 0) + (data?.presaves || 0),
+            shares: (existing?.shares || 0) + (data?.shares || 0),
+            pageViews: (existing?.pageViews || 0) + (data?.pageViews || 0),
           })
-          .where(eq(countdownAnalytics.id, existing.id))
+          .where(eq(countdownAnalytics?.id, existing?.id))
           .returning();
         return updated;
       }
@@ -422,7 +422,7 @@ class ReleaseCountdownService {
 
       return newRecord;
     } catch (error) {
-      logger.warn("Error recording analytics:", error);
+      logger?.warn("Error recording analytics:", error);
       throw new Error("Failed to record analytics");
     }
   }
@@ -434,13 +434,13 @@ class ReleaseCountdownService {
     dailyData: CountdownAnalytic[];
   }> {
     try {
-      const analytics = await this.getCountdownAnalytics(countdownId);
+      const _analytics = await this?.getCountdownAnalytics(countdownId);
 
-      const totals = analytics.reduce(
+      const _totals = analytics?.reduce(
         (acc, record) => ({
-          totalPresaves: acc.totalPresaves + (record.presaves || 0),
-          totalShares: acc.totalShares + (record.shares || 0),
-          totalPageViews: acc.totalPageViews + (record.pageViews || 0),
+          totalPresaves: acc?.totalPresaves + (record?.presaves || 0),
+          totalShares: acc?.totalShares + (record?.shares || 0),
+          totalPageViews: acc?.totalPageViews + (record?.pageViews || 0),
         }),
         { totalPresaves: 0, totalShares: 0, totalPageViews: 0 },
       );
@@ -450,7 +450,7 @@ class ReleaseCountdownService {
         dailyData: analytics,
       };
     } catch (error) {
-      logger.warn("Error getting analytics summary:", error);
+      logger?.warn("Error getting analytics summary:", error);
       throw new Error("Failed to get analytics summary");
     }
   }
@@ -458,14 +458,14 @@ class ReleaseCountdownService {
   generatePreReleaseChecklist(
     releaseDate: Date,
   ): Array<Omit<InsertCountdownTask, "countdownId">> {
-    return PRE_RELEASE_CHECKLIST_TEMPLATES.map((template) => {
-      const dueDate = new Date(releaseDate);
-      dueDate.setDate(dueDate.getDate() + template.dueOffset);
+    return PRE_RELEASE_CHECKLIST_TEMPLATES?.map((template) => {
+      const _dueDate = new Date(releaseDate);
+      dueDate?.setDate(dueDate?.getDate() + template?.dueOffset);
 
       return {
-        task: template.task,
+        task: template?.task,
         dueDate,
-        category: template.category,
+        category: template?.category,
         order: 0,
       };
     });
@@ -476,7 +476,7 @@ class ReleaseCountdownService {
     genre?: string,
     _targetAudience?: string,
   ): Promise<Array<Omit<InsertCountdownTask, "countdownId">>> {
-    const baseTasks = PRE_RELEASE_CHECKLIST_TEMPLATES;
+    const _baseTasks = PRE_RELEASE_CHECKLIST_TEMPLATES;
 
     const genreSpecificTasks: PreReleaseChecklistItem[] = [];
 
@@ -484,7 +484,7 @@ class ReleaseCountdownService {
       genre?.toLowerCase().includes("hip-hop") ||
       genre?.toLowerCase().includes("rap")
     ) {
-      genreSpecificTasks.push(
+      genreSpecificTasks?.push(
         {
           task: "Submit to hip-hop focused playlists on Spotify",
           dueOffset: -14,
@@ -500,7 +500,7 @@ class ReleaseCountdownService {
       genre?.toLowerCase().includes("electronic") ||
       genre?.toLowerCase().includes("edm")
     ) {
-      genreSpecificTasks.push(
+      genreSpecificTasks?.push(
         {
           task: "Submit to EDM-focused YouTube channels",
           dueOffset: -14,
@@ -516,7 +516,7 @@ class ReleaseCountdownService {
       genre?.toLowerCase().includes("indie") ||
       genre?.toLowerCase().includes("alternative")
     ) {
-      genreSpecificTasks.push(
+      genreSpecificTasks?.push(
         {
           task: "Pitch to indie music blogs and magazines",
           dueOffset: -14,
@@ -530,28 +530,28 @@ class ReleaseCountdownService {
       );
     }
 
-    const allTasks = [...baseTasks, ...genreSpecificTasks];
+    const _allTasks = [...baseTasks, ...genreSpecificTasks];
 
-    const countdown = await db
+    const _countdown = await db
       .select()
       .from(releaseCountdowns)
-      .where(eq(releaseCountdowns.id, countdownId))
+      .where(eq(releaseCountdowns?.id, countdownId))
       .limit(1);
 
     if (!countdown[0]) {
       throw new Error("Countdown not found");
     }
 
-    const releaseDate = new Date(countdown[0].releaseDate);
+    const _releaseDate = new Date(countdown[0].releaseDate);
 
-    return allTasks.map((template) => {
-      const dueDate = new Date(releaseDate);
-      dueDate.setDate(dueDate.getDate() + template.dueOffset);
+    return allTasks?.map((template) => {
+      const _dueDate = new Date(releaseDate);
+      dueDate?.setDate(dueDate?.getDate() + template?.dueOffset);
 
       return {
-        task: template.task,
+        task: template?.task,
         dueDate,
-        category: template.category,
+        category: template?.category,
         order: 0,
       };
     });
@@ -562,13 +562,13 @@ class ReleaseCountdownService {
     userId: string,
   ): Promise<{ countdown: ReleaseCountdown; tasks: CountdownTask[] } | null> {
     try {
-      const countdown = await this.getCountdown(countdownId, userId);
+      const _countdown = await this?.getCountdown(countdownId, userId);
       if (!countdown) return null;
 
-      const tasks = await this.getTasks(countdownId);
+      const _tasks = await this?.getTasks(countdownId);
       return { countdown, tasks };
     } catch (error) {
-      logger.warn("Error fetching countdown with tasks:", error);
+      logger?.warn("Error fetching countdown with tasks:", error);
       throw new Error("Failed to fetch countdown with tasks");
     }
   }
@@ -578,9 +578,9 @@ class ReleaseCountdownService {
     total: number;
     percentage: number;
   } {
-    const total = tasks.length;
-    const completed = tasks.filter((t) => t.completedAt !== null).length;
-    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const _total = tasks?.length;
+    const _completed = tasks?.filter((t) => t?.completedAt !== null).length;
+    const _percentage = total > 0 ? Math?.round((completed / total) * 100) : 0;
     return { completed, total, percentage };
   }
 
@@ -591,20 +591,20 @@ class ReleaseCountdownService {
     seconds: number;
     isReleased: boolean;
   } {
-    const now = new Date();
-    const diff = releaseDate.getTime() - now.getTime();
+    const _now = new Date();
+    const _diff = releaseDate?.getTime() - now?.getTime();
 
     if (diff <= 0) {
       return { days: 0, hours: 0, minutes: 0, seconds: 0, isReleased: true };
     }
 
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    const _days = Math?.floor(diff / (1000 * 60 * 60 * 24));
+    const _hours = Math?.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const _minutes = Math?.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const _seconds = Math?.floor((diff % (1000 * 60)) / 1000);
 
     return { days, hours, minutes, seconds, isReleased: false };
   }
 }
 
-export const releaseCountdownService = new ReleaseCountdownService();
+export const _releaseCountdownService = new ReleaseCountdownService();

@@ -193,9 +193,9 @@ export const RENDER_PRESETS: Record<string, Partial<RenderSettings>> = {
     dither: "none",
     normalize: "off",
     normalizeTarget: 0,
-    truePeakCeiling: -0.3,
+    truePeakCeiling: -0?.3,
     limiter: "true-peak",
-    limiterThreshold: -0.3,
+    limiterThreshold: -0?.3,
   },
   "master-archive": {
     format: "wav",
@@ -381,7 +381,7 @@ export class AudioRenderEngine {
     presetName: string,
     baseSettings: RenderSettings = DEFAULT_RENDER_SETTINGS,
   ): RenderSettings {
-    const preset = RENDER_PRESETS[presetName];
+    const _preset = RENDER_PRESETS[presetName];
     if (!preset) return baseSettings;
     return { ...baseSettings, ...preset };
   }
@@ -390,36 +390,36 @@ export class AudioRenderEngine {
     settings: RenderSettings,
     durationSeconds: number,
   ): number {
-    const channels = settings.channels;
-    const bytesPerSample = settings.bitDepth / 8;
+    const _channels = settings?.channels;
+    const _bytesPerSample = settings?.bitDepth / 8;
 
-    switch (settings.format) {
+    switch (settings?.format) {
       case "wav":
       case "aiff":
         return (
-          durationSeconds * settings.sampleRate * channels * bytesPerSample
+          durationSeconds * settings?.sampleRate * channels * bytesPerSample
         );
       case "flac":
-        const compressionRatio = 1 - (settings.flacCompression || 5) * 0.05;
+        const _compressionRatio = 1 - (settings?.flacCompression || 5) * 0?.05;
         return (
           durationSeconds *
-          settings.sampleRate *
+          settings?.sampleRate *
           channels *
           bytesPerSample *
           compressionRatio
         );
       case "mp3":
-        return durationSeconds * (((settings.mp3Bitrate || 320) * 1000) / 8);
+        return durationSeconds * (((settings?.mp3Bitrate || 320) * 1000) / 8);
       case "aac":
-        return durationSeconds * (((settings.aacBitrate || 256) * 1000) / 8);
+        return durationSeconds * (((settings?.aacBitrate || 256) * 1000) / 8);
       case "ogg":
-        const oggBitrate = 64 + (settings.oggQuality || 5) * 32;
+        const _oggBitrate = 64 + (settings?.oggQuality || 5) * 32;
         return durationSeconds * ((oggBitrate * 1000) / 8);
       case "opus":
-        return durationSeconds * (((settings.opusBitrate || 128) * 1000) / 8);
+        return durationSeconds * (((settings?.opusBitrate || 128) * 1000) / 8);
       default:
         return (
-          durationSeconds * settings.sampleRate * channels * bytesPerSample
+          durationSeconds * settings?.sampleRate * channels * bytesPerSample
         );
     }
   }
@@ -428,10 +428,10 @@ export class AudioRenderEngine {
     settings: RenderSettings,
     durationSeconds: number,
   ): number {
-    if (settings.realtime) {
+    if (settings?.realtime) {
       return durationSeconds;
     }
-    return durationSeconds / settings.offlineMultiplier;
+    return durationSeconds / settings?.offlineMultiplier;
   }
 
   validateSettings(settings: RenderSettings): {
@@ -442,65 +442,65 @@ export class AudioRenderEngine {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    if (settings.format === "mp3" && settings.bitDepth === 32) {
-      warnings.push(
+    if (settings?.format === "mp3" && settings?.bitDepth === 32) {
+      warnings?.push(
         "32-bit depth will be converted to 24-bit for MP3 encoding",
       );
     }
 
-    if (settings.dither !== "none" && settings.bitDepth === 32) {
-      warnings.push(
+    if (settings?.dither !== "none" && settings?.bitDepth === 32) {
+      warnings?.push(
         "Dithering is not typically needed for 32-bit float exports",
       );
     }
 
     if (
-      settings.format === "wav" &&
-      settings.bitDepth === 16 &&
-      settings.dither === "none"
+      settings?.format === "wav" &&
+      settings?.bitDepth === 16 &&
+      settings?.dither === "none"
     ) {
-      warnings.push(
+      warnings?.push(
         "Consider enabling dithering when exporting to 16-bit to reduce quantization noise",
       );
     }
 
-    if (settings.normalize === "lufs" && settings.normalizeTarget > -9) {
-      warnings.push("LUFS target above -9 may result in audible distortion");
+    if (settings?.normalize === "lufs" && settings?.normalizeTarget > -9) {
+      warnings?.push("LUFS target above -9 may result in audible distortion");
     }
 
-    if (settings.limiter === "off" && settings.normalize !== "off") {
-      warnings.push("Normalization without limiting may cause clipping");
+    if (settings?.limiter === "off" && settings?.normalize !== "off") {
+      warnings?.push("Normalization without limiting may cause clipping");
     }
 
-    if (settings.truePeakCeiling > -0.1 && settings.format !== "wav") {
-      warnings.push(
-        "True peak ceiling above -0.1 dB may cause intersample peaks in lossy formats",
+    if (settings?.truePeakCeiling > -0?.1 && settings?.format !== "wav") {
+      warnings?.push(
+        "True peak ceiling above -0?.1 dB may cause intersample peaks in lossy formats",
       );
     }
 
     if (
-      settings.sampleRate > 48000 &&
-      (settings.format === "mp3" || settings.format === "ogg")
+      settings?.sampleRate > 48000 &&
+      (settings?.format === "mp3" || settings?.format === "ogg")
     ) {
-      warnings.push(
-        `${settings.format.toUpperCase()} will be resampled to 48kHz`,
+      warnings?.push(
+        `${settings?.format.toUpperCase()} will be resampled to 48kHz`,
       );
     }
 
     if (
-      settings.metadata.isrc &&
-      !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(settings.metadata.isrc)
+      settings?.metadata.isrc &&
+      !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(settings?.metadata.isrc)
     ) {
-      errors.push(
-        "Invalid ISRC format. Expected: CCXXXYYNNNNN (e.g., USRC17607839)",
+      errors?.push(
+        "Invalid ISRC format. Expected: CCXXXYYNNNNN (e?.g., USRC17607839)",
       );
     }
 
-    if (settings.metadata.upc && !/^\d{12,14}$/.test(settings.metadata.upc)) {
-      errors.push("Invalid UPC format. Expected: 12-14 digits");
+    if (settings?.metadata.upc && !/^\d{12,14}$/.test(settings?.metadata.upc)) {
+      errors?.push("Invalid UPC format. Expected: 12-14 digits");
     }
 
-    return { valid: errors.length === 0, errors, warnings };
+    return { valid: errors?.length === 0, errors, warnings };
   }
 
   async render(
@@ -508,56 +508,56 @@ export class AudioRenderEngine {
     settings: RenderSettings,
     onProgress?: (progress: RenderProgress) => void,
   ): Promise<RenderResult> {
-    if (this.isRendering) {
+    if (this?.isRendering) {
       throw new Error("Render already in progress");
     }
 
-    this.isRendering = true;
-    this.abortController = new AbortController();
+    this?.isRendering = true;
+    this?.abortController = new AbortController();
 
-    const notify = (progress: RenderProgress) => {
+    const _notify = (progress: RenderProgress) => {
       if (onProgress) onProgress(progress);
-      this.listeners.forEach((l) => l(progress));
+      this?.listeners.forEach((l) => l(progress));
     };
 
     try {
-      const validation = this.validateSettings(settings);
-      if (!validation.valid) {
-        throw new Error(`Invalid settings: ${validation.errors.join(", ")}`);
+      const _validation = this?.validateSettings(settings);
+      if (!validation?.valid) {
+        throw new Error(`Invalid settings: ${validation?.errors.join(", ")}`);
       }
 
       notify({
         phase: "preparing",
         progress: 0,
-        warnings: validation.warnings,
+        warnings: validation?.warnings,
       });
 
-      const csrfToken = getCsrfTokenFromCookie();
-      const response = await fetch(`/api/studio/projects/${projectId}/render`, {
+      const _csrfToken = getCsrfTokenFromCookie();
+      const _response = await fetch(`/api/studio/projects/${projectId}/render`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
           ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
         },
-        body: JSON.stringify(settings),
-        signal: this.abortController.signal,
+        body: JSON?.stringify(settings),
+        signal: this?.abortController.signal,
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Render failed");
+      if (!response?.ok) {
+        const _error = await response?.json();
+        throw new Error(error?.message || "Render failed");
       }
 
-      const result: RenderResult = await response.json();
+      const result: RenderResult = await response?.json();
 
       notify({
         phase: "complete",
         progress: 100,
-        peakLevel: result.peakLevel,
-        lufs: result.lufs,
-        truePeak: result.truePeak,
-        warnings: result.warnings,
+        peakLevel: result?.peakLevel,
+        lufs: result?.lufs,
+        truePeak: result?.truePeak,
+        warnings: result?.warnings,
       });
 
       return result;
@@ -569,25 +569,25 @@ export class AudioRenderEngine {
       });
       throw error;
     } finally {
-      this.isRendering = false;
-      this.abortController = null;
+      this?.isRendering = false;
+      this?.abortController = null;
     }
   }
 
   abort(): void {
-    if (this.abortController) {
-      this.abortController.abort();
+    if (this?.abortController) {
+      this?.abortController.abort();
     }
   }
 
   subscribe(listener: (progress: RenderProgress) => void): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    this?.listeners.add(listener);
+    return () => this?.listeners.delete(listener);
   }
 
   getIsRendering(): boolean {
-    return this.isRendering;
+    return this?.isRendering;
   }
 }
 
-export const audioRenderEngine = new AudioRenderEngine();
+export const _audioRenderEngine = new AudioRenderEngine();

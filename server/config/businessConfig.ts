@@ -3,7 +3,7 @@
  * LLC Number: 900126446
  */
 
-export const BUSINESS_CONFIG = {
+export const _BUSINESS_CONFIG = {
   company: {
     name: "B-Lawz Music LLC",
     llcNumber: "900126446",
@@ -20,8 +20,8 @@ export const BUSINESS_CONFIG = {
 
   branding: {
     platformName: "Max Booster",
-    supportEmail: "support@maxbooster.ai",
-    legalEmail: "legal@maxbooster.ai",
+    supportEmail: "support@maxbooster?.ai",
+    legalEmail: "legal@maxbooster?.ai",
     copyrightYear: new Date().getFullYear(),
     copyrightText: `© ${new Date().getFullYear()} B-Lawz Music LLC. All rights reserved.`,
   },

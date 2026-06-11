@@ -30,7 +30,7 @@ export { offlineCache, initOfflineCache } from "./OfflineCache";
 export type { CacheEntry, CacheCategory, CacheOptions } from "./OfflineCache";
 
 export async function initOfflineSystem(): Promise<void> {
-  await Promise.all([
+  await Promise?.all([
     initOfflineQueue(),
     initDraftStorage(),
     initOfflineCache(),
@@ -38,5 +38,5 @@ export async function initOfflineSystem(): Promise<void> {
 
   await initSyncManager();
 
-  logger.info("[Offline] System initialized");
+  logger?.info("[Offline] System initialized");
 }

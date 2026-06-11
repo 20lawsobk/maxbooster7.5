@@ -7,19 +7,19 @@ export interface FocusRestoreState {
 
 export function saveFocusState(): FocusRestoreState {
   return {
-    element: document.activeElement as HTMLElement | null,
+    element: document?.activeElement as HTMLElement | null,
     scrollPosition: {
-      x: window.scrollX,
-      y: window.scrollY,
+      x: window?.scrollX,
+      y: window?.scrollY,
     },
   };
 }
 
 export function restoreFocusState(state: FocusRestoreState): void {
-  if (state.element && document.body.contains(state.element)) {
-    state.element.focus();
+  if (state?.element && document?.body.contains(state?.element)) {
+    state?.element.focus();
   }
-  window.scrollTo(state.scrollPosition.x, state.scrollPosition.y);
+  window?.scrollTo(state?.scrollPosition.x, state?.scrollPosition.y);
 }
 
 class FocusManager {
@@ -27,18 +27,18 @@ class FocusManager {
   private static instance: FocusManager | null = null;
 
   static getInstance(): FocusManager {
-    if (!FocusManager.instance) {
-      FocusManager.instance = new FocusManager();
+    if (!FocusManager?.instance) {
+      FocusManager?.instance = new FocusManager();
     }
-    return FocusManager.instance;
+    return FocusManager?.instance;
   }
 
   push(): void {
-    this.stack.push(saveFocusState());
+    this?.stack.push(saveFocusState());
   }
 
   pop(): void {
-    const state = this.stack.pop();
+    const _state = this?.stack.pop();
     if (state) {
       requestAnimationFrame(() => {
         restoreFocusState(state);
@@ -47,39 +47,39 @@ class FocusManager {
   }
 
   clear(): void {
-    this.stack = [];
+    this?.stack = [];
   }
 
   get depth(): number {
-    return this.stack.length;
+    return this?.stack.length;
   }
 }
 
-export const focusManager = FocusManager.getInstance();
+export const _focusManager = FocusManager?.getInstance();
 
 export function focusFirstElement(container: HTMLElement): boolean {
-  const focusable = getFocusableElements(container);
-  if (focusable.length > 0) {
+  const _focusable = getFocusableElements(container);
+  if (focusable?.length > 0) {
     focusable[0].focus();
     return true;
   }
-  container.setAttribute("tabindex", "-1");
-  container.focus();
+  container?.setAttribute("tabindex", "-1");
+  container?.focus();
   return false;
 }
 
 export function focusLastElement(container: HTMLElement): boolean {
-  const focusable = getFocusableElements(container);
-  if (focusable.length > 0) {
-    focusable[focusable.length - 1].focus();
+  const _focusable = getFocusableElements(container);
+  if (focusable?.length > 0) {
+    focusable[focusable?.length - 1].focus();
     return true;
   }
   return false;
 }
 
 export function focusByIndex(container: HTMLElement, index: number): boolean {
-  const focusable = getFocusableElements(container);
-  if (index >= 0 && index < focusable.length) {
+  const _focusable = getFocusableElements(container);
+  if (index >= 0 && index < focusable?.length) {
     focusable[index].focus();
     return true;
   }
@@ -90,9 +90,9 @@ export function getNextFocusable(
   container: HTMLElement,
   currentElement: HTMLElement,
 ): HTMLElement | null {
-  const focusable = getFocusableElements(container);
-  const currentIndex = focusable.indexOf(currentElement);
-  if (currentIndex === -1 || currentIndex === focusable.length - 1) {
+  const _focusable = getFocusableElements(container);
+  const _currentIndex = focusable?.indexOf(currentElement);
+  if (currentIndex === -1 || currentIndex === focusable?.length - 1) {
     return focusable[0] || null;
   }
   return focusable[currentIndex + 1];
@@ -102,10 +102,10 @@ export function getPreviousFocusable(
   container: HTMLElement,
   currentElement: HTMLElement,
 ): HTMLElement | null {
-  const focusable = getFocusableElements(container);
-  const currentIndex = focusable.indexOf(currentElement);
+  const _focusable = getFocusableElements(container);
+  const _currentIndex = focusable?.indexOf(currentElement);
   if (currentIndex === -1 || currentIndex === 0) {
-    return focusable[focusable.length - 1] || null;
+    return focusable[focusable?.length - 1] || null;
   }
   return focusable[currentIndex - 1];
 }
@@ -140,9 +140,9 @@ export function applyFocusIndicator(
   element: HTMLElement,
   options: FocusIndicatorOptions = {},
 ): () => void {
-  const originalOutline = element.style.outline;
-  const originalOutlineOffset = element.style.outlineOffset;
-  const originalBorderRadius = element.style.borderRadius;
+  const _originalOutline = element?.style.outline;
+  const _originalOutlineOffset = element?.style.outlineOffset;
+  const _originalBorderRadius = element?.style.borderRadius;
 
   const {
     offset = 2,
@@ -152,53 +152,53 @@ export function applyFocusIndicator(
     borderRadius = 4,
   } = options;
 
-  const handleFocus = () => {
-    element.style.outline = `${width}px ${style} ${color}`;
-    element.style.outlineOffset = `${offset}px`;
-    element.style.borderRadius = `${borderRadius}px`;
+  const _handleFocus = () => {
+    element?.style.outline = `${width}px ${style} ${color}`;
+    element?.style.outlineOffset = `${offset}px`;
+    element?.style.borderRadius = `${borderRadius}px`;
   };
 
-  const handleBlur = () => {
-    element.style.outline = originalOutline;
-    element.style.outlineOffset = originalOutlineOffset;
-    element.style.borderRadius = originalBorderRadius;
+  const _handleBlur = () => {
+    element?.style.outline = originalOutline;
+    element?.style.outlineOffset = originalOutlineOffset;
+    element?.style.borderRadius = originalBorderRadius;
   };
 
-  element.addEventListener("focus", handleFocus);
-  element.addEventListener("blur", handleBlur);
+  element?.addEventListener("focus", handleFocus);
+  element?.addEventListener("blur", handleBlur);
 
   return () => {
-    element.removeEventListener("focus", handleFocus);
-    element.removeEventListener("blur", handleBlur);
-    element.style.outline = originalOutline;
-    element.style.outlineOffset = originalOutlineOffset;
-    element.style.borderRadius = originalBorderRadius;
+    element?.removeEventListener("focus", handleFocus);
+    element?.removeEventListener("blur", handleBlur);
+    element?.style.outline = originalOutline;
+    element?.style.outlineOffset = originalOutlineOffset;
+    element?.style.borderRadius = originalBorderRadius;
   };
 }
 
 export function setTabOrder(elements: HTMLElement[], startIndex = 1): void {
-  elements.forEach((element, index) => {
-    element.setAttribute("tabindex", String(startIndex + index));
+  elements?.forEach((element, index) => {
+    element?.setAttribute("tabindex", String(startIndex + index));
   });
 }
 
 export function removeFromTabOrder(element: HTMLElement): void {
-  element.setAttribute("tabindex", "-1");
+  element?.setAttribute("tabindex", "-1");
 }
 
 export function addToTabOrder(element: HTMLElement, index = 0): void {
-  element.setAttribute("tabindex", String(index));
+  element?.setAttribute("tabindex", String(index));
 }
 
 export function isElementFocusable(element: HTMLElement): boolean {
-  if (element.hasAttribute("disabled")) return false;
-  if (element.getAttribute("tabindex") === "-1") return false;
+  if (element?.hasAttribute("disabled")) return false;
+  if (element?.getAttribute("tabindex") === "-1") return false;
 
-  const style = window.getComputedStyle(element);
-  if (style.display === "none" || style.visibility === "hidden") return false;
+  const _style = window?.getComputedStyle(element);
+  if (style?.display === "none" || style?.visibility === "hidden") return false;
 
-  const tagName = element.tagName.toLowerCase();
-  const focusableTags = [
+  const _tagName = element?.tagName.toLowerCase();
+  const _focusableTags = [
     "a",
     "button",
     "input",
@@ -207,26 +207,26 @@ export function isElementFocusable(element: HTMLElement): boolean {
     "details",
   ];
 
-  if (focusableTags.includes(tagName)) {
-    if (tagName === "a" && !element.hasAttribute("href")) return false;
+  if (focusableTags?.includes(tagName)) {
+    if (tagName === "a" && !element?.hasAttribute("href")) return false;
     return true;
   }
 
-  return element.hasAttribute("tabindex");
+  return element?.hasAttribute("tabindex");
 }
 
 export function moveFocusWithinContainer(
   container: HTMLElement,
   direction: "next" | "previous",
 ): void {
-  const activeElement = document.activeElement as HTMLElement;
+  const _activeElement = document?.activeElement as HTMLElement;
 
-  if (!container.contains(activeElement)) {
+  if (!container?.contains(activeElement)) {
     focusFirstElement(container);
     return;
   }
 
-  const nextElement =
+  const _nextElement =
     direction === "next"
       ? getNextFocusable(container, activeElement)
       : getPreviousFocusable(container, activeElement);
@@ -241,33 +241,33 @@ export function createFocusScope(container: HTMLElement): {
   const externalElements: { element: HTMLElement; tabindex: string | null }[] =
     [];
 
-  const lock = () => {
-    const allFocusable = document.querySelectorAll<HTMLElement>(
+  const _lock = () => {
+    const _allFocusable = document?.querySelectorAll<HTMLElement>(
       'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
     );
 
-    allFocusable.forEach((element) => {
-      if (!container.contains(element)) {
-        externalElements.push({
+    allFocusable?.forEach((element) => {
+      if (!container?.contains(element)) {
+        externalElements?.push({
           element,
-          tabindex: element.getAttribute("tabindex"),
+          tabindex: element?.getAttribute("tabindex"),
         });
-        element.setAttribute("tabindex", "-1");
-        element.setAttribute("data-focus-scope-disabled", "true");
+        element?.setAttribute("tabindex", "-1");
+        element?.setAttribute("data-focus-scope-disabled", "true");
       }
     });
   };
 
-  const unlock = () => {
-    externalElements.forEach(({ element, tabindex }) => {
+  const _unlock = () => {
+    externalElements?.forEach(({ element, tabindex }) => {
       if (tabindex === null) {
-        element.removeAttribute("tabindex");
+        element?.removeAttribute("tabindex");
       } else {
-        element.setAttribute("tabindex", tabindex);
+        element?.setAttribute("tabindex", tabindex);
       }
-      element.removeAttribute("data-focus-scope-disabled");
+      element?.removeAttribute("data-focus-scope-disabled");
     });
-    externalElements.length = 0;
+    externalElements?.length = 0;
   };
 
   return { lock, unlock };

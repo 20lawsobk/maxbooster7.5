@@ -103,7 +103,7 @@ export interface MidiClip {
   loopLength: number;
 }
 
-export const studioApi = {
+export const _studioApi = {
   comping: {
     async createGroup(
       projectId: number,
@@ -117,21 +117,21 @@ export const studioApi = {
     },
 
     async getGroups(projectId: number): Promise<CompingGroup[]> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch comping groups");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch comping groups");
+      return res?.json();
     },
 
     async getGroup(projectId: number, groupId: number): Promise<CompingGroup> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch comping group");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch comping group");
+      return res?.json();
     },
 
     async updateGroup(
@@ -175,12 +175,12 @@ export const studioApi = {
     },
 
     async getLanes(projectId: number, groupId: number): Promise<CompingLane[]> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/lanes`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch comping lanes");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch comping lanes");
+      return res?.json();
     },
 
     async updateLane(
@@ -229,12 +229,12 @@ export const studioApi = {
       projectId: number,
       groupId: number,
     ): Promise<CompingSegment[]> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/segments`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch comping segments");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch comping segments");
+      return res?.json();
     },
 
     async updateSegment(
@@ -272,12 +272,12 @@ export const studioApi = {
       projectId: number,
       groupId: number,
     ): Promise<CompingVersion[]> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/versions`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch comping versions");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch comping versions");
+      return res?.json();
     },
 
     async activateVersion(
@@ -312,11 +312,11 @@ export const studioApi = {
 
   markers: {
     async getMarkers(projectId: number): Promise<StudioMarker[]> {
-      const res = await fetch(`/api/studio/projects/${projectId}/markers`, {
+      const _res = await fetch(`/api/studio/projects/${projectId}/markers`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to fetch markers");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch markers");
+      return res?.json();
     },
 
     async createMarker(
@@ -358,29 +358,29 @@ export const studioApi = {
       projectId: number,
       exportId: string,
     ): Promise<StemExportStatus> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/stems/status/${exportId}`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch export status");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch export status");
+      return res?.json();
     },
 
     async downloadStems(projectId: number, exportId: string): Promise<Blob> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/stems/download/${exportId}`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to download stems");
-      return res.blob();
+      if (!res?.ok) throw new Error("Failed to download stems");
+      return res?.blob();
     },
 
     async listExports(projectId: number): Promise<StemExportStatus[]> {
-      const res = await fetch(`/api/studio/projects/${projectId}/stems/list`, {
+      const _res = await fetch(`/api/studio/projects/${projectId}/stems/list`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to list exports");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to list exports");
+      return res?.json();
     },
 
     async deleteExport(projectId: number, exportId: string): Promise<void> {
@@ -404,23 +404,23 @@ export const studioApi = {
       sampleRates: number[];
       bitDepths: number[];
     }> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/stems/formats`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to get formats");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to get formats");
+      return res?.json();
     },
   },
 
   midi: {
     async getClips(projectId: number, trackId: string): Promise<MidiClip[]> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/midi/clips?trackId=${trackId}`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch MIDI clips");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch MIDI clips");
+      return res?.json();
     },
 
     async createClip(
@@ -507,12 +507,12 @@ export const studioApi = {
       projectId: number,
       clipId: string,
     ): Promise<WarpMarker[]> {
-      const res = await fetch(
+      const _res = await fetch(
         `/api/studio/projects/${projectId}/warping/clips/${clipId}/markers`,
         { credentials: "include" },
       );
-      if (!res.ok) throw new Error("Failed to fetch warp markers");
-      return res.json();
+      if (!res?.ok) throw new Error("Failed to fetch warp markers");
+      return res?.json();
     },
 
     async addWarpMarker(

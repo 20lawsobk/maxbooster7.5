@@ -17,7 +17,7 @@
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface KillSwitchState {
   globalKilled: boolean;
@@ -71,9 +71,9 @@ class KillSwitchManager extends EventEmitter {
 
   private constructor() {
     super();
-    this.state = {
+    this?.state = {
       globalKilled: false,
-      systemStates: new Map(ALL_SYSTEMS.map((s) => [s, false])),
+      systemStates: new Map(ALL_SYSTEMS?.map((s) => [s, false])),
       lastKillTime: null,
       lastResumeTime: null,
       killReason: null,
@@ -83,10 +83,10 @@ class KillSwitchManager extends EventEmitter {
   }
 
   public static getInstance(): KillSwitchManager {
-    if (!KillSwitchManager.instance) {
-      KillSwitchManager.instance = new KillSwitchManager();
+    if (!KillSwitchManager?.instance) {
+      KillSwitchManager?.instance = new KillSwitchManager();
     }
-    return KillSwitchManager.instance;
+    return KillSwitchManager?.instance;
   }
 
   /**
@@ -96,34 +96,34 @@ class KillSwitchManager extends EventEmitter {
     systemName: AutonomousSystemName,
     callbacks: { kill: () => void; resume: () => void },
   ): void {
-    this.systemCallbacks.set(systemName, callbacks);
-    logger.info(`[KillSwitch] Registered system: ${systemName}`);
+    this?.systemCallbacks.set(systemName, callbacks);
+    logger?.info(`[KillSwitch] Registered system: ${systemName}`);
   }
 
   /**
    * EMERGENCY KILL ALL - Stops all autonomous systems immediately
    */
   public killAll(reason: string, triggeredBy: string = "system"): boolean {
-    logger.warn("═══════════════════════════════════════════════════════════");
-    logger.warn("🚨 KILL SWITCH ACTIVATED - STOPPING ALL AUTONOMOUS SYSTEMS");
-    logger.warn(`   Reason: ${reason}`);
-    logger.warn(`   Triggered by: ${triggeredBy}`);
-    logger.warn("═══════════════════════════════════════════════════════════");
+    logger?.warn("═══════════════════════════════════════════════════════════");
+    logger?.warn("🚨 KILL SWITCH ACTIVATED - STOPPING ALL AUTONOMOUS SYSTEMS");
+    logger?.warn(`   Reason: ${reason}`);
+    logger?.warn(`   Triggered by: ${triggeredBy}`);
+    logger?.warn("═══════════════════════════════════════════════════════════");
 
-    this.state.globalKilled = true;
-    this.state.lastKillTime = new Date();
-    this.state.killReason = reason;
-    this.state.killedBy = triggeredBy;
+    this?.state.globalKilled = true;
+    this?.state.lastKillTime = new Date();
+    this?.state.killReason = reason;
+    this?.state.killedBy = triggeredBy;
 
     let allSuccess = true;
 
-    for (const [systemName, callbacks] of this.systemCallbacks) {
+    for (const [systemName, callbacks] of this?.systemCallbacks) {
       try {
-        callbacks.kill();
-        this.state.systemStates.set(systemName, true);
-        logger.warn(`   ✓ Killed: ${systemName}`);
+        callbacks?.kill();
+        this?.state.systemStates?.set(systemName, true);
+        logger?.warn(`   ✓ Killed: ${systemName}`);
 
-        this.addAuditEntry({
+        this?.addAuditEntry({
           timestamp: new Date(),
           action: "KILL_SYSTEM",
           system: systemName,
@@ -132,10 +132,10 @@ class KillSwitchManager extends EventEmitter {
           success: true,
         });
       } catch (error) {
-        logger.warn({ err: error }, `   ✗ Failed to kill: ${systemName}`);
+        logger?.warn({ err: error }, `   ✗ Failed to kill: ${systemName}`);
         allSuccess = false;
 
-        this.addAuditEntry({
+        this?.addAuditEntry({
           timestamp: new Date(),
           action: "KILL_SYSTEM",
           system: systemName,
@@ -146,7 +146,7 @@ class KillSwitchManager extends EventEmitter {
       }
     }
 
-    this.addAuditEntry({
+    this?.addAuditEntry({
       timestamp: new Date(),
       action: "KILL",
       system: "ALL",
@@ -155,7 +155,7 @@ class KillSwitchManager extends EventEmitter {
       success: allSuccess,
     });
 
-    this.emit("killed", { reason, triggeredBy, success: allSuccess });
+    this?.emit("killed", { reason, triggeredBy, success: allSuccess });
 
     return allSuccess;
   }
@@ -164,24 +164,24 @@ class KillSwitchManager extends EventEmitter {
    * Resume all autonomous systems
    */
   public resumeAll(reason: string, triggeredBy: string = "system"): boolean {
-    logger.info("═══════════════════════════════════════════════════════════");
-    logger.info("✅ RESUMING ALL AUTONOMOUS SYSTEMS");
-    logger.info(`   Reason: ${reason}`);
-    logger.info(`   Triggered by: ${triggeredBy}`);
-    logger.info("═══════════════════════════════════════════════════════════");
+    logger?.info("═══════════════════════════════════════════════════════════");
+    logger?.info("✅ RESUMING ALL AUTONOMOUS SYSTEMS");
+    logger?.info(`   Reason: ${reason}`);
+    logger?.info(`   Triggered by: ${triggeredBy}`);
+    logger?.info("═══════════════════════════════════════════════════════════");
 
-    this.state.globalKilled = false;
-    this.state.lastResumeTime = new Date();
+    this?.state.globalKilled = false;
+    this?.state.lastResumeTime = new Date();
 
     let allSuccess = true;
 
-    for (const [systemName, callbacks] of this.systemCallbacks) {
+    for (const [systemName, callbacks] of this?.systemCallbacks) {
       try {
-        callbacks.resume();
-        this.state.systemStates.set(systemName, false);
-        logger.info(`   ✓ Resumed: ${systemName}`);
+        callbacks?.resume();
+        this?.state.systemStates?.set(systemName, false);
+        logger?.info(`   ✓ Resumed: ${systemName}`);
 
-        this.addAuditEntry({
+        this?.addAuditEntry({
           timestamp: new Date(),
           action: "RESUME_SYSTEM",
           system: systemName,
@@ -190,10 +190,10 @@ class KillSwitchManager extends EventEmitter {
           success: true,
         });
       } catch (error) {
-        logger.warn({ err: error }, `   ✗ Failed to resume: ${systemName}`);
+        logger?.warn({ err: error }, `   ✗ Failed to resume: ${systemName}`);
         allSuccess = false;
 
-        this.addAuditEntry({
+        this?.addAuditEntry({
           timestamp: new Date(),
           action: "RESUME_SYSTEM",
           system: systemName,
@@ -204,7 +204,7 @@ class KillSwitchManager extends EventEmitter {
       }
     }
 
-    this.addAuditEntry({
+    this?.addAuditEntry({
       timestamp: new Date(),
       action: "RESUME",
       system: "ALL",
@@ -213,7 +213,7 @@ class KillSwitchManager extends EventEmitter {
       success: allSuccess,
     });
 
-    this.emit("resumed", { reason, triggeredBy, success: allSuccess });
+    this?.emit("resumed", { reason, triggeredBy, success: allSuccess });
 
     return allSuccess;
   }
@@ -226,19 +226,19 @@ class KillSwitchManager extends EventEmitter {
     reason: string,
     triggeredBy: string = "system",
   ): boolean {
-    const callbacks = this.systemCallbacks.get(systemName);
+    const _callbacks = this?.systemCallbacks.get(systemName);
     if (!callbacks) {
-      logger.warn(`[KillSwitch] System not registered: ${systemName}`);
+      logger?.warn(`[KillSwitch] System not registered: ${systemName}`);
       return false;
     }
 
     try {
-      callbacks.kill();
-      this.state.systemStates.set(systemName, true);
+      callbacks?.kill();
+      this?.state.systemStates?.set(systemName, true);
 
-      logger.warn(`🚨 Killed system: ${systemName} - Reason: ${reason}`);
+      logger?.warn(`🚨 Killed system: ${systemName} - Reason: ${reason}`);
 
-      this.addAuditEntry({
+      this?.addAuditEntry({
         timestamp: new Date(),
         action: "KILL_SYSTEM",
         system: systemName,
@@ -247,12 +247,12 @@ class KillSwitchManager extends EventEmitter {
         success: true,
       });
 
-      this.emit("systemKilled", { systemName, reason, triggeredBy });
+      this?.emit("systemKilled", { systemName, reason, triggeredBy });
       return true;
     } catch (error) {
-      logger.warn({ err: error }, `Failed to kill system: ${systemName}`);
+      logger?.warn({ err: error }, `Failed to kill system: ${systemName}`);
 
-      this.addAuditEntry({
+      this?.addAuditEntry({
         timestamp: new Date(),
         action: "KILL_SYSTEM",
         system: systemName,
@@ -273,26 +273,26 @@ class KillSwitchManager extends EventEmitter {
     reason: string,
     triggeredBy: string = "system",
   ): boolean {
-    if (this.state.globalKilled) {
-      logger.warn(
+    if (this?.state.globalKilled) {
+      logger?.warn(
         `[KillSwitch] Cannot resume ${systemName} - global kill is active`,
       );
       return false;
     }
 
-    const callbacks = this.systemCallbacks.get(systemName);
+    const _callbacks = this?.systemCallbacks.get(systemName);
     if (!callbacks) {
-      logger.warn(`[KillSwitch] System not registered: ${systemName}`);
+      logger?.warn(`[KillSwitch] System not registered: ${systemName}`);
       return false;
     }
 
     try {
-      callbacks.resume();
-      this.state.systemStates.set(systemName, false);
+      callbacks?.resume();
+      this?.state.systemStates?.set(systemName, false);
 
-      logger.info(`✅ Resumed system: ${systemName} - Reason: ${reason}`);
+      logger?.info(`✅ Resumed system: ${systemName} - Reason: ${reason}`);
 
-      this.addAuditEntry({
+      this?.addAuditEntry({
         timestamp: new Date(),
         action: "RESUME_SYSTEM",
         system: systemName,
@@ -301,12 +301,12 @@ class KillSwitchManager extends EventEmitter {
         success: true,
       });
 
-      this.emit("systemResumed", { systemName, reason, triggeredBy });
+      this?.emit("systemResumed", { systemName, reason, triggeredBy });
       return true;
     } catch (error) {
-      logger.warn({ err: error }, `Failed to resume system: ${systemName}`);
+      logger?.warn({ err: error }, `Failed to resume system: ${systemName}`);
 
-      this.addAuditEntry({
+      this?.addAuditEntry({
         timestamp: new Date(),
         action: "RESUME_SYSTEM",
         system: systemName,
@@ -323,10 +323,10 @@ class KillSwitchManager extends EventEmitter {
    * Check if operations are allowed (for systems to call before acting)
    */
   public isOperationAllowed(systemName: AutonomousSystemName): boolean {
-    if (this.state.globalKilled) {
+    if (this?.state.globalKilled) {
       return false;
     }
-    return !this.state.systemStates.get(systemName);
+    return !this?.state.systemStates?.get(systemName);
   }
 
   /**
@@ -334,9 +334,9 @@ class KillSwitchManager extends EventEmitter {
    */
   public getState(): KillSwitchState {
     return {
-      ...this.state,
-      systemStates: new Map(this.state.systemStates),
-      auditLog: [...this.state.auditLog],
+      ...this?.state,
+      systemStates: new Map(this?.state.systemStates),
+      auditLog: [...this?.state.auditLog],
     };
   }
 
@@ -344,20 +344,20 @@ class KillSwitchManager extends EventEmitter {
    * Get audit log
    */
   public getAuditLog(limit: number = 100): KillSwitchAuditEntry[] {
-    return this.state.auditLog.slice(-limit);
+    return this?.state.auditLog?.slice(-limit);
   }
 
   private addAuditEntry(entry: KillSwitchAuditEntry): void {
-    this.state.auditLog.push(entry);
+    this?.state.auditLog?.push(entry);
 
     // Keep only last 1000 entries
-    if (this.state.auditLog.length > 1000) {
-      this.state.auditLog = this.state.auditLog.slice(-1000);
+    if (this?.state.auditLog?.length > 1000) {
+      this?.state.auditLog = this?.state.auditLog?.slice(-1000);
     }
   }
 }
 
-export const killSwitch = KillSwitchManager.getInstance();
+export const _killSwitch = KillSwitchManager?.getInstance();
 
 /**
  * Decorator/wrapper for autonomous operations
@@ -368,8 +368,8 @@ export function guardedOperation<T>(
   operation: () => T | Promise<T>,
   fallback?: T,
 ): T | Promise<T> {
-  if (!killSwitch.isOperationAllowed(systemName)) {
-    logger.debug(
+  if (!killSwitch?.isOperationAllowed(systemName)) {
+    logger?.debug(
       `[KillSwitch] Operation blocked for ${systemName} - system is killed`,
     );
     if (fallback !== undefined) {

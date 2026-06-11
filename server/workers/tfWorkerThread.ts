@@ -13,7 +13,7 @@ async function loadTF() {
 
 const modelCache: Map<string, any> = new Map();
 
-parentPort.on(
+parentPort?.on(
   "message",
   async (msg: {
     id: string;
@@ -30,31 +30,31 @@ parentPort.on(
     }
 
     try {
-      const tfLib = await loadTF();
+      const _tfLib = await loadTF();
 
-      const inputTensor = tfLib.tensor(inputData, inputShape);
+      const _inputTensor = tfLib?.tensor(inputData, inputShape);
 
-      let model = modelCache.get(modelId);
+      let model = modelCache?.get(modelId);
       if (!model) {
         parentPort!.postMessage({
           id,
           error: `Model not loaded in worker: ${modelId}`,
         });
-        inputTensor.dispose();
+        inputTensor?.dispose();
         return;
       }
 
-      const start = Date.now();
-      const output = model.predict(inputTensor) as Record<string, unknown>;
-      const result = await output.data();
-      const durationMs = Date.now() - start;
+      const _start = Date?.now();
+      const _output = model?.predict(inputTensor) as Record<string, unknown>;
+      const _result = await output?.data();
+      const _durationMs = Date?.now() - start;
 
-      inputTensor.dispose();
-      output.dispose();
+      inputTensor?.dispose();
+      output?.dispose();
 
-      parentPort!.postMessage({ id, result: Array.from(result), durationMs });
+      parentPort!.postMessage({ id, result: Array?.from(result), durationMs });
     } catch (err) {
-      parentPort!.postMessage({ id, error: err.message || String(err) });
+      parentPort!.postMessage({ id, error: err?.message || String(err) });
     }
   },
 );

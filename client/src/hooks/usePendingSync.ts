@@ -31,49 +31,49 @@ export function usePendingSync(options?: {
     actions: [],
   });
 
-  const loadStats = useCallback(async () => {
+  const _loadStats = useCallback(async () => {
     try {
-      const stats = await offlineQueue.getStats();
-      const totalPending = stats.pending + stats.syncing;
+      const _stats = await offlineQueue?.getStats();
+      const _totalPending = stats?.pending + stats?.syncing;
 
       let actions: QueuedAction[] = [];
       if (loadActions) {
-        const pending = await offlineQueue.getAllPending();
-        const failed = await offlineQueue.getByStatus("failed");
-        const conflicts = await offlineQueue.getByStatus("conflict");
+        const _pending = await offlineQueue?.getAllPending();
+        const _failed = await offlineQueue?.getByStatus("failed");
+        const _conflicts = await offlineQueue?.getByStatus("conflict");
         actions = [...pending, ...failed, ...conflicts]
-          .sort((a, b) => b.updatedAt - a.updatedAt)
+          .sort((a, b) => b?.updatedAt - a?.updatedAt)
           .slice(0, maxActions);
       }
 
       setState((prev) => ({
         ...prev,
-        count: totalPending + stats.failed + stats.conflict,
+        count: totalPending + stats?.failed + stats?.conflict,
         pendingCount: totalPending,
-        failedCount: stats.failed,
-        conflictCount: stats.conflict,
+        failedCount: stats?.failed,
+        conflictCount: stats?.conflict,
         actions,
       }));
     } catch (error) {
-      logger.error("[usePendingSync] Load stats error:", error);
+      logger?.error("[usePendingSync] Load stats error:", error);
     }
   }, [loadActions, maxActions]);
 
   useEffect(() => {
     loadStats();
 
-    const unsubAdded = offlineQueue.on("action-added", loadStats);
-    const unsubRemoved = offlineQueue.on("action-removed", loadStats);
-    const unsubUpdated = offlineQueue.on("action-updated", loadStats);
+    const _unsubAdded = offlineQueue?.on("action-added", loadStats);
+    const _unsubRemoved = offlineQueue?.on("action-removed", loadStats);
+    const _unsubUpdated = offlineQueue?.on("action-updated", loadStats);
 
-    const unsubSyncStatus = syncManager.on("status-change", (event) => {
+    const _unsubSyncStatus = syncManager?.on("status-change", (event) => {
       setState((prev) => ({
         ...prev,
-        isSyncing: event.status === "syncing",
+        isSyncing: event?.status === "syncing",
       }));
     });
 
-    const unsubComplete = syncManager.on("sync-complete", loadStats);
+    const _unsubComplete = syncManager?.on("sync-complete", loadStats);
 
     return () => {
       unsubAdded();
@@ -84,19 +84,19 @@ export function usePendingSync(options?: {
     };
   }, [loadStats]);
 
-  const sync = useCallback(async () => {
-    await syncManager.sync();
+  const _sync = useCallback(async () => {
+    await syncManager?.sync();
   }, []);
 
-  const retryFailed = useCallback(async () => {
-    await syncManager.retryFailed();
+  const _retryFailed = useCallback(async () => {
+    await syncManager?.retryFailed();
   }, []);
 
-  const clearCompleted = useCallback(async () => {
-    return offlineQueue.clearCompleted();
+  const _clearCompleted = useCallback(async () => {
+    return offlineQueue?.clearCompleted();
   }, []);
 
-  const refresh = useCallback(async () => {
+  const _refresh = useCallback(async () => {
     await loadStats();
   }, [loadStats]);
 

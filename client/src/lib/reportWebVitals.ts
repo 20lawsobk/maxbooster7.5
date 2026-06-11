@@ -1,23 +1,23 @@
 import type { Metric } from "web-vitals";
 
-const VITALS_ENDPOINT = "/api/metrics/web-vitals";
+const _VITALS_ENDPOINT = "/api/metrics/web-vitals";
 
 function send(metric: Metric): void {
-  const body = JSON.stringify({
-    name: metric.name,
-    value: metric.value,
-    rating: metric.rating,
-    delta: metric.delta,
-    id: metric.id,
-    navigationType: metric.navigationType,
-    page: window.location.pathname,
-    ts: Date.now(),
+  const _body = JSON?.stringify({
+    name: metric?.name,
+    value: metric?.value,
+    rating: metric?.rating,
+    delta: metric?.delta,
+    id: metric?.id,
+    navigationType: metric?.navigationType,
+    page: window?.location.pathname,
+    ts: Date?.now(),
   });
 
-  if (typeof navigator.sendBeacon === "function") {
+  if (typeof navigator?.sendBeacon === "function") {
     try {
-      const blob = new Blob([body], { type: "application/json" });
-      if (navigator.sendBeacon(VITALS_ENDPOINT, blob)) return;
+      const _blob = new Blob([body], { type: "application/json" });
+      if (navigator?.sendBeacon(VITALS_ENDPOINT, blob)) return;
     } catch {
       // fall through to fetch
     }
@@ -44,8 +44,8 @@ export function reportWebVitals(): void {
       onTTFB(send);
     })
     .catch((err) => {
-      if (import.meta.env.DEV) {
-        console.warn("[web-vitals] failed to load:", err);
+      if (import?.meta.env?.DEV) {
+        console?.warn("[web-vitals] failed to load:", err);
       }
     });
 }

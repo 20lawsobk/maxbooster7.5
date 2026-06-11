@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { workspaceRoles, workspaceMembers, workspaces, type WorkspaceRole } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export type ResourceType =
   | "releases"
@@ -145,7 +145,7 @@ export class RBACService {
     },
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
     try {
-      const existingRole = await this.getRoleByName(workspaceId, params.name);
+      const _existingRole = await this?.getRoleByName(workspaceId, params?.name);
       if (existingRole) {
         return {
           success: false,
@@ -153,13 +153,13 @@ export class RBACService {
         };
       }
 
-      let effectivePermissions = params.permissions;
-      if (params.parentRoleId) {
-        const parentRole = await this.getRole(params.parentRoleId);
+      let effectivePermissions = params?.permissions;
+      if (params?.parentRoleId) {
+        const _parentRole = await this?.getRole(params?.parentRoleId);
         if (parentRole) {
-          effectivePermissions = this.mergePermissions(
-            parentRole.permissions as Permission[],
-            params.permissions,
+          effectivePermissions = this?.mergePermissions(
+            parentRole?.permissions as Permission[],
+            params?.permissions,
           );
         }
       }
@@ -168,18 +168,18 @@ export class RBACService {
         .insert(workspaceRoles)
         .values({
           workspaceId,
-          name: params.name,
-          description: params.description,
+          name: params?.name,
+          description: params?.description,
           permissions: effectivePermissions,
           isCustom: true,
-          parentRoleId: params.parentRoleId,
-          priority: params.priority || 50,
+          parentRoleId: params?.parentRoleId,
+          priority: params?.priority || 50,
         })
         .returning();
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Create role error:");
+      logger?.warn({ err: error }, "Create role error:");
       return { success: false, error: "Failed to create role" };
     }
   }
@@ -189,11 +189,11 @@ export class RBACService {
       const [role] = await db
         .select()
         .from(workspaceRoles)
-        .where(eq(workspaceRoles.id, roleId))
+        .where(eq(workspaceRoles?.id, roleId))
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get role error:");
+      logger?.warn({ err: error }, "Get role error:");
       return null;
     }
   }
@@ -208,29 +208,29 @@ export class RBACService {
         .from(workspaceRoles)
         .where(
           and(
-            eq(workspaceRoles.workspaceId, workspaceId),
-            eq(workspaceRoles.name, name),
+            eq(workspaceRoles?.workspaceId, workspaceId),
+            eq(workspaceRoles?.name, name),
           ),
         )
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get role by name error:");
+      logger?.warn({ err: error }, "Get role by name error:");
       return null;
     }
   }
 
   async getWorkspaceRoles(workspaceId: string): Promise<WorkspaceRole[]> {
     try {
-      const roles = await db
+      const _roles = await db
         .select()
         .from(workspaceRoles)
-        .where(eq(workspaceRoles.workspaceId, workspaceId))
-        .orderBy(desc(workspaceRoles.createdAt));
+        .where(eq(workspaceRoles?.workspaceId, workspaceId))
+        .orderBy(desc(workspaceRoles?.createdAt));
 
       return roles;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get workspace roles error:");
+      logger?.warn({ err: error }, "Get workspace roles error:");
       return [];
     }
   }
@@ -245,12 +245,12 @@ export class RBACService {
     }>,
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
     try {
-      const existingRole = await this.getRole(roleId);
+      const _existingRole = await this?.getRole(roleId);
       if (!existingRole) {
         return { success: false, error: "Role not found" };
       }
 
-      if (existingRole.isSystem) {
+      if (existingRole?.isSystem) {
         return { success: false, error: "System roles cannot be modified" };
       }
 
@@ -260,12 +260,12 @@ export class RBACService {
           ...updates,
           updatedAt: new Date(),
         })
-        .where(eq(workspaceRoles.id, roleId))
+        .where(eq(workspaceRoles?.id, roleId))
         .returning();
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Update role error:");
+      logger?.warn({ err: error }, "Update role error:");
       return { success: false, error: "Failed to update role" };
     }
   }
@@ -274,33 +274,33 @@ export class RBACService {
     roleId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const role = await this.getRole(roleId);
+      const _role = await this?.getRole(roleId);
       if (!role) {
         return { success: false, error: "Role not found" };
       }
 
-      if (role.isSystem) {
+      if (role?.isSystem) {
         return { success: false, error: "System roles cannot be deleted" };
       }
 
       const [memberCount] = await db
         .select({ count: sql<number>`count(*)` })
         .from(workspaceMembers)
-        .where(eq(workspaceMembers.roleId, roleId))
+        .where(eq(workspaceMembers?.roleId, roleId))
         .limit(1);
 
-      if (memberCount && memberCount.count > 0) {
+      if (memberCount && memberCount?.count > 0) {
         return {
           success: false,
           error: "Cannot delete role with assigned members",
         };
       }
 
-      await db.delete(workspaceRoles).where(eq(workspaceRoles.id, roleId));
+      await db?.delete(workspaceRoles).where(eq(workspaceRoles?.id, roleId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Delete role error:");
+      logger?.warn({ err: error }, "Delete role error:");
       return { success: false, error: "Failed to delete role" };
     }
   }
@@ -312,16 +312,16 @@ export class RBACService {
     try {
       const [member] = await db
         .select({
-          roleId: workspaceMembers.roleId,
-          role: workspaceMembers.role,
-          customPermissions: workspaceMembers.permissions,
+          roleId: workspaceMembers?.roleId,
+          role: workspaceMembers?.role,
+          customPermissions: workspaceMembers?.permissions,
         })
         .from(workspaceMembers)
         .where(
           and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.userId, userId),
-            eq(workspaceMembers.status, "active"),
+            eq(workspaceMembers?.workspaceId, workspaceId),
+            eq(workspaceMembers?.userId, userId),
+            eq(workspaceMembers?.status, "active"),
           ),
         )
         .limit(1);
@@ -332,28 +332,28 @@ export class RBACService {
 
       let permissions: Permission[] = [];
 
-      if (member.roleId) {
-        const role = await this.getRole(member.roleId);
+      if (member?.roleId) {
+        const _role = await this?.getRole(member?.roleId);
         if (role) {
-          permissions = role.permissions as Permission[];
+          permissions = role?.permissions as Permission[];
         }
-      } else if (member.role) {
-        const template = DEFAULT_ROLE_TEMPLATES[member.role];
+      } else if (member?.role) {
+        const _template = DEFAULT_ROLE_TEMPLATES[member?.role];
         if (template) {
-          permissions = template.permissions;
+          permissions = template?.permissions;
         }
       }
 
-      if (member.customPermissions) {
-        permissions = this.mergePermissions(
+      if (member?.customPermissions) {
+        permissions = this?.mergePermissions(
           permissions,
-          member.customPermissions as Permission[],
+          member?.customPermissions as Permission[],
         );
       }
 
       return permissions;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get user permissions error:");
+      logger?.warn({ err: error }, "Get user permissions error:");
       return [];
     }
   }
@@ -365,12 +365,12 @@ export class RBACService {
     action: ActionType,
   ): Promise<boolean> {
     try {
-      const permissions = await this.getUserPermissions(workspaceId, userId);
+      const _permissions = await this?.getUserPermissions(workspaceId, userId);
 
       for (const permission of permissions) {
         if (
-          permission.resource === resource &&
-          permission.actions.includes(action)
+          permission?.resource === resource &&
+          permission?.actions.includes(action)
         ) {
           return true;
         }
@@ -378,7 +378,7 @@ export class RBACService {
 
       return false;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Check permission error:");
+      logger?.warn({ err: error }, "Check permission error:");
       return false;
     }
   }
@@ -389,26 +389,26 @@ export class RBACService {
     checks: Array<{ resource: ResourceType; action: ActionType }>,
   ): Promise<Record<string, boolean>> {
     try {
-      const permissions = await this.getUserPermissions(workspaceId, userId);
+      const _permissions = await this?.getUserPermissions(workspaceId, userId);
       const results: Record<string, boolean> = {};
 
       for (const check of checks) {
-        const key = `${check.resource}:${check.action}`;
-        results[key] = permissions.some(
+        const _key = `${check?.resource}:${check?.action}`;
+        results[key] = permissions?.some(
           (p) =>
-            p.resource === check.resource && p.actions.includes(check.action),
+            p?.resource === check?.resource && p?.actions.includes(check?.action),
         );
       }
 
       return results;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Check multiple permissions error:");
+      logger?.warn({ err: error }, "Check multiple permissions error:");
       return {};
     }
   }
 
   async canManageTeam(workspaceId: string, userId: string): Promise<boolean> {
-    return this.checkPermission(workspaceId, userId, "team", "update");
+    return this?.checkPermission(workspaceId, userId, "team", "update");
   }
 
   async canApproveContent(
@@ -416,7 +416,7 @@ export class RBACService {
     userId: string,
     contentType: ResourceType,
   ): Promise<boolean> {
-    return this.checkPermission(workspaceId, userId, contentType, "approve");
+    return this?.checkPermission(workspaceId, userId, contentType, "approve");
   }
 
   async isWorkspaceOwner(
@@ -425,14 +425,14 @@ export class RBACService {
   ): Promise<boolean> {
     try {
       const [workspace] = await db
-        .select({ ownerId: workspaces.ownerId })
+        .select({ ownerId: workspaces?.ownerId })
         .from(workspaces)
-        .where(eq(workspaces.id, workspaceId))
+        .where(eq(workspaces?.id, workspaceId))
         .limit(1);
 
       return workspace?.ownerId === userId;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Check workspace owner error:");
+      logger?.warn({ err: error }, "Check workspace owner error:");
       return false;
     }
   }
@@ -440,19 +440,19 @@ export class RBACService {
   async isAdmin(workspaceId: string, userId: string): Promise<boolean> {
     try {
       const [member] = await db
-        .select({ role: workspaceMembers.role })
+        .select({ role: workspaceMembers?.role })
         .from(workspaceMembers)
         .where(
           and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers?.workspaceId, workspaceId),
+            eq(workspaceMembers?.userId, userId),
           ),
         )
         .limit(1);
 
       return member?.role === "owner" || member?.role === "admin";
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Check admin error:");
+      logger?.warn({ err: error }, "Check admin error:");
       return false;
     }
   }
@@ -461,29 +461,29 @@ export class RBACService {
     base: Permission[],
     override: Permission[],
   ): Permission[] {
-    const merged = new Map<ResourceType, Set<ActionType>>();
+    const _merged = new Map<ResourceType, Set<ActionType>>();
 
     for (const permission of base) {
-      if (!merged.has(permission.resource)) {
-        merged.set(permission.resource, new Set());
+      if (!merged?.has(permission?.resource)) {
+        merged?.set(permission?.resource, new Set());
       }
-      permission.actions.forEach((action) =>
-        merged.get(permission.resource)!.add(action),
+      permission?.actions.forEach((action) =>
+        merged?.get(permission?.resource)!.add(action),
       );
     }
 
     for (const permission of override) {
-      if (!merged.has(permission.resource)) {
-        merged.set(permission.resource, new Set());
+      if (!merged?.has(permission?.resource)) {
+        merged?.set(permission?.resource, new Set());
       }
-      permission.actions.forEach((action) =>
-        merged.get(permission.resource)!.add(action),
+      permission?.actions.forEach((action) =>
+        merged?.get(permission?.resource)!.add(action),
       );
     }
 
-    return Array.from(merged.entries()).map(([resource, actions]) => ({
+    return Array?.from(merged?.entries()).map(([resource, actions]) => ({
       resource,
-      actions: Array.from(actions),
+      actions: Array?.from(actions),
     }));
   }
 
@@ -492,16 +492,16 @@ export class RBACService {
     templateKey: string,
     customName?: string,
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
-    const template = DEFAULT_ROLE_TEMPLATES[templateKey];
+    const _template = DEFAULT_ROLE_TEMPLATES[templateKey];
     if (!template) {
       return { success: false, error: "Template not found" };
     }
 
-    return this.createRole(workspaceId, {
-      name: customName || template.name,
-      description: template.description,
-      permissions: template.permissions,
-      priority: template.priority,
+    return this?.createRole(workspaceId, {
+      name: customName || template?.name,
+      description: template?.description,
+      permissions: template?.permissions,
+      priority: template?.priority,
     });
   }
 
@@ -511,39 +511,39 @@ export class RBACService {
     actions: ActionType[],
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const role = await this.getRole(roleId);
+      const _role = await this?.getRole(roleId);
       if (!role) {
         return { success: false, error: "Role not found" };
       }
 
-      if (role.isSystem) {
+      if (role?.isSystem) {
         return { success: false, error: "System roles cannot be modified" };
       }
 
-      const currentPermissions = role.permissions as Permission[];
-      const existingPermIndex = currentPermissions.findIndex(
-        (p) => p.resource === resource,
+      const _currentPermissions = role?.permissions as Permission[];
+      const _existingPermIndex = currentPermissions?.findIndex(
+        (p) => p?.resource === resource,
       );
 
       if (existingPermIndex >= 0) {
-        const existingActions = new Set(
+        const _existingActions = new Set(
           currentPermissions[existingPermIndex].actions,
         );
-        actions.forEach((action) => existingActions.add(action));
+        actions?.forEach((action) => existingActions?.add(action));
         currentPermissions[existingPermIndex].actions =
-          Array.from(existingActions);
+          Array?.from(existingActions);
       } else {
-        currentPermissions.push({ resource, actions });
+        currentPermissions?.push({ resource, actions });
       }
 
       await db
         .update(workspaceRoles)
         .set({ permissions: currentPermissions, updatedAt: new Date() })
-        .where(eq(workspaceRoles.id, roleId));
+        .where(eq(workspaceRoles?.id, roleId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Grant permission error:");
+      logger?.warn({ err: error }, "Grant permission error:");
       return { success: false, error: "Failed to grant permission" };
     }
   }
@@ -554,32 +554,32 @@ export class RBACService {
     actions?: ActionType[],
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const role = await this.getRole(roleId);
+      const _role = await this?.getRole(roleId);
       if (!role) {
         return { success: false, error: "Role not found" };
       }
 
-      if (role.isSystem) {
+      if (role?.isSystem) {
         return { success: false, error: "System roles cannot be modified" };
       }
 
-      let currentPermissions = role.permissions as Permission[];
-      const permIndex = currentPermissions.findIndex(
-        (p) => p.resource === resource,
+      let currentPermissions = role?.permissions as Permission[];
+      const _permIndex = currentPermissions?.findIndex(
+        (p) => p?.resource === resource,
       );
 
       if (permIndex >= 0) {
         if (actions) {
           currentPermissions[permIndex].actions = currentPermissions[
             permIndex
-          ].actions.filter((a) => !actions.includes(a));
-          if (currentPermissions[permIndex].actions.length === 0) {
-            currentPermissions = currentPermissions.filter(
+          ].actions?.filter((a) => !actions?.includes(a));
+          if (currentPermissions[permIndex].actions?.length === 0) {
+            currentPermissions = currentPermissions?.filter(
               (_, i) => i !== permIndex,
             );
           }
         } else {
-          currentPermissions = currentPermissions.filter(
+          currentPermissions = currentPermissions?.filter(
             (_, i) => i !== permIndex,
           );
         }
@@ -588,11 +588,11 @@ export class RBACService {
       await db
         .update(workspaceRoles)
         .set({ permissions: currentPermissions, updatedAt: new Date() })
-        .where(eq(workspaceRoles.id, roleId));
+        .where(eq(workspaceRoles?.id, roleId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Revoke permission error:");
+      logger?.warn({ err: error }, "Revoke permission error:");
       return { success: false, error: "Failed to revoke permission" };
     }
   }
@@ -602,4 +602,4 @@ export class RBACService {
   }
 }
 
-export const rbacService = new RBACService();
+export const _rbacService = new RBACService();

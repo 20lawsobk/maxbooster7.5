@@ -2,9 +2,9 @@
  * One-time idempotent index migration.
  * Uses CREATE INDEX IF NOT EXISTS — safe to run multiple times.
  * Targets high-traffic userId/FK columns that lack explicit indexes.
- * Run with: npx tsx server/scripts/addIndexes.ts
+ * Run with: npx tsx server/scripts/addIndexes?.ts
  */
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { sql } from "drizzle-orm";
 
 const indexes: { name: string; ddl: string }[] = [
@@ -160,26 +160,26 @@ const indexes: { name: string; ddl: string }[] = [
 ];
 
 async function run() {
-  console.log(`Creating ${indexes.length} indexes...`);
+  console?.log(`Creating ${indexes?.length} indexes...`);
   let created = 0;
   let failed = 0;
 
   for (const idx of indexes) {
     try {
-      await db.execute(sql.raw(idx.ddl));
-      console.log(`  ✓ ${idx.name}`);
+      await db?.execute(sql?.raw(idx?.ddl));
+      console?.log(`  ✓ ${idx?.name}`);
       created++;
     } catch (err) {
-      console.error(`  ✗ ${idx.name}: ${err.message}`);
+      console?.error(`  ✗ ${idx?.name}: ${err?.message}`);
       failed++;
     }
   }
 
-  console.log(`\nDone: ${created} succeeded, ${failed} failed.`);
-  process.exit(failed > 0 ? 1 : 0);
+  console?.log(`\nDone: ${created} succeeded, ${failed} failed.`);
+  process?.exit(failed > 0 ? 1 : 0);
 }
 
 run().catch((err) => {
-  console.error("Fatal error:", err);
-  process.exit(1);
+  console?.error("Fatal error:", err);
+  process?.exit(1);
 });

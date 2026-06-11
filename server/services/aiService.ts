@@ -5,9 +5,9 @@
 import {
   getRedisClient,
   RedisClientType,
-} from "../lib/redisConnectionFactory.js";
-import { logger } from "../logger.js";
-import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
+} from "../lib/redisConnectionFactory?.js";
+import { logger } from "../logger?.js";
+import { cbIsOpen } from "../lib/pdimCircuitBreaker?.js";
 
 
 interface AIAdvertisingConfig {
@@ -112,7 +112,7 @@ export class AIService {
   private readonly AUDIO_PATTERNS_PREFIX = "ai:audioPatterns:";
 
   constructor() {
-    this.initializeAudioData();
+    this?.initializeAudioData();
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
@@ -122,10 +122,10 @@ export class AIService {
   private _seedRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
   private _scheduleAudioDataRetry(delayMs = 60_000): void {
-    if (this._seedRetryTimer) return; // already scheduled
-    this._seedRetryTimer = setTimeout(() => {
-      this._seedRetryTimer = null;
-      this.initializeAudioData();
+    if (this?._seedRetryTimer) return; // already scheduled
+    this?._seedRetryTimer = setTimeout(() => {
+      this?._seedRetryTimer = null;
+      this?.initializeAudioData();
     }, delayMs);
   }
 
@@ -135,25 +135,25 @@ export class AIService {
     // every key.  Schedule a retry for when PDIM warms up rather than
     // generating a wall of "Could not seed" warnings.
     if (cbIsOpen()) {
-      this._scheduleAudioDataRetry(30_000);
+      this?._scheduleAudioDataRetry(30_000);
       return;
     }
 
     try {
-      const redis = await this.getRedis();
+      const _redis = await this?.getRedis();
       if (!redis) {
-        logger.warn("⚠️  AIService: Redis not available, caching disabled");
+        logger?.warn("⚠️  AIService: Redis not available, caching disabled");
         return;
       }
 
       let anyFailed = false;
 
-      const seedIfMissing = async (key: string, value: object) => {
+      const _seedIfMissing = async (key: string, value: object) => {
         try {
-          const existing = await redis.get(key);
+          const _existing = await redis?.get(key);
           if (!existing) {
-            await redis.set(key, JSON.stringify(value));
-            logger.info(`[AIService] Seeded audio data for ${key}`);
+            await redis?.set(key, JSON?.stringify(value));
+            logger?.info(`[AIService] Seeded audio data for ${key}`);
           }
         } catch (e) {
           // Suppress per-key warnings during PDIM cold-start — the retry
@@ -163,35 +163,35 @@ export class AIService {
         }
       };
 
-      await Promise.all([
-        seedIfMissing(`${this.GENRE_PROFILES_PREFIX}electronic`, {
+      await Promise?.all([
+        seedIfMissing(`${this?.GENRE_PROFILES_PREFIX}electronic`, {
           bpmRange: [120, 140],
           keyPreferences: ["Fm", "Am", "Dm", "Cm"],
-          energyRange: [0.7, 0.95],
-          danceabilityRange: [0.8, 0.98],
-          instrumentalness: 0.85,
-          acousticness: 0.15,
-          valence: [0.4, 0.8],
+          energyRange: [0?.7, 0?.95],
+          danceabilityRange: [0?.8, 0?.98],
+          instrumentalness: 0?.85,
+          acousticness: 0?.15,
+          valence: [0?.4, 0?.8],
         }),
-        seedIfMissing(`${this.GENRE_PROFILES_PREFIX}hip-hop`, {
+        seedIfMissing(`${this?.GENRE_PROFILES_PREFIX}hip-hop`, {
           bpmRange: [70, 100],
           keyPreferences: ["Fm", "Cm", "Gm", "Dm"],
-          energyRange: [0.6, 0.9],
-          danceabilityRange: [0.7, 0.95],
-          instrumentalness: 0.3,
-          acousticness: 0.2,
-          valence: [0.3, 0.7],
+          energyRange: [0?.6, 0?.9],
+          danceabilityRange: [0?.7, 0?.95],
+          instrumentalness: 0?.3,
+          acousticness: 0?.2,
+          valence: [0?.3, 0?.7],
         }),
-        seedIfMissing(`${this.GENRE_PROFILES_PREFIX}pop`, {
+        seedIfMissing(`${this?.GENRE_PROFILES_PREFIX}pop`, {
           bpmRange: [100, 130],
           keyPreferences: ["C", "G", "Am", "F"],
-          energyRange: [0.6, 0.9],
-          danceabilityRange: [0.6, 0.9],
-          instrumentalness: 0.1,
-          acousticness: 0.25,
-          valence: [0.5, 0.9],
+          energyRange: [0?.6, 0?.9],
+          danceabilityRange: [0?.6, 0?.9],
+          instrumentalness: 0?.1,
+          acousticness: 0?.25,
+          valence: [0?.5, 0?.9],
         }),
-        seedIfMissing(`${this.AUDIO_PATTERNS_PREFIX}spectral_analysis`, {
+        seedIfMissing(`${this?.AUDIO_PATTERNS_PREFIX}spectral_analysis`, {
           low_freq: {
             range: [20, 250],
             characteristics: ["bass", "sub-bass", "kick"],
@@ -218,18 +218,18 @@ export class AIService {
       // cold-start slow-lane), schedule a silent full retry.  The retry will
       // succeed once PDIM is healthy and won't re-warn for keys already seeded.
       if (anyFailed) {
-        this._scheduleAudioDataRetry(60_000);
+        this?._scheduleAudioDataRetry(60_000);
       }
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes("HTTP 5") || msg.includes("PDIM")) {
+      const _msg = error instanceof Error ? error?.message : String(error);
+      if (msg?.includes("HTTP 5") || msg?.includes("PDIM")) {
         // PDIM cold-start error — retry silently instead of warning
-        this._scheduleAudioDataRetry(60_000);
+        this?._scheduleAudioDataRetry(60_000);
       } else if (
-        process.env.NODE_ENV !== "development" ||
-        !!process.env.REPLIT_DEPLOYMENT
+        process?.env.NODE_ENV !== "development" ||
+        !!process?.env.REPLIT_DEPLOYMENT
       ) {
-        logger.warn(
+        logger?.warn(
           { err: error },
           "Failed to initialize AI service audio data in Redis:",
         );
@@ -258,32 +258,32 @@ export class AIService {
   }> {
     try {
       // Calculate metrics based on actual input data
-      const audienceScore = this.calculateAudienceScore(config.targetAudience);
-      const campaignEfficiency = this.calculateCampaignEfficiency(
-        config.campaignType,
+      const _audienceScore = this?.calculateAudienceScore(config?.targetAudience);
+      const _campaignEfficiency = this?.calculateCampaignEfficiency(
+        config?.campaignType,
         musicData,
       );
-      const viralityScore = this.calculateViralityPotential(config, musicData);
+      const _viralityScore = this?.calculateViralityPotential(config, musicData);
 
       // Generate campaign content using input data
-      const adContent = this.generateTargetedAdContent(config, musicData);
-      const targeting = this.calculatePrecisionTargeting(config.targetAudience);
-      const distribution = this.optimizeDistributionPlan(config, musicData);
+      const _adContent = this?.generateTargetedAdContent(config, musicData);
+      const _targeting = this?.calculatePrecisionTargeting(config?.targetAudience);
+      const _distribution = this?.optimizeDistributionPlan(config, musicData);
 
       return {
-        performanceBoost: `${Math.round(audienceScore * 500)}% performance increase`,
-        costReduction: `${Math.round(campaignEfficiency * 100)}% cost optimization`,
+        performanceBoost: `${Math?.round(audienceScore * 500)}% performance increase`,
+        costReduction: `${Math?.round(campaignEfficiency * 100)}% cost optimization`,
         viralityScore: viralityScore,
-        algorithmicAdvantage: `${Math.round(viralityScore * 1000)}x platform advantage`,
+        algorithmicAdvantage: `${Math?.round(viralityScore * 1000)}x platform advantage`,
         adContent: {
-          primary: adContent.primary,
-          variations: adContent.variations,
+          primary: adContent?.primary,
+          variations: adContent?.variations,
           targetingStrategy: targeting,
           distributionPlan: distribution,
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "AI advertising error:");
+      logger?.warn({ err: error }, "AI advertising error:");
       throw new Error("Failed to generate zero-cost ad campaign");
     }
   }
@@ -298,20 +298,20 @@ export class AIService {
     audioData?: Buffer,
   ): Promise<{ success: boolean; mixSettings: MixSettings }> {
     try {
-      const analysis = audioData
-        ? await this.analyzeAudio(audioData)
-        : await this.getDefaultAnalysis();
+      const _analysis = audioData
+        ? await this?.analyzeAudio(audioData)
+        : await this?.getDefaultAnalysis();
 
       const mixSettings: MixSettings = {
-        eq: this.calculateOptimalEQ(analysis),
-        compression: this.calculateOptimalCompression(analysis),
-        effects: this.calculateOptimalEffects(analysis),
-        stereoImaging: this.calculateStereoImaging(analysis),
+        eq: this?.calculateOptimalEQ(analysis),
+        compression: this?.calculateOptimalCompression(analysis),
+        effects: this?.calculateOptimalEffects(analysis),
+        stereoImaging: this?.calculateStereoImaging(analysis),
       };
 
       return { success: true, mixSettings };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "AI mix error:");
+      logger?.warn({ err: error }, "AI mix error:");
       throw new Error("Failed to mix track with AI");
     }
   }
@@ -326,21 +326,21 @@ export class AIService {
     audioData?: Buffer,
   ): Promise<{ success: boolean; masterSettings: MasterSettings }> {
     try {
-      const analysis = audioData
-        ? await this.analyzeAudio(audioData)
-        : await this.getDefaultAnalysis();
+      const _analysis = audioData
+        ? await this?.analyzeAudio(audioData)
+        : await this?.getDefaultAnalysis();
 
       const masterSettings: MasterSettings = {
-        multiband: this.calculateMultibandCompression(analysis),
-        limiter: this.calculateLimiterSettings(analysis),
-        maximizer: this.calculateMaximizerSettings(analysis),
-        stereoEnhancer: this.calculateStereoEnhancement(analysis),
-        spectralBalance: this.calculateSpectralBalance(analysis),
+        multiband: this?.calculateMultibandCompression(analysis),
+        limiter: this?.calculateLimiterSettings(analysis),
+        maximizer: this?.calculateMaximizerSettings(analysis),
+        stereoEnhancer: this?.calculateStereoEnhancement(analysis),
+        spectralBalance: this?.calculateSpectralBalance(analysis),
       };
 
       return { success: true, masterSettings };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "AI master error:");
+      logger?.warn({ err: error }, "AI master error:");
       throw new Error("Failed to master track with AI");
     }
   }
@@ -351,9 +351,9 @@ export class AIService {
    */
   async analyzeTrack(audioData: Buffer): Promise<AudioAnalysisResult> {
     try {
-      return await this.analyzeAudio(audioData);
+      return await this?.analyzeAudio(audioData);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "AI analysis error:");
+      logger?.warn({ err: error }, "AI analysis error:");
       throw new Error("Failed to analyze track");
     }
   }
@@ -361,27 +361,27 @@ export class AIService {
   // Private helper methods for deterministic AI processing
 
   private async analyzeAudio(audioData: Buffer): Promise<AudioAnalysisResult> {
-    const bufferHash = this.calculateBufferHash(audioData);
-    const detectedGenre = this.detectGenreFromBuffer(audioData, bufferHash);
-    const genreProfile =
-      (await this.getGenreProfile(detectedGenre.toLowerCase())) ||
-      (await this.getGenreProfile("electronic"));
+    const _bufferHash = this?.calculateBufferHash(audioData);
+    const _detectedGenre = this?.detectGenreFromBuffer(audioData, bufferHash);
+    const _genreProfile =
+      (await this?.getGenreProfile(detectedGenre?.toLowerCase())) ||
+      (await this?.getGenreProfile("electronic"));
 
     return {
-      bpm: this.detectBPMFromBuffer(audioData, bufferHash),
-      key: this.detectKeyFromBuffer(audioData, bufferHash),
+      bpm: this?.detectBPMFromBuffer(audioData, bufferHash),
+      key: this?.detectKeyFromBuffer(audioData, bufferHash),
       genre: detectedGenre,
-      mood: this.analyzeMoodFromGenre(detectedGenre, bufferHash),
-      energy: this.calculateEnergyFromProfile(genreProfile, bufferHash),
-      danceability: this.calculateDanceabilityFromProfile(
+      mood: this?.analyzeMoodFromGenre(detectedGenre, bufferHash),
+      energy: this?.calculateEnergyFromProfile(genreProfile, bufferHash),
+      danceability: this?.calculateDanceabilityFromProfile(
         genreProfile,
         bufferHash,
       ),
-      valence: this.calculateValenceFromProfile(genreProfile, bufferHash),
+      valence: this?.calculateValenceFromProfile(genreProfile, bufferHash),
       instrumentalness:
-        genreProfile.instrumentalness + ((bufferHash % 20) - 10) / 100,
-      acousticness: genreProfile.acousticness + ((bufferHash % 15) - 7) / 100,
-      stems: this.detectStemsFromBuffer(audioData, bufferHash),
+        genreProfile?.instrumentalness + ((bufferHash % 20) - 10) / 100,
+      acousticness: genreProfile?.acousticness + ((bufferHash % 15) - 7) / 100,
+      stems: this?.detectStemsFromBuffer(audioData, bufferHash),
     };
   }
 
@@ -391,11 +391,11 @@ export class AIService {
       key: "C Major",
       genre: "Electronic",
       mood: "Energetic",
-      energy: 0.8,
-      danceability: 0.7,
-      valence: 0.6,
-      instrumentalness: 0.3,
-      acousticness: 0.2,
+      energy: 0?.8,
+      danceability: 0?.7,
+      valence: 0?.6,
+      instrumentalness: 0?.3,
+      acousticness: 0?.2,
       stems: {
         vocals: true,
         drums: true,
@@ -409,16 +409,16 @@ export class AIService {
   private calculateBufferHash(audioData: Buffer): number {
     // Create deterministic hash from buffer
     let hash = 0;
-    for (let i = 0; i < Math.min(audioData.length, 1000); i += 4) {
+    for (let i = 0; i < Math?.min(audioData?.length, 1000); i += 4) {
       hash = ((hash << 5) - hash + audioData[i]) & 0xffffffff;
     }
-    return Math.abs(hash);
+    return Math?.abs(hash);
   }
 
   private detectBPMFromBuffer(audioData: Buffer, hash: number): number {
     // Simulate tempo detection based on buffer characteristics
-    const size = audioData.length;
-    const complexity = hash % 100;
+    const _size = audioData?.length;
+    const _complexity = hash % 100;
 
     if (size > 1000000) {
       // Large file suggests longer track
@@ -429,7 +429,7 @@ export class AIService {
   }
 
   private detectKeyFromBuffer(_audioData: Buffer, hash: number): string {
-    const keys = [
+    const _keys = [
       "C",
       "C#",
       "D",
@@ -443,19 +443,19 @@ export class AIService {
       "A#",
       "B",
     ];
-    const modes = ["Major", "Minor"];
+    const _modes = ["Major", "Minor"];
 
     // Use buffer characteristics to determine key
-    const keyIndex = hash % keys.length;
-    const modeIndex = (hash >> 4) % modes.length;
+    const _keyIndex = hash % keys?.length;
+    const _modeIndex = (hash >> 4) % modes?.length;
 
     return `${keys[keyIndex]} ${modes[modeIndex]}`;
   }
 
   private detectGenreFromBuffer(audioData: Buffer, hash: number): string {
     // Genre detection based on file characteristics
-    const size = audioData.length;
-    const complexity = hash % 1000;
+    const _size = audioData?.length;
+    const _complexity = hash % 1000;
 
     if (size > 2000000 && complexity > 500) return "Electronic";
     if (size < 1000000 && complexity < 300) return "Hip-Hop";
@@ -472,12 +472,12 @@ export class AIService {
       Rock: ["Aggressive", "Energetic", "Dark", "Rebellious"],
     };
 
-    const moods = moodMap[genre] || moodMap["Electronic"];
-    return moods[hash % moods.length];
+    const _moods = moodMap[genre] || moodMap["Electronic"];
+    return moods[hash % moods?.length];
   }
 
   private calculateEnergyFromProfile(profile: unknown, hash: number): number {
-    const [min, max] = profile.energyRange;
+    const [min, max] = profile?.energyRange;
     return min + ((hash % 100) / 100) * (max - min);
   }
 
@@ -485,12 +485,12 @@ export class AIService {
     profile: unknown,
     hash: number,
   ): number {
-    const [min, max] = profile.danceabilityRange;
+    const [min, max] = profile?.danceabilityRange;
     return min + (((hash >> 8) % 100) / 100) * (max - min);
   }
 
   private calculateValenceFromProfile(profile: unknown, hash: number): number {
-    const [min, max] = profile.valence;
+    const [min, max] = profile?.valence;
     return min + (((hash >> 16) % 100) / 100) * (max - min);
   }
 
@@ -513,9 +513,9 @@ export class AIService {
     audience: AIAdvertisingConfig["targetAudience"],
   ): number {
     // Calculate score based on audience specificity and interests
-    const ageSpecificity = audience.age.includes("-") ? 1.5 : 1.0;
-    const interestDiversity = Math.min(audience.interests.length / 5, 2.0);
-    const locationSpecificity = audience.location.length > 10 ? 1.3 : 1.0;
+    const _ageSpecificity = audience?.age.includes("-") ? 1?.5 : 1?.0;
+    const _interestDiversity = Math?.min(audience?.interests.length / 5, 2?.0);
+    const _locationSpecificity = audience?.location.length > 10 ? 1?.3 : 1?.0;
 
     return ageSpecificity * interestDiversity * locationSpecificity;
   }
@@ -524,14 +524,14 @@ export class AIService {
     campaignType: string,
     _musicData: unknown,
   ): number {
-    const typeMultipliers = {
-      viral: 0.95,
-      engagement: 0.8,
-      awareness: 0.7,
-      conversion: 0.85,
+    const _typeMultipliers = {
+      viral: 0?.95,
+      engagement: 0?.8,
+      awareness: 0?.7,
+      conversion: 0?.85,
     };
 
-    return typeMultipliers[campaignType as keyof typeof typeMultipliers] || 0.7;
+    return typeMultipliers[campaignType as keyof typeof typeMultipliers] || 0?.7;
   }
 
   private calculateViralityPotential(
@@ -540,25 +540,25 @@ export class AIService {
   ): number {
     // Calculate based on genre, target audience, and campaign type
     const genreMultipliers: Record<string, number> = {
-      electronic: 0.8,
-      "hip-hop": 0.9,
-      pop: 0.95,
-      rock: 0.6,
+      electronic: 0?.8,
+      "hip-hop": 0?.9,
+      pop: 0?.95,
+      rock: 0?.6,
     };
 
-    const campaignMultipliers = {
-      viral: 0.9,
-      engagement: 0.7,
-      awareness: 0.5,
-      conversion: 0.6,
+    const _campaignMultipliers = {
+      viral: 0?.9,
+      engagement: 0?.7,
+      awareness: 0?.5,
+      conversion: 0?.6,
     };
 
-    const genreScore = genreMultipliers[musicData.genre?.toLowerCase()] || 0.7;
-    const campaignScore = campaignMultipliers[config.campaignType] || 0.6;
-    const audienceScore =
-      config.targetAudience.interests.length > 3 ? 0.8 : 0.6;
+    const _genreScore = genreMultipliers[musicData?.genre?.toLowerCase()] || 0?.7;
+    const _campaignScore = campaignMultipliers[config?.campaignType] || 0?.6;
+    const _audienceScore =
+      config?.targetAudience.interests?.length > 3 ? 0?.8 : 0?.6;
 
-    return Math.min(genreScore * campaignScore * audienceScore, 0.95);
+    return Math?.min(genreScore * campaignScore * audienceScore, 0?.95);
   }
 
   private generateTargetedAdContent(
@@ -566,43 +566,43 @@ export class AIService {
     musicData: unknown,
   ): { primary: string; variations: string[] } {
     // Generate ads based on campaign type and target audience
-    const ageSegment = config.targetAudience.age;
-    const primaryInterest = config.targetAudience.interests[0] || "music";
+    const _ageSegment = config?.targetAudience.age;
+    const _primaryInterest = config?.targetAudience.interests[0] || "music";
 
     let primary = "";
     let variations: string[] = [];
 
-    switch (config.campaignType) {
+    switch (config?.campaignType) {
       case "viral":
-        primary = `🔥 Everyone's talking about ${musicData.title} by ${musicData.artist} - Join the movement that's taking ${config.targetAudience.location} by storm!`;
+        primary = `🔥 Everyone's talking about ${musicData?.title} by ${musicData?.artist} - Join the movement that's taking ${config?.targetAudience.location} by storm!`;
         variations = [
-          `💯 ${config.targetAudience.location} can't stop playing ${musicData.title} - See what the hype is about`,
-          `🎵 The track ${primaryInterest} fans have been waiting for: ${musicData.title} is HERE`,
-          `⚡ ${musicData.artist} drops ${musicData.title} and it's everything ${ageSegment} music lovers needed`,
+          `💯 ${config?.targetAudience.location} can't stop playing ${musicData?.title} - See what the hype is about`,
+          `🎵 The track ${primaryInterest} fans have been waiting for: ${musicData?.title} is HERE`,
+          `⚡ ${musicData?.artist} drops ${musicData?.title} and it's everything ${ageSegment} music lovers needed`,
         ];
         break;
       case "engagement":
-        primary = `🎧 ${primaryInterest} meets perfection in ${musicData.title} by ${musicData.artist} - What's your favorite moment?`;
+        primary = `🎧 ${primaryInterest} meets perfection in ${musicData?.title} by ${musicData?.artist} - What's your favorite moment?`;
         variations = [
-          `💬 Tell us: How does ${musicData.title} make you feel? ${musicData.artist} wants to know!`,
-          `🔄 Share your ${musicData.title} moment - ${config.targetAudience.location} is listening`,
-          `❤️ React if ${musicData.title} by ${musicData.artist} hits different for ${ageSegment} listeners`,
+          `💬 Tell us: How does ${musicData?.title} make you feel? ${musicData?.artist} wants to know!`,
+          `🔄 Share your ${musicData?.title} moment - ${config?.targetAudience.location} is listening`,
+          `❤️ React if ${musicData?.title} by ${musicData?.artist} hits different for ${ageSegment} listeners`,
         ];
         break;
       case "awareness":
-        primary = `✨ Discover ${musicData.artist}, the ${musicData.genre} artist ${config.targetAudience.location} is talking about. Start with ${musicData.title}`;
+        primary = `✨ Discover ${musicData?.artist}, the ${musicData?.genre} artist ${config?.targetAudience.location} is talking about. Start with ${musicData?.title}`;
         variations = [
-          `🎵 New to ${musicData.artist}? ${musicData.title} is the perfect introduction to their sound`,
-          `📻 ${config.targetAudience.location} radio is playing ${musicData.title} - Meet the artist behind the music`,
-          `🌟 ${musicData.artist} brings fresh ${musicData.genre} to ${ageSegment} audiences with ${musicData.title}`,
+          `🎵 New to ${musicData?.artist}? ${musicData?.title} is the perfect introduction to their sound`,
+          `📻 ${config?.targetAudience.location} radio is playing ${musicData?.title} - Meet the artist behind the music`,
+          `🌟 ${musicData?.artist} brings fresh ${musicData?.genre} to ${ageSegment} audiences with ${musicData?.title}`,
         ];
         break;
       case "conversion":
-        primary = `🎯 Stream ${musicData.title} by ${musicData.artist} now - Available on all platforms. Your ${primaryInterest} playlist needs this.`;
+        primary = `🎯 Stream ${musicData?.title} by ${musicData?.artist} now - Available on all platforms. Your ${primaryInterest} playlist needs this.`;
         variations = [
-          `⬇️ Download ${musicData.title} today - ${musicData.artist} delivers exactly what ${ageSegment} listeners want`,
-          `🔗 Add ${musicData.title} to your library - ${config.targetAudience.location} fans are already streaming`,
-          `💾 Save ${musicData.title} by ${musicData.artist} - The ${musicData.genre} hit that's changing playlists`,
+          `⬇️ Download ${musicData?.title} today - ${musicData?.artist} delivers exactly what ${ageSegment} listeners want`,
+          `🔗 Add ${musicData?.title} to your library - ${config?.targetAudience.location} fans are already streaming`,
+          `💾 Save ${musicData?.title} by ${musicData?.artist} - The ${musicData?.genre} hit that's changing playlists`,
         ];
         break;
     }
@@ -614,13 +614,13 @@ export class AIService {
     audience: AIAdvertisingConfig["targetAudience"],
   ): Record<string, unknown> {
     return {
-      demographic_precision: `${audience.age} ${audience.demographics}`,
-      geographic_focus: audience.location,
-      interest_alignment: audience.interests.join(", "),
+      demographic_precision: `${audience?.age} ${audience?.demographics}`,
+      geographic_focus: audience?.location,
+      interest_alignment: audience?.interests.join(", "),
       engagement_optimization:
-        audience.interests.length > 2 ? "high-precision" : "broad-reach",
-      conversion_likelihood: audience.interests.includes("music") ? 0.85 : 0.65,
-      organic_amplification: audience.location.includes("City") ? 1.4 : 1.2,
+        audience?.interests.length > 2 ? "high-precision" : "broad-reach",
+      conversion_likelihood: audience?.interests.includes("music") ? 0?.85 : 0?.65,
+      organic_amplification: audience?.location.includes("City") ? 1?.4 : 1?.2,
     };
   }
 
@@ -629,19 +629,19 @@ export class AIService {
     _musicData: unknown,
   ): Record<string, unknown> {
     // Create distribution plan based on campaign type and audience
-    const platforms =
-      config.campaignType === "viral"
+    const _platforms =
+      config?.campaignType === "viral"
         ? ["tiktok", "instagram", "twitter", "youtube"]
         : ["instagram", "facebook", "youtube", "twitter"];
 
     return {
-      primary_platforms: platforms.slice(0, 2),
-      secondary_platforms: platforms.slice(2),
-      timing_strategy: config.targetAudience.age.includes("18-")
+      primary_platforms: platforms?.slice(0, 2),
+      secondary_platforms: platforms?.slice(2),
+      timing_strategy: config?.targetAudience.age?.includes("18-")
         ? "evening_peak"
         : "afternoon_drive",
       content_seeding:
-        config.campaignType === "viral"
+        config?.campaignType === "viral"
           ? "influencer_network"
           : "organic_growth",
       budget_allocation: {
@@ -656,21 +656,21 @@ export class AIService {
   // Audio processing calculation methods (using analysis data)
   private calculateOptimalEQ(analysis: AudioAnalysisResult): MixSettings["eq"] {
     // Calculate EQ based on genre and energy characteristics
-    const genreEQ = {
-      Electronic: { lowGain: -1, midGain: 1.5, highGain: 2 },
-      "Hip-Hop": { lowGain: 2, midGain: 0.5, highGain: -0.5 },
+    const _genreEQ = {
+      Electronic: { lowGain: -1, midGain: 1?.5, highGain: 2 },
+      "Hip-Hop": { lowGain: 2, midGain: 0?.5, highGain: -0?.5 },
       Pop: { lowGain: 0, midGain: 1, highGain: 1 },
-      Rock: { lowGain: 1, midGain: 2, highGain: 1.5 },
-    }[analysis.genre] || { lowGain: 0, midGain: 1, highGain: 1 };
+      Rock: { lowGain: 1, midGain: 2, highGain: 1?.5 },
+    }[analysis?.genre] || { lowGain: 0, midGain: 1, highGain: 1 };
 
     return {
-      lowGain: genreEQ.lowGain + (analysis.energy > 0.8 ? 0.5 : -0.5),
-      lowMidGain: 0.5 + analysis.danceability * 0.5,
-      midGain: genreEQ.midGain + (analysis.valence > 0.6 ? 0.5 : 0),
-      highMidGain: 0.8 + analysis.energy * 0.4,
-      highGain: genreEQ.highGain + (analysis.acousticness < 0.3 ? 0.5 : -0.5),
-      lowCut: analysis.genre === "Electronic" ? 30 : 50,
-      highCut: 18000 + analysis.energy * 2000,
+      lowGain: genreEQ?.lowGain + (analysis?.energy > 0?.8 ? 0?.5 : -0?.5),
+      lowMidGain: 0?.5 + analysis?.danceability * 0?.5,
+      midGain: genreEQ?.midGain + (analysis?.valence > 0?.6 ? 0?.5 : 0),
+      highMidGain: 0?.8 + analysis?.energy * 0?.4,
+      highGain: genreEQ?.highGain + (analysis?.acousticness < 0?.3 ? 0?.5 : -0?.5),
+      lowCut: analysis?.genre === "Electronic" ? 30 : 50,
+      highCut: 18000 + analysis?.energy * 2000,
     };
   }
 
@@ -678,19 +678,19 @@ export class AIService {
     analysis: AudioAnalysisResult,
   ): MixSettings["compression"] {
     // Genre-specific compression settings
-    const baseRatio =
-      analysis.genre === "Hip-Hop"
-        ? 4.0
-        : analysis.genre === "Electronic"
-          ? 3.5
-          : 3.0;
+    const _baseRatio =
+      analysis?.genre === "Hip-Hop"
+        ? 4?.0
+        : analysis?.genre === "Electronic"
+          ? 3?.5
+          : 3?.0;
 
     return {
-      threshold: -12 + analysis.energy * 4, // More aggressive for high energy
-      ratio: baseRatio + analysis.danceability * 0.8,
-      attack: analysis.genre === "Electronic" ? 1 : 3,
-      release: 100 - analysis.danceability * 30,
-      makeupGain: 2 + analysis.energy * 2,
+      threshold: -12 + analysis?.energy * 4, // More aggressive for high energy
+      ratio: baseRatio + analysis?.danceability * 0?.8,
+      attack: analysis?.genre === "Electronic" ? 1 : 3,
+      release: 100 - analysis?.danceability * 30,
+      makeupGain: 2 + analysis?.energy * 2,
     };
   }
 
@@ -699,26 +699,26 @@ export class AIService {
   ): MixSettings["effects"] {
     return {
       reverb: {
-        wetness: analysis.acousticness * 0.4 + 0.1,
-        roomSize: analysis.valence > 0.6 ? 0.6 : 0.4,
-        damping: 0.3 + analysis.energy * 0.2,
+        wetness: analysis?.acousticness * 0?.4 + 0?.1,
+        roomSize: analysis?.valence > 0?.6 ? 0?.6 : 0?.4,
+        damping: 0?.3 + analysis?.energy * 0?.2,
       },
       delay: {
         time:
-          analysis.bpm > 120
-            ? 60000 / analysis.bpm / 4
-            : 60000 / analysis.bpm / 2,
-        feedback: 0.15 + analysis.danceability * 0.15,
-        wetness: analysis.genre === "Electronic" ? 0.15 : 0.08,
+          analysis?.bpm > 120
+            ? 60000 / analysis?.bpm / 4
+            : 60000 / analysis?.bpm / 2,
+        feedback: 0?.15 + analysis?.danceability * 0?.15,
+        wetness: analysis?.genre === "Electronic" ? 0?.15 : 0?.08,
       },
       chorus: {
-        rate: 0.3 + analysis.valence * 0.4,
-        depth: 0.2 + analysis.energy * 0.2,
-        wetness: analysis.genre === "Pop" ? 0.2 : 0.1,
+        rate: 0?.3 + analysis?.valence * 0?.4,
+        depth: 0?.2 + analysis?.energy * 0?.2,
+        wetness: analysis?.genre === "Pop" ? 0?.2 : 0?.1,
       },
       saturation: {
-        drive: analysis.energy * 0.4,
-        warmth: 0.3 + analysis.acousticness * 0.3,
+        drive: analysis?.energy * 0?.4,
+        warmth: 0?.3 + analysis?.acousticness * 0?.3,
       },
     };
   }
@@ -728,27 +728,27 @@ export class AIService {
   ): MixSettings["stereoImaging"] {
     return {
       width:
-        analysis.genre === "Electronic" ? 1.3 : 1.0 + analysis.energy * 0.2,
-      bassMonoFreq: analysis.danceability > 0.8 ? 100 : 150,
+        analysis?.genre === "Electronic" ? 1?.3 : 1?.0 + analysis?.energy * 0?.2,
+      bassMonoFreq: analysis?.danceability > 0?.8 ? 100 : 150,
     };
   }
 
   private calculateMultibandCompression(
     analysis: AudioAnalysisResult,
   ): MasterSettings["multiband"] {
-    const baseSettings = {
-      low: { threshold: -8, ratio: 2.5, gain: 1.5, frequency: 250 },
-      lowMid: { threshold: -10, ratio: 3.0, gain: 0.8, frequency: 600 },
-      mid: { threshold: -9, ratio: 3.2, gain: 1.0, frequency: 2500 },
-      highMid: { threshold: -7, ratio: 2.8, gain: 1.2, frequency: 8000 },
-      high: { threshold: -5, ratio: 2.0, gain: 1.8, frequency: 16000 },
+    const _baseSettings = {
+      low: { threshold: -8, ratio: 2?.5, gain: 1?.5, frequency: 250 },
+      lowMid: { threshold: -10, ratio: 3?.0, gain: 0?.8, frequency: 600 },
+      mid: { threshold: -9, ratio: 3?.2, gain: 1?.0, frequency: 2500 },
+      highMid: { threshold: -7, ratio: 2?.8, gain: 1?.2, frequency: 8000 },
+      high: { threshold: -5, ratio: 2?.0, gain: 1?.8, frequency: 16000 },
     };
 
     // Adjust based on genre and energy
-    const energyFactor = analysis.energy * 0.5;
-    Object.values(baseSettings).forEach((band) => {
-      band.threshold += energyFactor * 2;
-      band.ratio += analysis.danceability * 0.5;
+    const _energyFactor = analysis?.energy * 0?.5;
+    Object?.values(baseSettings).forEach((band) => {
+      band?.threshold += energyFactor * 2;
+      band?.ratio += analysis?.danceability * 0?.5;
     });
 
     return baseSettings;
@@ -758,10 +758,10 @@ export class AIService {
     analysis: AudioAnalysisResult,
   ): MasterSettings["limiter"] {
     return {
-      ceiling: -0.1 - analysis.energy * 0.2, // More headroom for energetic tracks
+      ceiling: -0?.1 - analysis?.energy * 0?.2, // More headroom for energetic tracks
       release:
-        analysis.genre === "Electronic" ? 30 + analysis.danceability * 20 : 50,
-      lookahead: 3 + analysis.energy * 4,
+        analysis?.genre === "Electronic" ? 30 + analysis?.danceability * 20 : 50,
+      lookahead: 3 + analysis?.energy * 4,
     };
   }
 
@@ -779,8 +779,8 @@ export class AIService {
     };
 
     return {
-      amount: 80 + analysis.energy * 15,
-      character: characterMap[analysis.genre] || "warm",
+      amount: 80 + analysis?.energy * 15,
+      character: characterMap[analysis?.genre] || "warm",
     };
   }
 
@@ -788,8 +788,8 @@ export class AIService {
     analysis: AudioAnalysisResult,
   ): MasterSettings["stereoEnhancer"] {
     return {
-      width: 1.0 + analysis.energy * 0.15,
-      bassWidth: analysis.danceability > 0.7 ? 0.7 : 0.9, // Tighter bass for danceable tracks
+      width: 1?.0 + analysis?.energy * 0?.15,
+      bassWidth: analysis?.danceability > 0?.7 ? 0?.7 : 0?.9, // Tighter bass for danceable tracks
     };
   }
 
@@ -798,21 +798,21 @@ export class AIService {
   ): MasterSettings["spectralBalance"] {
     return {
       lowShelf:
-        analysis.genre === "Hip-Hop" ? 1.5 + analysis.energy * 0.5 : 1.0,
-      highShelf: 1.2 + analysis.energy * 0.6,
-      presence: 1.0 + analysis.valence * 0.5, // More presence for positive tracks
+        analysis?.genre === "Hip-Hop" ? 1?.5 + analysis?.energy * 0?.5 : 1?.0,
+      highShelf: 1?.2 + analysis?.energy * 0?.6,
+      presence: 1?.0 + analysis?.valence * 0?.5, // More presence for positive tracks
     };
   }
 
   private async getGenreProfile(genre: string): Promise<unknown> {
     try {
-      const redis = await this.getRedis();
+      const _redis = await this?.getRedis();
       if (!redis) return null;
 
-      const val = await redis.get(`${this.GENRE_PROFILES_PREFIX}${genre}`);
-      return val ? JSON.parse(val) : null;
+      const _val = await redis?.get(`${this?.GENRE_PROFILES_PREFIX}${genre}`);
+      return val ? JSON?.parse(val) : null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, `Failed to get genre profile for ${genre}:`);
+      logger?.warn({ err: error }, `Failed to get genre profile for ${genre}:`);
       return null;
     }
   }
@@ -820,4 +820,4 @@ export class AIService {
 }
 
 // Export singleton instance
-export const aiService = new AIService();
+export const _aiService = new AIService();

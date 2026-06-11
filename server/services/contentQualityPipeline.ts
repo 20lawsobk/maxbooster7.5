@@ -1,11 +1,11 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { db } from "../db";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { advancedSocialAIService, type AdvancedContentRequest } from "./advancedSocialAIService.js";
-import { MaxCoreAIClient } from "./unifiedAIController.js";
-import { platformAlgorithmOptimizer } from "./platformAlgorithmOptimizer.js";
-import { getCalibratedWeights } from "./maxcoreScoreCalibrator.js";
+import { advancedSocialAIService, type AdvancedContentRequest } from "./advancedSocialAIService?.js";
+import { MaxCoreAIClient } from "./unifiedAIController?.js";
+import { platformAlgorithmOptimizer } from "./platformAlgorithmOptimizer?.js";
+import { getCalibratedWeights } from "./maxcoreScoreCalibrator?.js";
 
 // ── Veo Quality Gate Calibration ─────────────────────────────────────────────
 // Google's Veo model produces content that consistently scores ~90–95 on this
@@ -27,17 +27,17 @@ import { getCalibratedWeights } from "./maxcoreScoreCalibrator.js";
 //                              shortens training time and maximises the probability of
 //                              clearing the 81 bar on the first round
 // ─────────────────────────────────────────────────────────────────────────────
-const VEO_QUALITY_GATE = 81;
-const VEO_PRESSURE_FLOOR = 73;
-const VEO_DEFAULT_VARIANTS = 30;
+const _VEO_QUALITY_GATE = 81;
+const _VEO_PRESSURE_FLOOR = 73;
+const _VEO_DEFAULT_VARIANTS = 30;
 
 // ── Caffeine Mode — Deadline Pressure System ──────────────────────────────────
 // Tracks how far behind schedule the autonomous autopilot is.
 // pressure = postsStillNeeded / hoursRemaining
 //   0       → on track / ahead of schedule  (normal mode)
-//   0–0.5   → mild lag                      (gate floor −4 pts, wider posting window)
-//   0.5–1.5 → behind                        (gate floor −7 pts, accelerated learning)
-//   > 1.5   → CAFFEINE MODE (critical)      (gate floor −10 pts, max acceleration)
+//   0–0?.5   → mild lag                      (gate floor −4 pts, wider posting window)
+//   0?.5–1?.5 → behind                        (gate floor −7 pts, accelerated learning)
+//   > 1?.5   → CAFFEINE MODE (critical)      (gate floor −10 pts, max acceleration)
 //
 // The gate THRESHOLD lowers under pressure so the system can still publish, but
 // urgency-themed content simultaneously scores HIGHER — meaning only posts that
@@ -47,19 +47,19 @@ const VEO_DEFAULT_VARIANTS = 30;
 let _currentPressure = 0;
 
 export function updateSchedulePressure(pressure: number): void {
-  _currentPressure = Math.max(0, pressure);
-  if (pressure > 1.5) {
-    logger.warn(
-      `⚡ [CaffeineMode] CRITICAL schedule pressure: ${pressure.toFixed(2)} posts/hr needed` +
+  _currentPressure = Math?.max(0, pressure);
+  if (pressure > 1?.5) {
+    logger?.warn(
+      `⚡ [CaffeineMode] CRITICAL schedule pressure: ${pressure?.toFixed(2)} posts/hr needed` +
         ` — quality gate + urgency scoring adapting`,
     );
-  } else if (pressure > 0.5) {
-    logger.info(
-      `☕ [CaffeineMode] Moderate schedule pressure: ${pressure.toFixed(2)} posts/hr` +
+  } else if (pressure > 0?.5) {
+    logger?.info(
+      `☕ [CaffeineMode] Moderate schedule pressure: ${pressure?.toFixed(2)} posts/hr` +
         ` — gate relaxing, urgency content boosted`,
     );
   } else if (pressure === 0 && _currentPressure > 0) {
-    logger.info(
+    logger?.info(
       `😌 [CaffeineMode] Schedule pressure cleared — returning to normal quality gate`,
     );
   }
@@ -79,9 +79,9 @@ export function getCurrentPressure(): number {
  */
 function pressureAdjustedMinScore(baseMin: number): number {
   if (_currentPressure <= 0) return baseMin;
-  if (_currentPressure > 1.5) return Math.max(VEO_PRESSURE_FLOOR, baseMin - 10); // critical: floor 65
-  if (_currentPressure > 0.5) return Math.max(68, baseMin - 7); // moderate: floor 68
-  return Math.max(71, baseMin - 4); // mild:     floor 71
+  if (_currentPressure > 1?.5) return Math?.max(VEO_PRESSURE_FLOOR, baseMin - 10); // critical: floor 65
+  if (_currentPressure > 0?.5) return Math?.max(68, baseMin - 7); // moderate: floor 68
+  return Math?.max(71, baseMin - 4); // mild:     floor 71
 }
 
 /**
@@ -166,7 +166,7 @@ export interface RecentPerformance {
 }
 
 
-const HOOK_PATTERNS = [
+const _HOOK_PATTERNS = [
   /^(🔥|💥|⚡|🚀|✨|🎵|🎶|🚨|💀|🤯|👀|💯|🎤|🎧)/,
   /^(Breaking|NEW|Just dropped|Finally|Here's|This is|You won't believe)/i,
   /\?$/,
@@ -180,7 +180,7 @@ const HOOK_PATTERNS = [
   /(\d+k|\d+ million) (streams?|plays?|followers?)/i,
 ];
 
-const CTA_PATTERNS = [
+const _CTA_PATTERNS = [
   /(check it out|listen now|stream now|watch now|link in bio|tap the link)/i,
   /(share|comment|tag|follow|subscribe|like)/i,
   /(don't miss|limited time|exclusive|first to hear)/i,
@@ -370,11 +370,11 @@ const PSYCHOLOGICAL_TRIGGER_LAYERS: Record<
 // ─── RELEASE PHASE URGENCY MODIFIERS ──────────────────────────────────────────
 // Engagement prediction multipliers based on release timing
 const RELEASE_PHASE_MULTIPLIERS: Record<string, number> = {
-  "pre-release": 1.08, // Anticipation builds organic reach
-  launch: 1.22, // First 24h: highest algorithmic push window
-  "first-week": 1.15, // Playlist/chart window still open
-  sustain: 1.0, // Standard baseline
-  milestone: 1.12, // Celebration posts get strong re-share
+  "pre-release": 1?.08, // Anticipation builds organic reach
+  launch: 1?.22, // First 24h: highest algorithmic push window
+  "first-week": 1?.15, // Playlist/chart window still open
+  sustain: 1?.0, // Standard baseline
+  milestone: 1?.12, // Celebration posts get strong re-share
 };
 
 // ─── SELF-IDENTIFICATION PHRASES ──────────────────────────────────────────────
@@ -387,46 +387,46 @@ class ContentQualityPipeline {
     baseContext: Partial<ContentContext>,
   ): Promise<ContentContext> {
     try {
-      const [[brandVoiceResult], [preferencesResult]] = await Promise.all([
+      const [[brandVoiceResult], [preferencesResult]] = await Promise?.all([
         db
           .select()
           .from(userBrandVoices)
-          .where(eq(userBrandVoices.userId, userId))
+          .where(eq(userBrandVoices?.userId, userId))
           .limit(1),
         db
           .select()
           .from(autopilotPreferences)
-          .where(eq(autopilotPreferences.userId, userId))
+          .where(eq(autopilotPreferences?.userId, userId))
           .limit(1),
       ]);
 
-      const brandVoice = brandVoiceResult?.voiceProfile as
+      const _brandVoice = brandVoiceResult?.voiceProfile as
         | BrandVoiceData
         | undefined;
 
       return {
         userId,
         artistName:
-          preferencesResult?.artistName || baseContext.artistName || "Artist",
-        genre: preferencesResult?.genre || baseContext.genre,
-        topic: baseContext.topic || "new music",
-        objective: baseContext.objective || "engagement",
-        platform: baseContext.platform || "instagram",
-        tone: preferencesResult?.contentTone || baseContext.tone || "casual",
-        targetAudience: baseContext.targetAudience,
+          preferencesResult?.artistName || baseContext?.artistName || "Artist",
+        genre: preferencesResult?.genre || baseContext?.genre,
+        topic: baseContext?.topic || "new music",
+        objective: baseContext?.objective || "engagement",
+        platform: baseContext?.platform || "instagram",
+        tone: preferencesResult?.contentTone || baseContext?.tone || "casual",
+        targetAudience: baseContext?.targetAudience,
         brandVoice,
         avoidTopics: (preferencesResult?.avoidTopics as string[]) || [],
         preferredHashtags:
           (preferencesResult?.preferredHashtags as string[]) || [],
       };
     } catch (error) {
-      logger.warn({ err: error }, "Error building content context:");
+      logger?.warn({ err: error }, "Error building content context:");
       return {
         userId,
-        artistName: baseContext.artistName || "Artist",
-        topic: baseContext.topic || "new music",
-        objective: baseContext.objective || "engagement",
-        platform: baseContext.platform || "instagram",
+        artistName: baseContext?.artistName || "Artist",
+        topic: baseContext?.topic || "new music",
+        objective: baseContext?.objective || "engagement",
+        platform: baseContext?.platform || "instagram",
       };
     }
   }
@@ -436,7 +436,7 @@ class ContentQualityPipeline {
     count: number = 3,
   ): Promise<ContentVariant[]> {
     const variants: ContentVariant[] = [];
-    const strategies = this.getGenerationStrategies(context.objective);
+    const _strategies = this?.getGenerationStrategies(context?.objective);
 
     // Accumulate per-variant Advanced AI failures silently during the loop.
     // A single summary warn is logged after all variants are generated — this
@@ -448,49 +448,49 @@ class ContentQualityPipeline {
     };
 
     for (let i = 0; i < count; i++) {
-      const strategy = strategies[i % strategies.length];
-      const variant = await this.generateSingleVariant(
+      const _strategy = strategies[i % strategies?.length];
+      const _variant = await this?.generateSingleVariant(
         context,
         strategy,
         i,
         _failAcc,
       );
-      variants.push(variant);
+      variants?.push(variant);
     }
 
     // Emit one summary log if any variants fell back to local.
     // MaxCore is always running — a null return means it was temporarily busy
-    // (e.g. 504 under diffusion training load); the Tier-3 local fallback is
+    // (e?.g. 504 under diffusion training load); the Tier-3 local fallback is
     // the designed response, not an error condition.  Log at INFO so it is
     // visible without polluting the WARN channel.
-    if (_failAcc.count > 0) {
+    if (_failAcc?.count > 0) {
       let inRegistration = false;
       try {
-        const { isLuaRegistrationMode } = await import("../lib/luaExecutor.js");
+        const { isLuaRegistrationMode } = await import("../lib/luaExecutor?.js");
         inRegistration = isLuaRegistrationMode();
       } catch {
         /* non-fatal */
       }
       if (inRegistration) {
-        logger.debug(
-          `[ContentQuality] Advanced AI deferred for ${_failAcc.count}/${count} variants ` +
+        logger?.debug(
+          `[ContentQuality] Advanced AI deferred for ${_failAcc?.count}/${count} variants ` +
             `(registration in progress) — using local fallback`,
         );
       } else {
-        logger.info(
-          `[ContentQuality] Advanced AI used local fallback for ${_failAcc.count}/${count} variants` +
-            (_failAcc.reason ? ` (${_failAcc.reason})` : ""),
+        logger?.info(
+          `[ContentQuality] Advanced AI used local fallback for ${_failAcc?.count}/${count} variants` +
+            (_failAcc?.reason ? ` (${_failAcc?.reason})` : ""),
         );
       }
-      if (_failAcc.localCount > 0) {
-        logger.info(
-          `[ContentQuality] ${_failAcc.localCount}/${count} variants generated via ` +
+      if (_failAcc?.localCount > 0) {
+        logger?.info(
+          `[ContentQuality] ${_failAcc?.localCount}/${count} variants generated via ` +
             `local pattern fallback (Tier 2)`,
         );
       }
     }
 
-    return variants.sort((a, b) => b.scores.overall - a.scores.overall);
+    return variants?.sort((a, b) => b?.scores.overall - a?.scores.overall);
   }
 
   private getGenerationStrategies(objective: string): string[] {
@@ -528,7 +528,7 @@ class ContentQualityPipeline {
         "industry-truth",
       ],
     };
-    return strategies[objective] || strategies.engagement;
+    return strategies[objective] || strategies?.engagement;
   }
 
   private async generateSingleVariant(
@@ -544,21 +544,21 @@ class ContentQualityPipeline {
 
     // ── Tier 1: MaxCore Advanced AI (sole AI source) ─────────────────────────
     // MaxCore is always the first and primary source for content generation.
-    // advancedSocialAIService.generateAdvancedContent() routes to MaxCore
-    // (secure-ai-forge.replit.app) via MaxCoreAIClient.infer().
+    // advancedSocialAIService?.generateAdvancedContent() routes to MaxCore
+    // (secure-ai-forge?.replit.app) via MaxCoreAIClient?.infer().
     // Falls through to Tier 2 (local pattern fallback) only on transient failure.
     {
       try {
-        const contentType = this.strategyToContentType(strategy);
+        const _contentType = this?.strategyToContentType(strategy);
         const advancedRequest: AdvancedContentRequest = {
-          userId: context.userId,
-          topic: context.topic,
-          platforms: [context.platform],
-          objective: context.objective,
-          tone: (context.tone as Record<string, unknown>) || "casual",
-          targetAudience: context.targetAudience,
-          genre: context.genre,
-          artistName: context.artistName,
+          userId: context?.userId,
+          topic: context?.topic,
+          platforms: [context?.platform],
+          objective: context?.objective,
+          tone: (context?.tone as Record<string, unknown>) || "casual",
+          targetAudience: context?.targetAudience,
+          genre: context?.genre,
+          artistName: context?.artistName,
           contentType,
           includeHashtags: true,
           includeEmojis: true,
@@ -566,15 +566,15 @@ class ContentQualityPipeline {
           // strategy + index used as differentiator seeds so each variant differs
           trendContext: [`strategy:${strategy}`, `variant:${index}`],
         };
-        const advancedResult =
-          await advancedSocialAIService.generateAdvancedContent(
+        const _advancedResult =
+          await advancedSocialAIService?.generateAdvancedContent(
             advancedRequest,
           );
-        headline = advancedResult.primary.headline;
-        body = advancedResult.primary.body;
-        cta = advancedResult.primary.callToAction;
-        hashtags = advancedResult.primary.hashtags;
-        logger.info(
+        headline = advancedResult?.primary.headline;
+        body = advancedResult?.primary.body;
+        cta = advancedResult?.primary.callToAction;
+        hashtags = advancedResult?.primary.hashtags;
+        logger?.info(
           `[ContentQuality] Variant ${index} generated via Advanced AI (${contentType})`,
         );
       } catch (err) {
@@ -585,12 +585,12 @@ class ContentQualityPipeline {
         // the failure silently; generateVariants will emit one summary WARN
         // after the loop so N variants don't produce N identical warn lines.
         // Without an accumulator (standalone call), log immediately.
-        const advErrMsg = (err as Error)?.message ?? String(err);
+        const _advErrMsg = (err as Error)?.message ?? String(err);
         if (_failAcc) {
-          _failAcc.count++;
-          if (!_failAcc.reason) _failAcc.reason = advErrMsg;
+          _failAcc?.count++;
+          if (!_failAcc?.reason) _failAcc?.reason = advErrMsg;
         } else {
-          logger.info(
+          logger?.info(
             `[ContentQuality] MaxCore used local fallback for variant ${index}: ${advErrMsg}`,
           );
         }
@@ -608,40 +608,40 @@ class ContentQualityPipeline {
             GENRE_VIRAL_HOOKS,
             EMOTIONAL_TRIGGER_PATTERNS,
           } = await import(
-            "../../shared/ml/training/musicIndustryTrainingData.js"
+            "../../shared/ml/training/musicIndustryTrainingData?.js"
           );
 
           // Deterministic seed: same user + strategy + index → same pick every
-          // time so content is reproducible without Math.random().
-          const seedStr = `${context.userId}:${strategy}:${index}`;
+          // time so content is reproducible without Math?.random().
+          const _seedStr = `${context?.userId}:${strategy}:${index}`;
           function seededPick<T>(arr: readonly T[] | T[]): T {
-            if (!arr || arr.length === 0) return "" as unknown as T;
+            if (!arr || arr?.length === 0) return "" as unknown as T;
             let h = 2166136261;
-            for (let i = 0; i < seedStr.length; i++) {
-              h ^= seedStr.charCodeAt(i);
-              h = Math.imul(h, 16777619) >>> 0;
+            for (let i = 0; i < seedStr?.length; i++) {
+              h ^= seedStr?.charCodeAt(i);
+              h = Math?.imul(h, 16777619) >>> 0;
             }
-            return arr[h % arr.length];
+            return arr[h % arr?.length];
           }
 
-          const genre = (context.genre || "pop").toLowerCase();
-          const platform = (context.platform || "instagram").toLowerCase();
+          const _genre = (context?.genre || "pop").toLowerCase();
+          const _platform = (context?.platform || "instagram").toLowerCase();
 
           // Pick a platform hook template
-          const scripts = PLATFORM_CONTENT_SCRIPTS as Record<
+          const _scripts = PLATFORM_CONTENT_SCRIPTS as Record<
             string,
             Record<string, readonly string[]>
           >;
-          const platformScripts = scripts[platform] ?? scripts.instagram;
-          const hookList =
-            platformScripts.viralHookFormulas ??
-            platformScripts.reelsHookFormulas ??
-            platformScripts.titleFormulas ??
+          const _platformScripts = scripts[platform] ?? scripts?.instagram;
+          const _hookList =
+            platformScripts?.viralHookFormulas ??
+            platformScripts?.reelsHookFormulas ??
+            platformScripts?.titleFormulas ??
             [];
           let hookTemplate = seededPick(hookList as string[]);
 
           // Fill simple template placeholders
-          const topic = context.topic || "new music";
+          const _topic = context?.topic || "new music";
           hookTemplate = hookTemplate
             .replace(/\{scenario\}/g, topic)
             .replace(/\{identity\}/g, "music lover")
@@ -655,39 +655,39 @@ class ContentQualityPipeline {
             .replace(/\{adjective\}/g, "exciting");
 
           // Pick body content from emotional triggers
-          const triggerKeys = Object.keys(EMOTIONAL_TRIGGER_PATTERNS) as Array<
+          const _triggerKeys = Object?.keys(EMOTIONAL_TRIGGER_PATTERNS) as Array<
             keyof typeof EMOTIONAL_TRIGGER_PATTERNS
           >;
-          const triggerKey = seededPick(triggerKeys);
-          const bodyLine = seededPick(EMOTIONAL_TRIGGER_PATTERNS[triggerKey]);
+          const _triggerKey = seededPick(triggerKeys);
+          const _bodyLine = seededPick(EMOTIONAL_TRIGGER_PATTERNS[triggerKey]);
 
           // Compose body
-          const genreHooks = GENRE_VIRAL_HOOKS as Record<
+          const _genreHooks = GENRE_VIRAL_HOOKS as Record<
             string,
             Record<string, readonly string[]>
           >;
-          const genreData = genreHooks[genre] ?? genreHooks.pop;
+          const _genreData = genreHooks[genre] ?? genreHooks?.pop;
           const platformHooks: readonly string[] = (genreData?.[platform] ??
             genreData?.instagram ??
             []) as readonly string[];
-          const genreHook = platformHooks.length
+          const _genreHook = platformHooks?.length
             ? seededPick(platformHooks)
             : topic;
 
           headline = hookTemplate || genreHook;
           body = `${bodyLine}\n\n${genreHook}`;
           cta = seededPick([
-            ...CALL_TO_ACTION_LIBRARY.streaming.direct,
-            ...CALL_TO_ACTION_LIBRARY.streaming.urgent,
+            ...CALL_TO_ACTION_LIBRARY?.streaming.direct,
+            ...CALL_TO_ACTION_LIBRARY?.streaming.urgent,
           ]);
           hashtags = getHashtagsForGenre(genre).slice(0, 8);
 
           // Per-variant local-fallback info is suppressed when an accumulator
           // is present — generateVariants logs one summary line after the loop.
           if (_failAcc) {
-            _failAcc.localCount++;
+            _failAcc?.localCount++;
           } else {
-            logger.info(
+            logger?.info(
               `[ContentQuality] Variant ${index} generated via local pattern fallback (Tier 2)`,
             );
           }
@@ -704,23 +704,23 @@ class ContentQualityPipeline {
     // algorithmic lever (saves, reply velocity, watch completion, dwell time…).
     // Only applied when content scores below the alignment threshold — avoids
     // over-engineering content that already triggers the right signals.
-    const optimised = this.applyAlgorithmSignalOptimization(
+    const _optimised = this?.applyAlgorithmSignalOptimization(
       headline!,
       body!,
       cta!,
-      context.platform,
+      context?.platform,
     );
-    headline = optimised.headline;
-    body = optimised.body;
-    cta = optimised.cta;
+    headline = optimised?.headline;
+    body = optimised?.body;
+    cta = optimised?.cta;
 
-    const fullContent = `${headline}\n\n${body}`;
-    const platformOpt = this.validatePlatformConstraints(
+    const _fullContent = `${headline}\n\n${body}`;
+    const _platformOpt = this?.validatePlatformConstraints(
       fullContent,
       hashtags!,
-      context.platform,
+      context?.platform,
     );
-    const scores = this.scoreContent(
+    const _scores = this?.scoreContent(
       fullContent,
       headline,
       cta,
@@ -729,7 +729,7 @@ class ContentQualityPipeline {
     );
 
     return {
-      id: `variant_${index}_${Date.now()}`,
+      id: `variant_${index}_${Date?.now()}`,
       content: body!,
       headline: headline!,
       hashtags: hashtags!,
@@ -806,15 +806,15 @@ class ContentQualityPipeline {
    * Validate that generated content meets platform-specific constraints.
    * Checks character limits, hashtag count, and emoji count.
    * Returns a PlatformOptimization descriptor used by the scoring pipeline.
-   * Called both internally (as this.validatePlatformConstraints) and
-   * externally from contentQualityGate (as contentQualityPipeline.validatePlatformConstraints).
+   * Called both internally (as this?.validatePlatformConstraints) and
+   * externally from contentQualityGate (as contentQualityPipeline?.validatePlatformConstraints).
    */
   validatePlatformConstraints(
     content: string,
     hashtags: string[],
     platform: string,
   ): PlatformOptimization {
-    const key = platform.toLowerCase().replace(/[^a-z]/g, "");
+    const _key = platform?.toLowerCase().replace(/[^a-z]/g, "");
 
     const PLATFORM_LIMITS: Record<
       string,
@@ -831,42 +831,42 @@ class ContentQualityPipeline {
       googlebusiness: { maxChars: 1500, optimalHashtags: 0, optimalEmojis: 2 },
     };
 
-    const limits = PLATFORM_LIMITS[key] || {
+    const _limits = PLATFORM_LIMITS[key] || {
       maxChars: 2200,
       optimalHashtags: 5,
       optimalEmojis: 3,
     };
 
-    const emojiCount = (content.match(/\p{Emoji_Presentation}/gu) || []).length;
-    const hashtagCount = hashtags.length;
-    const characterCount = content.length;
+    const _emojiCount = (content?.match(/\p{Emoji_Presentation}/gu) || []).length;
+    const _hashtagCount = hashtags?.length;
+    const _characterCount = content?.length;
     const issues: string[] = [];
 
-    if (characterCount > limits.maxChars) {
-      issues.push(
-        `Content too long: ${characterCount} / ${limits.maxChars} characters`,
+    if (characterCount > limits?.maxChars) {
+      issues?.push(
+        `Content too long: ${characterCount} / ${limits?.maxChars} characters`,
       );
     }
-    if (hashtagCount > limits.optimalHashtags * 2) {
-      issues.push(
-        `Too many hashtags: ${hashtagCount} (optimal: ${limits.optimalHashtags})`,
+    if (hashtagCount > limits?.optimalHashtags * 2) {
+      issues?.push(
+        `Too many hashtags: ${hashtagCount} (optimal: ${limits?.optimalHashtags})`,
       );
     }
-    if (emojiCount > limits.optimalEmojis * 3) {
-      issues.push(
-        `Too many emojis: ${emojiCount} (optimal: ${limits.optimalEmojis})`,
+    if (emojiCount > limits?.optimalEmojis * 3) {
+      issues?.push(
+        `Too many emojis: ${emojiCount} (optimal: ${limits?.optimalEmojis})`,
       );
     }
 
     return {
       platform: key,
       characterCount,
-      maxCharacters: limits.maxChars,
+      maxCharacters: limits?.maxChars,
       hashtagCount,
-      optimalHashtags: limits.optimalHashtags,
+      optimalHashtags: limits?.optimalHashtags,
       emojiCount,
-      optimalEmojis: limits.optimalEmojis,
-      isValid: issues.length === 0,
+      optimalEmojis: limits?.optimalEmojis,
+      isValid: issues?.length === 0,
       issues,
     };
   }
@@ -883,47 +883,47 @@ class ContentQualityPipeline {
     context: ContentContext,
     platformOpt: PlatformOptimization,
   ): ContentScores {
-    const hookStrength = this.scoreHook(headline);
-    const callToActionEffectiveness = this.scoreCTA(cta);
-    const clarity = this.scoreClarity(content);
-    const sentiment = this.scoreSentiment(content, context.objective);
-    const brandAlignment = this.scoreBrandAlignment(content, context);
-    const engagement = this.predictEngagement(content, headline, context);
-    const specificity = this.scoreSpecificity(content, headline);
-    const emotionalArc = this.scoreEmotionalArc(content, headline);
-    const narrativeAuthenticity = this.scoreNarrativeAuthenticity(
+    const _hookStrength = this?.scoreHook(headline);
+    const _callToActionEffectiveness = this?.scoreCTA(cta);
+    const _clarity = this?.scoreClarity(content);
+    const _sentiment = this?.scoreSentiment(content, context?.objective);
+    const _brandAlignment = this?.scoreBrandAlignment(content, context);
+    const _engagement = this?.predictEngagement(content, headline, context);
+    const _specificity = this?.scoreSpecificity(content, headline);
+    const _emotionalArc = this?.scoreEmotionalArc(content, headline);
+    const _narrativeAuthenticity = this?.scoreNarrativeAuthenticity(
       content,
       headline,
     );
-    const algorithmAlignment =
-      platformAlgorithmOptimizer.scoreAlgorithmAlignment(
+    const _algorithmAlignment =
+      platformAlgorithmOptimizer?.scoreAlgorithmAlignment(
         content,
         headline,
         cta,
-        platformOpt.platform,
+        platformOpt?.platform,
       ).score;
 
-    const platformPenalty = platformOpt.isValid
+    const _platformPenalty = platformOpt?.isValid
       ? 0
-      : Math.min(10, platformOpt.issues.length * 3);
+      : Math?.min(10, platformOpt?.issues.length * 3);
 
     // Use MaxCore-calibrated weights when available, fall back to defaults
-    const w = getCalibratedWeights();
-    const overall = Math.max(
+    const _w = getCalibratedWeights();
+    const _overall = Math?.max(
       0,
-      Math.min(
+      Math?.min(
         100,
-        Math.round(
-          engagement * w.engagement +
-            hookStrength * w.hookStrength +
-            callToActionEffectiveness * w.callToActionEffectiveness +
-            sentiment * w.sentiment +
-            clarity * w.clarity +
-            brandAlignment * w.brandAlignment +
-            algorithmAlignment * w.algorithmAlignment +
-            specificity * w.specificity +
-            emotionalArc * w.emotionalArc +
-            narrativeAuthenticity * w.narrativeAuthenticity -
+        Math?.round(
+          engagement * w?.engagement +
+            hookStrength * w?.hookStrength +
+            callToActionEffectiveness * w?.callToActionEffectiveness +
+            sentiment * w?.sentiment +
+            clarity * w?.clarity +
+            brandAlignment * w?.brandAlignment +
+            algorithmAlignment * w?.algorithmAlignment +
+            specificity * w?.specificity +
+            emotionalArc * w?.emotionalArc +
+            narrativeAuthenticity * w?.narrativeAuthenticity -
             platformPenalty,
         ),
       ),
@@ -947,16 +947,16 @@ class ContentQualityPipeline {
     cta: string,
     platform: string,
   ): { headline: string; body: string; cta: string } {
-    const key = platform.toLowerCase().replace(/[^a-z]/g, "");
+    const _key = platform?.toLowerCase().replace(/[^a-z]/g, "");
 
     // Score current alignment — only modify if it's weak (< 60)
-    const currentScore = platformAlgorithmOptimizer.scoreAlgorithmAlignment(
+    const _currentScore = platformAlgorithmOptimizer?.scoreAlgorithmAlignment(
       body,
       headline,
       cta,
       platform,
     );
-    if (currentScore.score >= 60) {
+    if (currentScore?.score >= 60) {
       // Already well-aligned — trust the generated content
       return { headline, body, cta };
     }
@@ -966,21 +966,21 @@ class ContentQualityPipeline {
       case "twitter":
       case "x": {
         // Reply velocity — add a question to the CTA if missing
-        const hasQuestion =
+        const _hasQuestion =
           /\?/.test(cta) ||
-          /what do you think|agree|disagree|your take/i.test(cta);
-        const upgradedCta = hasQuestion
+          /what do you think|agree|disagree|your take/i?.test(cta);
+        const _upgradedCta = hasQuestion
           ? cta
           : `${cta} What's your take? Drop it below ↓`;
         // Remove external links from headline if present
-        const cleanHeadline = headline.replace(/https?:\/\/\S+/gi, "").trim();
+        const _cleanHeadline = headline?.replace(/https?:\/\/\S+/gi, "").trim();
         return { headline: cleanHeadline, body, cta: upgradedCta };
       }
 
       case "instagram": {
         // Saves — inject a save-trigger phrase if missing
-        const hasSaveTrigger = /save|bookmark/i.test(cta + headline);
-        const upgradedCta = hasSaveTrigger
+        const _hasSaveTrigger = /save|bookmark/i?.test(cta + headline);
+        const _upgradedCta = hasSaveTrigger
           ? cta
           : `Save this post for later 🔖 — ${cta}`;
         return { headline, body, cta: upgradedCta };
@@ -988,13 +988,13 @@ class ContentQualityPipeline {
 
       case "tiktok": {
         // Watch completion — prepend a curiosity-gap hook if headline is weak
-        const hasHook =
-          /pov:|unpopular opinion|this changed|nobody tells|plot twist|here'?s why/i.test(
+        const _hasHook =
+          /pov:|unpopular opinion|this changed|nobody tells|plot twist|here'?s why/i?.test(
             headline,
           );
-        const boostedHeadline = hasHook ? headline : `POV: ${headline}`;
-        const hasRewatch = /watch again|rewatch|duet|part 2/i.test(cta);
-        const upgradedCta = hasRewatch
+        const _boostedHeadline = hasHook ? headline : `POV: ${headline}`;
+        const _hasRewatch = /watch again|rewatch|duet|part 2/i?.test(cta);
+        const _upgradedCta = hasRewatch
           ? cta
           : `${cta} — Watch again if you missed it 🔁`;
         return { headline: boostedHeadline, body, cta: upgradedCta };
@@ -1002,23 +1002,23 @@ class ContentQualityPipeline {
 
       case "linkedin": {
         // Dwell time — append a professional question if CTA is weak
-        const hasQuestion =
-          /\?/.test(cta) || /what'?s your|how (do|are|have) you/i.test(cta);
-        const upgradedCta = hasQuestion
+        const _hasQuestion =
+          /\?/.test(cta) || /what'?s your|how (do|are|have) you/i?.test(cta);
+        const _upgradedCta = hasQuestion
           ? cta
           : `${cta}\n\nWhat's been your experience with this? Drop it in the comments.`;
         // Warn if body contains a link (should be in comments)
-        const bodyHasLink = /https?:\/\/\S+/i.test(body);
-        const cleanBody = bodyHasLink
-          ? body.replace(/https?:\/\/\S+/gi, "[link in first comment]")
+        const _bodyHasLink = /https?:\/\/\S+/i?.test(body);
+        const _cleanBody = bodyHasLink
+          ? body?.replace(/https?:\/\/\S+/gi, "[link in first comment]")
           : body;
         return { headline, body: cleanBody, cta: upgradedCta };
       }
 
       case "facebook": {
         // Emotional reactions — inject a tag-a-friend CTA if missing
-        const hasTagCta = /tag (a|someone|your)/i.test(cta);
-        const upgradedCta = hasTagCta
+        const _hasTagCta = /tag (a|someone|your)/i?.test(cta);
+        const _upgradedCta = hasTagCta
           ? cta
           : `${cta} Tag someone who needs to hear this ❤️`;
         return { headline, body, cta: upgradedCta };
@@ -1026,9 +1026,9 @@ class ContentQualityPipeline {
 
       case "threads": {
         // Replies — add a dialogue-inviting question if CTA is just a statement
-        const hasDialogue =
-          /\?/.test(cta) || /what'?s your|anyone else|reply with/i.test(cta);
-        const upgradedCta = hasDialogue
+        const _hasDialogue =
+          /\?/.test(cta) || /what'?s your|anyone else|reply with/i?.test(cta);
+        const _upgradedCta = hasDialogue
           ? cta
           : `${cta} What's your experience with this? 👇`;
         return { headline, body, cta: upgradedCta };
@@ -1036,8 +1036,8 @@ class ContentQualityPipeline {
 
       case "youtube": {
         // CTR × watch time — add a subscribe + watch-next CTA if weak
-        const hasWatchNext = /subscribe|watch (this|next|more)/i.test(cta);
-        const upgradedCta = hasWatchNext
+        const _hasWatchNext = /subscribe|watch (this|next|more)/i?.test(cta);
+        const _upgradedCta = hasWatchNext
           ? cta
           : `${cta} Subscribe for more, and watch the next one in the description.`;
         return { headline, body, cta: upgradedCta };
@@ -1052,58 +1052,58 @@ class ContentQualityPipeline {
     let score = 45;
 
     for (const pattern of HOOK_PATTERNS) {
-      if (pattern.test(headline)) {
+      if (pattern?.test(headline)) {
         score += 12;
       }
     }
 
-    if (headline.length > 10 && headline.length < 70) score += 10;
-    if (headline.includes("...") || headline.includes("👀")) score += 5;
+    if (headline?.length > 10 && headline?.length < 70) score += 10;
+    if (headline?.includes("...") || headline?.includes("👀")) score += 5;
     if (/\d/.test(headline)) score += 6;
-    if (headline.includes('"') || headline.includes("\u201c")) score += 4;
-    const capsWords = (headline.match(/\b[A-Z]{2,}\b/g) || []).length;
+    if (headline?.includes('"') || headline?.includes("\u201c")) score += 4;
+    const _capsWords = (headline?.match(/\b[A-Z]{2,}\b/g) || []).length;
     if (capsWords === 1) score += 4;
     else if (capsWords === 2) score += 2;
 
-    return Math.min(100, score);
+    return Math?.min(100, score);
   }
 
   private scoreCTA(cta: string): number {
     let score = 40;
 
     for (const pattern of CTA_PATTERNS) {
-      if (pattern.test(cta)) {
+      if (pattern?.test(cta)) {
         score += 15;
       }
     }
 
-    if (cta.length > 10 && cta.length < 60) score += 10;
-    if (cta.includes("!")) score += 5;
-    if (/\b(now|today|tonight|right now)\b/i.test(cta)) score += 8;
-    if (/\b(link in bio|tap|click|swipe)\b/i.test(cta)) score += 6;
-    if (/\b(first|limited|exclusive|only)\b/i.test(cta)) score += 5;
-    if (/[🔥🎵🎧🔗🎟️🎤⏰📈]/u.test(cta)) score += 4;
+    if (cta?.length > 10 && cta?.length < 60) score += 10;
+    if (cta?.includes("!")) score += 5;
+    if (/\b(now|today|tonight|right now)\b/i?.test(cta)) score += 8;
+    if (/\b(link in bio|tap|click|swipe)\b/i?.test(cta)) score += 6;
+    if (/\b(first|limited|exclusive|only)\b/i?.test(cta)) score += 5;
+    if (/[🔥🎵🎧🔗🎟️🎤⏰📈]/u?.test(cta)) score += 4;
 
-    return Math.min(100, score);
+    return Math?.min(100, score);
   }
 
   private scoreClarity(content: string): number {
-    const sentences = content.split(/[.!?]+/).filter((s) => s.trim());
-    const avgLength = content.length / Math.max(sentences.length, 1);
+    const _sentences = content?.split(/[.!?]+/).filter((s) => s?.trim());
+    const _avgLength = content?.length / Math?.max(sentences?.length, 1);
 
     let score = 70;
 
     if (avgLength > 20 && avgLength < 100) score += 15;
-    if (sentences.length >= 2 && sentences.length <= 5) score += 10;
+    if (sentences?.length >= 2 && sentences?.length <= 5) score += 10;
 
-    const complexWords = content.match(/\b\w{10,}\b/g) || [];
-    if (complexWords.length < 3) score += 5;
+    const _complexWords = content?.match(/\b\w{10,}\b/g) || [];
+    if (complexWords?.length < 3) score += 5;
 
-    return Math.min(100, score);
+    return Math?.min(100, score);
   }
 
   private scoreSentiment(content: string, objective: string): number {
-    const positiveWords = [
+    const _positiveWords = [
       "love",
       "amazing",
       "incredible",
@@ -1154,7 +1154,7 @@ class ContentQualityPipeline {
       "addictive",
       "catchy",
     ];
-    const negativeWords = [
+    const _negativeWords = [
       "hate",
       "worst",
       "terrible",
@@ -1163,7 +1163,7 @@ class ContentQualityPipeline {
       "disappointing",
       "skip",
     ];
-    const urgentWords = [
+    const _urgentWords = [
       "now",
       "today",
       "tonight",
@@ -1178,7 +1178,7 @@ class ContentQualityPipeline {
       "before",
       "last chance",
     ];
-    const emotionalWords = [
+    const _emotionalWords = [
       "heart",
       "soul",
       "life",
@@ -1211,7 +1211,7 @@ class ContentQualityPipeline {
       "legacy",
       "purpose",
     ];
-    const viralWords = [
+    const _viralWords = [
       "everyone",
       "share",
       "tag",
@@ -1225,7 +1225,7 @@ class ContentQualityPipeline {
       "explosion",
       "taking over",
     ];
-    const musicWords = [
+    const _musicWords = [
       "stream",
       "playlist",
       "spotify",
@@ -1250,29 +1250,29 @@ class ContentQualityPipeline {
       "recording",
     ];
 
-    const lower = content.toLowerCase();
+    const _lower = content?.toLowerCase();
     let score = 58;
 
-    const positiveCount = positiveWords.filter((w) => lower.includes(w)).length;
-    const negativeCount = negativeWords.filter((w) => lower.includes(w)).length;
-    const urgentCount = urgentWords.filter((w) => lower.includes(w)).length;
-    const emotionalCount = emotionalWords.filter((w) =>
-      lower.includes(w),
+    const _positiveCount = positiveWords?.filter((w) => lower?.includes(w)).length;
+    const _negativeCount = negativeWords?.filter((w) => lower?.includes(w)).length;
+    const _urgentCount = urgentWords?.filter((w) => lower?.includes(w)).length;
+    const _emotionalCount = emotionalWords?.filter((w) =>
+      lower?.includes(w),
     ).length;
-    const viralCount = viralWords.filter((w) => lower.includes(w)).length;
-    const musicCount = musicWords.filter((w) => lower.includes(w)).length;
+    const _viralCount = viralWords?.filter((w) => lower?.includes(w)).length;
+    const _musicCount = musicWords?.filter((w) => lower?.includes(w)).length;
 
-    score += Math.min(20, positiveCount * 4);
-    score -= Math.min(25, negativeCount * 8);
-    score += Math.min(8, musicCount * 2);
+    score += Math?.min(20, positiveCount * 4);
+    score -= Math?.min(25, negativeCount * 8);
+    score += Math?.min(8, musicCount * 2);
 
-    if (objective === "conversions") score += Math.min(15, urgentCount * 5);
+    if (objective === "conversions") score += Math?.min(15, urgentCount * 5);
     if (objective === "viral")
-      score += Math.min(15, emotionalCount * 4) + Math.min(10, viralCount * 3);
-    if (objective === "engagement") score += Math.min(10, emotionalCount * 3);
-    if (objective === "awareness") score += Math.min(8, positiveCount * 2);
+      score += Math?.min(15, emotionalCount * 4) + Math?.min(10, viralCount * 3);
+    if (objective === "engagement") score += Math?.min(10, emotionalCount * 3);
+    if (objective === "awareness") score += Math?.min(8, positiveCount * 2);
 
-    return Math.max(0, Math.min(100, score));
+    return Math?.max(0, Math?.min(100, score));
   }
 
   private scoreBrandAlignment(
@@ -1281,9 +1281,9 @@ class ContentQualityPipeline {
   ): number {
     let score = 70;
 
-    if (context.brandVoice) {
-      const emojiRegex = new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu");
-      const emojiCount = (content.match(emojiRegex) || []).length;
+    if (context?.brandVoice) {
+      const _emojiRegex = new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu");
+      const _emojiCount = (content?.match(emojiRegex) || []).length;
 
       const expectedEmojis: Record<string, number> = {
         none: 0,
@@ -1292,13 +1292,13 @@ class ContentQualityPipeline {
         heavy: 5,
       };
 
-      const expected = expectedEmojis[context.brandVoice.emojiUsage] || 2;
-      const emojiDiff = Math.abs(emojiCount - expected);
+      const _expected = expectedEmojis[context?.brandVoice.emojiUsage] || 2;
+      const _emojiDiff = Math?.abs(emojiCount - expected);
       score -= emojiDiff * 3;
 
       if (
-        context.brandVoice.commonPhrases.some((phrase) =>
-          content.toLowerCase().includes(phrase.toLowerCase()),
+        context?.brandVoice.commonPhrases?.some((phrase) =>
+          content?.toLowerCase().includes(phrase?.toLowerCase()),
         )
       ) {
         score += 10;
@@ -1306,14 +1306,14 @@ class ContentQualityPipeline {
     }
 
     if (
-      context.avoidTopics?.some((topic) =>
-        content.toLowerCase().includes(topic.toLowerCase()),
+      context?.avoidTopics?.some((topic) =>
+        content?.toLowerCase().includes(topic?.toLowerCase()),
       )
     ) {
       score -= 30;
     }
 
-    return Math.max(0, Math.min(100, score));
+    return Math?.max(0, Math?.min(100, score));
   }
 
   private predictEngagement(
@@ -1322,41 +1322,41 @@ class ContentQualityPipeline {
     context: ContentContext,
   ): number {
     let score = 55;
-    const lower = content.toLowerCase();
-    headline.toLowerCase();
+    const _lower = content?.toLowerCase();
+    headline?.toLowerCase();
 
     // ── Hook quality ──────────────────────────────────────────────────────────
-    if (headline.match(/^(🔥|💥|⚡|🚀|🚨|👀|💀|🤯|💯)/)) score += 7;
+    if (headline?.match(/^(🔥|💥|⚡|🚀|🚨|👀|💀|🤯|💯)/)) score += 7;
     if (/\?$/.test(headline)) score += 6; // Question hooks
     if (/^[A-Z]{2,}/.test(headline)) score += 4; // Caps-led hooks
-    if (/nobody (told|talks|shows)/i.test(headline)) score += 9; // Curiosity gap
-    if (/unpopular opinion|hot take|real talk/i.test(headline)) score += 8; // Opinion hook
-    if (/pov:|when you|tell me why/i.test(headline)) score += 7; // Relatable hook
+    if (/nobody (told|talks|shows)/i?.test(headline)) score += 9; // Curiosity gap
+    if (/unpopular opinion|hot take|real talk/i?.test(headline)) score += 8; // Opinion hook
+    if (/pov:|when you|tell me why/i?.test(headline)) score += 7; // Relatable hook
 
     // ── Engagement triggers in body ────────────────────────────────────────
-    if (lower.includes("?")) score += 8; // Questions drive comments
-    if (lower.match(/\btag\b|\bshare\b|\bcomment\b|\bdrop\b/i)) score += 7; // Action words
-    if (lower.match(/\b(you|your|yours)\b/)) score += 5; // Direct address
-    if (lower.match(/\bi\b.*\bfeel\b|\bwhen i\b|\bi wrote\b/i)) score += 6; // Personal narrative
+    if (lower?.includes("?")) score += 8; // Questions drive comments
+    if (lower?.match(/\btag\b|\bshare\b|\bcomment\b|\bdrop\b/i)) score += 7; // Action words
+    if (lower?.match(/\b(you|your|yours)\b/)) score += 5; // Direct address
+    if (lower?.match(/\bi\b.*\bfeel\b|\bwhen i\b|\bi wrote\b/i)) score += 6; // Personal narrative
 
     // ── Self-identification phrases ─────────────────────────────────────────
-    if (lower.match(/for (the|everyone|the artists|the people|anyone)/i))
+    if (lower?.match(/for (the|everyone|the artists|the people|anyone)/i))
       score += 7;
-    if (lower.match(/if you'?ve? (ever|always)|if you believe/i)) score += 6;
+    if (lower?.match(/if you'?ve? (ever|always)|if you believe/i)) score += 6;
 
     // ── Specificity signals (concrete > generic) ───────────────────────────
     if (/\d+/.test(content)) score += 5; // Numbers = specificity
-    if (/\d+(k|m)\s+(streams|plays|followers)/i.test(lower)) score += 8; // Stream counts
-    if (/(3am|2am|midnight|late night|studio at)/i.test(lower)) score += 6; // Time specifics
+    if (/\d+(k|m)\s+(streams|plays|followers)/i?.test(lower)) score += 8; // Stream counts
+    if (/(3am|2am|midnight|late night|studio at)/i?.test(lower)) score += 6; // Time specifics
 
     // ── Emotional arc signals ──────────────────────────────────────────────
-    const hasHook = HOOK_PATTERNS.some((p) => p.test(headline));
-    const hasTension =
-      /almost|thought about|wasn't sure|hard (day|time|moment)|darkest/i.test(
+    const _hasHook = HOOK_PATTERNS?.some((p) => p?.test(headline));
+    const _hasTension =
+      /almost|thought about|wasn't sure|hard (day|time|moment)|darkest/i?.test(
         lower,
       );
-    const hasResolution =
-      /but then|then it (clicked|hit)|finally|now i (know|realize|see)/i.test(
+    const _hasResolution =
+      /but then|then it (clicked|hit)|finally|now i (know|realize|see)/i?.test(
         lower,
       );
     if (hasHook && hasTension) score += 8; // Hook + tension = high engagement
@@ -1364,107 +1364,107 @@ class ContentQualityPipeline {
 
     // ── Content formula detection ──────────────────────────────────────────
     let formulaBoost = 0;
-    for (const formula of Object.values(CONTENT_FORMULA_LIBRARY)) {
-      if (formula.bestFor.includes(context.objective)) {
-        const formulaMatch = formula.hookSignals.some(
-          (sig) => sig.test(headline) || sig.test(lower),
+    for (const formula of Object?.values(CONTENT_FORMULA_LIBRARY)) {
+      if (formula?.bestFor.includes(context?.objective)) {
+        const _formulaMatch = formula?.hookSignals.some(
+          (sig) => sig?.test(headline) || sig?.test(lower),
         );
         if (formulaMatch) {
-          formulaBoost = Math.max(formulaBoost, formula.engagementBoost);
+          formulaBoost = Math?.max(formulaBoost, formula?.engagementBoost);
         }
       }
     }
-    score += Math.min(18, formulaBoost);
+    score += Math?.min(18, formulaBoost);
 
     // ── Psychological trigger layer detection ──────────────────────────────
-    const triggerLayers = PSYCHOLOGICAL_TRIGGER_LAYERS[context.objective] || [];
+    const _triggerLayers = PSYCHOLOGICAL_TRIGGER_LAYERS[context?.objective] || [];
     for (const layer of triggerLayers) {
-      const matchCount = layer.triggers.filter((t) => lower.includes(t)).length;
+      const _matchCount = layer?.triggers.filter((t) => lower?.includes(t)).length;
       if (matchCount >= 2) {
-        score += layer.scoreBoost;
+        score += layer?.scoreBoost;
         break;
       } // First combo match wins
     }
 
     // ── Release phase multiplier ───────────────────────────────────────────
-    const phaseMultiplier =
-      RELEASE_PHASE_MULTIPLIERS[context.releasePhase || "sustain"] || 1.0;
+    const _phaseMultiplier =
+      RELEASE_PHASE_MULTIPLIERS[context?.releasePhase || "sustain"] || 1?.0;
     score *= phaseMultiplier;
 
     // ── Objective multiplier ───────────────────────────────────────────────
     const objectiveMultipliers: Record<string, number> = {
-      awareness: 0.92,
-      engagement: 1.12,
-      conversions: 0.88,
-      viral: 1.2,
+      awareness: 0?.92,
+      engagement: 1?.12,
+      conversions: 0?.88,
+      viral: 1?.2,
     };
-    score *= objectiveMultipliers[context.objective] || 1;
+    score *= objectiveMultipliers[context?.objective] || 1;
 
     // ── Content length sweet spot ──────────────────────────────────────────
-    if (content.length > 80 && content.length < 350) score += 8;
-    else if (content.length > 50 && content.length < 80) score += 5;
-    else if (content.length > 350 && content.length < 600) score += 4;
+    if (content?.length > 80 && content?.length < 350) score += 8;
+    else if (content?.length > 50 && content?.length < 80) score += 5;
+    else if (content?.length > 350 && content?.length < 600) score += 4;
 
-    return Math.max(0, Math.min(100, Math.round(score)));
+    return Math?.max(0, Math?.min(100, Math?.round(score)));
   }
 
   private scoreSpecificity(content: string, headline: string): number {
     let score = 45;
-    const full = `${headline} ${content}`.toLowerCase();
+    const _full = `${headline} ${content}`.toLowerCase();
 
     // Numbers signal specificity (research: +36% CTR on numeric hooks)
-    const numbers = (full.match(/\d+/g) || []).length;
-    score += Math.min(20, numbers * 5);
+    const _numbers = (full?.match(/\d+/g) || []).length;
+    score += Math?.min(20, numbers * 5);
 
     // Time-specific references
     if (
-      /(3am|2am|midnight|at \d+(am|pm)|last night|this morning|tonight)/i.test(
+      /(3am|2am|midnight|at \d+(am|pm)|last night|this morning|tonight)/i?.test(
         full,
       )
     )
       score += 8;
 
     // Specific music industry metrics
-    if (/\d+(k|m)\s*(streams?|plays?|followers?|listeners?)/i.test(full))
+    if (/\d+(k|m)\s*(streams?|plays?|followers?|listeners?)/i?.test(full))
       score += 10;
-    if (/(charted|playlisted|placed|curated|certified)/i.test(full)) score += 8;
+    if (/(charted|playlisted|placed|curated|certified)/i?.test(full)) score += 8;
 
     // Named song/album titles (quoted text)
     if (/"[^"]{2,}"/.test(full) || /\u201c[^\u201d]{2,}\u201d/.test(full))
       score += 8;
 
     // Concrete sensory/location details
-    if (/(studio|booth|mic|headphones|board|session)/i.test(full)) score += 5;
-    if (/(wrote this|started with|began as|voice memo|track \d+)/i.test(full))
+    if (/(studio|booth|mic|headphones|board|session)/i?.test(full)) score += 5;
+    if (/(wrote this|started with|began as|voice memo|track \d+)/i?.test(full))
       score += 6;
 
     // Generic penalty — catch-all generic phrases reduce specificity
-    const genericPhrases = [
+    const _genericPhrases = [
       "new music",
       "check it out",
       "excited to share",
       "something special",
       "hard work",
     ];
-    const genericMatches = genericPhrases.filter((p) =>
-      full.includes(p),
+    const _genericMatches = genericPhrases?.filter((p) =>
+      full?.includes(p),
     ).length;
     score -= genericMatches * 4;
 
-    return Math.max(0, Math.min(100, score));
+    return Math?.max(0, Math?.min(100, score));
   }
 
   private scoreEmotionalArc(content: string, headline: string): number {
     let score = 40;
-    const full = `${headline} ${content}`.toLowerCase();
+    const _full = `${headline} ${content}`.toLowerCase();
 
     // Hook element (emotional entry point)
-    const hookPresent = HOOK_PATTERNS.some((p) => p.test(headline));
+    const _hookPresent = HOOK_PATTERNS?.some((p) => p?.test(headline));
     if (hookPresent) score += 15;
 
     // Context setting (why should I care)
     if (
-      /(this (track|song|record|single)|when (i|we)|the (story|moment|night|day))/i.test(
+      /(this (track|song|record|single)|when (i|we)|the (story|moment|night|day))/i?.test(
         full,
       )
     )
@@ -1472,7 +1472,7 @@ class ContentQualityPipeline {
 
     // Tension element (conflict/struggle — creates narrative pull)
     if (
-      /(almost|nearly|didn't think|wasn't sure|hard (to|day|time)|struggle|darkest|almost quit)/i.test(
+      /(almost|nearly|didn't think|wasn't sure|hard (to|day|time)|struggle|darkest|almost quit)/i?.test(
         full,
       )
     )
@@ -1480,26 +1480,26 @@ class ContentQualityPipeline {
 
     // Resolution (payoff — releases narrative tension)
     if (
-      /(finally|clicked|realized|turned out|ended up|now it's|glad i did|worth it)/i.test(
+      /(finally|clicked|realized|turned out|ended up|now it's|glad i did|worth it)/i?.test(
         full,
       )
     )
       score += 10;
 
     // CTA as call-to-action close
-    if (/(link in bio|stream|listen|share|tell me|drop a|comment)/i.test(full))
+    if (/(link in bio|stream|listen|share|tell me|drop a|comment)/i?.test(full))
       score += 8;
 
     // Full arc bonus (all 5 elements present)
-    const hasAll =
+    const _hasAll =
       hookPresent &&
-      /(this (track|song|record)|when i|the story)/i.test(full) &&
-      /(almost|struggle|darkest)/i.test(full) &&
-      /(finally|clicked|worth it)/i.test(full) &&
-      /(stream|share|comment)/i.test(full);
+      /(this (track|song|record)|when i|the story)/i?.test(full) &&
+      /(almost|struggle|darkest)/i?.test(full) &&
+      /(finally|clicked|worth it)/i?.test(full) &&
+      /(stream|share|comment)/i?.test(full);
     if (hasAll) score += 15;
 
-    return Math.max(0, Math.min(100, score));
+    return Math?.max(0, Math?.min(100, score));
   }
 
   /**
@@ -1522,10 +1522,10 @@ class ContentQualityPipeline {
     headline: string,
   ): number {
     let score = 50;
-    const full = `${headline} ${content}`.toLowerCase();
+    const _full = `${headline} ${content}`.toLowerCase();
 
     // ── Industry-native language (real artists sound like this) ───────────────
-    const industryNative = [
+    const _industryNative = [
       "bounce session",
       "tracking",
       "vocal take",
@@ -1563,13 +1563,13 @@ class ContentQualityPipeline {
       "in the booth",
       "rewrote the bridge",
     ];
-    const industryMatches = industryNative.filter((w) =>
-      full.includes(w),
+    const _industryMatches = industryNative?.filter((w) =>
+      full?.includes(w),
     ).length;
-    score += Math.min(20, industryMatches * 6);
+    score += Math?.min(20, industryMatches * 6);
 
     // ── Corporate PR fluff penalty (no real artist talks like this) ───────────
-    const fluffPhrases = [
+    const _fluffPhrases = [
       "i'm excited to announce",
       "i am thrilled to share",
       "please check out",
@@ -1589,18 +1589,18 @@ class ContentQualityPipeline {
       "pursuing my dreams",
       "working hard every day",
     ];
-    const fluffMatches = fluffPhrases.filter((p) => full.includes(p)).length;
+    const _fluffMatches = fluffPhrases?.filter((p) => full?.includes(p)).length;
     score -= fluffMatches * 9;
 
     // ── First-person concrete storytelling ────────────────────────────────────
     if (
-      /(i (wrote|started|recorded|spent|stayed|finished|played|scrapped|rewrote)|we (recorded|started|finished|tracked))/i.test(
+      /(i (wrote|started|recorded|spent|stayed|finished|played|scrapped|rewrote)|we (recorded|started|finished|tracked))/i?.test(
         full,
       )
     )
       score += 10;
     if (
-      /(track \d+|verse \d+|bar \d+|session \d+|take \d+|chapter \d+)/i.test(
+      /(track \d+|verse \d+|bar \d+|session \d+|take \d+|chapter \d+)/i?.test(
         full,
       )
     )
@@ -1608,17 +1608,17 @@ class ContentQualityPipeline {
 
     // ── Authentic emotion signals (specific > generic positivity) ─────────────
     if (
-      /(nervous|anxious|relieved|scared to post|wasn't ready|almost deleted|didn't think anyone)/i.test(
+      /(nervous|anxious|relieved|scared to post|wasn't ready|almost deleted|didn't think anyone)/i?.test(
         full,
       )
     )
       score += 9;
 
     // ── Veo-class sentence density: punchy, image-rich, not padded ────────────
-    const sentences = full.split(/[.!?]+/).filter((s) => s.trim().length > 3);
-    const avgLen = sentences.length
-      ? sentences.reduce((s, sen) => s + sen.trim().length, 0) /
-        sentences.length
+    const _sentences = full?.split(/[.!?]+/).filter((s) => s?.trim().length > 3);
+    const _avgLen = sentences?.length
+      ? sentences?.reduce((s, sen) => s + sen?.trim().length, 0) /
+        sentences?.length
       : 0;
     if (avgLen > 15 && avgLen < 80)
       score += 8; // punchy like Veo
@@ -1626,7 +1626,7 @@ class ContentQualityPipeline {
       score += 3; // acceptable
     else if (avgLen >= 140) score -= 6; // too padded
 
-    return Math.max(0, Math.min(100, score));
+    return Math?.max(0, Math?.min(100, score));
   }
 
   async selectBestVariant(
@@ -1636,40 +1636,40 @@ class ContentQualityPipeline {
     // Veo gate + Caffeine Mode: floor lowers under deadline pressure, but urgency
     // content already scored higher in scoreContent — so only urgency-rich posts
     // benefit from the relief.  Absolute floor is VEO_PRESSURE_FLOOR (65).
-    const effectiveMin = pressureAdjustedMinScore(minScore);
+    const _effectiveMin = pressureAdjustedMinScore(minScore);
     if (effectiveMin !== minScore && _currentPressure > 0) {
-      logger.info(
+      logger?.info(
         `☕ [CaffeineMode] Veo gate: ${minScore} → ${effectiveMin}` +
-          ` (pressure: ${_currentPressure.toFixed(2)}, floor: ${VEO_PRESSURE_FLOOR})`,
+          ` (pressure: ${_currentPressure?.toFixed(2)}, floor: ${VEO_PRESSURE_FLOOR})`,
       );
     }
 
-    const validVariants = variants.filter(
+    const _validVariants = variants?.filter(
       (v) =>
-        v.scores.overall >= effectiveMin && v.platformOptimizations.isValid,
+        v?.scores.overall >= effectiveMin && v?.platformOptimizations.isValid,
     );
 
-    if (validVariants.length === 0) {
-      const best = variants.sort(
-        (a, b) => b.scores.overall - a.scores.overall,
+    if (validVariants?.length === 0) {
+      const _best = variants?.sort(
+        (a, b) => b?.scores.overall - a?.scores.overall,
       )[0];
       // Fallback floor: VEO_PRESSURE_FLOOR — never publish below 87% of Veo gate
-      if (best && best.scores.overall >= VEO_PRESSURE_FLOOR) {
-        logger.info(
-          `[VeoGate] Fallback: best available ${best.scores.overall.toFixed(1)} passes ` +
-            `VEO_PRESSURE_FLOOR (${VEO_PRESSURE_FLOOR}). Issues: ${best.platformOptimizations.issues.join(", ") || "none"}`,
+      if (best && best?.scores.overall >= VEO_PRESSURE_FLOOR) {
+        logger?.info(
+          `[VeoGate] Fallback: best available ${best?.scores.overall?.toFixed(1)} passes ` +
+            `VEO_PRESSURE_FLOOR (${VEO_PRESSURE_FLOOR}). Issues: ${best?.platformOptimizations.issues?.join(", ") || "none"}`,
         );
         return best;
       }
-      logger.info(
-        `[VeoGate] All ${variants.length} variant(s) below ${VEO_PRESSURE_FLOOR} — content rejected. ` +
-          `Best score: ${best?.scores.overall.toFixed(1) ?? "N/A"}`,
+      logger?.info(
+        `[VeoGate] All ${variants?.length} variant(s) below ${VEO_PRESSURE_FLOOR} — content rejected. ` +
+          `Best score: ${best?.scores?.overall.toFixed(1) ?? "N/A"}`,
       );
       return null;
     }
 
-    logger.info(
-      `[VeoGate] ✅ Passed — score: ${validVariants[0].scores.overall.toFixed(1)} / gate: ${effectiveMin}`,
+    logger?.info(
+      `[VeoGate] ✅ Passed — score: ${validVariants[0].scores?.overall.toFixed(1)} / gate: ${effectiveMin}`,
     );
     return validVariants[0];
   }
@@ -1684,17 +1684,17 @@ class ContentQualityPipeline {
     variants: ContentVariant[];
     context: ContentContext;
   }> {
-    const context = await this.buildContext(userId, baseContext);
+    const _context = await this?.buildContext(userId, baseContext);
     // Caffeine Mode: add proportional extra variants under deadline pressure.
     // With a 30-variant base, extras are 20% / 33% / 50% more to meaningfully
     // increase the quality hit probability without doubling compute.
-    const pressureExtra =
-      _currentPressure > 1.5
-        ? Math.ceil(variantCount * 0.5) // critical: +50 % (e.g. 30 → 45)
-        : _currentPressure > 0.5
-          ? Math.ceil(variantCount * 0.33) // moderate: +33 % (e.g. 30 → 40)
+    const _pressureExtra =
+      _currentPressure > 1?.5
+        ? Math?.ceil(variantCount * 0?.5) // critical: +50 % (e?.g. 30 → 45)
+        : _currentPressure > 0?.5
+          ? Math?.ceil(variantCount * 0?.33) // moderate: +33 % (e?.g. 30 → 40)
           : 0;
-    const variants = await this.generateVariants(
+    const _variants = await this?.generateVariants(
       context,
       variantCount + pressureExtra,
     );
@@ -1705,33 +1705,33 @@ class ContentQualityPipeline {
     // local score (65%) to preserve the Veo-calibrated rubric while benefiting
     // from MaxCore's trained weights.  If MaxCore is offline the local score
     // stands unchanged — no silent quality degradation.
-    const topCandidates = [...variants]
-      .sort((a, b) => b.scores.overall - a.scores.overall)
+    const _topCandidates = [...variants]
+      .sort((a, b) => b?.scores.overall - a?.scores.overall)
       .slice(0, 3);
 
-    const maxcoreAvailable = await MaxCoreAIClient.isAvailable();
+    const _maxcoreAvailable = await MaxCoreAIClient?.isAvailable();
     if (maxcoreAvailable) {
-      await Promise.all(
-        topCandidates.map(async (variant) => {
+      await Promise?.all(
+        topCandidates?.map(async (variant) => {
           try {
-            const result = await MaxCoreAIClient.infer<{
+            const _result = await MaxCoreAIClient?.infer<{
               score: number;
               feedback?: string;
             }>("/api/content/score", {
-              text: `${variant.headline}\n\n${variant.content}`,
-              platform: context.platform,
-              cta: variant.callToAction,
-              hashtags: variant.hashtags,
+              text: `${variant?.headline}\n\n${variant?.content}`,
+              platform: context?.platform,
+              cta: variant?.callToAction,
+              hashtags: variant?.hashtags,
               userId,
             });
             if (result?.score !== undefined) {
-              const mcScore = Math.min(100, Math.max(0, result.score));
-              const blended = variant.scores.overall * 0.65 + mcScore * 0.35;
-              logger.debug(
-                `[MaxCore] Scored variant ${variant.id}: local=${variant.scores.overall.toFixed(1)} ` +
-                  `maxcore=${mcScore.toFixed(1)} blended=${blended.toFixed(1)}`,
+              const _mcScore = Math?.min(100, Math?.max(0, result?.score));
+              const _blended = variant?.scores.overall * 0?.65 + mcScore * 0?.35;
+              logger?.debug(
+                `[MaxCore] Scored variant ${variant?.id}: local=${variant?.scores.overall?.toFixed(1)} ` +
+                  `maxcore=${mcScore?.toFixed(1)} blended=${blended?.toFixed(1)}`,
               );
-              variant.scores.overall = blended;
+              variant?.scores.overall = blended;
             }
           } catch {
             /* MaxCore timeout — local score unchanged */
@@ -1740,22 +1740,22 @@ class ContentQualityPipeline {
       );
 
       // Re-sort after MaxCore blend
-      variants.sort((a, b) => b.scores.overall - a.scores.overall);
+      variants?.sort((a, b) => b?.scores.overall - a?.scores.overall);
     }
 
-    const selected = await this.selectBestVariant(variants, minScore);
+    const _selected = await this?.selectBestVariant(variants, minScore);
 
-    logger.info(
-      `[VeoGate] Generated ${variants.length} variant(s) (base: ${variantCount} + pressure extra: ${pressureExtra}` +
+    logger?.info(
+      `[VeoGate] Generated ${variants?.length} variant(s) (base: ${variantCount} + pressure extra: ${pressureExtra}` +
         `${maxcoreAvailable ? " + MaxCore blend" : ""}), ` +
-        `selected: ${selected?.id || "none"} (score: ${selected?.scores.overall.toFixed(1) || "N/A"} / gate: ${VEO_QUALITY_GATE})`,
+        `selected: ${selected?.id || "none"} (score: ${selected?.scores?.overall.toFixed(1) || "N/A"} / gate: ${VEO_QUALITY_GATE})`,
     );
 
     return { selected, variants, context };
   }
 
   /**
-   * Generate content using Advanced Social AI (GPT-5.2 Level)
+   * Generate content using Advanced Social AI (GPT-5?.2 Level)
    * Provides deep semantic understanding, viral pattern analysis,
    * and multi-dimensional content scoring
    */
@@ -1775,94 +1775,94 @@ class ContentQualityPipeline {
       improvements: string[];
     };
   }> {
-    const context = await this.buildContext(userId, baseContext);
+    const _context = await this?.buildContext(userId, baseContext);
 
     try {
       const advancedRequest: AdvancedContentRequest = {
         userId,
-        topic: context.topic,
-        platforms: [context.platform],
-        objective: context.objective,
-        tone: context.tone as Record<string, unknown>,
-        targetAudience: context.targetAudience,
-        genre: context.genre,
-        artistName: context.artistName,
-        contentType: this.mapObjectiveToContentType(context.objective),
+        topic: context?.topic,
+        platforms: [context?.platform],
+        objective: context?.objective,
+        tone: context?.tone as Record<string, unknown>,
+        targetAudience: context?.targetAudience,
+        genre: context?.genre,
+        artistName: context?.artistName,
+        contentType: this?.mapObjectiveToContentType(context?.objective),
         includeHashtags: true,
         includeEmojis: true,
         variantCount,
       };
 
-      const advancedResult =
-        await advancedSocialAIService.generateAdvancedContent(advancedRequest);
+      const _advancedResult =
+        await advancedSocialAIService?.generateAdvancedContent(advancedRequest);
 
-      const variants: ContentVariant[] = advancedResult.variants.map((v, _i) => {
+      const variants: ContentVariant[] = advancedResult?.variants.map((v, _i) => {
         // Apply algorithm signal optimization and run full pipeline scoring
-        const body = v.content.split("\n\n")[1] || v.content;
-        const optimised = this.applyAlgorithmSignalOptimization(
-          v.headline,
+        const _body = v?.content.split("\n\n")[1] || v?.content;
+        const _optimised = this?.applyAlgorithmSignalOptimization(
+          v?.headline,
           body,
-          v.cta,
-          context.platform,
+          v?.cta,
+          context?.platform,
         );
-        const platformOpt = this.validatePlatformConstraints(
-          `${optimised.headline}\n\n${optimised.body}`,
-          v.hashtags,
-          context.platform,
+        const _platformOpt = this?.validatePlatformConstraints(
+          `${optimised?.headline}\n\n${optimised?.body}`,
+          v?.hashtags,
+          context?.platform,
         );
-        const scores = this.scoreContent(
-          `${optimised.headline}\n\n${optimised.body}`,
-          optimised.headline,
-          optimised.cta,
+        const _scores = this?.scoreContent(
+          `${optimised?.headline}\n\n${optimised?.body}`,
+          optimised?.headline,
+          optimised?.cta,
           context,
           platformOpt,
         );
         return {
-          id: v.id,
-          content: optimised.body,
-          headline: optimised.headline,
-          hashtags: v.hashtags,
-          callToAction: optimised.cta,
+          id: v?.id,
+          content: optimised?.body,
+          headline: optimised?.headline,
+          hashtags: v?.hashtags,
+          callToAction: optimised?.cta,
           scores,
           platformOptimizations: platformOpt,
         };
       });
 
       // Primary variant — apply full scoring pipeline too
-      const primaryBody = advancedResult.primary.body;
-      const primaryOptimised = this.applyAlgorithmSignalOptimization(
-        advancedResult.primary.headline,
+      const _primaryBody = advancedResult?.primary.body;
+      const _primaryOptimised = this?.applyAlgorithmSignalOptimization(
+        advancedResult?.primary.headline,
         primaryBody,
-        advancedResult.primary.callToAction,
-        context.platform,
+        advancedResult?.primary.callToAction,
+        context?.platform,
       );
-      const primaryPlatformOpt = this.validatePlatformConstraints(
-        `${primaryOptimised.headline}\n\n${primaryOptimised.body}`,
-        advancedResult.primary.hashtags,
-        context.platform,
+      const _primaryPlatformOpt = this?.validatePlatformConstraints(
+        `${primaryOptimised?.headline}\n\n${primaryOptimised?.body}`,
+        advancedResult?.primary.hashtags,
+        context?.platform,
       );
-      const primaryScores = this.scoreContent(
-        `${primaryOptimised.headline}\n\n${primaryOptimised.body}`,
-        primaryOptimised.headline,
-        primaryOptimised.cta,
+      const _primaryScores = this?.scoreContent(
+        `${primaryOptimised?.headline}\n\n${primaryOptimised?.body}`,
+        primaryOptimised?.headline,
+        primaryOptimised?.cta,
         context,
         primaryPlatformOpt,
       );
-      variants.push({
+      variants?.push({
         id: "advanced_primary",
-        content: primaryOptimised.body,
-        headline: primaryOptimised.headline,
-        hashtags: advancedResult.primary.hashtags,
-        callToAction: primaryOptimised.cta,
+        content: primaryOptimised?.body,
+        headline: primaryOptimised?.headline,
+        hashtags: advancedResult?.primary.hashtags,
+        callToAction: primaryOptimised?.cta,
         scores: primaryScores,
         platformOptimizations: primaryPlatformOpt,
       });
 
-      variants.sort((a, b) => b.scores.overall - a.scores.overall);
-      const selected = variants[0] || null;
+      variants?.sort((a, b) => b?.scores.overall - a?.scores.overall);
+      const _selected = variants[0] || null;
 
-      logger.info(
-        `[AdvancedAI] Generated ${variants.length} variants with GPT-5.2 level AI, best score: ${selected?.scores.overall.toFixed(1)}`,
+      logger?.info(
+        `[AdvancedAI] Generated ${variants?.length} variants with GPT-5?.2 level AI, best score: ${selected?.scores?.overall.toFixed(1)}`,
       );
 
       return {
@@ -1870,23 +1870,23 @@ class ContentQualityPipeline {
         variants,
         context,
         advancedInsights: {
-          viralPotential: advancedResult.viralPotential.score,
-          audienceResonance: advancedResult.audienceResonance.resonanceScore,
+          viralPotential: advancedResult?.viralPotential.score,
+          audienceResonance: advancedResult?.audienceResonance.resonanceScore,
           optimalTiming: {
-            day: advancedResult.optimalTiming.bestDays[0] || 3,
-            hour: advancedResult.optimalTiming.bestHours[0] || 12,
+            day: advancedResult?.optimalTiming.bestDays[0] || 3,
+            hour: advancedResult?.optimalTiming.bestHours[0] || 12,
           },
-          mediaRecommendation: advancedResult.mediaGuidance.recommendedType,
-          improvements: advancedResult.insights
-            .filter((i) => i.type === "improvement")
-            .map((i) => i.message),
+          mediaRecommendation: advancedResult?.mediaGuidance.recommendedType,
+          improvements: advancedResult?.insights
+            .filter((i) => i?.type === "improvement")
+            .map((i) => i?.message),
         },
       };
     } catch (error) {
-      const errMsg = (error as Error)?.message ?? String(error);
+      const _errMsg = (error as Error)?.message ?? String(error);
       // MaxCore is always running — a failure here means it was temporarily
       // busy; the caller's local fallback handles it.  Log at INFO.
-      logger.info(
+      logger?.info(
         `[AdvancedAI] Content pipeline used local fallback: ${errMsg}`,
       );
       throw error;
@@ -1918,4 +1918,4 @@ class ContentQualityPipeline {
   }
 }
 
-export const contentQualityPipeline = new ContentQualityPipeline();
+export const _contentQualityPipeline = new ContentQualityPipeline();

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { createHardenedUpload } from "../middleware/uploadHandler?.js";
 import path from "path";
 import crypto from "crypto";
 import fs from "fs";
@@ -10,9 +10,9 @@ import { discoveryAlgorithmService } from "../services/discoveryAlgorithmService
 import { marketplaceService } from "../services/marketplaceService";
 import { storage } from "../storage";
 import { storageService } from "../services/storageService";
-import { storeUploadedFile } from "../middleware/uploadHandler.js";
+import { storeUploadedFile } from "../middleware/uploadHandler?.js";
 import { notificationService } from "../services/notificationService";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { db } from "../db";
 import {
   orders,
@@ -29,15 +29,15 @@ import {
   beatInteractions,
 } from "@shared/schema";
 import { eq, and, gte, sql, desc, asc, or, inArray } from "drizzle-orm";
-import { getBaseUrl } from "../config/defaults.js";
-import { requireAuth } from "../middleware/auth.js";
-import { processUploadedBeat } from "../services/audioSeparatorService.js";
-import { distributedCache } from "../infrastructure/distributedCache.js";
-import { pythonAIService } from "../services/pythonAIService.js";
+import { getBaseUrl } from "../config/defaults?.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { processUploadedBeat } from "../services/audioSeparatorService?.js";
+import { distributedCache } from "../infrastructure/distributedCache?.js";
+import { pythonAIService } from "../services/pythonAIService?.js";
 
-const router = Router();
+const _router = Router();
 
-const ALLOWED_AUDIO_MIMES = new Set([
+const _ALLOWED_AUDIO_MIMES = new Set([
   "audio/mpeg",
   "audio/mp3",
   "audio/wav",
@@ -55,33 +55,33 @@ const ALLOWED_AUDIO_MIMES = new Set([
   "audio/x-ms-wma",
   "audio/opus",
 ]);
-const ALLOWED_IMAGE_MIMES = new Set([
+const _ALLOWED_IMAGE_MIMES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
 ]);
 
-const upload = createHardenedUpload({
+const _upload = createHardenedUpload({
   maxFileSize: 200 * 1024 * 1024,
   maxFiles: 5,
   perFieldMimes: {
-    audioFile: Array.from(ALLOWED_AUDIO_MIMES),
-    coverArt: Array.from(ALLOWED_IMAGE_MIMES),
+    audioFile: Array?.from(ALLOWED_AUDIO_MIMES),
+    coverArt: Array?.from(ALLOWED_IMAGE_MIMES),
   },
   label: "marketplace upload",
 });
 
-const purchaseSchema = z.object({
-  beatId: z.string().min(1, "beatId is required"),
-  licenseType: z.enum(["basic", "premium", "unlimited", "exclusive"], {
+const _purchaseSchema = z?.object({
+  beatId: z?.string().min(1, "beatId is required"),
+  licenseType: z?.enum(["basic", "premium", "unlimited", "exclusive"], {
     required_error: "licenseType is required",
   }),
-  useEscrow: z.boolean().optional(),
+  useEscrow: z?.boolean().optional(),
 });
 
-const licenseTemplateSchema = z.object({
-  name: z.string().min(1).max(100),
+const _licenseTemplateSchema = z?.object({
+  name: z?.string().min(1).max(100),
   type: z
     .enum([
       "basic",
@@ -92,22 +92,22 @@ const licenseTemplateSchema = z.object({
       "custom",
     ])
     .optional(),
-  priceCents: z.number().int().min(0).optional(),
-  streams: z.union([z.string(), z.number()]).optional(),
-  copies: z.union([z.string(), z.number()]).optional(),
-  musicVideos: z.union([z.string(), z.number()]).optional(),
-  duration: z.string().max(50).optional(),
-  allowsBroadcast: z.boolean().optional(),
-  allowsProfit: z.boolean().optional(),
-  allowsSync: z.boolean().optional(),
-  fileFormats: z.string().max(100).optional(),
-  isActive: z.boolean().optional(),
-  sortOrder: z.number().int().optional(),
+  priceCents: z?.number().int().min(0).optional(),
+  streams: z?.union([z?.string(), z?.number()]).optional(),
+  copies: z?.union([z?.string(), z?.number()]).optional(),
+  musicVideos: z?.union([z?.string(), z?.number()]).optional(),
+  duration: z?.string().max(50).optional(),
+  allowsBroadcast: z?.boolean().optional(),
+  allowsProfit: z?.boolean().optional(),
+  allowsSync: z?.boolean().optional(),
+  fileFormats: z?.string().max(100).optional(),
+  isActive: z?.boolean().optional(),
+  sortOrder: z?.number().int().optional(),
 });
 
-const interactionSchema = z.object({
-  beatId: z.string().min(1, "beatId is required"),
-  interactionType: z.enum(
+const _interactionSchema = z?.object({
+  beatId: z?.string().min(1, "beatId is required"),
+  interactionType: z?.enum(
     [
       "play",
       "like",
@@ -122,39 +122,39 @@ const interactionSchema = z.object({
       required_error: "interactionType is required",
     },
   ),
-  playDurationSeconds: z.number().min(0).optional(),
-  completionRate: z.number().min(0).max(1).optional(),
-  source: z.string().max(50).optional(),
-  sessionId: z.string().max(100).optional(),
+  playDurationSeconds: z?.number().min(0).optional(),
+  completionRate: z?.number().min(0).max(1).optional(),
+  source: z?.string().max(50).optional(),
+  sessionId: z?.string().max(100).optional(),
 });
 
-const contractSchema = z.object({
-  name: z.string().min(1).max(200),
-  content: z.string().min(1),
-  description: z.string().max(500).optional(),
-  category: z.string().max(50).optional(),
-  variables: z.array(z.string()).optional(),
+const _contractSchema = z?.object({
+  name: z?.string().min(1).max(200),
+  content: z?.string().min(1),
+  description: z?.string().max(500).optional(),
+  category: z?.string().max(50).optional(),
+  variables: z?.array(z?.string()).optional(),
 });
 
-const affiliateSchema = z.object({
-  name: z.string().min(1).max(100),
-  email: z.string().email(),
-  commissionRate: z.number().min(0).max(100).optional(),
+const _affiliateSchema = z?.object({
+  name: z?.string().min(1).max(100),
+  email: z?.string().email(),
+  commissionRate: z?.number().min(0).max(100).optional(),
 });
 
-const collaborationSchema = z.object({
-  toUserId: z.string().min(1, "toUserId is required"),
-  type: z.string().min(1, "type is required"),
-  beatId: z.string().optional(),
-  terms: z.string().max(2000).optional(),
-  splitPercentage: z.number().min(0).max(100).optional(),
-  budget: z.number().min(0).optional(),
-  message: z.string().max(1000).optional(),
+const _collaborationSchema = z?.object({
+  toUserId: z?.string().min(1, "toUserId is required"),
+  type: z?.string().min(1, "type is required"),
+  beatId: z?.string().optional(),
+  terms: z?.string().max(2000).optional(),
+  splitPercentage: z?.number().min(0).max(100).optional(),
+  budget: z?.number().min(0).optional(),
+  message: z?.string().max(1000).optional(),
 });
 
-router.get("/beats", async (req: Request, res: Response) => {
+router?.get("/beats", async (req: Request, res: Response) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     const {
       search,
       genre,
@@ -169,20 +169,20 @@ router.get("/beats", async (req: Request, res: Response) => {
       priceMin,
       priceMax,
       tags,
-    } = req.query;
+    } = req?.query;
 
     // If filtering by producer, get their beats directly (short TTL since producer pages update often)
     if (producerId) {
-      const cacheKey = `marketplace:producer-beats:${producerId}`;
-      const producerBeats = await distributedCache.getOrSet(
+      const _cacheKey = `marketplace:producer-beats:${producerId}`;
+      const _producerBeats = await distributedCache?.getOrSet(
         cacheKey,
-        () => marketplaceService.getListingsByProducer(producerId as string),
+        () => marketplaceService?.getListingsByProducer(producerId as string),
         30,
       );
-      return res.json(producerBeats);
+      return res?.json(producerBeats);
     }
 
-    const filters = {
+    const _filters = {
       search: search as string,
       genre: genre as string,
       mood: mood as string,
@@ -192,77 +192,77 @@ router.get("/beats", async (req: Request, res: Response) => {
       priceMin: priceMin ? parseFloat(priceMin as string) : undefined,
       priceMax: priceMax ? parseFloat(priceMax as string) : undefined,
       tags: tags ? (tags as string).split(",") : undefined,
-      limit: Math.min(Math.max(1, parseInt(limit as string) || 20), 200),
-      offset: Math.min(Math.max(0, parseInt(offset as string) || 0), 100_000),
+      limit: Math?.min(Math?.max(1, parseInt(limit as string) || 20), 200),
+      offset: Math?.min(Math?.max(0, parseInt(offset as string) || 0), 100_000),
     };
 
     // Personalized feeds are cached per-user (30s) to still feel fresh
     if (userId) {
-      const filterSig = `${genre ?? ""}:${mood ?? ""}:${search ?? ""}:${sortBy ?? ""}:${limit ?? 20}:${offset ?? 0}`;
-      const cacheKey = `marketplace:beats:user:${userId}:${filterSig}`;
-      const personalizedBeats = await distributedCache.getOrSet(
+      const _filterSig = `${genre ?? ""}:${mood ?? ""}:${search ?? ""}:${sortBy ?? ""}:${limit ?? 20}:${offset ?? 0}`;
+      const _cacheKey = `marketplace:beats:user:${userId}:${filterSig}`;
+      const _personalizedBeats = await distributedCache?.getOrSet(
         cacheKey,
-        () => discoveryAlgorithmService.getPersonalizedFeed(userId, filters),
+        () => discoveryAlgorithmService?.getPersonalizedFeed(userId, filters),
         30,
       );
-      return res.json(personalizedBeats);
+      return res?.json(personalizedBeats);
     }
 
     // Anonymous browse — longer TTL since it's not personalized
-    const filterSig = `${genre ?? ""}:${mood ?? ""}:${search ?? ""}:${sortBy ?? ""}:${limit ?? 20}:${offset ?? 0}`;
-    const cacheKey = `marketplace:beats:anon:${filterSig}`;
-    const beats = await distributedCache.getOrSet(
+    const _filterSig = `${genre ?? ""}:${mood ?? ""}:${search ?? ""}:${sortBy ?? ""}:${limit ?? 20}:${offset ?? 0}`;
+    const _cacheKey = `marketplace:beats:anon:${filterSig}`;
+    const _beats = await distributedCache?.getOrSet(
       cacheKey,
       () =>
-        marketplaceService.browseListings({
+        marketplaceService?.browseListings({
           ...filters,
           sortBy: (sortBy as Record<string, unknown>) || "recent",
         }),
       60,
     );
 
-    res.json(beats);
+    res?.json(beats);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching beats:");
-    res.status(500).json({ error: "Failed to fetch beats" });
+    logger?.warn({ err: error }, "Error fetching beats:");
+    res?.status(500).json({ error: "Failed to fetch beats" });
   }
 });
 
-router.get("/producer-analytics", async (req: Request, res: Response) => {
+router?.get("/producer-analytics", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const { timeRange = "30d" } = req.query;
-    const userId = req.user!.id;
-    const cacheKey = `marketplace:producer-analytics:${userId}:${timeRange}`;
+    const { timeRange = "30d" } = req?.query;
+    const _userId = req?.user!.id;
+    const _cacheKey = `marketplace:producer-analytics:${userId}:${timeRange}`;
 
-    const result = await distributedCache.getOrSet(
+    const _result = await distributedCache?.getOrSet(
       cacheKey,
       async () => {
-        const userListings = await marketplaceService.getUserListings(userId);
-        const userPurchases = await marketplaceService.getUserSales(userId);
+        const _userListings = await marketplaceService?.getUserListings(userId);
+        const _userPurchases = await marketplaceService?.getUserSales(userId);
 
-        const totalViews = userListings.reduce(
-          (sum, l) => sum + (l.views || 0),
+        const _totalViews = userListings?.reduce(
+          (sum, l) => sum + (l?.views || 0),
           0,
         );
-        const totalPlays = userListings.reduce(
-          (sum, l) => sum + (l.plays || 0),
+        const _totalPlays = userListings?.reduce(
+          (sum, l) => sum + (l?.plays || 0),
           0,
         );
-        const totalSales = userPurchases.length;
-        const totalRevenue = userPurchases.reduce(
-          (sum, p) => sum + (p.amount || 0),
+        const _totalSales = userPurchases?.length;
+        const _totalRevenue = userPurchases?.reduce(
+          (sum, p) => sum + (p?.amount || 0),
           0,
         );
 
-        const conversionRate =
+        const _conversionRate =
           totalViews > 0 ? (totalSales / totalViews) * 100 : 0;
-        const avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+        const _avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
-        const days =
+        const _days =
           timeRange === "7d"
             ? 7
             : timeRange === "90d"
@@ -270,66 +270,66 @@ router.get("/producer-analytics", async (req: Request, res: Response) => {
               : timeRange === "1y"
                 ? 365
                 : 30;
-        const currentPeriodStart = new Date(
-          Date.now() - days * 24 * 60 * 60 * 1000,
+        const _currentPeriodStart = new Date(
+          Date?.now() - days * 24 * 60 * 60 * 1000,
         );
-        const previousPeriodStart = new Date(
-          Date.now() - days * 2 * 24 * 60 * 60 * 1000,
+        const _previousPeriodStart = new Date(
+          Date?.now() - days * 2 * 24 * 60 * 60 * 1000,
         );
-        const now = new Date();
+        const _now = new Date();
 
         const [[currentPeriodOrders], [previousPeriodOrders]] =
-          await Promise.all([
+          await Promise?.all([
             db
               .select({
                 count: sql<number>`COUNT(*)`,
-                revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
+                revenue: sql<number>`COALESCE(SUM(${orders?.amount}), 0)`,
               })
               .from(orders)
               .where(
                 and(
-                  eq(orders.sellerId, userId),
-                  eq(orders.status, "completed"),
-                  gte(orders.createdAt, currentPeriodStart),
-                  sql`${orders.createdAt} < ${now}`,
+                  eq(orders?.sellerId, userId),
+                  eq(orders?.status, "completed"),
+                  gte(orders?.createdAt, currentPeriodStart),
+                  sql`${orders?.createdAt} < ${now}`,
                 ),
               ),
             db
               .select({
                 count: sql<number>`COUNT(*)`,
-                revenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
+                revenue: sql<number>`COALESCE(SUM(${orders?.amount}), 0)`,
               })
               .from(orders)
               .where(
                 and(
-                  eq(orders.sellerId, userId),
-                  eq(orders.status, "completed"),
-                  gte(orders.createdAt, previousPeriodStart),
-                  sql`${orders.createdAt} < ${currentPeriodStart}`,
+                  eq(orders?.sellerId, userId),
+                  eq(orders?.status, "completed"),
+                  gte(orders?.createdAt, previousPeriodStart),
+                  sql`${orders?.createdAt} < ${currentPeriodStart}`,
                 ),
               ),
           ]);
 
-        const curSales = Number(currentPeriodOrders?.count || 0);
-        const prevSales = Number(previousPeriodOrders?.count || 0);
-        const curRevenue = Number(currentPeriodOrders?.revenue || 0);
-        const prevRevenue = Number(previousPeriodOrders?.revenue || 0);
+        const _curSales = Number(currentPeriodOrders?.count || 0);
+        const _prevSales = Number(previousPeriodOrders?.count || 0);
+        const _curRevenue = Number(currentPeriodOrders?.revenue || 0);
+        const _prevRevenue = Number(previousPeriodOrders?.revenue || 0);
 
-        const calcChange = (cur: number, prev: number) =>
+        const _calcChange = (cur: number, prev: number) =>
           prev > 0
             ? parseFloat((((cur - prev) / prev) * 100).toFixed(1))
             : cur > 0
               ? 100
               : 0;
-        const salesChange = calcChange(curSales, prevSales);
-        const revenueChange = calcChange(curRevenue, prevRevenue);
+        const _salesChange = calcChange(curSales, prevSales);
+        const _revenueChange = calcChange(curRevenue, prevRevenue);
 
-        const licenseBreakdown = userPurchases.reduce(
+        const _licenseBreakdown = userPurchases?.reduce(
           (acc, p) => {
-            const type = p.licenseType || "basic";
+            const _type = p?.licenseType || "basic";
             if (!acc[type]) acc[type] = { count: 0, revenue: 0 };
             acc[type].count++;
-            acc[type].revenue += p.amount || 0;
+            acc[type].revenue += p?.amount || 0;
             return acc;
           },
           {} as Record<string, { count: number; revenue: number }>,
@@ -341,8 +341,8 @@ router.get("/producer-analytics", async (req: Request, res: Response) => {
             totalPlays,
             totalSales,
             totalRevenue,
-            conversionRate: parseFloat(conversionRate.toFixed(2)),
-            avgOrderValue: parseFloat(avgOrderValue.toFixed(2)),
+            conversionRate: parseFloat(conversionRate?.toFixed(2)),
+            avgOrderValue: parseFloat(avgOrderValue?.toFixed(2)),
             viewsChange: 0,
             playsChange: 0,
             salesChange,
@@ -350,70 +350,70 @@ router.get("/producer-analytics", async (req: Request, res: Response) => {
           },
           timeline: await generateTimelineData(timeRange as string, userId),
           topBeats: userListings
-            .sort((a, b) => (b.plays || 0) - (a.plays || 0))
+            .sort((a, b) => (b?.plays || 0) - (a?.plays || 0))
             .slice(0, 5)
             .map((beat) => ({
-              id: beat.id,
-              title: beat.title,
-              views: beat.views || 0,
-              plays: beat.plays || 0,
-              sales: userPurchases.filter((p) => p.beatId === beat.id).length,
+              id: beat?.id,
+              title: beat?.title,
+              views: beat?.views || 0,
+              plays: beat?.plays || 0,
+              sales: userPurchases?.filter((p) => p?.beatId === beat?.id).length,
               revenue: userPurchases
-                .filter((p) => p.beatId === beat.id)
-                .reduce((s, p) => s + (p.amount || 0), 0),
+                .filter((p) => p?.beatId === beat?.id)
+                .reduce((s, p) => s + (p?.amount || 0), 0),
               conversionRate:
-                beat.views > 0
+                beat?.views > 0
                   ? parseFloat(
                       (
-                        (userPurchases.filter((p) => p.beatId === beat.id)
+                        (userPurchases?.filter((p) => p?.beatId === beat?.id)
                           .length /
-                          beat.views) *
+                          beat?.views) *
                         100
                       ).toFixed(2),
                     )
                   : 0,
             })),
-          licenseBreakdown: Object.entries(licenseBreakdown).map(
+          licenseBreakdown: Object?.entries(licenseBreakdown).map(
             ([type, data]) => ({
-              type: type.charAt(0).toUpperCase() + type.slice(1),
-              count: data.count,
-              revenue: data.revenue,
+              type: type?.charAt(0).toUpperCase() + type?.slice(1),
+              count: data?.count,
+              revenue: data?.revenue,
               percentage:
                 totalSales > 0
-                  ? parseFloat(((data.count / totalSales) * 100).toFixed(1))
+                  ? parseFloat(((data?.count / totalSales) * 100).toFixed(1))
                   : 0,
             }),
           ),
           trafficSources: [
             {
               source: "Direct",
-              visits: Math.floor(totalViews * 0.33),
-              conversions: Math.floor(totalSales * 0.35),
-              percentage: 33.3,
+              visits: Math?.floor(totalViews * 0?.33),
+              conversions: Math?.floor(totalSales * 0?.35),
+              percentage: 33?.3,
             },
             {
               source: "Social Media",
-              visits: Math.floor(totalViews * 0.28),
-              conversions: Math.floor(totalSales * 0.25),
-              percentage: 28.1,
+              visits: Math?.floor(totalViews * 0?.28),
+              conversions: Math?.floor(totalSales * 0?.25),
+              percentage: 28?.1,
             },
             {
               source: "Search",
-              visits: Math.floor(totalViews * 0.21),
-              conversions: Math.floor(totalSales * 0.22),
-              percentage: 20.8,
+              visits: Math?.floor(totalViews * 0?.21),
+              conversions: Math?.floor(totalSales * 0?.22),
+              percentage: 20?.8,
             },
             {
               source: "Referral",
-              visits: Math.floor(totalViews * 0.11),
-              conversions: Math.floor(totalSales * 0.12),
-              percentage: 11.2,
+              visits: Math?.floor(totalViews * 0?.11),
+              conversions: Math?.floor(totalSales * 0?.12),
+              percentage: 11?.2,
             },
             {
               source: "Email",
-              visits: Math.floor(totalViews * 0.07),
-              conversions: Math.floor(totalSales * 0.06),
-              percentage: 6.6,
+              visits: Math?.floor(totalViews * 0?.07),
+              conversions: Math?.floor(totalSales * 0?.06),
+              percentage: 6?.6,
             },
           ],
         };
@@ -421,16 +421,16 @@ router.get("/producer-analytics", async (req: Request, res: Response) => {
       60,
     );
 
-    res.json(result);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching producer analytics:");
-    res.status(500).json({ error: "Failed to fetch analytics" });
+    logger?.warn({ err: error }, "Error fetching producer analytics:");
+    res?.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
 
 async function generateTimelineData(timeRange: string, userId: string) {
-  const cacheKey = `marketplace:timeline:${userId}:${timeRange}:${Math.floor(Date.now() / 60000)}`;
-  return distributedCache.getOrSet(
+  const _cacheKey = `marketplace:timeline:${userId}:${timeRange}:${Math?.floor(Date?.now() / 60000)}`;
+  return distributedCache?.getOrSet(
     cacheKey,
     () => _computeTimelineData(timeRange, userId),
     60,
@@ -438,7 +438,7 @@ async function generateTimelineData(timeRange: string, userId: string) {
 }
 
 async function _computeTimelineData(timeRange: string, userId: string) {
-  const months = [
+  const _months = [
     "Jan",
     "Feb",
     "Mar",
@@ -452,8 +452,8 @@ async function _computeTimelineData(timeRange: string, userId: string) {
     "Nov",
     "Dec",
   ];
-  const now = new Date();
-  const periodCount =
+  const _now = new Date();
+  const _periodCount =
     timeRange === "7d"
       ? 7
       : timeRange === "90d"
@@ -462,113 +462,113 @@ async function _computeTimelineData(timeRange: string, userId: string) {
           ? 12
           : 10;
 
-  const userListingIds = await db
-    .select({ id: listings.id })
+  const _userListingIds = await db
+    .select({ id: listings?.id })
     .from(listings)
-    .where(eq(listings.userId, userId))
+    .where(eq(listings?.userId, userId))
     .limit(500);
 
-  new Set(userListingIds.map((l) => l.id));
+  new Set(userListingIds?.map((l) => l?.id));
 
-  const data = [];
+  const _data = [];
   for (let i = periodCount - 1; i >= 0; i--) {
-    const periodStart = new Date(now);
-    const periodEnd = new Date(now);
+    const _periodStart = new Date(now);
+    const _periodEnd = new Date(now);
 
     if (timeRange === "7d") {
-      periodStart.setDate(periodStart.getDate() - i - 1);
-      periodEnd.setDate(periodEnd.getDate() - i);
+      periodStart?.setDate(periodStart?.getDate() - i - 1);
+      periodEnd?.setDate(periodEnd?.getDate() - i);
     } else {
-      periodStart.setMonth(periodStart.getMonth() - i - 1);
-      periodEnd.setMonth(periodEnd.getMonth() - i);
+      periodStart?.setMonth(periodStart?.getMonth() - i - 1);
+      periodEnd?.setMonth(periodEnd?.getMonth() - i);
     }
 
-    const periodOrders = await db
+    const _periodOrders = await db
       .select({
         salesCount: sql<number>`COUNT(*)`,
-        totalRevenue: sql<number>`COALESCE(SUM(${orders.amount}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${orders?.amount}), 0)`,
       })
       .from(orders)
       .where(
         and(
-          eq(orders.sellerId, userId),
-          eq(orders.status, "completed"),
-          gte(orders.createdAt, periodStart),
-          sql`${orders.createdAt} < ${periodEnd}`,
+          eq(orders?.sellerId, userId),
+          eq(orders?.status, "completed"),
+          gte(orders?.createdAt, periodStart),
+          sql`${orders?.createdAt} < ${periodEnd}`,
         ),
       );
 
-    const salesCount = Number(periodOrders[0]?.salesCount) || 0;
-    const totalRevenue = Number(periodOrders[0]?.totalRevenue) || 0;
+    const _salesCount = Number(periodOrders[0]?.salesCount) || 0;
+    const _totalRevenue = Number(periodOrders[0]?.totalRevenue) || 0;
 
-    const label =
+    const _label =
       timeRange === "7d"
-        ? periodEnd.toLocaleDateString("en-US", { weekday: "short" })
-        : months[periodEnd.getMonth()];
+        ? periodEnd?.toLocaleDateString("en-US", { weekday: "short" })
+        : months[periodEnd?.getMonth()];
 
-    data.push({
+    data?.push({
       date: label,
       views: 0,
       plays: 0,
       sales: salesCount,
-      revenue: Math.round(totalRevenue * 100) / 100,
+      revenue: Math?.round(totalRevenue * 100) / 100,
     });
   }
   return data;
 }
 
-router.get("/license-templates", async (req: Request, res: Response) => {
+router?.get("/license-templates", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
-    const userTemplates = await db
+    const _userTemplates = await db
       .select()
       .from(licenseTemplates)
-      .where(eq(licenseTemplates.userId, req.user!.id))
-      .orderBy(asc(licenseTemplates.sortOrder))
+      .where(eq(licenseTemplates?.userId, req?.user!.id))
+      .orderBy(asc(licenseTemplates?.sortOrder))
       .limit(50);
 
-    const mapped = userTemplates.map((t) => ({
-      id: t.id,
-      name: t.name,
-      type: t.type,
-      price: (t.priceCents || 0) / 100,
-      priceCents: t.priceCents,
+    const _mapped = userTemplates?.map((t) => ({
+      id: t?.id,
+      name: t?.name,
+      type: t?.type,
+      price: (t?.priceCents || 0) / 100,
+      priceCents: t?.priceCents,
       streams:
-        t.streams === "unlimited" ? "unlimited" : parseInt(t.streams || "0"),
+        t?.streams === "unlimited" ? "unlimited" : parseInt(t?.streams || "0"),
       copies:
-        t.copies === "unlimited" ? "unlimited" : parseInt(t.copies || "0"),
+        t?.copies === "unlimited" ? "unlimited" : parseInt(t?.copies || "0"),
       musicVideos:
-        t.musicVideos === "unlimited"
+        t?.musicVideos === "unlimited"
           ? "unlimited"
-          : parseInt(t.musicVideos || "0"),
-      duration: t.duration || "1 year",
-      allowsBroadcast: t.allowsBroadcast ?? false,
-      allowsProfit: t.allowsProfit ?? true,
-      allowsSync: t.allowsSync ?? false,
-      fileFormats: t.fileFormats || "MP3",
-      isActive: t.isActive ?? true,
-      sortOrder: t.sortOrder ?? 0,
-      createdAt: t.createdAt,
-      updatedAt: t.updatedAt,
+          : parseInt(t?.musicVideos || "0"),
+      duration: t?.duration || "1 year",
+      allowsBroadcast: t?.allowsBroadcast ?? false,
+      allowsProfit: t?.allowsProfit ?? true,
+      allowsSync: t?.allowsSync ?? false,
+      fileFormats: t?.fileFormats || "MP3",
+      isActive: t?.isActive ?? true,
+      sortOrder: t?.sortOrder ?? 0,
+      createdAt: t?.createdAt,
+      updatedAt: t?.updatedAt,
     }));
 
-    res.json(mapped);
+    res?.json(mapped);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching license templates:");
-    res.status(500).json({ error: "Failed to fetch license templates" });
+    logger?.warn({ err: error }, "Error fetching license templates:");
+    res?.status(500).json({ error: "Failed to fetch license templates" });
   }
 });
 
-router.post(
+router?.post(
   "/license-templates",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const parsed = licenseTemplateSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.issues[0].message });
+      const _parsed = licenseTemplateSchema?.safeParse(req?.body);
+      if (!parsed?.success) {
+        return res?.status(400).json({ error: parsed?.error.issues[0].message });
       }
       const {
         name,
@@ -583,11 +583,11 @@ router.post(
         allowsSync,
         fileFormats,
         sortOrder,
-      } = parsed.data;
+      } = parsed?.data;
       const [template] = await db
         .insert(licenseTemplates)
         .values({
-          userId: req.user!.id,
+          userId: req?.user!.id,
           name,
           type: type || "basic",
           priceCents: priceCents ?? 2999,
@@ -602,40 +602,40 @@ router.post(
           sortOrder: sortOrder ?? 0,
         })
         .returning();
-      res.status(201).json(template);
+      res?.status(201).json(template);
     } catch (error) {
-      logger.warn({ err: error }, "Error creating license template:");
-      res.status(500).json({ error: "Failed to create license template" });
+      logger?.warn({ err: error }, "Error creating license template:");
+      res?.status(500).json({ error: "Failed to create license template" });
     }
   },
 );
 
-router.put(
+router?.put(
   "/license-templates/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const existing = await db
+      const { id } = req?.params;
+      const _existing = await db
         .select()
         .from(licenseTemplates)
         .where(
           and(
-            eq(licenseTemplates.id, id),
-            eq(licenseTemplates.userId, req.user!.id),
+            eq(licenseTemplates?.id, id),
+            eq(licenseTemplates?.userId, req?.user!.id),
           ),
         )
         .limit(1);
-      if (existing.length === 0) {
-        return res.status(404).json({ error: "License template not found" });
+      if (existing?.length === 0) {
+        return res?.status(404).json({ error: "License template not found" });
       }
-      const parsed = licenseTemplateSchema.partial().safeParse(req.body);
-      if (!parsed.success) {
+      const _parsed = licenseTemplateSchema?.partial().safeParse(req?.body);
+      if (!parsed?.success) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: parsed.error.flatten() });
+          .json({ error: "Validation error", details: parsed?.error.flatten() });
       }
-      const { streams, copies, musicVideos, ...rest } = parsed.data;
+      const { streams, copies, musicVideos, ...rest } = parsed?.data;
       const updates: Record<string, any> = {
         ...rest,
         ...(streams !== undefined && { streams: String(streams) }),
@@ -649,115 +649,115 @@ router.put(
         .set(updates)
         .where(
           and(
-            eq(licenseTemplates.id, id),
-            eq(licenseTemplates.userId, req.user!.id),
+            eq(licenseTemplates?.id, id),
+            eq(licenseTemplates?.userId, req?.user!.id),
           ),
         )
         .returning();
-      res.json(updated);
+      res?.json(updated);
     } catch (error) {
-      logger.warn({ err: error }, "Error updating license template:");
-      res.status(500).json({ error: "Failed to update license template" });
+      logger?.warn({ err: error }, "Error updating license template:");
+      res?.status(500).json({ error: "Failed to update license template" });
     }
   },
 );
 
-router.delete(
+router?.delete(
   "/license-templates/:id",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req.params;
-      const existing = await db
+      const { id } = req?.params;
+      const _existing = await db
         .select()
         .from(licenseTemplates)
         .where(
           and(
-            eq(licenseTemplates.id, id),
-            eq(licenseTemplates.userId, req.user!.id),
+            eq(licenseTemplates?.id, id),
+            eq(licenseTemplates?.userId, req?.user!.id),
           ),
         )
         .limit(1);
-      if (existing.length === 0) {
-        return res.status(404).json({ error: "License template not found" });
+      if (existing?.length === 0) {
+        return res?.status(404).json({ error: "License template not found" });
       }
       await db
         .delete(licenseTemplates)
         .where(
           and(
-            eq(licenseTemplates.id, id),
-            eq(licenseTemplates.userId, req.user!.id),
+            eq(licenseTemplates?.id, id),
+            eq(licenseTemplates?.userId, req?.user!.id),
           ),
         );
-      res.json({ success: true });
+      res?.json({ success: true });
     } catch (error) {
-      logger.warn({ err: error }, "Error deleting license template:");
-      res.status(500).json({ error: "Failed to delete license template" });
+      logger?.warn({ err: error }, "Error deleting license template:");
+      res?.status(500).json({ error: "Failed to delete license template" });
     }
   },
 );
 
-router.get("/my-beats", async (req: Request, res: Response) => {
+router?.get("/my-beats", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userListings = await marketplaceService.getUserListings(req.user!.id);
-    res.json(userListings);
+    const _userListings = await marketplaceService?.getUserListings(req?.user!.id);
+    res?.json(userListings);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching user beats:");
-    res.status(500).json({ error: "Failed to fetch your beats" });
+    logger?.warn({ err: error }, "Error fetching user beats:");
+    res?.status(500).json({ error: "Failed to fetch your beats" });
   }
 });
 
-router.get("/producers", async (_req: Request, res: Response) => {
+router?.get("/producers", async (_req: Request, res: Response) => {
   try {
-    const producers = await storage.getProducers();
-    res.json({ producers: producers || [] });
+    const _producers = await storage?.getProducers();
+    res?.json({ producers: producers || [] });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching producers:");
-    res.status(500).json({ error: "Failed to fetch producers" });
+    logger?.warn({ err: error }, "Error fetching producers:");
+    res?.status(500).json({ error: "Failed to fetch producers" });
   }
 });
 
-router.get("/purchases", async (req: Request, res: Response) => {
+router?.get("/purchases", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const purchases = await marketplaceService.getUserPurchases(req.user!.id);
-    res.json(purchases);
+    const _purchases = await marketplaceService?.getUserPurchases(req?.user!.id);
+    res?.json(purchases);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching purchases:");
-    res.status(500).json({ error: "Failed to fetch purchases" });
+    logger?.warn({ err: error }, "Error fetching purchases:");
+    res?.status(500).json({ error: "Failed to fetch purchases" });
   }
 });
 
-router.get("/sales-analytics", async (req: Request, res: Response) => {
+router?.get("/sales-analytics", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const analytics = await marketplaceService.getSalesAnalytics(req.user!.id);
-    res.json(analytics);
+    const _analytics = await marketplaceService?.getSalesAnalytics(req?.user!.id);
+    res?.json(analytics);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching sales analytics:");
-    res.status(500).json({ error: "Failed to fetch sales analytics" });
+    logger?.warn({ err: error }, "Error fetching sales analytics:");
+    res?.status(500).json({ error: "Failed to fetch sales analytics" });
   }
 });
 
-router.post("/interaction", async (req: Request, res: Response) => {
+router?.post("/interaction", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const parsed = interactionSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0].message });
+    const _parsed = interactionSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
+      return res?.status(400).json({ error: parsed?.error.issues[0].message });
     }
     const {
       beatId,
@@ -766,10 +766,10 @@ router.post("/interaction", async (req: Request, res: Response) => {
       completionRate,
       source,
       sessionId,
-    } = parsed.data;
+    } = parsed?.data;
 
-    await discoveryAlgorithmService.recordInteraction({
-      userId: req.user!.id,
+    await discoveryAlgorithmService?.recordInteraction({
+      userId: req?.user!.id,
       beatId,
       interactionType,
       playDurationSeconds,
@@ -778,77 +778,77 @@ router.post("/interaction", async (req: Request, res: Response) => {
       sessionId,
     });
 
-    res.json({ success: true });
+    res?.json({ success: true });
 
     if (interactionType === "play") {
       setImmediate(async () => {
         try {
           const [listing] = await db
             .select({
-              id: listings.id,
-              title: listings.title,
-              plays: listings.plays,
-              userId: listings.userId,
+              id: listings?.id,
+              title: listings?.title,
+              plays: listings?.plays,
+              userId: listings?.userId,
             })
             .from(listings)
-            .where(eq(listings.id, beatId))
+            .where(eq(listings?.id, beatId))
             .limit(1);
           if (listing) {
-            const plays = (listing.plays || 0) + 1;
-            const milestones = [
+            const _plays = (listing?.plays || 0) + 1;
+            const _milestones = [
               100, 500, 1000, 5000, 10000, 25000, 50000, 100000, 500000,
               1000000,
             ];
-            if (milestones.includes(plays)) {
-              await notificationService.sendBeatPlayMilestoneNotification(
-                listing.userId,
-                listing.title || "Unknown Beat",
+            if (milestones?.includes(plays)) {
+              await notificationService?.sendBeatPlayMilestoneNotification(
+                listing?.userId,
+                listing?.title || "Unknown Beat",
                 plays,
               );
-              await notificationService.sendStreamMilestoneNotification(
-                listing.userId,
-                listing.title || "Unknown Beat",
+              await notificationService?.sendStreamMilestoneNotification(
+                listing?.userId,
+                listing?.title || "Unknown Beat",
                 plays,
               );
             }
           }
         } catch (err) {
-          logger.warn({ err: err }, "Beat play milestone notification error:");
+          logger?.warn({ err: err }, "Beat play milestone notification error:");
         }
       });
     }
   } catch (error) {
-    logger.warn({ err: error }, "Error recording interaction:");
-    res.status(500).json({ error: "Failed to record interaction" });
+    logger?.warn({ err: error }, "Error recording interaction:");
+    res?.status(500).json({ error: "Failed to record interaction" });
   }
 });
 
-router.get("/for-you", async (req: Request, res: Response) => {
+router?.get("/for-you", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const { limit, offset, genre, mood } = req.query;
-    const userId = req.user!.id;
+    const { limit, offset, genre, mood } = req?.query;
+    const _userId = req?.user!.id;
 
-    const personalizedBeats =
-      await discoveryAlgorithmService.getPersonalizedFeed(userId, {
-        limit: Math.min(Math.max(1, parseInt(limit as string) || 20), 200),
-        offset: Math.min(Math.max(0, parseInt(offset as string) || 0), 100_000),
+    const _personalizedBeats =
+      await discoveryAlgorithmService?.getPersonalizedFeed(userId, {
+        limit: Math?.min(Math?.max(1, parseInt(limit as string) || 20), 200),
+        offset: Math?.min(Math?.max(0, parseInt(offset as string) || 0), 100_000),
         genre: genre as string,
         mood: mood as string,
       });
 
-    const insights = await discoveryAlgorithmService.getTasteInsights(userId);
+    const _insights = await discoveryAlgorithmService?.getTasteInsights(userId);
 
-    const sections = [
+    const _sections = [
       {
         id: "for-you",
         title: "For You",
         description: "Beats curated based on your listening history",
         beats: personalizedBeats
-          .filter((b) => b.discoveryScore > 0.5)
+          .filter((b) => b?.discoveryScore > 0?.5)
           .slice(0, 8),
         type: "personalized",
       },
@@ -856,187 +856,187 @@ router.get("/for-you", async (req: Request, res: Response) => {
         id: "trending",
         title: "Trending Now",
         description: "Popular beats this week",
-        beats: personalizedBeats.filter((b) => b.isHot).slice(0, 8),
+        beats: personalizedBeats?.filter((b) => b?.isHot).slice(0, 8),
         type: "trending",
       },
       {
         id: "new-releases",
         title: "New Releases",
         description: "Fresh beats just uploaded",
-        beats: personalizedBeats.filter((b) => b.isNew).slice(0, 8),
+        beats: personalizedBeats?.filter((b) => b?.isNew).slice(0, 8),
         type: "new",
       },
     ];
 
-    if (insights.topGenres.length > 0) {
-      const topGenre = insights.topGenres[0];
-      sections.push({
-        id: `genre-${topGenre.genre.toLowerCase()}`,
-        title: `Because You Like ${topGenre.genre}`,
-        description: `More ${topGenre.genre} beats for you`,
+    if (insights?.topGenres.length > 0) {
+      const _topGenre = insights?.topGenres[0];
+      sections?.push({
+        id: `genre-${topGenre?.genre.toLowerCase()}`,
+        title: `Because You Like ${topGenre?.genre}`,
+        description: `More ${topGenre?.genre} beats for you`,
         beats: personalizedBeats
-          .filter((b) => b.genre === topGenre.genre)
+          .filter((b) => b?.genre === topGenre?.genre)
           .slice(0, 8),
         type: "genre_match",
       });
     }
 
-    if (insights.topMoods.length > 0) {
-      const topMood = insights.topMoods[0];
-      sections.push({
-        id: `mood-${topMood.mood.toLowerCase()}`,
-        title: `${topMood.mood} Vibes`,
-        description: `Beats matching your ${topMood.mood.toLowerCase()} mood`,
+    if (insights?.topMoods.length > 0) {
+      const _topMood = insights?.topMoods[0];
+      sections?.push({
+        id: `mood-${topMood?.mood.toLowerCase()}`,
+        title: `${topMood?.mood} Vibes`,
+        description: `Beats matching your ${topMood?.mood.toLowerCase()} mood`,
         beats: personalizedBeats
-          .filter((b) => b.mood === topMood.mood)
+          .filter((b) => b?.mood === topMood?.mood)
           .slice(0, 8),
         type: "mood_match",
       });
     }
 
-    res.json({
-      sections: sections.filter((s) => s.beats.length > 0),
+    res?.json({
+      sections: sections?.filter((s) => s?.beats.length > 0),
       tasteProfile: {
-        topGenres: insights.topGenres.slice(0, 3),
-        topMoods: insights.topMoods.slice(0, 3),
-        totalInteractions: insights.totalInteractions,
+        topGenres: insights?.topGenres.slice(0, 3),
+        topMoods: insights?.topMoods.slice(0, 3),
+        totalInteractions: insights?.totalInteractions,
       },
       allBeats: personalizedBeats,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching For You feed:");
-    res.status(500).json({ error: "Failed to fetch personalized feed" });
+    logger?.warn({ err: error }, "Error fetching For You feed:");
+    res?.status(500).json({ error: "Failed to fetch personalized feed" });
   }
 });
 
-router.get("/ai-recommendations", async (req: Request, res: Response) => {
+router?.get("/ai-recommendations", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const insights = await discoveryAlgorithmService.getTasteInsights(
-      req.user!.id,
+    const _insights = await discoveryAlgorithmService?.getTasteInsights(
+      req?.user!.id,
     );
-    const topGenres = insights.topGenres.slice(0, 3).map((g) => g.genre);
+    const _topGenres = insights?.topGenres.slice(0, 3).map((g) => g?.genre);
 
-    const recommendations = topGenres.map((genre, index) => ({
+    const _recommendations = topGenres?.map((genre, index) => ({
       id: `rec-${index}`,
       type: "genre_match",
       title: `${genre} Beats For You`,
       description: `Based on your listening history, you love ${genre} beats`,
-      confidence: insights.topGenres[index]?.score || 0.5,
+      confidence: insights?.topGenres[index]?.score || 0?.5,
       action: "browse",
       metadata: { genre },
     }));
 
-    res.json(recommendations);
+    res?.json(recommendations);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching AI recommendations:");
-    res.status(500).json({ error: "Failed to fetch recommendations" });
+    logger?.warn({ err: error }, "Error fetching AI recommendations:");
+    res?.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });
 
-router.get("/taste-profile", async (req: Request, res: Response) => {
+router?.get("/taste-profile", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const insights = await discoveryAlgorithmService.getTasteInsights(
-      req.user!.id,
+    const _insights = await discoveryAlgorithmService?.getTasteInsights(
+      req?.user!.id,
     );
-    res.json(insights);
+    res?.json(insights);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching taste profile:");
-    res.status(500).json({ error: "Failed to fetch taste profile" });
+    logger?.warn({ err: error }, "Error fetching taste profile:");
+    res?.status(500).json({ error: "Failed to fetch taste profile" });
   }
 });
 
-router.post("/follow-producer", async (req: Request, res: Response) => {
+router?.post("/follow-producer", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const { producerId } = req.body;
+    const { producerId } = req?.body;
     if (!producerId) {
-      return res.status(400).json({ error: "producerId is required" });
+      return res?.status(400).json({ error: "producerId is required" });
     }
 
-    const result = await discoveryAlgorithmService.followProducer(
-      req.user!.id,
+    const _result = await discoveryAlgorithmService?.followProducer(
+      req?.user!.id,
       producerId,
     );
-    res.json(result);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error following producer:");
-    res.status(500).json({ error: "Failed to follow producer" });
+    logger?.warn({ err: error }, "Error following producer:");
+    res?.status(500).json({ error: "Failed to follow producer" });
   }
 });
 
-router.post("/unfollow-producer", async (req: Request, res: Response) => {
+router?.post("/unfollow-producer", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const { producerId } = req.body;
+    const { producerId } = req?.body;
     if (!producerId) {
-      return res.status(400).json({ error: "producerId is required" });
+      return res?.status(400).json({ error: "producerId is required" });
     }
 
-    const result = await discoveryAlgorithmService.unfollowProducer(
-      req.user!.id,
+    const _result = await discoveryAlgorithmService?.unfollowProducer(
+      req?.user!.id,
       producerId,
     );
-    res.json(result);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error unfollowing producer:");
-    res.status(500).json({ error: "Failed to unfollow producer" });
+    logger?.warn({ err: error }, "Error unfollowing producer:");
+    res?.status(500).json({ error: "Failed to unfollow producer" });
   }
 });
 
-router.post("/purchase", async (req: Request, res: Response) => {
+router?.post("/purchase", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const parsed = purchaseSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0].message });
+    const _parsed = purchaseSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
+      return res?.status(400).json({ error: parsed?.error.issues[0].message });
     }
-    const { beatId, licenseType } = parsed.data;
+    const { beatId, licenseType } = parsed?.data;
 
-    const result = await marketplaceService.initiatePurchase(
-      req.user!.id,
+    const _result = await marketplaceService?.initiatePurchase(
+      req?.user!.id,
       beatId,
       licenseType,
     );
 
-    await discoveryAlgorithmService.recordInteraction({
-      userId: req.user!.id,
+    await discoveryAlgorithmService?.recordInteraction({
+      userId: req?.user!.id,
       beatId,
       interactionType: "purchase",
       source: "checkout",
     });
 
-    res.json(result);
+    res?.json(result);
 
     setImmediate(async () => {
       try {
-        const beatTitle =
+        const _beatTitle =
           (result as Record<string, unknown>).beatTitle || "your beat";
-        const amount = (result as Record<string, unknown>).amount || 0;
-        const sellerId = (result as Record<string, unknown>).sellerId;
-        await notificationService.sendBeatPurchasedNotification(
-          req.user!.id,
+        const _amount = (result as Record<string, unknown>).amount || 0;
+        const _sellerId = (result as Record<string, unknown>).sellerId;
+        await notificationService?.sendBeatPurchasedNotification(
+          req?.user!.id,
           beatTitle,
           licenseType,
         );
-        if (sellerId && sellerId !== req.user!.id) {
-          await notificationService.sendBeatSoldNotification(
+        if (sellerId && sellerId !== req?.user!.id) {
+          await notificationService?.sendBeatSoldNotification(
             sellerId,
             beatTitle,
             licenseType,
@@ -1044,62 +1044,62 @@ router.post("/purchase", async (req: Request, res: Response) => {
           );
         }
       } catch (err) {
-        logger.warn({ err: err }, "[Marketplace] purchase notification error:");
+        logger?.warn({ err: err }, "[Marketplace] purchase notification error:");
       }
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error initiating purchase:");
-    const msg = error.message || "Failed to initiate purchase";
-    if (msg.includes("not found") || msg.includes("Not found")) {
-      return res.status(404).json({ error: msg });
+    logger?.warn({ err: error }, "Error initiating purchase:");
+    const _msg = error?.message || "Failed to initiate purchase";
+    if (msg?.includes("not found") || msg?.includes("Not found")) {
+      return res?.status(404).json({ error: msg });
     }
     if (
-      msg.includes("not configured") ||
-      msg.includes("Invalid") ||
-      msg.includes("inactive")
+      msg?.includes("not configured") ||
+      msg?.includes("Invalid") ||
+      msg?.includes("inactive")
     ) {
-      return res.status(400).json({ error: msg });
+      return res?.status(400).json({ error: msg });
     }
-    if (msg.includes("Cannot purchase your own")) {
-      return res.status(403).json({ error: msg });
+    if (msg?.includes("Cannot purchase your own")) {
+      return res?.status(403).json({ error: msg });
     }
-    res.status(500).json({ error: "Failed to initiate purchase" });
+    res?.status(500).json({ error: "Failed to initiate purchase" });
   }
 });
 
-router.get(
+router?.get(
   "/purchases/:orderId/license-agreement",
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const { orderId } = req.params;
+      const { orderId } = req?.params;
 
       const [order] = await db
         .select()
         .from(orders)
-        .where(eq(orders.id, orderId))
+        .where(eq(orders?.id, orderId))
         .limit(1);
       if (!order) {
-        return res.status(404).json({ error: "Order not found" });
+        return res?.status(404).json({ error: "Order not found" });
       }
-      if (order.userId !== req.user!.id && order.sellerId !== req.user!.id) {
-        return res.status(403).json({ error: "Access denied" });
+      if (order?.userId !== req?.user!.id && order?.sellerId !== req?.user!.id) {
+        return res?.status(403).json({ error: "Access denied" });
       }
 
-      const [[listing], [buyer], [seller]] = await Promise.all([
+      const [[listing], [buyer], [seller]] = await Promise?.all([
         db
           .select()
           .from(listings)
-          .where(eq(listings.id, order.listingId))
+          .where(eq(listings?.id, order?.listingId))
           .limit(1),
-        db.select().from(users).where(eq(users.id, order.userId)).limit(1),
-        db.select().from(users).where(eq(users.id, order.sellerId)).limit(1),
+        db?.select().from(users).where(eq(users?.id, order?.userId)).limit(1),
+        db?.select().from(users).where(eq(users?.id, order?.sellerId)).limit(1),
       ]);
 
-      const licenseType = order.licenseType || "basic";
+      const _licenseType = order?.licenseType || "basic";
       const templateMap: Record<string, any> = {
         basic: {
           name: "Basic Lease",
@@ -1151,32 +1151,32 @@ router.get(
         },
       };
 
-      const template = templateMap[licenseType] || templateMap.basic;
-      const snapshot = order.licenseSnapshot as Record<string, unknown>;
-      const beatTitle = listing?.title || "Unknown Beat";
-      const producerName =
+      const _template = templateMap[licenseType] || templateMap?.basic;
+      const _snapshot = order?.licenseSnapshot as Record<string, unknown>;
+      const _beatTitle = listing?.title || "Unknown Beat";
+      const _producerName =
         seller?.displayName || seller?.username || "Producer";
-      const buyerName = buyer?.displayName || buyer?.username || "Buyer";
-      const purchaseDate = order.createdAt
-        ? new Date(order.createdAt).toLocaleDateString("en-US", {
+      const _buyerName = buyer?.displayName || buyer?.username || "Buyer";
+      const _purchaseDate = order?.createdAt
+        ? new Date(order?.createdAt).toLocaleDateString("en-US", {
             year: "numeric",
             month: "long",
             day: "numeric",
           })
         : new Date().toLocaleDateString();
-      const amountPaid = `$${(order.amount || 0).toFixed(2)}`;
-      const fileFormats =
-        snapshot?.fileFormats?.map((f: string) => f.toUpperCase()).join(", ") ||
-        template.fileFormats;
+      const _amountPaid = `$${(order?.amount || 0).toFixed(2)}`;
+      const _fileFormats =
+        snapshot?.fileFormats?.map((f: string) => f?.toUpperCase()).join(", ") ||
+        template?.fileFormats;
 
-      const isExclusive = licenseType === "exclusive";
-      const agreement = [
+      const _isExclusive = licenseType === "exclusive";
+      const _agreement = [
         "═══════════════════════════════════════════════════════════════",
         "                    BEAT LICENSE AGREEMENT",
-        `                    ${template.name.toUpperCase()}`,
+        `                    ${template?.name.toUpperCase()}`,
         "═══════════════════════════════════════════════════════════════",
         "",
-        `Agreement ID: ${order.id}`,
+        `Agreement ID: ${order?.id}`,
         `Date: ${purchaseDate}`,
         "",
         "PARTIES:",
@@ -1185,7 +1185,7 @@ router.get(
         "",
         "BEAT INFORMATION:",
         `  Title: "${beatTitle}"`,
-        `  License Type: ${template.name} (${template.type})`,
+        `  License Type: ${template?.name} (${template?.type})`,
         `  Amount Paid: ${amountPaid}`,
         "",
         "═══════════════════════════════════════════════════════════════",
@@ -1194,16 +1194,16 @@ router.get(
         "",
         isExclusive
           ? `Producer hereby TRANSFERS ALL RIGHTS, title, and interest in the beat titled "${beatTitle}" to ${buyerName}, including full copyright ownership.`
-          : `Producer grants ${buyerName} a ${template.type} license to use the beat titled "${beatTitle}" under the following terms:`,
+          : `Producer grants ${buyerName} a ${template?.type} license to use the beat titled "${beatTitle}" under the following terms:`,
         "",
         "USAGE RIGHTS:",
-        `  • Audio Streams: ${template.streams}`,
-        `  • Physical/Digital Copies: ${template.copies}`,
-        `  • Radio Stations: ${template.radioStations}`,
-        `  • Music Videos: ${template.musicVideos}`,
-        `  • Broadcast Television: ${template.broadcast ? "Included" : "Not included"}`,
-        `  • Sync Licensing (Film/TV/Ads): ${template.sync ? "Included" : "Not included"}`,
-        `  • License Duration: ${template.duration}`,
+        `  • Audio Streams: ${template?.streams}`,
+        `  • Physical/Digital Copies: ${template?.copies}`,
+        `  • Radio Stations: ${template?.radioStations}`,
+        `  • Music Videos: ${template?.musicVideos}`,
+        `  • Broadcast Television: ${template?.broadcast ? "Included" : "Not included"}`,
+        `  • Sync Licensing (Film/TV/Ads): ${template?.sync ? "Included" : "Not included"}`,
+        `  • License Duration: ${template?.duration}`,
         "",
         "DELIVERABLES:",
         `  File Formats: ${fileFormats}`,
@@ -1243,22 +1243,22 @@ router.get(
         "",
         "This agreement is automatically generated and represents a binding contract.",
         `Generated by Max Booster • ${purchaseDate}`,
-        `Transaction ID: ${order.stripePaymentIntentId || order.id}`,
+        `Transaction ID: ${order?.stripePaymentIntentId || order?.id}`,
       ].join("\n");
 
-      if (req.query.format === "download") {
-        res.setHeader("Content-Type", "text/plain");
-        res.setHeader(
+      if (req?.query.format === "download") {
+        res?.setHeader("Content-Type", "text/plain");
+        res?.setHeader(
           "Content-Disposition",
-          `attachment; filename="license-agreement-${order.id}.txt"`,
+          `attachment; filename="license-agreement-${order?.id}.txt"`,
         );
-        return res.send(agreement);
+        return res?.send(agreement);
       }
 
-      res.json({
-        orderId: order.id,
+      res?.json({
+        orderId: order?.id,
         licenseType,
-        licenseName: template.name,
+        licenseName: template?.name,
         beatTitle,
         producerName,
         buyerName,
@@ -1268,256 +1268,256 @@ router.get(
         template,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error generating license agreement:");
-      res.status(500).json({ error: "Failed to generate license agreement" });
+      logger?.warn({ err: error }, "Error generating license agreement:");
+      res?.status(500).json({ error: "Failed to generate license agreement" });
     }
   },
 );
 
-router.get("/escrow", async (req: Request, res: Response) => {
+router?.get("/escrow", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const escrowOrders = await db
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const _escrowOrders = await db
       .select()
       .from(orders)
       .where(
         and(
-          or(eq(orders.userId, userId), eq(orders.sellerId, userId)),
-          or(eq(orders.status, "pending"), eq(orders.status, "escrow")),
+          or(eq(orders?.userId, userId), eq(orders?.sellerId, userId)),
+          or(eq(orders?.status, "pending"), eq(orders?.status, "escrow")),
         ),
       )
-      .orderBy(desc(orders.createdAt))
+      .orderBy(desc(orders?.createdAt))
       .limit(200);
 
-    const formatted = escrowOrders.map((o) => ({
-      id: o.id,
-      orderId: o.id,
-      buyerId: o.userId,
-      sellerId: o.sellerId,
-      listingId: o.listingId,
-      amount: o.amount,
-      currency: o.currency || "usd",
-      status: o.status,
-      licenseType: o.licenseType,
-      createdAt: o.createdAt,
+    const _formatted = escrowOrders?.map((o) => ({
+      id: o?.id,
+      orderId: o?.id,
+      buyerId: o?.userId,
+      sellerId: o?.sellerId,
+      listingId: o?.listingId,
+      amount: o?.amount,
+      currency: o?.currency || "usd",
+      status: o?.status,
+      licenseType: o?.licenseType,
+      createdAt: o?.createdAt,
       releasedAt: null,
     }));
 
-    res.json(formatted);
+    res?.json(formatted);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching escrow transactions:");
-    res.status(500).json({ error: "Failed to fetch escrow transactions" });
+    logger?.warn({ err: error }, "Error fetching escrow transactions:");
+    res?.status(500).json({ error: "Failed to fetch escrow transactions" });
   }
 });
 
-router.get("/affiliates", async (req: Request, res: Response) => {
+router?.get("/affiliates", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const settingKey = `affiliates:${userId}`;
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const _settingKey = `affiliates:${userId}`;
     const [row] = await db
       .select()
       .from(systemSettings)
-      .where(eq(systemSettings.key, settingKey))
+      .where(eq(systemSettings?.key, settingKey))
       .limit(1);
 
-    const affiliates = row ? (row.value as unknown[]) || [] : [];
-    res.json(affiliates);
+    const _affiliates = row ? (row?.value as unknown[]) || [] : [];
+    res?.json(affiliates);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching affiliates:");
-    res.status(500).json({ error: "Failed to fetch affiliates" });
+    logger?.warn({ err: error }, "Error fetching affiliates:");
+    res?.status(500).json({ error: "Failed to fetch affiliates" });
   }
 });
 
-router.get("/contracts", async (req: Request, res: Response) => {
+router?.get("/contracts", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const contracts = await storage.getContractTemplates(userId);
-    res.json(contracts);
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const _contracts = await storage?.getContractTemplates(userId);
+    res?.json(contracts);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching contracts:");
-    res.status(500).json({ error: "Failed to fetch contracts" });
+    logger?.warn({ err: error }, "Error fetching contracts:");
+    res?.status(500).json({ error: "Failed to fetch contracts" });
   }
 });
 
-router.get("/contracts/:id", async (req: Request, res: Response) => {
+router?.get("/contracts/:id", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const { id } = req.params;
-    const contract = await storage.getContractTemplateByUser(id, userId);
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const { id } = req?.params;
+    const _contract = await storage?.getContractTemplateByUser(id, userId);
 
     if (!contract) {
-      return res.status(404).json({ error: "Contract not found" });
+      return res?.status(404).json({ error: "Contract not found" });
     }
 
-    res.json(contract);
+    res?.json(contract);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching contract:");
-    res.status(500).json({ error: "Failed to fetch contract" });
+    logger?.warn({ err: error }, "Error fetching contract:");
+    res?.status(500).json({ error: "Failed to fetch contract" });
   }
 });
 
-router.patch("/contracts/:id", async (req: Request, res: Response) => {
+router?.patch("/contracts/:id", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const { id } = req.params;
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const { id } = req?.params;
 
-    const parsed = contractSchema.partial().safeParse(req.body);
-    if (!parsed.success) {
+    const _parsed = contractSchema?.partial().safeParse(req?.body);
+    if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed.error.flatten() });
+        .json({ error: "Validation error", details: parsed?.error.flatten() });
     }
 
-    const contract = await storage.getContractTemplateByUser(id, userId);
+    const _contract = await storage?.getContractTemplateByUser(id, userId);
     if (!contract) {
-      return res.status(404).json({ error: "Contract not found" });
+      return res?.status(404).json({ error: "Contract not found" });
     }
 
-    const updatedContract = await storage.updateContractTemplate(
+    const _updatedContract = await storage?.updateContractTemplate(
       id,
-      parsed.data,
+      parsed?.data,
     );
 
-    res.json(updatedContract);
+    res?.json(updatedContract);
   } catch (error) {
-    logger.warn({ err: error }, "Error updating contract:");
-    res.status(500).json({ error: "Failed to update contract" });
+    logger?.warn({ err: error }, "Error updating contract:");
+    res?.status(500).json({ error: "Failed to update contract" });
   }
 });
 
-router.delete("/contracts/:id", async (req: Request, res: Response) => {
+router?.delete("/contracts/:id", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const { id } = req.params;
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const { id } = req?.params;
 
-    const contract = await storage.getContractTemplateByUser(id, userId);
+    const _contract = await storage?.getContractTemplateByUser(id, userId);
     if (!contract) {
-      return res.status(404).json({ error: "Contract not found" });
+      return res?.status(404).json({ error: "Contract not found" });
     }
 
-    await storage.deleteContractTemplate(id);
-    res.json({ success: true });
+    await storage?.deleteContractTemplate(id);
+    res?.json({ success: true });
   } catch (error) {
-    logger.warn({ err: error }, "Error deleting contract:");
-    res.status(500).json({ error: "Failed to delete contract" });
+    logger?.warn({ err: error }, "Error deleting contract:");
+    res?.status(500).json({ error: "Failed to delete contract" });
   }
 });
 
-router.get("/collaborations", async (req: Request, res: Response) => {
+router?.get("/collaborations", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
-    const userId = req.user!.id;
+    const _userId = req?.user!.id;
 
     // Find projects where user is owner
-    const ownedProjects = await db
+    const _ownedProjects = await db
       .select()
       .from(collaborationProjects)
       .where(
         and(
-          eq(collaborationProjects.ownerId, userId),
-          sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`,
+          eq(collaborationProjects?.ownerId, userId),
+          sql`${collaborationProjects?.metadata}->>'_offerType' = 'marketplace_collab'`,
         ),
       )
-      .orderBy(desc(collaborationProjects.createdAt))
+      .orderBy(desc(collaborationProjects?.createdAt))
       .limit(100);
 
     // Find projects where user is a member (via projectMembers)
-    const memberRows = await db
-      .select({ projectId: projectMembers.projectId })
+    const _memberRows = await db
+      .select({ projectId: projectMembers?.projectId })
       .from(projectMembers)
-      .where(eq(projectMembers.userId, userId))
+      .where(eq(projectMembers?.userId, userId))
       .limit(200);
 
     let memberProjects: Record<string, unknown>[] = [];
-    if (memberRows.length > 0) {
-      const memberProjectIds = memberRows.map((r) => r.projectId);
+    if (memberRows?.length > 0) {
+      const _memberProjectIds = memberRows?.map((r) => r?.projectId);
       memberProjects = await db
         .select()
         .from(collaborationProjects)
         .where(
           and(
-            inArray(collaborationProjects.id, memberProjectIds),
-            sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`,
+            inArray(collaborationProjects?.id, memberProjectIds),
+            sql`${collaborationProjects?.metadata}->>'_offerType' = 'marketplace_collab'`,
           ),
         )
-        .orderBy(desc(collaborationProjects.createdAt))
+        .orderBy(desc(collaborationProjects?.createdAt))
         .limit(100);
     }
 
-    const allProjects = [
+    const _allProjects = [
       ...ownedProjects,
-      ...memberProjects.filter((p) => p.ownerId !== userId),
+      ...memberProjects?.filter((p) => p?.ownerId !== userId),
     ];
 
-    const collaborations = allProjects.map((project) => {
-      const meta = (project.metadata as Record<string, unknown>) || {};
+    const _collaborations = allProjects?.map((project) => {
+      const _meta = (project?.metadata as Record<string, unknown>) || {};
       return {
-        id: project.id,
-        fromUser: meta.fromUser || {
-          id: project.ownerId,
+        id: project?.id,
+        fromUser: meta?.fromUser || {
+          id: project?.ownerId,
           name: "Unknown",
           avatar: "",
         },
-        toUser: meta.toUser || {
-          id: meta.toUserId || "",
+        toUser: meta?.toUser || {
+          id: meta?.toUserId || "",
           name: "Recipient",
           avatar: "",
         },
-        beatId: meta.beatId || null,
-        beatTitle: meta.beatTitle || project.title,
-        type: meta.type || "custom",
-        terms: meta.terms || project.description || "",
-        splitPercentage: meta.splitPercentage ?? 50,
-        budget: meta.budget || null,
-        status: project.status || "pending",
-        messages: meta.messages || [],
-        createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
+        beatId: meta?.beatId || null,
+        beatTitle: meta?.beatTitle || project?.title,
+        type: meta?.type || "custom",
+        terms: meta?.terms || project?.description || "",
+        splitPercentage: meta?.splitPercentage ?? 50,
+        budget: meta?.budget || null,
+        status: project?.status || "pending",
+        messages: meta?.messages || [],
+        createdAt: project?.createdAt?.toISOString() || new Date().toISOString(),
       };
     });
 
-    res.json(collaborations);
+    res?.json(collaborations);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching collaborations:");
-    res.status(500).json({ error: "Failed to fetch collaborations" });
+    logger?.warn({ err: error }, "Error fetching collaborations:");
+    res?.status(500).json({ error: "Failed to fetch collaborations" });
   }
 });
 
-router.post(
+router?.post(
   "/upload",
-  upload.fields([
+  upload?.fields([
     { name: "audioFile", maxCount: 1 },
     { name: "coverArt", maxCount: 1 },
   ]),
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Unauthorized" });
       }
 
       const {
@@ -1530,11 +1530,11 @@ router.post(
         licenseType,
         description,
         tags,
-      } = req.body;
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      } = req?.body;
+      const _files = req?.files as { [fieldname: string]: Express?.Multer.File[] };
 
       if (!title || !genre) {
-        return res.status(400).json({ error: "Title and genre are required" });
+        return res?.status(400).json({ error: "Title and genre are required" });
       }
 
       let audioUrl = "";
@@ -1542,40 +1542,40 @@ router.post(
       let uploadedAudioKey = "";
 
       if (files?.audioFile?.[0]) {
-        const audioFile = files.audioFile[0];
-        const ext = path.extname(audioFile.originalname) || ".mp3";
-        const filename = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${ext}`;
-        uploadedAudioKey = await storageService.uploadFile(
-          audioFile.buffer,
+        const _audioFile = files?.audioFile[0];
+        const _ext = path?.extname(audioFile?.originalname) || ".mp3";
+        const _filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
+        uploadedAudioKey = await storageService?.uploadFile(
+          audioFile?.buffer,
           "beats",
           filename,
-          audioFile.mimetype,
+          audioFile?.mimetype,
         );
         audioUrl = `/api/marketplace/audio/${uploadedAudioKey}`;
-        logger.info(`Audio file saved: ${uploadedAudioKey}`);
+        logger?.info(`Audio file saved: ${uploadedAudioKey}`);
       }
 
       if (files?.coverArt?.[0]) {
-        const coverFile = files.coverArt[0];
-        const result = await storeUploadedFile(
+        const _coverFile = files?.coverArt[0];
+        const _result = await storeUploadedFile(
           coverFile,
-          req.user!.id,
+          req?.user!.id,
           "artwork",
         );
-        artworkUrl = result.url;
-        logger.info(
-          `Cover art saved via storeUploadedFile: ${result.key} (processed: ${result.processed})`,
+        artworkUrl = result?.url;
+        logger?.info(
+          `Cover art saved via storeUploadedFile: ${result?.key} (processed: ${result?.processed})`,
         );
       } else if (
-        req.body.artworkUrl &&
-        typeof req.body.artworkUrl === "string"
+        req?.body.artworkUrl &&
+        typeof req?.body.artworkUrl === "string"
       ) {
         // Cover art pre-uploaded separately — use the URL directly
-        artworkUrl = req.body.artworkUrl;
+        artworkUrl = req?.body.artworkUrl;
       }
 
-      const listing = await marketplaceService.createListing({
-        userId: req.user!.id,
+      const _listing = await marketplaceService?.createListing({
+        userId: req?.user!.id,
         title,
         description,
         genre,
@@ -1584,7 +1584,7 @@ router.post(
         price: parseFloat(price) || 50,
         audioUrl,
         artworkUrl,
-        tags: tags ? tags.split(",").map((t: string) => t.trim()) : [],
+        tags: tags ? tags?.split(",").map((t: string) => t?.trim()) : [],
         licenses: [
           {
             type: licenseType || "basic",
@@ -1596,42 +1596,42 @@ router.post(
 
       // Auto-tag BPM/key via Python librosa analysis if not provided by user
       if (files?.audioFile?.[0] && (!tempo || !key)) {
-        const audioBuffer = files.audioFile[0].buffer;
-        const ext = path.extname(files.audioFile[0].originalname) || ".mp3";
-        const tmpPath = path.join(
-          os.tmpdir(),
-          `beat_autotag_${listing.id}${ext}`,
+        const _audioBuffer = files?.audioFile[0].buffer;
+        const _ext = path?.extname(files?.audioFile[0].originalname) || ".mp3";
+        const _tmpPath = path?.join(
+          os?.tmpdir(),
+          `beat_autotag_${listing?.id}${ext}`,
         );
         setImmediate(async () => {
           try {
-            await fsPromises.writeFile(tmpPath, audioBuffer);
-            const available = await pythonAIService.isAvailable();
+            await fsPromises?.writeFile(tmpPath, audioBuffer);
+            const _available = await pythonAIService?.isAvailable();
             if (available) {
-              const analysis = await pythonAIService.analyzeAudio(
+              const _analysis = await pythonAIService?.analyzeAudio(
                 tmpPath,
                 false,
               );
-              if (analysis.success && analysis.data) {
+              if (analysis?.success && analysis?.data) {
                 const updateData: Record<string, unknown> = {};
-                if (!tempo && analysis.data.bpm)
-                  updateData.bpm = Math.round(analysis.data.bpm);
-                if (!key && analysis.data.key)
-                  updateData.key = analysis.data.key;
-                if (Object.keys(updateData).length > 0) {
+                if (!tempo && analysis?.data.bpm)
+                  updateData?.bpm = Math?.round(analysis?.data.bpm);
+                if (!key && analysis?.data.key)
+                  updateData?.key = analysis?.data.key;
+                if (Object?.keys(updateData).length > 0) {
                   await db
                     .update(listings)
                     .set(updateData)
-                    .where(eq(listings.id, listing.id));
-                  logger.info(
-                    `[AutoTag] Beat ${listing.id} tagged: BPM=${updateData.bpm ?? "kept"} key=${updateData.key ?? "kept"}`,
+                    .where(eq(listings?.id, listing?.id));
+                  logger?.info(
+                    `[AutoTag] Beat ${listing?.id} tagged: BPM=${updateData?.bpm ?? "kept"} key=${updateData?.key ?? "kept"}`,
                   );
                 }
               }
             }
           } catch (tagErr) {
-            logger.warn("[AutoTag] Failed to auto-tag beat:", tagErr);
+            logger?.warn("[AutoTag] Failed to auto-tag beat:", tagErr);
           } finally {
-            fsPromises.unlink(tmpPath).catch(() => {
+            fsPromises?.unlink(tmpPath).catch(() => {
               /* intentional: temp-file cleanup */
             });
           }
@@ -1641,13 +1641,13 @@ router.post(
       // Notify admin about new marketplace listing awaiting review (async, non-blocking)
       setImmediate(async () => {
         try {
-          await notificationService.sendAdminMarketplaceReviewNotification(
+          await notificationService?.sendAdminMarketplaceReviewNotification(
             title,
-            listing.id,
-            (req.user as Record<string, unknown>)?.email || "unknown",
+            listing?.id,
+            (req?.user as Record<string, unknown>)?.email || "unknown",
           );
         } catch (err) {
-          logger.warn(
+          logger?.warn(
             { err: err },
             "Marketplace review admin notification error:",
           );
@@ -1657,41 +1657,41 @@ router.post(
       // Notify followers about the new beat upload (async, non-blocking)
       (async () => {
         try {
-          const producerId = req.user!.id;
-          const producerName =
-            (req.user as Record<string, unknown>)?.firstName ||
-            (req.user as Record<string, unknown>)?.username ||
+          const _producerId = req?.user!.id;
+          const _producerName =
+            (req?.user as Record<string, unknown>)?.firstName ||
+            (req?.user as Record<string, unknown>)?.username ||
             "A producer you follow";
-          const followers =
-            await discoveryAlgorithmService.getProducerFollowers(producerId);
+          const _followers =
+            await discoveryAlgorithmService?.getProducerFollowers(producerId);
 
-          if (followers.length > 0) {
-            logger.info(
-              `Notifying ${followers.length} followers about new beat: ${title}`,
+          if (followers?.length > 0) {
+            logger?.info(
+              `Notifying ${followers?.length} followers about new beat: ${title}`,
             );
 
             // Send notifications in parallel batches of 10
-            const batchSize = 10;
-            for (let i = 0; i < followers.length; i += batchSize) {
-              const batch = followers.slice(i, i + batchSize);
-              await Promise.all(
-                batch.map((followerId) =>
+            const _batchSize = 10;
+            for (let i = 0; i < followers?.length; i += batchSize) {
+              const _batch = followers?.slice(i, i + batchSize);
+              await Promise?.all(
+                batch?.map((followerId) =>
                   notificationService
                     .send({
                       userId: followerId,
                       type: "marketing",
                       title: "New Beat Alert!",
                       message: `${producerName} just dropped a new beat: "${title}". Check it out now!`,
-                      link: `/marketplace/beat/${listing.id}`,
+                      link: `/marketplace/beat/${listing?.id}`,
                       metadata: {
-                        beatId: listing.id,
+                        beatId: listing?.id,
                         producerId,
                         beatTitle: title,
                         genre,
                       },
                     })
                     .catch((err) =>
-                      logger.warn(
+                      logger?.warn(
                         { err: err },
                         `Failed to notify follower ${followerId}:`,
                       ),
@@ -1700,81 +1700,81 @@ router.post(
               );
             }
 
-            logger.info(
-              `Successfully notified ${followers.length} followers about new beat`,
+            logger?.info(
+              `Successfully notified ${followers?.length} followers about new beat`,
             );
           }
         } catch (notifyError) {
-          logger.warn("Error notifying followers about new beat:", notifyError);
+          logger?.warn("Error notifying followers about new beat:", notifyError);
         }
       })();
 
-      res.status(201).json(listing);
+      res?.status(201).json(listing);
 
       // Async audio separation: generate MP3 (all tiers) + stems (unlimited/exclusive)
       if (uploadedAudioKey) {
         setImmediate(async () => {
           try {
-            const sepResult = await processUploadedBeat(
-              listing.id,
-              req.user!.id,
+            const _sepResult = await processUploadedBeat(
+              listing?.id,
+              req?.user!.id,
               uploadedAudioKey,
               licenseType,
             );
-            logger.info(
-              `[AudioSeparator] Beat ${listing.id} processed — ` +
-                `mp3=${!!sepResult.mp3Url} stems=${sepResult.stemsAvailable}`,
+            logger?.info(
+              `[AudioSeparator] Beat ${listing?.id} processed — ` +
+                `mp3=${!!sepResult?.mp3Url} stems=${sepResult?.stemsAvailable}`,
             );
           } catch (sepErr) {
-            logger.warn("[AudioSeparator] Processing failed:", sepErr);
+            logger?.warn("[AudioSeparator] Processing failed:", sepErr);
           }
         });
       }
 
       setImmediate(async () => {
         try {
-          await notificationService.sendBeatListingLiveNotification(
-            req.user!.id,
+          await notificationService?.sendBeatListingLiveNotification(
+            req?.user!.id,
             title,
             parseFloat(price) || 50,
           );
         } catch (err) {
-          logger.warn(
+          logger?.warn(
             { err: err },
             "[Marketplace] beat listing notification error:",
           );
         }
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error uploading beat:");
-      res.status(500).json({ error: "Failed to upload beat" });
+      logger?.warn({ err: error }, "Error uploading beat:");
+      res?.status(500).json({ error: "Failed to upload beat" });
     }
   },
 );
 
-router.get("/audio/*path", async (req: Request, res: Response) => {
+router?.get("/audio/*path", async (req: Request, res: Response) => {
   try {
-    let fileKey = Array.isArray(req.params.path)
-      ? req.params.path.join("/")
-      : req.params.path;
+    let fileKey = Array?.isArray(req?.params.path)
+      ? req?.params.path?.join("/")
+      : req?.params.path;
 
     if (typeof fileKey !== "string") {
-      return res.status(400).json({ error: "Invalid audio path" });
+      return res?.status(400).json({ error: "Invalid audio path" });
     }
 
     if (
-      fileKey.includes("..") ||
-      fileKey.includes("\0") ||
-      fileKey.startsWith("/")
+      fileKey?.includes("..") ||
+      fileKey?.includes("\0") ||
+      fileKey?.startsWith("/")
     ) {
-      return res.status(400).json({ error: "Invalid audio path" });
+      return res?.status(400).json({ error: "Invalid audio path" });
     }
 
-    if (fileKey.startsWith("uploads/")) {
-      fileKey = fileKey.substring("uploads/".length);
+    if (fileKey?.startsWith("uploads/")) {
+      fileKey = fileKey?.substring("uploads/".length);
     }
 
-    const ext = path.extname(fileKey).toLowerCase();
+    const _ext = path?.extname(fileKey).toLowerCase();
     const mimeTypes: Record<string, string> = {
       ".mp3": "audio/mpeg",
       ".wav": "audio/wav",
@@ -1784,48 +1784,48 @@ router.get("/audio/*path", async (req: Request, res: Response) => {
       ".ogg": "audio/ogg",
       ".aac": "audio/aac",
     };
-    const contentType = mimeTypes[ext] || "audio/mpeg";
+    const _contentType = mimeTypes[ext] || "audio/mpeg";
 
     // CORS headers for audio playback
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
-    res.setHeader(
+    res?.setHeader("Access-Control-Allow-Origin", "*");
+    res?.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res?.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
+    res?.setHeader(
       "Access-Control-Expose-Headers",
       "Content-Length, Content-Range, Accept-Ranges",
     );
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res?.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res?.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+    res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 
     // Fast path: stream directly from local disk (avoids PDIM round-trip for large files)
-    const LOCAL_STORAGE_DIR = path.resolve("./uploads/files");
-    const localPath = path.join(
+    const _LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
+    const _localPath = path?.join(
       LOCAL_STORAGE_DIR,
-      fileKey.replace(/\//g, path.sep),
+      fileKey?.replace(/\//g, path?.sep),
     );
 
     try {
-      const stat = await fsPromises.stat(localPath);
-      const fileSize = stat.size;
-      const range = req.headers.range;
+      const _stat = await fsPromises?.stat(localPath);
+      const _fileSize = stat?.size;
+      const _range = req?.headers.range;
 
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Accept-Ranges", "bytes");
+      res?.setHeader("Content-Type", contentType);
+      res?.setHeader("Accept-Ranges", "bytes");
 
       if (range) {
-        const parts = range.replace(/bytes=/, "").split("-");
-        const start = parseInt(parts[0], 10);
-        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-        const chunkSize = end - start + 1;
+        const _parts = range?.replace(/bytes=/, "").split("-");
+        const _start = parseInt(parts[0], 10);
+        const _end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const _chunkSize = end - start + 1;
 
-        res.status(206);
-        res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
-        res.setHeader("Content-Length", chunkSize);
-        fs.createReadStream(localPath, { start, end }).pipe(res);
+        res?.status(206);
+        res?.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+        res?.setHeader("Content-Length", chunkSize);
+        fs?.createReadStream(localPath, { start, end }).pipe(res);
       } else {
-        res.setHeader("Content-Length", fileSize);
-        fs.createReadStream(localPath).pipe(res);
+        res?.setHeader("Content-Length", fileSize);
+        fs?.createReadStream(localPath).pipe(res);
       }
       return;
     } catch {
@@ -1833,64 +1833,64 @@ router.get("/audio/*path", async (req: Request, res: Response) => {
     }
 
     // Fallback: load from PDIM into buffer (for files not yet written to disk)
-    const exists = await storageService.fileExists(fileKey);
+    const _exists = await storageService?.fileExists(fileKey);
     if (!exists) {
-      logger.warn(`Audio file not found: ${fileKey}`);
-      return res.status(404).json({ error: "Audio file not found" });
+      logger?.warn(`Audio file not found: ${fileKey}`);
+      return res?.status(404).json({ error: "Audio file not found" });
     }
 
-    const fileBuffer = await storageService.downloadFile(fileKey);
-    const fileSize = fileBuffer.length;
-    const range = req.headers.range;
+    const _fileBuffer = await storageService?.downloadFile(fileKey);
+    const _fileSize = fileBuffer?.length;
+    const _range = req?.headers.range;
 
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Accept-Ranges", "bytes");
+    res?.setHeader("Content-Type", contentType);
+    res?.setHeader("Accept-Ranges", "bytes");
 
     if (range) {
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-      const chunkSize = end - start + 1;
+      const _parts = range?.replace(/bytes=/, "").split("-");
+      const _start = parseInt(parts[0], 10);
+      const _end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+      const _chunkSize = end - start + 1;
 
-      res.status(206);
-      res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
-      res.setHeader("Content-Length", chunkSize);
-      res.send(fileBuffer.subarray(start, end + 1));
+      res?.status(206);
+      res?.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+      res?.setHeader("Content-Length", chunkSize);
+      res?.send(fileBuffer?.subarray(start, end + 1));
     } else {
-      res.setHeader("Content-Length", fileSize);
-      res.send(fileBuffer);
+      res?.setHeader("Content-Length", fileSize);
+      res?.send(fileBuffer);
     }
   } catch (error) {
-    logger.warn({ err: error }, "Error serving audio file:");
-    res.status(500).json({ error: "Failed to load audio file" });
+    logger?.warn({ err: error }, "Error serving audio file:");
+    res?.status(500).json({ error: "Failed to load audio file" });
   }
 });
 
-router.get("/cover/*path", async (req: Request, res: Response) => {
+router?.get("/cover/*path", async (req: Request, res: Response) => {
   try {
-    const fileKey = Array.isArray(req.params.path)
-      ? req.params.path.join("/")
-      : req.params.path;
+    const _fileKey = Array?.isArray(req?.params.path)
+      ? req?.params.path?.join("/")
+      : req?.params.path;
 
     if (typeof fileKey !== "string") {
-      return res.status(400).json({ error: "Invalid cover path" });
+      return res?.status(400).json({ error: "Invalid cover path" });
     }
 
     if (
-      fileKey.includes("..") ||
-      fileKey.includes("\0") ||
-      fileKey.startsWith("/")
+      fileKey?.includes("..") ||
+      fileKey?.includes("\0") ||
+      fileKey?.startsWith("/")
     ) {
-      return res.status(400).json({ error: "Invalid cover path" });
+      return res?.status(400).json({ error: "Invalid cover path" });
     }
 
-    const exists = await storageService.fileExists(fileKey);
+    const _exists = await storageService?.fileExists(fileKey);
     if (!exists) {
-      logger.warn(`Cover image not found: ${fileKey}`);
-      return res.status(404).json({ error: "Cover image not found" });
+      logger?.warn(`Cover image not found: ${fileKey}`);
+      return res?.status(404).json({ error: "Cover image not found" });
     }
 
-    const ext = path.extname(fileKey).toLowerCase();
+    const _ext = path?.extname(fileKey).toLowerCase();
     const mimeTypes: Record<string, string> = {
       ".jpg": "image/jpeg",
       ".jpeg": "image/jpeg",
@@ -1899,36 +1899,36 @@ router.get("/cover/*path", async (req: Request, res: Response) => {
       ".webp": "image/webp",
     };
 
-    const fileBuffer = await storageService.downloadFile(fileKey);
+    const _fileBuffer = await storageService?.downloadFile(fileKey);
 
     // CORS headers for image loading - override Helmet restrictions
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
-    res.setHeader("Content-Type", mimeTypes[ext] || "image/jpeg");
-    res.setHeader("Content-Length", fileBuffer.length);
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.send(fileBuffer);
+    res?.setHeader("Access-Control-Allow-Origin", "*");
+    res?.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res?.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res?.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+    res?.setHeader("Content-Type", mimeTypes[ext] || "image/jpeg");
+    res?.setHeader("Content-Length", fileBuffer?.length);
+    res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res?.send(fileBuffer);
   } catch (error) {
-    logger.warn({ err: error }, "Error serving cover image:");
-    res.status(500).json({ error: "Failed to load cover image" });
+    logger?.warn({ err: error }, "Error serving cover image:");
+    res?.status(500).json({ error: "Failed to load cover image" });
   }
 });
 
-router.put(
+router?.put(
   "/listings/:id",
-  upload.fields([
+  upload?.fields([
     { name: "audio", maxCount: 1 },
     { name: "artwork", maxCount: 1 },
   ]),
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const { id } = req.params;
+      const { id } = req?.params;
       const {
         title,
         description,
@@ -1939,188 +1939,188 @@ router.put(
         price,
         tags,
         licenseType,
-      } = req.body;
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+      } = req?.body;
+      const _files = req?.files as { [fieldname: string]: Express?.Multer.File[] };
 
       const updateData: Record<string, unknown> = {};
-      if (title) updateData.title = title;
-      if (description !== undefined) updateData.description = description;
-      if (genre) updateData.genre = genre;
-      if (mood) updateData.mood = mood;
-      if (tempo) updateData.bpm = parseInt(tempo);
-      if (key) updateData.key = key;
-      if (price) updateData.price = parseFloat(price);
-      if (licenseType) updateData.licenseType = licenseType;
-      if (tags) updateData.tags = tags.split(",").map((t: string) => t.trim());
+      if (title) updateData?.title = title;
+      if (description !== undefined) updateData?.description = description;
+      if (genre) updateData?.genre = genre;
+      if (mood) updateData?.mood = mood;
+      if (tempo) updateData?.bpm = parseInt(tempo);
+      if (key) updateData?.key = key;
+      if (price) updateData?.price = parseFloat(price);
+      if (licenseType) updateData?.licenseType = licenseType;
+      if (tags) updateData?.tags = tags?.split(",").map((t: string) => t?.trim());
 
       if (files?.audio?.[0]) {
-        const audioFile = files.audio[0];
-        const ext = path.extname(audioFile.originalname).toLowerCase();
-        const filename = `${Date.now()}-${crypto.randomBytes(8).toString("hex")}${ext}`;
-        const audioKey = await storageService.uploadFile(
-          audioFile.buffer,
+        const _audioFile = files?.audio[0];
+        const _ext = path?.extname(audioFile?.originalname).toLowerCase();
+        const _filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
+        const _audioKey = await storageService?.uploadFile(
+          audioFile?.buffer,
           "beats",
           filename,
-          audioFile.mimetype,
+          audioFile?.mimetype,
         );
-        updateData.audioUrl = `/api/marketplace/audio/${audioKey}`;
+        updateData?.audioUrl = `/api/marketplace/audio/${audioKey}`;
       }
 
       if (files?.artwork?.[0]) {
-        const artworkFile = files.artwork[0];
-        const result = await storeUploadedFile(
+        const _artworkFile = files?.artwork[0];
+        const _result = await storeUploadedFile(
           artworkFile,
-          req.user!.id,
+          req?.user!.id,
           "artwork",
         );
-        updateData.artworkUrl = result.url;
-        logger.info(
-          `Artwork updated via storeUploadedFile: ${result.key} (processed: ${result.processed})`,
+        updateData?.artworkUrl = result?.url;
+        logger?.info(
+          `Artwork updated via storeUploadedFile: ${result?.key} (processed: ${result?.processed})`,
         );
       } else if (
-        req.body.artworkUrl &&
-        typeof req.body.artworkUrl === "string"
+        req?.body.artworkUrl &&
+        typeof req?.body.artworkUrl === "string"
       ) {
         // Cover art pre-uploaded separately — use the URL directly
-        updateData.artworkUrl = req.body.artworkUrl;
+        updateData?.artworkUrl = req?.body.artworkUrl;
       }
 
-      const updatedListing = await marketplaceService.updateListing(
+      const _updatedListing = await marketplaceService?.updateListing(
         id,
-        req.user!.id,
+        req?.user!.id,
         updateData,
       );
       if (!updatedListing) {
-        return res.status(404).json({ error: "Listing not found" });
+        return res?.status(404).json({ error: "Listing not found" });
       }
 
-      res.json(updatedListing);
+      res?.json(updatedListing);
     } catch (error) {
-      logger.warn({ err: error }, "Error updating listing:");
-      if (error.message === "Not authorized to update this listing") {
-        return res.status(403).json({ error: error.message });
+      logger?.warn({ err: error }, "Error updating listing:");
+      if (error?.message === "Not authorized to update this listing") {
+        return res?.status(403).json({ error: error?.message });
       }
-      res.status(500).json({ error: "Failed to update beat" });
+      res?.status(500).json({ error: "Failed to update beat" });
     }
   },
 );
 
-router.delete("/listings/:id", async (req: Request, res: Response) => {
+router?.delete("/listings/:id", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req.params;
-    await marketplaceService.deleteListing(id, req.user!.id);
-    res.json({ success: true, message: "Beat deleted successfully" });
+    const { id } = req?.params;
+    await marketplaceService?.deleteListing(id, req?.user!.id);
+    res?.json({ success: true, message: "Beat deleted successfully" });
   } catch (error) {
-    logger.warn({ err: error }, "Error deleting listing:");
-    if (error.message === "Not authorized to delete this listing") {
-      return res.status(403).json({ error: error.message });
+    logger?.warn({ err: error }, "Error deleting listing:");
+    if (error?.message === "Not authorized to delete this listing") {
+      return res?.status(403).json({ error: error?.message });
     }
-    if (error.message === "Listing not found") {
-      return res.status(404).json({ error: error.message });
+    if (error?.message === "Listing not found") {
+      return res?.status(404).json({ error: error?.message });
     }
-    res.status(500).json({ error: "Failed to delete beat" });
+    res?.status(500).json({ error: "Failed to delete beat" });
   }
 });
 
-router.post("/connect-stripe", async (req: Request, res: Response) => {
+router?.post("/connect-stripe", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const baseUrl = getBaseUrl();
+    const _baseUrl = getBaseUrl();
 
-    const returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;
-    const refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
+    const _returnUrl = `${baseUrl}/marketplace?tab=payouts&setup=complete`;
+    const _refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
 
-    const result = await marketplaceService.setupStripeConnect(
-      req.user!.id,
+    const _result = await marketplaceService?.setupStripeConnect(
+      req?.user!.id,
       returnUrl,
       refreshUrl,
     );
 
-    res.json(result);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error connecting Stripe:");
-    res.status(500).json({ error: "Failed to connect Stripe account" });
+    logger?.warn({ err: error }, "Error connecting Stripe:");
+    res?.status(500).json({ error: "Failed to connect Stripe account" });
   }
 });
 
-router.post("/follow/:producerId", async (req: Request, res: Response) => {
+router?.post("/follow/:producerId", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const { producerId } = req.params;
+    const { producerId } = req?.params;
     if (!producerId) {
-      return res.status(400).json({ error: "producerId is required" });
+      return res?.status(400).json({ error: "producerId is required" });
     }
 
-    const result = await discoveryAlgorithmService.followProducer(
-      req.user!.id,
+    const _result = await discoveryAlgorithmService?.followProducer(
+      req?.user!.id,
       producerId,
     );
-    res.json(result);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error following producer:");
-    res.status(500).json({ error: "Failed to follow producer" });
+    logger?.warn({ err: error }, "Error following producer:");
+    res?.status(500).json({ error: "Failed to follow producer" });
   }
 });
 
-router.post(
+router?.post(
   "/escrow/:transactionId/release",
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const { transactionId } = req.params;
-      res.json({
+      const { transactionId } = req?.params;
+      res?.json({
         success: true,
         message: "Escrow released successfully",
         transactionId,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error releasing escrow:");
-      res.status(500).json({ error: "Failed to release escrow" });
+      logger?.warn({ err: error }, "Error releasing escrow:");
+      res?.status(500).json({ error: "Failed to release escrow" });
     }
   },
 );
 
-router.post("/affiliates", async (req: Request, res: Response) => {
+router?.post("/affiliates", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const parsed = affiliateSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0].message });
+    const _parsed = affiliateSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
+      return res?.status(400).json({ error: parsed?.error.issues[0].message });
     }
-    const { name, email, commissionRate } = parsed.data;
+    const { name, email, commissionRate } = parsed?.data;
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const settingKey = `affiliates:${userId}`;
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const _settingKey = `affiliates:${userId}`;
     const [existing] = await db
       .select()
       .from(systemSettings)
-      .where(eq(systemSettings.key, settingKey))
+      .where(eq(systemSettings?.key, settingKey))
       .limit(1);
     const currentList: Record<string, unknown>[] = existing
-      ? (existing.value as Record<string, unknown>[]) || []
+      ? (existing?.value as Record<string, unknown>[]) || []
       : [];
 
-    const affiliate = {
-      id: `aff-${Date.now()}`,
+    const _affiliate = {
+      id: `aff-${Date?.now()}`,
       name,
       email,
-      affiliateCode: `REF-${crypto.randomBytes(3).toString("hex").toUpperCase()}`,
+      affiliateCode: `REF-${crypto?.randomBytes(3).toString("hex").toUpperCase()}`,
       commissionRate: commissionRate || 20,
       totalEarnings: 0,
       pendingPayout: 0,
@@ -2130,39 +2130,39 @@ router.post("/affiliates", async (req: Request, res: Response) => {
       joinedAt: new Date().toISOString(),
     };
 
-    const updatedList = [...currentList, affiliate];
+    const _updatedList = [...currentList, affiliate];
     if (existing) {
       await db
         .update(systemSettings)
         .set({ value: updatedList, updatedAt: new Date() })
-        .where(eq(systemSettings.key, settingKey));
+        .where(eq(systemSettings?.key, settingKey));
     } else {
       await db
         .insert(systemSettings)
         .values({ key: settingKey, value: updatedList });
     }
 
-    res.status(201).json(affiliate);
+    res?.status(201).json(affiliate);
   } catch (error) {
-    logger.warn({ err: error }, "Error creating affiliate:");
-    res.status(500).json({ error: "Failed to create affiliate" });
+    logger?.warn({ err: error }, "Error creating affiliate:");
+    res?.status(500).json({ error: "Failed to create affiliate" });
   }
 });
 
-router.post("/contracts", async (req: Request, res: Response) => {
+router?.post("/contracts", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req.user as Record<string, unknown>).id;
-    const parsed = contractSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0].message });
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const _parsed = contractSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
+      return res?.status(400).json({ error: parsed?.error.issues[0].message });
     }
-    const { name, description, content, category, variables } = parsed.data;
+    const { name, description, content, category, variables } = parsed?.data;
 
-    const contract = await storage.createContractTemplate({
+    const _contract = await storage?.createContractTemplate({
       userId,
       name,
       description: description || "",
@@ -2171,33 +2171,33 @@ router.post("/contracts", async (req: Request, res: Response) => {
       variables: variables || [],
     });
 
-    res.status(201).json(contract);
+    res?.status(201).json(contract);
   } catch (error) {
-    logger.warn({ err: error }, "Error creating contract:");
-    res.status(500).json({ error: "Failed to create contract" });
+    logger?.warn({ err: error }, "Error creating contract:");
+    res?.status(500).json({ error: "Failed to create contract" });
   }
 });
 
-router.post("/collaborations", async (req: Request, res: Response) => {
+router?.post("/collaborations", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const parsed = collaborationSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.issues[0].message });
+    const _parsed = collaborationSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
+      return res?.status(400).json({ error: parsed?.error.issues[0].message });
     }
     const { toUserId, beatId, type, terms, splitPercentage, budget, message } =
-      parsed.data;
-    const userId = req.user!.id;
+      parsed?.data;
+    const _userId = req?.user!.id;
 
-    const fromUser = {
+    const _fromUser = {
       id: userId,
-      name: (req.user as Record<string, unknown>)?.username || "User",
+      name: (req?.user as Record<string, unknown>)?.username || "User",
       avatar: "",
     };
-    const messages = message
+    const _messages = message
       ? [
           {
             sender: userId,
@@ -2231,48 +2231,48 @@ router.post("/collaborations", async (req: Request, res: Response) => {
       })
       .returning();
 
-    const meta = (project.metadata as Record<string, unknown>) || {};
-    const collaboration = {
-      id: project.id,
-      fromUser: meta.fromUser,
-      toUser: meta.toUser,
-      beatId: meta.beatId,
-      beatTitle: meta.beatTitle,
-      type: meta.type,
-      terms: meta.terms,
-      splitPercentage: meta.splitPercentage,
-      budget: meta.budget,
-      status: project.status,
-      messages: meta.messages,
-      createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
+    const _meta = (project?.metadata as Record<string, unknown>) || {};
+    const _collaboration = {
+      id: project?.id,
+      fromUser: meta?.fromUser,
+      toUser: meta?.toUser,
+      beatId: meta?.beatId,
+      beatTitle: meta?.beatTitle,
+      type: meta?.type,
+      terms: meta?.terms,
+      splitPercentage: meta?.splitPercentage,
+      budget: meta?.budget,
+      status: project?.status,
+      messages: meta?.messages,
+      createdAt: project?.createdAt?.toISOString() || new Date().toISOString(),
     };
 
-    res.status(201).json(collaboration);
+    res?.status(201).json(collaboration);
   } catch (error) {
-    logger.warn({ err: error }, "Error creating collaboration:");
-    res.status(500).json({ error: "Failed to create collaboration" });
+    logger?.warn({ err: error }, "Error creating collaboration:");
+    res?.status(500).json({ error: "Failed to create collaboration" });
   }
 });
 
 // Producer by ID endpoint
-router.get("/producers/:producerId", async (req: Request, res: Response) => {
+router?.get("/producers/:producerId", async (req: Request, res: Response) => {
   try {
-    const { producerId } = req.params;
-    const producer = await storage.getUser(producerId);
+    const { producerId } = req?.params;
+    const _producer = await storage?.getUser(producerId);
     if (!producer) {
-      return res.status(404).json({ error: "Producer not found" });
+      return res?.status(404).json({ error: "Producer not found" });
     }
 
-    const producerBeats =
-      await marketplaceService.getListingsByProducer(producerId);
-    const beatCount = producerBeats.length;
+    const _producerBeats =
+      await marketplaceService?.getListingsByProducer(producerId);
+    const _beatCount = producerBeats?.length;
 
-    const userStorefront = await db
-      .select({ id: storefronts.id })
+    const _userStorefront = await db
+      .select({ id: storefronts?.id })
       .from(storefronts)
-      .where(eq(storefronts.userId, producerId))
+      .where(eq(storefronts?.userId, producerId))
       .limit(1);
-    const storefrontId = userStorefront[0]?.id;
+    const _storefrontId = userStorefront[0]?.id;
 
     let followerCount = 0;
     let avgRating = 0;
@@ -2282,29 +2282,29 @@ router.get("/producers/:producerId", async (req: Request, res: Response) => {
       const [followResult] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(storefrontFollows)
-        .where(eq(storefrontFollows.storefrontId, storefrontId))
+        .where(eq(storefrontFollows?.storefrontId, storefrontId))
         .limit(1);
       followerCount = followResult?.count || 0;
 
       const [ratingResult] = await db
         .select({
-          avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)`,
+          avg: sql<number>`coalesce(avg(${storefrontRatings?.rating}), 0)`,
         })
         .from(storefrontRatings)
-        .where(eq(storefrontRatings.storefrontId, storefrontId))
+        .where(eq(storefrontRatings?.storefrontId, storefrontId))
         .limit(1);
-      avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
+      avgRating = Math?.round((Number(ratingResult?.avg) || 0) * 10) / 10;
     }
 
-    if (avgRating === 0 && producerBeats.length > 0) {
-      const beatRatings = producerBeats
-        .filter((b: Record<string, unknown>) => (b.avgRating || 0) > 0)
-        .map((b: Record<string, unknown>) => b.avgRating);
-      if (beatRatings.length > 0) {
+    if (avgRating === 0 && producerBeats?.length > 0) {
+      const _beatRatings = producerBeats
+        .filter((b: Record<string, unknown>) => (b?.avgRating || 0) > 0)
+        .map((b: Record<string, unknown>) => b?.avgRating);
+      if (beatRatings?.length > 0) {
         avgRating =
-          Math.round(
-            (beatRatings.reduce((s: number, r: number) => s + r, 0) /
-              beatRatings.length) *
+          Math?.round(
+            (beatRatings?.reduce((s: number, r: number) => s + r, 0) /
+              beatRatings?.length) *
               10,
           ) / 10;
       }
@@ -2314,125 +2314,125 @@ router.get("/producers/:producerId", async (req: Request, res: Response) => {
       .select({ count: sql<number>`count(*)::int` })
       .from(orders)
       .where(
-        and(eq(orders.sellerId, producerId), eq(orders.status, "completed")),
+        and(eq(orders?.sellerId, producerId), eq(orders?.status, "completed")),
       )
       .limit(1);
     salesCount = salesResult?.count || 0;
 
-    const featuredBeats = producerBeats
+    const _featuredBeats = producerBeats
       .slice(0, 8)
       .map((beat: Record<string, unknown>) => ({
-        id: beat.id,
-        title: beat.title,
-        price: beat.price || (beat.priceCents ? beat.priceCents / 100 : 0),
-        plays: beat.plays || 0,
-        likes: beat.likes || 0,
-        genre: beat.genre || "",
-        tempo: beat.bpm || beat.tempo || 0,
-        coverUrl: beat.artworkUrl || beat.coverUrl || "",
-        audioUrl: beat.previewUrl || beat.audioUrl || "",
+        id: beat?.id,
+        title: beat?.title,
+        price: beat?.price || (beat?.priceCents ? beat?.priceCents / 100 : 0),
+        plays: beat?.plays || 0,
+        likes: beat?.likes || 0,
+        genre: beat?.genre || "",
+        tempo: beat?.bpm || beat?.tempo || 0,
+        coverUrl: beat?.artworkUrl || beat?.coverUrl || "",
+        audioUrl: beat?.previewUrl || beat?.audioUrl || "",
       }));
 
-    const displayName =
-      producer.artistName ||
-      `${producer.firstName || ""} ${producer.lastName || ""}`.trim() ||
-      producer.username ||
+    const _displayName =
+      producer?.artistName ||
+      `${producer?.firstName || ""} ${producer?.lastName || ""}`.trim() ||
+      producer?.username ||
       "Producer";
 
-    res.json({
-      id: producer.id,
-      username: producer.username,
+    res?.json({
+      id: producer?.id,
+      username: producer?.username,
       displayName,
       name: displayName,
-      avatarUrl: producer.avatarUrl,
-      bio: producer.bio,
-      location: producer.location,
-      website: producer.website,
-      socialLinks: producer.socialLinks,
+      avatarUrl: producer?.avatarUrl,
+      bio: producer?.bio,
+      location: producer?.location,
+      website: producer?.website,
+      socialLinks: producer?.socialLinks,
       followerCount,
       beatCount,
       sales: salesCount,
       rating: avgRating,
       verified:
-        producer.role === "admin" || producer.subscriptionTier === "lifetime",
+        producer?.role === "admin" || producer?.subscriptionTier === "lifetime",
       featuredBeats,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching producer:");
-    res.status(500).json({ error: "Failed to fetch producer" });
+    logger?.warn({ err: error }, "Error fetching producer:");
+    res?.status(500).json({ error: "Failed to fetch producer" });
   }
 });
 
 // Producer follow status endpoint
-router.get(
+router?.get(
   "/producers/:producerId/follow-status",
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Unauthorized" });
       }
-      const { producerId } = req.params;
-      const profile = await discoveryAlgorithmService.getOrCreateTasteProfile(
-        req.user!.id,
+      const { producerId } = req?.params;
+      const _profile = await discoveryAlgorithmService?.getOrCreateTasteProfile(
+        req?.user!.id,
       );
-      const followedProducers = profile.followedProducers || [];
-      const isFollowing = followedProducers.includes(producerId);
-      res.json({ isFollowing });
+      const _followedProducers = profile?.followedProducers || [];
+      const _isFollowing = followedProducers?.includes(producerId);
+      res?.json({ isFollowing });
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching follow status:");
-      res.status(500).json({ error: "Failed to fetch follow status" });
+      logger?.warn({ err: error }, "Error fetching follow status:");
+      res?.status(500).json({ error: "Failed to fetch follow status" });
     }
   },
 );
 
 // Toggle unfollow producer
-router.post("/unfollow/:producerId", async (req: Request, res: Response) => {
+router?.post("/unfollow/:producerId", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { producerId } = req.params;
-    const result = await discoveryAlgorithmService.unfollowProducer(
-      req.user!.id,
+    const { producerId } = req?.params;
+    const _result = await discoveryAlgorithmService?.unfollowProducer(
+      req?.user!.id,
       producerId,
     );
-    res.json(result);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error unfollowing producer:");
-    res.status(500).json({ error: "Failed to unfollow producer" });
+    logger?.warn({ err: error }, "Error unfollowing producer:");
+    res?.status(500).json({ error: "Failed to unfollow producer" });
   }
 });
 
 // Like a beat (toggle)
-router.post("/beats/:beatId/like", async (req: Request, res: Response) => {
+router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { beatId } = req.params;
+    const { beatId } = req?.params;
 
     // Check if already liked
-    const existingLike = await db
+    const _existingLike = await db
       .select()
       .from(beatInteractions)
       .where(
         and(
-          eq(beatInteractions.userId, req.user!.id),
-          eq(beatInteractions.beatId, beatId),
-          eq(beatInteractions.interactionType, "like"),
+          eq(beatInteractions?.userId, req?.user!.id),
+          eq(beatInteractions?.beatId, beatId),
+          eq(beatInteractions?.interactionType, "like"),
         ).limit(1),
       )
       .limit(1);
 
-    if (existingLike.length > 0) {
+    if (existingLike?.length > 0) {
       // Unlike - remove the interaction and decrement count
       await db
         .delete(beatInteractions)
         .where(
           and(
-            eq(beatInteractions.userId, req.user!.id),
-            eq(beatInteractions.beatId, beatId),
-            eq(beatInteractions.interactionType, "like"),
+            eq(beatInteractions?.userId, req?.user!.id),
+            eq(beatInteractions?.beatId, beatId),
+            eq(beatInteractions?.interactionType, "like"),
           ),
         );
 
@@ -2440,24 +2440,24 @@ router.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       const [listing] = await db
         .select()
         .from(listings)
-        .where(eq(listings.id, beatId))
+        .where(eq(listings?.id, beatId))
         .limit(1);
       let newLikes = 0;
       if (listing) {
-        const currentMetadata =
-          (listing.metadata as Record<string, unknown>) || {};
-        newLikes = Math.max(0, (currentMetadata.likes || 0) - 1);
+        const _currentMetadata =
+          (listing?.metadata as Record<string, unknown>) || {};
+        newLikes = Math?.max(0, (currentMetadata?.likes || 0) - 1);
         await db
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
-          .where(eq(listings.id, beatId));
+          .where(eq(listings?.id, beatId));
       }
 
-      res.json({ success: true, liked: false, likes: newLikes });
+      res?.json({ success: true, liked: false, likes: newLikes });
     } else {
       // Like - record the interaction
-      await discoveryAlgorithmService.recordInteraction({
-        userId: req.user!.id,
+      await discoveryAlgorithmService?.recordInteraction({
+        userId: req?.user!.id,
         beatId,
         interactionType: "like",
         source: "marketplace",
@@ -2467,74 +2467,74 @@ router.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       const [listing] = await db
         .select()
         .from(listings)
-        .where(eq(listings.id, beatId))
+        .where(eq(listings?.id, beatId))
         .limit(1);
       if (listing) {
-        const currentMetadata =
-          (listing.metadata as Record<string, unknown>) || {};
-        const newLikes = (currentMetadata.likes || 0) + 1;
+        const _currentMetadata =
+          (listing?.metadata as Record<string, unknown>) || {};
+        const _newLikes = (currentMetadata?.likes || 0) + 1;
         await db
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
-          .where(eq(listings.id, beatId));
-        res.json({ success: true, liked: true, likes: newLikes });
+          .where(eq(listings?.id, beatId));
+        res?.json({ success: true, liked: true, likes: newLikes });
       } else {
-        res.json({ success: true, liked: true });
+        res?.json({ success: true, liked: true });
       }
     }
   } catch (error) {
-    logger.warn({ err: error }, "Error liking beat:");
-    res.status(500).json({ error: "Failed to like beat" });
+    logger?.warn({ err: error }, "Error liking beat:");
+    res?.status(500).json({ error: "Failed to like beat" });
   }
 });
 
 // Get like status for a beat
-router.get(
+router?.get(
   "/beats/:beatId/like-status",
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Unauthorized" });
       }
-      const { beatId } = req.params;
+      const { beatId } = req?.params;
 
       // Check if user has liked this beat by checking interactions
-      const likes = await db
+      const _likes = await db
         .select()
         .from(beatInteractions)
         .where(
           and(
-            eq(beatInteractions.userId, req.user!.id),
-            eq(beatInteractions.beatId, beatId),
-            eq(beatInteractions.interactionType, "like"),
+            eq(beatInteractions?.userId, req?.user!.id),
+            eq(beatInteractions?.beatId, beatId),
+            eq(beatInteractions?.interactionType, "like"),
           ).limit(1),
         )
         .limit(1);
 
-      res.json({ isLiked: likes.length > 0 });
+      res?.json({ isLiked: likes?.length > 0 });
     } catch (error) {
-      logger.warn({ err: error }, "Error checking like status:");
-      res.status(500).json({ error: "Failed to check like status" });
+      logger?.warn({ err: error }, "Error checking like status:");
+      res?.status(500).json({ error: "Failed to check like status" });
     }
   },
 );
 
 // Rate a beat
-router.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
+router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { beatId } = req.params;
-    const { rating } = req.body;
+    const { beatId } = req?.params;
+    const { rating } = req?.body;
 
     if (typeof rating !== "number" || rating < 1 || rating > 5) {
-      return res.status(400).json({ error: "Rating must be between 1 and 5" });
+      return res?.status(400).json({ error: "Rating must be between 1 and 5" });
     }
 
     // Store rating in beat interactions with custom data
-    await discoveryAlgorithmService.recordInteraction({
-      userId: req.user!.id,
+    await discoveryAlgorithmService?.recordInteraction({
+      userId: req?.user!.id,
       beatId,
       interactionType: "rate",
       source: "marketplace",
@@ -2545,31 +2545,31 @@ router.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
     const [listing] = await db
       .select()
       .from(listings)
-      .where(eq(listings.id, beatId))
+      .where(eq(listings?.id, beatId))
       .limit(1);
     if (listing) {
-      const currentMetadata =
-        (listing.metadata as Record<string, unknown>) || {};
-      const currentRatings = currentMetadata.ratings || [];
-      const userRatingIndex = currentRatings.findIndex(
-        (r: Record<string, unknown>) => r.userId === req.user!.id,
+      const _currentMetadata =
+        (listing?.metadata as Record<string, unknown>) || {};
+      const _currentRatings = currentMetadata?.ratings || [];
+      const _userRatingIndex = currentRatings?.findIndex(
+        (r: Record<string, unknown>) => r?.userId === req?.user!.id,
       );
 
       if (userRatingIndex >= 0) {
         currentRatings[userRatingIndex].rating = rating;
       } else {
-        currentRatings.push({
-          userId: req.user!.id,
+        currentRatings?.push({
+          userId: req?.user!.id,
           rating,
           createdAt: new Date().toISOString(),
         });
       }
 
-      const avgRating =
-        currentRatings.reduce(
-          (sum: number, r: Record<string, unknown>) => sum + r.rating,
+      const _avgRating =
+        currentRatings?.reduce(
+          (sum: number, r: Record<string, unknown>) => sum + r?.rating,
           0,
-        ) / currentRatings.length;
+        ) / currentRatings?.length;
 
       await db
         .update(listings)
@@ -2577,176 +2577,176 @@ router.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
           metadata: {
             ...currentMetadata,
             ratings: currentRatings,
-            avgRating: Math.round(avgRating * 10) / 10,
-            ratingCount: currentRatings.length,
+            avgRating: Math?.round(avgRating * 10) / 10,
+            ratingCount: currentRatings?.length,
           },
         })
-        .where(eq(listings.id, beatId));
+        .where(eq(listings?.id, beatId));
 
-      res.json({
+      res?.json({
         success: true,
         rating,
-        avgRating: Math.round(avgRating * 10) / 10,
+        avgRating: Math?.round(avgRating * 10) / 10,
       });
     } else {
-      res.status(404).json({ error: "Beat not found" });
+      res?.status(404).json({ error: "Beat not found" });
     }
   } catch (error) {
-    logger.warn({ err: error }, "Error rating beat:");
-    res.status(500).json({ error: "Failed to rate beat" });
+    logger?.warn({ err: error }, "Error rating beat:");
+    res?.status(500).json({ error: "Failed to rate beat" });
   }
 });
 
 // Get beat rating info
-router.get("/beats/:beatId/rating", async (req: Request, res: Response) => {
+router?.get("/beats/:beatId/rating", async (req: Request, res: Response) => {
   try {
-    const { beatId } = req.params;
+    const { beatId } = req?.params;
     const [listing] = await db
       .select()
       .from(listings)
-      .where(eq(listings.id, beatId))
+      .where(eq(listings?.id, beatId))
       .limit(1);
     if (!listing) {
-      return res.status(404).json({ error: "Beat not found" });
+      return res?.status(404).json({ error: "Beat not found" });
     }
 
-    const metadata = (listing.metadata as Record<string, unknown>) || {};
-    const userRating = req.isAuthenticated()
-      ? (metadata.ratings || []).find(
-          (r: Record<string, unknown>) => r.userId === req.user!.id,
+    const _metadata = (listing?.metadata as Record<string, unknown>) || {};
+    const _userRating = req?.isAuthenticated()
+      ? (metadata?.ratings || []).find(
+          (r: Record<string, unknown>) => r?.userId === req?.user!.id,
         )?.rating || 0
       : 0;
 
-    res.json({
-      avgRating: metadata.avgRating || 0,
-      ratingCount: metadata.ratingCount || 0,
+    res?.json({
+      avgRating: metadata?.avgRating || 0,
+      ratingCount: metadata?.ratingCount || 0,
       userRating,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching beat rating:");
-    res.status(500).json({ error: "Failed to fetch rating" });
+    logger?.warn({ err: error }, "Error fetching beat rating:");
+    res?.status(500).json({ error: "Failed to fetch rating" });
   }
 });
 
 // Stems endpoints
-router.get(
+router?.get(
   "/stems/:stemId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { stemId } = req.params;
-      res.json({
+      const { stemId } = req?.params;
+      res?.json({
         id: stemId,
         name: "Stem",
         type: "wav",
         duration: 180,
-        price: 29.99,
+        price: 29?.99,
         downloadUrl: null,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching stem:");
-      res.status(500).json({ error: "Failed to fetch stem" });
+      logger?.warn({ err: error }, "Error fetching stem:");
+      res?.status(500).json({ error: "Failed to fetch stem" });
     }
   },
 );
 
-router.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
+router?.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { stemId } = req.params;
-    res.json({
+    const { stemId } = req?.params;
+    res?.json({
       success: true,
-      purchaseId: `purchase_${Date.now()}`,
+      purchaseId: `purchase_${Date?.now()}`,
       stemId,
       downloadUrl: `/api/marketplace/stems/${stemId}/download`,
     });
 
     setImmediate(async () => {
       try {
-        await notificationService.sendStemsPurchasedNotification(
-          req.user!.id,
+        await notificationService?.sendStemsPurchasedNotification(
+          req?.user!.id,
           stemId,
         );
       } catch (err) {
-        logger.warn(
+        logger?.warn(
           { err: err },
           "[Marketplace] stems purchase notification error:",
         );
       }
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error purchasing stem:");
-    res.status(500).json({ error: "Failed to purchase stem" });
+    logger?.warn({ err: error }, "Error purchasing stem:");
+    res?.status(500).json({ error: "Failed to purchase stem" });
   }
 });
 
-router.get(
+router?.get(
   "/stems/:stemId/download/:trackId",
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Unauthorized" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Unauthorized" });
       }
-      const { stemId, trackId } = req.params;
-      res.json({
+      const { stemId, trackId } = req?.params;
+      res?.json({
         success: true,
         downloadUrl: `/uploads/stems/${stemId}_${trackId}.wav`,
-        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        expiresAt: new Date(Date?.now() + 3600000).toISOString(),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error generating stem download:");
-      res.status(500).json({ error: "Failed to generate download link" });
+      logger?.warn({ err: error }, "Error generating stem download:");
+      res?.status(500).json({ error: "Failed to generate download link" });
     }
   },
 );
 
-router.get("/my-stems", async (req: Request, res: Response) => {
+router?.get("/my-stems", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Unauthorized" });
     }
-    const userId = req.user!.id;
-    const stems = await db
+    const _userId = req?.user!.id;
+    const _stems = await db
       .select()
       .from(listingStems)
-      .where(eq(listingStems.userId, userId))
-      .orderBy(desc(listingStems.createdAt))
+      .where(eq(listingStems?.userId, userId))
+      .orderBy(desc(listingStems?.createdAt))
       .limit(100);
-    res.json(stems);
+    res?.json(stems);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching user stems:");
-    res.status(500).json({ error: "Failed to fetch your stems" });
+    logger?.warn({ err: error }, "Error fetching user stems:");
+    res?.status(500).json({ error: "Failed to fetch your stems" });
   }
 });
 
-router.get(
+router?.get(
   "/listings/:listingId/stems",
   async (req: Request, res: Response) => {
     try {
-      const { listingId } = req.params;
-      const stems = await db
+      const { listingId } = req?.params;
+      const _stems = await db
         .select()
         .from(listingStems)
-        .where(eq(listingStems.listingId, listingId))
-        .orderBy(asc(listingStems.createdAt))
+        .where(eq(listingStems?.listingId, listingId))
+        .orderBy(asc(listingStems?.createdAt))
         .limit(50);
-      res.json(stems);
+      res?.json(stems);
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching listing stems:");
-      res.status(500).json({ error: "Failed to fetch listing stems" });
+      logger?.warn({ err: error }, "Error fetching listing stems:");
+      res?.status(500).json({ error: "Failed to fetch listing stems" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/listings/:listingId/stems",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { listingId } = req.params;
+      const _userId = req?.user!.id;
+      const { listingId } = req?.params;
       const {
         stemName,
         stemType,
@@ -2756,7 +2756,7 @@ router.post(
         sampleRate,
         bitDepth,
         price,
-      } = req.body;
+      } = req?.body;
 
       if (!stemName || !fileUrl) {
         return res
@@ -2780,26 +2780,26 @@ router.post(
         })
         .returning();
 
-      res.status(201).json(stem);
+      res?.status(201).json(stem);
     } catch (error) {
-      logger.warn({ err: error }, "Error creating stem:");
-      res.status(500).json({ error: "Failed to create stem" });
+      logger?.warn({ err: error }, "Error creating stem:");
+      res?.status(500).json({ error: "Failed to create stem" });
     }
   },
 );
 
-router.delete(
+router?.delete(
   "/stems/:stemId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { stemId } = req.params;
+      const _userId = req?.user!.id;
+      const { stemId } = req?.params;
 
       const [deleted] = await db
         .delete(listingStems)
         .where(
-          and(eq(listingStems.id, stemId), eq(listingStems.userId, userId)),
+          and(eq(listingStems?.id, stemId), eq(listingStems?.userId, userId)),
         )
         .returning();
 
@@ -2809,10 +2809,10 @@ router.delete(
           .json({ error: "Stem not found or not authorized" });
       }
 
-      res.json({ success: true });
+      res?.json({ success: true });
     } catch (error) {
-      logger.warn({ err: error }, "Error deleting stem:");
-      res.status(500).json({ error: "Failed to delete stem" });
+      logger?.warn({ err: error }, "Error deleting stem:");
+      res?.status(500).json({ error: "Failed to delete stem" });
     }
   },
 );

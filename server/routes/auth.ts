@@ -1,33 +1,33 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   users,
   sessions,
   securityThreats,
   socialAccounts,
-} from "../../shared/schema.js";
+} from "../../shared/schema?.js";
 import { eq, and, desc, ne, gte, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
-import { requireAuth } from "../middleware/auth.js";
-import { emailService } from "../services/emailService.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { emailService } from "../services/emailService?.js";
 
-const router = Router();
+const _router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; email?: string };
   session: Record<string, unknown>;
 }
 
-router.post(
+router?.post(
   "/refresh-token",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const sessionId = req.session?.id;
+      const _sessionId = req?.session?.id;
 
       if (!sessionId) {
-        return res.status(400).json({
+        return res?.status(400).json({
           success: false,
           error: "no_session",
           message: "No active session found",
@@ -35,14 +35,14 @@ router.post(
         });
       }
 
-      const existingSession = await db
+      const _existingSession = await db
         .select()
         .from(sessions)
-        .where(eq(sessions.id, sessionId))
+        .where(eq(sessions?.id, sessionId))
         .limit(1);
 
-      if (existingSession.length === 0) {
-        return res.status(401).json({
+      if (existingSession?.length === 0) {
+        return res?.status(401).json({
           success: false,
           error: "session_not_found",
           message: "Session not found or expired",
@@ -50,10 +50,10 @@ router.post(
         });
       }
 
-      const session = existingSession[0];
+      const _session = existingSession[0];
 
-      if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
-        return res.status(401).json({
+      if (session?.expiresAt && new Date(session?.expiresAt) < new Date()) {
+        return res?.status(401).json({
           success: false,
           error: "session_expired",
           message: "Session has expired",
@@ -61,7 +61,7 @@ router.post(
         });
       }
 
-      const newExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const _newExpiresAt = new Date(Date?.now() + 24 * 60 * 60 * 1000);
 
       await db
         .update(sessions)
@@ -69,17 +69,17 @@ router.post(
           lastActivity: new Date(),
           expiresAt: newExpiresAt,
         })
-        .where(eq(sessions.id, sessionId));
+        .where(eq(sessions?.id, sessionId));
 
-      res.json({
+      res?.json({
         success: true,
         message: "Token refreshed successfully",
-        expiresAt: newExpiresAt.toISOString(),
+        expiresAt: newExpiresAt?.toISOString(),
         outcome: "token_refresh_successful",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Token refresh error:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Token refresh error:");
+      res?.status(500).json({
         success: false,
         error: "refresh_failed",
         message: "Failed to refresh token",
@@ -89,47 +89,47 @@ router.post(
   },
 );
 
-router.post(
+router?.post(
   "/extend-session",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const sessionId = req.session?.id;
-      const { extendMinutes = 30 } = req.body;
+      const _sessionId = req?.session?.id;
+      const { extendMinutes = 30 } = req?.body;
 
       if (!sessionId) {
-        return res.status(400).json({
+        return res?.status(400).json({
           success: false,
           error: "no_session",
           message: "No active session to extend",
         });
       }
 
-      const existingSession = await db
+      const _existingSession = await db
         .select()
         .from(sessions)
-        .where(eq(sessions.id, sessionId))
+        .where(eq(sessions?.id, sessionId))
         .limit(1);
 
-      if (existingSession.length === 0) {
-        return res.status(401).json({
+      if (existingSession?.length === 0) {
+        return res?.status(401).json({
           success: false,
           error: "session_not_found",
           message: "Session not found",
         });
       }
 
-      const parsedMinutes = Number(extendMinutes);
-      if (!Number.isFinite(parsedMinutes) || parsedMinutes <= 0) {
-        return res.status(400).json({
+      const _parsedMinutes = Number(extendMinutes);
+      if (!Number?.isFinite(parsedMinutes) || parsedMinutes <= 0) {
+        return res?.status(400).json({
           success: false,
           error: "invalid_extend_minutes",
           message: "extendMinutes must be a positive number",
         });
       }
-      const maxExtendMinutes = 120;
-      const actualExtend = Math.min(parsedMinutes, maxExtendMinutes);
-      const newExpiresAt = new Date(Date.now() + actualExtend * 60 * 1000);
+      const _maxExtendMinutes = 120;
+      const _actualExtend = Math?.min(parsedMinutes, maxExtendMinutes);
+      const _newExpiresAt = new Date(Date?.now() + actualExtend * 60 * 1000);
 
       await db
         .update(sessions)
@@ -137,18 +137,18 @@ router.post(
           lastActivity: new Date(),
           expiresAt: newExpiresAt,
         })
-        .where(eq(sessions.id, sessionId));
+        .where(eq(sessions?.id, sessionId));
 
-      res.json({
+      res?.json({
         success: true,
         message: `Session extended by ${actualExtend} minutes`,
-        expiresAt: newExpiresAt.toISOString(),
+        expiresAt: newExpiresAt?.toISOString(),
         extendedMinutes: actualExtend,
         outcome: "session_extended",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Session extension error:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Session extension error:");
+      res?.status(500).json({
         success: false,
         error: "extension_failed",
         message: "Failed to extend session",
@@ -157,132 +157,132 @@ router.post(
   },
 );
 
-router.get(
+router?.get(
   "/sessions",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const currentSessionId = req.session?.id;
+      const _userId = req?.user!.id;
+      const _currentSessionId = req?.session?.id;
 
-      const userSessions = await db
+      const _userSessions = await db
         .select()
         .from(sessions)
         .where(
-          and(eq(sessions.userId, userId), gte(sessions.expiresAt, new Date())),
+          and(eq(sessions?.userId, userId), gte(sessions?.expiresAt, new Date())),
         )
-        .orderBy(desc(sessions.lastActivity))
+        .orderBy(desc(sessions?.lastActivity))
         .limit(50);
 
-      const formattedSessions = userSessions.map((session) => {
-        const userAgent = session.userAgent || "";
+      const _formattedSessions = userSessions?.map((session) => {
+        const _userAgent = session?.userAgent || "";
         let device = "Unknown Device";
         let browser = "Unknown Browser";
         let os = "Unknown OS";
 
-        if (userAgent.includes("iPhone")) {
+        if (userAgent?.includes("iPhone")) {
           device = "iPhone";
           os = "iOS";
-        } else if (userAgent.includes("iPad")) {
+        } else if (userAgent?.includes("iPad")) {
           device = "iPad";
           os = "iOS";
-        } else if (userAgent.includes("Android")) {
+        } else if (userAgent?.includes("Android")) {
           device = "Android Device";
           os = "Android";
-        } else if (userAgent.includes("Windows")) {
+        } else if (userAgent?.includes("Windows")) {
           device = "Windows PC";
           os = "Windows";
-        } else if (userAgent.includes("Macintosh")) {
+        } else if (userAgent?.includes("Macintosh")) {
           device = "Mac";
           os = "macOS";
-        } else if (userAgent.includes("Linux")) {
+        } else if (userAgent?.includes("Linux")) {
           device = "Linux PC";
           os = "Linux";
         }
 
-        if (userAgent.includes("Chrome")) browser = "Chrome";
-        else if (userAgent.includes("Firefox")) browser = "Firefox";
-        else if (userAgent.includes("Safari")) browser = "Safari";
-        else if (userAgent.includes("Edge")) browser = "Edge";
+        if (userAgent?.includes("Chrome")) browser = "Chrome";
+        else if (userAgent?.includes("Firefox")) browser = "Firefox";
+        else if (userAgent?.includes("Safari")) browser = "Safari";
+        else if (userAgent?.includes("Edge")) browser = "Edge";
 
         return {
-          id: session.id,
+          id: session?.id,
           device,
           browser,
           os,
-          ipAddress: session.ipAddress || "Unknown",
+          ipAddress: session?.ipAddress || "Unknown",
           location: "Unknown",
-          lastActivity: session.lastActivity?.toISOString(),
-          createdAt: session.createdAt?.toISOString(),
-          expiresAt: session.expiresAt?.toISOString(),
-          current: session.id === currentSessionId,
-          trusted: session.trusted ?? false,
+          lastActivity: session?.lastActivity?.toISOString(),
+          createdAt: session?.createdAt?.toISOString(),
+          expiresAt: session?.expiresAt?.toISOString(),
+          current: session?.id === currentSessionId,
+          trusted: session?.trusted ?? false,
         };
       });
 
-      res.json({
+      res?.json({
         sessions: formattedSessions,
-        totalCount: formattedSessions.length,
+        totalCount: formattedSessions?.length,
         currentSessionId,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Get sessions error:");
-      res.status(500).json({ error: "Failed to fetch sessions" });
+      logger?.warn({ err: error }, "Get sessions error:");
+      res?.status(500).json({ error: "Failed to fetch sessions" });
     }
   },
 );
 
-router.delete(
+router?.delete(
   "/sessions/:sessionId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { sessionId } = req.params;
-      const currentSessionId = req.session?.id;
+      const _userId = req?.user!.id;
+      const { sessionId } = req?.params;
+      const _currentSessionId = req?.session?.id;
 
       if (sessionId === currentSessionId) {
-        return res.status(400).json({
+        return res?.status(400).json({
           success: false,
           error: "cannot_terminate_current",
           message: "Cannot terminate current session. Use logout instead.",
         });
       }
 
-      const sessionToDelete = await db
+      const _sessionToDelete = await db
         .select()
         .from(sessions)
-        .where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId)))
+        .where(and(eq(sessions?.id, sessionId), eq(sessions?.userId, userId)))
         .limit(1);
 
-      if (sessionToDelete.length === 0) {
-        return res.status(404).json({
+      if (sessionToDelete?.length === 0) {
+        return res?.status(404).json({
           success: false,
           error: "session_not_found",
           message: "Session not found or already terminated",
         });
       }
 
-      await db.delete(sessions).where(eq(sessions.id, sessionId));
+      await db?.delete(sessions).where(eq(sessions?.id, sessionId));
 
-      await db.insert(securityThreats).values({
+      await db?.insert(securityThreats).values({
         threatType: "remote_session_terminated",
         severity: "low",
         userId,
-        sourceIp: req.ip || "unknown",
+        sourceIp: req?.ip || "unknown",
         status: "resolved",
         indicators: { terminatedSessionId: sessionId },
         metadata: { action: "user_terminated_session" },
       });
 
-      res.json({
+      res?.json({
         success: true,
         message: "Session terminated successfully",
         outcome: "remote_session_terminated",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Delete session error:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Delete session error:");
+      res?.status(500).json({
         success: false,
         error: "termination_failed",
         message: "Failed to terminate session",
@@ -291,55 +291,55 @@ router.delete(
   },
 );
 
-router.delete(
+router?.delete(
   "/sessions/other",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const currentSessionId = req.session?.id;
+      const _userId = req?.user!.id;
+      const _currentSessionId = req?.session?.id;
 
-      const otherSessions = await db
-        .select({ id: sessions.id })
+      const _otherSessions = await db
+        .select({ id: sessions?.id })
         .from(sessions)
         .where(
           and(
-            eq(sessions.userId, userId),
-            ne(sessions.id, currentSessionId || ""),
+            eq(sessions?.userId, userId),
+            ne(sessions?.id, currentSessionId || ""),
           ),
         )
         .limit(500);
 
-      const terminatedCount = otherSessions.length;
+      const _terminatedCount = otherSessions?.length;
 
       await db
         .delete(sessions)
         .where(
           and(
-            eq(sessions.userId, userId),
-            ne(sessions.id, currentSessionId || ""),
+            eq(sessions?.userId, userId),
+            ne(sessions?.id, currentSessionId || ""),
           ),
         );
 
-      await db.insert(securityThreats).values({
+      await db?.insert(securityThreats).values({
         threatType: "all_other_sessions_logged_out",
         severity: "low",
         userId,
-        sourceIp: req.ip || "unknown",
+        sourceIp: req?.ip || "unknown",
         status: "resolved",
         indicators: { terminatedCount },
         metadata: { action: "user_logged_out_all_devices" },
       });
 
-      res.json({
+      res?.json({
         success: true,
         message: `Logged out of ${terminatedCount} other sessions`,
         terminatedCount,
         outcome: "all_other_sessions_logged_out",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Delete other sessions error:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Delete other sessions error:");
+      res?.status(500).json({
         success: false,
         error: "bulk_termination_failed",
         message: "Failed to terminate other sessions",
@@ -348,30 +348,30 @@ router.delete(
   },
 );
 
-router.post(
+router?.post(
   "/devices/trust",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { deviceId, trusted } = req.body;
+      const _userId = req?.user!.id;
+      const { deviceId, trusted } = req?.body;
 
       if (!deviceId) {
-        return res.status(400).json({
+        return res?.status(400).json({
           success: false,
           error: "missing_device_id",
           message: "Device ID is required",
         });
       }
 
-      const session = await db
+      const _session = await db
         .select()
         .from(sessions)
-        .where(and(eq(sessions.id, deviceId), eq(sessions.userId, userId)))
+        .where(and(eq(sessions?.id, deviceId), eq(sessions?.userId, userId)))
         .limit(1);
 
-      if (session.length === 0) {
-        return res.status(404).json({
+      if (session?.length === 0) {
+        return res?.status(404).json({
           success: false,
           error: "device_not_found",
           message: "Device/session not found",
@@ -381,11 +381,11 @@ router.post(
       await db
         .update(sessions)
         .set({ trusted: !!trusted })
-        .where(and(eq(sessions.id, deviceId), eq(sessions.userId, userId)));
+        .where(and(eq(sessions?.id, deviceId), eq(sessions?.userId, userId)));
 
-      const outcome = trusted ? "device_trusted" : "device_untrusted";
+      const _outcome = trusted ? "device_trusted" : "device_untrusted";
 
-      res.json({
+      res?.json({
         success: true,
         message: trusted
           ? "Device marked as trusted"
@@ -395,8 +395,8 @@ router.post(
         outcome,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Trust device error:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Trust device error:");
+      res?.status(500).json({
         success: false,
         error: "trust_update_failed",
         message: "Failed to update device trust status",
@@ -405,16 +405,16 @@ router.post(
   },
 );
 
-router.get(
+router?.get(
   "/session-status",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const currentSessionId = req.session?.id;
+      const _userId = req?.user!.id;
+      const _currentSessionId = req?.session?.id;
 
       if (!currentSessionId) {
-        return res.json({
+        return res?.json({
           valid: false,
           expiresAt: null,
           secondsRemaining: 0,
@@ -422,14 +422,14 @@ router.get(
         });
       }
 
-      const session = await db
+      const _session = await db
         .select()
         .from(sessions)
-        .where(eq(sessions.id, currentSessionId))
+        .where(eq(sessions?.id, currentSessionId))
         .limit(1);
 
-      if (session.length === 0) {
-        return res.json({
+      if (session?.length === 0) {
+        return res?.json({
           valid: false,
           expiresAt: null,
           secondsRemaining: 0,
@@ -437,22 +437,22 @@ router.get(
         });
       }
 
-      const expiresAt = session[0].expiresAt;
-      const now = new Date();
-      const isValid = expiresAt ? new Date(expiresAt) > now : true;
-      const secondsRemaining = expiresAt
-        ? Math.max(
+      const _expiresAt = session[0].expiresAt;
+      const _now = new Date();
+      const _isValid = expiresAt ? new Date(expiresAt) > now : true;
+      const _secondsRemaining = expiresAt
+        ? Math?.max(
             0,
-            Math.floor((new Date(expiresAt).getTime() - now.getTime()) / 1000),
+            Math?.floor((new Date(expiresAt).getTime() - now?.getTime()) / 1000),
           )
         : null;
 
-      const sessionCount = await db
+      const _sessionCount = await db
         .select({ count: sql<number>`count(*)` })
         .from(sessions)
-        .where(and(eq(sessions.userId, userId), gte(sessions.expiresAt, now)));
+        .where(and(eq(sessions?.userId, userId), gte(sessions?.expiresAt, now)));
 
-      res.json({
+      res?.json({
         valid: isValid,
         expiresAt: expiresAt?.toISOString(),
         secondsRemaining,
@@ -460,46 +460,46 @@ router.get(
         outcome: isValid ? "session_valid" : "session_expired",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Session status error:");
-      res.status(500).json({ error: "Failed to check session status" });
+      logger?.warn({ err: error }, "Session status error:");
+      res?.status(500).json({ error: "Failed to check session status" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/social-token-status",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
 
-      const accounts = await db
+      const _accounts = await db
         .select()
         .from(socialAccounts)
         .where(
           and(
-            eq(socialAccounts.userId, userId),
-            eq(socialAccounts.isActive, true),
+            eq(socialAccounts?.userId, userId),
+            eq(socialAccounts?.isActive, true),
           ),
         )
         .limit(20);
 
-      const now = new Date();
-      const platformStatus = accounts.map((account) => {
-        const tokenExpiresAt = account.tokenExpiresAt;
-        const isExpired = tokenExpiresAt
+      const _now = new Date();
+      const _platformStatus = accounts?.map((account) => {
+        const _tokenExpiresAt = account?.tokenExpiresAt;
+        const _isExpired = tokenExpiresAt
           ? new Date(tokenExpiresAt) < now
           : false;
-        const expiresInSeconds = tokenExpiresAt
-          ? Math.floor(
-              (new Date(tokenExpiresAt).getTime() - now.getTime()) / 1000,
+        const _expiresInSeconds = tokenExpiresAt
+          ? Math?.floor(
+              (new Date(tokenExpiresAt).getTime() - now?.getTime()) / 1000,
             )
           : null;
 
         let status: string = "connected";
         let action: string | null = null;
 
-        if (!account.accessToken) {
+        if (!account?.accessToken) {
           status = "disconnected";
           action = "connect";
         } else if (isExpired) {
@@ -511,14 +511,14 @@ router.get(
         }
 
         return {
-          platform: account.platform,
-          platformName: account.platformName || account.platform,
+          platform: account?.platform,
+          platformName: account?.platformName || account?.platform,
           status,
           action,
           tokenExpiresAt: tokenExpiresAt?.toISOString(),
           expiresInSeconds,
-          lastRefreshed: account.lastRefreshedAt?.toISOString(),
-          scopes: account.scopes || [],
+          lastRefreshed: account?.lastRefreshedAt?.toISOString(),
+          scopes: account?.scopes || [],
           outcome:
             status === "connected"
               ? "token_valid"
@@ -530,44 +530,44 @@ router.get(
         };
       });
 
-      const needsAttention = platformStatus.filter((p) => p.action !== null);
+      const _needsAttention = platformStatus?.filter((p) => p?.action !== null);
 
-      res.json({
+      res?.json({
         platforms: platformStatus,
         needsAttention,
-        hasExpiredTokens: needsAttention.some((p) => p.status === "expired"),
-        hasExpiringTokens: needsAttention.some(
-          (p) => p.status === "expiring_soon",
+        hasExpiredTokens: needsAttention?.some((p) => p?.status === "expired"),
+        hasExpiringTokens: needsAttention?.some(
+          (p) => p?.status === "expiring_soon",
         ),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Social token status error:");
-      res.status(500).json({ error: "Failed to fetch social token status" });
+      logger?.warn({ err: error }, "Social token status error:");
+      res?.status(500).json({ error: "Failed to fetch social token status" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/social/:platform/refresh",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { platform } = req.params;
+      const _userId = req?.user!.id;
+      const { platform } = req?.params;
 
-      const account = await db
+      const _account = await db
         .select()
         .from(socialAccounts)
         .where(
           and(
-            eq(socialAccounts.userId, userId),
-            eq(socialAccounts.platform, platform),
+            eq(socialAccounts?.userId, userId),
+            eq(socialAccounts?.platform, platform),
           ),
         )
         .limit(1);
 
-      if (account.length === 0) {
-        return res.status(404).json({
+      if (account?.length === 0) {
+        return res?.status(404).json({
           success: false,
           error: "account_not_found",
           message: `No ${platform} account connected`,
@@ -576,7 +576,7 @@ router.post(
       }
 
       if (!account[0].refreshToken) {
-        return res.status(400).json({
+        return res?.status(400).json({
           success: false,
           error: "no_refresh_token",
           message: "No refresh token available. Re-authorization required.",
@@ -585,15 +585,15 @@ router.post(
         });
       }
 
-      res.json({
+      res?.json({
         success: true,
         message: `${platform} token refresh initiated`,
         platform,
         outcome: "token_refresh_initiated",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Social token refresh error:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Social token refresh error:");
+      res?.status(500).json({
         success: false,
         error: "refresh_failed",
         message: "Failed to refresh token",
@@ -603,29 +603,29 @@ router.post(
   },
 );
 
-router.get(
+router?.get(
   "/security-alerts",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const _userId = req?.user!.id;
+      const _sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
-      const userThreats = await db
+      const _userThreats = await db
         .select()
         .from(securityThreats)
         .where(
           and(
-            eq(securityThreats.userId, userId),
-            gte(securityThreats.detectedAt, sevenDaysAgo),
+            eq(securityThreats?.userId, userId),
+            gte(securityThreats?.detectedAt, sevenDaysAgo),
           ),
         )
-        .orderBy(desc(securityThreats.detectedAt))
+        .orderBy(desc(securityThreats?.detectedAt))
         .limit(50);
 
-      const alerts = userThreats.map((threat) => {
-        const metadata = (threat.metadata as Record<string, any>) || {};
-        const indicators = (threat.indicators as Record<string, any>) || {};
+      const _alerts = userThreats?.map((threat) => {
+        const _metadata = (threat?.metadata as Record<string, any>) || {};
+        const _indicators = (threat?.indicators as Record<string, any>) || {};
 
         let type: string = "security_alert";
         let title = "Security Alert";
@@ -633,25 +633,25 @@ router.get(
         let action: string | null = null;
         let actionLabel: string | null = null;
 
-        switch (threat.threatType) {
+        switch (threat?.threatType) {
           case "suspicious_login":
             type = "suspicious_login_attempt";
             title = "Suspicious Login Attempt";
-            message = `A login attempt from ${indicators.location || "an unknown location"} was detected.`;
+            message = `A login attempt from ${indicators?.location || "an unknown location"} was detected.`;
             action = "review_sessions";
             actionLabel = "Review Sessions";
             break;
           case "new_device_login":
             type = "login_from_new_device";
             title = "New Device Login";
-            message = `Your account was accessed from a new device: ${indicators.device || "Unknown device"}.`;
+            message = `Your account was accessed from a new device: ${indicators?.device || "Unknown device"}.`;
             action = "manage_devices";
             actionLabel = "Manage Devices";
             break;
           case "new_location_login":
             type = "login_from_new_location";
             title = "Login from New Location";
-            message = `Your account was accessed from a new location: ${indicators.location || "Unknown location"}.`;
+            message = `Your account was accessed from a new location: ${indicators?.location || "Unknown location"}.`;
             action = "review_sessions";
             actionLabel = "Review Sessions";
             break;
@@ -717,96 +717,96 @@ router.get(
             actionLabel = "Manage Sessions";
             break;
           default:
-            type = threat.threatType;
-            title = threat.threatType
+            type = threat?.threatType;
+            title = threat?.threatType
               .replace(/_/g, " ")
-              .replace(/\b\w/g, (c) => c.toUpperCase());
+              .replace(/\b\w/g, (c) => c?.toUpperCase());
         }
 
         return {
-          id: threat.id,
+          id: threat?.id,
           type,
           title,
           message,
-          severity: threat.severity,
-          timestamp: threat.detectedAt?.toISOString(),
-          resolved: threat.status === "resolved" || threat.status === "healed",
+          severity: threat?.severity,
+          timestamp: threat?.detectedAt?.toISOString(),
+          resolved: threat?.status === "resolved" || threat?.status === "healed",
           action,
           actionLabel,
           metadata: {
-            ip: threat.sourceIp,
+            ip: threat?.sourceIp,
             ...indicators,
             ...metadata,
           },
         };
       });
 
-      const unresolvedCount = alerts.filter((a) => !a.resolved).length;
-      const criticalCount = alerts.filter(
-        (a) => a.severity === "critical" && !a.resolved,
+      const _unresolvedCount = alerts?.filter((a) => !a?.resolved).length;
+      const _criticalCount = alerts?.filter(
+        (a) => a?.severity === "critical" && !a?.resolved,
       ).length;
 
-      res.json({
+      res?.json({
         alerts,
         summary: {
-          total: alerts.length,
+          total: alerts?.length,
           unresolved: unresolvedCount,
           critical: criticalCount,
-          requiresAction: alerts.filter((a) => a.action && !a.resolved).length,
+          requiresAction: alerts?.filter((a) => a?.action && !a?.resolved).length,
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching user security alerts:");
-      res.status(500).json({ error: "Failed to fetch security alerts" });
+      logger?.warn({ err: error }, "Error fetching user security alerts:");
+      res?.status(500).json({ error: "Failed to fetch security alerts" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/security-alerts/:alertId/dismiss",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { alertId } = req.params;
+      const _userId = req?.user!.id;
+      const { alertId } = req?.params;
 
       await db
         .update(securityThreats)
         .set({ status: "resolved" })
         .where(
           and(
-            eq(securityThreats.id, alertId),
-            eq(securityThreats.userId, userId),
+            eq(securityThreats?.id, alertId),
+            eq(securityThreats?.userId, userId),
           ),
         );
 
-      res.json({ success: true, message: "Alert dismissed" });
+      res?.json({ success: true, message: "Alert dismissed" });
     } catch (error) {
-      logger.warn({ err: error }, "Error dismissing alert:");
-      res.status(500).json({ error: "Failed to dismiss alert" });
+      logger?.warn({ err: error }, "Error dismissing alert:");
+      res?.status(500).json({ error: "Failed to dismiss alert" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/send-verification-email",
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
-      if (!user) return res.status(404).json({ error: "User not found" });
+      if (!user) return res?.status(404).json({ error: "User not found" });
 
-      if (user.emailVerified) {
-        return res.json({ success: true, message: "Email already verified" });
+      if (user?.emailVerified) {
+        return res?.json({ success: true, message: "Email already verified" });
       }
 
-      const token = crypto.randomBytes(32).toString("hex");
-      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      const _token = crypto?.randomBytes(32).toString("hex");
+      const _expires = new Date(Date?.now() + 24 * 60 * 60 * 1000);
 
       await db
         .update(users)
@@ -814,43 +814,43 @@ router.post(
           emailVerificationToken: token,
           emailVerificationExpires: expires,
         })
-        .where(eq(users.id, userId));
+        .where(eq(users?.id, userId));
 
-      const appUrl =
-        process.env.APP_URL || process.env.DOMAIN || "https://max-booster.com";
-      const verificationUrl = `${appUrl}/verify-email?token=${token}`;
+      const _appUrl =
+        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster?.com";
+      const _verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
       try {
-        await emailService.sendEmail({
-          to: user.email,
+        await emailService?.sendEmail({
+          to: user?.email,
           subject: "Verify your Max Booster email",
           html: `<h2>Email Verification</h2><p>Click the link below to verify your email address:</p><p><a href="${verificationUrl}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
         });
       } catch (emailError) {
-        logger.warn(
+        logger?.warn(
           "Email service unavailable — verification email not sent (token not logged).",
         );
       }
 
-      res.json({ success: true, message: "Verification email sent" });
+      res?.json({ success: true, message: "Verification email sent" });
     } catch (error) {
-      logger.warn({ err: error }, "Error sending verification email:");
-      res.status(500).json({ error: "Failed to send verification email" });
+      logger?.warn({ err: error }, "Error sending verification email:");
+      res?.status(500).json({ error: "Failed to send verification email" });
     }
   },
 );
 
-router.get("/verify-email", async (req, res) => {
+router?.get("/verify-email", async (req, res) => {
   try {
-    const { token } = req.query;
+    const { token } = req?.query;
     if (!token || typeof token !== "string") {
-      return res.status(400).json({ error: "Verification token required" });
+      return res?.status(400).json({ error: "Verification token required" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.emailVerificationToken, token))
+      .where(eq(users?.emailVerificationToken, token))
       .limit(1);
 
     if (!user) {
@@ -860,8 +860,8 @@ router.get("/verify-email", async (req, res) => {
     }
 
     if (
-      user.emailVerificationExpires &&
-      new Date(user.emailVerificationExpires) < new Date()
+      user?.emailVerificationExpires &&
+      new Date(user?.emailVerificationExpires) < new Date()
     ) {
       return res
         .status(400)
@@ -877,30 +877,30 @@ router.get("/verify-email", async (req, res) => {
         emailVerificationToken: null,
         emailVerificationExpires: null,
       })
-      .where(eq(users.id, user.id));
+      .where(eq(users?.id, user?.id));
 
-    res.json({ success: true, message: "Email verified successfully" });
+    res?.json({ success: true, message: "Email verified successfully" });
   } catch (error) {
-    logger.warn({ err: error }, "Error verifying email:");
-    res.status(500).json({ error: "Failed to verify email" });
+    logger?.warn({ err: error }, "Error verifying email:");
+    res?.status(500).json({ error: "Failed to verify email" });
   }
 });
 
-router.get(
+router?.get(
   "/email-verification-status",
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
       const [user] = await db
-        .select({ emailVerified: users.emailVerified })
+        .select({ emailVerified: users?.emailVerified })
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
-      res.json({ emailVerified: user?.emailVerified ?? false });
+      res?.json({ emailVerified: user?.emailVerified ?? false });
     } catch (error) {
-      logger.warn({ err: error }, "Error checking email verification:");
-      res.status(500).json({ error: "Failed to check verification status" });
+      logger?.warn({ err: error }, "Error checking email verification:");
+      res?.status(500).json({ error: "Failed to check verification status" });
     }
   },
 );

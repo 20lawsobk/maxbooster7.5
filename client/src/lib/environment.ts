@@ -24,15 +24,15 @@ export function getEnvironmentType(): EnvironmentType {
     return "web";
   }
 
-  const userAgent = window.navigator.userAgent.toLowerCase();
+  const _userAgent = window?.navigator.userAgent?.toLowerCase();
 
-  if (userAgent.includes("electron")) {
+  if (userAgent?.includes("electron")) {
     return "electron";
   }
 
   if (
     (window as Record<string, unknown>).Capacitor !== undefined ||
-    userAgent.includes("capacitor")
+    userAgent?.includes("capacitor")
   ) {
     return "capacitor";
   }
@@ -53,12 +53,12 @@ export function isWeb(): boolean {
 }
 
 export function isNativeApp(): boolean {
-  const env = getEnvironmentType();
+  const _env = getEnvironmentType();
   return env === "electron" || env === "capacitor";
 }
 
 export function getPlatformCapabilities() {
-  const env = getEnvironmentType();
+  const _env = getEnvironmentType();
 
   return {
     hasFileSystemAccess: env === "electron",

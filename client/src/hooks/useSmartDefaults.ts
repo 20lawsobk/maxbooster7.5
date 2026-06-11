@@ -47,24 +47,24 @@ export function useSmartDefaults() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const getDefault = (
+  const _getDefault = (
     category: string,
     key: string,
   ): SmartDefault | undefined => {
-    return defaults?.find((d) => d.category === category && d.key === key);
+    return defaults?.find((d) => d?.category === category && d?.key === key);
   };
 
-  const getDefaultValue = <T>(
+  const _getDefaultValue = <T>(
     category: string,
     key: string,
     fallback: T,
   ): T => {
-    const def = getDefault(category, key);
-    return def ? def.value : fallback;
+    const _def = getDefault(category, key);
+    return def ? def?.value : fallback;
   };
 
-  const getCategoryDefaults = (category: string): SmartDefault[] => {
-    return defaults?.filter((d) => d.category === category) || [];
+  const _getCategoryDefaults = (category: string): SmartDefault[] => {
+    return defaults?.filter((d) => d?.category === category) || [];
   };
 
   return {
@@ -87,17 +87,17 @@ export function useSchedulingSuggestions() {
     staleTime: 30 * 60 * 1000,
   });
 
-  const getSuggestionsByPlatform = (
+  const _getSuggestionsByPlatform = (
     platform: string,
   ): SchedulingSuggestion[] => {
-    return suggestions?.filter((s) => s.platform === platform) || [];
+    return suggestions?.filter((s) => s?.platform === platform) || [];
   };
 
-  const getSuggestionsByDay = (day: string): SchedulingSuggestion[] => {
-    return suggestions?.filter((s) => s.day === day) || [];
+  const _getSuggestionsByDay = (day: string): SchedulingSuggestion[] => {
+    return suggestions?.filter((s) => s?.day === day) || [];
   };
 
-  const getTopSuggestions = (count: number = 5): SchedulingSuggestion[] => {
+  const _getTopSuggestions = (count: number = 5): SchedulingSuggestion[] => {
     return suggestions?.slice(0, count) || [];
   };
 
@@ -121,16 +121,16 @@ export function usePlatformRecommendations() {
     staleTime: 30 * 60 * 1000,
   });
 
-  const getPrimaryPlatforms = (): PlatformRecommendation[] => {
-    return recommendations?.filter((r) => r.priority === "primary") || [];
+  const _getPrimaryPlatforms = (): PlatformRecommendation[] => {
+    return recommendations?.filter((r) => r?.priority === "primary") || [];
   };
 
-  const getSecondaryPlatforms = (): PlatformRecommendation[] => {
-    return recommendations?.filter((r) => r.priority === "secondary") || [];
+  const _getSecondaryPlatforms = (): PlatformRecommendation[] => {
+    return recommendations?.filter((r) => r?.priority === "secondary") || [];
   };
 
-  const getEmergingPlatforms = (): PlatformRecommendation[] => {
-    return recommendations?.filter((r) => r.priority === "emerging") || [];
+  const _getEmergingPlatforms = (): PlatformRecommendation[] => {
+    return recommendations?.filter((r) => r?.priority === "emerging") || [];
   };
 
   return {
@@ -177,7 +177,7 @@ export function useArtistTypeDefaults(
   genres?: string[],
   careerStage?: CareerStage,
 ) {
-  const genreParam = genres?.join(",") || "";
+  const _genreParam = genres?.join(",") || "";
   const {
     data: defaults,
     isLoading,

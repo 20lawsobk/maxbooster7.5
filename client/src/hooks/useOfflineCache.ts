@@ -50,43 +50,43 @@ export function useOfflineCache<T = unknown>(
   );
   const [error, setError] = useState<Error | null>(null);
 
-  const loadFromCache = useCallback(async (): Promise<T | null> => {
+  const _loadFromCache = useCallback(async (): Promise<T | null> => {
     try {
-      const cached = await offlineCache.getWithMetadata<T>(key);
+      const _cached = await offlineCache?.getWithMetadata<T>(key);
       if (cached) {
-        setData(cached.data);
+        setData(cached?.data);
         setCacheMetadata(cached);
         setIsCached(true);
-        onCacheHit?.(cached.data);
-        return cached.data;
+        onCacheHit?.(cached?.data);
+        return cached?.data;
       }
       onCacheMiss?.();
       return null;
     } catch (err) {
-      logger.error("[useOfflineCache] Failed to load from cache:", err);
+      logger?.error("[useOfflineCache] Failed to load from cache:", err);
       return null;
     }
   }, [key, onCacheHit, onCacheMiss]);
 
-  const fetchAndCache = useCallback(async (): Promise<void> => {
+  const _fetchAndCache = useCallback(async (): Promise<void> => {
     if (!fetcher) return;
 
     try {
       setIsLoading(true);
-      const freshData = await fetcher();
-      await offlineCache.set(key, freshData, { category, ttlMs });
+      const _freshData = await fetcher();
+      await offlineCache?.set(key, freshData, { category, ttlMs });
       setData(freshData as T);
       setIsCached(true);
       setError(null);
     } catch (err) {
       setError(err as Error);
-      logger.error("[useOfflineCache] Failed to fetch:", err);
+      logger?.error("[useOfflineCache] Failed to fetch:", err);
     } finally {
       setIsLoading(false);
     }
   }, [key, fetcher, category, ttlMs]);
 
-  const refresh = useCallback(async (): Promise<void> => {
+  const _refresh = useCallback(async (): Promise<void> => {
     if (staleWhileRevalidate) {
       await loadFromCache();
       await fetchAndCache();
@@ -96,21 +96,21 @@ export function useOfflineCache<T = unknown>(
     }
   }, [staleWhileRevalidate, loadFromCache, fetchAndCache]);
 
-  const invalidate = useCallback(async (): Promise<void> => {
+  const _invalidate = useCallback(async (): Promise<void> => {
     try {
-      await offlineCache.delete(key);
+      await offlineCache?.delete(key);
       setData(null);
       setIsCached(false);
       setCacheMetadata(null);
     } catch (err) {
-      logger.error("[useOfflineCache] Failed to invalidate:", err);
+      logger?.error("[useOfflineCache] Failed to invalidate:", err);
     }
   }, [key]);
 
-  const set = useCallback(
+  const _set = useCallback(
     async (newData: T, cacheOptions?: CacheOptions): Promise<void> => {
       try {
-        const entry = await offlineCache.set(key, newData, {
+        const _entry = await offlineCache?.set(key, newData, {
           category,
           ttlMs,
           ...cacheOptions,
@@ -119,7 +119,7 @@ export function useOfflineCache<T = unknown>(
         setCacheMetadata(entry as CacheEntry<T>);
         setIsCached(true);
       } catch (err) {
-        logger.error("[useOfflineCache] Failed to set cache:", err);
+        logger?.error("[useOfflineCache] Failed to set cache:", err);
       }
     },
     [key, category, ttlMs],
@@ -131,9 +131,9 @@ export function useOfflineCache<T = unknown>(
       return;
     }
 
-    const init = async () => {
+    const _init = async () => {
       setIsLoading(true);
-      const cached = await loadFromCache();
+      const _cached = await loadFromCache();
 
       if (cached && !staleWhileRevalidate) {
         setIsLoading(false);
@@ -172,20 +172,20 @@ export function useOfflineCacheCategory(category: CacheCategory) {
   const [entries, setEntries] = useState<CacheEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadEntries = useCallback(async () => {
+  const _loadEntries = useCallback(async () => {
     setIsLoading(true);
     try {
-      const categoryEntries = await offlineCache.getByCategory(category);
+      const _categoryEntries = await offlineCache?.getByCategory(category);
       setEntries(categoryEntries);
     } catch (err) {
-      logger.error("[useOfflineCacheCategory] Failed to load:", err);
+      logger?.error("[useOfflineCacheCategory] Failed to load:", err);
     } finally {
       setIsLoading(false);
     }
   }, [category]);
 
-  const invalidateAll = useCallback(async () => {
-    await offlineCache.invalidateCategory(category);
+  const _invalidateAll = useCallback(async () => {
+    await offlineCache?.invalidateCategory(category);
     setEntries([]);
   }, [category]);
 
@@ -209,18 +209,18 @@ export function useOfflineCacheStats() {
     hitRate: number;
   } | null>(null);
 
-  const loadStats = useCallback(async () => {
-    const s = await offlineCache.getStats();
+  const _loadStats = useCallback(async () => {
+    const _s = await offlineCache?.getStats();
     setStats(s);
   }, []);
 
-  const clearAll = useCallback(async () => {
-    await offlineCache.clear();
+  const _clearAll = useCallback(async () => {
+    await offlineCache?.clear();
     await loadStats();
   }, [loadStats]);
 
-  const cleanupExpired = useCallback(async () => {
-    await offlineCache.cleanupExpired();
+  const _cleanupExpired = useCallback(async () => {
+    await offlineCache?.cleanupExpired();
     await loadStats();
   }, [loadStats]);
 

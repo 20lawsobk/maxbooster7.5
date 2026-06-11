@@ -5,84 +5,84 @@ import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger";
 import { invoiceService } from "../services/invoiceService";
 import { randomBytes } from "crypto";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 
-const router = Router();
+const _router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; email: string };
 }
 
 function generateInvoiceNumber(): string {
-  const year = new Date().getFullYear();
-  const unique = randomBytes(4).toString("hex").toUpperCase();
+  const _year = new Date().getFullYear();
+  const _unique = randomBytes(4).toString("hex").toUpperCase();
   return `INV-${year}-${unique}`;
 }
 
-router.get(
+router?.get(
   "/",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
-      const offset = Math.min(
-        Math.max(parseInt(req.query.offset as string) || 0, 0),
+      const _userId = req?.user!.id;
+      const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+      const _offset = Math?.min(
+        Math?.max(parseInt(req?.query.offset as string) || 0, 0),
         100_000,
       );
 
       let query = db
         .select()
         .from(invoices)
-        .where(eq(invoices.userId, userId))
-        .orderBy(desc(invoices.createdAt))
+        .where(eq(invoices?.userId, userId))
+        .orderBy(desc(invoices?.createdAt))
         .limit(limit)
         .offset(offset);
 
-      const userInvoices = await query;
-      res.json({ invoices: userInvoices, pagination: { limit, offset } });
+      const _userInvoices = await query;
+      res?.json({ invoices: userInvoices, pagination: { limit, offset } });
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to get invoices:");
-      res.status(500).json({ error: "Failed to get invoices" });
+      logger?.warn({ err: error }, "[Invoices] Failed to get invoices:");
+      res?.status(500).json({ error: "Failed to get invoices" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/:invoiceId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
+      const { invoiceId } = req?.params;
 
       const [invoice] = await db
         .select()
         .from(invoices)
-        .where(eq(invoices.id, invoiceId))
+        .where(eq(invoices?.id, invoiceId))
         .limit(1);
 
       if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
+        return res?.status(404).json({ error: "Invoice not found" });
       }
 
-      if (invoice.userId !== req.user!.id) {
-        return res.status(403).json({ error: "Forbidden" });
+      if (invoice?.userId !== req?.user!.id) {
+        return res?.status(403).json({ error: "Forbidden" });
       }
 
-      res.json(invoice);
+      res?.json(invoice);
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to get invoice:");
-      res.status(500).json({ error: "Failed to get invoice" });
+      logger?.warn({ err: error }, "[Invoices] Failed to get invoice:");
+      res?.status(500).json({ error: "Failed to get invoice" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
       const {
         lineItems,
         toAddress,
@@ -91,23 +91,23 @@ router.post(
         notes,
         terms,
         invoiceType,
-      } = req.body;
+      } = req?.body;
 
-      if (!lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
-        return res.status(400).json({ error: "Line items are required" });
+      if (!lineItems || !Array?.isArray(lineItems) || lineItems?.length === 0) {
+        return res?.status(400).json({ error: "Line items are required" });
       }
 
-      const subtotalCents = lineItems.reduce(
+      const _subtotalCents = lineItems?.reduce(
         (sum: number, item: Record<string, unknown>) => {
-          return sum + item.quantity * item.unitPrice * 100;
+          return sum + item?.quantity * item?.unitPrice * 100;
         },
         0,
       );
 
-      const taxCents = Math.round(subtotalCents * 0.0); // Calculate based on location
-      const totalCents = subtotalCents + taxCents;
+      const _taxCents = Math?.round(subtotalCents * 0?.0); // Calculate based on location
+      const _totalCents = subtotalCents + taxCents;
 
-      const invoiceNumber = generateInvoiceNumber();
+      const _invoiceNumber = generateInvoiceNumber();
 
       const [invoice] = await db
         .insert(invoices)
@@ -124,44 +124,44 @@ router.post(
           totalCents,
           dueDate: dueDate
             ? new Date(dueDate)
-            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            : new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
           notes,
           terms,
         })
         .returning();
 
-      logger.info("[Invoices] Invoice created:", {
-        invoiceId: invoice.id,
+      logger?.info("[Invoices] Invoice created:", {
+        invoiceId: invoice?.id,
         invoiceNumber,
       });
-      res.status(201).json(invoice);
+      res?.status(201).json(invoice);
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to create invoice:");
-      res.status(500).json({ error: "Failed to create invoice" });
+      logger?.warn({ err: error }, "[Invoices] Failed to create invoice:");
+      res?.status(500).json({ error: "Failed to create invoice" });
     }
   },
 );
 
-router.put(
+router?.put(
   "/:invoiceId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
-      const userId = req.user!.id;
+      const { invoiceId } = req?.params;
+      const _userId = req?.user!.id;
 
       const [existing] = await db
         .select()
         .from(invoices)
-        .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
+        .where(and(eq(invoices?.id, invoiceId), eq(invoices?.userId, userId)))
         .limit(1);
 
       if (!existing) {
-        return res.status(404).json({ error: "Invoice not found" });
+        return res?.status(404).json({ error: "Invoice not found" });
       }
 
-      if (existing.status === "paid") {
-        return res.status(400).json({ error: "Cannot modify paid invoice" });
+      if (existing?.status === "paid") {
+        return res?.status(400).json({ error: "Cannot modify paid invoice" });
       }
 
       const {
@@ -172,98 +172,98 @@ router.put(
         notes,
         terms,
         status,
-      } = req.body;
+      } = req?.body;
 
-      let subtotalCents = existing.subtotalCents;
-      let totalCents = existing.totalCents;
+      let subtotalCents = existing?.subtotalCents;
+      let totalCents = existing?.totalCents;
 
-      if (lineItems && Array.isArray(lineItems)) {
-        subtotalCents = lineItems.reduce(
+      if (lineItems && Array?.isArray(lineItems)) {
+        subtotalCents = lineItems?.reduce(
           (sum: number, item: Record<string, unknown>) => {
-            return sum + item.quantity * item.unitPrice * 100;
+            return sum + item?.quantity * item?.unitPrice * 100;
           },
           0,
         );
-        totalCents = subtotalCents + (existing.taxCents || 0);
+        totalCents = subtotalCents + (existing?.taxCents || 0);
       }
 
       const [updated] = await db
         .update(invoices)
         .set({
-          lineItems: lineItems || existing.lineItems,
-          fromAddress: fromAddress || existing.fromAddress,
-          toAddress: toAddress || existing.toAddress,
-          dueDate: dueDate ? new Date(dueDate) : existing.dueDate,
-          notes: notes || existing.notes,
-          terms: terms || existing.terms,
-          status: status || existing.status,
+          lineItems: lineItems || existing?.lineItems,
+          fromAddress: fromAddress || existing?.fromAddress,
+          toAddress: toAddress || existing?.toAddress,
+          dueDate: dueDate ? new Date(dueDate) : existing?.dueDate,
+          notes: notes || existing?.notes,
+          terms: terms || existing?.terms,
+          status: status || existing?.status,
           subtotalCents,
           totalCents,
           updatedAt: new Date(),
         })
-        .where(eq(invoices.id, invoiceId))
+        .where(eq(invoices?.id, invoiceId))
         .returning();
 
-      res.json(updated);
+      res?.json(updated);
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to update invoice:");
-      res.status(500).json({ error: "Failed to update invoice" });
+      logger?.warn({ err: error }, "[Invoices] Failed to update invoice:");
+      res?.status(500).json({ error: "Failed to update invoice" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/:invoiceId/send",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
-      const userId = req.user!.id;
+      const { invoiceId } = req?.params;
+      const _userId = req?.user!.id;
 
       const [invoice] = await db
         .select()
         .from(invoices)
-        .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
+        .where(and(eq(invoices?.id, invoiceId), eq(invoices?.userId, userId)))
         .limit(1);
 
       if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
+        return res?.status(404).json({ error: "Invoice not found" });
       }
 
       await db
         .update(invoices)
         .set({ status: "sent", updatedAt: new Date() })
-        .where(eq(invoices.id, invoiceId));
+        .where(eq(invoices?.id, invoiceId));
 
-      logger.info("[Invoices] Invoice sent:", {
+      logger?.info("[Invoices] Invoice sent:", {
         invoiceId,
-        invoiceNumber: invoice.invoiceNumber,
+        invoiceNumber: invoice?.invoiceNumber,
       });
-      res.json({ success: true, message: "Invoice sent successfully" });
+      res?.json({ success: true, message: "Invoice sent successfully" });
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to send invoice:");
-      res.status(500).json({ error: "Failed to send invoice" });
+      logger?.warn({ err: error }, "[Invoices] Failed to send invoice:");
+      res?.status(500).json({ error: "Failed to send invoice" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/:invoiceId/mark-paid",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
-      const userId = req.user!.id;
-      const { paymentMethod } = req.body;
+      const { invoiceId } = req?.params;
+      const _userId = req?.user!.id;
+      const { paymentMethod } = req?.body;
 
       const [invoice] = await db
         .select()
         .from(invoices)
-        .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
+        .where(and(eq(invoices?.id, invoiceId), eq(invoices?.userId, userId)))
         .limit(1);
 
       if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
+        return res?.status(404).json({ error: "Invoice not found" });
       }
 
       await db
@@ -274,57 +274,57 @@ router.post(
           paymentMethod: paymentMethod || "manual",
           updatedAt: new Date(),
         })
-        .where(eq(invoices.id, invoiceId));
+        .where(eq(invoices?.id, invoiceId));
 
-      logger.info("[Invoices] Invoice marked paid:", {
+      logger?.info("[Invoices] Invoice marked paid:", {
         invoiceId,
-        invoiceNumber: invoice.invoiceNumber,
+        invoiceNumber: invoice?.invoiceNumber,
       });
-      res.json({ success: true, message: "Invoice marked as paid" });
+      res?.json({ success: true, message: "Invoice marked as paid" });
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to mark invoice paid:");
-      res.status(500).json({ error: "Failed to mark invoice as paid" });
+      logger?.warn({ err: error }, "[Invoices] Failed to mark invoice paid:");
+      res?.status(500).json({ error: "Failed to mark invoice as paid" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/:invoiceId/pdf",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req.params;
-      const userId = req.user!.id;
+      const { invoiceId } = req?.params;
+      const _userId = req?.user!.id;
 
       const [invoice] = await db
         .select()
         .from(invoices)
-        .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
+        .where(and(eq(invoices?.id, invoiceId), eq(invoices?.userId, userId)))
         .limit(1);
 
       if (!invoice) {
-        return res.status(404).json({ error: "Invoice not found" });
+        return res?.status(404).json({ error: "Invoice not found" });
       }
 
-      const pdfData = await invoiceService.generatePDF({
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        userId: invoice.userId,
+      const _pdfData = await invoiceService?.generatePDF({
+        id: invoice?.id,
+        invoiceNumber: invoice?.invoiceNumber,
+        userId: invoice?.userId,
         type:
-          (invoice.invoiceType as
+          (invoice?.invoiceType as
             | "sale"
             | "purchase"
             | "royalty"
             | "service") || "sale",
         status:
-          (invoice.status as
+          (invoice?.status as
             | "draft"
             | "sent"
             | "paid"
             | "overdue"
             | "cancelled"
             | "refunded") || "draft",
-        from: (invoice.fromAddress as Record<string, unknown>) || {
+        from: (invoice?.fromAddress as Record<string, unknown>) || {
           name: "Max Booster",
           street: "123 Music Lane",
           city: "Los Angeles",
@@ -332,65 +332,65 @@ router.get(
           postalCode: "90001",
           country: "US",
         },
-        to: (invoice.toAddress as Record<string, unknown>) || {
+        to: (invoice?.toAddress as Record<string, unknown>) || {
           name: "Customer",
           street: "N/A",
           city: "N/A",
           postalCode: "N/A",
           country: "US",
         },
-        lineItems: ((invoice.lineItems as Record<string, unknown>[]) || []).map(
+        lineItems: ((invoice?.lineItems as Record<string, unknown>[]) || []).map(
           (item: Record<string, unknown>, idx: number) => ({
             id: `item-${idx}`,
-            description: item.description || "Service",
-            quantity: item.quantity || 1,
-            unitPrice: item.unitPrice || 0,
-            total: (item.quantity || 1) * (item.unitPrice || 0),
+            description: item?.description || "Service",
+            quantity: item?.quantity || 1,
+            unitPrice: item?.unitPrice || 0,
+            total: (item?.quantity || 1) * (item?.unitPrice || 0),
           }),
         ),
-        subtotal: (invoice.subtotalCents || 0) / 100,
+        subtotal: (invoice?.subtotalCents || 0) / 100,
         taxes: [],
-        totalTax: (invoice.taxCents || 0) / 100,
-        total: (invoice.totalCents || 0) / 100,
-        currency: invoice.currency || "USD",
-        dueDate: invoice.dueDate || new Date(),
-        issuedDate: invoice.createdAt || new Date(),
-        notes: invoice.notes || undefined,
-        terms: invoice.terms || undefined,
+        totalTax: (invoice?.taxCents || 0) / 100,
+        total: (invoice?.totalCents || 0) / 100,
+        currency: invoice?.currency || "USD",
+        dueDate: invoice?.dueDate || new Date(),
+        issuedDate: invoice?.createdAt || new Date(),
+        notes: invoice?.notes || undefined,
+        terms: invoice?.terms || undefined,
       });
 
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
+      res?.setHeader("Content-Type", "application/pdf");
+      res?.setHeader(
         "Content-Disposition",
-        `attachment; filename="${invoice.invoiceNumber}.pdf"`,
+        `attachment; filename="${invoice?.invoiceNumber}.pdf"`,
       );
-      res.send(Buffer.from(pdfData, "base64"));
+      res?.send(Buffer?.from(pdfData, "base64"));
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to generate PDF:");
-      res.status(500).json({ error: "Failed to generate PDF" });
+      logger?.warn({ err: error }, "[Invoices] Failed to generate PDF:");
+      res?.status(500).json({ error: "Failed to generate PDF" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/generate-from-order/:orderId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { orderId } = req.params;
-      const userId = req.user!.id;
+      const { orderId } = req?.params;
+      const _userId = req?.user!.id;
 
       const [order] = await db
         .select()
         .from(orders)
-        .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
+        .where(and(eq(orders?.id, orderId), eq(orders?.userId, userId)))
         .limit(1);
 
       if (!order) {
-        return res.status(404).json({ error: "Order not found" });
+        return res?.status(404).json({ error: "Order not found" });
       }
 
-      const invoiceNumber = generateInvoiceNumber();
+      const _invoiceNumber = generateInvoiceNumber();
 
       const [invoice] = await db
         .insert(invoices)
@@ -403,54 +403,54 @@ router.post(
             {
               description: `Order #${orderId}`,
               quantity: 1,
-              unitPrice: order.amount,
+              unitPrice: order?.amount,
             },
           ],
-          subtotalCents: Math.round(order.amount * 100),
-          totalCents: Math.round(order.amount * 100),
-          paidAt: order.createdAt,
+          subtotalCents: Math?.round(order?.amount * 100),
+          totalCents: Math?.round(order?.amount * 100),
+          paidAt: order?.createdAt,
           paymentMethod: "stripe",
           metadata: { orderId },
         })
         .returning();
 
-      logger.info("[Invoices] Invoice generated from order:", {
-        invoiceId: invoice.id,
+      logger?.info("[Invoices] Invoice generated from order:", {
+        invoiceId: invoice?.id,
         orderId,
       });
-      res.status(201).json(invoice);
+      res?.status(201).json(invoice);
     } catch (error) {
-      logger.warn(
+      logger?.warn(
         { err: error },
         "[Invoices] Failed to generate invoice from order:",
       );
-      res.status(500).json({ error: "Failed to generate invoice" });
+      res?.status(500).json({ error: "Failed to generate invoice" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/bulk-generate",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { startDate, endDate } = req.body;
+      const _userId = req?.user!.id;
+      const { startDate, endDate } = req?.body;
 
-      const start = startDate
+      const _start = startDate
         ? new Date(startDate)
-        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const end = endDate ? new Date(endDate) : new Date();
+        : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+      const _end = endDate ? new Date(endDate) : new Date();
 
-      const userOrders = await db
+      const _userOrders = await db
         .select()
         .from(orders)
         .where(
           and(
-            eq(orders.userId, userId),
-            eq(orders.status, "completed"),
-            gte(orders.createdAt, start),
-            lte(orders.createdAt, end),
+            eq(orders?.userId, userId),
+            eq(orders?.status, "completed"),
+            gte(orders?.createdAt, start),
+            lte(orders?.createdAt, end),
           ),
         )
         .limit(200);
@@ -458,15 +458,15 @@ router.post(
       const generatedInvoices: string[] = [];
 
       for (const order of userOrders) {
-        const existingResult = await db.execute(
-          sql`SELECT id FROM invoices WHERE metadata->>'orderId' = ${order.id}`,
+        const _existingResult = await db?.execute(
+          sql`SELECT id FROM invoices WHERE metadata->>'orderId' = ${order?.id}`,
         );
 
-        if (existingResult.rows && existingResult.rows.length > 0) {
+        if (existingResult?.rows && existingResult?.rows.length > 0) {
           continue;
         }
 
-        const invoiceNumber = generateInvoiceNumber();
+        const _invoiceNumber = generateInvoiceNumber();
 
         const [invoice] = await db
           .insert(invoices)
@@ -477,49 +477,49 @@ router.post(
             status: "paid",
             lineItems: [
               {
-                description: `Order #${order.id}`,
+                description: `Order #${order?.id}`,
                 quantity: 1,
-                unitPrice: order.amount,
+                unitPrice: order?.amount,
               },
             ],
-            subtotalCents: Math.round(order.amount * 100),
-            totalCents: Math.round(order.amount * 100),
-            paidAt: order.createdAt,
+            subtotalCents: Math?.round(order?.amount * 100),
+            totalCents: Math?.round(order?.amount * 100),
+            paidAt: order?.createdAt,
             paymentMethod: "stripe",
-            metadata: { orderId: order.id },
+            metadata: { orderId: order?.id },
           })
           .returning();
 
-        generatedInvoices.push(invoice.id);
+        generatedInvoices?.push(invoice?.id);
       }
 
-      logger.info("[Invoices] Bulk invoices generated:", {
-        count: generatedInvoices.length,
+      logger?.info("[Invoices] Bulk invoices generated:", {
+        count: generatedInvoices?.length,
         userId,
       });
-      res.json({
+      res?.json({
         success: true,
-        generated: generatedInvoices.length,
+        generated: generatedInvoices?.length,
         invoiceIds: generatedInvoices,
       });
     } catch (error) {
-      logger.warn(
+      logger?.warn(
         { err: error },
         "[Invoices] Failed to bulk generate invoices:",
       );
-      res.status(500).json({ error: "Failed to bulk generate invoices" });
+      res?.status(500).json({ error: "Failed to bulk generate invoices" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/summary/stats",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
 
-      const statsResult = await db.execute(
+      const _statsResult = await db?.execute(
         sql`SELECT 
             COUNT(*) as total_invoices,
             COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_count,
@@ -532,20 +532,20 @@ router.get(
           WHERE user_id = ${userId}`,
       );
 
-      const stats = statsResult.rows?.[0] || {};
+      const _stats = statsResult?.rows?.[0] || {};
 
-      res.json({
-        totalInvoices: Number(stats.total_invoices) || 0,
-        paidCount: Number(stats.paid_count) || 0,
-        sentCount: Number(stats.sent_count) || 0,
-        draftCount: Number(stats.draft_count) || 0,
-        overdueCount: Number(stats.overdue_count) || 0,
-        totalPaid: Number(stats.total_paid_cents) / 100 || 0,
-        totalPending: Number(stats.total_pending_cents) / 100 || 0,
+      res?.json({
+        totalInvoices: Number(stats?.total_invoices) || 0,
+        paidCount: Number(stats?.paid_count) || 0,
+        sentCount: Number(stats?.sent_count) || 0,
+        draftCount: Number(stats?.draft_count) || 0,
+        overdueCount: Number(stats?.overdue_count) || 0,
+        totalPaid: Number(stats?.total_paid_cents) / 100 || 0,
+        totalPending: Number(stats?.total_pending_cents) / 100 || 0,
       });
     } catch (error) {
-      logger.warn({ err: error }, "[Invoices] Failed to get invoice stats:");
-      res.status(500).json({ error: "Failed to get invoice statistics" });
+      logger?.warn({ err: error }, "[Invoices] Failed to get invoice stats:");
+      res?.status(500).json({ error: "Failed to get invoice statistics" });
     }
   },
 );

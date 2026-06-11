@@ -13,7 +13,7 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   generateCreativePackage,
   planCreative,
@@ -22,16 +22,16 @@ import {
   type CreativeBrief,
   type CreativePlan,
   type EngagementScores,
-} from "../services/creativeModelService.js";
+} from "../services/creativeModelService?.js";
 
-const router = Router();
+const _router = Router();
 
 function requireAuth(req: Request, res: Response): number | null {
-  const userId =
-    (req.session as Record<string, unknown>)?.userId ??
-    (req.user as Record<string, unknown>)?.id;
+  const _userId =
+    (req?.session as Record<string, unknown>)?.userId ??
+    (req?.user as Record<string, unknown>)?.id;
   if (!userId) {
-    res.status(401).json({ error: "Authentication required" });
+    res?.status(401).json({ error: "Authentication required" });
     return null;
   }
   return Number(userId);
@@ -56,11 +56,11 @@ function parseBrief(body: Record<string, unknown>): CreativeBrief | string {
     goal: goal ?? "awareness",
     tone: tone ?? "high_energy",
     offer,
-    callToAction: callToAction ?? body.call_to_action ?? "Learn more",
-    keyMessages: Array.isArray(keyMessages)
+    callToAction: callToAction ?? body?.call_to_action ?? "Learn more",
+    keyMessages: Array?.isArray(keyMessages)
       ? keyMessages
-      : Array.isArray(body.key_messages)
-        ? body.key_messages
+      : Array?.isArray(body?.key_messages)
+        ? body?.key_messages
         : [],
     style: style ?? {},
   };
@@ -68,28 +68,28 @@ function parseBrief(body: Record<string, unknown>): CreativeBrief | string {
 
 // ─── POST /generate ───────────────────────────────────────────────────────────
 
-router.post("/generate", async (req: Request, res: Response) => {
-  const userId = requireAuth(req, res);
+router?.post("/generate", async (req: Request, res: Response) => {
+  const _userId = requireAuth(req, res);
   if (!userId) return;
 
-  const brief = parseBrief(req.body);
+  const _brief = parseBrief(req?.body);
   if (typeof brief === "string") {
-    return res.status(400).json({ error: brief });
+    return res?.status(400).json({ error: brief });
   }
 
-  const audioPath: string = req.body.audioPath ?? req.body.audio_path ?? "";
-  const assetId: string | undefined = req.body.assetId ?? req.body.asset_id;
+  const audioPath: string = req?.body.audioPath ?? req?.body.audio_path ?? "";
+  const assetId: string | undefined = req?.body.assetId ?? req?.body.asset_id;
 
   try {
-    const pkg = await generateCreativePackage({
+    const _pkg = await generateCreativePackage({
       brief,
       audioPath,
       userId,
       assetId,
     });
-    res.json({ success: true, data: pkg });
+    res?.json({ success: true, data: pkg });
   } catch (err) {
-    logger.warn("[CreativeModel] /generate error", { err });
+    logger?.warn("[CreativeModel] /generate error", { err });
     res
       .status(500)
       .json({ error: "Creative generation failed", detail: err?.message });
@@ -98,84 +98,84 @@ router.post("/generate", async (req: Request, res: Response) => {
 
 // ─── POST /plan ───────────────────────────────────────────────────────────────
 
-router.post("/plan", async (req: Request, res: Response) => {
-  const userId = requireAuth(req, res);
+router?.post("/plan", async (req: Request, res: Response) => {
+  const _userId = requireAuth(req, res);
   if (!userId) return;
 
-  const brief = parseBrief(req.body);
+  const _brief = parseBrief(req?.body);
   if (typeof brief === "string") {
-    return res.status(400).json({ error: brief });
+    return res?.status(400).json({ error: brief });
   }
 
-  const audioPath: string = req.body.audioPath ?? req.body.audio_path ?? "";
+  const audioPath: string = req?.body.audioPath ?? req?.body.audio_path ?? "";
 
   try {
-    const result = await planCreative(brief, audioPath);
-    res.json({ success: true, data: result });
+    const _result = await planCreative(brief, audioPath);
+    res?.json({ success: true, data: result });
   } catch (err) {
-    logger.warn("[CreativeModel] /plan error", { err });
-    res.status(500).json({ error: "Planning failed", detail: err?.message });
+    logger?.warn("[CreativeModel] /plan error", { err });
+    res?.status(500).json({ error: "Planning failed", detail: err?.message });
   }
 });
 
 // ─── POST /score ──────────────────────────────────────────────────────────────
 
-router.post("/score", async (req: Request, res: Response) => {
-  const userId = requireAuth(req, res);
+router?.post("/score", async (req: Request, res: Response) => {
+  const _userId = requireAuth(req, res);
   if (!userId) return;
 
-  const brief = parseBrief(req.body);
+  const _brief = parseBrief(req?.body);
   if (typeof brief === "string") {
-    return res.status(400).json({ error: brief });
+    return res?.status(400).json({ error: brief });
   }
 
-  const plan: CreativePlan | undefined = req.body.plan;
-  const MAX_SCRIPT_CHARS = 10_000;
-  const script: string = (req.body.script ?? "")
+  const plan: CreativePlan | undefined = req?.body.plan;
+  const _MAX_SCRIPT_CHARS = 10_000;
+  const script: string = (req?.body.script ?? "")
     .toString()
     .slice(0, MAX_SCRIPT_CHARS);
 
-  if (!plan || !Array.isArray(plan.beats)) {
-    return res.status(400).json({ error: "plan with beats array is required" });
+  if (!plan || !Array?.isArray(plan?.beats)) {
+    return res?.status(400).json({ error: "plan with beats array is required" });
   }
 
   try {
-    const scores = await scoreCreative(brief, plan, script);
-    res.json({ success: true, data: scores });
+    const _scores = await scoreCreative(brief, plan, script);
+    res?.json({ success: true, data: scores });
   } catch (err) {
-    logger.warn("[CreativeModel] /score error", { err });
-    res.status(500).json({ error: "Scoring failed", detail: err?.message });
+    logger?.warn("[CreativeModel] /score error", { err });
+    res?.status(500).json({ error: "Scoring failed", detail: err?.message });
   }
 });
 
 // ─── POST /feedback ───────────────────────────────────────────────────────────
 
-router.post("/feedback", async (req: Request, res: Response) => {
-  const userId = requireAuth(req, res);
+router?.post("/feedback", async (req: Request, res: Response) => {
+  const _userId = requireAuth(req, res);
   if (!userId) return;
 
-  const { assetId, brief: rawBrief, scores: rawScores, metrics } = req.body;
+  const { assetId, brief: rawBrief, scores: rawScores, metrics } = req?.body;
 
   if (!assetId) {
-    return res.status(400).json({ error: "assetId is required" });
+    return res?.status(400).json({ error: "assetId is required" });
   }
 
-  const brief = parseBrief(rawBrief ?? {});
+  const _brief = parseBrief(rawBrief ?? {});
   if (typeof brief === "string") {
-    return res.status(400).json({ error: `brief.${brief}` });
+    return res?.status(400).json({ error: `brief.${brief}` });
   }
 
   const scores: EngagementScores = {
-    watchTimeScore: Number(rawScores?.watchTimeScore ?? 0.7),
-    hookStrength: Number(rawScores?.hookStrength ?? 0.7),
-    conversionScore: Number(rawScores?.conversionScore ?? 0.7),
+    watchTimeScore: Number(rawScores?.watchTimeScore ?? 0?.7),
+    hookStrength: Number(rawScores?.hookStrength ?? 0?.7),
+    conversionScore: Number(rawScores?.conversionScore ?? 0?.7),
   };
 
   try {
     await submitFeedback(assetId, userId, brief, scores, metrics ?? {});
-    res.json({ success: true });
+    res?.json({ success: true });
   } catch (err) {
-    logger.warn("[CreativeModel] /feedback error", { err });
+    logger?.warn("[CreativeModel] /feedback error", { err });
     res
       .status(500)
       .json({ error: "Feedback submission failed", detail: err?.message });

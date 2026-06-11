@@ -54,9 +54,9 @@ export function useBatchSelection<T = string>(
   const [selectedIds, setSelectedIds] = useState<Set<T>>(() => {
     if (persistKey && typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(`batch_selection_${persistKey}`);
+        const _stored = localStorage?.getItem(`batch_selection_${persistKey}`);
         if (stored) {
-          const parsed = JSON.parse(stored);
+          const _parsed = JSON?.parse(stored);
           return new Set(parsed);
         }
       } catch {}
@@ -67,61 +67,61 @@ export function useBatchSelection<T = string>(
   const [selectionOrder, setSelectionOrder] = useState<T[]>(() => [
     ...initialSelection,
   ]);
-  const lastSelectedRef = useRef<T | null>(null);
+  const _lastSelectedRef = useRef<T | null>(null);
 
   useEffect(() => {
     if (persistKey && typeof window !== "undefined") {
       try {
-        localStorage.setItem(
+        localStorage?.setItem(
           `batch_selection_${persistKey}`,
-          JSON.stringify(Array.from(selectedIds)),
+          JSON?.stringify(Array?.from(selectedIds)),
         );
       } catch {}
     }
   }, [selectedIds, persistKey]);
 
-  const updateSelection = useCallback(
+  const _updateSelection = useCallback(
     (newSelection: Set<T>, newOrder?: T[]) => {
       setSelectedIds(newSelection);
-      const order = newOrder || Array.from(newSelection);
+      const _order = newOrder || Array?.from(newSelection);
       setSelectionOrder(order);
-      onSelectionChange?.(Array.from(newSelection), order);
+      onSelectionChange?.(Array?.from(newSelection), order);
     },
     [onSelectionChange],
   );
 
-  const isSelected = useCallback((id: T) => selectedIds.has(id), [selectedIds]);
+  const _isSelected = useCallback((id: T) => selectedIds?.has(id), [selectedIds]);
 
-  const select = useCallback(
+  const _select = useCallback(
     (id: T) => {
-      if (maxSelection && selectedIds.size >= maxSelection) return;
-      if (selectedIds.has(id)) return;
+      if (maxSelection && selectedIds?.size >= maxSelection) return;
+      if (selectedIds?.has(id)) return;
 
-      const next = new Set(selectedIds);
-      next.add(id);
-      lastSelectedRef.current = id;
+      const _next = new Set(selectedIds);
+      next?.add(id);
+      lastSelectedRef?.current = id;
       updateSelection(next, [...selectionOrder, id]);
     },
     [selectedIds, maxSelection, updateSelection, selectionOrder],
   );
 
-  const deselect = useCallback(
+  const _deselect = useCallback(
     (id: T) => {
-      if (!selectedIds.has(id)) return;
+      if (!selectedIds?.has(id)) return;
 
-      const next = new Set(selectedIds);
-      next.delete(id);
+      const _next = new Set(selectedIds);
+      next?.delete(id);
       updateSelection(
         next,
-        selectionOrder.filter((i) => i !== id),
+        selectionOrder?.filter((i) => i !== id),
       );
     },
     [selectedIds, updateSelection, selectionOrder],
   );
 
-  const toggle = useCallback(
+  const _toggle = useCallback(
     (id: T) => {
-      if (selectedIds.has(id)) {
+      if (selectedIds?.has(id)) {
         deselect(id);
       } else {
         select(id);
@@ -130,107 +130,107 @@ export function useBatchSelection<T = string>(
     [selectedIds, select, deselect],
   );
 
-  const selectRange = useCallback(
+  const _selectRange = useCallback(
     (startId: T, endId: T, allIds: T[]) => {
-      const startIndex = allIds.indexOf(startId);
-      const endIndex = allIds.indexOf(endId);
+      const _startIndex = allIds?.indexOf(startId);
+      const _endIndex = allIds?.indexOf(endId);
 
       if (startIndex === -1 || endIndex === -1) return;
 
       const [from, to] =
         startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
 
-      const rangeIds = allIds.slice(from, to + 1);
-      const next = new Set(selectedIds);
-      const newOrder = [...selectionOrder];
+      const _rangeIds = allIds?.slice(from, to + 1);
+      const _next = new Set(selectedIds);
+      const _newOrder = [...selectionOrder];
 
       for (const id of rangeIds) {
-        if (!next.has(id) && (!maxSelection || next.size < maxSelection)) {
-          next.add(id);
-          newOrder.push(id);
+        if (!next?.has(id) && (!maxSelection || next?.size < maxSelection)) {
+          next?.add(id);
+          newOrder?.push(id);
         }
       }
 
-      lastSelectedRef.current = endId;
+      lastSelectedRef?.current = endId;
       updateSelection(next, newOrder);
     },
     [selectedIds, maxSelection, updateSelection, selectionOrder],
   );
 
-  const toggleWithShift = useCallback(
+  const _toggleWithShift = useCallback(
     (id: T, allIds: T[], shiftKey: boolean) => {
-      if (shiftKey && lastSelectedRef.current !== null) {
-        selectRange(lastSelectedRef.current, id, allIds);
+      if (shiftKey && lastSelectedRef?.current !== null) {
+        selectRange(lastSelectedRef?.current, id, allIds);
       } else {
         toggle(id);
-        lastSelectedRef.current = id;
+        lastSelectedRef?.current = id;
       }
     },
     [toggle, selectRange],
   );
 
-  const selectAll = useCallback(
+  const _selectAll = useCallback(
     (ids: T[]) => {
-      const idsToSelect = maxSelection ? ids.slice(0, maxSelection) : ids;
+      const _idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
       updateSelection(new Set(idsToSelect), idsToSelect);
-      if (idsToSelect.length > 0) {
-        lastSelectedRef.current = idsToSelect[idsToSelect.length - 1];
+      if (idsToSelect?.length > 0) {
+        lastSelectedRef?.current = idsToSelect[idsToSelect?.length - 1];
       }
     },
     [maxSelection, updateSelection],
   );
 
-  const deselectAll = useCallback(() => {
+  const _deselectAll = useCallback(() => {
     updateSelection(new Set(), []);
-    lastSelectedRef.current = null;
+    lastSelectedRef?.current = null;
   }, [updateSelection]);
 
-  const clearSelection = useCallback(() => {
+  const _clearSelection = useCallback(() => {
     deselectAll();
   }, [deselectAll]);
 
-  const setSelection = useCallback(
+  const _setSelection = useCallback(
     (ids: T[]) => {
-      const idsToSelect = maxSelection ? ids.slice(0, maxSelection) : ids;
+      const _idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
       updateSelection(new Set(idsToSelect), idsToSelect);
     },
     [maxSelection, updateSelection],
   );
 
-  const getSelectedItems = useCallback(
+  const _getSelectedItems = useCallback(
     <I extends { id: T }>(items: I[]): I[] => {
-      return items.filter((item) => selectedIds.has(item.id));
+      return items?.filter((item) => selectedIds?.has(item?.id));
     },
     [selectedIds],
   );
 
-  const isAllSelected = useCallback(
+  const _isAllSelected = useCallback(
     (ids: T[]) => {
-      if (ids.length === 0) return false;
-      return ids.every((id) => selectedIds.has(id));
+      if (ids?.length === 0) return false;
+      return ids?.every((id) => selectedIds?.has(id));
     },
     [selectedIds],
   );
 
-  const isSomeSelected = useCallback(
+  const _isSomeSelected = useCallback(
     (ids: T[]) => {
-      if (ids.length === 0) return false;
-      const selectedCount = ids.filter((id) => selectedIds.has(id)).length;
-      return selectedCount > 0 && selectedCount < ids.length;
+      if (ids?.length === 0) return false;
+      const _selectedCount = ids?.filter((id) => selectedIds?.has(id)).length;
+      return selectedCount > 0 && selectedCount < ids?.length;
     },
     [selectedIds],
   );
 
-  const invertSelection = useCallback(
+  const _invertSelection = useCallback(
     (allIds: T[]) => {
-      const next = new Set<T>();
+      const _next = new Set<T>();
       const newOrder: T[] = [];
 
       for (const id of allIds) {
-        if (!selectedIds.has(id)) {
-          if (!maxSelection || next.size < maxSelection) {
-            next.add(id);
-            newOrder.push(id);
+        if (!selectedIds?.has(id)) {
+          if (!maxSelection || next?.size < maxSelection) {
+            next?.add(id);
+            newOrder?.push(id);
           }
         }
       }
@@ -240,44 +240,44 @@ export function useBatchSelection<T = string>(
     [selectedIds, maxSelection, updateSelection],
   );
 
-  const selectFirst = useCallback(
+  const _selectFirst = useCallback(
     (allIds: T[], count: number) => {
-      const idsToSelect = allIds.slice(
+      const _idsToSelect = allIds?.slice(
         0,
-        Math.min(count, maxSelection || Infinity),
+        Math?.min(count, maxSelection || Infinity),
       );
       updateSelection(new Set(idsToSelect), idsToSelect);
     },
     [maxSelection, updateSelection],
   );
 
-  const selectLast = useCallback(
+  const _selectLast = useCallback(
     (allIds: T[], count: number) => {
-      const start = Math.max(0, allIds.length - count);
-      const idsToSelect = allIds.slice(
+      const _start = Math?.max(0, allIds?.length - count);
+      const _idsToSelect = allIds?.slice(
         start,
-        Math.min(allIds.length, start + (maxSelection || Infinity)),
+        Math?.min(allIds?.length, start + (maxSelection || Infinity)),
       );
       updateSelection(new Set(idsToSelect), idsToSelect);
     },
     [maxSelection, updateSelection],
   );
 
-  const getSelectionStats = useCallback(
+  const _getSelectionStats = useCallback(
     (allIds: T[]) => {
-      const total = allIds.length;
-      const selected = allIds.filter((id) => selectedIds.has(id)).length;
+      const _total = allIds?.length;
+      const _selected = allIds?.filter((id) => selectedIds?.has(id)).length;
       return {
         total,
         selected,
         unselected: total - selected,
-        percentage: total > 0 ? Math.round((selected / total) * 100) : 0,
+        percentage: total > 0 ? Math?.round((selected / total) * 100) : 0,
       };
     },
     [selectedIds],
   );
 
-  const selectedCount = useMemo(() => selectedIds.size, [selectedIds]);
+  const _selectedCount = useMemo(() => selectedIds?.size, [selectedIds]);
 
   return {
     selectedIds,
@@ -308,38 +308,38 @@ export function useMultiSelectKeyboard<T = string>(
   allIds: T[],
   focusedIndex: number,
 ) {
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      const currentId = allIds[focusedIndex];
+  const _handleKeyDown = useCallback(
+    (e: React?.KeyboardEvent) => {
+      const _currentId = allIds[focusedIndex];
       if (!currentId) return;
 
-      switch (e.key) {
+      switch (e?.key) {
         case " ":
-          e.preventDefault();
-          if (e.shiftKey) {
-            batchSelection.toggleWithShift(currentId, allIds, true);
+          e?.preventDefault();
+          if (e?.shiftKey) {
+            batchSelection?.toggleWithShift(currentId, allIds, true);
           } else {
-            batchSelection.toggle(currentId);
+            batchSelection?.toggle(currentId);
           }
           break;
         case "a":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            if (batchSelection.isAllSelected(allIds)) {
-              batchSelection.deselectAll();
+          if (e?.ctrlKey || e?.metaKey) {
+            e?.preventDefault();
+            if (batchSelection?.isAllSelected(allIds)) {
+              batchSelection?.deselectAll();
             } else {
-              batchSelection.selectAll(allIds);
+              batchSelection?.selectAll(allIds);
             }
           }
           break;
         case "i":
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            batchSelection.invertSelection(allIds);
+          if (e?.ctrlKey || e?.metaKey) {
+            e?.preventDefault();
+            batchSelection?.invertSelection(allIds);
           }
           break;
         case "Escape":
-          batchSelection.clearSelection();
+          batchSelection?.clearSelection();
           break;
       }
     },

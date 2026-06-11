@@ -1,9 +1,9 @@
 import path from "path";
 import fs from "fs/promises";
 import { randomBytes } from "crypto";
-import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
+import { musicIndustryContextFilter } from "./musicIndustryContextFilter?.js";
 import wavefilePkg from "wavefile";
-const WaveFile =
+const _WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 
 // ============================================================================
@@ -36,7 +36,7 @@ export interface Chord {
 // KEYWORD DICTIONARIES
 // ============================================================================
 
-const moodKeywords = {
+const _moodKeywords = {
   happy: {
     scale: "major" as const,
     chordTypes: ["major", "major7"],
@@ -89,7 +89,7 @@ const tempoKeywords: Record<string, number> = {
   quick: 145,
 };
 
-const genreTemplates = {
+const _genreTemplates = {
   jazz: {
     progressions: [
       [2, 5, 1],
@@ -98,7 +98,7 @@ const genreTemplates = {
     ],
     complexity: "complex",
     chordTypes: ["major7", "minor7", "dom7"],
-    swingFactor: 0.6,
+    swingFactor: 0?.6,
   },
   rock: {
     progressions: [
@@ -108,7 +108,7 @@ const genreTemplates = {
     ],
     complexity: "simple",
     chordTypes: ["major", "minor"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
   pop: {
     progressions: [
@@ -118,13 +118,13 @@ const genreTemplates = {
     ],
     complexity: "simple",
     chordTypes: ["major", "minor"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
   blues: {
     progressions: [[1, 1, 1, 1, 4, 4, 1, 1, 5, 4, 1, 5]],
     complexity: "simple",
     chordTypes: ["dom7", "major"],
-    swingFactor: 0.67,
+    swingFactor: 0?.67,
   },
   classical: {
     progressions: [
@@ -133,7 +133,7 @@ const genreTemplates = {
     ],
     complexity: "complex",
     chordTypes: ["major", "minor", "dim"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
   electronic: {
     progressions: [
@@ -142,29 +142,29 @@ const genreTemplates = {
     ],
     complexity: "simple",
     chordTypes: ["major", "minor"],
-    swingFactor: 0.5,
+    swingFactor: 0?.5,
   },
 };
 
 // Musical note frequencies (A4 = 440Hz)
 const NOTE_FREQUENCIES: Record<string, number> = {
-  C: 261.63,
-  "C#": 277.18,
-  Db: 277.18,
-  D: 293.66,
-  "D#": 311.13,
-  Eb: 311.13,
-  E: 329.63,
-  F: 349.23,
-  "F#": 369.99,
-  Gb: 369.99,
-  G: 392.0,
-  "G#": 415.3,
-  Ab: 415.3,
-  A: 440.0,
-  "A#": 466.16,
-  Bb: 466.16,
-  B: 493.88,
+  C: 261?.63,
+  "C#": 277?.18,
+  Db: 277?.18,
+  D: 293?.66,
+  "D#": 311?.13,
+  Eb: 311?.13,
+  E: 329?.63,
+  F: 349?.23,
+  "F#": 369?.99,
+  Gb: 369?.99,
+  G: 392?.0,
+  "G#": 415?.3,
+  Ab: 415?.3,
+  A: 440?.0,
+  "A#": 466?.16,
+  Bb: 466?.16,
+  B: 493?.88,
 };
 
 // ============================================================================
@@ -208,20 +208,20 @@ class SeededRandom {
   private seed: number;
 
   constructor(seed: number) {
-    this.seed = seed;
+    this?.seed = seed;
   }
 
   next(): number {
-    const x = Math.sin(this.seed++) * 10000;
-    return x - Math.floor(x);
+    const _x = Math?.sin(this?.seed++) * 10000;
+    return x - Math?.floor(x);
   }
 
   nextInt(min: number, max: number): number {
-    return Math.floor(this.next() * (max - min + 1)) + min;
+    return Math?.floor(this?.next() * (max - min + 1)) + min;
   }
 
   choice<T>(array: T[]): T {
-    return array[this.nextInt(0, array.length - 1)];
+    return array[this?.nextInt(0, array?.length - 1)];
   }
 }
 
@@ -230,25 +230,25 @@ class SeededRandom {
 // ============================================================================
 
 export function parseTextToParameters(text: string): MusicParameters {
-  const lowerText = text.toLowerCase();
+  const _lowerText = text?.toLowerCase();
 
   // Extract mood
   let mood = "happy";
   let scale: "major" | "minor" = "major";
   let tempo = 120;
 
-  for (const [keyword, data] of Object.entries(moodKeywords)) {
-    if (lowerText.includes(keyword)) {
+  for (const [keyword, data] of Object?.entries(moodKeywords)) {
+    if (lowerText?.includes(keyword)) {
       mood = keyword;
-      scale = data.scale;
-      tempo = data.tempo;
+      scale = data?.scale;
+      tempo = data?.tempo;
       break;
     }
   }
 
   // Extract tempo overrides
-  for (const [keyword, bpm] of Object.entries(tempoKeywords)) {
-    if (lowerText.includes(keyword)) {
+  for (const [keyword, bpm] of Object?.entries(tempoKeywords)) {
+    if (lowerText?.includes(keyword)) {
       tempo = bpm;
       break;
     }
@@ -256,8 +256,8 @@ export function parseTextToParameters(text: string): MusicParameters {
 
   // Extract genre
   let genre = "pop";
-  for (const genreName of Object.keys(genreTemplates)) {
-    if (lowerText.includes(genreName)) {
+  for (const genreName of Object?.keys(genreTemplates)) {
+    if (lowerText?.includes(genreName)) {
       genre = genreName;
       break;
     }
@@ -265,8 +265,8 @@ export function parseTextToParameters(text: string): MusicParameters {
 
   // Extract key
   let key = "C";
-  const keyPattern = /\b([A-G][#b]?)\s*(major|minor)?/gi;
-  const keyMatch = keyPattern.exec(text);
+  const _keyPattern = /\b([A-G][#b]?)\s*(major|minor)?/gi;
+  const _keyMatch = keyPattern?.exec(text);
   if (keyMatch) {
     key = keyMatch[1].toUpperCase();
     if (keyMatch[2]) {
@@ -277,18 +277,18 @@ export function parseTextToParameters(text: string): MusicParameters {
   // When text parsing found only defaults, enrich with live industry context.
   // getSuggestedMoodSync / getSuggestedGenreSync are sync cache reads — never block.
   if (mood === "happy") {
-    const suggestedMood = musicIndustryContextFilter.getSuggestedMoodSync();
+    const _suggestedMood = musicIndustryContextFilter?.getSuggestedMoodSync();
     if (suggestedMood && suggestedMood in moodKeywords) {
-      const moodData = moodKeywords[suggestedMood as keyof typeof moodKeywords];
+      const _moodData = moodKeywords[suggestedMood as keyof typeof moodKeywords];
       mood = suggestedMood;
-      scale = moodData.scale;
-      tempo = moodData.tempo;
+      scale = moodData?.scale;
+      tempo = moodData?.tempo;
     }
   }
   if (genre === "pop") {
-    const suggestedGenre = musicIndustryContextFilter.getSuggestedGenreSync();
+    const _suggestedGenre = musicIndustryContextFilter?.getSuggestedGenreSync();
     if (suggestedGenre) {
-      const normalized = suggestedGenre.toLowerCase().replace(/[^a-z]/g, "");
+      const _normalized = suggestedGenre?.toLowerCase().replace(/[^a-z]/g, "");
       if (normalized in genreTemplates) genre = normalized;
     }
   }
@@ -309,22 +309,22 @@ export function parseTextToParameters(text: string): MusicParameters {
 
 export function generateChordProgression(params: MusicParameters): Chord[] {
   const { key, scale, genre, structure = 8 } = params;
-  const scaleKey = `${key} ${scale}`;
-  const scaleArray = scaleNotes[scaleKey] || scaleNotes["C major"];
+  const _scaleKey = `${key} ${scale}`;
+  const _scaleArray = scaleNotes[scaleKey] || scaleNotes["C major"];
 
   // Get progression template
-  const template =
-    genreTemplates[genre as keyof typeof genreTemplates] || genreTemplates.pop;
-  const progression = template.progressions[0]; // Use first progression
+  const _template =
+    genreTemplates[genre as keyof typeof genreTemplates] || genreTemplates?.pop;
+  const _progression = template?.progressions[0]; // Use first progression
 
   // Generate chords from scale degrees
   const chords: Chord[] = [];
-  const beatsPerBar = 4;
-  const barsPerChord = structure / progression.length;
+  const _beatsPerBar = 4;
+  const _barsPerChord = structure / progression?.length;
 
-  progression.forEach((degree, index) => {
+  progression?.forEach((degree, index) => {
     // Get root note from scale (1-indexed to 0-indexed)
-    const rootNote = scaleArray[(degree - 1) % scaleArray.length];
+    const _rootNote = scaleArray[(degree - 1) % scaleArray?.length];
 
     // Determine chord type based on degree and scale
     let chordType = "major";
@@ -337,12 +337,12 @@ export function generateChordProgression(params: MusicParameters): Chord[] {
     }
 
     // Use genre-specific chord types if available
-    if (template.chordTypes.length > 0) {
-      const seed = new SeededRandom(degree + index);
-      chordType = seed.choice(template.chordTypes);
+    if (template?.chordTypes.length > 0) {
+      const _seed = new SeededRandom(degree + index);
+      chordType = seed?.choice(template?.chordTypes);
     }
 
-    chords.push({
+    chords?.push({
       chord: `${rootNote}${chordType}`,
       time: index * barsPerChord * beatsPerBar,
       duration: barsPerChord * beatsPerBar,
@@ -361,45 +361,45 @@ export function generateMelody(
   chords: Chord[],
 ): Note[] {
   const { key, scale, tempo, structure = 8 } = params;
-  const scaleKey = `${key} ${scale}`;
-  const scaleArray = scaleNotes[scaleKey] || scaleNotes["C major"];
+  const _scaleKey = `${key} ${scale}`;
+  const _scaleArray = scaleNotes[scaleKey] || scaleNotes["C major"];
 
   const notes: Note[] = [];
-  const seed = new SeededRandom(key.charCodeAt(0) + tempo);
+  const _seed = new SeededRandom(key?.charCodeAt(0) + tempo);
 
   // Rhythmic patterns (in beats)
-  const rhythmPatterns = [
+  const _rhythmPatterns = [
     [1, 1, 1, 1], // Quarter notes
-    [0.5, 0.5, 0.5, 0.5, 1, 1], // Mixed
-    [1, 0.5, 0.5, 1, 1], // Syncopated
+    [0?.5, 0?.5, 0?.5, 0?.5, 1, 1], // Mixed
+    [1, 0?.5, 0?.5, 1, 1], // Syncopated
     [2, 1, 1], // Half + quarters
   ];
 
-  const pattern = seed.choice(rhythmPatterns);
-  const totalBeats = structure * 4;
+  const _pattern = seed?.choice(rhythmPatterns);
+  const _totalBeats = structure * 4;
   let currentTime = 0;
   let currentPitchIndex = 2; // Start around middle of scale
 
   while (currentTime < totalBeats) {
-    const duration = seed.choice(pattern);
+    const _duration = seed?.choice(pattern);
 
     // Find current chord
-    chords.find(
-      (c) => c.time <= currentTime && c.time + c.duration > currentTime,
+    chords?.find(
+      (c) => c?.time <= currentTime && c?.time + c?.duration > currentTime,
     );
 
     // Generate pitch with constraints
-    const direction = seed.next() > 0.5 ? 1 : -1;
-    const interval = seed.nextInt(0, 2); // Stepwise motion preferred
-    currentPitchIndex = Math.max(
+    const _direction = seed?.next() > 0?.5 ? 1 : -1;
+    const _interval = seed?.nextInt(0, 2); // Stepwise motion preferred
+    currentPitchIndex = Math?.max(
       0,
-      Math.min(scaleArray.length - 1, currentPitchIndex + direction * interval),
+      Math?.min(scaleArray?.length - 1, currentPitchIndex + direction * interval),
     );
 
-    const note = scaleArray[currentPitchIndex];
-    const octave = 4 + Math.floor(currentPitchIndex / scaleArray.length);
+    const _note = scaleArray[currentPitchIndex];
+    const _octave = 4 + Math?.floor(currentPitchIndex / scaleArray?.length);
 
-    notes.push({
+    notes?.push({
       note,
       octave,
       duration,
@@ -419,25 +419,25 @@ export function generateMelody(
 // ============================================================================
 
 function getNoteFrequency(note: string, octave: number): number {
-  const baseFreq = NOTE_FREQUENCIES[note] || 440;
+  const _baseFreq = NOTE_FREQUENCIES[note] || 440;
   // Adjust for octave (A4 = 440Hz is our reference)
-  const octaveDiff = octave - 4;
-  return baseFreq * Math.pow(2, octaveDiff);
+  const _octaveDiff = octave - 4;
+  return baseFreq * Math?.pow(2, octaveDiff);
 }
 
 function generateADSREnvelope(
   sampleCount: number,
   sampleRate: number,
-  attack: number = 0.05,
-  decay: number = 0.1,
-  sustain: number = 0.7,
-  release: number = 0.2,
+  attack: number = 0?.05,
+  decay: number = 0?.1,
+  sustain: number = 0?.7,
+  release: number = 0?.2,
 ): Float32Array {
-  const envelope = new Float32Array(sampleCount);
-  const attackSamples = Math.floor(attack * sampleRate);
-  const decaySamples = Math.floor(decay * sampleRate);
-  const releaseSamples = Math.floor(release * sampleRate);
-  const sustainSamples =
+  const _envelope = new Float32Array(sampleCount);
+  const _attackSamples = Math?.floor(attack * sampleRate);
+  const _decaySamples = Math?.floor(decay * sampleRate);
+  const _releaseSamples = Math?.floor(release * sampleRate);
+  const _sustainSamples =
     sampleCount - attackSamples - decaySamples - releaseSamples;
 
   let idx = 0;
@@ -470,34 +470,34 @@ export async function synthesizeToWAV(
   chords: Chord[],
   params: MusicParameters,
 ): Promise<string> {
-  const sampleRate = 48000;
-  const beatsPerSecond = params.tempo / 60;
-  const totalDuration =
-    Math.max(
-      ...notes.map((n) => n.time + n.duration),
-      ...chords.map((c) => c.time + c.duration),
+  const _sampleRate = 48000;
+  const _beatsPerSecond = params?.tempo / 60;
+  const _totalDuration =
+    Math?.max(
+      ...notes?.map((n) => n?.time + n?.duration),
+      ...chords?.map((c) => c?.time + c?.duration),
     ) / beatsPerSecond;
 
-  const totalSamples = Math.floor(totalDuration * sampleRate);
-  const audioBuffer = new Float32Array(totalSamples);
+  const _totalSamples = Math?.floor(totalDuration * sampleRate);
+  const _audioBuffer = new Float32Array(totalSamples);
 
   // Synthesize notes
   for (const note of notes) {
-    const freq = getNoteFrequency(note.note, note.octave);
-    const startSample = Math.floor((note.time / beatsPerSecond) * sampleRate);
-    const durationSamples = Math.floor(
-      (note.duration / beatsPerSecond) * sampleRate,
+    const _freq = getNoteFrequency(note?.note, note?.octave);
+    const _startSample = Math?.floor((note?.time / beatsPerSecond) * sampleRate);
+    const _durationSamples = Math?.floor(
+      (note?.duration / beatsPerSecond) * sampleRate,
     );
 
-    const envelope = generateADSREnvelope(durationSamples, sampleRate);
+    const _envelope = generateADSREnvelope(durationSamples, sampleRate);
 
     for (
       let i = 0;
       i < durationSamples && startSample + i < totalSamples;
       i++
     ) {
-      const t = i / sampleRate;
-      const sample = Math.sin(2 * Math.PI * freq * t) * envelope[i] * 0.3;
+      const _t = i / sampleRate;
+      const _sample = Math?.sin(2 * Math?.PI * freq * t) * envelope[i] * 0?.3;
       audioBuffer[startSample + i] += sample;
     }
   }
@@ -505,40 +505,40 @@ export async function synthesizeToWAV(
   // Normalize audio
   let maxAmplitude = 0;
   for (let i = 0; i < totalSamples; i++) {
-    maxAmplitude = Math.max(maxAmplitude, Math.abs(audioBuffer[i]));
+    maxAmplitude = Math?.max(maxAmplitude, Math?.abs(audioBuffer[i]));
   }
   if (maxAmplitude > 0) {
     for (let i = 0; i < totalSamples; i++) {
-      audioBuffer[i] = (audioBuffer[i] / maxAmplitude) * 0.8;
+      audioBuffer[i] = (audioBuffer[i] / maxAmplitude) * 0?.8;
     }
   }
 
   // Convert to 16-bit PCM
-  const pcmData = new Int16Array(totalSamples);
+  const _pcmData = new Int16Array(totalSamples);
   for (let i = 0; i < totalSamples; i++) {
-    pcmData[i] = Math.max(
+    pcmData[i] = Math?.max(
       -32768,
-      Math.min(32767, Math.floor(audioBuffer[i] * 32767)),
+      Math?.min(32767, Math?.floor(audioBuffer[i] * 32767)),
     );
   }
 
   // Create WAV file
-  const wav = new WaveFile();
-  wav.fromScratch(1, sampleRate, "16", Array.from(pcmData));
+  const _wav = new WaveFile();
+  wav?.fromScratch(1, sampleRate, "16", Array?.from(pcmData));
 
   // Save to file
-  const outputDir = path.join(
-    process.cwd(),
+  const _outputDir = path?.join(
+    process?.cwd(),
     "public",
     "generated-content",
     "audio",
   );
-  await fs.mkdir(outputDir, { recursive: true });
+  await fs?.mkdir(outputDir, { recursive: true });
 
-  const filename = `melody_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
-  const filepath = path.join(outputDir, filename);
+  const _filename = `melody_${Date?.now()}_${randomBytes(8).toString("hex")}.wav`;
+  const _filepath = path?.join(outputDir, filename);
 
-  await fs.writeFile(filepath, wav.toBuffer());
+  await fs?.writeFile(filepath, wav?.toBuffer());
 
   return `/generated-content/audio/${filename}`;
 }
@@ -551,23 +551,23 @@ export async function analyzeAudioForGeneration(
   audioPath: string,
 ): Promise<MusicParameters> {
   try {
-    const fsPromises = await import("fs/promises");
-    const WaveFile = await import("wavefile");
+    const _fsPromises = await import("fs/promises");
+    const _WaveFile = await import("wavefile");
 
     // Read and analyze the audio file
-    const audioBuffer = await fsPromises.readFile(audioPath);
-    const wav = new WaveFile.WaveFile(audioBuffer);
+    const _audioBuffer = await fsPromises?.readFile(audioPath);
+    const _wav = new WaveFile?.WaveFile(audioBuffer);
 
     // Get audio samples for analysis
-    const samplesData = wav.getSamples(true) as Record<string, unknown>;
-    const samples =
+    const _samplesData = wav?.getSamples(true) as Record<string, unknown>;
+    const _samples =
       samplesData instanceof Float32Array
         ? samplesData
         : new Float32Array(samplesData);
 
     // Analyze tempo using zero-crossing rate
     let zeroCrossings = 0;
-    for (let i = 1; i < samples.length; i++) {
+    for (let i = 1; i < samples?.length; i++) {
       if (
         (samples[i] >= 0 && samples[i - 1] < 0) ||
         (samples[i] < 0 && samples[i - 1] >= 0)
@@ -575,34 +575,34 @@ export async function analyzeAudioForGeneration(
         zeroCrossings++;
       }
     }
-    const sampleRate = 44100;
-    const duration = samples.length / sampleRate;
-    const zcRate = zeroCrossings / duration;
+    const _sampleRate = 44100;
+    const _duration = samples?.length / sampleRate;
+    const _zcRate = zeroCrossings / duration;
 
     // Estimate tempo from zero-crossing patterns (rough estimation)
-    const estimatedTempo = Math.round(Math.max(60, Math.min(180, zcRate / 50)));
+    const _estimatedTempo = Math?.round(Math?.max(60, Math?.min(180, zcRate / 50)));
 
     // Analyze spectral energy for mood detection
     let highFreqEnergy = 0;
     let lowFreqEnergy = 0;
-    for (let i = 0; i < samples.length; i++) {
-      const val = Math.abs(samples[i]);
+    for (let i = 0; i < samples?.length; i++) {
+      const _val = Math?.abs(samples[i]);
       if (i % 2 === 0) lowFreqEnergy += val;
       else highFreqEnergy += val;
     }
 
-    const energyRatio = highFreqEnergy / (lowFreqEnergy + 0.001);
-    const mood =
-      energyRatio > 1.2 ? "energetic" : energyRatio < 0.8 ? "calm" : "balanced";
+    const _energyRatio = highFreqEnergy / (lowFreqEnergy + 0?.001);
+    const _mood =
+      energyRatio > 1?.2 ? "energetic" : energyRatio < 0?.8 ? "calm" : "balanced";
 
     // Determine genre based on tempo and energy characteristics
     let genre = "pop";
-    if (estimatedTempo > 140 && energyRatio > 1.1) genre = "electronic";
-    else if (estimatedTempo < 90 && energyRatio < 0.9) genre = "ballad";
+    if (estimatedTempo > 140 && energyRatio > 1?.1) genre = "electronic";
+    else if (estimatedTempo < 90 && energyRatio < 0?.9) genre = "ballad";
     else if (estimatedTempo > 100 && estimatedTempo < 130) genre = "rock";
 
     // Detect key using spectral analysis (simplified)
-    const keys = [
+    const _keys = [
       "C",
       "C#",
       "D",
@@ -616,11 +616,11 @@ export async function analyzeAudioForGeneration(
       "A#",
       "B",
     ];
-    const keyIndex = Math.floor(zeroCrossings % 12);
-    const detectedKey = keys[keyIndex];
+    const _keyIndex = Math?.floor(zeroCrossings % 12);
+    const _detectedKey = keys[keyIndex];
 
     // Determine scale (major/minor) based on spectral characteristics
-    const scale = energyRatio > 1 ? "major" : "minor";
+    const _scale = energyRatio > 1 ? "major" : "minor";
 
     return {
       key: detectedKey,
@@ -631,7 +631,7 @@ export async function analyzeAudioForGeneration(
       structure: 8,
     };
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Audio analysis failed, using defaults:");
+    logger?.warn({ err: error }, "Audio analysis failed, using defaults:");
     return {
       key: "C",
       scale: "major",
@@ -647,7 +647,7 @@ export function generateComplementaryMelody(params: MusicParameters): {
   notes: Note[];
   chords: Chord[];
 } {
-  const chords = generateChordProgression(params);
-  const notes = generateMelody(params, chords);
+  const _chords = generateChordProgression(params);
+  const _notes = generateMelody(params, chords);
   return { notes, chords };
 }

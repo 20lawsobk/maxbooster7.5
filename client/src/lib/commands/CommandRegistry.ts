@@ -28,8 +28,8 @@ export interface CommandHistoryEntry {
   timestamp: number;
 }
 
-const HISTORY_STORAGE_KEY = "max-booster-command-history";
-const MAX_HISTORY_SIZE = 20;
+const _HISTORY_STORAGE_KEY = "max-booster-command-history";
+const _MAX_HISTORY_SIZE = 20;
 
 class CommandRegistryImpl {
   private commands: Map<string, Command> = new Map();
@@ -38,157 +38,157 @@ class CommandRegistryImpl {
 
   constructor() {
     if (typeof window !== "undefined") {
-      this.loadHistory();
+      this?.loadHistory();
     }
   }
 
   private loadHistory(): void {
     try {
-      const stored = localStorage.getItem(HISTORY_STORAGE_KEY);
+      const _stored = localStorage?.getItem(HISTORY_STORAGE_KEY);
       if (stored) {
-        this.history = JSON.parse(stored);
+        this?.history = JSON?.parse(stored);
       }
     } catch (e) {
-      logger.warn("Failed to load command history:", e);
+      logger?.warn("Failed to load command history:", e);
     }
   }
 
   private saveHistory(): void {
     try {
-      localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(this.history));
+      localStorage?.setItem(HISTORY_STORAGE_KEY, JSON?.stringify(this?.history));
     } catch (e) {
-      logger.warn("Failed to save command history:", e);
+      logger?.warn("Failed to save command history:", e);
     }
   }
 
   register(command: Command): void {
-    this.commands.set(command.id, command);
+    this?.commands.set(command?.id, command);
   }
 
   unregister(commandId: string): void {
-    this.commands.delete(commandId);
+    this?.commands.delete(commandId);
   }
 
   registerMany(commands: Command[]): void {
-    commands.forEach((c) => this.register(c));
+    commands?.forEach((c) => this?.register(c));
   }
 
   getCommand(id: string): Command | undefined {
-    return this.commands.get(id);
+    return this?.commands.get(id);
   }
 
   getAllCommands(): Command[] {
-    return Array.from(this.commands.values());
+    return Array?.from(this?.commands.values());
   }
 
   getEnabledCommands(): Command[] {
-    return this.getAllCommands().filter((cmd) => {
-      if (cmd.enabled === undefined) return true;
-      if (typeof cmd.enabled === "function") return cmd.enabled();
-      return cmd.enabled;
+    return this?.getAllCommands().filter((cmd) => {
+      if (cmd?.enabled === undefined) return true;
+      if (typeof cmd?.enabled === "function") return cmd?.enabled();
+      return cmd?.enabled;
     });
   }
 
   getCommandsByCategory(category: string): Command[] {
-    return this.getEnabledCommands().filter((c) => c.category === category);
+    return this?.getEnabledCommands().filter((c) => c?.category === category);
   }
 
   getCommandsForContext(context: string): Command[] {
-    return this.getEnabledCommands().filter((cmd) => {
-      if (!cmd.context) return true;
-      return cmd.context.includes(context) || cmd.context.includes("global");
+    return this?.getEnabledCommands().filter((cmd) => {
+      if (!cmd?.context) return true;
+      return cmd?.context.includes(context) || cmd?.context.includes("global");
     });
   }
 
   setContext(context: string): void {
-    this.currentContext = context;
+    this?.currentContext = context;
   }
 
   getContext(): string {
-    return this.currentContext;
+    return this?.currentContext;
   }
 
   getContextualCommands(): Command[] {
-    return this.getCommandsForContext(this.currentContext);
+    return this?.getCommandsForContext(this?.currentContext);
   }
 
   async execute(commandId: string): Promise<void> {
-    const command = this.commands.get(commandId);
+    const _command = this?.commands.get(commandId);
     if (!command) {
-      logger.warn(`Command not found: ${commandId}`);
+      logger?.warn(`Command not found: ${commandId}`);
       return;
     }
 
-    const enabled =
-      command.enabled === undefined
+    const _enabled =
+      command?.enabled === undefined
         ? true
-        : typeof command.enabled === "function"
-          ? command.enabled()
-          : command.enabled;
+        : typeof command?.enabled === "function"
+          ? command?.enabled()
+          : command?.enabled;
 
     if (!enabled) {
-      logger.warn(`Command is disabled: ${commandId}`);
+      logger?.warn(`Command is disabled: ${commandId}`);
       return;
     }
 
-    this.addToHistory(commandId);
-    await command.action();
+    this?.addToHistory(commandId);
+    await command?.action();
   }
 
   private addToHistory(commandId: string): void {
-    this.history = this.history.filter((h) => h.commandId !== commandId);
-    this.history.unshift({
+    this?.history = this?.history.filter((h) => h?.commandId !== commandId);
+    this?.history.unshift({
       commandId,
-      timestamp: Date.now(),
+      timestamp: Date?.now(),
     });
-    if (this.history.length > MAX_HISTORY_SIZE) {
-      this.history = this.history.slice(0, MAX_HISTORY_SIZE);
+    if (this?.history.length > MAX_HISTORY_SIZE) {
+      this?.history = this?.history.slice(0, MAX_HISTORY_SIZE);
     }
-    this.saveHistory();
+    this?.saveHistory();
   }
 
   getHistory(): CommandHistoryEntry[] {
-    return [...this.history];
+    return [...this?.history];
   }
 
   getRecentCommands(limit: number = 5): Command[] {
-    return this.history
+    return this?.history
       .slice(0, limit)
-      .map((h) => this.commands.get(h.commandId))
+      .map((h) => this?.commands.get(h?.commandId))
       .filter((c): c is Command => c !== undefined);
   }
 
   clearHistory(): void {
-    this.history = [];
-    this.saveHistory();
+    this?.history = [];
+    this?.saveHistory();
   }
 
   search(query: string): Command[] {
-    if (!query.trim()) {
-      return this.getContextualCommands();
+    if (!query?.trim()) {
+      return this?.getContextualCommands();
     }
 
-    const lowerQuery = query.toLowerCase();
-    const terms = lowerQuery.split(/\s+/);
+    const _lowerQuery = query?.toLowerCase();
+    const _terms = lowerQuery?.split(/\s+/);
 
-    const commands = this.getContextualCommands();
-    const scored = commands.map((cmd) => {
+    const _commands = this?.getContextualCommands();
+    const _scored = commands?.map((cmd) => {
       let score = 0;
-      const name = cmd.name.toLowerCase();
-      const description = (cmd.description || "").toLowerCase();
-      const keywords = (cmd.keywords || []).map((k) => k.toLowerCase());
+      const _name = cmd?.name.toLowerCase();
+      const _description = (cmd?.description || "").toLowerCase();
+      const _keywords = (cmd?.keywords || []).map((k) => k?.toLowerCase());
 
       if (name === lowerQuery) score += 100;
-      if (name.startsWith(lowerQuery)) score += 50;
-      if (name.includes(lowerQuery)) score += 25;
+      if (name?.startsWith(lowerQuery)) score += 50;
+      if (name?.includes(lowerQuery)) score += 25;
 
-      terms.forEach((term) => {
-        if (name.includes(term)) score += 10;
-        if (description.includes(term)) score += 5;
-        if (keywords.some((k) => k.includes(term))) score += 8;
+      terms?.forEach((term) => {
+        if (name?.includes(term)) score += 10;
+        if (description?.includes(term)) score += 5;
+        if (keywords?.some((k) => k?.includes(term))) score += 8;
       });
 
-      if (this.fuzzyMatch(name, lowerQuery)) {
+      if (this?.fuzzyMatch(name, lowerQuery)) {
         score += 15;
       }
 
@@ -196,38 +196,38 @@ class CommandRegistryImpl {
     });
 
     return scored
-      .filter((s) => s.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map((s) => s.command);
+      .filter((s) => s?.score > 0)
+      .sort((a, b) => b?.score - a?.score)
+      .map((s) => s?.command);
   }
 
   private fuzzyMatch(str: string, pattern: string): boolean {
     let patternIdx = 0;
     let strIdx = 0;
 
-    while (patternIdx < pattern.length && strIdx < str.length) {
+    while (patternIdx < pattern?.length && strIdx < str?.length) {
       if (pattern[patternIdx] === str[strIdx]) {
         patternIdx++;
       }
       strIdx++;
     }
 
-    return patternIdx === pattern.length;
+    return patternIdx === pattern?.length;
   }
 
   getGroups(): CommandGroup[] {
-    const commands = this.getContextualCommands();
-    const groups = new Map<string, Command[]>();
+    const _commands = this?.getContextualCommands();
+    const _groups = new Map<string, Command[]>();
 
-    commands.forEach((cmd) => {
-      const existing = groups.get(cmd.category) || [];
-      existing.push(cmd);
-      groups.set(cmd.category, existing);
+    commands?.forEach((cmd) => {
+      const _existing = groups?.get(cmd?.category) || [];
+      existing?.push(cmd);
+      groups?.set(cmd?.category, existing);
     });
 
-    return Array.from(groups.entries()).map(([category, cmds]) => ({
+    return Array?.from(groups?.entries()).map(([category, cmds]) => ({
       id: category,
-      name: this.formatCategoryName(category),
+      name: this?.formatCategoryName(category),
       commands: cmds,
     }));
   }
@@ -235,18 +235,18 @@ class CommandRegistryImpl {
   private formatCategoryName(category: string): string {
     return category
       .split(/[-_]/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word?.charAt(0).toUpperCase() + word?.slice(1))
       .join(" ");
   }
 
   getFormattedShortcut(commandId: string): string {
-    const command = this.commands.get(commandId);
+    const _command = this?.commands.get(commandId);
     if (!command?.shortcut) return "";
-    return formatShortcutKeys(command.shortcut.key, command.shortcut.modifiers);
+    return formatShortcutKeys(command?.shortcut.key, command?.shortcut.modifiers);
   }
 
   clear(): void {
-    this.commands.clear();
+    this?.commands.clear();
   }
 }
 
@@ -261,7 +261,7 @@ export function getCommandRegistry(): CommandRegistryImpl {
 
 export function resetCommandRegistry(): void {
   if (instance) {
-    instance.clear();
+    instance?.clear();
     instance = null;
   }
 }
@@ -274,7 +274,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["home", "main", "overview"],
     action: () => {
-      window.location.href = "/dashboard";
+      window?.location.href = "/dashboard";
     },
     context: ["global"],
   },
@@ -285,7 +285,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["daw", "music", "create", "edit"],
     action: () => {
-      window.location.href = "/studio";
+      window?.location.href = "/studio";
     },
     context: ["global"],
   },
@@ -296,7 +296,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["songs", "tracks", "library"],
     action: () => {
-      window.location.href = "/projects";
+      window?.location.href = "/projects";
     },
     context: ["global"],
   },
@@ -307,7 +307,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["stats", "metrics", "performance"],
     action: () => {
-      window.location.href = "/analytics";
+      window?.location.href = "/analytics";
     },
     context: ["global"],
   },
@@ -318,7 +318,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["release", "publish", "spotify", "apple"],
     action: () => {
-      window.location.href = "/distribution";
+      window?.location.href = "/distribution";
     },
     context: ["global"],
   },
@@ -329,7 +329,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["post", "twitter", "instagram", "schedule"],
     action: () => {
-      window.location.href = "/social-media";
+      window?.location.href = "/social-media";
     },
     context: ["global"],
   },
@@ -340,7 +340,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["beats", "samples", "buy", "sell"],
     action: () => {
-      window.location.href = "/marketplace";
+      window?.location.href = "/marketplace";
     },
     context: ["global"],
   },
@@ -351,7 +351,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "navigation",
     keywords: ["earnings", "money", "payments"],
     action: () => {
-      window.location.href = "/royalties";
+      window?.location.href = "/royalties";
     },
     context: ["global"],
   },
@@ -363,7 +363,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     keywords: ["preferences", "account", "config"],
     shortcut: { key: ",", modifiers: ["cmd"] },
     action: () => {
-      window.location.href = "/settings";
+      window?.location.href = "/settings";
     },
     context: ["global"],
   },
@@ -374,7 +374,7 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "actions",
     keywords: ["create", "start", "song"],
     action: () => {
-      window.location.href = "/studio";
+      window?.location.href = "/studio";
     },
     context: ["global", "dashboard"],
   },
@@ -385,8 +385,8 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "actions",
     keywords: ["import", "add", "audio"],
     action: () => {
-      const event = new CustomEvent("open-upload-dialog");
-      window.dispatchEvent(event);
+      const _event = new CustomEvent("open-upload-dialog");
+      window?.dispatchEvent(event);
     },
     context: ["global", "dashboard", "studio"],
   },
@@ -398,8 +398,8 @@ export const DEFAULT_COMMANDS: Command[] = [
     keywords: ["keys", "hotkeys", "bindings"],
     shortcut: { key: "/", modifiers: ["cmd"] },
     action: () => {
-      const event = new CustomEvent("open-shortcuts-guide");
-      window.dispatchEvent(event);
+      const _event = new CustomEvent("open-shortcuts-guide");
+      window?.dispatchEvent(event);
     },
     context: ["global"],
   },
@@ -410,8 +410,8 @@ export const DEFAULT_COMMANDS: Command[] = [
     category: "view",
     keywords: ["dark", "light", "mode"],
     action: () => {
-      const event = new CustomEvent("toggle-theme");
-      window.dispatchEvent(event);
+      const _event = new CustomEvent("toggle-theme");
+      window?.dispatchEvent(event);
     },
     context: ["global"],
   },

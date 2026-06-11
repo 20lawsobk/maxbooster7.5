@@ -57,34 +57,34 @@ export class StudioOneWaveformEngine {
   private initialized = false;
 
   constructor(config: Partial<StudioOneEngineConfig> = {}) {
-    this.config = { ...DEFAULT_ENGINE_CONFIG, ...config };
-    this.peakCache = peakCacheEngine;
-    this.ndRenderer = nonDestructiveRenderer;
-    this.timeline = new TimelineRenderer(this.config.renderConfig);
-    this.transform = transformRenderer;
+    this?.config = { ...DEFAULT_ENGINE_CONFIG, ...config };
+    this?.peakCache = peakCacheEngine;
+    this?.ndRenderer = nonDestructiveRenderer;
+    this?.timeline = new TimelineRenderer(this?.config.renderConfig);
+    this?.transform = transformRenderer;
   }
 
   initialize(canvas: HTMLCanvasElement): void {
-    if (this.initialized) return;
+    if (this?.initialized) return;
 
-    this.canvas = canvas;
-    this.timeline.attach(canvas);
-    this.timeline.setSampleRate(this.config.sampleRate);
-    this.timeline.setPlayhead({
-      bpm: this.config.bpm,
-      timeSignature: this.config.timeSignature,
+    this?.canvas = canvas;
+    this?.timeline.attach(canvas);
+    this?.timeline.setSampleRate(this?.config.sampleRate);
+    this?.timeline.setPlayhead({
+      bpm: this?.config.bpm,
+      timeSignature: this?.config.timeSignature,
     });
 
-    this.initialized = true;
+    this?.initialized = true;
   }
 
   start(): void {
-    if (!this.initialized) return;
-    this.timeline.startRenderLoop();
+    if (!this?.initialized) return;
+    this?.timeline.startRenderLoop();
   }
 
   stop(): void {
-    this.timeline.stopRenderLoop();
+    this?.timeline.stopRenderLoop();
   }
 
   loadAudio(
@@ -93,33 +93,33 @@ export class StudioOneWaveformEngine {
     sampleRate?: number,
     channels?: number,
   ): void {
-    const sr = sampleRate || this.config.sampleRate;
-    this.peakCache.generatePeakCache(sourceId, audioData, sr, channels || 1);
+    const _sr = sampleRate || this?.config.sampleRate;
+    this?.peakCache.generatePeakCache(sourceId, audioData, sr, channels || 1);
   }
 
   loadAudioBuffer(sourceId: string, buffer: AudioBuffer): void {
-    const channelData = buffer.getChannelData(0);
-    this.peakCache.generatePeakCache(
+    const _channelData = buffer?.getChannelData(0);
+    this?.peakCache.generatePeakCache(
       sourceId,
       channelData,
-      buffer.sampleRate,
-      buffer.numberOfChannels,
+      buffer?.sampleRate,
+      buffer?.numberOfChannels,
     );
   }
 
   setClips(clips: ClipRenderData[]): void {
-    this.timeline.setClips(clips);
+    this?.timeline.setClips(clips);
   }
 
   addClip(clip: ClipRenderData): void {
-    const currentClips = this.getClips();
-    currentClips.push(clip);
-    this.timeline.setClips(currentClips);
+    const _currentClips = this?.getClips();
+    currentClips?.push(clip);
+    this?.timeline.setClips(currentClips);
   }
 
   removeClip(clipId: string): void {
-    const currentClips = this.getClips().filter((c) => c.id !== clipId);
-    this.timeline.setClips(currentClips);
+    const _currentClips = this?.getClips().filter((c) => c?.id !== clipId);
+    this?.timeline.setClips(currentClips);
   }
 
   private getClips(): ClipRenderData[] {
@@ -128,74 +128,74 @@ export class StudioOneWaveformEngine {
 
   play(fromPosition?: number): void {
     if (fromPosition !== undefined) {
-      this.timeline.setPlayhead({ position: fromPosition });
+      this?.timeline.setPlayhead({ position: fromPosition });
     }
-    this.timeline.setPlayhead({ isPlaying: true });
+    this?.timeline.setPlayhead({ isPlaying: true });
   }
 
   pause(): void {
-    this.timeline.setPlayhead({ isPlaying: false });
+    this?.timeline.setPlayhead({ isPlaying: false });
   }
 
   seek(position: number): void {
-    this.timeline.setPlayhead({ position });
+    this?.timeline.setPlayhead({ position });
   }
 
   setBpm(bpm: number): void {
-    this.config.bpm = bpm;
-    this.timeline.setPlayhead({ bpm });
+    this?.config.bpm = bpm;
+    this?.timeline.setPlayhead({ bpm });
   }
 
   setTimeSignature(numerator: number, denominator: number): void {
-    this.config.timeSignature = [numerator, denominator];
-    this.timeline.setPlayhead({ timeSignature: [numerator, denominator] });
+    this?.config.timeSignature = [numerator, denominator];
+    this?.timeline.setPlayhead({ timeSignature: [numerator, denominator] });
   }
 
-  zoomIn(factor: number = 1.5, atPixelX?: number): void {
-    const x =
-      atPixelX ?? (this.canvas?.getBoundingClientRect().width ?? 500) / 2;
-    this.timeline.zoomAtPoint(factor, x);
+  zoomIn(factor: number = 1?.5, atPixelX?: number): void {
+    const _x =
+      atPixelX ?? (this?.canvas?.getBoundingClientRect().width ?? 500) / 2;
+    this?.timeline.zoomAtPoint(factor, x);
   }
 
-  zoomOut(factor: number = 1.5, atPixelX?: number): void {
-    const x =
-      atPixelX ?? (this.canvas?.getBoundingClientRect().width ?? 500) / 2;
-    this.timeline.zoomAtPoint(1 / factor, x);
+  zoomOut(factor: number = 1?.5, atPixelX?: number): void {
+    const _x =
+      atPixelX ?? (this?.canvas?.getBoundingClientRect().width ?? 500) / 2;
+    this?.timeline.zoomAtPoint(1 / factor, x);
   }
 
   setVerticalScale(scale: number): void {
-    this.ndRenderer.setVerticalScale(scale);
+    this?.ndRenderer.setVerticalScale(scale);
   }
 
   getVerticalScale(): number {
-    return this.ndRenderer.getDataZoom().verticalScale;
+    return this?.ndRenderer.getDataZoom().verticalScale;
   }
 
   setDataZoom(zoom: Partial<DataZoomState>): void {
-    this.ndRenderer.setDataZoom(zoom);
+    this?.ndRenderer.setDataZoom(zoom);
   }
 
   scrollTo(timeOffset: number): void {
-    this.timeline.scrollTo(timeOffset);
+    this?.timeline.scrollTo(timeOffset);
   }
 
   scrollBy(timeDelta: number): void {
-    this.timeline.scrollBy(timeDelta);
+    this?.timeline.scrollBy(timeDelta);
   }
 
   registerProcessingChain(sourceId: string, chain: ProcessingChain): void {
-    this.transform.registerSource(sourceId, chain);
+    this?.transform.registerSource(sourceId, chain);
   }
 
   async renderToAudio(
     sourceId: string,
     audioContext?: AudioContext,
   ): Promise<Float32Array | null> {
-    return this.transform.renderTransform(sourceId, audioContext);
+    return this?.transform.renderTransform(sourceId, audioContext);
   }
 
   onTransformEvent(listener: (event: TransformEvent) => void): () => void {
-    return this.transform.addEventListener(listener);
+    return this?.transform.addEventListener(listener);
   }
 
   getPeaks(
@@ -204,7 +204,7 @@ export class StudioOneWaveformEngine {
     endSample: number,
     targetWidth: number,
   ): PeakData[] | null {
-    const result = this.peakCache.getPeaksForView(
+    const _result = this?.peakCache.getPeaksForView(
       sourceId,
       startSample,
       endSample,
@@ -217,54 +217,54 @@ export class StudioOneWaveformEngine {
     sourceId: string,
     threshold?: number,
   ): { position: number; strength: number }[] {
-    return this.peakCache.detectTransients(sourceId, threshold);
+    return this?.peakCache.detectTransients(sourceId, threshold);
   }
 
   updateRenderConfig(config: Partial<TimelineRenderConfig>): void {
-    this.timeline.updateConfig(config);
+    this?.timeline.updateConfig(config);
   }
 
   setViewDuration(duration: number): void {
-    this.timeline.setViewDuration(duration);
+    this?.timeline.setViewDuration(duration);
   }
 
   getStats(): EngineStats {
-    const cacheStats = this.peakCache.getCacheStats();
-    const dataZoom = this.ndRenderer.getDataZoom();
+    const _cacheStats = this?.peakCache.getCacheStats();
+    const _dataZoom = this?.ndRenderer.getDataZoom();
 
     return {
-      fps: this.timeline.getFps(),
-      deltaTime: this.timeline.getDeltaTime(),
-      cacheUtilization: cacheStats.utilizationPercent,
-      cacheEntries: cacheStats.entries,
-      totalCacheBytes: cacheStats.totalBytes,
+      fps: this?.timeline.getFps(),
+      deltaTime: this?.timeline.getDeltaTime(),
+      cacheUtilization: cacheStats?.utilizationPercent,
+      cacheEntries: cacheStats?.entries,
+      totalCacheBytes: cacheStats?.totalBytes,
       clipCount: 0,
-      currentZoom: dataZoom.horizontalZoom,
-      verticalScale: dataZoom.verticalScale,
-      scrollOffset: this.timeline.getScrollOffset(),
+      currentZoom: dataZoom?.horizontalZoom,
+      verticalScale: dataZoom?.verticalScale,
+      scrollOffset: this?.timeline.getScrollOffset(),
       isPlaying: false,
       playheadPosition: 0,
     };
   }
 
   invalidateSource(sourceId: string): void {
-    this.peakCache.invalidateCache(sourceId);
+    this?.peakCache.invalidateCache(sourceId);
   }
 
   clearCache(): void {
-    this.peakCache.clearAll();
+    this?.peakCache.clearAll();
   }
 
   destroy(): void {
-    this.stop();
-    this.timeline.destroy();
-    this.transform.destroy();
-    this.initialized = false;
-    this.canvas = null;
+    this?.stop();
+    this?.timeline.destroy();
+    this?.transform.destroy();
+    this?.initialized = false;
+    this?.canvas = null;
   }
 }
 
-export const studioOneWaveformEngine = new StudioOneWaveformEngine();
+export const _studioOneWaveformEngine = new StudioOneWaveformEngine();
 
 export {
   PeakCacheEngine,

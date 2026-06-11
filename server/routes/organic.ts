@@ -1,27 +1,27 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
-import { asyncHandler } from "../middleware/errorHandler.js";
-import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { asyncHandler } from "../middleware/errorHandler?.js";
+import { logger } from "../logger?.js";
 import {
   viralScoringService,
   type ContentData,
-} from "../services/viralScoring.js";
-import { timingOptimizerService } from "../services/timingOptimizer.js";
-import { contentVariantGeneratorService } from "../services/contentVariantGenerator.js";
+} from "../services/viralScoring?.js";
+import { timingOptimizerService } from "../services/timingOptimizer?.js";
+import { contentVariantGeneratorService } from "../services/contentVariantGenerator?.js";
 import {
   algorithmIntelligenceService,
   type AlgorithmHealth,
-} from "../services/algorithmIntelligence.js";
+} from "../services/algorithmIntelligence?.js";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 
-const router = Router();
+const _router = Router();
 
-const contentSchema = z.object({
-  id: z.string().optional(),
-  caption: z.string().min(1, "Caption is required"),
-  hashtags: z.array(z.string()).default([]),
-  platform: z.enum([
+const _contentSchema = z?.object({
+  id: z?.string().optional(),
+  caption: z?.string().min(1, "Caption is required"),
+  hashtags: z?.array(z?.string()).default([]),
+  platform: z?.enum([
     "tiktok",
     "instagram",
     "youtube",
@@ -32,28 +32,28 @@ const contentSchema = z.object({
   contentType: z
     .enum(["video", "image", "carousel", "text", "story", "reel"])
     .default("video"),
-  mediaUrl: z.string().optional(),
-  duration: z.number().optional(),
-  hasAudio: z.boolean().optional(),
-  musicGenre: z.string().optional(),
+  mediaUrl: z?.string().optional(),
+  duration: z?.number().optional(),
+  hasAudio: z?.boolean().optional(),
+  musicGenre: z?.string().optional(),
   targetAudience: z
     .object({
-      ageRange: z.string(),
-      interests: z.array(z.string()),
-      location: z.string().optional(),
+      ageRange: z?.string(),
+      interests: z?.array(z?.string()),
+      location: z?.string().optional(),
     })
     .optional(),
-  scheduledTime: z.string().datetime().optional(),
+  scheduledTime: z?.string().datetime().optional(),
 });
 
-router.get(
+router?.get(
   "/viral-score/:contentId",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { contentId } = req.params;
+      const { contentId } = req?.params;
 
-      res.json({
+      res?.json({
         success: false,
         dormant: true,
         message:
@@ -61,71 +61,71 @@ router.get(
         contentId,
       });
     } catch (error) {
-      logger.warn("Error in get viral-score:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in get viral-score:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.post(
+router?.post(
   "/viral-score",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const { content } = req.body;
+      const _userId = req?.user!.id;
+      const { content } = req?.body;
 
-      const validatedContent = contentSchema.parse(content);
+      const _validatedContent = contentSchema?.parse(content);
 
       const contentData: ContentData = {
         ...validatedContent,
-        id: validatedContent.id || randomBytes(8).toString("hex"),
+        id: validatedContent?.id || randomBytes(8).toString("hex"),
         userId,
-        scheduledTime: validatedContent.scheduledTime
-          ? new Date(validatedContent.scheduledTime)
+        scheduledTime: validatedContent?.scheduledTime
+          ? new Date(validatedContent?.scheduledTime)
           : undefined,
       };
 
-      const score = await viralScoringService.scoreContent(contentData);
+      const _score = await viralScoringService?.scoreContent(contentData);
 
-      const transformedScore = {
-        overall: score.overall,
+      const _transformedScore = {
+        overall: score?.overall,
         breakdown: {
-          emotionalImpact: score.factors.emotionalResonance,
-          trendAlignment: score.factors.trendRelevance,
-          formatOptimization: score.factors.contentStructure,
-          timingScore: score.factors.timingScore,
-          engagementPotential: score.factors.engagementHooks,
+          emotionalImpact: score?.factors.emotionalResonance,
+          trendAlignment: score?.factors.trendRelevance,
+          formatOptimization: score?.factors.contentStructure,
+          timingScore: score?.factors.timingScore,
+          engagementPotential: score?.factors.engagementHooks,
         },
-        recommendations: score.recommendations,
+        recommendations: score?.recommendations,
         predictedReach: {
-          low: Math.round(score.predictedEngagement.likes * 0.5),
-          mid: Math.round(score.predictedEngagement.likes),
-          high: Math.round(score.predictedEngagement.likes * 2),
+          low: Math?.round(score?.predictedEngagement.likes * 0?.5),
+          mid: Math?.round(score?.predictedEngagement.likes),
+          high: Math?.round(score?.predictedEngagement.likes * 2),
         },
       };
 
-      res.json({
+      res?.json({
         success: true,
         score: transformedScore,
       });
     } catch (error) {
-      logger.warn("Error in post viral-score:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in post viral-score:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/optimal-timing/:platform",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const { platform } = req.params;
-      const { timezone = "America/New_York" } = req.query;
+      const _userId = req?.user!.id;
+      const { platform } = req?.params;
+      const { timezone = "America/New_York" } = req?.query;
 
-      const validPlatforms = [
+      const _validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -133,27 +133,27 @@ router.get(
         "facebook",
         "linkedin",
       ];
-      if (!validPlatforms.includes(platform)) {
-        return res.status(400).json({ error: "Invalid platform" });
+      if (!validPlatforms?.includes(platform)) {
+        return res?.status(400).json({ error: "Invalid platform" });
       }
 
-      const timing = await timingOptimizerService.getOptimalTiming(
+      const _timing = await timingOptimizerService?.getOptimalTiming(
         platform,
         timezone as string,
         userId,
       );
 
-      const transformedTiming = {
+      const _transformedTiming = {
         platform,
-        bestTimes: timing.bestTimes.map((slot) => ({
-          dayOfWeek: slot.dayOfWeek,
-          hour: slot.hour,
-          score: slot.score,
-          expectedEngagement: Math.round(
-            (slot.audienceActive * slot.score) / 100,
+        bestTimes: timing?.bestTimes.map((slot) => ({
+          dayOfWeek: slot?.dayOfWeek,
+          hour: slot?.hour,
+          score: slot?.score,
+          expectedEngagement: Math?.round(
+            (slot?.audienceActive * slot?.score) / 100,
           ),
         })),
-        avoidTimes: timing.avoidTimes || [
+        avoidTimes: timing?.avoidTimes || [
           { dayOfWeek: 0, hour: 3, reason: "Very low engagement period" },
           { dayOfWeek: 0, hour: 4, reason: "Very low engagement period" },
           { dayOfWeek: 1, hour: 2, reason: "Early morning - low activity" },
@@ -161,55 +161,55 @@ router.get(
         ],
       };
 
-      res.json({
+      res?.json({
         success: true,
         timing: transformedTiming,
       });
     } catch (error) {
-      logger.warn("Error in optimal-timing:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in optimal-timing:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/reach-dashboard",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const { timezone = "America/New_York" } = req.query;
+      const _userId = req?.user!.id;
+      const { timezone = "America/New_York" } = req?.query;
 
-      const platforms = ["tiktok", "instagram", "youtube", "twitter"];
+      const _platforms = ["tiktok", "instagram", "youtube", "twitter"];
 
-      const [healthResults, timingResults] = await Promise.all([
-        Promise.all(
-          platforms.map((platform) =>
-            algorithmIntelligenceService.checkAlgorithmHealth(platform, userId),
+      const [healthResults, timingResults] = await Promise?.all([
+        Promise?.all(
+          platforms?.map((platform) =>
+            algorithmIntelligenceService?.checkAlgorithmHealth(platform, userId),
           ),
         ),
-        timingOptimizerService.getOptimalTimingForAllPlatforms(
+        timingOptimizerService?.getOptimalTimingForAllPlatforms(
           timezone as string,
         ),
       ]);
 
       const platformHealth: Record<string, AlgorithmHealth> = {};
-      platforms.forEach((platform, index) => {
+      platforms?.forEach((platform, index) => {
         platformHealth[platform] = healthResults[index];
       });
 
-      const overallHealth = Math.round(
-        Object.values(platformHealth).reduce(
-          (sum, h) => sum + h.overallScore,
+      const _overallHealth = Math?.round(
+        Object?.values(platformHealth).reduce(
+          (sum, h) => sum + h?.overallScore,
           0,
-        ) / platforms.length,
+        ) / platforms?.length,
       );
 
-      const reachMultiplier = 1 + (overallHealth - 50) / 100;
+      const _reachMultiplier = 1 + (overallHealth - 50) / 100;
 
-      const allAlerts = Object.values(platformHealth)
-        .flatMap((h) => h.alerts)
-        .filter((a) => !a.resolved)
+      const _allAlerts = Object?.values(platformHealth)
+        .flatMap((h) => h?.alerts)
+        .filter((a) => !a?.resolved)
         .sort((a, b) => {
           const severityOrder: Record<string, number> = {
             critical: 0,
@@ -217,29 +217,29 @@ router.get(
             medium: 2,
             low: 3,
           };
-          return severityOrder[a.severity] - severityOrder[b.severity];
+          return severityOrder[a?.severity] - severityOrder[b?.severity];
         });
 
-      const allRecommendations = [
+      const _allRecommendations = [
         ...new Set(
-          Object.values(platformHealth).flatMap((h) => h.recommendations),
+          Object?.values(platformHealth).flatMap((h) => h?.recommendations),
         ),
       ].slice(0, 10);
 
-      const moneySaved = {
+      const _moneySaved = {
         monthly: null,
         yearly: null,
         paidEquivalent: null,
       };
 
-      const viralScoreTrends = platforms.map((platform) => ({
+      const _viralScoreTrends = platforms?.map((platform) => ({
         platform,
         current: null,
         previous: null,
         trend: null,
       }));
 
-      const growthVelocity = {
+      const _growthVelocity = {
         daily: null,
         weekly: null,
         monthly: null,
@@ -253,24 +253,24 @@ router.get(
       }> = [];
 
       for (const platform of platforms) {
-        const timing = timingResults[platform];
+        const _timing = timingResults[platform];
         if (timing) {
-          for (const slot of timing.bestTimes.slice(0, 10)) {
-            heatmapData.push({
-              dayOfWeek: slot.dayOfWeek,
-              hour: slot.hour,
-              value: slot.score,
+          for (const slot of timing?.bestTimes.slice(0, 10)) {
+            heatmapData?.push({
+              dayOfWeek: slot?.dayOfWeek,
+              hour: slot?.hour,
+              value: slot?.score,
               platform,
             });
           }
         }
       }
 
-      res.json({
+      res?.json({
         success: true,
         dashboard: {
           overallHealth,
-          reachMultiplier: Math.round(reachMultiplier * 100) / 100,
+          reachMultiplier: Math?.round(reachMultiplier * 100) / 100,
           platformHealth,
           optimalTiming: timingResults,
           alerts: allAlerts,
@@ -284,7 +284,7 @@ router.get(
             projected30Days: null,
             projected90Days: null,
           },
-          viralHighlights: platforms.map((platform) => ({
+          viralHighlights: platforms?.map((platform) => ({
             platform,
             topScore: null,
             avgScore: null,
@@ -294,84 +294,84 @@ router.get(
         },
       });
     } catch (error) {
-      logger.warn("Error in reach-dashboard:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in reach-dashboard:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.post(
+router?.post(
   "/generate-variants",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const { content, count = 5 } = req.body;
+      const _userId = req?.user!.id;
+      const { content, count = 5 } = req?.body;
 
-      const validatedContent = contentSchema.parse(content);
+      const _validatedContent = contentSchema?.parse(content);
 
-      const contentData = {
+      const _contentData = {
         ...validatedContent,
-        id: validatedContent.id || randomBytes(8).toString("hex"),
+        id: validatedContent?.id || randomBytes(8).toString("hex"),
         userId,
       };
 
-      const variantResult =
-        await contentVariantGeneratorService.generateVariants(
+      const _variantResult =
+        await contentVariantGeneratorService?.generateVariants(
           contentData as Record<string, unknown>,
           count,
         );
-      const variants = Array.isArray(variantResult)
+      const _variants = Array?.isArray(variantResult)
         ? variantResult
-        : variantResult.variants || [];
+        : variantResult?.variants || [];
 
-      const variantsWithScores = await Promise.all(
-        variants.map(async (variant: Record<string, unknown>) => {
-          const score = await viralScoringService.scoreContent({
+      const _variantsWithScores = await Promise?.all(
+        variants?.map(async (variant: Record<string, unknown>) => {
+          const _score = await viralScoringService?.scoreContent({
             ...contentData,
-            caption: variant.caption,
-            hashtags: variant.hashtags,
+            caption: variant?.caption,
+            hashtags: variant?.hashtags,
           } as ContentData);
           return {
             ...variant,
-            viralScore: score.overall,
+            viralScore: score?.overall,
             predictedReach: {
-              low: Math.round(score.predictedEngagement.likes * 0.5),
-              mid: Math.round(score.predictedEngagement.likes),
-              high: Math.round(score.predictedEngagement.likes * 2),
+              low: Math?.round(score?.predictedEngagement.likes * 0?.5),
+              mid: Math?.round(score?.predictedEngagement.likes),
+              high: Math?.round(score?.predictedEngagement.likes * 2),
             },
           };
         }),
       );
 
-      variantsWithScores.sort((a, b) => b.viralScore - a.viralScore);
+      variantsWithScores?.sort((a, b) => b?.viralScore - a?.viralScore);
 
-      logger.info(
-        `🧪 Generated ${variants.length} variants for user ${userId}`,
+      logger?.info(
+        `🧪 Generated ${variants?.length} variants for user ${userId}`,
       );
 
-      res.json({
+      res?.json({
         success: true,
         variants: variantsWithScores,
         winner: variantsWithScores[0],
-        statisticalConfidence: Math.min(95, 60 + variants.length * 7),
+        statisticalConfidence: Math?.min(95, 60 + variants?.length * 7),
       });
     } catch (error) {
-      logger.warn("Error in generate-variants:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in generate-variants:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/algorithm-insights",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const { platform = "instagram" } = req.query;
+      const _userId = req?.user!.id;
+      const { platform = "instagram" } = req?.query;
 
-      const validPlatforms = [
+      const _validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -379,39 +379,39 @@ router.get(
         "facebook",
         "linkedin",
       ];
-      if (!validPlatforms.includes(platform as string)) {
-        return res.status(400).json({ error: "Invalid platform" });
+      if (!validPlatforms?.includes(platform as string)) {
+        return res?.status(400).json({ error: "Invalid platform" });
       }
 
-      const [health, insights, patterns] = await Promise.all([
-        algorithmIntelligenceService.checkAlgorithmHealth(
+      const [health, insights, patterns] = await Promise?.all([
+        algorithmIntelligenceService?.checkAlgorithmHealth(
           platform as string,
           userId,
         ),
-        algorithmIntelligenceService.getAlgorithmInsights(
+        algorithmIntelligenceService?.getAlgorithmInsights(
           platform as string,
           userId,
         ),
-        algorithmIntelligenceService.getEngagementPatterns(
+        algorithmIntelligenceService?.getEngagementPatterns(
           platform as string,
           userId,
         ),
       ]);
 
-      const platformProfile =
-        await algorithmIntelligenceService.getPlatformProfile(
+      const _platformProfile =
+        await algorithmIntelligenceService?.getPlatformProfile(
           platform as string,
         );
 
-      res.json({
+      res?.json({
         success: true,
         insights: {
           platform,
           algorithmHealth: health,
-          contentPreferences: platformProfile.contentPreferences,
+          contentPreferences: platformProfile?.contentPreferences,
           engagementPatterns: patterns,
-          algorithmTips: insights.tips,
-          benchmarks: insights.benchmarks,
+          algorithmTips: insights?.tips,
+          benchmarks: insights?.benchmarks,
           optimizationStrategies: [
             "Post during peak engagement windows",
             "Use 3-5 trending hashtags per post",
@@ -420,13 +420,13 @@ router.get(
             "Maintain consistent posting schedule",
           ],
           saveShareRatio: {
-            optimal: 0.15,
+            optimal: 0?.15,
             current: null,
             recommendation: "Add more save-worthy educational content",
           },
           commentDepthStrategy: {
-            avgDepth: 2.3,
-            optimal: 3.5,
+            avgDepth: 2?.3,
+            optimal: 3?.5,
             tips: [
               "Ask questions in captions",
               "Reply to every comment",
@@ -436,21 +436,21 @@ router.get(
         },
       });
     } catch (error) {
-      logger.warn("Error in algorithm-insights:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in algorithm-insights:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/algorithm-insights/:platform",
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req.user!.id;
-      const { platform } = req.params;
+      const _userId = req?.user!.id;
+      const { platform } = req?.params;
 
-      const validPlatforms = [
+      const _validPlatforms = [
         "tiktok",
         "instagram",
         "youtube",
@@ -458,33 +458,33 @@ router.get(
         "facebook",
         "linkedin",
       ];
-      if (!validPlatforms.includes(platform)) {
-        return res.status(400).json({ error: "Invalid platform" });
+      if (!validPlatforms?.includes(platform)) {
+        return res?.status(400).json({ error: "Invalid platform" });
       }
 
-      const insights = await algorithmIntelligenceService.getAlgorithmInsights(
+      const _insights = await algorithmIntelligenceService?.getAlgorithmInsights(
         platform,
         userId,
       );
 
-      res.json({
+      res?.json({
         success: true,
         insights,
       });
     } catch (error) {
-      logger.warn("Error in algorithm-insights by platform:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in algorithm-insights by platform:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/dashboard",
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
 
-      res.json({
+      res?.json({
         overview: {
           totalReach: 0,
           totalImpressions: 0,
@@ -499,38 +499,38 @@ router.get(
         alerts: [],
       });
     } catch (error) {
-      logger.warn("Error in organic dashboard:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in organic dashboard:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/stats",
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
 
-      res.json({
+      res?.json({
         totalPosts: 0,
         totalReach: 0,
         avgEngagement: 0,
         viralPosts: 0,
       });
     } catch (error) {
-      logger.warn("Error in organic stats:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in organic stats:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/metrics",
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
 
-      res.json({
+      res?.json({
         reach: null,
         impressions: null,
         impressionsChange: null,
@@ -538,24 +538,24 @@ router.get(
         viralScore: null,
       });
     } catch (error) {
-      logger.warn("Error in organic metrics:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in organic metrics:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
 
-router.get(
+router?.get(
   "/recommendations",
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
 
-      res.json({
+      res?.json({
         recommendations: [],
       });
     } catch (error) {
-      logger.warn("Error in organic recommendations:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error in organic recommendations:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );

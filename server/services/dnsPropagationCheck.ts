@@ -1,18 +1,18 @@
 /**
  * dnsPropagationCheck — Real-time DNS propagation status via multiple resolvers
  *
- * Modelled after Vercel's propagation check API and tools like whatsmydns.net:
+ * Modelled after Vercel's propagation check API and tools like whatsmydns?.net:
  *
  *   • Queries multiple public DoH resolvers in parallel (Cloudflare, Google,
  *     Quad9, OpenDNS) to give a representative global propagation picture.
  *   • Each resolver reports independently — partial propagation is surfaced
- *     (e.g. "3/4 resolvers see the correct value") rather than binary pass/fail.
+ *     (e?.g. "3/4 resolvers see the correct value") rather than binary pass/fail.
  *   • All queries use DNS-over-HTTPS so they bypass any local/container resolver
  *     that would skew results in Replit's environment.
  *   • Results are cached for 30 s per domain+type to avoid DoH rate limits.
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // ─── Resolvers ────────────────────────────────────────────────────────────────
 
@@ -27,16 +27,16 @@ const RESOLVERS: DoHResolver[] = [
   {
     name: "Cloudflare",
     region: "Global",
-    url: "https://cloudflare-dns.com/dns-query",
+    url: "https://cloudflare-dns?.com/dns-query",
   },
   {
     name: "Cloudflare Alt",
     region: "Global",
-    url: "https://1.1.1.1/dns-query",
+    url: "https://1?.1.1?.1/dns-query",
   },
   // Google DoH — reliable, cloud-friendly
-  { name: "Google", region: "Global", url: "https://dns.google/resolve" },
-  { name: "Google Alt", region: "Global", url: "https://8.8.8.8/resolve" },
+  { name: "Google", region: "Global", url: "https://dns?.google/resolve" },
+  { name: "Google Alt", region: "Global", url: "https://8?.8.8?.8/resolve" },
 ];
 
 const DNS_TYPE_NUMS: Record<string, number> = {
@@ -56,7 +56,7 @@ interface CacheEntry {
   expiresAt: number;
 }
 
-const cache = new Map<string, CacheEntry>();
+const _cache = new Map<string, CacheEntry>();
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,63 +91,63 @@ async function queryResolver(
   expectedValue: string | undefined,
   timeoutMs: number,
 ): Promise<ResolverResult> {
-  const start = Date.now();
+  const _start = Date?.now();
   try {
     // Use string type name in the URL — universally accepted across Cloudflare,
     // Google, Quad9, OpenDNS (numeric codes are supported by Cloudflare/Google
     // but rejected by Quad9 and OpenDNS JSON APIs).
-    const url = `${resolver.url}?name=${encodeURIComponent(name)}&type=${encodeURIComponent(typeName)}`;
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), timeoutMs);
+    const _url = `${resolver?.url}?name=${encodeURIComponent(name)}&type=${encodeURIComponent(typeName)}`;
+    const _controller = new AbortController();
+    const _tid = setTimeout(() => controller?.abort(), timeoutMs);
 
-    const resp = await fetch(url, {
+    const _resp = await fetch(url, {
       headers: { Accept: "application/dns-json" },
-      signal: controller.signal,
+      signal: controller?.signal,
     });
     clearTimeout(tid);
 
-    if (!resp.ok) {
+    if (!resp?.ok) {
       return {
-        resolver: resolver.name,
-        region: resolver.region,
+        resolver: resolver?.name,
+        region: resolver?.region,
         propagated: false,
         values: [],
-        latencyMs: Date.now() - start,
-        error: `HTTP ${resp.status}`,
+        latencyMs: Date?.now() - start,
+        error: `HTTP ${resp?.status}`,
       };
     }
 
-    const data = (await resp.json()) as {
+    const _data = (await resp?.json()) as {
       Answer?: Array<{ type: number; data: string }>;
       Status: number;
     };
-    const values = (data.Answer || [])
-      .filter((a) => a.type === typeNum)
-      .map((a) => a.data.replace(/^"|"$/g, "").trim());
+    const _values = (data?.Answer || [])
+      .filter((a) => a?.type === typeNum)
+      .map((a) => a?.data.replace(/^"|"$/g, "").trim());
 
-    const propagated = expectedValue
-      ? values.some(
+    const _propagated = expectedValue
+      ? values?.some(
           (v) =>
-            v.toLowerCase().replace(/\.$/, "") ===
-              expectedValue.toLowerCase().replace(/\.$/, "") ||
-            v.includes(expectedValue),
+            v?.toLowerCase().replace(/\.$/, "") ===
+              expectedValue?.toLowerCase().replace(/\.$/, "") ||
+            v?.includes(expectedValue),
         )
-      : values.length > 0;
+      : values?.length > 0;
 
     return {
-      resolver: resolver.name,
-      region: resolver.region,
+      resolver: resolver?.name,
+      region: resolver?.region,
       propagated,
       values,
-      latencyMs: Date.now() - start,
+      latencyMs: Date?.now() - start,
     };
   } catch (err) {
     return {
-      resolver: resolver.name,
-      region: resolver.region,
+      resolver: resolver?.name,
+      region: resolver?.region,
       propagated: false,
       values: [],
-      latencyMs: Date.now() - start,
+      latencyMs: Date?.now() - start,
       error:
         err?.name === "AbortError" ? "timeout" : (err?.message ?? "unknown"),
     };
@@ -160,7 +160,7 @@ async function queryResolver(
  * Queries all four public resolvers in parallel for the given domain/type.
  * Returns a full propagation report including per-resolver results.
  *
- * @param domain     The domain name to query (e.g. "mybeats.com")
+ * @param domain     The domain name to query (e?.g. "mybeats?.com")
  * @param type       DNS record type (A, CNAME, NS, TXT, MX, AAAA, CAA)
  * @param expected   Optional expected value — resolvers are marked as
  *                   "propagated" only if they return this value.
@@ -173,43 +173,43 @@ export async function checkPropagation(
   expected?: string,
   timeoutMs = 4000,
 ): Promise<PropagationResult> {
-  const upperType = type.toUpperCase();
-  const cacheKey = `${domain}:${upperType}:${expected ?? "*"}`;
+  const _upperType = type?.toUpperCase();
+  const _cacheKey = `${domain}:${upperType}:${expected ?? "*"}`;
 
   // Serve from cache if fresh
-  const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.data;
+  const _cached = cache?.get(cacheKey);
+  if (cached && cached?.expiresAt > Date?.now()) {
+    return cached?.data;
   }
 
-  const typeNum = DNS_TYPE_NUMS[upperType];
+  const _typeNum = DNS_TYPE_NUMS[upperType];
   if (!typeNum) {
     throw new Error(`Unsupported DNS type for propagation check: ${type}`);
   }
 
-  const results = await Promise.all(
-    RESOLVERS.map((r) =>
+  const _results = await Promise?.all(
+    RESOLVERS?.map((r) =>
       queryResolver(r, domain, typeNum, upperType, expected, timeoutMs),
     ),
   );
 
-  const propagatedCount = results.filter((r) => r.propagated).length;
+  const _propagatedCount = results?.filter((r) => r?.propagated).length;
   const result: PropagationResult = {
     domain,
     type: upperType,
     expectedValue: expected,
     propagatedCount,
-    totalResolvers: RESOLVERS.length,
-    propagationPercent: Math.round((propagatedCount / RESOLVERS.length) * 100),
-    fullyPropagated: propagatedCount === RESOLVERS.length,
+    totalResolvers: RESOLVERS?.length,
+    propagationPercent: Math?.round((propagatedCount / RESOLVERS?.length) * 100),
+    fullyPropagated: propagatedCount === RESOLVERS?.length,
     resolvers: results,
     checkedAt: new Date().toISOString(),
   };
 
-  cache.set(cacheKey, { data: result, expiresAt: Date.now() + 30_000 });
+  cache?.set(cacheKey, { data: result, expiresAt: Date?.now() + 30_000 });
 
-  logger.debug(
-    `[DnsPropagation] ${domain} ${upperType}: ${propagatedCount}/${RESOLVERS.length} resolvers propagated`,
+  logger?.debug(
+    `[DnsPropagation] ${domain} ${upperType}: ${propagatedCount}/${RESOLVERS?.length} resolvers propagated`,
   );
 
   return result;
@@ -235,21 +235,21 @@ export async function checkDomainSetupPropagation(
   overallPercent: number;
   setupComplete: boolean;
 }> {
-  const cnameTarget = `${storefrontId}.${baseDomain}`;
-  const [ns, a, wwwCname] = await Promise.all([
+  const _cnameTarget = `${storefrontId}.${baseDomain}`;
+  const [ns, a, wwwCname] = await Promise?.all([
     checkPropagation(domain, "NS", ns1),
     checkPropagation(domain, "A", platformIp),
     checkPropagation(`www.${domain}`, "CNAME", cnameTarget),
   ]);
 
   // Setup is complete if NS delegation OR (A record AND www CNAME) are propagated
-  const nsDone = ns.propagatedCount >= 2;
-  const recordsDone = a.propagatedCount >= 2 && wwwCname.propagatedCount >= 2;
-  const setupComplete = nsDone || recordsDone;
+  const _nsDone = ns?.propagatedCount >= 2;
+  const _recordsDone = a?.propagatedCount >= 2 && wwwCname?.propagatedCount >= 2;
+  const _setupComplete = nsDone || recordsDone;
 
-  const overallPercent = Math.max(
-    ns.propagationPercent,
-    Math.round((a.propagationPercent + wwwCname.propagationPercent) / 2),
+  const _overallPercent = Math?.max(
+    ns?.propagationPercent,
+    Math?.round((a?.propagationPercent + wwwCname?.propagationPercent) / 2),
   );
 
   return { ns, a, wwwCname, overallPercent, setupComplete };

@@ -7,29 +7,29 @@
 
 import fsPromises from "fs/promises";
 import path from "path";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import type {
   VideoGenOptions,
   VideoGenResult,
-} from "./videoGeneratorService.js";
-import { MaxCoreAIClient } from "./maxcoreClient.js";
+} from "./videoGeneratorService?.js";
+import { MaxCoreAIClient } from "./maxcoreClient?.js";
 
-const POLL_INTERVAL_MS = 2_000;
-const POLL_MAX_ATTEMPTS = 150; // 5 min
+const _POLL_INTERVAL_MS = 2_000;
+const _POLL_MAX_ATTEMPTS = 150; // 5 min
 
-const MAXCORE_ORIGIN = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-const MC_AI_KEY = process.env.AI_SERVER_KEY || "";
-const LOCAL_VIDEO_DIR = path.join(process.cwd(), "uploads", "videos");
+const _MAXCORE_ORIGIN = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
+const _MC_AI_KEY = process?.env.AI_SERVER_KEY || "";
+const _LOCAL_VIDEO_DIR = path?.join(process?.cwd(), "uploads", "videos");
 
 // ── MaxCore Rendering Engine (middle tier) ────────────────────────────────────
 // Three-tier architecture: Max Booster → RELAY (port 8008) → MaxCore
-// The relay is the DiT-24 / api_server_v4.py diffusion server which enriches
+// The relay is the DiT-24 / api_server_v4?.py diffusion server which enriches
 // prompts with music-context metadata, forwards to MaxCore for authoritative
 // generation, and applies the full DigitalGPU post-processing chain to every frame.
-const RELAY_URL =
-  process.env.RELAY_ENGINE_URL ||
-  `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
-const RELAY_TIMEOUT_MS = 60_000;
+const _RELAY_URL =
+  process?.env.RELAY_ENGINE_URL ||
+  `http://localhost:${process?.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+const _RELAY_TIMEOUT_MS = 60_000;
 
 // Style name mapping: VideoGenOptions template/genre → relay style_name
 const TEMPLATE_TO_STYLE: Record<string, string> = {
@@ -51,7 +51,7 @@ const TEMPLATE_TO_STYLE: Record<string, string> = {
 };
 
 function resolveStyleName(opts: VideoGenOptions): string {
-  const t = (opts.template || opts.genre || "")
+  const _t = (opts?.template || opts?.genre || "")
     .toLowerCase()
     .replace(/[^a-z_]/g, "_");
   return TEMPLATE_TO_STYLE[t] || TEMPLATE_TO_STYLE["default"];
@@ -63,15 +63,15 @@ function resolveStyleName(opts: VideoGenOptions): string {
  * Capped at MAX_URL_STORE_SIZE entries (oldest evicted first) to prevent
  * unbounded memory growth in long-running production deployments.
  */
-const MAX_URL_STORE_SIZE = 500;
-export const maxcoreVideoUrlStore = new Map<string, string>();
+const _MAX_URL_STORE_SIZE = 500;
+export const _maxcoreVideoUrlStore = new Map<string, string>();
 
 function urlStoreSet(filename: string, url: string): void {
-  if (maxcoreVideoUrlStore.size >= MAX_URL_STORE_SIZE) {
-    const firstKey = maxcoreVideoUrlStore.keys().next().value;
-    if (firstKey !== undefined) maxcoreVideoUrlStore.delete(firstKey);
+  if (maxcoreVideoUrlStore?.size >= MAX_URL_STORE_SIZE) {
+    const _firstKey = maxcoreVideoUrlStore?.keys().next().value;
+    if (firstKey !== undefined) maxcoreVideoUrlStore?.delete(firstKey);
   }
-  maxcoreVideoUrlStore.set(filename, url);
+  maxcoreVideoUrlStore?.set(filename, url);
 }
 
 function maxcoreAuthHeaders(): Record<string, string> {
@@ -88,37 +88,37 @@ function maxcoreAuthHeaders(): Record<string, string> {
  *   AVI:       starts with 'RIFF'
  *
  * Also returns true for large binary buffers that don't look like HTML — a
- * real video will always be many megabytes, never 683 bytes of index.html.
+ * real video will always be many megabytes, never 683 bytes of index?.html.
  */
 function looksLikeRealVideo(buf: Buffer): boolean {
-  if (buf.length < 100) return false;
+  if (buf?.length < 100) return false;
 
-  const isMP4 = buf.slice(4, 8).toString("ascii") === "ftyp";
-  const isWebM =
+  const _isMP4 = buf?.slice(4, 8).toString("ascii") === "ftyp";
+  const _isWebM =
     buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3;
-  const isAVI = buf.slice(0, 4).toString("ascii") === "RIFF";
+  const _isAVI = buf?.slice(0, 4).toString("ascii") === "RIFF";
 
   if (isMP4 || isWebM || isAVI) return true;
 
   // Reject anything that looks like HTML/text
-  const head = buf.slice(0, 200).toString("utf8").toLowerCase();
+  const _head = buf?.slice(0, 200).toString("utf8").toLowerCase();
   if (
-    head.includes("<!doctype") ||
-    head.includes("<html") ||
-    head.startsWith("{") ||
-    head.startsWith("[")
+    head?.includes("<!doctype") ||
+    head?.includes("<html") ||
+    head?.startsWith("{") ||
+    head?.startsWith("[")
   )
     return false;
 
   // Accept anything large and binary that isn't HTML — real video files are always > 100 KB
-  return buf.length > 100_000;
+  return buf?.length > 100_000;
 }
 
 /**
  * Extract the MaxCore job UUID from a filename like "video_<uuid>.mp4"
  */
 function extractJobUuid(filename: string): string | null {
-  const m = filename.match(
+  const _m = filename?.match(
     /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i,
   );
   return m ? m[1] : null;
@@ -129,17 +129,17 @@ function extractJobUuid(filename: string): string | null {
  * Ordered: specific API download routes first (bypass SPA), then static paths.
  */
 function candidateUrls(rawUrl: string): string[] {
-  const absolute = rawUrl.startsWith("http")
+  const _absolute = rawUrl?.startsWith("http")
     ? rawUrl
     : `${MAXCORE_ORIGIN}${rawUrl}`;
-  const filename = path.basename(rawUrl.split("?")[0]);
-  const uuid = extractJobUuid(filename);
+  const _filename = path?.basename(rawUrl?.split("?")[0]);
+  const _uuid = extractJobUuid(filename);
 
   const urls: string[] = [];
 
   // Job-ID-based download routes (most likely to work)
   if (uuid) {
-    urls.push(
+    urls?.push(
       `${MAXCORE_ORIGIN}/api/video-job/${uuid}/download`,
       `${MAXCORE_ORIGIN}/api/video-job/${uuid}/file`,
       `${MAXCORE_ORIGIN}/api/video-job/${uuid}/video`,
@@ -153,7 +153,7 @@ function candidateUrls(rawUrl: string): string[] {
   }
 
   // Filename-based /api/* routes (bypass SPA catch-all)
-  urls.push(
+  urls?.push(
     `${MAXCORE_ORIGIN}/api/uploads/${filename}`,
     `${MAXCORE_ORIGIN}/api/uploads/videos/${filename}`,
     `${MAXCORE_ORIGIN}/api/videos/${filename}`,
@@ -170,7 +170,7 @@ function candidateUrls(rawUrl: string): string[] {
   );
 
   // The raw URL from MaxCore + non-/api/ static paths (caught by SPA but worth trying)
-  urls.push(
+  urls?.push(
     absolute,
     `${MAXCORE_ORIGIN}/uploads/${filename}`,
     `${MAXCORE_ORIGIN}/uploads/videos/${filename}`,
@@ -196,35 +196,35 @@ function candidateUrls(rawUrl: string): string[] {
  * The raw MaxCore URL is stored in maxcoreVideoUrlStore so the proxy can use it.
  */
 async function cacheVideoLocally(rawUrl: string): Promise<string> {
-  const filename = path.basename(rawUrl.split("?")[0]);
-  const localPath = path.join(LOCAL_VIDEO_DIR, filename);
+  const _filename = path?.basename(rawUrl?.split("?")[0]);
+  const _localPath = path?.join(LOCAL_VIDEO_DIR, filename);
 
   // Log the exact URL MaxCore returned so we can diagnose path issues
-  logger.info(
+  logger?.info(
     `[AdvancedVideoRenderer] cacheVideoLocally — rawUrl from MaxCore: "${rawUrl}"`,
   );
 
   // Register the raw MaxCore URL for the proxy route regardless of what happens below
-  const absoluteForProxy = rawUrl.startsWith("http")
+  const _absoluteForProxy = rawUrl?.startsWith("http")
     ? rawUrl
     : `${MAXCORE_ORIGIN}${rawUrl}`;
   urlStoreSet(filename, absoluteForProxy);
 
   try {
-    await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
+    await fsPromises?.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
 
-    const candidates = candidateUrls(rawUrl);
+    const _candidates = candidateUrls(rawUrl);
     for (const url of candidates) {
       try {
-        const response = await fetch(url, {
+        const _response = await fetch(url, {
           headers: maxcoreAuthHeaders(),
-          signal: AbortSignal.timeout(60_000),
+          signal: AbortSignal?.timeout(60_000),
         });
-        const ct = response.headers.get("content-type") ?? "unknown";
-        const cl = response.headers.get("content-length") ?? "unknown";
-        if (!response.ok) {
-          logger.info(
-            `[AdvancedVideoRenderer] Candidate ${url} → HTTP ${response.status} ct="${ct}"`,
+        const _ct = response?.headers.get("content-type") ?? "unknown";
+        const _cl = response?.headers.get("content-length") ?? "unknown";
+        if (!response?.ok) {
+          logger?.info(
+            `[AdvancedVideoRenderer] Candidate ${url} → HTTP ${response?.status} ct="${ct}"`,
           );
           continue;
         }
@@ -232,38 +232,38 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
         // Buffer the full response so we can inspect it with magic bytes.
         // Content-type alone is unreliable — MaxCore's SPA returns text/html for
         // any unrecognised path with 200 OK.  Magic-byte validation is definitive.
-        const buffer = Buffer.from(await response.arrayBuffer());
+        const _buffer = Buffer?.from(await response?.arrayBuffer());
 
         if (!looksLikeRealVideo(buffer)) {
-          const head = buffer
+          const _head = buffer
             .slice(0, 60)
             .toString("utf8")
             .replace(/[\r\n]/g, " ");
-          logger.info(
+          logger?.info(
             `[AdvancedVideoRenderer] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", len=${cl}, head="${head}")`,
           );
           continue;
         }
 
-        await fsPromises.writeFile(localPath, buffer);
-        logger.info(
-          `[AdvancedVideoRenderer] Video cached from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`,
+        await fsPromises?.writeFile(localPath, buffer);
+        logger?.info(
+          `[AdvancedVideoRenderer] Video cached from ${url} — ${filename} (${(buffer?.length / 1024).toFixed(0)} KB)`,
         );
         urlStoreSet(filename, url);
         return `/uploads/videos/${filename}`;
       } catch (err) {
-        logger.info(
-          `[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err.message}`,
+        logger?.info(
+          `[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err?.message}`,
         );
       }
     }
 
-    logger.warn(
-      `[AdvancedVideoRenderer] All ${candidates.length} candidates failed for "${filename}" — proxy will stream from MaxCore: ${absoluteForProxy}`,
+    logger?.warn(
+      `[AdvancedVideoRenderer] All ${candidates?.length} candidates failed for "${filename}" — proxy will stream from MaxCore: ${absoluteForProxy}`,
     );
   } catch (err) {
-    logger.warn(
-      `[AdvancedVideoRenderer] Local cache setup failed: ${err.message}`,
+    logger?.warn(
+      `[AdvancedVideoRenderer] Local cache setup failed: ${err?.message}`,
     );
   }
 
@@ -276,53 +276,53 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
  * Uses poll() (not get()) so each attempt is a real HTTP request with no suppression.
  */
 async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
-  logger.info(
+  logger?.info(
     `[AdvancedVideoRenderer] Polling MaxCore job ${jobId} (max ${POLL_MAX_ATTEMPTS} × ${POLL_INTERVAL_MS / 1000}s)`,
   );
 
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
-    const status = await MaxCoreAIClient.poll<unknown>("/video-job/" + jobId);
+    const _status = await MaxCoreAIClient?.poll<unknown>("/video-job/" + jobId);
     if (!status) continue;
 
-    if (status.status === "done" && status.url) {
-      const servedUrl = await cacheVideoLocally(status.url);
-      logger.info(
+    if (status?.status === "done" && status?.url) {
+      const _servedUrl = await cacheVideoLocally(status?.url);
+      logger?.info(
         `[AdvancedVideoRenderer] Job ${jobId} done after ${attempt + 1} poll(s) — serving: ${servedUrl}`,
       );
       return {
         success: true,
         url: servedUrl,
-        filename: status.filename,
-        width: status.width,
-        height: status.height,
-        duration: status.duration,
-        hook: status.hook,
-        body: status.body,
-        cta: status.cta,
-        template: status.template,
-        template_name: status.template_name,
-        scenes_rendered: status.scenes_rendered,
+        filename: status?.filename,
+        width: status?.width,
+        height: status?.height,
+        duration: status?.duration,
+        hook: status?.hook,
+        body: status?.body,
+        cta: status?.cta,
+        template: status?.template,
+        template_name: status?.template_name,
+        scenes_rendered: status?.scenes_rendered,
         source: "MaxCoreAI",
       };
     }
 
-    if (status.status === "error") {
-      logger.warn(
-        `[AdvancedVideoRenderer] MaxCore job ${jobId} errored: ${status.error}`,
+    if (status?.status === "error") {
+      logger?.warn(
+        `[AdvancedVideoRenderer] MaxCore job ${jobId} errored: ${status?.error}`,
       );
       return null;
     }
 
     if (attempt % 15 === 14) {
-      logger.info(
-        `[AdvancedVideoRenderer] Job ${jobId} still ${status.status ?? "processing"} (${attempt + 1} polls)`,
+      logger?.info(
+        `[AdvancedVideoRenderer] Job ${jobId} still ${status?.status ?? "processing"} (${attempt + 1} polls)`,
       );
     }
   }
 
-  logger.warn(
+  logger?.warn(
     `[AdvancedVideoRenderer] Job ${jobId} timed out after ${POLL_MAX_ATTEMPTS} poll attempts`,
   );
   return null;
@@ -353,33 +353,33 @@ interface MaxCoreSentiment {
 async function generateContent(
   opts: VideoGenOptions,
 ): Promise<MaxCoreContent | null> {
-  const topic = [
-    opts.artist_name ? `${opts.artist_name}` : null,
-    opts.topic,
-    opts.genre ? `(${opts.genre})` : null,
+  const _topic = [
+    opts?.artist_name ? `${opts?.artist_name}` : null,
+    opts?.topic,
+    opts?.genre ? `(${opts?.genre})` : null,
   ]
     .filter(Boolean)
     .join(" — ");
 
-  logger.info(
+  logger?.info(
     `[AdvancedVideoRenderer] Calling /api/generate/content for topic: "${topic}"`,
   );
 
-  return MaxCoreAIClient.generate<MaxCoreContent>("/generate/content", {
+  return MaxCoreAIClient?.generate<MaxCoreContent>("/generate/content", {
     topic,
-    platform: opts.platform || "tiktok",
-    tone: opts.tone || "energetic",
-    goal: opts.goal || "growth",
-    genre: opts.genre || undefined,
-    artist: opts.artist_name || undefined,
-    title: opts.topic || undefined,
+    platform: opts?.platform || "tiktok",
+    tone: opts?.tone || "energetic",
+    goal: opts?.goal || "growth",
+    genre: opts?.genre || undefined,
+    artist: opts?.artist_name || undefined,
+    title: opts?.topic || undefined,
   });
 }
 
 // ── Step 2: sentiment scoring on the hook ─────────────────────────────────────
 
 async function getSentiment(hook: string): Promise<MaxCoreSentiment | null> {
-  return MaxCoreAIClient.generate<MaxCoreSentiment>("/analyze/sentiment", {
+  return MaxCoreAIClient?.generate<MaxCoreSentiment>("/analyze/sentiment", {
     text: hook,
   });
 }
@@ -411,145 +411,145 @@ async function renderVideoViaRelay(
     sentiment_confidence: number | null;
   },
 ): Promise<VideoGenResult | null> {
-  const startMs = Date.now();
-  const styleName = resolveStyleName(opts);
+  const _startMs = Date?.now();
+  const _styleName = resolveStyleName(opts);
 
-  const relayPayload = {
-    prompt: intelligence.hook || opts.hook || opts.topic || "",
+  const _relayPayload = {
+    prompt: intelligence?.hook || opts?.hook || opts?.topic || "",
     T: 16,
-    H: opts.aspect_ratio === "16:9" ? 144 : 256,
-    W: opts.aspect_ratio === "16:9" ? 256 : 144,
-    bpm: 120.0,
-    energy: 0.75,
-    energy_peak: 0.9,
+    H: opts?.aspect_ratio === "16:9" ? 144 : 256,
+    W: opts?.aspect_ratio === "16:9" ? 256 : 144,
+    bpm: 120?.0,
+    energy: 0?.75,
+    energy_peak: 0?.9,
     style_name: styleName,
     beat_index: 0,
     total_beats: 4,
     is_drop: false,
-    emotional_goal: opts.tone || "curiosity",
-    platform: opts.platform || "tiktok",
+    emotional_goal: opts?.tone || "curiosity",
+    platform: opts?.platform || "tiktok",
     output_format: "frames_b64",
     use_digital_gpu: true,
     temporal_smooth: true,
   };
 
   try {
-    const resp = await fetch(`${RELAY_URL}/generate`, {
+    const _resp = await fetch(`${RELAY_URL}/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(relayPayload),
-      signal: AbortSignal.timeout(RELAY_TIMEOUT_MS),
+      body: JSON?.stringify(relayPayload),
+      signal: AbortSignal?.timeout(RELAY_TIMEOUT_MS),
     });
 
-    if (!resp.ok) {
-      logger.warn(
-        `[RelayTier] /generate → HTTP ${resp.status} — falling back to direct MaxCore`,
+    if (!resp?.ok) {
+      logger?.warn(
+        `[RelayTier] /generate → HTTP ${resp?.status} — falling back to direct MaxCore`,
       );
       return null;
     }
 
-    const data: Record<string, unknown> = (await resp.json()) as Record<
+    const data: Record<string, unknown> = (await resp?.json()) as Record<
       string,
       unknown
     >;
-    const elapsedMs = Date.now() - startMs;
+    const _elapsedMs = Date?.now() - startMs;
 
-    logger.info(
+    logger?.info(
       `[RelayTier] Generation complete in ${elapsedMs}ms — ` +
-        `style=${data.style_used} frames=${data.num_frames} ` +
-        `gpu_applied=${data.gpu_applied} trained=${data.trained} ` +
-        `relay_source=${data.relay_source}`,
+        `style=${data?.style_used} frames=${data?.num_frames} ` +
+        `gpu_applied=${data?.gpu_applied} trained=${data?.trained} ` +
+        `relay_source=${data?.relay_source}`,
     );
 
     // Relay returned a real encoded MP4 (from UNetV5 local renderer) — write to disk
     if (
-      data.mp4_b64 &&
-      typeof data.mp4_b64 === "string" &&
-      data.mp4_b64.length > 100
+      data?.mp4_b64 &&
+      typeof data?.mp4_b64 === "string" &&
+      data?.mp4_b64.length > 100
     ) {
       try {
-        const mp4Buf = Buffer.from(data.mp4_b64, "base64");
+        const _mp4Buf = Buffer?.from(data?.mp4_b64, "base64");
         if (looksLikeRealVideo(mp4Buf)) {
-          await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
-          const filename = `relay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`;
-          const localPath = path.join(LOCAL_VIDEO_DIR, filename);
-          await fsPromises.writeFile(localPath, mp4Buf);
-          logger.info(
+          await fsPromises?.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
+          const _filename = `relay_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}.mp4`;
+          const _localPath = path?.join(LOCAL_VIDEO_DIR, filename);
+          await fsPromises?.writeFile(localPath, mp4Buf);
+          logger?.info(
             `[RelayTier] Saved relay MP4 to disk: ${filename} ` +
-              `(${(mp4Buf.length / 1024).toFixed(0)} KB, backend=${data.backend || "unetv5"})`,
+              `(${(mp4Buf?.length / 1024).toFixed(0)} KB, backend=${data?.backend || "unetv5"})`,
           );
           return {
             success: true,
             url: `/uploads/videos/${filename}`,
             source: "MaxCoreRelay_UNetV5",
             processing_time_ms: elapsedMs,
-            relay_trained: data.trained,
-            relay_style: data.style_used,
-            relay_gpu_applied: data.gpu_applied,
-            relay_frames: data.num_frames,
+            relay_trained: data?.trained,
+            relay_style: data?.style_used,
+            relay_gpu_applied: data?.gpu_applied,
+            relay_frames: data?.num_frames,
             ...intelligence,
           } as Record<string, unknown>;
         }
       } catch (encErr: Record<string, unknown>) {
-        logger.warn(
-          `[RelayTier] mp4_b64 decode/write failed: ${encErr.message}`,
+        logger?.warn(
+          `[RelayTier] mp4_b64 decode/write failed: ${encErr?.message}`,
         );
       }
     }
 
     // If relay has a MaxCore authoritative video URL, cache it locally
-    if (data.video_url) {
-      const servedUrl = await cacheVideoLocally(data.video_url);
+    if (data?.video_url) {
+      const _servedUrl = await cacheVideoLocally(data?.video_url);
       return {
         success: true,
         url: servedUrl,
         source: "MaxCoreRelay_DigitalGPU",
         processing_time_ms: elapsedMs,
-        relay_trained: data.trained,
-        relay_style: data.style_used,
-        relay_scene: data.scene_name,
-        relay_gpu_applied: data.gpu_applied,
-        relay_frames: data.num_frames,
+        relay_trained: data?.trained,
+        relay_style: data?.style_used,
+        relay_scene: data?.scene_name,
+        relay_gpu_applied: data?.gpu_applied,
+        relay_frames: data?.num_frames,
         ...intelligence,
       } as Record<string, unknown>;
     }
 
     // Relay returned DigitalGPU-processed frames (no MaxCore URL) — still valid
     if (
-      data.frames_b64 &&
-      Array.isArray(data.frames_b64) &&
-      data.frames_b64.length > 0
+      data?.frames_b64 &&
+      Array?.isArray(data?.frames_b64) &&
+      data?.frames_b64.length > 0
     ) {
-      logger.info(
-        `[RelayTier] Relay returned ${data.frames_b64.length} DigitalGPU frames (no video URL)`,
+      logger?.info(
+        `[RelayTier] Relay returned ${data?.frames_b64.length} DigitalGPU frames (no video URL)`,
       );
       return {
         success: true,
         url: null,
-        frames_b64: data.frames_b64,
+        frames_b64: data?.frames_b64,
         source: "MaxCoreRelay_DigitalGPU_Frames",
         processing_time_ms: elapsedMs,
-        relay_trained: data.trained,
-        relay_style: data.style_used,
-        relay_scene: data.scene_name,
-        relay_gpu_applied: data.gpu_applied,
-        relay_frames: data.num_frames,
+        relay_trained: data?.trained,
+        relay_style: data?.style_used,
+        relay_scene: data?.scene_name,
+        relay_gpu_applied: data?.gpu_applied,
+        relay_frames: data?.num_frames,
         ...intelligence,
       } as Record<string, unknown>;
     }
 
-    logger.warn(
+    logger?.warn(
       "[RelayTier] Relay returned no video_url and no frames — falling back",
     );
     return null;
   } catch (err) {
-    if (err.name === "TimeoutError" || err.name === "AbortError") {
-      logger.warn(
+    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+      logger?.warn(
         `[RelayTier] Relay timed out after ${RELAY_TIMEOUT_MS / 1000}s — falling back to direct MaxCore`,
       );
     } else {
-      logger.debug(
-        `[RelayTier] Relay unavailable: ${err.message} — falling back to direct MaxCore`,
+      logger?.debug(
+        `[RelayTier] Relay unavailable: ${err?.message} — falling back to direct MaxCore`,
       );
     }
     return null;
@@ -567,38 +567,38 @@ async function renderVideoViaRelay(
 export async function renderVideo(
   opts: VideoGenOptions,
 ): Promise<VideoGenResult> {
-  const startMs = Date.now();
-  logger.info("[AdvancedVideoRenderer] Starting three-tier MaxCore pipeline");
+  const _startMs = Date?.now();
+  logger?.info("[AdvancedVideoRenderer] Starting three-tier MaxCore pipeline");
 
   // ── Step 1: generate content + sentiment intelligence (parallel) ──────────
-  const contentResult = await generateContent(opts);
+  const _contentResult = await generateContent(opts);
 
-  const hook = contentResult?.hook || opts.hook || "";
-  const body = contentResult?.body || opts.body || "";
-  const cta = contentResult?.cta || opts.cta || "";
-  const hashtags = contentResult?.hashtags || [];
-  const contentConfidence = contentResult?.confidence ?? null;
+  const _hook = contentResult?.hook || opts?.hook || "";
+  const _body = contentResult?.body || opts?.body || "";
+  const _cta = contentResult?.cta || opts?.cta || "";
+  const _hashtags = contentResult?.hashtags || [];
+  const _contentConfidence = contentResult?.confidence ?? null;
 
   if (contentResult) {
-    logger.info(
-      `[AdvancedVideoRenderer] Content generated — hook: "${hook.slice(0, 60)}..." ` +
-        `confidence: ${contentConfidence} hashtags: ${hashtags.length}`,
+    logger?.info(
+      `[AdvancedVideoRenderer] Content generated — hook: "${hook?.slice(0, 60)}..." ` +
+        `confidence: ${contentConfidence} hashtags: ${hashtags?.length}`,
     );
   } else {
-    logger.warn(
+    logger?.warn(
       "[AdvancedVideoRenderer] /api/generate/content returned null — using opts fallbacks",
     );
   }
 
-  const sentimentResult = hook ? await getSentiment(hook) : null;
+  const _sentimentResult = hook ? await getSentiment(hook) : null;
   if (sentimentResult) {
-    logger.info(
-      `[AdvancedVideoRenderer] Sentiment: ${sentimentResult.label} ` +
-        `(score=${sentimentResult.sentiment.toFixed(2)}, confidence=${sentimentResult.confidence.toFixed(2)})`,
+    logger?.info(
+      `[AdvancedVideoRenderer] Sentiment: ${sentimentResult?.label} ` +
+        `(score=${sentimentResult?.sentiment.toFixed(2)}, confidence=${sentimentResult?.confidence.toFixed(2)})`,
     );
   }
 
-  const intelligence = {
+  const _intelligence = {
     hashtags,
     content_confidence: contentConfidence,
     sentiment_score: sentimentResult?.sentiment ?? null,
@@ -609,44 +609,44 @@ export async function renderVideo(
   // ── Step 2: Try Tier-2 relay (MaxCore Rendering Engine, port 8008) ─────────
   // The relay adds DigitalGPU post-processing (bloom, chroma ab, vignette,
   // temporal smoothing) to every frame before delivering to Max Booster.
-  const relayResult = await renderVideoViaRelay(opts, {
+  const _relayResult = await renderVideoViaRelay(opts, {
     hook,
     body,
     cta,
     ...intelligence,
   });
   if (relayResult) {
-    logger.info(
-      `[AdvancedVideoRenderer] Relay tier succeeded in ${Date.now() - startMs}ms ` +
+    logger?.info(
+      `[AdvancedVideoRenderer] Relay tier succeeded in ${Date?.now() - startMs}ms ` +
         `(source=${(relayResult as Record<string, unknown>).source})`,
     );
     return {
       ...relayResult,
-      processing_time_ms: Date.now() - startMs,
+      processing_time_ms: Date?.now() - startMs,
     } as VideoGenResult;
   }
 
-  logger.info(
+  logger?.info(
     "[AdvancedVideoRenderer] Relay tier unavailable — falling back to direct MaxCore",
   );
 
   // ── Step 3: Direct MaxCore fallback ─────────────────────────────────────
-  const jobResp = await MaxCoreAIClient.infer<unknown>("/generate-video", {
+  const _jobResp = await MaxCoreAIClient?.infer<unknown>("/generate-video", {
     hook,
     body,
     cta,
-    topic: opts.topic || hook || body || "music video",
-    platform: opts.platform || "tiktok",
-    aspect_ratio: opts.aspect_ratio,
-    template: opts.template || "cinematic_promo",
-    duration: opts.duration || 10,
-    artist_name: opts.artist_name,
-    genre: opts.genre || undefined,
-    tone: opts.tone || "energetic",
-    goal: opts.goal || "growth",
-    quality: opts.quality || "cinematic",
-    user_audio_path: opts.user_audio_path || undefined,
-    voiceover: !!opts.voiceover,
+    topic: opts?.topic || hook || body || "music video",
+    platform: opts?.platform || "tiktok",
+    aspect_ratio: opts?.aspect_ratio,
+    template: opts?.template || "cinematic_promo",
+    duration: opts?.duration || 10,
+    artist_name: opts?.artist_name,
+    genre: opts?.genre || undefined,
+    tone: opts?.tone || "energetic",
+    goal: opts?.goal || "growth",
+    quality: opts?.quality || "cinematic",
+    user_audio_path: opts?.user_audio_path || undefined,
+    voiceover: !!opts?.voiceover,
   });
 
   if (!jobResp) {
@@ -654,57 +654,57 @@ export async function renderVideo(
       success: false,
       error: "MaxCore did not respond to the video job submission",
       source: "MaxCoreAI",
-      processing_time_ms: Date.now() - startMs,
+      processing_time_ms: Date?.now() - startMs,
     };
   }
 
   // Synchronous response — MaxCore rendered immediately
-  if (jobResp.url) {
-    const servedUrl = await cacheVideoLocally(jobResp.url);
-    logger.info(
-      `[AdvancedVideoRenderer] Synchronous render complete in ${Date.now() - startMs}ms`,
+  if (jobResp?.url) {
+    const _servedUrl = await cacheVideoLocally(jobResp?.url);
+    logger?.info(
+      `[AdvancedVideoRenderer] Synchronous render complete in ${Date?.now() - startMs}ms`,
     );
     return {
       success: true,
       url: servedUrl,
-      filename: jobResp.filename,
-      width: jobResp.width,
-      height: jobResp.height,
-      duration: jobResp.duration,
-      hook: jobResp.hook || hook,
-      body: jobResp.body || body,
-      cta: jobResp.cta || cta,
-      template: jobResp.template,
-      template_name: jobResp.template_name,
-      scenes_rendered: jobResp.scenes_rendered,
+      filename: jobResp?.filename,
+      width: jobResp?.width,
+      height: jobResp?.height,
+      duration: jobResp?.duration,
+      hook: jobResp?.hook || hook,
+      body: jobResp?.body || body,
+      cta: jobResp?.cta || cta,
+      template: jobResp?.template,
+      template_name: jobResp?.template_name,
+      scenes_rendered: jobResp?.scenes_rendered,
       source: "MaxCoreAI",
-      processing_time_ms: Date.now() - startMs,
+      processing_time_ms: Date?.now() - startMs,
       ...intelligence,
     } as Record<string, unknown>;
   }
 
   // Async response — poll for completion
-  if (jobResp.job_id) {
-    const result = await pollVideoJob(jobResp.job_id);
+  if (jobResp?.job_id) {
+    const _result = await pollVideoJob(jobResp?.job_id);
     if (result) {
       return {
         ...result,
-        hook: result.hook || hook,
-        body: result.body || body,
-        cta: result.cta || cta,
-        processing_time_ms: Date.now() - startMs,
+        hook: result?.hook || hook,
+        body: result?.body || body,
+        cta: result?.cta || cta,
+        processing_time_ms: Date?.now() - startMs,
         ...intelligence,
       } as Record<string, unknown>;
     }
     return {
       success: false,
-      error: `MaxCore job ${jobResp.job_id} did not complete within the polling window`,
+      error: `MaxCore job ${jobResp?.job_id} did not complete within the polling window`,
       source: "MaxCoreAI",
-      processing_time_ms: Date.now() - startMs,
+      processing_time_ms: Date?.now() - startMs,
     };
   }
 
-  logger.warn(
+  logger?.warn(
     "[AdvancedVideoRenderer] MaxCore response missing both url and job_id:",
     jobResp,
   );
@@ -712,6 +712,6 @@ export async function renderVideo(
     success: false,
     error: "MaxCore returned an unexpected response format",
     source: "MaxCoreAI",
-    processing_time_ms: Date.now() - startMs,
+    processing_time_ms: Date?.now() - startMs,
   };
 }

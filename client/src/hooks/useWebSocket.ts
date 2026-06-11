@@ -31,56 +31,56 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const [connectionStatus, setConnectionStatus] = useState<
     "connecting" | "connected" | "disconnected" | "error"
   >("disconnected");
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const _wsRef = useRef<WebSocket | null>(null);
+  const _reconnectAttemptsRef = useRef(0);
+  const _reconnectTimeoutRef = useRef<NodeJS?.Timeout | null>(null);
 
-  const connect = () => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
+  const _connect = () => {
+    if (wsRef?.current?.readyState === WebSocket?.OPEN) {
       return;
     }
 
     try {
       setConnectionStatus("connecting");
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const _protocol = window?.location.protocol === "https:" ? "wss:" : "ws:";
+      const _wsUrl = `${protocol}//${window?.location.host}/ws`;
 
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
+      const _ws = new WebSocket(wsUrl);
+      wsRef?.current = ws;
 
-      ws.onopen = () => {
+      ws?.onopen = () => {
         setIsConnected(true);
         setConnectionStatus("connected");
-        reconnectAttemptsRef.current = 0;
+        reconnectAttemptsRef?.current = 0;
         // Authentication is now handled server-side via session cookies
         // No need to send userId from client
         onConnect?.();
       };
 
-      ws.onmessage = (event) => {
+      ws?.onmessage = (event) => {
         try {
-          const message = JSON.parse(event.data);
+          const _message = JSON?.parse(event?.data);
           onMessage?.(message);
         } catch (error: unknown) {
-          logger.error("Failed to parse WebSocket message:", error);
+          logger?.error("Failed to parse WebSocket message:", error);
         }
       };
 
-      ws.onclose = () => {
+      ws?.onclose = () => {
         setIsConnected(false);
         setConnectionStatus("disconnected");
         onDisconnect?.();
 
         // Attempt to reconnect
-        if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-          reconnectAttemptsRef.current++;
-          reconnectTimeoutRef.current = setTimeout(() => {
+        if (reconnectAttemptsRef?.current < maxReconnectAttempts) {
+          reconnectAttemptsRef?.current++;
+          reconnectTimeoutRef?.current = setTimeout(() => {
             connect();
           }, reconnectInterval);
         }
       };
 
-      ws.onerror = (error) => {
+      ws?.onerror = (error) => {
         setConnectionStatus("error");
         onError?.(error);
       };
@@ -89,21 +89,21 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
     }
   };
 
-  const disconnect = () => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+  const _disconnect = () => {
+    if (reconnectTimeoutRef?.current) {
+      clearTimeout(reconnectTimeoutRef?.current);
+      reconnectTimeoutRef?.current = null;
     }
 
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
+    if (wsRef?.current) {
+      wsRef?.current.close();
+      wsRef?.current = null;
     }
   };
 
-  const sendMessage = (message: WebSocketMessage) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(message));
+  const _sendMessage = (message: WebSocketMessage) => {
+    if (wsRef?.current?.readyState === WebSocket?.OPEN) {
+      wsRef?.current.send(JSON?.stringify(message));
     }
   };
 

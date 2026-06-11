@@ -1,16 +1,16 @@
 import { Router } from "express";
-import { pool } from "../db.js";
+import { pool } from "../db?.js";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
-const router = Router();
+const _router = Router();
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || "max-booster.com";
-const DNS_SERVER_IP = process.env.DNS_SERVER_IP || "34.68.76.67";
-const NS1 = process.env.NS1 || `ns1.${BASE_DOMAIN}`;
-const NS2 = process.env.NS2 || `ns2.${BASE_DOMAIN}`;
+const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster?.com";
+const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34?.68.76?.67";
+const _NS1 = process?.env.NS1 || `ns1.${BASE_DOMAIN}`;
+const _NS2 = process?.env.NS2 || `ns2.${BASE_DOMAIN}`;
 
-const DOMAIN_LIMIT = 2;
+const _DOMAIN_LIMIT = 2;
 
 /**
  * Returns the total number of custom domains a user has across both paths:
@@ -21,43 +21,43 @@ async function getUserDomainUsage(
   userId: string,
 ): Promise<{ zones: number; claimed: number; total: number }> {
   // Count DISTINCT domain names across both sources so the same domain
-  // (e.g. max-booster.com appearing in both dns_zones and storefront_domains)
+  // (e?.g. max-booster?.com appearing in both dns_zones and storefront_domains)
   // is only counted once.
-  const uniqueResult = await pool.query(
+  const _uniqueResult = await pool?.query(
     `SELECT COUNT(DISTINCT domain)::int AS n FROM (
        SELECT domain FROM dns_zones WHERE user_id = $1
        UNION
-       SELECT sd.domain
+       SELECT sd?.domain
        FROM storefront_domains sd
-       JOIN storefronts s ON s.id = sd.storefront_id
-       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
+       JOIN storefronts s ON s?.id = sd?.storefront_id
+       WHERE s?.user_id = $1 AND sd?.type = 'platform_subdomain'
      ) combined`,
     [userId],
   );
-  const total = uniqueResult.rows[0]?.n ?? 0;
+  const _total = uniqueResult?.rows[0]?.n ?? 0;
   // zones/claimed kept for informational breakdown (not used for quota)
-  const [zonesResult] = await Promise.all([
-    pool.query("SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1", [
+  const [zonesResult] = await Promise?.all([
+    pool?.query("SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1", [
       userId,
     ]),
   ]);
-  const zones = zonesResult.rows[0]?.n ?? 0;
+  const _zones = zonesResult?.rows[0]?.n ?? 0;
   return { zones, claimed: 0, total };
 }
 
 /** Returns true if the user has an active subscription (or is an admin). */
 async function userHasActiveSubscription(userId: string): Promise<boolean> {
-  const result = await pool.query(
+  const _result = await pool?.query(
     `SELECT subscription_status, role FROM users WHERE id = $1 LIMIT 1`,
     [userId],
   );
-  const user = result.rows[0];
+  const _user = result?.rows[0];
   if (!user) return false;
-  if (user.role === "admin") return true;
-  return ["active", "trialing"].includes(user.subscription_status ?? "");
+  if (user?.role === "admin") return true;
+  return ["active", "trialing"].includes(user?.subscription_status ?? "");
 }
 
-const RECORD_TYPES = [
+const _RECORD_TYPES = [
   "A",
   "AAAA",
   "CNAME",
@@ -68,24 +68,24 @@ const RECORD_TYPES = [
   "CAA",
 ] as const;
 
-const recordSchema = z.object({
-  type: z.enum(RECORD_TYPES),
-  name: z.string().min(1).max(253),
-  value: z.string().min(1),
-  ttl: z.number().int().min(60).max(604800).default(3600),
-  priority: z.number().int().min(0).max(65535).optional(),
-  weight: z.number().int().min(0).max(65535).optional(),
-  port: z.number().int().min(0).max(65535).optional(),
-  tag: z.string().optional(),
+const _recordSchema = z?.object({
+  type: z?.enum(RECORD_TYPES),
+  name: z?.string().min(1).max(253),
+  value: z?.string().min(1),
+  ttl: z?.number().int().min(60).max(604800).default(3600),
+  priority: z?.number().int().min(0).max(65535).optional(),
+  weight: z?.number().int().min(0).max(65535).optional(),
+  port: z?.number().int().min(0).max(65535).optional(),
+  tag: z?.string().optional(),
 });
 
-function validateRecord(r: z.infer<typeof recordSchema>): string | null {
-  switch (r.type) {
+function validateRecord(r: z?.infer<typeof recordSchema>): string | null {
+  switch (r?.type) {
     case "A": {
-      const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
-      if (!ipv4.test(r.value)) return "A record must be a valid IPv4 address";
+      const _ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
+      if (!ipv4?.test(r?.value)) return "A record must be a valid IPv4 address";
       if (
-        r.value
+        r?.value
           .split(".")
           .map(Number)
           .some((p) => p > 255)
@@ -94,29 +94,29 @@ function validateRecord(r: z.infer<typeof recordSchema>): string | null {
       break;
     }
     case "AAAA": {
-      const ipv6 = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$|^::$/;
-      if (!ipv6.test(r.value))
+      const _ipv6 = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$|^::$/;
+      if (!ipv6?.test(r?.value))
         return "AAAA record must be a valid IPv6 address";
       break;
     }
     case "CNAME": {
-      const hostname = /^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.?$/;
-      if (!hostname.test(r.value)) return "CNAME must be a valid hostname";
+      const _hostname = /^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.?$/;
+      if (!hostname?.test(r?.value)) return "CNAME must be a valid hostname";
       break;
     }
     case "MX":
-      if (r.priority === undefined) return "MX records require a priority";
+      if (r?.priority === undefined) return "MX records require a priority";
       break;
     case "TXT":
-      if (r.value.length > 4096) return "TXT record too long (max 4096 chars)";
+      if (r?.value.length > 4096) return "TXT record too long (max 4096 chars)";
       break;
     case "SRV":
-      if (r.priority === undefined) return "SRV records require priority";
-      if (r.weight === undefined) return "SRV records require weight";
-      if (r.port === undefined) return "SRV records require port";
+      if (r?.priority === undefined) return "SRV records require priority";
+      if (r?.weight === undefined) return "SRV records require weight";
+      if (r?.port === undefined) return "SRV records require port";
       break;
     case "CAA":
-      if (!r.tag)
+      if (!r?.tag)
         return "CAA records require a tag (issue, issuewild, or iodef)";
       break;
   }
@@ -134,36 +134,36 @@ function normalizeDomain(d: string): string {
 
 function mapZone(row: Record<string, unknown>) {
   return {
-    id: row.id,
-    userId: row.user_id,
-    domain: row.domain,
-    status: row.status,
-    isVerified: row.is_verified,
-    verificationToken: row.verification_token,
-    nameserver1: row.nameserver1,
-    nameserver2: row.nameserver2,
-    notes: row.notes,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row?.id,
+    userId: row?.user_id,
+    domain: row?.domain,
+    status: row?.status,
+    isVerified: row?.is_verified,
+    verificationToken: row?.verification_token,
+    nameserver1: row?.nameserver1,
+    nameserver2: row?.nameserver2,
+    notes: row?.notes,
+    createdAt: row?.created_at,
+    updatedAt: row?.updated_at,
   };
 }
 
 function mapRecord(row: Record<string, unknown>) {
   return {
-    id: row.id,
-    zoneId: row.zone_id,
-    userId: row.user_id,
-    domain: row.domain,
-    type: row.type,
-    name: row.name,
-    value: row.value,
-    ttl: row.ttl,
-    priority: row.priority,
-    weight: row.weight,
-    port: row.port,
-    tag: row.tag,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row?.id,
+    zoneId: row?.zone_id,
+    userId: row?.user_id,
+    domain: row?.domain,
+    type: row?.type,
+    name: row?.name,
+    value: row?.value,
+    ttl: row?.ttl,
+    priority: row?.priority,
+    weight: row?.weight,
+    port: row?.port,
+    tag: row?.tag,
+    createdAt: row?.created_at,
+    updatedAt: row?.updated_at,
   };
 }
 
@@ -171,31 +171,31 @@ function mapRecord(row: Record<string, unknown>) {
  * GET /api/dns-manager/usage
  * Returns domain usage and limit for the logged-in user.
  */
-router.get("/usage", async (req, res) => {
+router?.get("/usage", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = (req.user as Record<string, unknown>).id;
-    const [usage, hasSubscription] = await Promise.all([
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = (req?.user as Record<string, unknown>).id;
+    const [usage, hasSubscription] = await Promise?.all([
       getUserDomainUsage(userId),
       userHasActiveSubscription(userId),
     ]);
-    res.json({
+    res?.json({
       limit: DOMAIN_LIMIT,
-      used: usage.total,
-      zones: usage.zones,
-      claimed: usage.claimed,
-      remaining: Math.max(0, DOMAIN_LIMIT - usage.total),
+      used: usage?.total,
+      zones: usage?.zones,
+      claimed: usage?.claimed,
+      remaining: Math?.max(0, DOMAIN_LIMIT - usage?.total),
       hasSubscription,
     });
   } catch (err) {
-    logger.warn("[DNS Manager] Usage error: " + (err?.message ?? String(err)));
-    res.status(500).json({ error: "Failed to fetch usage" });
+    logger?.warn("[DNS Manager] Usage error: " + (err?.message ?? String(err)));
+    res?.status(500).json({ error: "Failed to fetch usage" });
   }
 });
 
-router.get("/info", (_req, res) => {
-  res.json({
+router?.get("/info", (_req, res) => {
+  res?.json({
     nameservers: [NS1, NS2],
     serverIp: DNS_SERVER_IP,
     baseDomain: BASE_DOMAIN,
@@ -212,48 +212,48 @@ router.get("/info", (_req, res) => {
   });
 });
 
-router.get("/zones", async (req, res) => {
+router?.get("/zones", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const result = await pool.query(
+    const _result = await pool?.query(
       "SELECT * FROM dns_zones WHERE user_id = $1 ORDER BY created_at DESC",
       [userId],
     );
 
-    res.json({ zones: result.rows.map(mapZone) });
+    res?.json({ zones: result?.rows.map(mapZone) });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error listing zones: " + (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to list zones" });
+    res?.status(500).json({ error: "Failed to list zones" });
   }
 });
 
-router.post("/zones", async (req, res) => {
+router?.post("/zones", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = (req.user as Record<string, unknown>).id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = (req?.user as Record<string, unknown>).id;
 
-    const schema = z.object({
-      domain: z.string().min(3),
-      notes: z.string().optional(),
+    const _schema = z?.object({
+      domain: z?.string().min(3),
+      notes: z?.string().optional(),
     });
-    const parsed = schema.safeParse(req.body);
-    if (!parsed.success)
+    const _parsed = schema?.safeParse(req?.body);
+    if (!parsed?.success)
       return res
         .status(400)
-        .json({ error: "Invalid input", details: parsed.error.issues });
+        .json({ error: "Invalid input", details: parsed?.error.issues });
 
-    const domain = normalizeDomain(parsed.data.domain);
+    const _domain = normalizeDomain(parsed?.data.domain);
 
     // Subscription required
-    const hasSubscription = await userHasActiveSubscription(userId);
+    const _hasSubscription = await userHasActiveSubscription(userId);
     if (!hasSubscription) {
-      return res.status(403).json({
+      return res?.status(403).json({
         error:
           "An active Max Booster subscription is required to add custom domains.",
         code: "SUBSCRIPTION_REQUIRED",
@@ -261,39 +261,39 @@ router.post("/zones", async (req, res) => {
     }
 
     // Enforce 2-domain limit (across DNS zones + platform domain claims)
-    const usage = await getUserDomainUsage(userId);
-    if (usage.total >= DOMAIN_LIMIT) {
-      return res.status(403).json({
+    const _usage = await getUserDomainUsage(userId);
+    if (usage?.total >= DOMAIN_LIMIT) {
+      return res?.status(403).json({
         error: `Domain limit reached. Your subscription includes up to ${DOMAIN_LIMIT} custom domains. Remove an existing domain to add a new one.`,
         code: "DOMAIN_LIMIT_REACHED",
         limit: DOMAIN_LIMIT,
-        used: usage.total,
+        used: usage?.total,
       });
     }
 
-    const existing = await pool.query(
+    const _existing = await pool?.query(
       "SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1",
       [domain],
     );
-    if (existing.rows.length > 0)
+    if (existing?.rows.length > 0)
       return res
         .status(409)
         .json({ error: "Domain already registered in the system" });
 
-    const insertZone = await pool.query(
+    const _insertZone = await pool?.query(
       `INSERT INTO dns_zones (user_id, domain, status, notes)
        VALUES ($1, $2, 'pending', $3)
        RETURNING *`,
-      [userId, domain, parsed.data.notes ?? null],
+      [userId, domain, parsed?.data.notes ?? null],
     );
-    const zone = mapZone(insertZone.rows[0]);
+    const _zone = mapZone(insertZone?.rows[0]);
 
-    await pool.query(
+    await pool?.query(
       `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl) VALUES
        ($1, $2, $3, 'NS',  '@', $4, 3600),
        ($1, $2, $3, 'SOA', '@', $5, 3600)`,
       [
-        zone.id,
+        zone?.id,
         userId,
         domain,
         NS1,
@@ -301,41 +301,41 @@ router.post("/zones", async (req, res) => {
       ],
     );
 
-    res.json({ success: true, zone });
+    res?.json({ success: true, zone });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error creating zone: " + (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to create zone" });
+    res?.status(500).json({ error: "Failed to create zone" });
   }
 });
 
-router.post("/zones/:zoneId/verify", async (req, res) => {
+router?.post("/zones/:zoneId/verify", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = mapZone(zoneResult.rows[0]);
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = mapZone(zoneResult?.rows[0]);
 
     // Max Booster-registered domains are pre-verified — subscription payment is the
     // authorization. No TXT record or NS delegation check required.
-    const maxBoosterOwned = await pool.query(
+    const _maxBoosterOwned = await pool?.query(
       `SELECT id FROM claimed_domains WHERE domain = $1 AND registrar_name = 'maxbooster' LIMIT 1`,
-      [zone.domain],
+      [zone?.domain],
     );
-    if (maxBoosterOwned.rows.length > 0) {
-      await pool.query(
+    if (maxBoosterOwned?.rows.length > 0) {
+      await pool?.query(
         "UPDATE dns_zones SET is_verified = true, status = $1, updated_at = NOW() WHERE id = $2",
-        ["active", zone.id],
+        ["active", zone?.id],
       );
-      return res.json({
+      return res?.json({
         verified: true,
         status: "active",
         method: "maxbooster_registered",
@@ -346,34 +346,34 @@ router.post("/zones/:zoneId/verify", async (req, res) => {
     let nsResolved = false;
     let txtResolved = false;
 
-    const DOH_ENDPOINTS = [
-      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(zone.domain)}&type=NS`,
-      `https://dns.google/resolve?name=${encodeURIComponent(zone.domain)}&type=NS`,
+    const _DOH_ENDPOINTS = [
+      `https://cloudflare-dns?.com/dns-query?name=${encodeURIComponent(zone?.domain)}&type=NS`,
+      `https://dns?.google/resolve?name=${encodeURIComponent(zone?.domain)}&type=NS`,
     ];
-    const TXT_ENDPOINTS = [
-      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(zone.domain)}&type=TXT`,
-      `https://dns.google/resolve?name=${encodeURIComponent(zone.domain)}&type=TXT`,
+    const _TXT_ENDPOINTS = [
+      `https://cloudflare-dns?.com/dns-query?name=${encodeURIComponent(zone?.domain)}&type=TXT`,
+      `https://dns?.google/resolve?name=${encodeURIComponent(zone?.domain)}&type=TXT`,
     ];
 
-    const token = zone.verificationToken ?? "";
+    const _token = zone?.verificationToken ?? "";
 
     // Check NS delegation
     for (const url of DOH_ENDPOINTS) {
       try {
-        const r = await fetch(url, {
+        const _r = await fetch(url, {
           headers: { Accept: "application/dns-json" },
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal?.timeout(5000),
         });
-        const d: Record<string, unknown> = (await r.json()) as Record<
+        const d: Record<string, unknown> = (await r?.json()) as Record<
           string,
           unknown
         >;
-        const answers: unknown[] = d.Answer ?? [];
+        const answers: unknown[] = d?.Answer ?? [];
         if (
-          answers.some(
+          answers?.some(
             (a: Record<string, unknown>) =>
-              typeof a.data === "string" &&
-              (a.data.includes(NS1) || a.data.includes(BASE_DOMAIN)),
+              typeof a?.data === "string" &&
+              (a?.data.includes(NS1) || a?.data.includes(BASE_DOMAIN)),
           )
         ) {
           nsResolved = true;
@@ -388,19 +388,19 @@ router.post("/zones/:zoneId/verify", async (req, res) => {
     if (!nsResolved && token) {
       for (const url of TXT_ENDPOINTS) {
         try {
-          const r = await fetch(url, {
+          const _r = await fetch(url, {
             headers: { Accept: "application/dns-json" },
-            signal: AbortSignal.timeout(5000),
+            signal: AbortSignal?.timeout(5000),
           });
-          const d: Record<string, unknown> = (await r.json()) as Record<
+          const d: Record<string, unknown> = (await r?.json()) as Record<
             string,
             unknown
           >;
-          const answers: unknown[] = d.Answer ?? [];
+          const answers: unknown[] = d?.Answer ?? [];
           if (
-            answers.some(
+            answers?.some(
               (a: Record<string, unknown>) =>
-                typeof a.data === "string" && a.data.includes(token),
+                typeof a?.data === "string" && a?.data.includes(token),
             )
           ) {
             txtResolved = true;
@@ -412,275 +412,275 @@ router.post("/zones/:zoneId/verify", async (req, res) => {
       }
     }
 
-    const resolved = nsResolved || txtResolved;
-    const method = nsResolved ? "ns" : txtResolved ? "txt" : null;
+    const _resolved = nsResolved || txtResolved;
+    const _method = nsResolved ? "ns" : txtResolved ? "txt" : null;
 
     if (resolved) {
-      await pool.query(
+      await pool?.query(
         "UPDATE dns_zones SET is_verified = true, status = $1, updated_at = NOW() WHERE id = $2",
-        ["active", zone.id],
+        ["active", zone?.id],
       );
-      return res.json({ verified: true, status: "active", method });
+      return res?.json({ verified: true, status: "active", method });
     }
 
-    res.json({
+    res?.json({
       verified: false,
       message: `NS delegation not detected. Make sure your registrar's nameserver is set to ${NS1}, or add TXT record: maxbooster-verify=${token}`,
     });
   } catch (err) {
-    logger.warn("[DNS Manager] Verify error: " + (err?.message ?? String(err)));
-    res.status(500).json({ error: "Verification check failed" });
+    logger?.warn("[DNS Manager] Verify error: " + (err?.message ?? String(err)));
+    res?.status(500).json({ error: "Verification check failed" });
   }
 });
 
-router.delete("/zones/:zoneId", async (req, res) => {
+router?.delete("/zones/:zoneId", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT id FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zoneId = zoneResult.rows[0].id;
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zoneId = zoneResult?.rows[0].id;
 
-    await pool.query("DELETE FROM dns_zone_records WHERE zone_id = $1", [
+    await pool?.query("DELETE FROM dns_zone_records WHERE zone_id = $1", [
       zoneId,
     ]);
-    await pool.query("DELETE FROM dns_zones WHERE id = $1", [zoneId]);
+    await pool?.query("DELETE FROM dns_zones WHERE id = $1", [zoneId]);
 
-    res.json({ success: true });
+    res?.json({ success: true });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error deleting zone: " + (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to delete zone" });
+    res?.status(500).json({ error: "Failed to delete zone" });
   }
 });
 
-router.get("/zones/:zoneId/records", async (req, res) => {
+router?.get("/zones/:zoneId/records", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = mapZone(zoneResult.rows[0]);
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = mapZone(zoneResult?.rows[0]);
 
-    const records = await pool.query(
+    const _records = await pool?.query(
       "SELECT * FROM dns_zone_records WHERE zone_id = $1 ORDER BY type, name LIMIT 500",
-      [zone.id],
+      [zone?.id],
     );
 
-    res.json({ records: records.rows.map(mapRecord), zone });
+    res?.json({ records: records?.rows.map(mapRecord), zone });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error fetching records: " + (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to fetch records" });
+    res?.status(500).json({ error: "Failed to fetch records" });
   }
 });
 
-router.post("/zones/:zoneId/records", async (req, res) => {
+router?.post("/zones/:zoneId/records", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = mapZone(zoneResult.rows[0]);
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = mapZone(zoneResult?.rows[0]);
 
-    const parsed = recordSchema.safeParse(req.body);
-    if (!parsed.success)
+    const _parsed = recordSchema?.safeParse(req?.body);
+    if (!parsed?.success)
       return res
         .status(400)
-        .json({ error: "Invalid record", details: parsed.error.issues });
+        .json({ error: "Invalid record", details: parsed?.error.issues });
 
-    const validErr = validateRecord(parsed.data);
-    if (validErr) return res.status(400).json({ error: validErr });
+    const _validErr = validateRecord(parsed?.data);
+    if (validErr) return res?.status(400).json({ error: validErr });
 
-    const result = await pool.query(
+    const _result = await pool?.query(
       `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl, priority, weight, port, tag)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
       [
-        zone.id,
+        zone?.id,
         userId,
-        zone.domain,
-        parsed.data.type,
-        parsed.data.name,
-        parsed.data.value,
-        parsed.data.ttl,
-        parsed.data.priority ?? null,
-        parsed.data.weight ?? null,
-        parsed.data.port ?? null,
-        parsed.data.tag ?? null,
+        zone?.domain,
+        parsed?.data.type,
+        parsed?.data.name,
+        parsed?.data.value,
+        parsed?.data.ttl,
+        parsed?.data.priority ?? null,
+        parsed?.data.weight ?? null,
+        parsed?.data.port ?? null,
+        parsed?.data.tag ?? null,
       ],
     );
 
-    res.json({ success: true, record: mapRecord(result.rows[0]) });
+    res?.json({ success: true, record: mapRecord(result?.rows[0]) });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error adding record: " + (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to add record" });
+    res?.status(500).json({ error: "Failed to add record" });
   }
 });
 
-router.put("/zones/:zoneId/records/:recordId", async (req, res) => {
+router?.put("/zones/:zoneId/records/:recordId", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
 
-    const parsed = recordSchema.safeParse(req.body);
-    if (!parsed.success)
+    const _parsed = recordSchema?.safeParse(req?.body);
+    if (!parsed?.success)
       return res
         .status(400)
-        .json({ error: "Invalid record", details: parsed.error.issues });
+        .json({ error: "Invalid record", details: parsed?.error.issues });
 
-    const validErr = validateRecord(parsed.data);
-    if (validErr) return res.status(400).json({ error: validErr });
+    const _validErr = validateRecord(parsed?.data);
+    if (validErr) return res?.status(400).json({ error: validErr });
 
-    const result = await pool.query(
+    const _result = await pool?.query(
       `UPDATE dns_zone_records
        SET type=$1, name=$2, value=$3, ttl=$4, priority=$5, weight=$6, port=$7, tag=$8, updated_at=NOW()
        WHERE id=$9 AND user_id=$10
        RETURNING *`,
       [
-        parsed.data.type,
-        parsed.data.name,
-        parsed.data.value,
-        parsed.data.ttl,
-        parsed.data.priority ?? null,
-        parsed.data.weight ?? null,
-        parsed.data.port ?? null,
-        parsed.data.tag ?? null,
-        req.params.recordId,
+        parsed?.data.type,
+        parsed?.data.name,
+        parsed?.data.value,
+        parsed?.data.ttl,
+        parsed?.data.priority ?? null,
+        parsed?.data.weight ?? null,
+        parsed?.data.port ?? null,
+        parsed?.data.tag ?? null,
+        req?.params.recordId,
         userId,
       ],
     );
 
-    if (result.rows.length === 0)
-      return res.status(404).json({ error: "Record not found" });
-    res.json({ success: true, record: mapRecord(result.rows[0]) });
+    if (result?.rows.length === 0)
+      return res?.status(404).json({ error: "Record not found" });
+    res?.json({ success: true, record: mapRecord(result?.rows[0]) });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error updating record: " + (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to update record" });
+    res?.status(500).json({ error: "Failed to update record" });
   }
 });
 
-router.delete("/zones/:zoneId/records/:recordId", async (req, res) => {
+router?.delete("/zones/:zoneId/records/:recordId", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT id FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
 
-    await pool.query(
+    await pool?.query(
       "DELETE FROM dns_zone_records WHERE id = $1 AND user_id = $2",
-      [req.params.recordId, userId],
+      [req?.params.recordId, userId],
     );
 
-    res.json({ success: true });
+    res?.json({ success: true });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error deleting record: " + (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to delete record" });
+    res?.status(500).json({ error: "Failed to delete record" });
   }
 });
 
-router.post("/zones/:zoneId/records/batch", async (req, res) => {
+router?.post("/zones/:zoneId/records/batch", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = mapZone(zoneResult.rows[0]);
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = mapZone(zoneResult?.rows[0]);
 
-    const { records } = req.body;
-    if (!Array.isArray(records) || records.length === 0)
-      return res.status(400).json({ error: "Records array required" });
-    if (records.length > 100)
-      return res.status(400).json({ error: "Max 100 records per batch" });
+    const { records } = req?.body;
+    if (!Array?.isArray(records) || records?.length === 0)
+      return res?.status(400).json({ error: "Records array required" });
+    if (records?.length > 100)
+      return res?.status(400).json({ error: "Max 100 records per batch" });
 
-    const validated: z.infer<typeof recordSchema>[] = [];
+    const validated: z?.infer<typeof recordSchema>[] = [];
     for (const r of records) {
-      const parsed = recordSchema.safeParse(r);
-      if (!parsed.success)
+      const _parsed = recordSchema?.safeParse(r);
+      if (!parsed?.success)
         return res
           .status(400)
           .json({
             error: "Invalid record in batch",
-            details: parsed.error.issues,
+            details: parsed?.error.issues,
           });
-      const validErr = validateRecord(parsed.data);
-      if (validErr) return res.status(400).json({ error: validErr });
-      validated.push(parsed.data);
+      const _validErr = validateRecord(parsed?.data);
+      if (validErr) return res?.status(400).json({ error: validErr });
+      validated?.push(parsed?.data);
     }
 
     for (const r of validated) {
-      await pool.query(
+      await pool?.query(
         `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl, priority, weight, port, tag)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
-          zone.id,
+          zone?.id,
           userId,
-          zone.domain,
-          r.type,
-          r.name,
-          r.value,
-          r.ttl,
-          r.priority ?? null,
-          r.weight ?? null,
-          r.port ?? null,
-          r.tag ?? null,
+          zone?.domain,
+          r?.type,
+          r?.name,
+          r?.value,
+          r?.ttl,
+          r?.priority ?? null,
+          r?.weight ?? null,
+          r?.port ?? null,
+          r?.tag ?? null,
         ],
       );
     }
 
-    res.json({ success: true, count: validated.length });
+    res?.json({ success: true, count: validated?.length });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[DNS Manager] Error batch adding records: " +
         (err?.message ?? String(err)),
     );
-    res.status(500).json({ error: "Failed to batch add records" });
+    res?.status(500).json({ error: "Failed to batch add records" });
   }
 });
 
@@ -690,49 +690,49 @@ router.post("/zones/:zoneId/records/batch", async (req, res) => {
  * GET /api/dns-manager/zones/:zoneId/storefront-link
  * Return the storefront currently linked to this zone as its custom URL.
  */
-router.get("/zones/:zoneId/storefront-link", async (req, res) => {
+router?.get("/zones/:zoneId/storefront-link", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT id, domain, is_verified, status FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = zoneResult.rows[0];
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = zoneResult?.rows[0];
 
-    const linkResult = await pool.query(
-      `SELECT sd.storefront_id, sd.status, s.name, s.slug
+    const _linkResult = await pool?.query(
+      `SELECT sd?.storefront_id, sd?.status, s?.name, s?.slug
        FROM storefront_domains sd
-       JOIN storefronts s ON s.id = sd.storefront_id
-       WHERE sd.domain = $1 AND sd.type = 'custom_domain' AND s.user_id = $2
+       JOIN storefronts s ON s?.id = sd?.storefront_id
+       WHERE sd?.domain = $1 AND sd?.type = 'custom_domain' AND s?.user_id = $2
        LIMIT 1`,
-      [zone.domain, userId],
+      [zone?.domain, userId],
     );
 
-    const link = linkResult.rows[0] ?? null;
-    return res.json({
+    const _link = linkResult?.rows[0] ?? null;
+    return res?.json({
       zone: {
-        id: zone.id,
-        domain: zone.domain,
-        isVerified: zone.is_verified,
-        status: zone.status,
+        id: zone?.id,
+        domain: zone?.domain,
+        isVerified: zone?.is_verified,
+        status: zone?.status,
       },
       linked: link
         ? {
-            storefrontId: link.storefront_id,
-            storefrontName: link.name,
-            storefrontSlug: link.slug,
-            status: link.status,
+            storefrontId: link?.storefront_id,
+            storefrontName: link?.name,
+            storefrontSlug: link?.slug,
+            status: link?.status,
           }
         : null,
     });
   } catch (err) {
-    logger.warn({ err }, "[DNS Manager] storefront-link GET error");
-    return res.status(500).json({ error: "Failed to fetch storefront link" });
+    logger?.warn({ err }, "[DNS Manager] storefront-link GET error");
+    return res?.status(500).json({ error: "Failed to fetch storefront link" });
   }
 });
 
@@ -743,28 +743,28 @@ router.get("/zones/:zoneId/storefront-link", async (req, res) => {
  * Sets the zone's domain as the custom URL for the given storefront.
  * Requires the zone to be verified (is_verified = true).
  */
-router.post("/zones/:zoneId/use-as-storefront", async (req, res) => {
+router?.post("/zones/:zoneId/use-as-storefront", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const { storefrontId } = req.body;
+    const { storefrontId } = req?.body;
     if (!storefrontId || typeof storefrontId !== "string") {
-      return res.status(400).json({ error: "storefrontId is required" });
+      return res?.status(400).json({ error: "storefrontId is required" });
     }
 
     // Verify zone belongs to user
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT id, domain, is_verified, status FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = zoneResult.rows[0];
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = zoneResult?.rows[0];
 
-    if (!zone.is_verified) {
-      return res.status(422).json({
+    if (!zone?.is_verified) {
+      return res?.status(422).json({
         error:
           "Ownership of this transferred domain must be verified first. Go to the Setup Guide tab, add the TXT verification record at your current registrar, then click Check Verification.",
         code: "TRANSFER_VERIFICATION_REQUIRED",
@@ -772,71 +772,71 @@ router.post("/zones/:zoneId/use-as-storefront", async (req, res) => {
     }
 
     // Verify storefront belongs to user
-    const sfResult = await pool.query(
+    const _sfResult = await pool?.query(
       "SELECT id, name, slug FROM storefronts WHERE id = $1 AND user_id = $2 LIMIT 1",
       [storefrontId, userId],
     );
-    if (sfResult.rows.length === 0)
-      return res.status(404).json({ error: "Storefront not found" });
-    const sf = sfResult.rows[0];
+    if (sfResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Storefront not found" });
+    const _sf = sfResult?.rows[0];
 
     // Clear any existing custom_domain links for this storefront (one at a time)
-    await pool.query(
+    await pool?.query(
       `DELETE FROM storefront_domains WHERE storefront_id = $1 AND type = 'custom_domain'`,
       [storefrontId],
     );
 
     // Clear any existing link for this domain (in case it was linked to a different storefront)
-    await pool.query(`DELETE FROM storefront_domains WHERE domain = $1`, [
-      zone.domain,
+    await pool?.query(`DELETE FROM storefront_domains WHERE domain = $1`, [
+      zone?.domain,
     ]);
 
     // Insert new link
-    await pool.query(
+    await pool?.query(
       `INSERT INTO storefront_domains (storefront_id, domain, type, status, is_primary, dns_zone_id)
        VALUES ($1, $2, 'custom_domain', 'active', true, $3)`,
-      [storefrontId, zone.domain, zone.id],
+      [storefrontId, zone?.domain, zone?.id],
     );
 
     // Upsert storefront_hosts so the edge router picks it up (root domain)
-    await pool.query(
+    await pool?.query(
       `INSERT INTO storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
        VALUES ($1, $2, 'pending', NOW(), NOW())
-       ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED.storefront_id, updated_at = NOW()`,
-      [zone.domain, storefrontId],
+       ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED?.storefront_id, updated_at = NOW()`,
+      [zone?.domain, storefrontId],
     );
 
     // Also add www. variant for root domains (no subdomain prefix)
-    const isRootDomain =
-      !zone.domain.startsWith("www.") && zone.domain.split(".").length === 2;
+    const _isRootDomain =
+      !zone?.domain.startsWith("www.") && zone?.domain.split(".").length === 2;
     if (isRootDomain) {
-      await pool.query(
+      await pool?.query(
         `INSERT INTO storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
          VALUES ($1, $2, 'pending', NOW(), NOW())
-         ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED.storefront_id, updated_at = NOW()`,
-        [`www.${zone.domain}`, storefrontId],
+         ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED?.storefront_id, updated_at = NOW()`,
+        [`www.${zone?.domain}`, storefrontId],
       );
     }
 
     // Update the storefront's customDomain field
-    await pool.query(
+    await pool?.query(
       `UPDATE storefronts SET custom_domain = $1, is_custom_domain_active = true, updated_at = NOW() WHERE id = $2`,
-      [zone.domain, storefrontId],
+      [zone?.domain, storefrontId],
     );
 
-    logger.info(
-      `[DNS Manager] Zone ${zone.domain} linked as storefront URL for ${storefrontId}`,
+    logger?.info(
+      `[DNS Manager] Zone ${zone?.domain} linked as storefront URL for ${storefrontId}`,
     );
-    return res.json({
+    return res?.json({
       success: true,
-      domain: zone.domain,
-      url: `https://${zone.domain}`,
+      domain: zone?.domain,
+      url: `https://${zone?.domain}`,
       storefrontId,
-      storefrontName: sf.name,
-      storefrontSlug: sf.slug,
+      storefrontName: sf?.name,
+      storefrontSlug: sf?.slug,
     });
   } catch (err) {
-    logger.warn({ err }, "[DNS Manager] use-as-storefront POST error");
+    logger?.warn({ err }, "[DNS Manager] use-as-storefront POST error");
     return res
       .status(500)
       .json({ error: "Failed to link domain as storefront URL" });
@@ -848,50 +848,50 @@ router.post("/zones/:zoneId/use-as-storefront", async (req, res) => {
  * Export all DNS records for this zone as a BIND-format zone file.
  * Returns { zoneText, filename } so the client can trigger a download.
  */
-router.get("/zones/:zoneId/export", async (req, res) => {
+router?.get("/zones/:zoneId/export", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = mapZone(zoneResult.rows[0]);
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = mapZone(zoneResult?.rows[0]);
 
-    const recordsResult = await pool.query(
+    const _recordsResult = await pool?.query(
       "SELECT * FROM dns_zone_records WHERE zone_id = $1 ORDER BY type, name",
-      [zone.id],
+      [zone?.id],
     );
     const records: ReturnType<typeof mapRecord>[] =
-      recordsResult.rows.map(mapRecord);
+      recordsResult?.rows.map(mapRecord);
 
-    const now = new Date();
-    const serial = now.toISOString().slice(0, 10).replace(/-/g, "") + "01";
-    const origin = zone.domain.endsWith(".") ? zone.domain : `${zone.domain}.`;
+    const _now = new Date();
+    const _serial = now?.toISOString().slice(0, 10).replace(/-/g, "") + "01";
+    const _origin = zone?.domain.endsWith(".") ? zone?.domain : `${zone?.domain}.`;
 
     function fqdn(name: string): string {
       if (name === "@" || name === "") return "@";
-      if (name.endsWith(".")) return name;
-      return name.includes(".") && !name.endsWith(zone.domain)
+      if (name?.endsWith(".")) return name;
+      return name?.includes(".") && !name?.endsWith(zone?.domain)
         ? `${name}.`
         : name;
     }
 
     function fqdnVal(val: string, type: string): string {
       if (["NS", "CNAME", "MX", "SRV"].includes(type)) {
-        return val.endsWith(".") ? val : `${val}.`;
+        return val?.endsWith(".") ? val : `${val}.`;
       }
-      if (type === "TXT") return `"${val.replace(/"/g, '\\"')}"`;
+      if (type === "TXT") return `"${val?.replace(/"/g, '\\"')}"`;
       return val;
     }
 
     const lines: string[] = [
-      `; Zone file for ${zone.domain}`,
-      `; Exported from Max Booster on ${now.toUTCString()}`,
+      `; Zone file for ${zone?.domain}`,
+      `; Exported from Max Booster on ${now?.toUTCString()}`,
       `; `,
       `; Import this at Cloudflare, Route 53, Namecheap, or any BIND-compatible provider.`,
       `; Replace or remove the NS records below with your new provider's nameservers.`,
@@ -913,36 +913,36 @@ router.get("/zones/:zoneId/export", async (req, res) => {
       `; ── Your DNS records ─────────────────────────────────────────────────────`,
     ];
 
-    const userRecords = records.filter((r) => !["SOA", "NS"].includes(r.type));
+    const _userRecords = records?.filter((r) => !["SOA", "NS"].includes(r?.type));
     for (const r of userRecords) {
-      const name = fqdn(r.name).padEnd(24);
-      const ttlStr = String(r.ttl ?? 3600).padEnd(8);
-      const typeStr = r.type.padEnd(6);
-      let valueStr = fqdnVal(r.value, r.type);
+      const _name = fqdn(r?.name).padEnd(24);
+      const _ttlStr = String(r?.ttl ?? 3600).padEnd(8);
+      const _typeStr = r?.type.padEnd(6);
+      let valueStr = fqdnVal(r?.value, r?.type);
 
-      if (r.type === "MX" && r.priority !== undefined) {
-        valueStr = `${r.priority} ${valueStr}`;
-      } else if (r.type === "SRV" && r.priority !== undefined) {
-        valueStr = `${r.priority} ${r.weight ?? 0} ${r.port ?? 0} ${valueStr}`;
-      } else if (r.type === "CAA" && r.tag) {
-        valueStr = `0 ${r.tag} "${r.value}"`;
+      if (r?.type === "MX" && r?.priority !== undefined) {
+        valueStr = `${r?.priority} ${valueStr}`;
+      } else if (r?.type === "SRV" && r?.priority !== undefined) {
+        valueStr = `${r?.priority} ${r?.weight ?? 0} ${r?.port ?? 0} ${valueStr}`;
+      } else if (r?.type === "CAA" && r?.tag) {
+        valueStr = `0 ${r?.tag} "${r?.value}"`;
       }
 
-      lines.push(`${name} ${ttlStr} IN  ${typeStr} ${valueStr}`);
+      lines?.push(`${name} ${ttlStr} IN  ${typeStr} ${valueStr}`);
     }
 
-    const zoneText = lines.join("\n") + "\n";
-    const filename = `${zone.domain.replace(/\./g, "_")}_zone.txt`;
+    const _zoneText = lines?.join("\n") + "\n";
+    const _filename = `${zone?.domain.replace(/\./g, "_")}_zone?.txt`;
 
-    res.json({
+    res?.json({
       zoneText,
       filename,
-      domain: zone.domain,
-      recordCount: userRecords.length,
+      domain: zone?.domain,
+      recordCount: userRecords?.length,
     });
   } catch (err) {
-    logger.warn({ err }, "[DNS Manager] export error");
-    res.status(500).json({ error: "Failed to export zone" });
+    logger?.warn({ err }, "[DNS Manager] export error");
+    res?.status(500).json({ error: "Failed to export zone" });
   }
 });
 
@@ -952,57 +952,57 @@ router.get("/zones/:zoneId/export", async (req, res) => {
  * Cleans up all records and storefront links.
  * Returns the zone file export before deletion so the client has a final copy.
  */
-router.post("/zones/:zoneId/transfer-out", async (req, res) => {
+router?.post("/zones/:zoneId/transfer-out", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = mapZone(zoneResult.rows[0]);
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = mapZone(zoneResult?.rows[0]);
 
     // Clean up storefront links before deleting the zone
-    const linkResult = await pool.query(
+    const _linkResult = await pool?.query(
       `SELECT storefront_id FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
-      [zone.domain],
+      [zone?.domain],
     );
-    const linkedStorefrontId = linkResult.rows[0]?.storefront_id ?? null;
+    const _linkedStorefrontId = linkResult?.rows[0]?.storefront_id ?? null;
 
-    await pool.query(
+    await pool?.query(
       `DELETE FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain'`,
-      [zone.domain],
+      [zone?.domain],
     );
-    await pool.query(
+    await pool?.query(
       `DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`,
-      [zone.domain, `www.${zone.domain}`],
+      [zone?.domain, `www.${zone?.domain}`],
     );
 
     if (linkedStorefrontId) {
-      await pool.query(
+      await pool?.query(
         `UPDATE storefronts SET custom_domain = NULL, is_custom_domain_active = false, updated_at = NOW()
          WHERE id = $1 AND custom_domain = $2`,
-        [linkedStorefrontId, zone.domain],
+        [linkedStorefrontId, zone?.domain],
       );
     }
 
     // Delete all DNS records, then the zone itself
-    await pool.query("DELETE FROM dns_zone_records WHERE zone_id = $1", [
-      zone.id,
+    await pool?.query("DELETE FROM dns_zone_records WHERE zone_id = $1", [
+      zone?.id,
     ]);
-    await pool.query("DELETE FROM dns_zones WHERE id = $1", [zone.id]);
+    await pool?.query("DELETE FROM dns_zones WHERE id = $1", [zone?.id]);
 
-    logger.info(
-      `[DNS Manager] Zone ${zone.domain} transferred out by user ${userId}`,
+    logger?.info(
+      `[DNS Manager] Zone ${zone?.domain} transferred out by user ${userId}`,
     );
-    res.json({ success: true, domain: zone.domain });
+    res?.json({ success: true, domain: zone?.domain });
   } catch (err) {
-    logger.warn({ err }, "[DNS Manager] transfer-out error");
-    res.status(500).json({ error: "Failed to transfer out domain" });
+    logger?.warn({ err }, "[DNS Manager] transfer-out error");
+    res?.status(500).json({ error: "Failed to transfer out domain" });
   }
 });
 
@@ -1010,55 +1010,55 @@ router.post("/zones/:zoneId/transfer-out", async (req, res) => {
  * DELETE /api/dns-manager/zones/:zoneId/use-as-storefront
  * Remove the link between this zone's domain and any storefront.
  */
-router.delete("/zones/:zoneId/use-as-storefront", async (req, res) => {
+router?.delete("/zones/:zoneId/use-as-storefront", async (req, res) => {
   try {
-    if (!req.isAuthenticated())
-      return res.status(401).json({ error: "Unauthorized" });
-    const userId = req.user!.id;
+    if (!req?.isAuthenticated())
+      return res?.status(401).json({ error: "Unauthorized" });
+    const _userId = req?.user!.id;
 
-    const zoneResult = await pool.query(
+    const _zoneResult = await pool?.query(
       "SELECT id, domain FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1",
-      [req.params.zoneId, userId],
+      [req?.params.zoneId, userId],
     );
-    if (zoneResult.rows.length === 0)
-      return res.status(404).json({ error: "Zone not found" });
-    const zone = zoneResult.rows[0];
+    if (zoneResult?.rows.length === 0)
+      return res?.status(404).json({ error: "Zone not found" });
+    const _zone = zoneResult?.rows[0];
 
     // Find the linked storefront so we can clear its customDomain field
-    const linkResult = await pool.query(
+    const _linkResult = await pool?.query(
       `SELECT storefront_id FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
-      [zone.domain],
+      [zone?.domain],
     );
-    const linkedStorefrontId = linkResult.rows[0]?.storefront_id ?? null;
+    const _linkedStorefrontId = linkResult?.rows[0]?.storefront_id ?? null;
 
     // Remove storefront_domains entry
-    await pool.query(
+    await pool?.query(
       `DELETE FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain'`,
-      [zone.domain],
+      [zone?.domain],
     );
 
     // Remove storefront_hosts entries (root domain and www variant)
-    await pool.query(
+    await pool?.query(
       `DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`,
-      [zone.domain, `www.${zone.domain}`],
+      [zone?.domain, `www.${zone?.domain}`],
     );
 
     // Clear customDomain on the storefront if it matches
     if (linkedStorefrontId) {
-      await pool.query(
+      await pool?.query(
         `UPDATE storefronts SET custom_domain = NULL, is_custom_domain_active = false, updated_at = NOW()
          WHERE id = $1 AND custom_domain = $2`,
-        [linkedStorefrontId, zone.domain],
+        [linkedStorefrontId, zone?.domain],
       );
     }
 
-    logger.info(
-      `[DNS Manager] Storefront URL link removed for zone ${zone.domain}`,
+    logger?.info(
+      `[DNS Manager] Storefront URL link removed for zone ${zone?.domain}`,
     );
-    return res.json({ success: true });
+    return res?.json({ success: true });
   } catch (err) {
-    logger.warn({ err }, "[DNS Manager] use-as-storefront DELETE error");
-    return res.status(500).json({ error: "Failed to unlink storefront URL" });
+    logger?.warn({ err }, "[DNS Manager] use-as-storefront DELETE error");
+    return res?.status(500).json({ error: "Failed to unlink storefront URL" });
   }
 });
 

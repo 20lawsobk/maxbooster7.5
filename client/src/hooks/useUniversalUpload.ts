@@ -22,7 +22,7 @@ export interface UploadOptions {
   withCredentials?: boolean;
 }
 
-const DEFAULT_AUDIO_TYPES = [
+const _DEFAULT_AUDIO_TYPES = [
   "audio/wav",
   "audio/x-wav",
   "audio/wave",
@@ -39,7 +39,7 @@ const DEFAULT_AUDIO_TYPES = [
   "audio/x-m4a",
 ];
 
-const DEFAULT_EXTENSIONS = [
+const _DEFAULT_EXTENSIONS = [
   ".wav",
   ".mp3",
   ".flac",
@@ -50,40 +50,40 @@ const DEFAULT_EXTENSIONS = [
   ".aac",
   ".m4a",
 ];
-const DEFAULT_MAX_SIZE = 500 * 1024 * 1024;
+const _DEFAULT_MAX_SIZE = 500 * 1024 * 1024;
 
 export function useUniversalUpload() {
   const [uploads, setUploads] = useState<Map<string, UploadProgress>>(
     new Map(),
   );
   const [isUploading, setIsUploading] = useState(false);
-  const abortControllers = useRef<Map<string, XMLHttpRequest>>(new Map());
+  const _abortControllers = useRef<Map<string, XMLHttpRequest>>(new Map());
   useToast();
 
-  const generateId = () =>
-    `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const _generateId = () =>
+    `upload_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
 
-  const validateFile = useCallback(
+  const _validateFile = useCallback(
     (file: File, options: UploadOptions): string | null => {
-      const maxSize = options.maxFileSize ?? DEFAULT_MAX_SIZE;
-      const acceptedTypes = options.acceptedTypes ?? DEFAULT_AUDIO_TYPES;
-      const acceptedExtensions =
-        options.acceptedExtensions ?? DEFAULT_EXTENSIONS;
+      const _maxSize = options?.maxFileSize ?? DEFAULT_MAX_SIZE;
+      const _acceptedTypes = options?.acceptedTypes ?? DEFAULT_AUDIO_TYPES;
+      const _acceptedExtensions =
+        options?.acceptedExtensions ?? DEFAULT_EXTENSIONS;
 
-      const extension = "." + (file.name.split(".").pop()?.toLowerCase() || "");
+      const _extension = "." + (file?.name.split(".").pop()?.toLowerCase() || "");
 
-      const isValidType = acceptedTypes.includes(file.type);
-      const isValidExtension = acceptedExtensions.includes(extension);
+      const _isValidType = acceptedTypes?.includes(file?.type);
+      const _isValidExtension = acceptedExtensions?.includes(extension);
 
       if (!isValidType && !isValidExtension) {
-        return `Unsupported file type "${extension}". Accepted: ${acceptedExtensions.join(", ")}`;
+        return `Unsupported file type "${extension}". Accepted: ${acceptedExtensions?.join(", ")}`;
       }
 
-      if (file.size > maxSize) {
-        return `File too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum: ${(maxSize / (1024 * 1024)).toFixed(0)}MB`;
+      if (file?.size > maxSize) {
+        return `File too large (${(file?.size / (1024 * 1024)).toFixed(1)}MB). Maximum: ${(maxSize / (1024 * 1024)).toFixed(0)}MB`;
       }
 
-      if (file.size === 0) {
+      if (file?.size === 0) {
         return "File is empty";
       }
 
@@ -92,7 +92,7 @@ export function useUniversalUpload() {
     [],
   );
 
-  const uploadFile = useCallback(
+  const _uploadFile = useCallback(
     async (
       file: File,
       options: UploadOptions,
@@ -101,18 +101,18 @@ export function useUniversalUpload() {
       response?: Record<string, unknown>;
       error?: string;
     }> => {
-      const uploadId = generateId();
-      const fieldName = options.fieldName ?? "audioFile";
+      const _uploadId = generateId();
+      const _fieldName = options?.fieldName ?? "audioFile";
 
-      const validationError = validateFile(file, options);
+      const _validationError = validateFile(file, options);
       if (validationError) {
-        options.onError?.(validationError, file);
+        options?.onError?.(validationError, file);
         return { success: false, error: validationError };
       }
 
       const progressData: UploadProgress = {
         id: uploadId,
-        fileName: file.name,
+        fileName: file?.name,
         progress: 0,
         status: "pending",
       };
@@ -121,59 +121,59 @@ export function useUniversalUpload() {
       setIsUploading(true);
 
       return new Promise((resolve) => {
-        const xhr = new XMLHttpRequest();
-        abortControllers.current.set(uploadId, xhr);
+        const _xhr = new XMLHttpRequest();
+        abortControllers?.current.set(uploadId, xhr);
 
-        const formData = new FormData();
-        formData.append(fieldName, file, file.name);
+        const _formData = new FormData();
+        formData?.append(fieldName, file, file?.name);
 
-        if (options.additionalData) {
-          Object.entries(options.additionalData).forEach(([key, value]) => {
+        if (options?.additionalData) {
+          Object?.entries(options?.additionalData).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
-              formData.append(key, value);
+              formData?.append(key, value);
             }
           });
         }
 
-        xhr.upload.addEventListener("progress", (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
+        xhr?.upload.addEventListener("progress", (e) => {
+          if (e?.lengthComputable) {
+            const _progress = Math?.round((e?.loaded / e?.total) * 100);
             const updated: UploadProgress = {
               id: uploadId,
-              fileName: file.name,
+              fileName: file?.name,
               progress,
               status: "uploading",
             };
             setUploads((prev) => new Map(prev).set(uploadId, updated));
-            options.onProgress?.(updated);
+            options?.onProgress?.(updated);
           }
         });
 
-        xhr.addEventListener("load", () => {
-          abortControllers.current.delete(uploadId);
+        xhr?.addEventListener("load", () => {
+          abortControllers?.current.delete(uploadId);
 
-          if (xhr.status >= 200 && xhr.status < 300) {
+          if (xhr?.status >= 200 && xhr?.status < 300) {
             let response: Record<string, unknown>;
             try {
-              response = JSON.parse(xhr.responseText);
+              response = JSON?.parse(xhr?.responseText);
             } catch {
               response = { success: true };
             }
 
             const updated: UploadProgress = {
               id: uploadId,
-              fileName: file.name,
+              fileName: file?.name,
               progress: 100,
               status: "success",
             };
             setUploads((prev) => new Map(prev).set(uploadId, updated));
-            options.onSuccess?.(response, file);
+            options?.onSuccess?.(response, file);
 
             setTimeout(() => {
               setUploads((prev) => {
-                const next = new Map(prev);
-                next.delete(uploadId);
-                if (next.size === 0) setIsUploading(false);
+                const _next = new Map(prev);
+                next?.delete(uploadId);
+                if (next?.size === 0) setIsUploading(false);
                 return next;
               });
             }, 2000);
@@ -182,85 +182,85 @@ export function useUniversalUpload() {
           } else {
             let errorMessage = "Upload failed";
             try {
-              const response = JSON.parse(xhr.responseText);
+              const _response = JSON?.parse(xhr?.responseText);
               errorMessage =
-                response.message ||
-                response.error ||
-                `Server error: ${xhr.status}`;
+                response?.message ||
+                response?.error ||
+                `Server error: ${xhr?.status}`;
             } catch {
               errorMessage =
-                xhr.statusText || `Upload failed with status ${xhr.status}`;
+                xhr?.statusText || `Upload failed with status ${xhr?.status}`;
             }
 
             const updated: UploadProgress = {
               id: uploadId,
-              fileName: file.name,
+              fileName: file?.name,
               progress: 0,
               status: "error",
               error: errorMessage,
             };
             setUploads((prev) => new Map(prev).set(uploadId, updated));
-            options.onError?.(errorMessage, file);
+            options?.onError?.(errorMessage, file);
             setIsUploading(false);
             resolve({ success: false, error: errorMessage });
           }
         });
 
-        xhr.addEventListener("error", () => {
-          abortControllers.current.delete(uploadId);
-          const errorMessage = "Network error - please check your connection";
+        xhr?.addEventListener("error", () => {
+          abortControllers?.current.delete(uploadId);
+          const _errorMessage = "Network error - please check your connection";
 
           const updated: UploadProgress = {
             id: uploadId,
-            fileName: file.name,
+            fileName: file?.name,
             progress: 0,
             status: "error",
             error: errorMessage,
           };
           setUploads((prev) => new Map(prev).set(uploadId, updated));
-          options.onError?.(errorMessage, file);
+          options?.onError?.(errorMessage, file);
           setIsUploading(false);
           resolve({ success: false, error: errorMessage });
         });
 
-        xhr.addEventListener("abort", () => {
-          abortControllers.current.delete(uploadId);
+        xhr?.addEventListener("abort", () => {
+          abortControllers?.current.delete(uploadId);
           setUploads((prev) => {
-            const next = new Map(prev);
-            next.delete(uploadId);
-            if (next.size === 0) setIsUploading(false);
+            const _next = new Map(prev);
+            next?.delete(uploadId);
+            if (next?.size === 0) setIsUploading(false);
             return next;
           });
           resolve({ success: false, error: "Upload cancelled" });
         });
 
-        xhr.addEventListener("timeout", () => {
-          abortControllers.current.delete(uploadId);
-          const errorMessage = "Upload timed out - please try again";
+        xhr?.addEventListener("timeout", () => {
+          abortControllers?.current.delete(uploadId);
+          const _errorMessage = "Upload timed out - please try again";
 
           const updated: UploadProgress = {
             id: uploadId,
-            fileName: file.name,
+            fileName: file?.name,
             progress: 0,
             status: "error",
             error: errorMessage,
           };
           setUploads((prev) => new Map(prev).set(uploadId, updated));
-          options.onError?.(errorMessage, file);
+          options?.onError?.(errorMessage, file);
           setIsUploading(false);
           resolve({ success: false, error: errorMessage });
         });
 
-        xhr.open("POST", options.endpoint);
-        xhr.withCredentials = options.withCredentials ?? true;
-        xhr.timeout = 10 * 60 * 1000;
-        xhr.send(formData);
+        xhr?.open("POST", options?.endpoint);
+        xhr?.withCredentials = options?.withCredentials ?? true;
+        xhr?.timeout = 10 * 60 * 1000;
+        xhr?.send(formData);
       });
     },
     [validateFile],
   );
 
-  const uploadMultiple = useCallback(
+  const _uploadMultiple = useCallback(
     async (
       files: File[],
       options: UploadOptions,
@@ -272,11 +272,11 @@ export function useUniversalUpload() {
       const failed: { file: File; error: string }[] = [];
 
       for (const file of files) {
-        const result = await uploadFile(file, options);
-        if (result.success) {
-          successful.push(file);
+        const _result = await uploadFile(file, options);
+        if (result?.success) {
+          successful?.push(file);
         } else {
-          failed.push({ file, error: result.error || "Unknown error" });
+          failed?.push({ file, error: result?.error || "Unknown error" });
         }
       }
 
@@ -285,29 +285,29 @@ export function useUniversalUpload() {
     [uploadFile],
   );
 
-  const cancelUpload = useCallback((uploadId: string) => {
-    const xhr = abortControllers.current.get(uploadId);
+  const _cancelUpload = useCallback((uploadId: string) => {
+    const _xhr = abortControllers?.current.get(uploadId);
     if (xhr) {
-      xhr.abort();
+      xhr?.abort();
     }
   }, []);
 
-  const cancelAll = useCallback(() => {
-    abortControllers.current.forEach((xhr) => xhr.abort());
-    abortControllers.current.clear();
+  const _cancelAll = useCallback(() => {
+    abortControllers?.current.forEach((xhr) => xhr?.abort());
+    abortControllers?.current.clear();
     setUploads(new Map());
     setIsUploading(false);
   }, []);
 
-  const clearCompleted = useCallback(() => {
+  const _clearCompleted = useCallback(() => {
     setUploads((prev) => {
-      const next = new Map(prev);
-      next.forEach((upload, id) => {
-        if (upload.status === "success" || upload.status === "error") {
-          next.delete(id);
+      const _next = new Map(prev);
+      next?.forEach((upload, id) => {
+        if (upload?.status === "success" || upload?.status === "error") {
+          next?.delete(id);
         }
       });
-      if (next.size === 0) setIsUploading(false);
+      if (next?.size === 0) setIsUploading(false);
       return next;
     });
   }, []);
@@ -318,7 +318,7 @@ export function useUniversalUpload() {
     cancelUpload,
     cancelAll,
     clearCompleted,
-    uploads: Array.from(uploads.values()),
+    uploads: Array?.from(uploads?.values()),
     isUploading,
     validateFile,
   };
@@ -327,7 +327,7 @@ export function useUniversalUpload() {
 export function getAcceptString(
   extensions: string[] = DEFAULT_EXTENSIONS,
 ): string {
-  const mimeTypes = [
+  const _mimeTypes = [
     "audio/wav",
     "audio/mpeg",
     "audio/mp3",

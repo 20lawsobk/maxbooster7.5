@@ -194,61 +194,61 @@ const PLATFORM_DATA: Record<
   spotify: {
     audienceAge: [16, 45],
     engagement: "high",
-    growth: 0.85,
+    growth: 0?.85,
     effort: "medium",
   },
   apple_music: {
     audienceAge: [18, 50],
     engagement: "medium",
-    growth: 0.75,
+    growth: 0?.75,
     effort: "low",
   },
   youtube: {
     audienceAge: [13, 55],
     engagement: "high",
-    growth: 0.9,
+    growth: 0?.9,
     effort: "high",
   },
   tiktok: {
     audienceAge: [13, 30],
     engagement: "very_high",
-    growth: 0.95,
+    growth: 0?.95,
     effort: "high",
   },
   instagram: {
     audienceAge: [16, 40],
     engagement: "high",
-    growth: 0.8,
+    growth: 0?.8,
     effort: "medium",
   },
   soundcloud: {
     audienceAge: [16, 35],
     engagement: "medium",
-    growth: 0.6,
+    growth: 0?.6,
     effort: "low",
   },
   bandcamp: {
     audienceAge: [20, 45],
     engagement: "low",
-    growth: 0.5,
+    growth: 0?.5,
     effort: "low",
   },
   facebook: {
     audienceAge: [25, 55],
     engagement: "medium",
-    growth: 0.5,
+    growth: 0?.5,
     effort: "medium",
   },
   twitter: {
     audienceAge: [18, 45],
     engagement: "medium",
-    growth: 0.6,
+    growth: 0?.6,
     effort: "medium",
   },
   linkedin: {
     audienceAge: [25, 55],
     engagement: "low",
-    growth: 0.4,
+    growth: 0?.4,
     effort: "low",
   },
 };
@@ -259,27 +259,27 @@ class SmartDefaultsEngine {
 
   async getSmartDefaults(userId: string): Promise<SmartDefault[]> {
     try {
-      const redis = await getRedisClient();
+      const _redis = await getRedisClient();
       if (redis) {
-        const cached = await redis.get(`${this.CACHE_PREFIX}${userId}`);
+        const _cached = await redis?.get(`${this?.CACHE_PREFIX}${userId}`);
         if (cached) {
-          return JSON.parse(cached);
+          return JSON?.parse(cached);
         }
       }
 
-      const defaults = await this.calculateSmartDefaults(userId);
+      const _defaults = await this?.calculateSmartDefaults(userId);
 
       if (redis) {
-        await redis.setEx(
-          `${this.CACHE_PREFIX}${userId}`,
-          this.CACHE_TTL,
-          JSON.stringify(defaults),
+        await redis?.setEx(
+          `${this?.CACHE_PREFIX}${userId}`,
+          this?.CACHE_TTL,
+          JSON?.stringify(defaults),
         );
       }
 
       return defaults;
     } catch (error) {
-      logger.warn({ err: error }, "Error getting smart defaults:");
+      logger?.warn({ err: error }, "Error getting smart defaults:");
       return [];
     }
   }
@@ -288,58 +288,58 @@ class SmartDefaultsEngine {
     userId: string,
   ): Promise<SmartDefault[]> {
     const defaults: SmartDefault[] = [];
-    const preferences = await userPreferencesService.getUserPreferences(userId);
+    const _preferences = await userPreferencesService?.getUserPreferences(userId);
     if (!preferences) return defaults;
 
-    const genreTemplate = this.getGenreTemplate(preferences.genres[0] || "pop");
+    const _genreTemplate = this?.getGenreTemplate(preferences?.genres[0] || "pop");
 
-    defaults.push({
+    defaults?.push({
       category: "studio",
       key: "defaultBPM",
-      value: genreTemplate.defaultBPM,
-      confidence: 0.85,
-      reasoning: `Based on ${genreTemplate.genre} genre conventions`,
+      value: genreTemplate?.defaultBPM,
+      confidence: 0?.85,
+      reasoning: `Based on ${genreTemplate?.genre} genre conventions`,
     });
 
-    defaults.push({
+    defaults?.push({
       category: "studio",
       key: "defaultKey",
-      value: genreTemplate.defaultKey,
-      confidence: 0.8,
-      reasoning: `Common key for ${genreTemplate.genre} music`,
+      value: genreTemplate?.defaultKey,
+      confidence: 0?.8,
+      reasoning: `Common key for ${genreTemplate?.genre} music`,
     });
 
-    defaults.push({
+    defaults?.push({
       category: "content",
       key: "postingFrequency",
-      value: genreTemplate.postingFrequency,
-      confidence: 0.75,
-      reasoning: `Optimal frequency for ${genreTemplate.genre} audience engagement`,
+      value: genreTemplate?.postingFrequency,
+      confidence: 0?.75,
+      reasoning: `Optimal frequency for ${genreTemplate?.genre} audience engagement`,
     });
 
-    defaults.push({
+    defaults?.push({
       category: "branding",
       key: "colorPalette",
-      value: genreTemplate.colorPalette,
-      confidence: 0.7,
-      reasoning: `Colors associated with ${genreTemplate.genre} aesthetics`,
+      value: genreTemplate?.colorPalette,
+      confidence: 0?.7,
+      reasoning: `Colors associated with ${genreTemplate?.genre} aesthetics`,
     });
 
-    const careerStageDefaults = this.getCareerStageDefaults(
-      preferences.careerStage,
+    const _careerStageDefaults = this?.getCareerStageDefaults(
+      preferences?.careerStage,
     );
-    defaults.push(...careerStageDefaults);
+    defaults?.push(...careerStageDefaults);
 
     return defaults;
   }
 
   getGenreTemplate(genre: string): GenreTemplate {
-    const normalizedGenre = genre.toLowerCase().replace(/\s+/g, "-");
+    const _normalizedGenre = genre?.toLowerCase().replace(/\s+/g, "-");
     return GENRE_TEMPLATES[normalizedGenre] || GENRE_TEMPLATES["pop"];
   }
 
   getAllGenreTemplates(): GenreTemplate[] {
-    return Object.values(GENRE_TEMPLATES);
+    return Object?.values(GENRE_TEMPLATES);
   }
 
   private getCareerStageDefaults(stage: CareerStage): SmartDefault[] {
@@ -347,48 +347,48 @@ class SmartDefaultsEngine {
 
     switch (stage) {
       case "emerging":
-        defaults.push({
+        defaults?.push({
           category: "strategy",
           key: "focusArea",
           value: "audience_building",
-          confidence: 0.9,
+          confidence: 0?.9,
           reasoning:
             "Early-stage artists should focus on building their initial fanbase",
         });
-        defaults.push({
+        defaults?.push({
           category: "content",
           key: "quantity_vs_quality",
           value: "balanced",
-          confidence: 0.85,
+          confidence: 0?.85,
           reasoning:
             "New artists benefit from consistent presence while developing quality",
         });
         break;
       case "developing":
-        defaults.push({
+        defaults?.push({
           category: "strategy",
           key: "focusArea",
           value: "engagement_deepening",
-          confidence: 0.85,
+          confidence: 0?.85,
           reasoning:
             "Growing artists should deepen connections with existing fans",
         });
         break;
       case "established":
-        defaults.push({
+        defaults?.push({
           category: "strategy",
           key: "focusArea",
           value: "monetization",
-          confidence: 0.85,
+          confidence: 0?.85,
           reasoning: "Established artists can focus on revenue optimization",
         });
         break;
       case "professional":
-        defaults.push({
+        defaults?.push({
           category: "strategy",
           key: "focusArea",
           value: "scaling",
-          confidence: 0.9,
+          confidence: 0?.9,
           reasoning: "Professional artists should focus on scaling operations",
         });
         break;
@@ -401,39 +401,39 @@ class SmartDefaultsEngine {
     userId: string,
   ): Promise<SchedulingSuggestion[]> {
     try {
-      const preferences =
-        await userPreferencesService.getUserPreferences(userId);
+      const _preferences =
+        await userPreferencesService?.getUserPreferences(userId);
       if (!preferences) return [];
 
-      const timezone =
-        preferences.targetAudience.primaryTimezone || "America/New_York";
-      const timezoneData =
+      const _timezone =
+        preferences?.targetAudience.primaryTimezone || "America/New_York";
+      const _timezoneData =
         TIMEZONE_POSTING_MAP[timezone] ||
         TIMEZONE_POSTING_MAP["America/New_York"];
-      const platforms = preferences.contentPreferences.platforms;
+      const _platforms = preferences?.contentPreferences.platforms;
 
       const suggestions: SchedulingSuggestion[] = [];
 
-      for (const platform of platforms.slice(0, 3)) {
-        for (const day of timezoneData.peakDays) {
-          const times = timezoneData.peakHours
+      for (const platform of platforms?.slice(0, 3)) {
+        for (const day of timezoneData?.peakDays) {
+          const _times = timezoneData?.peakHours
             .slice(0, 2)
-            .map((h) => `${h.toString().padStart(2, "0")}:00`);
-          suggestions.push({
+            .map((h) => `${h?.toString().padStart(2, "0")}:00`);
+          suggestions?.push({
             day,
             times,
             platform,
             reason: `Peak engagement times for ${platform} in ${timezone}`,
-            engagementScore: 0.75 + Math.random() * 0.2,
+            engagementScore: 0?.75 + Math?.random() * 0?.2,
           });
         }
       }
 
       return suggestions
-        .sort((a, b) => b.engagementScore - a.engagementScore)
+        .sort((a, b) => b?.engagementScore - a?.engagementScore)
         .slice(0, 10);
     } catch (error) {
-      logger.warn({ err: error }, "Error getting scheduling suggestions:");
+      logger?.warn({ err: error }, "Error getting scheduling suggestions:");
       return [];
     }
   }
@@ -442,29 +442,29 @@ class SmartDefaultsEngine {
     userId: string,
   ): Promise<PlatformRecommendation[]> {
     try {
-      const preferences =
-        await userPreferencesService.getUserPreferences(userId);
+      const _preferences =
+        await userPreferencesService?.getUserPreferences(userId);
       if (!preferences) return [];
 
-      const genreTemplate = this.getGenreTemplate(
-        preferences.genres[0] || "pop",
+      const _genreTemplate = this?.getGenreTemplate(
+        preferences?.genres[0] || "pop",
       );
-      const audienceAge = preferences.targetAudience.ageRange;
+      const _audienceAge = preferences?.targetAudience.ageRange;
       const recommendations: PlatformRecommendation[] = [];
 
-      for (const [platform, data] of Object.entries(PLATFORM_DATA)) {
-        const ageOverlap = this.calculateAgeOverlap(
+      for (const [platform, data] of Object?.entries(PLATFORM_DATA)) {
+        const _ageOverlap = this?.calculateAgeOverlap(
           audienceAge,
-          data.audienceAge,
+          data?.audienceAge,
         );
-        const isGenreSuggested =
-          genreTemplate.suggestedPlatforms.includes(platform);
-        preferences.contentPreferences.platforms.includes(platform);
+        const _isGenreSuggested =
+          genreTemplate?.suggestedPlatforms.includes(platform);
+        preferences?.contentPreferences.platforms?.includes(platform);
 
         let priority: "primary" | "secondary" | "emerging";
-        if (isGenreSuggested && ageOverlap > 0.6) {
+        if (isGenreSuggested && ageOverlap > 0?.6) {
           priority = "primary";
-        } else if (ageOverlap > 0.4 || data.growth > 0.8) {
+        } else if (ageOverlap > 0?.4 || data?.growth > 0?.8) {
           priority = "secondary";
         } else {
           priority = "emerging";
@@ -472,34 +472,34 @@ class SmartDefaultsEngine {
 
         let reason = "";
         if (isGenreSuggested) {
-          reason = `Popular for ${genreTemplate.genre} artists`;
-        } else if (data.growth > 0.85) {
+          reason = `Popular for ${genreTemplate?.genre} artists`;
+        } else if (data?.growth > 0?.85) {
           reason = "High growth platform with emerging opportunities";
         } else {
           reason = `Matches your target audience age (${audienceAge[0]}-${audienceAge[1]})`;
         }
 
-        recommendations.push({
+        recommendations?.push({
           platform,
           priority,
           reason,
           audienceMatch: ageOverlap,
-          growthPotential: data.growth,
-          effort: data.effort as "low" | "medium" | "high",
+          growthPotential: data?.growth,
+          effort: data?.effort as "low" | "medium" | "high",
         });
       }
 
       return recommendations
         .sort((a, b) => {
-          const priorityOrder = { primary: 3, secondary: 2, emerging: 1 };
+          const _priorityOrder = { primary: 3, secondary: 2, emerging: 1 };
           return (
-            priorityOrder[b.priority] - priorityOrder[a.priority] ||
-            b.audienceMatch - a.audienceMatch
+            priorityOrder[b?.priority] - priorityOrder[a?.priority] ||
+            b?.audienceMatch - a?.audienceMatch
           );
         })
         .slice(0, 8);
     } catch (error) {
-      logger.warn(
+      logger?.warn(
         { err: error },
         "Error getting distribution recommendations:",
       );
@@ -512,22 +512,22 @@ class SmartDefaultsEngine {
     genres: string[],
     careerStage: CareerStage,
   ): Promise<Partial<UserPreferences>> {
-    const basePreferences = userPreferencesService.getDefaultPreferences(
+    const _basePreferences = userPreferencesService?.getDefaultPreferences(
       artistType,
       careerStage,
     );
 
-    if (genres.length > 0) {
-      const primaryGenre = genres[0];
-      const template = this.getGenreTemplate(primaryGenre);
+    if (genres?.length > 0) {
+      const _primaryGenre = genres[0];
+      const _template = this?.getGenreTemplate(primaryGenre);
 
-      basePreferences.genres = genres;
-      basePreferences.studioPreferences.defaultBPM = template.defaultBPM;
-      basePreferences.studioPreferences.defaultKey = template.defaultKey;
-      basePreferences.contentPreferences.platforms =
-        template.suggestedPlatforms;
-      basePreferences.contentPreferences.contentTypes = template.contentStyle;
-      basePreferences.targetAudience.ageRange = template.audienceAge;
+      basePreferences?.genres = genres;
+      basePreferences?.studioPreferences.defaultBPM = template?.defaultBPM;
+      basePreferences?.studioPreferences.defaultKey = template?.defaultKey;
+      basePreferences?.contentPreferences.platforms =
+        template?.suggestedPlatforms;
+      basePreferences?.contentPreferences.contentTypes = template?.contentStyle;
+      basePreferences?.targetAudience.ageRange = template?.audienceAge;
     }
 
     return basePreferences;
@@ -537,16 +537,16 @@ class SmartDefaultsEngine {
     range1: [number, number],
     range2: [number, number],
   ): number {
-    const start = Math.max(range1[0], range2[0]);
-    const end = Math.min(range1[1], range2[1]);
+    const _start = Math?.max(range1[0], range2[0]);
+    const _end = Math?.min(range1[1], range2[1]);
     if (start >= end) return 0;
 
-    const overlapSize = end - start;
-    const range1Size = range1[1] - range1[0];
-    const range2Size = range2[1] - range2[0];
+    const _overlapSize = end - start;
+    const _range1Size = range1[1] - range1[0];
+    const _range2Size = range2[1] - range2[0];
 
-    return overlapSize / Math.max(range1Size, range2Size);
+    return overlapSize / Math?.max(range1Size, range2Size);
   }
 }
 
-export const smartDefaultsEngine = new SmartDefaultsEngine();
+export const _smartDefaultsEngine = new SmartDefaultsEngine();

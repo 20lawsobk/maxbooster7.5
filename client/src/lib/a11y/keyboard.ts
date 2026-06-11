@@ -31,95 +31,95 @@ export function createFocusTrap(
   let paused = false;
   let previouslyFocused: HTMLElement | null = null;
 
-  const handleKeyDown = (event: KeyboardEvent) => {
+  const _handleKeyDown = (event: KeyboardEvent) => {
     if (!active || paused) return;
 
-    if (event.key === "Tab") {
+    if (event?.key === "Tab") {
       handleTabKey(event);
-    } else if (event.key === "Escape" && escapeDeactivates) {
-      event.preventDefault();
+    } else if (event?.key === "Escape" && escapeDeactivates) {
+      event?.preventDefault();
       onEscape?.();
     }
   };
 
-  const handleTabKey = (event: KeyboardEvent) => {
-    const focusableElements = getFocusableElements(container);
-    if (focusableElements.length === 0) return;
+  const _handleTabKey = (event: KeyboardEvent) => {
+    const _focusableElements = getFocusableElements(container);
+    if (focusableElements?.length === 0) return;
 
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
+    const _firstElement = focusableElements[0];
+    const _lastElement = focusableElements[focusableElements?.length - 1];
 
-    if (event.shiftKey) {
-      if (document.activeElement === firstElement) {
-        event.preventDefault();
-        lastElement.focus();
+    if (event?.shiftKey) {
+      if (document?.activeElement === firstElement) {
+        event?.preventDefault();
+        lastElement?.focus();
       }
     } else {
-      if (document.activeElement === lastElement) {
-        event.preventDefault();
-        firstElement.focus();
+      if (document?.activeElement === lastElement) {
+        event?.preventDefault();
+        firstElement?.focus();
       }
     }
   };
 
-  const handleClick = (event: MouseEvent) => {
+  const _handleClick = (event: MouseEvent) => {
     if (!active || paused || allowOutsideClick) return;
 
-    const target = event.target as Node;
-    if (!container.contains(target)) {
-      event.preventDefault();
-      event.stopPropagation();
+    const _target = event?.target as Node;
+    if (!container?.contains(target)) {
+      event?.preventDefault();
+      event?.stopPropagation();
       focusFirstElement();
     }
   };
 
-  const focusFirstElement = () => {
-    const focusableElements = getFocusableElements(container);
+  const _focusFirstElement = () => {
+    const _focusableElements = getFocusableElements(container);
     if (initialFocus) {
-      const element =
+      const _element =
         typeof initialFocus === "string"
-          ? container.querySelector<HTMLElement>(initialFocus)
+          ? container?.querySelector<HTMLElement>(initialFocus)
           : initialFocus;
       element?.focus();
-    } else if (focusableElements.length > 0) {
+    } else if (focusableElements?.length > 0) {
       focusableElements[0].focus();
     } else {
-      container.setAttribute("tabindex", "-1");
-      container.focus();
+      container?.setAttribute("tabindex", "-1");
+      container?.focus();
     }
   };
 
-  const activate = () => {
+  const _activate = () => {
     if (active) return;
 
-    previouslyFocused = document.activeElement as HTMLElement;
+    previouslyFocused = document?.activeElement as HTMLElement;
     active = true;
 
-    document.addEventListener("keydown", handleKeyDown);
-    document.addEventListener("click", handleClick, true);
+    document?.addEventListener("keydown", handleKeyDown);
+    document?.addEventListener("click", handleClick, true);
 
     requestAnimationFrame(() => {
       focusFirstElement();
     });
   };
 
-  const deactivate = () => {
+  const _deactivate = () => {
     if (!active) return;
 
     active = false;
-    document.removeEventListener("keydown", handleKeyDown);
-    document.removeEventListener("click", handleClick, true);
+    document?.removeEventListener("keydown", handleKeyDown);
+    document?.removeEventListener("click", handleClick, true);
 
     if (returnFocusOnDeactivate && previouslyFocused) {
-      previouslyFocused.focus();
+      previouslyFocused?.focus();
     }
   };
 
-  const pause = () => {
+  const _pause = () => {
     paused = true;
   };
 
-  const unpause = () => {
+  const _unpause = () => {
     paused = false;
   };
 
@@ -147,30 +147,30 @@ export function createRovingTabIndex(
     onFocusChange,
   } = options;
 
-  const getItems = (): HTMLElement[] => {
-    return Array.from(container.querySelectorAll<HTMLElement>(selector));
+  const _getItems = (): HTMLElement[] => {
+    return Array?.from(container?.querySelectorAll<HTMLElement>(selector));
   };
 
-  const updateTabIndex = (items: HTMLElement[], focusedIndex: number) => {
-    items.forEach((item, index) => {
-      item.setAttribute("tabindex", index === focusedIndex ? "0" : "-1");
+  const _updateTabIndex = (items: HTMLElement[], focusedIndex: number) => {
+    items?.forEach((item, index) => {
+      item?.setAttribute("tabindex", index === focusedIndex ? "0" : "-1");
     });
   };
 
   let currentIndex = 0;
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    const items = getItems();
-    if (items.length === 0) return;
+  const _handleKeyDown = (event: KeyboardEvent) => {
+    const _items = getItems();
+    if (items?.length === 0) return;
 
-    const currentElement = document.activeElement as HTMLElement;
-    const currentIdx = items.indexOf(currentElement);
+    const _currentElement = document?.activeElement as HTMLElement;
+    const _currentIdx = items?.indexOf(currentElement);
     if (currentIdx === -1) return;
 
     let nextIndex = currentIdx;
     let handled = false;
 
-    switch (event.key) {
+    switch (event?.key) {
       case "ArrowUp":
         if (
           orientation === "vertical" ||
@@ -229,19 +229,19 @@ export function createRovingTabIndex(
         break;
 
       case "End":
-        nextIndex = items.length - 1;
+        nextIndex = items?.length - 1;
         handled = true;
         break;
     }
 
     if (handled) {
-      event.preventDefault();
+      event?.preventDefault();
 
       if (loop) {
-        if (nextIndex < 0) nextIndex = items.length - 1;
-        if (nextIndex >= items.length) nextIndex = 0;
+        if (nextIndex < 0) nextIndex = items?.length - 1;
+        if (nextIndex >= items?.length) nextIndex = 0;
       } else {
-        nextIndex = Math.max(0, Math.min(items.length - 1, nextIndex));
+        nextIndex = Math?.max(0, Math?.min(items?.length - 1, nextIndex));
       }
 
       if (nextIndex !== currentIdx && items[nextIndex]) {
@@ -253,13 +253,13 @@ export function createRovingTabIndex(
     }
   };
 
-  const items = getItems();
+  const _items = getItems();
   updateTabIndex(items, currentIndex);
 
-  container.addEventListener("keydown", handleKeyDown);
+  container?.addEventListener("keydown", handleKeyDown);
 
   return () => {
-    container.removeEventListener("keydown", handleKeyDown);
+    container?.removeEventListener("keydown", handleKeyDown);
   };
 }
 
@@ -271,20 +271,20 @@ export interface EscapeHandlerOptions {
 export function createEscapeHandler(options: EscapeHandlerOptions): () => void {
   const { onEscape, stopPropagation = true } = options;
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
+  const _handleKeyDown = (event: KeyboardEvent) => {
+    if (event?.key === "Escape") {
       if (stopPropagation) {
-        event.stopPropagation();
+        event?.stopPropagation();
       }
-      event.preventDefault();
+      event?.preventDefault();
       onEscape();
     }
   };
 
-  document.addEventListener("keydown", handleKeyDown);
+  document?.addEventListener("keydown", handleKeyDown);
 
   return () => {
-    document.removeEventListener("keydown", handleKeyDown);
+    document?.removeEventListener("keydown", handleKeyDown);
   };
 }
 
@@ -306,48 +306,48 @@ export function setupArrowNavigation(
     onNavigate,
   } = options;
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    const items = Array.from(container.querySelectorAll<HTMLElement>(selector));
-    const currentIndex = items.findIndex(
-      (item) => item === document.activeElement,
+  const _handleKeyDown = (event: KeyboardEvent) => {
+    const _items = Array?.from(container?.querySelectorAll<HTMLElement>(selector));
+    const _currentIndex = items?.findIndex(
+      (item) => item === document?.activeElement,
     );
 
     if (currentIndex === -1) return;
 
     let nextIndex = currentIndex;
-    const isNext =
-      (orientation === "horizontal" && event.key === "ArrowRight") ||
-      (orientation === "vertical" && event.key === "ArrowDown");
-    const isPrev =
-      (orientation === "horizontal" && event.key === "ArrowLeft") ||
-      (orientation === "vertical" && event.key === "ArrowUp");
+    const _isNext =
+      (orientation === "horizontal" && event?.key === "ArrowRight") ||
+      (orientation === "vertical" && event?.key === "ArrowDown");
+    const _isPrev =
+      (orientation === "horizontal" && event?.key === "ArrowLeft") ||
+      (orientation === "vertical" && event?.key === "ArrowUp");
 
     if (isNext) {
       nextIndex = loop
-        ? (currentIndex + 1) % items.length
-        : Math.min(currentIndex + 1, items.length - 1);
+        ? (currentIndex + 1) % items?.length
+        : Math?.min(currentIndex + 1, items?.length - 1);
     } else if (isPrev) {
       nextIndex = loop
-        ? (currentIndex - 1 + items.length) % items.length
-        : Math.max(currentIndex - 1, 0);
-    } else if (event.key === "Home") {
+        ? (currentIndex - 1 + items?.length) % items?.length
+        : Math?.max(currentIndex - 1, 0);
+    } else if (event?.key === "Home") {
       nextIndex = 0;
-    } else if (event.key === "End") {
-      nextIndex = items.length - 1;
+    } else if (event?.key === "End") {
+      nextIndex = items?.length - 1;
     } else {
       return;
     }
 
-    event.preventDefault();
-    const nextItem = items[nextIndex];
+    event?.preventDefault();
+    const _nextItem = items[nextIndex];
     if (nextItem) {
-      nextItem.focus();
+      nextItem?.focus();
       onNavigate?.(nextItem, nextIndex);
     }
   };
 
-  container.addEventListener("keydown", handleKeyDown);
-  return () => container.removeEventListener("keydown", handleKeyDown);
+  container?.addEventListener("keydown", handleKeyDown);
+  return () => container?.removeEventListener("keydown", handleKeyDown);
 }
 
 export function handleTypeahead(
@@ -361,12 +361,12 @@ export function handleTypeahead(
   return (char: string): HTMLElement | null => {
     if (clearTimer) clearTimeout(clearTimer);
 
-    buffer += char.toLowerCase();
+    buffer += char?.toLowerCase();
     clearTimer = setTimeout(() => {
       buffer = "";
     }, timeout);
 
-    const match = items.find((item) =>
+    const _match = items?.find((item) =>
       getLabel(item).toLowerCase().startsWith(buffer),
     );
 

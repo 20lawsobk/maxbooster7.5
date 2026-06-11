@@ -48,10 +48,10 @@ declare global {
   }
 }
 
-const DEFAULT_PING_URL = "/api/health";
-const DEFAULT_PING_INTERVAL = 30000;
-const DEFAULT_SLOW_THRESHOLD = 2000;
-const DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
+const _DEFAULT_PING_URL = "/api/health";
+const _DEFAULT_PING_INTERVAL = 30000;
+const _DEFAULT_SLOW_THRESHOLD = 2000;
+const _DEFAULT_MAX_RECONNECT_ATTEMPTS = 5;
 
 export function useNetworkStatus(
   options: UseNetworkStatusOptions = {},
@@ -73,12 +73,12 @@ export function useNetworkStatus(
   } = options;
 
   const [state, setState] = useState<NetworkState>(() => ({
-    status: navigator.onLine ? "online" : "offline",
-    isOnline: navigator.onLine,
-    isOffline: !navigator.onLine,
+    status: navigator?.onLine ? "online" : "offline",
+    isOnline: navigator?.onLine,
+    isOffline: !navigator?.onLine,
     isSlow: false,
     isReconnecting: false,
-    lastOnline: navigator.onLine ? new Date() : null,
+    lastOnline: navigator?.onLine ? new Date() : null,
     reconnectAttempts: 0,
     connectionType: null,
     effectiveType: null,
@@ -86,22 +86,22 @@ export function useNetworkStatus(
     rtt: null,
   }));
 
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const pingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isReconnectingRef = useRef(false);
-  const mountedRef = useRef(true);
+  const _reconnectTimeoutRef = useRef<NodeJS?.Timeout | null>(null);
+  const _pingIntervalRef = useRef<NodeJS?.Timeout | null>(null);
+  const _isReconnectingRef = useRef(false);
+  const _mountedRef = useRef(true);
 
-  const getConnectionInfo = useCallback(() => {
-    const connection =
-      navigator.connection ||
-      navigator.mozConnection ||
-      navigator.webkitConnection;
+  const _getConnectionInfo = useCallback(() => {
+    const _connection =
+      navigator?.connection ||
+      navigator?.mozConnection ||
+      navigator?.webkitConnection;
     if (connection) {
       return {
-        connectionType: connection.type || null,
-        effectiveType: connection.effectiveType || null,
-        downlink: connection.downlink || null,
-        rtt: connection.rtt || null,
+        connectionType: connection?.type || null,
+        effectiveType: connection?.effectiveType || null,
+        downlink: connection?.downlink || null,
+        rtt: connection?.rtt || null,
       };
     }
     return {
@@ -112,30 +112,30 @@ export function useNetworkStatus(
     };
   }, []);
 
-  const checkConnection = useCallback(async (): Promise<boolean> => {
-    if (!navigator.onLine) {
+  const _checkConnection = useCallback(async (): Promise<boolean> => {
+    if (!navigator?.onLine) {
       return false;
     }
 
-    const startTime = performance.now();
+    const _startTime = performance?.now();
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const _controller = new AbortController();
+      const _timeoutId = setTimeout(() => controller?.abort(), 10000);
 
-      const response = await fetch(pingUrl, {
+      const _response = await fetch(pingUrl, {
         method: "HEAD",
         cache: "no-store",
-        signal: controller.signal,
+        signal: controller?.signal,
       });
 
       clearTimeout(timeoutId);
 
-      const latency = performance.now() - startTime;
-      const isSlow = latency > slowThreshold;
+      const _latency = performance?.now() - startTime;
+      const _isSlow = latency > slowThreshold;
 
-      if (mountedRef.current) {
-        const connectionInfo = getConnectionInfo();
+      if (mountedRef?.current) {
+        const _connectionInfo = getConnectionInfo();
         setState((prev) => ({
           ...prev,
           status: isSlow ? "slow" : "online",
@@ -153,9 +153,9 @@ export function useNetworkStatus(
         }
       }
 
-      return response.ok;
+      return response?.ok;
     } catch {
-      if (mountedRef.current) {
+      if (mountedRef?.current) {
         setState((prev) => ({
           ...prev,
           status: "offline",
@@ -168,10 +168,10 @@ export function useNetworkStatus(
     }
   }, [pingUrl, slowThreshold, getConnectionInfo, onSlow]);
 
-  const scheduleReconnect = useCallback(
+  const _scheduleReconnect = useCallback(
     (attempt: number) => {
       if (attempt >= maxReconnectAttempts) {
-        isReconnectingRef.current = false;
+        isReconnectingRef?.current = false;
         setState((prev) => ({ ...prev, isReconnecting: false }));
 
         if (showToasts) {
@@ -185,11 +185,11 @@ export function useNetworkStatus(
         return;
       }
 
-      const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
-      const jitter = Math.random() * 1000;
+      const _delay = Math?.min(1000 * Math?.pow(2, attempt), 30000);
+      const _jitter = Math?.random() * 1000;
 
-      reconnectTimeoutRef.current = setTimeout(async () => {
-        if (!mountedRef.current) return;
+      reconnectTimeoutRef?.current = setTimeout(async () => {
+        if (!mountedRef?.current) return;
 
         setState((prev) => ({
           ...prev,
@@ -200,12 +200,12 @@ export function useNetworkStatus(
 
         onReconnect?.(attempt + 1);
 
-        const isConnected = await checkConnection();
+        const _isConnected = await checkConnection();
 
-        if (!isConnected && mountedRef.current) {
+        if (!isConnected && mountedRef?.current) {
           scheduleReconnect(attempt + 1);
-        } else if (isConnected && mountedRef.current) {
-          isReconnectingRef.current = false;
+        } else if (isConnected && mountedRef?.current) {
+          isReconnectingRef?.current = false;
 
           if (showToasts) {
             toast({
@@ -222,12 +222,12 @@ export function useNetworkStatus(
     [maxReconnectAttempts, checkConnection, onReconnect, onOnline, showToasts],
   );
 
-  const retry = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
+  const _retry = useCallback(() => {
+    if (reconnectTimeoutRef?.current) {
+      clearTimeout(reconnectTimeoutRef?.current);
     }
 
-    isReconnectingRef.current = true;
+    isReconnectingRef?.current = true;
     setState((prev) => ({
       ...prev,
       reconnectAttempts: 0,
@@ -236,29 +236,29 @@ export function useNetworkStatus(
     }));
 
     checkConnection().then((isConnected) => {
-      if (!isConnected && mountedRef.current) {
+      if (!isConnected && mountedRef?.current) {
         scheduleReconnect(0);
       }
     });
   }, [checkConnection, scheduleReconnect]);
 
-  const cancelRetry = useCallback(() => {
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+  const _cancelRetry = useCallback(() => {
+    if (reconnectTimeoutRef?.current) {
+      clearTimeout(reconnectTimeoutRef?.current);
+      reconnectTimeoutRef?.current = null;
     }
-    isReconnectingRef.current = false;
+    isReconnectingRef?.current = false;
     setState((prev) => ({ ...prev, isReconnecting: false }));
   }, []);
 
   useEffect(() => {
-    mountedRef.current = true;
+    mountedRef?.current = true;
 
-    const handleOnline = () => {
-      errorService.addBreadcrumb("network-online", { timestamp: new Date() });
+    const _handleOnline = () => {
+      errorService?.addBreadcrumb("network-online", { timestamp: new Date() });
 
       checkConnection().then((isConnected) => {
-        if (isConnected && mountedRef.current) {
+        if (isConnected && mountedRef?.current) {
           setState((prev) => ({
             ...prev,
             status: "online",
@@ -282,8 +282,8 @@ export function useNetworkStatus(
       });
     };
 
-    const handleOffline = () => {
-      errorService.addBreadcrumb("network-offline", { timestamp: new Date() });
+    const _handleOffline = () => {
+      errorService?.addBreadcrumb("network-offline", { timestamp: new Date() });
 
       setState((prev) => ({
         ...prev,
@@ -303,19 +303,19 @@ export function useNetworkStatus(
 
       onOffline?.();
 
-      if (!isReconnectingRef.current) {
-        isReconnectingRef.current = true;
+      if (!isReconnectingRef?.current) {
+        isReconnectingRef?.current = true;
         scheduleReconnect(0);
       }
     };
 
-    const handleConnectionChange = () => {
-      const connectionInfo = getConnectionInfo();
+    const _handleConnectionChange = () => {
+      const _connectionInfo = getConnectionInfo();
       setState((prev) => ({ ...prev, ...connectionInfo }));
 
       if (
-        connectionInfo.effectiveType === "2g" ||
-        connectionInfo.effectiveType === "slow-2g"
+        connectionInfo?.effectiveType === "2g" ||
+        connectionInfo?.effectiveType === "slow-2g"
       ) {
         if (showToasts) {
           toast({
@@ -329,19 +329,19 @@ export function useNetworkStatus(
       }
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window?.addEventListener("online", handleOnline);
+    window?.addEventListener("offline", handleOffline);
 
-    const connection =
-      navigator.connection ||
-      navigator.mozConnection ||
-      navigator.webkitConnection;
+    const _connection =
+      navigator?.connection ||
+      navigator?.mozConnection ||
+      navigator?.webkitConnection;
     if (connection) {
-      connection.addEventListener("change", handleConnectionChange);
+      connection?.addEventListener("change", handleConnectionChange);
     }
 
-    pingIntervalRef.current = setInterval(() => {
-      if (navigator.onLine) {
+    pingIntervalRef?.current = setInterval(() => {
+      if (navigator?.onLine) {
         checkConnection();
       }
     }, pingInterval);
@@ -349,20 +349,20 @@ export function useNetworkStatus(
     checkConnection();
 
     return () => {
-      mountedRef.current = false;
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      mountedRef?.current = false;
+      window?.removeEventListener("online", handleOnline);
+      window?.removeEventListener("offline", handleOffline);
 
       if (connection) {
-        connection.removeEventListener("change", handleConnectionChange);
+        connection?.removeEventListener("change", handleConnectionChange);
       }
 
-      if (pingIntervalRef.current) {
-        clearInterval(pingIntervalRef.current);
+      if (pingIntervalRef?.current) {
+        clearInterval(pingIntervalRef?.current);
       }
 
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
+      if (reconnectTimeoutRef?.current) {
+        clearTimeout(reconnectTimeoutRef?.current);
       }
     };
   }, [
@@ -407,15 +407,15 @@ export function useRetryWithBackoff<T>(
   const [isRetrying, setIsRetrying] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [error, setError] = useState<Error | null>(null);
-  const abortRef = useRef(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const _abortRef = useRef(false);
+  const _timeoutRef = useRef<NodeJS?.Timeout | null>(null);
 
-  const execute = useCallback(async (): Promise<T | null> => {
-    abortRef.current = false;
+  const _execute = useCallback(async (): Promise<T | null> => {
+    abortRef?.current = false;
     setError(null);
 
     for (let i = 0; i <= maxRetries; i++) {
-      if (abortRef.current) {
+      if (abortRef?.current) {
         return null;
       }
 
@@ -423,14 +423,14 @@ export function useRetryWithBackoff<T>(
 
       if (i > 0) {
         setIsRetrying(true);
-        const delay = Math.min(initialDelay * Math.pow(2, i - 1), maxDelay);
-        const jitter = Math.random() * 1000;
+        const _delay = Math?.min(initialDelay * Math?.pow(2, i - 1), maxDelay);
+        const _jitter = Math?.random() * 1000;
 
         await new Promise<void>((resolve) => {
-          timeoutRef.current = setTimeout(resolve, delay + jitter);
+          timeoutRef?.current = setTimeout(resolve, delay + jitter);
         });
 
-        if (abortRef.current) {
+        if (abortRef?.current) {
           return null;
         }
 
@@ -438,13 +438,13 @@ export function useRetryWithBackoff<T>(
       }
 
       try {
-        const result = await fn();
+        const _result = await fn();
         setIsRetrying(false);
         setAttempt(0);
         onSuccess?.(result);
         return result;
       } catch (err) {
-        const e = err instanceof Error ? err : new Error(String(err));
+        const _e = err instanceof Error ? err : new Error(String(err));
         setError(e);
 
         if (i === maxRetries) {
@@ -467,15 +467,15 @@ export function useRetryWithBackoff<T>(
     error,
   ]);
 
-  const cancel = useCallback(() => {
-    abortRef.current = true;
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+  const _cancel = useCallback(() => {
+    abortRef?.current = true;
+    if (timeoutRef?.current) {
+      clearTimeout(timeoutRef?.current);
     }
     setIsRetrying(false);
   }, []);
 
-  const reset = useCallback(() => {
+  const _reset = useCallback(() => {
     cancel();
     setAttempt(0);
     setError(null);
@@ -483,9 +483,9 @@ export function useRetryWithBackoff<T>(
 
   useEffect(() => {
     return () => {
-      abortRef.current = true;
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      abortRef?.current = true;
+      if (timeoutRef?.current) {
+        clearTimeout(timeoutRef?.current);
       }
     };
   }, []);

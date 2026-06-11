@@ -79,7 +79,7 @@ export interface StudioLayoutState {
   resetLayout: () => void;
 }
 
-const defaultState = {
+const _defaultState = {
   mode: "arrange" as StudioMode,
   browserPanel: { visible: true, width: 280 },
   inspectorPanel: { visible: false, width: 260 },
@@ -111,7 +111,7 @@ const defaultState = {
   focusedPanel: null as StudioLayoutState["focusedPanel"],
 };
 
-export const useStudioLayoutStore = create<StudioLayoutState>()(
+export const _useStudioLayoutStore = create<StudioLayoutState>()(
   persist(
     (set) => ({
       ...defaultState,
@@ -120,41 +120,41 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
         set((state) => {
           const updates: Partial<StudioLayoutState> = { mode };
           if (mode === "mix") {
-            updates.consolePanel = {
-              ...state.consolePanel,
+            updates?.consolePanel = {
+              ...state?.consolePanel,
               visible: true,
               height: 500,
             };
-            updates.launcherPanel = { ...state.launcherPanel, visible: false };
+            updates?.launcherPanel = { ...state?.launcherPanel, visible: false };
           } else if (mode === "launcher") {
-            updates.launcherPanel = { ...state.launcherPanel, visible: true };
+            updates?.launcherPanel = { ...state?.launcherPanel, visible: true };
           } else if (mode === "arrange") {
-            updates.consolePanel = {
-              ...state.consolePanel,
+            updates?.consolePanel = {
+              ...state?.consolePanel,
               visible: true,
               height: 300,
             };
-            updates.launcherPanel = { ...state.launcherPanel, visible: false };
+            updates?.launcherPanel = { ...state?.launcherPanel, visible: false };
           } else if (mode === "project") {
-            updates.browserPanel = { ...state.browserPanel, visible: false };
-            updates.consolePanel = { ...state.consolePanel, visible: true };
+            updates?.browserPanel = { ...state?.browserPanel, visible: false };
+            updates?.consolePanel = { ...state?.consolePanel, visible: true };
           }
           return updates;
         }),
 
       togglePanel: (panel) =>
         set((state) => {
-          const panelKey = `${panel}Panel` as keyof StudioLayoutState;
-          const currentPanel = state[panelKey] as PanelState;
+          const _panelKey = `${panel}Panel` as keyof StudioLayoutState;
+          const _currentPanel = state[panelKey] as PanelState;
           return {
-            [panelKey]: { ...currentPanel, visible: !currentPanel.visible },
+            [panelKey]: { ...currentPanel, visible: !currentPanel?.visible },
           } as Partial<StudioLayoutState>;
         }),
 
       setPanelWidth: (panel, width) =>
         set((state) => {
-          const panelKey = `${panel}Panel` as keyof StudioLayoutState;
-          const currentPanel = state[panelKey] as PanelState;
+          const _panelKey = `${panel}Panel` as keyof StudioLayoutState;
+          const _currentPanel = state[panelKey] as PanelState;
           return {
             [panelKey]: { ...currentPanel, width },
           } as Partial<StudioLayoutState>;
@@ -162,8 +162,8 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
 
       setPanelHeight: (panel, height) =>
         set((state) => {
-          const panelKey = `${panel}Panel` as keyof StudioLayoutState;
-          const currentPanel = state[panelKey] as PanelState;
+          const _panelKey = `${panel}Panel` as keyof StudioLayoutState;
+          const _currentPanel = state[panelKey] as PanelState;
           return {
             [panelKey]: { ...currentPanel, height },
           } as Partial<StudioLayoutState>;
@@ -172,15 +172,15 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
       toggleConsoleSection: (section) =>
         set((state) => ({
           consoleSections: {
-            ...state.consoleSections,
-            [section]: !state.consoleSections[section],
+            ...state?.consoleSections,
+            [section]: !state?.consoleSections[section],
           },
         })),
 
       setChannelWidth: (width) => set({ channelWidth: width }),
 
       setZoomLevel: (level) =>
-        set({ zoomLevel: Math.max(0.1, Math.min(10, level)) }),
+        set({ zoomLevel: Math?.max(0?.1, Math?.min(10, level)) }),
 
       setScroll: (horizontal, vertical) =>
         set({
@@ -195,24 +195,24 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
       setFocusedPanel: (panel) => set({ focusedPanel: panel }),
 
       toggleGridVisible: () =>
-        set((state) => ({ gridVisible: !state.gridVisible })),
+        set((state) => ({ gridVisible: !state?.gridVisible })),
 
       toggleSnapEnabled: () =>
-        set((state) => ({ snapEnabled: !state.snapEnabled })),
+        set((state) => ({ snapEnabled: !state?.snapEnabled })),
 
       toggleAutomationVisible: () =>
-        set((state) => ({ automationVisible: !state.automationVisible })),
+        set((state) => ({ automationVisible: !state?.automationVisible })),
 
       toggleArrangerTrack: () =>
-        set((state) => ({ arrangerTrackVisible: !state.arrangerTrackVisible })),
+        set((state) => ({ arrangerTrackVisible: !state?.arrangerTrackVisible })),
 
       toggleMarkerLane: () =>
-        set((state) => ({ markerLaneVisible: !state.markerLaneVisible })),
+        set((state) => ({ markerLaneVisible: !state?.markerLaneVisible })),
 
       setPanelVisibility: (panel, visible) =>
         set((state) => {
-          const panelKey = `${panel}Panel` as keyof StudioLayoutState;
-          const currentPanel = state[panelKey] as PanelState;
+          const _panelKey = `${panel}Panel` as keyof StudioLayoutState;
+          const _currentPanel = state[panelKey] as PanelState;
           return {
             [panelKey]: { ...currentPanel, visible },
           } as Partial<StudioLayoutState>;
@@ -223,16 +223,16 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
     {
       name: "studio-layout",
       partialize: (state) => ({
-        mode: state.mode,
-        browserPanel: state.browserPanel,
-        inspectorPanel: state.inspectorPanel,
-        consolePanel: state.consolePanel,
-        consoleSections: state.consoleSections,
-        channelWidth: state.channelWidth,
-        showTransport: state.showTransport,
-        snapEnabled: state.snapEnabled,
-        gridVisible: state.gridVisible,
-        markerLaneVisible: state.markerLaneVisible,
+        mode: state?.mode,
+        browserPanel: state?.browserPanel,
+        inspectorPanel: state?.inspectorPanel,
+        consolePanel: state?.consolePanel,
+        consoleSections: state?.consoleSections,
+        channelWidth: state?.channelWidth,
+        showTransport: state?.showTransport,
+        snapEnabled: state?.snapEnabled,
+        gridVisible: state?.gridVisible,
+        markerLaneVisible: state?.markerLaneVisible,
       }),
     },
   ),

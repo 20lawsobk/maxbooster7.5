@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { EventEmitter } from "events";
 import { randomBytes } from "crypto";
 
@@ -128,27 +128,27 @@ class VSTPluginBridge extends EventEmitter {
 
   constructor(config: Partial<VSTBridgeConfig> = {}) {
     super();
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    this?.config = { ...DEFAULT_CONFIG, ...config };
   }
 
   async initialize(): Promise<void> {
     try {
-      logger.info("Initializing VST Plugin Bridge...");
-      this.bridgeReady = true;
-      this.emit("bridgeReady");
-      logger.info("VST Plugin Bridge initialized successfully");
+      logger?.info("Initializing VST Plugin Bridge...");
+      this?.bridgeReady = true;
+      this?.emit("bridgeReady");
+      logger?.info("VST Plugin Bridge initialized successfully");
     } catch (error) {
-      logger.warn({ err: error }, "Failed to initialize VST Plugin Bridge:");
+      logger?.warn({ err: error }, "Failed to initialize VST Plugin Bridge:");
       throw error;
     }
   }
 
   isBridgeReady(): boolean {
-    return this.bridgeReady;
+    return this?.bridgeReady;
   }
 
   isDesktopConnected(): boolean {
-    return this.desktopConnection !== null;
+    return this?.desktopConnection !== null;
   }
 
   async connectDesktopApp(connectionInfo: {
@@ -156,35 +156,35 @@ class VSTPluginBridge extends EventEmitter {
     userId: string;
   }): Promise<boolean> {
     try {
-      logger.info("Desktop app connection request:", connectionInfo);
-      this.desktopConnection = {
-        sessionId: connectionInfo.sessionId,
-        userId: connectionInfo.userId,
+      logger?.info("Desktop app connection request:", connectionInfo);
+      this?.desktopConnection = {
+        sessionId: connectionInfo?.sessionId,
+        userId: connectionInfo?.userId,
         connectedAt: new Date(),
       };
-      this.emit("desktopConnected", this.desktopConnection);
+      this?.emit("desktopConnected", this?.desktopConnection);
       return true;
     } catch (error) {
-      logger.warn({ err: error }, "Failed to connect desktop app:");
+      logger?.warn({ err: error }, "Failed to connect desktop app:");
       return false;
     }
   }
 
   disconnectDesktopApp(): void {
-    if (this.desktopConnection) {
-      this.emit("desktopDisconnected", this.desktopConnection);
-      this.desktopConnection = null;
+    if (this?.desktopConnection) {
+      this?.emit("desktopDisconnected", this?.desktopConnection);
+      this?.desktopConnection = null;
     }
   }
 
   async scanPlugins(paths?: string[]): Promise<VSTScanResult> {
-    if (this.isScanning) {
+    if (this?.isScanning) {
       throw new Error("Plugin scan already in progress");
     }
 
-    this.isScanning = true;
-    const startTime = Date.now();
-    const scanPaths = paths || this.config.scanPaths;
+    this?.isScanning = true;
+    const _startTime = Date?.now();
+    const _scanPaths = paths || this?.config.scanPaths;
     const result: VSTScanResult = {
       scanned: 0,
       valid: 0,
@@ -195,40 +195,40 @@ class VSTPluginBridge extends EventEmitter {
     };
 
     try {
-      logger.info("Starting VST plugin scan...", { paths: scanPaths });
-      this.emit("scanStart", { paths: scanPaths });
+      logger?.info("Starting VST plugin scan...", { paths: scanPaths });
+      this?.emit("scanStart", { paths: scanPaths });
 
       for (const scanPath of scanPaths) {
         try {
-          const plugins = await this.scanDirectory(scanPath);
-          result.scanned += plugins.scanned;
-          result.valid += plugins.valid;
-          result.invalid += plugins.invalid;
-          result.plugins.push(...plugins.plugins);
-          result.errors.push(...plugins.errors);
+          const _plugins = await this?.scanDirectory(scanPath);
+          result?.scanned += plugins?.scanned;
+          result?.valid += plugins?.valid;
+          result?.invalid += plugins?.invalid;
+          result?.plugins.push(...plugins?.plugins);
+          result?.errors.push(...plugins?.errors);
         } catch (error) {
-          result.errors.push({ path: scanPath, error: error.message });
+          result?.errors.push({ path: scanPath, error: error?.message });
         }
       }
 
-      for (const plugin of result.plugins) {
-        this.scannedPlugins.set(plugin.id, plugin);
+      for (const plugin of result?.plugins) {
+        this?.scannedPlugins.set(plugin?.id, plugin);
       }
 
-      this.lastScanTime = new Date();
-      result.scanTime = Date.now() - startTime;
+      this?.lastScanTime = new Date();
+      result?.scanTime = Date?.now() - startTime;
 
-      logger.info("VST plugin scan completed", {
-        scanned: result.scanned,
-        valid: result.valid,
-        invalid: result.invalid,
-        scanTime: result.scanTime,
+      logger?.info("VST plugin scan completed", {
+        scanned: result?.scanned,
+        valid: result?.valid,
+        invalid: result?.invalid,
+        scanTime: result?.scanTime,
       });
 
-      this.emit("scanComplete", result);
+      this?.emit("scanComplete", result);
       return result;
     } finally {
-      this.isScanning = false;
+      this?.isScanning = false;
     }
   }
 
@@ -242,10 +242,10 @@ class VSTPluginBridge extends EventEmitter {
       scanTime: 0,
     };
 
-    const samplePlugins = this.getBuiltInVSTEmulations();
-    result.valid = samplePlugins.length;
-    result.scanned = samplePlugins.length;
-    result.plugins = samplePlugins;
+    const _samplePlugins = this?.getBuiltInVSTEmulations();
+    result?.valid = samplePlugins?.length;
+    result?.scanned = samplePlugins?.length;
+    result?.plugins = samplePlugins;
 
     return result;
   }
@@ -256,7 +256,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-serum-emulation",
         name: "Wavetable Synth Pro",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://wavetable-synth-pro",
         category: "instrument",
@@ -269,7 +269,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 0,
         tailSize: 0,
-        parameters: this.generateWavetableParams(),
+        parameters: this?.generateWavetableParams(),
         programs: [
           "Init",
           "Bass Drop",
@@ -282,7 +282,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-massive-emulation",
         name: "Massive Synth",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://massive-synth",
         category: "instrument",
@@ -295,7 +295,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 0,
         tailSize: 0,
-        parameters: this.generateMassiveParams(),
+        parameters: this?.generateMassiveParams(),
         programs: [
           "Init",
           "Wobble Bass",
@@ -308,7 +308,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-fabfilter-proq-emulation",
         name: "Pro EQ 3",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://pro-eq-3",
         category: "effect",
@@ -321,7 +321,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 0,
         tailSize: 0,
-        parameters: this.generateProEQParams(),
+        parameters: this?.generateProEQParams(),
         programs: [
           "Flat",
           "Vocal Presence",
@@ -334,7 +334,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-fabfilter-prol-emulation",
         name: "Pro Limiter",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://pro-limiter",
         category: "effect",
@@ -347,7 +347,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 64,
         tailSize: 0,
-        parameters: this.generateLimiterParams(),
+        parameters: this?.generateLimiterParams(),
         programs: [
           "Transparent",
           "Loud Master",
@@ -359,7 +359,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-ozone-emulation",
         name: "Master Suite",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://master-suite",
         category: "effect",
@@ -372,7 +372,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 128,
         tailSize: 4096,
-        parameters: this.generateMasterSuiteParams(),
+        parameters: this?.generateMasterSuiteParams(),
         programs: [
           "Balanced Master",
           "Loud EDM",
@@ -385,7 +385,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-valhalla-room-emulation",
         name: "Ethereal Reverb",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://ethereal-reverb",
         category: "effect",
@@ -398,7 +398,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 0,
         tailSize: 48000,
-        parameters: this.generateReverbParams(),
+        parameters: this?.generateReverbParams(),
         programs: [
           "Small Room",
           "Large Hall",
@@ -412,7 +412,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-soundtoys-decapitator-emulation",
         name: "Analog Saturation",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://analog-saturation",
         category: "effect",
@@ -425,7 +425,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 0,
         tailSize: 0,
-        parameters: this.generateSaturationParams(),
+        parameters: this?.generateSaturationParams(),
         programs: [
           "Subtle Warmth",
           "Tube Drive",
@@ -438,7 +438,7 @@ class VSTPluginBridge extends EventEmitter {
         id: "vst-ssl-comp-emulation",
         name: "Bus Compressor",
         vendor: "Max Booster",
-        version: "1.0.0",
+        version: "1?.0.0",
         format: "vst3",
         path: "internal://bus-compressor",
         category: "effect",
@@ -451,7 +451,7 @@ class VSTPluginBridge extends EventEmitter {
         supportsDoublePrecision: true,
         latency: 32,
         tailSize: 0,
-        parameters: this.generateBusCompParams(),
+        parameters: this?.generateBusCompParams(),
         programs: [
           "Glue",
           "Punchy",
@@ -474,7 +474,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -487,7 +487,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -513,7 +513,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -522,11 +522,11 @@ class VSTPluginBridge extends EventEmitter {
         id: "osc_mix",
         name: "Oscillator Mix",
         label: "%",
-        value: 0.5,
-        defaultValue: 0.5,
+        value: 0?.5,
+        defaultValue: 0?.5,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -561,11 +561,11 @@ class VSTPluginBridge extends EventEmitter {
         id: "env_attack",
         name: "Amp Attack",
         label: "s",
-        value: 0.001,
-        defaultValue: 0.001,
+        value: 0?.001,
+        defaultValue: 0?.001,
         minValue: 0,
         maxValue: 10,
-        stepSize: 0.001,
+        stepSize: 0?.001,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -583,7 +583,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -596,7 +596,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -609,7 +609,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -648,7 +648,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -661,7 +661,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -674,7 +674,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -705,7 +705,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: -30,
         maxValue: 30,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -716,9 +716,9 @@ class VSTPluginBridge extends EventEmitter {
         label: "",
         value: 1,
         defaultValue: 1,
-        minValue: 0.1,
+        minValue: 0?.1,
         maxValue: 30,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -744,7 +744,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: -30,
         maxValue: 30,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -755,9 +755,9 @@ class VSTPluginBridge extends EventEmitter {
         label: "",
         value: 1,
         defaultValue: 1,
-        minValue: 0.1,
+        minValue: 0?.1,
         maxValue: 30,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -771,11 +771,11 @@ class VSTPluginBridge extends EventEmitter {
         id: "ceiling",
         name: "Ceiling",
         label: "dB",
-        value: -0.3,
-        defaultValue: -0.3,
+        value: -0?.3,
+        defaultValue: -0?.3,
         minValue: -6,
         maxValue: 0,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -788,7 +788,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 24,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -814,7 +814,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 5,
         minValue: 0,
         maxValue: 10,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: false,
         isReadOnly: false,
       },
@@ -832,7 +832,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: -12,
         maxValue: 12,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -845,7 +845,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: -12,
         maxValue: 12,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -858,7 +858,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: -12,
         maxValue: 12,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -871,7 +871,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: -12,
         minValue: -40,
         maxValue: 0,
-        stepSize: 0.5,
+        stepSize: 0?.5,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -884,7 +884,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 2,
         minValue: 1,
         maxValue: 20,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -906,11 +906,11 @@ class VSTPluginBridge extends EventEmitter {
         id: "limiter_ceiling",
         name: "Ceiling",
         label: "dB",
-        value: -0.1,
-        defaultValue: -0.1,
+        value: -0?.1,
+        defaultValue: -0?.1,
         minValue: -6,
         maxValue: 0,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -937,11 +937,11 @@ class VSTPluginBridge extends EventEmitter {
         id: "size",
         name: "Size",
         label: "",
-        value: 0.5,
-        defaultValue: 0.5,
+        value: 0?.5,
+        defaultValue: 0?.5,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -952,9 +952,9 @@ class VSTPluginBridge extends EventEmitter {
         label: "s",
         value: 2,
         defaultValue: 2,
-        minValue: 0.1,
+        minValue: 0?.1,
         maxValue: 30,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -1011,7 +1011,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 24,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -1033,11 +1033,11 @@ class VSTPluginBridge extends EventEmitter {
         id: "tone",
         name: "Tone",
         label: "",
-        value: 0.5,
-        defaultValue: 0.5,
+        value: 0?.5,
+        defaultValue: 0?.5,
         minValue: 0,
         maxValue: 1,
-        stepSize: 0.01,
+        stepSize: 0?.01,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -1050,7 +1050,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: -24,
         maxValue: 24,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -1081,7 +1081,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: -10,
         minValue: -30,
         maxValue: 0,
-        stepSize: 0.5,
+        stepSize: 0?.5,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -1094,7 +1094,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 4,
         minValue: 1,
         maxValue: 10,
-        stepSize: 0.5,
+        stepSize: 0?.5,
         isAutomatable: false,
         isReadOnly: false,
       },
@@ -1105,9 +1105,9 @@ class VSTPluginBridge extends EventEmitter {
         label: "ms",
         value: 10,
         defaultValue: 10,
-        minValue: 0.1,
+        minValue: 0?.1,
         maxValue: 30,
-        stepSize: 0.1,
+        stepSize: 0?.1,
         isAutomatable: false,
         isReadOnly: false,
       },
@@ -1133,7 +1133,7 @@ class VSTPluginBridge extends EventEmitter {
         defaultValue: 0,
         minValue: 0,
         maxValue: 20,
-        stepSize: 0.5,
+        stepSize: 0?.5,
         isAutomatable: true,
         isReadOnly: false,
       },
@@ -1154,19 +1154,19 @@ class VSTPluginBridge extends EventEmitter {
   }
 
   getScannedPlugins(): VSTPluginInfo[] {
-    return Array.from(this.scannedPlugins.values());
+    return Array?.from(this?.scannedPlugins.values());
   }
 
   getPluginById(pluginId: string): VSTPluginInfo | undefined {
-    return this.scannedPlugins.get(pluginId);
+    return this?.scannedPlugins.get(pluginId);
   }
 
   getPluginsByCategory(category: "instrument" | "effect"): VSTPluginInfo[] {
-    return this.getScannedPlugins().filter((p) => p.category === category);
+    return this?.getScannedPlugins().filter((p) => p?.category === category);
   }
 
   getPluginsByFormat(format: VSTFormat): VSTPluginInfo[] {
-    return this.getScannedPlugins().filter((p) => p.format === format);
+    return this?.getScannedPlugins().filter((p) => p?.format === format);
   }
 
   async createInstance(
@@ -1177,26 +1177,26 @@ class VSTPluginBridge extends EventEmitter {
     sampleRate: number = 44100,
     blockSize: number = 512,
   ): Promise<VSTInstance> {
-    const plugin = this.getPluginById(pluginId);
+    const _plugin = this?.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
 
-    if (this.instances.size >= this.config.maxInstances) {
+    if (this?.instances.size >= this?.config.maxInstances) {
       throw new Error(
-        `Maximum plugin instances reached: ${this.config.maxInstances}`,
+        `Maximum plugin instances reached: ${this?.config.maxInstances}`,
       );
     }
 
     const instance: VSTInstance = {
-      id: `vst-inst-${Date.now()}-${randomBytes(6).toString("hex")}`,
+      id: `vst-inst-${Date?.now()}-${randomBytes(6).toString("hex")}`,
       pluginId,
       pluginInfo: plugin,
       projectId,
       trackId,
       chainPosition,
-      parameters: Object.fromEntries(
-        plugin.parameters.map((p) => [p.id, p.defaultValue]),
+      parameters: Object?.fromEntries(
+        plugin?.parameters.map((p) => [p?.id, p?.defaultValue]),
       ),
       bypassed: false,
       sampleRate,
@@ -1207,40 +1207,40 @@ class VSTPluginBridge extends EventEmitter {
       updatedAt: new Date(),
     };
 
-    this.instances.set(instance.id, instance);
-    this.emit("instanceCreated", instance);
+    this?.instances.set(instance?.id, instance);
+    this?.emit("instanceCreated", instance);
 
-    logger.info("VST instance created:", {
-      instanceId: instance.id,
-      pluginName: plugin.name,
+    logger?.info("VST instance created:", {
+      instanceId: instance?.id,
+      pluginName: plugin?.name,
     });
     return instance;
   }
 
   async deleteInstance(instanceId: string): Promise<void> {
-    const instance = this.instances.get(instanceId);
+    const _instance = this?.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
-    this.instances.delete(instanceId);
-    this.emit("instanceDeleted", { instanceId });
-    logger.info("VST instance deleted:", { instanceId });
+    this?.instances.delete(instanceId);
+    this?.emit("instanceDeleted", { instanceId });
+    logger?.info("VST instance deleted:", { instanceId });
   }
 
   getInstance(instanceId: string): VSTInstance | undefined {
-    return this.instances.get(instanceId);
+    return this?.instances.get(instanceId);
   }
 
   getProjectInstances(projectId: string): VSTInstance[] {
-    return Array.from(this.instances.values()).filter(
-      (i) => i.projectId === projectId,
+    return Array?.from(this?.instances.values()).filter(
+      (i) => i?.projectId === projectId,
     );
   }
 
   getTrackInstances(trackId: string): VSTInstance[] {
-    return Array.from(this.instances.values()).filter(
-      (i) => i.trackId === trackId,
+    return Array?.from(this?.instances.values()).filter(
+      (i) => i?.trackId === trackId,
     );
   }
 
@@ -1248,87 +1248,87 @@ class VSTPluginBridge extends EventEmitter {
     instanceId: string,
     parameters: Record<string, number>,
   ): Promise<VSTInstance> {
-    const instance = this.instances.get(instanceId);
+    const _instance = this?.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
-    instance.parameters = { ...instance.parameters, ...parameters };
-    instance.updatedAt = new Date();
+    instance?.parameters = { ...instance?.parameters, ...parameters };
+    instance?.updatedAt = new Date();
 
-    this.emit("parametersChanged", { instanceId, parameters });
+    this?.emit("parametersChanged", { instanceId, parameters });
     return instance;
   }
 
   async setBypass(instanceId: string, bypassed: boolean): Promise<VSTInstance> {
-    const instance = this.instances.get(instanceId);
+    const _instance = this?.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
-    instance.bypassed = bypassed;
-    instance.updatedAt = new Date();
+    instance?.bypassed = bypassed;
+    instance?.updatedAt = new Date();
 
-    this.emit("bypassChanged", { instanceId, bypassed });
+    this?.emit("bypassChanged", { instanceId, bypassed });
     return instance;
   }
 
   async processAudio(request: VSTProcessRequest): Promise<Float32Array[]> {
-    const instance = this.instances.get(request.instanceId);
+    const _instance = this?.instances.get(request?.instanceId);
     if (!instance) {
-      throw new Error(`Instance not found: ${request.instanceId}`);
+      throw new Error(`Instance not found: ${request?.instanceId}`);
     }
 
-    if (instance.bypassed) {
-      return request.inputBuffers;
+    if (instance?.bypassed) {
+      return request?.inputBuffers;
     }
 
-    return request.inputBuffers;
+    return request?.inputBuffers;
   }
 
   async loadProgram(instanceId: string, programIndex: number): Promise<void> {
-    const instance = this.instances.get(instanceId);
+    const _instance = this?.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
-    const plugin = instance.pluginInfo;
-    if (programIndex < 0 || programIndex >= plugin.programs.length) {
+    const _plugin = instance?.pluginInfo;
+    if (programIndex < 0 || programIndex >= plugin?.programs.length) {
       throw new Error(`Invalid program index: ${programIndex}`);
     }
 
-    logger.info("VST program loaded:", {
+    logger?.info("VST program loaded:", {
       instanceId,
-      program: plugin.programs[programIndex],
+      program: plugin?.programs[programIndex],
     });
-    this.emit("programChanged", {
+    this?.emit("programChanged", {
       instanceId,
       programIndex,
-      programName: plugin.programs[programIndex],
+      programName: plugin?.programs[programIndex],
     });
   }
 
   async openEditor(instanceId: string): Promise<{ windowId: string }> {
-    const instance = this.instances.get(instanceId);
+    const _instance = this?.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
-    instance.editorOpen = true;
-    const windowId = `editor-${instanceId}`;
+    instance?.editorOpen = true;
+    const _windowId = `editor-${instanceId}`;
 
-    this.emit("editorOpened", { instanceId, windowId });
+    this?.emit("editorOpened", { instanceId, windowId });
     return { windowId };
   }
 
   async closeEditor(instanceId: string): Promise<void> {
-    const instance = this.instances.get(instanceId);
+    const _instance = this?.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
-    instance.editorOpen = false;
-    this.emit("editorClosed", { instanceId });
+    instance?.editorOpen = false;
+    this?.emit("editorClosed", { instanceId });
   }
 
   getStats(): {
@@ -1340,20 +1340,20 @@ class VSTPluginBridge extends EventEmitter {
     desktopConnected: boolean;
   } {
     const instancesByFormat: Record<string, number> = {};
-    for (const instance of this.instances.values()) {
-      const format = instance.pluginInfo.format;
+    for (const instance of this?.instances.values()) {
+      const _format = instance?.pluginInfo.format;
       instancesByFormat[format] = (instancesByFormat[format] || 0) + 1;
     }
 
     return {
-      totalPlugins: this.scannedPlugins.size,
-      totalInstances: this.instances.size,
+      totalPlugins: this?.scannedPlugins.size,
+      totalInstances: this?.instances.size,
       instancesByFormat,
-      lastScanTime: this.lastScanTime,
-      bridgeReady: this.bridgeReady,
-      desktopConnected: this.isDesktopConnected(),
+      lastScanTime: this?.lastScanTime,
+      bridgeReady: this?.bridgeReady,
+      desktopConnected: this?.isDesktopConnected(),
     };
   }
 }
 
-export const vstPluginBridge = new VSTPluginBridge();
+export const _vstPluginBridge = new VSTPluginBridge();

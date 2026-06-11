@@ -73,7 +73,7 @@ const SCALE_INTERVALS: Record<string, number[]> = {
   arabian: [0, 2, 4, 5, 6, 8, 10],
 };
 
-const NOTE_NAMES = [
+const _NOTE_NAMES = [
   "C",
   "C#",
   "D",
@@ -128,15 +128,15 @@ const CHORD_PROGRESSIONS: Record<string, number[][]> = {
 };
 
 const RHYTHM_PATTERNS: Record<string, number[]> = {
-  straight: [0, 0.25, 0.5, 0.75],
-  swing: [0, 0.33, 0.5, 0.83],
-  triplet: [0, 0.33, 0.67],
-  dotted: [0, 0.375, 0.75],
-  syncopated: [0, 0.25, 0.375, 0.625, 0.75],
-  hiphop: [0, 0.25, 0.5, 0.625, 0.875],
-  trap: [0, 0.125, 0.25, 0.5, 0.625, 0.75, 0.875],
-  house: [0, 0.25, 0.5, 0.75],
-  dnb: [0, 0.167, 0.5, 0.667],
+  straight: [0, 0?.25, 0?.5, 0?.75],
+  swing: [0, 0?.33, 0?.5, 0?.83],
+  triplet: [0, 0?.33, 0?.67],
+  dotted: [0, 0?.375, 0?.75],
+  syncopated: [0, 0?.25, 0?.375, 0?.625, 0?.75],
+  hiphop: [0, 0?.25, 0?.5, 0?.625, 0?.875],
+  trap: [0, 0?.125, 0?.25, 0?.5, 0?.625, 0?.75, 0?.875],
+  house: [0, 0?.25, 0?.5, 0?.75],
+  dnb: [0, 0?.167, 0?.5, 0?.667],
 };
 
 class MidiGeneratorService {
@@ -145,14 +145,14 @@ class MidiGeneratorService {
     scale: string,
     octaveRange: [number, number],
   ): number[] {
-    const intervals = SCALE_INTERVALS[scale] || SCALE_INTERVALS.major;
+    const _intervals = SCALE_INTERVALS[scale] || SCALE_INTERVALS?.major;
     const notes: number[] = [];
 
     for (let octave = octaveRange[0]; octave <= octaveRange[1]; octave++) {
       for (const interval of intervals) {
-        const note = rootNote + octave * 12 + interval;
+        const _note = rootNote + octave * 12 + interval;
         if (note >= 0 && note <= 127) {
-          notes.push(note);
+          notes?.push(note);
         }
       }
     }
@@ -161,12 +161,12 @@ class MidiGeneratorService {
   }
 
   private noteNameToMidi(noteName: string): number {
-    const match = noteName.match(/^([A-G]#?)(\d)?$/i);
+    const _match = noteName?.match(/^([A-G]#?)(\d)?$/i);
     if (!match) return 60;
 
     const [, note, octaveStr] = match;
-    const noteIndex = NOTE_NAMES.indexOf(note.toUpperCase());
-    const octave = octaveStr ? parseInt(octaveStr) : 4;
+    const _noteIndex = NOTE_NAMES?.indexOf(note?.toUpperCase());
+    const _octave = octaveStr ? parseInt(octaveStr) : 4;
 
     return noteIndex + (octave + 1) * 12;
   }
@@ -175,24 +175,24 @@ class MidiGeneratorService {
     notes: MidiNote[],
     options: HumanizationOptions,
   ): MidiNote[] {
-    if (!options.enabled) return notes;
+    if (!options?.enabled) return notes;
 
-    return notes.map((note) => {
-      const velocityOffset =
-        (Math.random() - 0.5) * 2 * options.velocityVariation;
-      const timingOffset =
-        ((Math.random() - 0.5) * 2 * options.timingOffsetMs) / 1000;
-      const durationOffset =
-        (Math.random() - 0.5) * 2 * options.durationVariation;
+    return notes?.map((note) => {
+      const _velocityOffset =
+        (Math?.random() - 0?.5) * 2 * options?.velocityVariation;
+      const _timingOffset =
+        ((Math?.random() - 0?.5) * 2 * options?.timingOffsetMs) / 1000;
+      const _durationOffset =
+        (Math?.random() - 0?.5) * 2 * options?.durationVariation;
 
       return {
         ...note,
-        velocity: Math.max(
+        velocity: Math?.max(
           1,
-          Math.min(127, Math.round(note.velocity + velocityOffset)),
+          Math?.min(127, Math?.round(note?.velocity + velocityOffset)),
         ),
-        startTime: Math.max(0, note.startTime + timingOffset),
-        duration: Math.max(0.01, note.duration * (1 + durationOffset)),
+        startTime: Math?.max(0, note?.startTime + timingOffset),
+        duration: Math?.max(0?.01, note?.duration * (1 + durationOffset)),
       };
     });
   }
@@ -203,44 +203,44 @@ class MidiGeneratorService {
     density: "sparse" | "normal" | "dense" = "normal",
     humanization?: HumanizationOptions,
   ): MidiNote[] {
-    const rootNote = this.noteNameToMidi(constraints.key);
-    const octaveRange = constraints.octaveRange || [4, 5];
-    const scaleNotes = this.getScaleNotes(
+    const _rootNote = this?.noteNameToMidi(constraints?.key);
+    const _octaveRange = constraints?.octaveRange || [4, 5];
+    const _scaleNotes = this?.getScaleNotes(
       rootNote % 12,
-      constraints.scale,
+      constraints?.scale,
       octaveRange,
     );
 
-    const beatsPerBar = constraints.timeSignature?.[0] || 4;
-    const totalBeats = bars * beatsPerBar;
-    const beatDuration = 60 / constraints.tempo;
+    const _beatsPerBar = constraints?.timeSignature?.[0] || 4;
+    const _totalBeats = bars * beatsPerBar;
+    const _beatDuration = 60 / constraints?.tempo;
 
-    const notesPerBeat =
-      density === "sparse" ? 0.5 : density === "dense" ? 2 : 1;
-    const totalNotes = Math.round(totalBeats * notesPerBeat);
+    const _notesPerBeat =
+      density === "sparse" ? 0?.5 : density === "dense" ? 2 : 1;
+    const _totalNotes = Math?.round(totalBeats * notesPerBeat);
 
     const notes: MidiNote[] = [];
     let currentTime = 0;
-    let lastNoteIndex = Math.floor(scaleNotes.length / 2);
+    let lastNoteIndex = Math?.floor(scaleNotes?.length / 2);
 
     for (let i = 0; i < totalNotes; i++) {
-      const stepSize = Math.floor(Math.random() * 5) - 2;
-      lastNoteIndex = Math.max(
+      const _stepSize = Math?.floor(Math?.random() * 5) - 2;
+      lastNoteIndex = Math?.max(
         0,
-        Math.min(scaleNotes.length - 1, lastNoteIndex + stepSize),
+        Math?.min(scaleNotes?.length - 1, lastNoteIndex + stepSize),
       );
 
-      const velocity = constraints.velocityRange
-        ? Math.floor(
-            Math.random() *
-              (constraints.velocityRange[1] - constraints.velocityRange[0]) +
-              constraints.velocityRange[0],
+      const _velocity = constraints?.velocityRange
+        ? Math?.floor(
+            Math?.random() *
+              (constraints?.velocityRange[1] - constraints?.velocityRange[0]) +
+              constraints?.velocityRange[0],
           )
-        : Math.floor(Math.random() * 40 + 70);
+        : Math?.floor(Math?.random() * 40 + 70);
 
-      const noteDuration = beatDuration * (0.5 + Math.random() * 0.5);
+      const _noteDuration = beatDuration * (0?.5 + Math?.random() * 0?.5);
 
-      notes.push({
+      notes?.push({
         note: scaleNotes[lastNoteIndex],
         velocity,
         startTime: currentTime,
@@ -250,7 +250,7 @@ class MidiGeneratorService {
       currentTime += beatDuration / notesPerBeat;
     }
 
-    return humanization ? this.applyHumanization(notes, humanization) : notes;
+    return humanization ? this?.applyHumanization(notes, humanization) : notes;
   }
 
   generateRhythm(
@@ -259,30 +259,30 @@ class MidiGeneratorService {
     pattern: keyof typeof RHYTHM_PATTERNS = "straight",
     noteValue: number = 60,
   ): MidiNote[] {
-    const beatDuration = 60 / constraints.tempo;
-    const beatsPerBar = constraints.timeSignature?.[0] || 4;
-    const patternPositions =
-      RHYTHM_PATTERNS[pattern] || RHYTHM_PATTERNS.straight;
+    const _beatDuration = 60 / constraints?.tempo;
+    const _beatsPerBar = constraints?.timeSignature?.[0] || 4;
+    const _patternPositions =
+      RHYTHM_PATTERNS[pattern] || RHYTHM_PATTERNS?.straight;
 
     const notes: MidiNote[] = [];
 
     for (let bar = 0; bar < bars; bar++) {
       for (let beat = 0; beat < beatsPerBar; beat++) {
         for (const position of patternPositions) {
-          const startTime =
+          const _startTime =
             (bar * beatsPerBar + beat + position) * beatDuration;
-          const velocity =
+          const _velocity =
             position === 0
               ? 110
-              : position === 0.5
+              : position === 0?.5
                 ? 90
-                : 70 + Math.floor(Math.random() * 30);
+                : 70 + Math?.floor(Math?.random() * 30);
 
-          notes.push({
+          notes?.push({
             note: noteValue,
             velocity,
             startTime,
-            duration: beatDuration * 0.1,
+            duration: beatDuration * 0?.1,
           });
         }
       }
@@ -295,27 +295,27 @@ class MidiGeneratorService {
     constraints: GenerationConstraints,
     config: ChordProgressionConfig,
   ): MidiNote[] {
-    const rootNote = this.noteNameToMidi(constraints.key);
-    const beatDuration = 60 / constraints.tempo;
-    const progression =
-      CHORD_PROGRESSIONS[config.style] || CHORD_PROGRESSIONS.pop;
+    const _rootNote = this?.noteNameToMidi(constraints?.key);
+    const _beatDuration = 60 / constraints?.tempo;
+    const _progression =
+      CHORD_PROGRESSIONS[config?.style] || CHORD_PROGRESSIONS?.pop;
 
     const notes: MidiNote[] = [];
     let currentTime = 0;
-    const chordDuration = beatDuration * 4;
+    const _chordDuration = beatDuration * 4;
 
-    for (let i = 0; i < config.length; i++) {
-      const chordIntervals = progression[i % progression.length];
-      const baseOctave = 3;
+    for (let i = 0; i < config?.length; i++) {
+      const _chordIntervals = progression[i % progression?.length];
+      const _baseOctave = 3;
 
       for (const interval of chordIntervals) {
-        const midiNote = (rootNote % 12) + interval + baseOctave * 12;
+        const _midiNote = (rootNote % 12) + interval + baseOctave * 12;
 
-        notes.push({
+        notes?.push({
           note: midiNote,
-          velocity: 80 + Math.floor(Math.random() * 20),
+          velocity: 80 + Math?.floor(Math?.random() * 20),
           startTime: currentTime,
-          duration: chordDuration * 0.9,
+          duration: chordDuration * 0?.9,
         });
       }
 
@@ -330,20 +330,20 @@ class MidiGeneratorService {
     config: ArpeggiatorConfig,
     tempo: number,
   ): MidiNote[] {
-    const uniquePitches = [...new Set(inputNotes.map((n) => n.note))].sort(
+    const _uniquePitches = [...new Set(inputNotes?.map((n) => n?.note))].sort(
       (a, b) => a - b,
     );
-    if (uniquePitches.length === 0) return [];
+    if (uniquePitches?.length === 0) return [];
 
     const expandedNotes: number[] = [];
-    for (let oct = 0; oct < config.octaves; oct++) {
+    for (let oct = 0; oct < config?.octaves; oct++) {
       for (const pitch of uniquePitches) {
-        expandedNotes.push(pitch + oct * 12);
+        expandedNotes?.push(pitch + oct * 12);
       }
     }
 
     let orderedNotes: number[];
-    switch (config.pattern) {
+    switch (config?.pattern) {
       case "up":
         orderedNotes = [...expandedNotes];
         break;
@@ -353,53 +353,53 @@ class MidiGeneratorService {
       case "updown":
         orderedNotes = [
           ...expandedNotes,
-          ...expandedNotes.slice(1, -1).reverse(),
+          ...expandedNotes?.slice(1, -1).reverse(),
         ];
         break;
       case "downup":
         orderedNotes = [
-          ...expandedNotes.reverse(),
-          ...expandedNotes.slice(1, -1),
+          ...expandedNotes?.reverse(),
+          ...expandedNotes?.slice(1, -1),
         ];
         break;
       case "random":
-        orderedNotes = [...expandedNotes].sort(() => Math.random() - 0.5);
+        orderedNotes = [...expandedNotes].sort(() => Math?.random() - 0?.5);
         break;
       case "converge":
         orderedNotes = [];
-        for (let i = 0; i < Math.ceil(expandedNotes.length / 2); i++) {
-          orderedNotes.push(expandedNotes[i]);
-          if (expandedNotes.length - 1 - i !== i) {
-            orderedNotes.push(expandedNotes[expandedNotes.length - 1 - i]);
+        for (let i = 0; i < Math?.ceil(expandedNotes?.length / 2); i++) {
+          orderedNotes?.push(expandedNotes[i]);
+          if (expandedNotes?.length - 1 - i !== i) {
+            orderedNotes?.push(expandedNotes[expandedNotes?.length - 1 - i]);
           }
         }
         break;
       case "diverge":
         orderedNotes = [];
-        const mid = Math.floor(expandedNotes.length / 2);
+        const _mid = Math?.floor(expandedNotes?.length / 2);
         for (let i = 0; i <= mid; i++) {
-          if (mid + i < expandedNotes.length)
-            orderedNotes.push(expandedNotes[mid + i]);
+          if (mid + i < expandedNotes?.length)
+            orderedNotes?.push(expandedNotes[mid + i]);
           if (mid - i >= 0 && i !== 0)
-            orderedNotes.push(expandedNotes[mid - i]);
+            orderedNotes?.push(expandedNotes[mid - i]);
         }
         break;
       default:
         orderedNotes = [...expandedNotes];
     }
 
-    const rateMs = this.rateToMs(config.rate, tempo);
-    const noteDuration = (rateMs / 1000) * config.gate;
+    const _rateMs = this?.rateToMs(config?.rate, tempo);
+    const _noteDuration = (rateMs / 1000) * config?.gate;
 
     const result: MidiNote[] = [];
     let time = 0;
-    const velocity = config.velocity || 100;
+    const _velocity = config?.velocity || 100;
 
     for (const note of orderedNotes) {
-      const swingOffset =
-        result.length % 2 === 1 ? (config.swing / 100) * (rateMs / 1000) : 0;
+      const _swingOffset =
+        result?.length % 2 === 1 ? (config?.swing / 100) * (rateMs / 1000) : 0;
 
-      result.push({
+      result?.push({
         note,
         velocity,
         startTime: time + swingOffset,
@@ -413,7 +413,7 @@ class MidiGeneratorService {
   }
 
   private rateToMs(rate: string, tempo: number): number {
-    const beatMs = 60000 / tempo;
+    const _beatMs = 60000 / tempo;
     const rates: Record<string, number> = {
       "1/4": beatMs,
       "1/8": beatMs / 2,
@@ -430,9 +430,9 @@ class MidiGeneratorService {
     constraints: GenerationConstraints,
     config: ChordProgressionConfig,
   ): { chords: string[]; notes: MidiNote[][] } {
-    const rootNote = this.noteNameToMidi(constraints.key) % 12;
-    const scaleIntervals =
-      SCALE_INTERVALS[constraints.scale] || SCALE_INTERVALS.major;
+    const _rootNote = this?.noteNameToMidi(constraints?.key) % 12;
+    const _scaleIntervals =
+      SCALE_INTERVALS[constraints?.scale] || SCALE_INTERVALS?.major;
 
     const chordQualities: Record<number, string> = {
       0: "maj",
@@ -453,30 +453,30 @@ class MidiGeneratorService {
       rnb: [1, 4, 0, 5],
     };
 
-    const degreeSequence = progressions[config.style] || progressions.pop;
+    const _degreeSequence = progressions[config?.style] || progressions?.pop;
     const chords: string[] = [];
     const noteArrays: MidiNote[][] = [];
 
-    const beatDuration = 60 / constraints.tempo;
+    const _beatDuration = 60 / constraints?.tempo;
     let currentTime = 0;
 
-    for (let i = 0; i < config.length; i++) {
-      const degree = degreeSequence[i % degreeSequence.length];
-      const chordRoot = (rootNote + scaleIntervals[degree]) % 12;
-      const quality = chordQualities[degree] || "maj";
+    for (let i = 0; i < config?.length; i++) {
+      const _degree = degreeSequence[i % degreeSequence?.length];
+      const _chordRoot = (rootNote + scaleIntervals[degree]) % 12;
+      const _quality = chordQualities[degree] || "maj";
 
-      const chordName = `${NOTE_NAMES[chordRoot]}${quality}`;
-      chords.push(chordName);
+      const _chordName = `${NOTE_NAMES[chordRoot]}${quality}`;
+      chords?.push(chordName);
 
-      const chordNotes = this.buildChord(chordRoot, quality, config.voicing);
-      const midiNotes: MidiNote[] = chordNotes.map((note) => ({
+      const _chordNotes = this?.buildChord(chordRoot, quality, config?.voicing);
+      const midiNotes: MidiNote[] = chordNotes?.map((note) => ({
         note: note + 48,
         velocity: 85,
         startTime: currentTime,
-        duration: beatDuration * 4 * 0.95,
+        duration: beatDuration * 4 * 0?.95,
       }));
 
-      noteArrays.push(midiNotes);
+      noteArrays?.push(midiNotes);
       currentTime += beatDuration * 4;
     }
 
@@ -498,29 +498,29 @@ class MidiGeneratorService {
       add9: [0, 4, 7, 14],
     };
 
-    const chordIntervals = intervals[quality] || intervals.maj;
-    let notes = chordIntervals.map((i) => root + i);
+    const _chordIntervals = intervals[quality] || intervals?.maj;
+    let notes = chordIntervals?.map((i) => root + i);
 
     switch (voicing) {
       case "open":
-        if (notes.length >= 3) {
+        if (notes?.length >= 3) {
           notes[1] += 12;
         }
         break;
       case "drop2":
-        if (notes.length >= 4) {
+        if (notes?.length >= 4) {
           notes[2] -= 12;
-          notes.sort((a, b) => a - b);
+          notes?.sort((a, b) => a - b);
         }
         break;
       case "drop3":
-        if (notes.length >= 4) {
+        if (notes?.length >= 4) {
           notes[1] -= 12;
-          notes.sort((a, b) => a - b);
+          notes?.sort((a, b) => a - b);
         }
         break;
       case "spread":
-        notes = notes.map((n, i) => n + i * 12);
+        notes = notes?.map((n, i) => n + i * 12);
         break;
     }
 
@@ -528,16 +528,16 @@ class MidiGeneratorService {
   }
 
   getAvailableScales(): string[] {
-    return Object.keys(SCALE_INTERVALS);
+    return Object?.keys(SCALE_INTERVALS);
   }
 
   getAvailableRhythmPatterns(): string[] {
-    return Object.keys(RHYTHM_PATTERNS);
+    return Object?.keys(RHYTHM_PATTERNS);
   }
 
   getAvailableChordStyles(): string[] {
-    return Object.keys(CHORD_PROGRESSIONS);
+    return Object?.keys(CHORD_PROGRESSIONS);
   }
 }
 
-export const midiGeneratorService = new MidiGeneratorService();
+export const _midiGeneratorService = new MidiGeneratorService();

@@ -102,7 +102,7 @@ export interface DomainInfo {
 }
 
 // ── Domain lifecycle states ───────────────────────────────────────────────────
-// Full state machine as surfaced in the DB claimed_domains.status field
+// Full state machine as surfaced in the DB claimed_domains?.status field
 
 export type DomainLifecycleState =
   | "requested" // user initiated, pre-registrar call

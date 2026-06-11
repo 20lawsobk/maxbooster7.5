@@ -21,7 +21,7 @@ class Logger {
   private isDevelopment: boolean;
 
   constructor() {
-    this.isDevelopment = import.meta.env.DEV;
+    this?.isDevelopment = import?.meta.env?.DEV;
   }
 
   private formatLog(
@@ -40,7 +40,7 @@ class Logger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    if (this.isDevelopment) {
+    if (this?.isDevelopment) {
       return true;
     }
     return level === "error" || level === "warn";
@@ -52,32 +52,32 @@ class Logger {
     data?: unknown,
     context?: string,
   ): void {
-    if (!this.shouldLog(level)) {
+    if (!this?.shouldLog(level)) {
       return;
     }
 
-    const logEntry = this.formatLog(level, message, data, context);
+    const _logEntry = this?.formatLog(level, message, data, context);
 
-    if (this.isDevelopment) {
-      const prefix = `[${level.toUpperCase()}]${context ? ` [${context}]` : ""}`;
-      const style = this.getConsoleStyle(level);
+    if (this?.isDevelopment) {
+      const _prefix = `[${level?.toUpperCase()}]${context ? ` [${context}]` : ""}`;
+      const _style = this?.getConsoleStyle(level);
 
       if (data !== undefined) {
-        console.log(`%c${prefix} ${message}`, style, data);
+        console?.log(`%c${prefix} ${message}`, style, data);
       } else {
-        console.log(`%c${prefix} ${message}`, style);
+        console?.log(`%c${prefix} ${message}`, style);
       }
     } else {
       if (level === "error") {
-        console.error(logEntry.message, logEntry.data);
+        console?.error(logEntry?.message, logEntry?.data);
       } else if (level === "warn") {
-        console.warn(logEntry.message, logEntry.data);
+        console?.warn(logEntry?.message, logEntry?.data);
       }
     }
   }
 
   private getConsoleStyle(level: LogLevel): string {
-    const styles = {
+    const _styles = {
       info: "color: #3b82f6; font-weight: bold",
       warn: "color: #f59e0b; font-weight: bold",
       error: "color: #ef4444; font-weight: bold",
@@ -87,20 +87,20 @@ class Logger {
   }
 
   info(message: string, data?: unknown, context?: string): void {
-    this.log("info", message, data, context);
+    this?.log("info", message, data, context);
   }
 
   warn(message: string, data?: unknown, context?: string): void {
-    this.log("warn", message, data, context);
+    this?.log("warn", message, data, context);
   }
 
   error(message: string, data?: unknown, context?: string): void {
-    this.log("error", message, data, context);
+    this?.log("error", message, data, context);
   }
 
   debug(message: string, data?: unknown, context?: string): void {
-    this.log("debug", message, data, context);
+    this?.log("debug", message, data, context);
   }
 }
 
-export const logger = new Logger();
+export const _logger = new Logger();
