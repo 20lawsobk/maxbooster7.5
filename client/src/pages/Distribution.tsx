@@ -346,25 +346,25 @@ interface PayoutHistory {
 }
 
 interface LabelSubmissionItem {
-  id?: string;
+  id: string;
   trackTitle?: string;
   labelName?: string;
   contactName?: string;
   contactRole?: string;
   notes?: string;
   priority?: string;
-  status?: string;
+  status: string;
 }
 
 interface SampleClearanceItem {
-  id?: string;
+  id: string;
   trackTitle?: string;
   sampleSource?: string;
   sampleArtist?: string;
   sampleLabel?: string;
   clearanceType?: string;
   fee?: number;
-  status?: string;
+  status: string;
 }
 
 interface PlaylistPitchingStats {
@@ -451,6 +451,40 @@ interface UploadSessionStatus {
   uploadedChunks: number;
   totalChunks: number;
   status: "initializing" | "uploading" | "processing" | "complete" | "failed";
+}
+
+interface VenueRecord {
+  id: string;
+  venueName: string;
+  city?: string;
+  state?: string;
+  capacity?: number;
+  contactName?: string;
+  contactEmail?: string;
+  status: string;
+}
+
+interface MusicVideoJobStatus {
+  status?: string;
+  progress?: number;
+  step?: string;
+  error?: string;
+  videoUrl?: string;
+  outputPath?: string;
+}
+
+interface VoiceProfileOption {
+  id: string;
+  name: string;
+}
+
+interface LibraryVideoItem {
+  id: string;
+  trackTitle?: string;
+  songTitle?: string;
+  stage?: string;
+  status?: string;
+  videoUrl?: string;
 }
 
 function getPlatformIcon(slug: string) {
@@ -990,7 +1024,7 @@ function VenueBookingCRM() {
     mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest("POST", "/api/venues", {
         ...data,
-        capacity: data.capacity ? parseInt(data.capacity) : undefined,
+        capacity: data.capacity ? parseInt(data.capacity as string) : undefined,
       });
       return res.json();
     },
@@ -1173,7 +1207,7 @@ function VenueBookingCRM() {
           </div>
         ) : (
           <div className="space-y-2">
-            {venues.map((v: Record<string, unknown>) => (
+            {venues.map((v: VenueRecord) => (
               <div
                 key={v.id}
                 className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors"
@@ -1207,6 +1241,7 @@ function VenueBookingCRM() {
 
 function SyncLicensingContent() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data: catalog = [], isLoading } = useQuery<any[]>({
@@ -1430,8 +1465,7 @@ export default function Distribution() {
   const [activeTab, setActiveTab] = useState("releases");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isHyperFollowOpen, setIsHyperFollowOpen] = useState(false);
+  const [, setIsHyperFollowOpen] = useState(false);
   const [showReleaseDetails, setShowReleaseDetails] = useState(false);
   const [showEditRelease, setShowEditRelease] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -1475,13 +1509,10 @@ export default function Distribution() {
   });
 
   // Chunked Upload State
-  const [uploadSessions, setUploadSessions] = useState<any[]>([]);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [uploadSpeed, setUploadSpeed] = useState(0);
-  const [eta, setETA] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const [generatedISRC, setGeneratedISRC] = useState<string>("");
-  const [generatedUPC, setGeneratedUPC] = useState<string>("");
+  const [isPaused] = useState(false);
+  const [, setGeneratedISRC] = useState<string>("");
+  const [, setGeneratedUPC] = useState<string>("");
 
   // Data Queries
   const { data: releases = [], isLoading: releasesLoading } = useQuery<
@@ -1997,10 +2028,10 @@ export default function Distribution() {
               release.genre ||
               "N/A",
             release.releaseDate
-              ? new Date(release.releaseDate).toLocaleDateString()
+              ? new Date(release.releaseDate as string).toLocaleDateString()
               : "Not Set",
             release.status || "Draft",
-            release.platforms?.length || 0,
+            (release.platforms as unknown[])?.length || 0,
           ]);
 
           // Add table
@@ -2026,8 +2057,10 @@ export default function Distribution() {
           });
 
           // Add summary
+          const docUnknown: unknown = doc;
           const finalY =
-            (doc as Record<string, unknown>).lastAutoTable?.finalY || 60;
+            (docUnknown as { lastAutoTable?: { finalY?: number } })
+              .lastAutoTable?.finalY || 60;
           doc.setFontSize(12);
           doc.text("Summary", 14, finalY + 15);
           doc.setFontSize(10);
@@ -2644,10 +2677,7 @@ export default function Distribution() {
                                 >
                                   {
                                     (
-                                      release.metadata as Record<
-                                        string,
-                                        unknown
-                                      >
+                                      release.metadata as ReleaseMetadata
                                     ).releaseType
                                   }
                                 </Badge>
@@ -2657,10 +2687,7 @@ export default function Distribution() {
                                 <Badge variant="outline" className="text-xs">
                                   {
                                     (
-                                      release.metadata as Record<
-                                        string,
-                                        unknown
-                                      >
+                                      release.metadata as ReleaseMetadata
                                     ).primaryGenre
                                   }
                                 </Badge>
@@ -2741,10 +2768,7 @@ export default function Distribution() {
                                   title: release.title,
                                   artistName:
                                     (
-                                      release.metadata as Record<
-                                        string,
-                                        unknown
-                                      >
+                                      release.metadata as ReleaseMetadata
                                     )?.artistName ||
                                     release.artistName ||
                                     "",
@@ -2755,10 +2779,7 @@ export default function Distribution() {
                                     : "",
                                   primaryGenre:
                                     (
-                                      release.metadata as Record<
-                                        string,
-                                        unknown
-                                      >
+                                      release.metadata as ReleaseMetadata
                                     )?.primaryGenre || "",
                                 });
                                 setShowEditRelease(true);
@@ -2936,7 +2957,6 @@ export default function Distribution() {
                 <ChartCard
                   title="Revenue Trends"
                   subtitle="Last 30 days earnings"
-                  icon={<TrendingUp className="h-5 w-5 text-blue-500" />}
                 >
                   {streamingTrends && streamingTrends.length > 0 ? (
                     <SimpleAreaChart
@@ -2966,7 +2986,6 @@ export default function Distribution() {
                 <ChartCard
                   title="Platform Breakdown"
                   subtitle="Earnings by platform"
-                  icon={<PieChart className="h-5 w-5 text-blue-500" />}
                 >
                   {analytics?.platformBreakdown &&
                   analytics.platformBreakdown.length > 0 ? (
@@ -3104,7 +3123,7 @@ export default function Distribution() {
                                     (week.streams /
                                       Math.max(
                                         ...streamingTrends.map(
-                                          (w: unknown) => w.streams,
+                                          (w: StreamingTrend) => w.streams,
                                         ),
                                         1,
                                       )) *
@@ -3244,7 +3263,7 @@ export default function Distribution() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => exportReportMutation.mutate()}
+                    onClick={() => exportReportMutation.mutate("csv")}
                     disabled={exportReportMutation.isPending}
                     data-testid="button-export-report"
                   >
@@ -5232,8 +5251,8 @@ export default function Distribution() {
                       </p>
                     </div>
                   </div>
-                  {(selectedRelease.metadata as ReleaseMetadata)
-                    ?.selectedPlatforms?.length > 0 && (
+                  {((selectedRelease.metadata as ReleaseMetadata)
+                    ?.selectedPlatforms?.length ?? 0) > 0 && (
                     <div>
                       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-2">
                         Platforms
@@ -5241,7 +5260,7 @@ export default function Distribution() {
                       <div className="flex flex-wrap gap-1">
                         {(
                           selectedRelease.metadata as ReleaseMetadata
-                        ).selectedPlatforms.map((p: string) => (
+                        ).selectedPlatforms?.map((p: string) => (
                           <Badge
                             key={p}
                             variant="outline"
@@ -6237,7 +6256,7 @@ function MusicVideosContent() {
   const [enableVoice, setEnableVoice] = useState(false);
 
   const [jobId, setJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<Record<string, unknown> | null>(
+  const [jobStatus, setJobStatus] = useState<MusicVideoJobStatus | null>(
     null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -6353,7 +6372,7 @@ function MusicVideosContent() {
     } catch (err) {
       toast({
         title: "Error",
-        description: err.message,
+        description: (err as Error).message,
         variant: "destructive",
       });
     } finally {
@@ -6634,7 +6653,7 @@ function MusicVideosContent() {
                 </SelectTrigger>
                 <SelectContent>
                   {(voiceProfiles.length ? voiceProfiles : FALLBACK_VOICES).map(
-                    (v: Record<string, unknown>) => (
+                    (v: VoiceProfileOption) => (
                       <SelectItem key={v.id} value={v.id}>
                         {v.name}
                       </SelectItem>
@@ -6743,7 +6762,7 @@ function MusicVideosContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {libraryVideos.map((v: Record<string, unknown>) => (
+              {libraryVideos.map((v: LibraryVideoItem) => (
                 <div
                   key={v.id}
                   className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-800 rounded-lg"

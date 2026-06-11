@@ -70,27 +70,60 @@ interface Variant {
   priceOffset: number;
 }
 
+interface MerchItem {
+  id: string;
+  name: string;
+  description?: string;
+  price: string;
+  salePrice?: string;
+  imageUrl?: string;
+  category: string;
+  variants: Variant[];
+  inventory: number;
+  sku?: string;
+  isActive: boolean;
+  isDigital: boolean;
+  downloadUrl?: string;
+  soldCount: number;
+}
+
+interface MerchOrder {
+  id: string;
+  buyerEmail?: string;
+  buyerName?: string;
+  total: string;
+  status: string;
+  trackingNumber?: string;
+  createdAt: string;
+}
+
+interface MerchStats {
+  totalRevenue: number;
+  totalOrders: number;
+  ordersThisMonth: number;
+  bestSellers: MerchItem[];
+  inventoryAlerts: number;
+  lowInventoryItems: MerchItem[];
+}
+
 export default function MerchStore() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("products");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Record<
-    string,
-    unknown
-  > | null>(null);
+  const [editingItem, setEditingItem] = useState<MerchItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [addVariants, setAddVariants] = useState<Variant[]>([]);
   const [editVariants, setEditVariants] = useState<Variant[]>([]);
 
-  const { data: items, isLoading: itemsLoading } = useQuery({
+  const { data: items, isLoading: itemsLoading } = useQuery<MerchItem[]>({
     queryKey: ["/api/merch"],
   });
-  const { data: orders, isLoading: ordersLoading } = useQuery({
+  const { data: orders, isLoading: ordersLoading } = useQuery<MerchOrder[]>({
     queryKey: ["/api/merch/orders"],
   });
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery<MerchStats>({
     queryKey: ["/api/merch/stats"],
   });
 
@@ -155,7 +188,7 @@ export default function MerchStore() {
       trackingNumber,
     }: {
       id: string;
-      status: string;
+      status?: string;
       trackingNumber?: string;
     }) => {
       const res = await apiRequest("PUT", `/api/merch/orders/${id}`, {
@@ -198,6 +231,7 @@ export default function MerchStore() {
 
   const handleEditItem = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!editingItem) return;
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
     updateItemMutation.mutate({
@@ -211,8 +245,8 @@ export default function MerchStore() {
     });
   };
 
-  const filteredItems = (items as Record<string, unknown>[])?.filter(
-    (item: Record<string, unknown>) =>
+  const filteredItems = items?.filter(
+    (item) =>
       item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.sku?.toLowerCase().includes(searchTerm.toLowerCase()),
   );
@@ -330,7 +364,7 @@ export default function MerchStore() {
     variants,
     setVariants,
   }: {
-    defaultValues?: Record<string, unknown>;
+    defaultValues?: MerchItem;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     isLoading: boolean;
     submitLabel: string;
@@ -448,8 +482,8 @@ export default function MerchStore() {
     </form>
   );
 
-  const itemsArr = (items as Record<string, unknown>[]) || [];
-  const ordersArr = (orders as Record<string, unknown>[]) || [];
+  const itemsArr = items || [];
+  const ordersArr = orders || [];
 
   const categoryRevenue = (() => {
     const map: Record<string, number> = {};
@@ -473,8 +507,7 @@ export default function MerchStore() {
   const avgOrderValue =
     ordersArr.length > 0
       ? ordersArr.reduce(
-          (s: number, o: Record<string, unknown>) =>
-            s + parseFloat(o.total || 0),
+          (s: number, o) => s + parseFloat(o.total || "0"),
           0,
         ) / ordersArr.length
       : 0;
@@ -537,28 +570,28 @@ export default function MerchStore() {
           {[
             {
               label: "Total Revenue",
-              value: `$${(stats as Record<string, unknown>)?.totalRevenue?.toFixed(2) || "0.00"}`,
+              value: `$${stats?.totalRevenue?.toFixed(2) || "0.00"}`,
               sub: "Lifetime earnings",
               icon: DollarSign,
               color: "text-green-500",
             },
             {
               label: "Orders (Month)",
-              value: (stats as Record<string, unknown>)?.ordersThisMonth || 0,
+              value: stats?.ordersThisMonth || 0,
               sub: "Orders this month",
               icon: ShoppingCart,
               color: "text-blue-500",
             },
             {
               label: "Total Orders",
-              value: (stats as Record<string, unknown>)?.totalOrders || 0,
+              value: stats?.totalOrders || 0,
               sub: "All time orders",
               icon: TrendingUp,
               color: "text-purple-500",
             },
             {
               label: "Low Stock",
-              value: (stats as Record<string, unknown>)?.inventoryAlerts || 0,
+              value: stats?.inventoryAlerts || 0,
               sub: "Items needing restock",
               icon: AlertCircle,
               color: "text-destructive",
@@ -622,7 +655,7 @@ export default function MerchStore() {
                   </Button>
                 </div>
               ) : (
-                filteredItems?.map((item: Record<string, unknown>) => (
+                filteredItems?.map((item) => (
                   <Card key={item.id} className="overflow-hidden group">
                     <div className="aspect-square bg-muted relative">
                       {item.imageUrl ? (
@@ -770,7 +803,7 @@ export default function MerchStore() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      ordersArr.map((order: Record<string, unknown>) => (
+                      ordersArr.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-mono text-xs">
                             {order.id.split("-")[0]}
@@ -917,8 +950,7 @@ export default function MerchStore() {
                   </CardTitle>
                   <div className="text-2xl font-bold">
                     {itemsArr.reduce(
-                      (s: number, i: Record<string, unknown>) =>
-                        s + (i.soldCount || 0),
+                      (s: number, i) => s + (i.soldCount || 0),
                       0,
                     )}
                   </div>
@@ -1021,15 +1053,15 @@ export default function MerchStore() {
                   <CardTitle>Best Sellers</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {!(stats as Record<string, unknown>)?.bestSellers?.length ? (
+                  {!stats?.bestSellers?.length ? (
                     <div className="flex flex-col items-center py-8 text-muted-foreground">
                       <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
                       <p className="text-sm">No sales data yet.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {(stats as Record<string, unknown>).bestSellers.map(
-                        (item: Record<string, unknown>, i: number) => (
+                      {stats?.bestSellers?.map(
+                        (item, i: number) => (
                           <div
                             key={item.id}
                             className="flex items-center justify-between"
@@ -1078,8 +1110,7 @@ export default function MerchStore() {
                   <CardTitle>Inventory Alerts</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {!(stats as Record<string, unknown>)?.lowInventoryItems
-                    ?.length ? (
+                  {!stats?.lowInventoryItems?.length ? (
                     <div className="flex flex-col items-center py-8 text-center">
                       <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
                       <p className="text-sm text-muted-foreground">
@@ -1088,8 +1119,8 @@ export default function MerchStore() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {(stats as Record<string, unknown>).lowInventoryItems.map(
-                        (item: Record<string, unknown>) => (
+                      {stats?.lowInventoryItems?.map(
+                        (item) => (
                           <div
                             key={item.id}
                             className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20"

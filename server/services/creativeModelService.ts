@@ -157,6 +157,55 @@ function tryParseJson(raw: string): Record<string, unknown> {
   return JSON.parse(raw);
 }
 
+// ─── MaxCore / DiT-24 response shapes (typing for `unknown` JSON bodies) ───────
+
+interface MaxCoreSection {
+  name?: string;
+  label?: string;
+  start: number;
+  end?: number;
+}
+
+interface AudioAnalyzeResponse {
+  bpm?: number;
+  tempo?: number;
+  key?: string;
+  musical_key?: string;
+  sections?: unknown;
+  energy_curve?: unknown;
+  mood?: unknown;
+}
+
+interface GenerateTextResponse {
+  text?: string;
+  content?: string;
+  script?: string;
+  caption?: string;
+  outputs?: Array<{ text?: string }>;
+}
+
+
+interface RawBeat {
+  timecodeHint?: string;
+  timecode_hint?: string;
+  description?: string;
+  emotionalGoal?: string;
+  emotional_goal?: string;
+}
+
+interface VideoRelayResponse {
+  url?: string;
+  job_id?: string;
+  mp4_b64?: string;
+  frames?: number;
+  source?: string;
+}
+
+interface VideoJobResponse {
+  status?: string;
+  url?: string;
+}
+
 // ─── Public Types ─────────────────────────────────────────────────────────────
 
 /**
@@ -175,6 +224,7 @@ export interface CreativeBrief {
   offer: string;
   callToAction: string;
   keyMessages: string[];
+  artistName?: string;
   style: {
     aesthetic?: string;
     camera?: string;
@@ -188,6 +238,7 @@ export interface BeatNote {
   timecodeHint: string;
   description: string;
   emotionalGoal: string;
+  visualDescription?: string;
 }
 
 /** Full creative plan produced by the planning stage */
@@ -196,6 +247,7 @@ export interface CreativePlan {
   visuals: string[];
   hooks: string[];
   testingVariants: string[];
+  cta?: string;
 }
 
 /** Music metadata produced by the analysis stage */
@@ -206,6 +258,7 @@ export interface MusicMeta {
   sections: Array<{ name: string; start: number; end: number }>;
   energyCurve: number[];
   mood: string[];
+  genre?: string;
 }
 
 /** Beat-locked timeline produced by the alignment stage */
@@ -244,21 +297,21 @@ async function analyzeMusicStage(
   logger.info("[CreativeModel] Stage 1: Music analysis", { audioPath });
 
   try {
-    const raw = await maxcorePost("/audio/analyze", {
+    const raw = (await maxcorePost("/audio/analyze", {
       audio_path: audioPath,
       context: {
         domain: brief.domain,
         tone: brief.tone,
         platform: brief.platform,
       },
-    });
+    })) as AudioAnalyzeResponse;
 
     return {
       audioPat: audioPath,
       bpm: raw.bpm ?? raw.tempo ?? 120,
       key: raw.key ?? raw.musical_key ?? "C major",
       sections: Array.isArray(raw.sections)
-        ? raw.sections.map((s: Record<string, unknown>) => ({
+        ? raw.sections.map((s: MaxCoreSection) => ({
             name: s.name ?? s.label ?? "section",
             start: Number(s.start ?? 0),
             end: Number(s.end ?? s.start + 8),
@@ -595,21 +648,21 @@ Return JSON only — beats array must match the constraint count exactly:
 }`.trim();
 
   try {
-    const raw = await maxcorePost("/generate/text", {
+    const raw = (await maxcorePost("/generate/text", {
       mode: "content",
       platform: brief.platform,
       topic: `${brief.domain} creative plan — ${brief.goal}`,
       tone: brief.tone,
       prompt,
       format: "json",
-    });
+    })) as GenerateTextResponse;
 
     const text: string =
       raw.text ?? raw.content ?? raw.outputs?.[0]?.text ?? JSON.stringify(raw);
     const parsed = tryParseJson(text);
 
     const maxCoreBeats: BeatNote[] = Array.isArray(parsed.beats)
-      ? parsed.beats.map((b: Record<string, unknown>) => ({
+      ? parsed.beats.map((b: RawBeat) => ({
           timecodeHint: b.timecodeHint ?? b.timecode_hint ?? "0-3s",
           description: b.description ?? "",
           emotionalGoal: b.emotionalGoal ?? b.emotional_goal ?? "curiosity",
@@ -632,7 +685,7 @@ Return JSON only — beats array must match the constraint count exactly:
     const variants: string[] = Array.isArray(
       parsed.testingVariants ?? parsed.testing_variants,
     )
-      ? (parsed.testingVariants ?? parsed.testing_variants)
+      ? ((parsed.testingVariants ?? parsed.testing_variants) as string[])
       : ["origin_story", "bold_claim", "fan_reaction"];
     while (variants.length < variantCount) variants.push("social_proof");
 
@@ -712,7 +765,7 @@ async function scriptStage(
     : "";
 
   try {
-    const raw = await maxcorePost("/generate/text", {
+    const raw = (await maxcorePost("/generate/text", {
       mode: "content",
       platform: brief.platform,
       topic: `${brief.platform.toUpperCase()} video script — ${brief.goal}`,
@@ -728,7 +781,7 @@ async function scriptStage(
       ]
         .filter(Boolean)
         .join("\n"),
-    });
+    })) as GenerateTextResponse;
 
     return (
       raw.text ??
@@ -899,7 +952,7 @@ ${timeline
 Only override a beat's timing or transition if there is a strong narrative reason. Explain any deviation in a "notes" field.`.trim();
 
   try {
-    const raw = await maxcorePost("/generate/text", {
+    const raw = (await maxcorePost("/generate/text", {
       mode: "content",
       format: "json",
       topic: "Music-video temporal alignment validation",
@@ -913,12 +966,12 @@ Only override a beat's timing or transition if there is a strong narrative reaso
   "timeline": [{ "start": 0.0, "end": 3.0, "note": "optional reason for any change" }],
   "transitions": ["cut_on_beat", "crossfade", ...]
 }`,
-    });
+    })) as GenerateTextResponse;
 
     const text: string = raw.text ?? raw.content ?? JSON.stringify(raw);
     const parsed = tryParseJson(text);
 
-    if (Array.isArray(parsed?.timeline)) {
+    if (Array.isArray(parsed.timeline)) {
       return {
         timeline: parsed.timeline.map(
           (t: Record<string, unknown>, i: number) => ({
@@ -990,7 +1043,11 @@ async function assemblyStage(
   // ── Tier 1: DiT-24 local relay (routes to MaxCore when untrained, local when trained) ──
   try {
     logger.info("[CreativeModel] Stage 6: Trying DiT-24 local relay");
-    const relayResp = await dit24Post("/generate-video", videoPayload, 90_000);
+    const relayResp = (await dit24Post(
+      "/generate-video",
+      videoPayload,
+      90_000,
+    )) as VideoRelayResponse;
 
     if (relayResp?.url) {
       logger.info(
@@ -1007,7 +1064,9 @@ async function assemblyStage(
       const deadline = Date.now() + 180_000;
       while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 5_000));
-        const poll = await maxcoreGet(`/video-job/${relayResp.job_id}`);
+        const poll = (await maxcoreGet(
+          `/video-job/${relayResp.job_id}`,
+        )) as VideoJobResponse;
         if (poll?.status === "done" && poll?.url) {
           logger.info(
             `[CreativeModel] Stage 6: MaxCore job done → ${poll.url}`,
@@ -1030,11 +1089,11 @@ async function assemblyStage(
       );
       return `data:video/mp4;base64,${relayResp.mp4_b64}`;
     }
-  } catch (relayErr: Record<string, unknown>) {
+  } catch (relayErr) {
     logger.warn(
       "[CreativeModel] Stage 6: DiT-24 relay unavailable — falling back to MaxCore direct",
       {
-        err: relayErr?.message ?? String(relayErr),
+        err: relayErr instanceof Error ? relayErr.message : String(relayErr),
       },
     );
   }
@@ -1042,7 +1101,11 @@ async function assemblyStage(
   // ── Tier 2: MaxCore direct (fallback when relay is unavailable) ──────────────
   try {
     logger.info("[CreativeModel] Stage 6: MaxCore direct fallback");
-    const jobResp = await maxcorePost("/generate-video", videoPayload, 60_000);
+    const jobResp = (await maxcorePost(
+      "/generate-video",
+      videoPayload,
+      60_000,
+    )) as VideoRelayResponse;
 
     if (!jobResp) {
       throw new Error(
@@ -1160,9 +1223,8 @@ async function scoringStage(
   const maxcore =
     maxcoreResult.status === "fulfilled"
       ? (() => {
-          const parsed = tryParseJson(
-            maxcoreResult.value?.text ?? maxcoreResult.value?.content ?? "{}",
-          );
+          const value = maxcoreResult.value as GenerateTextResponse;
+          const parsed = tryParseJson(value?.text ?? value?.content ?? "{}");
           return {
             watchTimeScore: clamp(
               parsed.watchTimeScore ?? parsed.watch_time_score,
@@ -1228,7 +1290,7 @@ async function scoringStage(
   return { watchTimeScore: 0.7, hookStrength: 0.75, conversionScore: 0.65 };
 }
 
-function clamp(v: number, min = 0, max = 1): number {
+function clamp(v: unknown, min = 0, max = 1): number {
   return Math.max(min, Math.min(max, Number(v) || 0));
 }
 
