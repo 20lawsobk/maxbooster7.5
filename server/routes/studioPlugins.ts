@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { randomBytes } from "crypto";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   pluginHostService,
   PluginCategory,
@@ -265,7 +265,7 @@ router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
 
     if (data?.bypassed !== undefined) {
       await pluginHostService?.setInstanceBypassed(instanceId, data?.bypassed);
-      updatedInstance.bypassed = data?.bypassed;
+      updatedInstance?.bypassed = data?.bypassed;
     }
 
     res?.json({
@@ -731,7 +731,7 @@ router?.post(
       const _newParams = targetSlot === "A" ? state?.slotA : state?.slotB;
 
       await pluginHostService?.updateInstanceParameters(instanceId, newParams);
-      state.activeSlot = targetSlot;
+      state?.activeSlot = targetSlot;
       abCompareStates?.set(instanceId, state);
       capMap(abCompareStates, AB_COMPARE_MAX);
 
@@ -782,9 +782,9 @@ router?.post(
       }
 
       if (to === "A") {
-        state.slotA = { ...state?.slotB };
+        state?.slotA = { ...state?.slotB };
       } else {
-        state.slotB = { ...state?.slotA };
+        state?.slotB = { ...state?.slotA };
       }
       abCompareStates?.set(instanceId, state);
       capMap(abCompareStates, AB_COMPARE_MAX);
@@ -899,7 +899,7 @@ router?.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
       sources: {
         lfo: [
           { id: "lfo1", name: "LFO 1", rate: 1, shape: "sine" },
-          { id: "lfo2", name: "LFO 2", rate: 0.5, shape: "triangle" },
+          { id: "lfo2", name: "LFO 2", rate: 0?.5, shape: "triangle" },
           { id: "lfo3", name: "LFO 3", rate: 2, shape: "square" },
           { id: "lfo4", name: "LFO 4", rate: 4, shape: "saw" },
         ],
@@ -907,18 +907,18 @@ router?.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
           {
             id: "env1",
             name: "Envelope 1",
-            attack: 0.01,
-            decay: 0.1,
-            sustain: 0.7,
-            release: 0.3,
+            attack: 0?.01,
+            decay: 0?.1,
+            sustain: 0?.7,
+            release: 0?.3,
           },
           {
             id: "env2",
             name: "Envelope 2",
-            attack: 0.5,
-            decay: 0.2,
-            sustain: 0.5,
-            release: 0.5,
+            attack: 0?.5,
+            decay: 0?.2,
+            sustain: 0?.5,
+            release: 0?.5,
           },
         ],
         macro: [
@@ -1023,7 +1023,7 @@ router?.delete(
       const _config = modulationConfigs?.get(key);
 
       if (config) {
-        config.routings = config?.routings.filter(
+        config?.routings = config?.routings.filter(
           (r: Record<string, unknown>) => r?.id !== routingId,
         );
         modulationConfigs?.set(key, config);

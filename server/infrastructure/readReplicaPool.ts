@@ -1,6 +1,6 @@
 import { Pool, PoolClient, PoolConfig } from "pg";
-import { logger } from "../logger.js";
-import { env } from "../config/env.js";
+import { logger } from "../logger?.js";
+import { env } from "../config/env?.js";
 
 interface ReplicaConfig {
   host: string;
@@ -26,10 +26,10 @@ class ReadReplicaPool {
   private replicaWeights: number[] = [];
   private totalWeight: number = 0;
   private healthyReplicas: Set<number> = new Set();
-  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private healthCheckInterval: NodeJS?.Timeout | null = null;
 
   private constructor(config: ReadReplicaPoolConfig) {
-    this.primaryPool = new Pool({
+    this?.primaryPool = new Pool({
       ...config?.primary,
       max: config?.maxPoolSize,
       idleTimeoutMillis: config?.idleTimeout,
@@ -74,14 +74,14 @@ class ReadReplicaPool {
   static getInstance(): ReadReplicaPool {
     if (!ReadReplicaPool?.instance) {
       const _config = ReadReplicaPool?.buildConfigFromEnv();
-      ReadReplicaPool.instance = new ReadReplicaPool(config);
+      ReadReplicaPool?.instance = new ReadReplicaPool(config);
     }
     return ReadReplicaPool?.instance;
   }
 
   static initializeWithConfig(config: ReadReplicaPoolConfig): ReadReplicaPool {
     if (!ReadReplicaPool?.instance) {
-      ReadReplicaPool.instance = new ReadReplicaPool(config);
+      ReadReplicaPool?.instance = new ReadReplicaPool(config);
     }
     return ReadReplicaPool?.instance;
   }
@@ -133,7 +133,7 @@ class ReadReplicaPool {
   }
 
   private startHealthChecks(): void {
-    this.healthCheckInterval = setInterval(async () => {
+    this?.healthCheckInterval = setInterval(async () => {
       for (let i = 0; i < this?.replicaPools.length; i++) {
         try {
           const _client = await this?.replicaPools[i].connect();

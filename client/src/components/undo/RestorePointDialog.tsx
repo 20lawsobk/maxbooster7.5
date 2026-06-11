@@ -1,15 +1,6 @@
 import { logger } from "@/lib/logger";
 import { useState, useMemo } from "react";
-import {
-  Flag,
-  GitBranch,
-  Clock,
-  RotateCcw,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  CheckCircle2,
-} from "lucide-react";
+import { Flag, GitBranch, Clock, RotateCcw, Plus, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

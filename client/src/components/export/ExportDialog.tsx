@@ -24,23 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Download,
-  FileAudio,
-  FileSpreadsheet,
-  FileText,
-  File,
-  Settings2,
-  Layers,
-  Folder,
-  Volume2,
-  Zap,
-  Loader2,
-  Database,
-  Shield,
-  BarChart3,
-  DollarSign,
-} from "lucide-react";
+import { Download, FileAudio, FileSpreadsheet, FileText, File, Settings2, Layers, Folder, Volume2, Zap, Loader2, Database, Shield, BarChart3, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";

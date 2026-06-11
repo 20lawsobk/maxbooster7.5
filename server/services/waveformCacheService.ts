@@ -1,5 +1,5 @@
-import { logger } from "../logger.js";
-import { storageService } from "./storageService.js";
+import { logger } from "../logger?.js";
+import { storageService } from "./storageService?.js";
 import wavefilePkg from "wavefile";
 const _WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
@@ -30,7 +30,7 @@ class WaveformCacheService {
 
   static getInstance(): WaveformCacheService {
     if (!WaveformCacheService?.instance) {
-      WaveformCacheService.instance = new WaveformCacheService();
+      WaveformCacheService?.instance = new WaveformCacheService();
     }
     return WaveformCacheService?.instance;
   }
@@ -188,8 +188,8 @@ class WaveformCacheService {
   private generateFallbackWaveform(resolution: number): WaveformData {
     const _peaks = new Array(resolution)
       .fill(0)
-      .map(() => Math?.random() * 0.5 + 0.1);
-    const _rms = peaks?.map((p) => p * 0.7);
+      .map(() => Math?.random() * 0?.5 + 0?.1);
+    const _rms = peaks?.map((p) => p * 0?.7);
 
     return {
       peaks,

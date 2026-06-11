@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { randomBytes } from "crypto";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import type { Request, Response } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
@@ -30,19 +30,16 @@ import {
   type ReleaseMetadata,
   type LintResult,
 } from "../services/labelCopyLinter";
-import {
-  dspPolicyChecker,
-  type ComplianceResult,
-} from "../services/dspPolicyChecker";
+import { dspPolicyChecker, type ComplianceResult } from "../services/dspPolicyChecker";
 import {
   releaseWorkflowService,
   type TakedownReason,
 } from "../services/releaseWorkflow";
 import { audioFingerprintService } from "../services/audioFingerprint";
-import { audioMetadataService } from "../services/audioMetadataService.js";
+import { audioMetadataService } from "../services/audioMetadataService?.js";
 import { logger } from "../logger";
-import { notificationService } from "../services/notificationService.js";
-import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { notificationService } from "../services/notificationService?.js";
+import { createHardenedUpload } from "../middleware/uploadHandler?.js";
 import path from "path";
 import fs from "fs";
 import fsPromises from "fs/promises";
@@ -215,7 +212,7 @@ z?.object({
     "manager",
     "featured_artist",
   ]),
-  percentage: z?.number().min(0.1).max(100),
+  percentage: z?.number().min(0?.1).max(100),
 });
 
 // Middleware to ensure user is authenticated
@@ -956,9 +953,11 @@ router?.post(
       });
 
       if (!campaign) {
-        return res.status(500).json({
-          error: "Failed to create campaign - database insert returned null",
-        });
+        return res
+          .status(500)
+          .json({
+            error: "Failed to create campaign - database insert returned null",
+          });
       }
 
       res?.json(campaign);
@@ -1173,18 +1172,18 @@ router?.post("/hyperfollow/:slug/track", async (req: Request, res: Response) => 
 
     // Update analytics
     if (eventType === "pageView") {
-      analytics.pageViews = (analytics?.pageViews || 0) + 1;
+      analytics?.pageViews = (analytics?.pageViews || 0) + 1;
     } else if (eventType === "preSave") {
-      analytics.preSaves = (analytics?.preSaves || 0) + 1;
+      analytics?.preSaves = (analytics?.preSaves || 0) + 1;
     } else if (eventType === "emailSignup" && email) {
-      analytics.emailSignups = (analytics?.emailSignups || 0) + 1;
+      analytics?.emailSignups = (analytics?.emailSignups || 0) + 1;
       const _emailList = links?.emailList || [];
       if (!emailList?.includes(email)) {
         emailList?.push(email);
-        links.emailList = emailList;
+        links?.emailList = emailList;
       }
     } else if (eventType === "platformClick" && platform) {
-      analytics.platformClicks = analytics?.platformClicks || {};
+      analytics?.platformClicks = analytics?.platformClicks || {};
       analytics?.platformClicks[platform] =
         (analytics?.platformClicks[platform] || 0) + 1;
     }
@@ -1390,7 +1389,7 @@ router?.post(
 // ===========================
 
 import { ddexPackageService } from "../services/ddexPackageService";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // POST /api/distribution/releases/:id/ddex/preview - Generate and preview XML
 router?.post(
@@ -1549,7 +1548,7 @@ router?.get(
 
       res?.download(
         outputPath,
-        `${release?.title || "release"}_DDEX.zip`,
+        `${release?.title || "release"}_DDEX?.zip`,
         (err) => {
           if (err && !res?.headersSent) {
             logger?.warn({ err: err }, "Error downloading DDEX package:");
@@ -2311,7 +2310,7 @@ router?.post(
 
       if (data?.type === "isrc" || data?.type === "both") {
         const _count = data?.count || 1;
-        results.isrcs = await musicCodesService?.generateBulkISRCs(
+        results?.isrcs = await musicCodesService?.generateBulkISRCs(
           userId,
           count,
           countryCode,
@@ -2320,7 +2319,7 @@ router?.post(
 
       if (data?.type === "upc" || data?.type === "both") {
         const _upcResult = await musicCodesService?.generateUPC(userId);
-        results.upc = {
+        results?.upc = {
           code: upcResult?.code,
           formatted: upcResult?.formatted,
           checkDigit: upcResult?.checkDigit || "",
@@ -2794,7 +2793,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { trackId } = req?.params;
-      const _threshold = parseFloat(req?.query.threshold as string) || 0.5;
+      const _threshold = parseFloat(req?.query.threshold as string) || 0?.5;
       const _maxResults = parseInt(req?.query.maxResults as string) || 10;
 
       const _similarTracks = await audioFingerprintService?.findSimilarTracks(
@@ -2935,9 +2934,11 @@ router?.post(
       } else if (extension === ".xml") {
         fileType = "ddex";
       } else {
-        return res.status(400).json({
-          error: "Unsupported file format. Use CSV, XLSX, or DDEX XML",
-        });
+        return res
+          .status(400)
+          .json({
+            error: "Unsupported file format. Use CSV, XLSX, or DDEX XML",
+          });
       }
 
       const _jobId = await catalogImporter?.createImportJob(
@@ -4533,14 +4534,14 @@ router?.get(
       if (setting && setting?.value) {
         const _val = setting?.value as Record<string, unknown>;
         res?.json({
-          rates: val?.rates || { USD: 1, EUR: 0.92, GBP: 0.79 },
+          rates: val?.rates || { USD: 1, EUR: 0?.92, GBP: 0?.79 },
           baseCurrency: val?.baseCurrency || "USD",
           lastUpdated:
             setting?.updatedAt?.toISOString() || new Date().toISOString(),
         });
       } else {
         res?.json({
-          rates: { USD: 1, EUR: 0.92, GBP: 0.79 },
+          rates: { USD: 1, EUR: 0?.92, GBP: 0?.79 },
           baseCurrency: "USD",
           lastUpdated: new Date().toISOString(),
         });
@@ -5931,7 +5932,7 @@ router?.post(
           sampleRateDetail = `Sample rate is ${(sr / 1000).toFixed(1)} kHz — accepted for distribution`;
         } else {
           sampleRateStatus = "failed";
-          sampleRateDetail = `Sample rate is ${sr} Hz — not accepted. Export at 44.1 kHz or 48 kHz`;
+          sampleRateDetail = `Sample rate is ${sr} Hz — not accepted. Export at 44?.1 kHz or 48 kHz`;
         }
       } else {
         sampleRateStatus = REQUIRES_ANALYSIS;
@@ -6143,7 +6144,7 @@ router?.post("/qc/fix", requireAuth, async (req: Request, res: Response) => {
     // processing pipeline. Guide the user through the manual fix workflow.
     const audioCheckGuidance: Record<string, string> = {
       sample_rate:
-        "Export your audio at 44.1 kHz or 48 kHz and re-upload the track.",
+        "Export your audio at 44?.1 kHz or 48 kHz and re-upload the track.",
       bit_depth:
         "Export your audio at 16-bit or 24-bit depth and re-upload the track.",
       loudness:
@@ -6740,7 +6741,7 @@ router?.get(
       res?.setHeader("Content-Type", "application/json");
       res?.setHeader(
         "Content-Disposition",
-        `attachment; filename="distribution_${id}_export.json"`,
+        `attachment; filename="distribution_${id}_export?.json"`,
       );
       res?.json(exportData);
     } catch (error: unknown) {
@@ -6986,7 +6987,7 @@ router?.post(
         return res?.status(400).json({ error: "artistName is required" });
       }
       const { buildMigrationPayload } = await import(
-        "../services/catalogMigrationService.js"
+        "../services/catalogMigrationService?.js"
       );
       const _payload = await buildMigrationPayload(artistName?.trim(), user?.id);
       res?.json(payload);

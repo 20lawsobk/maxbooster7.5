@@ -22,10 +22,10 @@
  *   // pkg is ready to schedule, publish, or store
  */
 
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory?.js";
 
-import { PLATFORM_SPECS, assembleCaption, getVisualSpec, enforceHashtagLimit, type SupportedPlatform, type ContentSlot } from "./contentPipeline/platformFormatters.js";
+import { PLATFORM_SPECS, assembleCaption, getVisualSpec, enforceHashtagLimit, type SupportedPlatform, type ContentSlot } from "./contentPipeline/platformFormatters?.js";
 
 import {
   generateHooks,
@@ -43,26 +43,26 @@ import {
   type VideoScript,
   type VisualPrompt,
   type StorySequence,
-} from "./contentPipeline/contentTypeGenerators.js";
+} from "./contentPipeline/contentTypeGenerators?.js";
 
 import {
   buildScheduleManifest,
   manifestToBulkSchedulePayload,
   type ScheduleManifest,
   type SchedulingOptions,
-} from "./contentPipeline/schedulingMetadataBuilder.js";
+} from "./contentPipeline/schedulingMetadataBuilder?.js";
 
 import {
   generateAllMaxBoosterContent,
   type MaxBoosterContentPiece,
   type MaxBoosterContentContext,
-} from "./contentPipeline/maxBoosterContentStrategy.js";
+} from "./contentPipeline/maxBoosterContentStrategy?.js";
 
 import {
   generateAllArtistContent,
   type ArtistContext,
   type ArtistContentPiece,
-} from "./contentPipeline/artistContentStrategy.js";
+} from "./contentPipeline/artistContentStrategy?.js";
 
 // ─── Root Input Types ─────────────────────────────────────────────────────────
 

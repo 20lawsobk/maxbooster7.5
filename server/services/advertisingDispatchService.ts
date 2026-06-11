@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { platformAPI } from "../platform-apis";
 import { adCampaigns, adCreatives, contentCalendar } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 /**
  * Advertising Dispatch Service
@@ -471,7 +471,7 @@ export class AdvertisingDispatchService {
     // Organic posts typically get 100-300% more engagement per impression than paid ads
     // This is a simplified calculation
     const _engagementRate = engagement?.engagementRate || 0;
-    const _avgPaidAdEngagementRate = 0.01; // 1% baseline for paid ads
+    const _avgPaidAdEngagementRate = 0?.01; // 1% baseline for paid ads
 
     if (engagementRate > avgPaidAdEngagementRate) {
       return (

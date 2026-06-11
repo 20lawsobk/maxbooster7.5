@@ -7,12 +7,12 @@
 
 import fsPromises from "fs/promises";
 import path from "path";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import type {
   VideoGenOptions,
   VideoGenResult,
-} from "./videoGeneratorService.js";
-import { MaxCoreAIClient } from "./maxcoreClient.js";
+} from "./videoGeneratorService?.js";
+import { MaxCoreAIClient } from "./maxcoreClient?.js";
 
 const _POLL_INTERVAL_MS = 2_000;
 const _POLL_MAX_ATTEMPTS = 150; // 5 min
@@ -23,7 +23,7 @@ const _LOCAL_VIDEO_DIR = path?.join(process?.cwd(), "uploads", "videos");
 
 // ── MaxCore Rendering Engine (middle tier) ────────────────────────────────────
 // Three-tier architecture: Max Booster → RELAY (port 8008) → MaxCore
-// The relay is the DiT-24 / api_server_v4.py diffusion server which enriches
+// The relay is the DiT-24 / api_server_v4?.py diffusion server which enriches
 // prompts with music-context metadata, forwards to MaxCore for authoritative
 // generation, and applies the full DigitalGPU post-processing chain to every frame.
 const _RELAY_URL =
@@ -419,9 +419,9 @@ async function renderVideoViaRelay(
     T: 16,
     H: opts?.aspect_ratio === "16:9" ? 144 : 256,
     W: opts?.aspect_ratio === "16:9" ? 256 : 144,
-    bpm: 120.0,
-    energy: 0.75,
-    energy_peak: 0.9,
+    bpm: 120?.0,
+    energy: 0?.75,
+    energy_peak: 0?.9,
     style_name: styleName,
     beat_index: 0,
     total_beats: 4,

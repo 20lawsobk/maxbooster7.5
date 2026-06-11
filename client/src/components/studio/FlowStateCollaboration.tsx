@@ -1,15 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import {
-  Users,
-  UserPlus,
-  Send,
-  Copy,
-  Check,
-  MousePointer2,
-  Eye,
-  Crown,
-} from "lucide-react";
+import { Users, UserPlus, Send, Copy, Check, MousePointer2, Eye, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

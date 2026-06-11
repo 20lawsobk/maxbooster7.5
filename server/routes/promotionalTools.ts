@@ -3,7 +3,7 @@ import type { Request, Response } from "express";
 import { z } from "zod";
 import { promotionalToolsService } from "../services/promotionalToolsService";
 import { logger } from "../logger";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 
 const _router = Router();
 

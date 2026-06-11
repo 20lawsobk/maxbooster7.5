@@ -7,8 +7,8 @@
 
 import { Router, Request, Response } from "express";
 import { killSwitch, AutonomousSystemName } from "../safety/killSwitch";
-import { require2FA } from "../middleware/auth.js";
-import { logger } from "../logger.js";
+import { require2FA } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 

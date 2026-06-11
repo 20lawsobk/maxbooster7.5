@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import fs from "fs/promises";
 import path from "path";
 
@@ -202,7 +202,7 @@ export class MetricsCollector {
   }
 
   clearSnapshots(): void {
-    this.snapshots = [];
+    this?.snapshots = [];
     logger?.info("Metrics snapshots cleared");
   }
 }

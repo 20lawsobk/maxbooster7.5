@@ -82,7 +82,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#0f172a",
     text: "#ffffff",
     textSecondary: "#94a3b8",
-    overlay: "rgba(15, 23, 42, 0.8)",
+    overlay: "rgba(15, 23, 42, 0?.8)",
   },
   neon: {
     primary: "#00ff88",
@@ -91,7 +91,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#000000",
     text: "#ffffff",
     textSecondary: "#888888",
-    overlay: "rgba(0, 0, 0, 0.7)",
+    overlay: "rgba(0, 0, 0, 0?.7)",
   },
   minimal: {
     primary: "#1a1a1a",
@@ -100,7 +100,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#ffffff",
     text: "#1a1a1a",
     textSecondary: "#666666",
-    overlay: "rgba(255, 255, 255, 0.9)",
+    overlay: "rgba(255, 255, 255, 0?.9)",
   },
   vintage: {
     primary: "#d4a574",
@@ -109,7 +109,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#1a1612",
     text: "#f5e6d3",
     textSecondary: "#bfae9f",
-    overlay: "rgba(26, 22, 18, 0.85)",
+    overlay: "rgba(26, 22, 18, 0?.85)",
   },
   electric: {
     primary: "#ff3366",
@@ -118,7 +118,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#0a0a1a",
     text: "#ffffff",
     textSecondary: "#aabbcc",
-    overlay: "rgba(10, 10, 26, 0.75)",
+    overlay: "rgba(10, 10, 26, 0?.75)",
   },
   pastel: {
     primary: "#ffc8dd",
@@ -127,7 +127,7 @@ export const DEFAULT_PALETTES: Record<string, ColorPalette> = {
     background: "#fff5f5",
     text: "#2d2d2d",
     textSecondary: "#666666",
-    overlay: "rgba(255, 245, 245, 0.85)",
+    overlay: "rgba(255, 245, 245, 0?.85)",
   },
 };
 
@@ -447,8 +447,8 @@ function getDefaultTransform(): TransformConfig {
     scaleX: 1,
     scaleY: 1,
     rotation: 0,
-    anchorX: 0.5,
-    anchorY: 0.5,
+    anchorX: 0?.5,
+    anchorY: 0?.5,
   };
 }
 
@@ -488,7 +488,7 @@ export function compileReleaseAnnouncement(
   });
 
   if (options?.coverArtUrl) {
-    const _coverSize = Math?.min(width, height) * 0.4;
+    const _coverSize = Math?.min(width, height) * 0?.4;
     const _isPortrait = height > width;
     layers?.push({
       id: generateId(),
@@ -498,12 +498,12 @@ export function compileReleaseAnnouncement(
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: isPortrait ? (width - coverSize) / 2 : width * 0.15,
-        y: isPortrait ? height * 0.2 : (height - coverSize) / 2,
+        x: isPortrait ? (width - coverSize) / 2 : width * 0?.15,
+        y: isPortrait ? height * 0?.2 : (height - coverSize) / 2,
         scaleX: 1,
         scaleY: 1,
       },
-      startTime: 0.2,
+      startTime: 0?.2,
       endTime: duration,
       config: {
         src: options?.coverArtUrl,
@@ -511,7 +511,7 @@ export function compileReleaseAnnouncement(
         height: coverSize,
         borderRadius: 12,
         shadow: {
-          color: "rgba(0,0,0,0.5)",
+          color: "rgba(0,0,0,0?.5)",
           blur: 30,
           offsetX: 0,
           offsetY: 10,
@@ -520,26 +520,26 @@ export function compileReleaseAnnouncement(
       animations: [
         {
           property: "scaleX",
-          from: 0.8,
+          from: 0?.8,
           to: 1,
-          startTime: 0.2,
-          endTime: 0.8,
+          startTime: 0?.2,
+          endTime: 0?.8,
           easing: "easeOut",
         },
         {
           property: "scaleY",
-          from: 0.8,
+          from: 0?.8,
           to: 1,
-          startTime: 0.2,
-          endTime: 0.8,
+          startTime: 0?.2,
+          endTime: 0?.8,
           easing: "easeOut",
         },
         {
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 0.2,
-          endTime: 0.6,
+          startTime: 0?.2,
+          endTime: 0?.6,
           easing: "easeOut",
         },
       ],
@@ -547,7 +547,7 @@ export function compileReleaseAnnouncement(
         ? {
             enabled: true,
             property: "scale",
-            intensity: 0.05,
+            intensity: 0?.05,
           }
         : undefined,
     });
@@ -563,14 +563,14 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.08,
+      y: height * 0?.08,
     },
-    startTime: 0.5,
+    startTime: 0?.5,
     endTime: duration,
     config: {
       text: `NEW ${releaseTypeLabel}`,
       font: "Inter",
-      fontSize: Math?.round(width * 0.025),
+      fontSize: Math?.round(width * 0?.025),
       fontWeight: "600",
       color: palette?.accent,
       align: "center",
@@ -581,8 +581,8 @@ export function compileReleaseAnnouncement(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.5,
-        endTime: 0.8,
+        startTime: 0?.5,
+        endTime: 0?.8,
         easing: "easeOut",
       },
     ],
@@ -597,34 +597,34 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.7,
+      y: height * 0?.7,
     },
-    startTime: 0.8,
+    startTime: 0?.8,
     endTime: duration,
     config: {
       text: options?.releaseName,
       font: "Inter",
-      fontSize: Math?.round(width * 0.06),
+      fontSize: Math?.round(width * 0?.06),
       fontWeight: "800",
       color: palette?.text,
       align: "center",
-      maxWidth: width * 0.8,
+      maxWidth: width * 0?.8,
     },
     animations: [
       {
         property: "y",
-        from: height * 0.75,
-        to: height * 0.7,
-        startTime: 0.8,
-        endTime: 1.3,
+        from: height * 0?.75,
+        to: height * 0?.7,
+        startTime: 0?.8,
+        endTime: 1?.3,
         easing: "easeOut",
       },
       {
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.8,
-        endTime: 1.2,
+        startTime: 0?.8,
+        endTime: 1?.2,
         easing: "easeOut",
       },
     ],
@@ -632,7 +632,7 @@ export function compileReleaseAnnouncement(
       ? {
           enabled: true,
           property: "glow",
-          intensity: 0.3,
+          intensity: 0?.3,
         }
       : undefined,
   });
@@ -646,14 +646,14 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.77,
+      y: height * 0?.77,
     },
-    startTime: 1.0,
+    startTime: 1?.0,
     endTime: duration,
     config: {
       text: options?.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0.035),
+      fontSize: Math?.round(width * 0?.035),
       fontWeight: "500",
       color: palette?.textSecondary,
       align: "center",
@@ -663,8 +663,8 @@ export function compileReleaseAnnouncement(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 1.0,
-        endTime: 1.4,
+        startTime: 1?.0,
+        endTime: 1?.4,
         easing: "easeOut",
       },
     ],
@@ -679,14 +679,14 @@ export function compileReleaseAnnouncement(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.85,
+      y: height * 0?.85,
     },
-    startTime: 1.5,
+    startTime: 1?.5,
     endTime: duration,
     config: {
       text: `OUT ${options?.releaseDate}`,
       font: "Inter",
-      fontSize: Math?.round(width * 0.028),
+      fontSize: Math?.round(width * 0?.028),
       fontWeight: "600",
       color: palette?.accent,
       align: "center",
@@ -696,8 +696,8 @@ export function compileReleaseAnnouncement(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 1.5,
-        endTime: 1.8,
+        startTime: 1?.5,
+        endTime: 1?.8,
         easing: "easeOut",
       },
     ],
@@ -772,42 +772,42 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.12,
+      y: height * 0?.12,
     },
-    startTime: 0.3,
+    startTime: 0?.3,
     endTime: duration,
     config: {
       text: options?.tourName,
       font: "Inter",
-      fontSize: Math?.round(width * 0.055),
+      fontSize: Math?.round(width * 0?.055),
       fontWeight: "900",
       color: palette?.text,
       align: "center",
-      maxWidth: width * 0.9,
+      maxWidth: width * 0?.9,
     },
     animations: [
       {
         property: "scaleX",
-        from: 1.2,
+        from: 1?.2,
         to: 1,
-        startTime: 0.3,
-        endTime: 0.8,
+        startTime: 0?.3,
+        endTime: 0?.8,
         easing: "easeOut",
       },
       {
         property: "scaleY",
-        from: 1.2,
+        from: 1?.2,
         to: 1,
-        startTime: 0.3,
-        endTime: 0.8,
+        startTime: 0?.3,
+        endTime: 0?.8,
         easing: "easeOut",
       },
       {
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.3,
-        endTime: 0.6,
+        startTime: 0?.3,
+        endTime: 0?.6,
         easing: "easeOut",
       },
     ],
@@ -822,14 +822,14 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.19,
+      y: height * 0?.19,
     },
-    startTime: 0.5,
+    startTime: 0?.5,
     endTime: duration,
     config: {
       text: options?.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0.03),
+      fontSize: Math?.round(width * 0?.03),
       fontWeight: "500",
       color: palette?.textSecondary,
       align: "center",
@@ -839,19 +839,19 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.5,
-        endTime: 0.8,
+        startTime: 0?.5,
+        endTime: 0?.8,
         easing: "easeOut",
       },
     ],
   });
 
-  const _dateStartY = height * 0.28;
-  const _dateSpacing = height * 0.08;
+  const _dateStartY = height * 0?.28;
+  const _dateSpacing = height * 0?.08;
   const _maxVisibleDates = Math?.min(options?.dates.length, 6);
 
   options?.dates.slice(0, maxVisibleDates).forEach((dateInfo, index) => {
-    const _delayBase = 0.8 + index * 0.15;
+    const _delayBase = 0?.8 + index * 0?.15;
     layers?.push({
       id: generateId(),
       type: "text",
@@ -860,7 +860,7 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: width * 0.1,
+        x: width * 0?.1,
         y: dateStartY + index * dateSpacing,
       },
       startTime: delayBase,
@@ -868,7 +868,7 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
       config: {
         text: dateInfo?.date,
         font: "Inter",
-        fontSize: Math?.round(width * 0.022),
+        fontSize: Math?.round(width * 0?.022),
         fontWeight: "600",
         color: palette?.accent,
         align: "left",
@@ -876,10 +876,10 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
       animations: [
         {
           property: "x",
-          from: width * 0.05,
-          to: width * 0.1,
+          from: width * 0?.05,
+          to: width * 0?.1,
           startTime: delayBase,
-          endTime: delayBase + 0.4,
+          endTime: delayBase + 0?.4,
           easing: "easeOut",
         },
         {
@@ -887,7 +887,7 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
           from: 0,
           to: 1,
           startTime: delayBase,
-          endTime: delayBase + 0.3,
+          endTime: delayBase + 0?.3,
           easing: "easeOut",
         },
       ],
@@ -901,35 +901,35 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: width * 0.35,
+        x: width * 0?.35,
         y: dateStartY + index * dateSpacing,
       },
-      startTime: delayBase + 0.1,
+      startTime: delayBase + 0?.1,
       endTime: duration,
       config: {
         text: `${dateInfo?.venue} - ${dateInfo?.city}${dateInfo?.country ? `, ${dateInfo?.country}` : ""}`,
         font: "Inter",
-        fontSize: Math?.round(width * 0.02),
+        fontSize: Math?.round(width * 0?.02),
         fontWeight: "400",
         color: dateInfo?.soldOut ? palette?.textSecondary : palette?.text,
         align: "left",
-        maxWidth: width * 0.5,
+        maxWidth: width * 0?.5,
       },
       animations: [
         {
           property: "x",
-          from: width * 0.3,
-          to: width * 0.35,
-          startTime: delayBase + 0.1,
-          endTime: delayBase + 0.5,
+          from: width * 0?.3,
+          to: width * 0?.35,
+          startTime: delayBase + 0?.1,
+          endTime: delayBase + 0?.5,
           easing: "easeOut",
         },
         {
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: delayBase + 0.1,
-          endTime: delayBase + 0.4,
+          startTime: delayBase + 0?.1,
+          endTime: delayBase + 0?.4,
           easing: "easeOut",
         },
       ],
@@ -944,15 +944,15 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
         opacity: 1,
         transform: {
           ...getDefaultTransform(),
-          x: width * 0.88,
+          x: width * 0?.88,
           y: dateStartY + index * dateSpacing,
         },
-        startTime: delayBase + 0.2,
+        startTime: delayBase + 0?.2,
         endTime: duration,
         config: {
           text: "SOLD OUT",
           font: "Inter",
-          fontSize: Math?.round(width * 0.015),
+          fontSize: Math?.round(width * 0?.015),
           fontWeight: "700",
           color: "#ff4444",
           align: "right",
@@ -962,8 +962,8 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
             property: "opacity",
             from: 0,
             to: 1,
-            startTime: delayBase + 0.2,
-            endTime: delayBase + 0.5,
+            startTime: delayBase + 0?.2,
+            endTime: delayBase + 0?.5,
             easing: "easeOut",
           },
         ],
@@ -1052,14 +1052,14 @@ export function compileBehindTheScenes(
           from: 0,
           to: 1,
           startTime: currentTime,
-          endTime: currentTime + 0.5,
+          endTime: currentTime + 0?.5,
           easing: "easeOut",
         },
         {
           property: "opacity",
           from: 1,
           to: 0,
-          startTime: currentTime + clip?.duration - 0.5,
+          startTime: currentTime + clip?.duration - 0?.5,
           endTime: currentTime + clip?.duration,
           easing: "easeIn",
         },
@@ -1076,19 +1076,19 @@ export function compileBehindTheScenes(
         transform: {
           ...getDefaultTransform(),
           x: width / 2,
-          y: height * 0.88,
+          y: height * 0?.88,
         },
-        startTime: currentTime + 0.3,
-        endTime: currentTime + clip?.duration - 0.3,
+        startTime: currentTime + 0?.3,
+        endTime: currentTime + clip?.duration - 0?.3,
         config: {
           text: clip?.caption,
           font: "Inter",
-          fontSize: Math?.round(width * 0.025),
+          fontSize: Math?.round(width * 0?.025),
           fontWeight: "400",
           color: palette?.text,
           align: "center",
           shadow: {
-            color: "rgba(0,0,0,0.8)",
+            color: "rgba(0,0,0,0?.8)",
             blur: 10,
             offsetX: 0,
             offsetY: 2,
@@ -1099,8 +1099,8 @@ export function compileBehindTheScenes(
             property: "opacity",
             from: 0,
             to: 1,
-            startTime: currentTime + 0.3,
-            endTime: currentTime + 0.6,
+            startTime: currentTime + 0?.3,
+            endTime: currentTime + 0?.6,
             easing: "easeOut",
           },
         ],
@@ -1119,14 +1119,14 @@ export function compileBehindTheScenes(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.1,
+      y: height * 0?.1,
     },
-    startTime: 0.5,
+    startTime: 0?.5,
     endTime: duration,
     config: {
       text: options?.title,
       font: "Inter",
-      fontSize: Math?.round(width * 0.04),
+      fontSize: Math?.round(width * 0?.04),
       fontWeight: "700",
       color: palette?.text,
       align: "center",
@@ -1136,8 +1136,8 @@ export function compileBehindTheScenes(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.5,
-        endTime: 0.8,
+        startTime: 0?.5,
+        endTime: 0?.8,
         easing: "easeOut",
       },
     ],
@@ -1153,14 +1153,14 @@ export function compileBehindTheScenes(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0.15,
+        y: height * 0?.15,
       },
-      startTime: 0.7,
+      startTime: 0?.7,
       endTime: duration,
       config: {
         text: options?.subtitle,
         font: "Inter",
-        fontSize: Math?.round(width * 0.025),
+        fontSize: Math?.round(width * 0?.025),
         fontWeight: "400",
         color: palette?.textSecondary,
         align: "center",
@@ -1170,8 +1170,8 @@ export function compileBehindTheScenes(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 0.7,
-          endTime: 1.0,
+          startTime: 0?.7,
+          endTime: 1?.0,
           easing: "easeOut",
         },
       ],
@@ -1230,7 +1230,7 @@ export function compileQuoteLyric(
 
   const _quoteStyle = options?.quotationStyle || "minimal";
   const _quoteFontSize =
-    quoteStyle === "handwritten" ? width * 0.045 : width * 0.04;
+    quoteStyle === "handwritten" ? width * 0?.045 : width * 0?.04;
   const _quoteFont = quoteStyle === "handwritten" ? "Georgia" : "Inter";
   const _quoteWeight = quoteStyle === "neon" ? "300" : "500";
 
@@ -1240,18 +1240,18 @@ export function compileQuoteLyric(
       type: "text",
       zIndex: 5,
       visible: true,
-      opacity: 0.3,
+      opacity: 0?.3,
       transform: {
         ...getDefaultTransform(),
-        x: width * 0.12,
-        y: height * 0.35,
+        x: width * 0?.12,
+        y: height * 0?.35,
       },
-      startTime: 0.3,
+      startTime: 0?.3,
       endTime: duration,
       config: {
         text: '"',
         font: "Georgia",
-        fontSize: Math?.round(width * 0.15),
+        fontSize: Math?.round(width * 0?.15),
         fontWeight: "400",
         color: palette?.accent,
         align: "center",
@@ -1260,9 +1260,9 @@ export function compileQuoteLyric(
         {
           property: "opacity",
           from: 0,
-          to: 0.3,
-          startTime: 0.3,
-          endTime: 0.6,
+          to: 0?.3,
+          startTime: 0?.3,
+          endTime: 0?.6,
           easing: "easeOut",
         },
       ],
@@ -1278,9 +1278,9 @@ export function compileQuoteLyric(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.45,
+      y: height * 0?.45,
     },
-    startTime: 0.5,
+    startTime: 0?.5,
     endTime: duration,
     config: {
       text: options?.quote,
@@ -1289,8 +1289,8 @@ export function compileQuoteLyric(
       fontWeight: quoteWeight,
       color: palette?.text,
       align: "center",
-      maxWidth: width * 0.8,
-      lineHeight: 1.5,
+      maxWidth: width * 0?.8,
+      lineHeight: 1?.5,
       glowColor: quoteStyle === "neon" ? palette?.accent : undefined,
       glowIntensity: quoteStyle === "neon" ? 20 : undefined,
     },
@@ -1299,8 +1299,8 @@ export function compileQuoteLyric(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.5,
-        endTime: 1.2,
+        startTime: 0?.5,
+        endTime: 1?.2,
         easing: "easeOut",
       },
     ],
@@ -1308,7 +1308,7 @@ export function compileQuoteLyric(
       ? {
           enabled: true,
           property: "glow",
-          intensity: 0.5,
+          intensity: 0?.5,
         }
       : undefined,
   });
@@ -1326,14 +1326,14 @@ export function compileQuoteLyric(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0.65,
+        y: height * 0?.65,
       },
-      startTime: 1.5,
+      startTime: 1?.5,
       endTime: duration,
       config: {
         text: attributionText,
         font: "Inter",
-        fontSize: Math?.round(width * 0.022),
+        fontSize: Math?.round(width * 0?.022),
         fontWeight: "400",
         color: palette?.textSecondary,
         align: "center",
@@ -1343,8 +1343,8 @@ export function compileQuoteLyric(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 1.5,
-          endTime: 1.8,
+          startTime: 1?.5,
+          endTime: 1?.8,
           easing: "easeOut",
         },
       ],
@@ -1415,11 +1415,11 @@ export function compileCountdownTimer(
       type: "image",
       zIndex: 2,
       visible: true,
-      opacity: 0.15,
+      opacity: 0?.15,
       transform: {
         ...getDefaultTransform(),
-        scaleX: 1.2,
-        scaleY: 1.2,
+        scaleX: 1?.2,
+        scaleY: 1?.2,
       },
       startTime: 0,
       endTime: duration,
@@ -1441,14 +1441,14 @@ export function compileCountdownTimer(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.15,
+      y: height * 0?.15,
     },
-    startTime: 0.3,
+    startTime: 0?.3,
     endTime: duration,
     config: {
       text: options?.title,
       font: "Inter",
-      fontSize: Math?.round(width * 0.045),
+      fontSize: Math?.round(width * 0?.045),
       fontWeight: "700",
       color: palette?.text,
       align: "center",
@@ -1458,8 +1458,8 @@ export function compileCountdownTimer(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.3,
-        endTime: 0.6,
+        startTime: 0?.3,
+        endTime: 0?.6,
         easing: "easeOut",
       },
     ],
@@ -1474,14 +1474,14 @@ export function compileCountdownTimer(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.22,
+      y: height * 0?.22,
     },
-    startTime: 0.5,
+    startTime: 0?.5,
     endTime: duration,
     config: {
       text: options?.eventName,
       font: "Inter",
-      fontSize: Math?.round(width * 0.028),
+      fontSize: Math?.round(width * 0?.028),
       fontWeight: "400",
       color: palette?.textSecondary,
       align: "center",
@@ -1491,19 +1491,19 @@ export function compileCountdownTimer(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 0.5,
-        endTime: 0.8,
+        startTime: 0?.5,
+        endTime: 0?.8,
         easing: "easeOut",
       },
     ],
   });
 
-  const _timerY = height * 0.45;
+  const _timerY = height * 0?.45;
   const _timerFontSize =
-    options?.timerStyle === "minimal" ? width * 0.08 : width * 0.1;
+    options?.timerStyle === "minimal" ? width * 0?.08 : width * 0?.1;
   const _timerUnits = ["DAYS", "HOURS", "MINS", "SECS"];
-  const _unitSpacing = width * 0.22;
-  const _startX = width / 2 - unitSpacing * 1.5;
+  const _unitSpacing = width * 0?.22;
+  const _startX = width / 2 - unitSpacing * 1?.5;
 
   timerUnits?.forEach((unit, index) => {
     const _x = startX + index * unitSpacing;
@@ -1519,7 +1519,7 @@ export function compileCountdownTimer(
         x,
         y: timerY,
       },
-      startTime: 0.6 + index * 0.1,
+      startTime: 0?.6 + index * 0?.1,
       endTime: duration,
       config: {
         text: "00",
@@ -1537,26 +1537,26 @@ export function compileCountdownTimer(
       animations: [
         {
           property: "scaleX",
-          from: 0.5,
+          from: 0?.5,
           to: 1,
-          startTime: 0.6 + index * 0.1,
-          endTime: 0.9 + index * 0.1,
+          startTime: 0?.6 + index * 0?.1,
+          endTime: 0?.9 + index * 0?.1,
           easing: "bounce",
         },
         {
           property: "scaleY",
-          from: 0.5,
+          from: 0?.5,
           to: 1,
-          startTime: 0.6 + index * 0.1,
-          endTime: 0.9 + index * 0.1,
+          startTime: 0?.6 + index * 0?.1,
+          endTime: 0?.9 + index * 0?.1,
           easing: "bounce",
         },
         {
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 0.6 + index * 0.1,
-          endTime: 0.8 + index * 0.1,
+          startTime: 0?.6 + index * 0?.1,
+          endTime: 0?.8 + index * 0?.1,
           easing: "easeOut",
         },
       ],
@@ -1564,7 +1564,7 @@ export function compileCountdownTimer(
         ? {
             enabled: true,
             property: "scale",
-            intensity: 0.03,
+            intensity: 0?.03,
           }
         : undefined,
     });
@@ -1579,14 +1579,14 @@ export function compileCountdownTimer(
         transform: {
           ...getDefaultTransform(),
           x,
-          y: timerY + timerFontSize * 0.7,
+          y: timerY + timerFontSize * 0?.7,
         },
-        startTime: 0.8 + index * 0.1,
+        startTime: 0?.8 + index * 0?.1,
         endTime: duration,
         config: {
           text: unit,
           font: "Inter",
-          fontSize: Math?.round(width * 0.015),
+          fontSize: Math?.round(width * 0?.015),
           fontWeight: "500",
           color: palette?.textSecondary,
           align: "center",
@@ -1597,8 +1597,8 @@ export function compileCountdownTimer(
             property: "opacity",
             from: 0,
             to: 1,
-            startTime: 0.8 + index * 0.1,
-            endTime: 1.0 + index * 0.1,
+            startTime: 0?.8 + index * 0?.1,
+            endTime: 1?.0 + index * 0?.1,
             easing: "easeOut",
           },
         ],
@@ -1615,14 +1615,14 @@ export function compileCountdownTimer(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.75,
+      y: height * 0?.75,
     },
-    startTime: 1.5,
+    startTime: 1?.5,
     endTime: duration,
     config: {
       text: options?.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0.025),
+      fontSize: Math?.round(width * 0?.025),
       fontWeight: "500",
       color: palette?.textSecondary,
       align: "center",
@@ -1632,8 +1632,8 @@ export function compileCountdownTimer(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: 1.5,
-        endTime: 1.8,
+        startTime: 1?.5,
+        endTime: 1?.8,
         easing: "easeOut",
       },
     ],
@@ -1697,7 +1697,7 @@ export function compileSplitScreen(
   });
 
   const _isDiagonal = options?.dividerStyle === "diagonal";
-  const _leftWidth = isDiagonal ? width * 0.55 : width / 2;
+  const _leftWidth = isDiagonal ? width * 0?.55 : width / 2;
 
   if (options?.leftContent.imageUrl || options?.leftContent.videoUrl) {
     layers?.push({
@@ -1719,7 +1719,7 @@ export function compileSplitScreen(
         src: options?.leftContent.videoUrl || options?.leftContent.imageUrl,
         fit: "cover",
         clipPath: isDiagonal
-          ? `polygon(0 0, ${leftWidth}px 0, ${leftWidth - width * 0.1}px ${height}px, 0 ${height}px)`
+          ? `polygon(0 0, ${leftWidth}px 0, ${leftWidth - width * 0?.1}px ${height}px, 0 ${height}px)`
           : `rect(0, ${leftWidth}px, ${height}px, 0)`,
       },
       animations:
@@ -1729,8 +1729,8 @@ export function compileSplitScreen(
                 property: "x",
                 from: -leftWidth,
                 to: 0,
-                startTime: 0.3,
-                endTime: 1.0,
+                startTime: 0?.3,
+                endTime: 1?.0,
                 easing: "easeOut",
               },
             ]
@@ -1747,7 +1747,7 @@ export function compileSplitScreen(
       opacity: 1,
       transform: {
         ...getDefaultTransform(),
-        x: isDiagonal ? leftWidth - width * 0.1 : width / 2,
+        x: isDiagonal ? leftWidth - width * 0?.1 : width / 2,
         y: 0,
         anchorX: 0,
         anchorY: 0,
@@ -1758,7 +1758,7 @@ export function compileSplitScreen(
         src: options?.rightContent.videoUrl || options?.rightContent.imageUrl,
         fit: "cover",
         clipPath: isDiagonal
-          ? `polygon(${width * 0.1}px 0, ${width - leftWidth + width * 0.1}px 0, ${width - leftWidth + width * 0.1}px ${height}px, 0 ${height}px)`
+          ? `polygon(${width * 0?.1}px 0, ${width - leftWidth + width * 0?.1}px 0, ${width - leftWidth + width * 0?.1}px ${height}px, 0 ${height}px)`
           : undefined,
       },
       animations:
@@ -1767,9 +1767,9 @@ export function compileSplitScreen(
               {
                 property: "x",
                 from: width,
-                to: isDiagonal ? leftWidth - width * 0.1 : width / 2,
-                startTime: 0.3,
-                endTime: 1.0,
+                to: isDiagonal ? leftWidth - width * 0?.1 : width / 2,
+                startTime: 0?.3,
+                endTime: 1?.0,
                 easing: "easeOut",
               },
             ]
@@ -1788,10 +1788,10 @@ export function compileSplitScreen(
         ...getDefaultTransform(),
         x: width / 2,
         y: 0,
-        anchorX: 0.5,
+        anchorX: 0?.5,
         anchorY: 0,
       },
-      startTime: 0.5,
+      startTime: 0?.5,
       endTime: duration,
       config: {
         type: "rectangle",
@@ -1805,10 +1805,10 @@ export function compileSplitScreen(
           ? [
               {
                 property: "opacity",
-                from: 0.5,
+                from: 0?.5,
                 to: 1,
-                startTime: 0.5,
-                endTime: 1.5,
+                startTime: 0?.5,
+                endTime: 1?.5,
                 easing: "easeInOut",
               },
             ]
@@ -1826,14 +1826,14 @@ export function compileSplitScreen(
       transform: {
         ...getDefaultTransform(),
         x: leftWidth / 2,
-        y: height * 0.08,
+        y: height * 0?.08,
       },
-      startTime: 1.0,
+      startTime: 1?.0,
       endTime: duration,
       config: {
         text: options?.leftContent.label,
         font: "Inter",
-        fontSize: Math?.round(width * 0.02),
+        fontSize: Math?.round(width * 0?.02),
         fontWeight: "600",
         color: palette?.text,
         align: "center",
@@ -1846,8 +1846,8 @@ export function compileSplitScreen(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 1.0,
-          endTime: 1.3,
+          startTime: 1?.0,
+          endTime: 1?.3,
           easing: "easeOut",
         },
       ],
@@ -1864,14 +1864,14 @@ export function compileSplitScreen(
       transform: {
         ...getDefaultTransform(),
         x: width / 2 + leftWidth / 2,
-        y: height * 0.08,
+        y: height * 0?.08,
       },
-      startTime: 1.0,
+      startTime: 1?.0,
       endTime: duration,
       config: {
         text: options?.rightContent.label,
         font: "Inter",
-        fontSize: Math?.round(width * 0.02),
+        fontSize: Math?.round(width * 0?.02),
         fontWeight: "600",
         color: palette?.text,
         align: "center",
@@ -1884,8 +1884,8 @@ export function compileSplitScreen(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: 1.0,
-          endTime: 1.3,
+          startTime: 1?.0,
+          endTime: 1?.3,
           easing: "easeOut",
         },
       ],
@@ -1904,12 +1904,12 @@ export function compileSplitScreen(
         x: width / 2,
         y: height / 2,
       },
-      startTime: 0.8,
+      startTime: 0?.8,
       endTime: duration,
       config: {
         text: "VS",
         font: "Inter",
-        fontSize: Math?.round(width * 0.05),
+        fontSize: Math?.round(width * 0?.05),
         fontWeight: "900",
         color: palette?.accent,
         align: "center",
@@ -1921,16 +1921,16 @@ export function compileSplitScreen(
           property: "scaleX",
           from: 2,
           to: 1,
-          startTime: 0.8,
-          endTime: 1.2,
+          startTime: 0?.8,
+          endTime: 1?.2,
           easing: "bounce",
         },
         {
           property: "scaleY",
           from: 2,
           to: 1,
-          startTime: 0.8,
-          endTime: 1.2,
+          startTime: 0?.8,
+          endTime: 1?.2,
           easing: "bounce",
         },
       ],
@@ -1993,11 +1993,11 @@ export function compileSocialTeaser(
       type: "image",
       zIndex: 2,
       visible: true,
-      opacity: 0.2,
+      opacity: 0?.2,
       transform: {
         ...getDefaultTransform(),
-        scaleX: 1.3,
-        scaleY: 1.3,
+        scaleX: 1?.3,
+        scaleY: 1?.3,
       },
       startTime: 0,
       endTime: duration,
@@ -2009,16 +2009,16 @@ export function compileSocialTeaser(
       animations: [
         {
           property: "scaleX",
-          from: 1.3,
-          to: 1.5,
+          from: 1?.3,
+          to: 1?.5,
           startTime: 0,
           endTime: duration,
           easing: "linear",
         },
         {
           property: "scaleY",
-          from: 1.3,
-          to: 1.5,
+          from: 1?.3,
+          to: 1?.5,
           startTime: 0,
           endTime: duration,
           easing: "linear",
@@ -2027,7 +2027,7 @@ export function compileSocialTeaser(
     });
   }
 
-  const _hookDelay = 0.2;
+  const _hookDelay = 0?.2;
   layers?.push({
     id: generateId(),
     type: "text",
@@ -2037,34 +2037,34 @@ export function compileSocialTeaser(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.35,
+      y: height * 0?.35,
     },
     startTime: hookDelay,
-    endTime: duration * 0.6,
+    endTime: duration * 0?.6,
     config: {
       text: options?.hookText,
       font: "Inter",
-      fontSize: Math?.round(width * 0.055),
+      fontSize: Math?.round(width * 0?.055),
       fontWeight: "800",
       color: palette?.text,
       align: "center",
-      maxWidth: width * 0.85,
+      maxWidth: width * 0?.85,
     },
     animations: [
       {
         property: "scaleX",
-        from: 0.8,
+        from: 0?.8,
         to: 1,
         startTime: hookDelay,
-        endTime: hookDelay + 0.4,
+        endTime: hookDelay + 0?.4,
         easing: "easeOut",
       },
       {
         property: "scaleY",
-        from: 0.8,
+        from: 0?.8,
         to: 1,
         startTime: hookDelay,
-        endTime: hookDelay + 0.4,
+        endTime: hookDelay + 0?.4,
         easing: "easeOut",
       },
       {
@@ -2072,15 +2072,15 @@ export function compileSocialTeaser(
         from: 0,
         to: 1,
         startTime: hookDelay,
-        endTime: hookDelay + 0.3,
+        endTime: hookDelay + 0?.3,
         easing: "easeOut",
       },
       {
         property: "opacity",
         from: 1,
         to: 0,
-        startTime: duration * 0.5,
-        endTime: duration * 0.6,
+        startTime: duration * 0?.5,
+        endTime: duration * 0?.6,
         easing: "easeIn",
       },
     ],
@@ -2088,17 +2088,17 @@ export function compileSocialTeaser(
       ? {
           enabled: true,
           property: "scale",
-          intensity: 0.05,
+          intensity: 0?.05,
         }
       : undefined,
   });
 
   const _revealTime =
     options?.animation?.revealTiming === "early"
-      ? duration * 0.4
+      ? duration * 0?.4
       : options?.animation?.revealTiming === "late"
-        ? duration * 0.7
-        : duration * 0.55;
+        ? duration * 0?.7
+        : duration * 0?.55;
   layers?.push({
     id: generateId(),
     type: "text",
@@ -2108,26 +2108,26 @@ export function compileSocialTeaser(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.45,
+      y: height * 0?.45,
     },
     startTime: revealTime,
     endTime: duration,
     config: {
       text: options?.mainContent,
       font: "Inter",
-      fontSize: Math?.round(width * 0.045),
+      fontSize: Math?.round(width * 0?.045),
       fontWeight: "600",
       color: palette?.text,
       align: "center",
-      maxWidth: width * 0.85,
+      maxWidth: width * 0?.85,
     },
     animations: [
       {
         property: "y",
-        from: height * 0.5,
-        to: height * 0.45,
+        from: height * 0?.5,
+        to: height * 0?.45,
         startTime: revealTime,
-        endTime: revealTime + 0.5,
+        endTime: revealTime + 0?.5,
         easing: "easeOut",
       },
       {
@@ -2135,7 +2135,7 @@ export function compileSocialTeaser(
         from: 0,
         to: 1,
         startTime: revealTime,
-        endTime: revealTime + 0.3,
+        endTime: revealTime + 0?.3,
         easing: "easeOut",
       },
     ],
@@ -2150,14 +2150,14 @@ export function compileSocialTeaser(
     transform: {
       ...getDefaultTransform(),
       x: width / 2,
-      y: height * 0.55,
+      y: height * 0?.55,
     },
-    startTime: revealTime + 0.3,
+    startTime: revealTime + 0?.3,
     endTime: duration,
     config: {
       text: options?.artistName,
       font: "Inter",
-      fontSize: Math?.round(width * 0.028),
+      fontSize: Math?.round(width * 0?.028),
       fontWeight: "500",
       color: palette?.accent,
       align: "center",
@@ -2167,8 +2167,8 @@ export function compileSocialTeaser(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: revealTime + 0.3,
-        endTime: revealTime + 0.6,
+        startTime: revealTime + 0?.3,
+        endTime: revealTime + 0?.6,
         easing: "easeOut",
       },
     ],
@@ -2184,14 +2184,14 @@ export function compileSocialTeaser(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0.9,
+        y: height * 0?.9,
       },
-      startTime: duration * 0.7,
+      startTime: duration * 0?.7,
       endTime: duration,
       config: {
         text: options?.mentionHandle,
         font: "Inter",
-        fontSize: Math?.round(width * 0.022),
+        fontSize: Math?.round(width * 0?.022),
         fontWeight: "500",
         color: palette?.textSecondary,
         align: "center",
@@ -2201,8 +2201,8 @@ export function compileSocialTeaser(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: duration * 0.7,
-          endTime: duration * 0.8,
+          startTime: duration * 0?.7,
+          endTime: duration * 0?.8,
           easing: "easeOut",
         },
       ],
@@ -2219,14 +2219,14 @@ export function compileSocialTeaser(
       transform: {
         ...getDefaultTransform(),
         x: width / 2,
-        y: height * 0.82,
+        y: height * 0?.82,
       },
-      startTime: duration * 0.75,
+      startTime: duration * 0?.75,
       endTime: duration,
       config: {
         text: `↑ ${options?.swipeUpText}`,
         font: "Inter",
-        fontSize: Math?.round(width * 0.022),
+        fontSize: Math?.round(width * 0?.022),
         fontWeight: "600",
         color: palette?.text,
         align: "center",
@@ -2234,9 +2234,9 @@ export function compileSocialTeaser(
       animations: [
         {
           property: "y",
-          from: height * 0.85,
-          to: height * 0.82,
-          startTime: duration * 0.75,
+          from: height * 0?.85,
+          to: height * 0?.82,
+          startTime: duration * 0?.75,
           endTime: duration,
           easing: "easeInOut",
         },
@@ -2244,8 +2244,8 @@ export function compileSocialTeaser(
           property: "opacity",
           from: 0,
           to: 1,
-          startTime: duration * 0.75,
-          endTime: duration * 0.85,
+          startTime: duration * 0?.75,
+          endTime: duration * 0?.85,
           easing: "easeOut",
         },
       ],
@@ -2283,12 +2283,12 @@ function createCallToActionLayer(
 ): TemplateLayer {
   const _ctaY =
     cta?.position === "bottom"
-      ? height * 0.92
+      ? height * 0?.92
       : cta?.position === "center"
         ? height / 2
         : cta?.position === "top"
-          ? height * 0.08
-          : cta?.customPosition?.y || height * 0.92;
+          ? height * 0?.08
+          : cta?.customPosition?.y || height * 0?.92;
   const _ctaX = cta?.customPosition?.x || width / 2;
 
   return {
@@ -2302,12 +2302,12 @@ function createCallToActionLayer(
       x: ctaX,
       y: ctaY,
     },
-    startTime: duration * 0.7,
+    startTime: duration * 0?.7,
     endTime: duration,
     config: {
       text: cta?.text,
       font: "Inter",
-      fontSize: Math?.round(width * 0.025),
+      fontSize: Math?.round(width * 0?.025),
       fontWeight: "600",
       color: cta?.textColor || palette?.text,
       align: "center",
@@ -2330,8 +2330,8 @@ function createCallToActionLayer(
         property: "opacity",
         from: 0,
         to: 1,
-        startTime: duration * 0.7,
-        endTime: duration * 0.8,
+        startTime: duration * 0?.7,
+        endTime: duration * 0?.8,
         easing: "easeOut",
       },
       ...(cta?.animation?.type === "pulse"
@@ -2339,17 +2339,17 @@ function createCallToActionLayer(
             {
               property: "scaleX",
               from: 1,
-              to: 1.05,
-              startTime: duration * 0.85,
-              endTime: duration * 0.95,
+              to: 1?.05,
+              startTime: duration * 0?.85,
+              endTime: duration * 0?.95,
               easing: "easeInOut" as const,
             },
             {
               property: "scaleY",
               from: 1,
-              to: 1.05,
-              startTime: duration * 0.85,
-              endTime: duration * 0.95,
+              to: 1?.05,
+              startTime: duration * 0?.85,
+              endTime: duration * 0?.95,
               easing: "easeInOut" as const,
             },
           ]
@@ -2365,10 +2365,10 @@ function createLogoLayer(
   duration: number,
 ): TemplateLayer {
   const positions: Record<string, { x: number; y: number }> = {
-    "top-left": { x: width * 0.08, y: height * 0.05 },
-    "top-right": { x: width * 0.92, y: height * 0.05 },
-    "bottom-left": { x: width * 0.08, y: height * 0.95 },
-    "bottom-right": { x: width * 0.92, y: height * 0.95 },
+    "top-left": { x: width * 0?.08, y: height * 0?.05 },
+    "top-right": { x: width * 0?.92, y: height * 0?.05 },
+    "bottom-left": { x: width * 0?.08, y: height * 0?.95 },
+    "bottom-right": { x: width * 0?.92, y: height * 0?.95 },
     center: { x: width / 2, y: height / 2 },
   };
 

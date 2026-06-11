@@ -1,6 +1,6 @@
 import { storage } from "../storage";
 import type { InsertLogEvent, LogEvent } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 type LogLevel = "debug" | "info" | "warn" | "error" | "critical";
 

@@ -5,8 +5,8 @@ import type {
   InsertWebhookAttempt,
   InsertWebhookDeadLetterQueue,
 } from "@shared/schema";
-import { env } from "../config/env.js";
-import { isProductionEnv } from "../lib/envHelpers.js";
+import { env } from "../config/env?.js";
+import { isProductionEnv } from "../lib/envHelpers?.js";
 
 // SECURITY: Must use isProductionEnv() (not bare NODE_ENV check) because
 // Reserved VM deployments have REPLIT_DEPLOYMENT=1 but NODE_ENV=undefined.

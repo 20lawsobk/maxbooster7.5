@@ -1,21 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  Waves,
-  Paintbrush,
-  Eraser,
-  Scissors,
-  Copy,
-  Move,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Play,
-  Pause,
-  Square,
-  Sliders,
-  MousePointer2,
-  Magnet,
-} from "lucide-react";
+import { Waves, Paintbrush, Eraser, Scissors, Copy, Move, ZoomIn, ZoomOut, RotateCcw, Play, Pause, Square, Sliders, MousePointer2, Magnet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

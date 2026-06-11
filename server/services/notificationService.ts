@@ -2,10 +2,10 @@ import { Resend } from "resend";
 import { db } from "../db";
 import { notifications, users } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { webPushService } from "./webPushService.js";
-import { buildPushPayload } from "./pushNotificationTypes.js";
-import { env } from "../config/env.js";
+import { logger } from "../logger?.js";
+import { webPushService } from "./webPushService?.js";
+import { buildPushPayload } from "./pushNotificationTypes?.js";
+import { env } from "../config/env?.js";
 
 interface NotificationOptions {
   userId: string;
@@ -33,8 +33,8 @@ class NotificationService {
   private initialize() {
     if (!this?.isInitialized && env?.RESEND_API_KEY) {
       try {
-        this.resend = new Resend(env?.RESEND_API_KEY);
-        this.isInitialized = true;
+        this?.resend = new Resend(env?.RESEND_API_KEY);
+        this?.isInitialized = true;
         logger?.info("✅ Resend initialized for email notifications");
       } catch (error: unknown) {
         logger?.warn({ err: error }, "❌ Failed to initialize SendGrid:");
@@ -130,7 +130,7 @@ class NotificationService {
     }
 
     const _template = this?.getEmailTemplate(type, title, message, link);
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
 
     try {
       await this?.resend.emails?.send({
@@ -180,8 +180,8 @@ class NotificationService {
           title,
           body: message,
           url: link || "/",
-          icon: "/icons/icon-192x192.png",
-          badge: "/icons/icon-72x72.png",
+          icon: "/icons/icon-192x192?.png",
+          badge: "/icons/icon-72x72?.png",
           tag: `notification-${Date?.now()}`,
           category: "system",
           actions: [
@@ -226,19 +226,19 @@ class NotificationService {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1?.0">
   <title>${title}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0?.1); overflow: hidden;">
           <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Max Booster</h1>
-              <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">AI-Powered Music Platform</p>
+              <p style="margin: 10px 0 0; color: rgba(255,255,255,0?.9); font-size: 14px;">AI-Powered Music Platform</p>
             </td>
           </tr>
           
@@ -246,7 +246,7 @@ class NotificationService {
           <tr>
             <td style="padding: 40px 30px;">
               <h2 style="margin: 0 0 20px; color: #1f2937; font-size: 24px; font-weight: 600;">${title}</h2>
-              <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">${message}</p>
+              <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">${message}</p>
               ${actionButton}
               <div style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #e5e7eb;">
                 <p style="margin: 0; color: #6b7280; font-size: 14px;">
@@ -656,7 +656,7 @@ Manage your notification preferences: ${link || "https://maxbooster?.ai/settings
 
   private async getAdminUserId(): Promise<string | null> {
     try {
-      const _adminEmail = process?.env.ADMIN_EMAIL || "noreply@max-booster.com";
+      const _adminEmail = process?.env.ADMIN_EMAIL || "noreply@max-booster?.com";
       const _admin = await db?.query.users?.findFirst({
         where: eq(users?.email, adminEmail),
         columns: { id: true },

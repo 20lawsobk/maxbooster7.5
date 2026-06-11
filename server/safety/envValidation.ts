@@ -5,7 +5,7 @@
  * Server MUST NOT start if critical variables are missing.
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface EnvRequirement {
   name: string;
@@ -76,7 +76,7 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: false,
     category: "monitoring",
     description: "Sentry DSN for error tracking",
-    validator: (v) => v?.includes("sentry.io"),
+    validator: (v) => v?.includes("sentry?.io"),
   },
 
   // BoosterState - Custom in-memory store (replaces Redis)

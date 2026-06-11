@@ -17,10 +17,10 @@ import rateLimit, {
   type IncrementResponse,
 } from "express-rate-limit";
 import type { Request, Response } from "express";
-import { config } from "../config/defaults.js";
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisClient.js";
-import { SLIDING_WINDOW_LUA } from "./slidingWindowLua.js";
+import { config } from "../config/defaults?.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisClient?.js";
+import { SLIDING_WINDOW_LUA } from "./slidingWindowLua?.js";
 
 const _RL_PREFIX = "glrl:";
 
@@ -36,13 +36,13 @@ class RedisRateLimitStore implements Store {
   private fallbackPrunedAt = Date?.now();
 
   constructor(windowMs: number, maxRequests: number) {
-    this.windowMs = windowMs;
-    this.maxRequests = maxRequests;
+    this?.windowMs = windowMs;
+    this?.maxRequests = maxRequests;
   }
 
   init(options: Options): void {
-    this.windowMs = options?.windowMs;
-    this.maxRequests =
+    this?.windowMs = options?.windowMs;
+    this?.maxRequests =
       typeof options?.max === "number" ? options?.max : this?.maxRequests;
   }
 
@@ -52,7 +52,7 @@ class RedisRateLimitStore implements Store {
       for (const [k, v] of this?.fallbackStore) {
         if (now > v?.resetAt) this?.fallbackStore.delete(k);
       }
-      this.fallbackPrunedAt = now;
+      this?.fallbackPrunedAt = now;
     }
     const _entry = this?.fallbackStore.get(key);
     if (!entry || now > entry?.resetAt) {
@@ -194,9 +194,9 @@ export const _globalRateLimiter = rateLimit({
       req?.path.startsWith("/@react-refresh") ||
       req?.path.startsWith("/@replit/");
     const _isLocalhost =
-      req?.ip === "127.0.0.1" ||
+      req?.ip === "127?.0.0?.1" ||
       req?.ip === "::1" ||
-      req?.ip === "::ffff:127.0.0.1" ||
+      req?.ip === "::ffff:127?.0.0?.1" ||
       (typeof req?.ip === "string" && req?.ip.startsWith("10."));
     const _isSessionMaintenance =
       req?.path === "/api/auth/refresh-token" ||
@@ -231,9 +231,9 @@ export const _criticalEndpointLimiter = rateLimit({
   validate: { trustProxy: false },
   skip: (req: Request) => {
     return (
-      req?.ip === "127.0.0.1" ||
+      req?.ip === "127?.0.0?.1" ||
       req?.ip === "::1" ||
-      req?.ip === "::ffff:127.0.0.1" ||
+      req?.ip === "::ffff:127?.0.0?.1" ||
       (typeof req?.ip === "string" && req?.ip.startsWith("10."))
     );
   },

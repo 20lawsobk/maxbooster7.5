@@ -7,9 +7,9 @@
 
 import { Request, Response, NextFunction } from "express";
 import Stripe from "stripe";
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
-import { env } from "../config/env.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory?.js";
+import { env } from "../config/env?.js";
 
 // Audit log for webhook events
 interface WebhookAuditEntry {

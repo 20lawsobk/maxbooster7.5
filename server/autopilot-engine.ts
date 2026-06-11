@@ -1,10 +1,10 @@
 import { EventEmitter } from "events";
 import { randomUUID } from "crypto";
-import { platformAPI } from "./platform-apis.js";
-import { logger } from "./logger.js";
-import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
-import { autopilotLearningService } from "./services/autopilotLearningService.js";
-import { evolutionRegistry } from "./services/evolutionRegistry.js";
+import { platformAPI } from "./platform-apis?.js";
+import { logger } from "./logger?.js";
+import { advancedSocialAIService } from "./services/advancedSocialAIService?.js";
+import { autopilotLearningService } from "./services/autopilotLearningService?.js";
+import { evolutionRegistry } from "./services/evolutionRegistry?.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -73,7 +73,7 @@ export class AutopilotEngine extends EventEmitter {
   private jobs: Map<string, AutopilotJob> = new Map();
   private config: AutopilotConfig;
   private isRunning: boolean = false;
-  private schedulerInterval: NodeJS.Timeout | null = null;
+  private schedulerInterval: NodeJS?.Timeout | null = null;
   private contentQueue: Map<string, any[]> = new Map();
   private performanceData: Map<string, any> = new Map();
   // Durable publish context keyed by contentId, captured at PUBLISH time.
@@ -87,8 +87,8 @@ export class AutopilotEngine extends EventEmitter {
 
   constructor(userId: string) {
     super();
-    this.userId = userId;
-    this.config = this?.getDefaultConfig();
+    this?.userId = userId;
+    this?.config = this?.getDefaultConfig();
   }
 
   static createForSocialAndAds(userId: string): AutopilotEngine {
@@ -101,7 +101,7 @@ export class AutopilotEngine extends EventEmitter {
       contentTypes: ["announcements", "questions", "tips", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: true,
-      engagementThreshold: 0.03,
+      engagementThreshold: 0?.03,
     });
     return engine;
   }
@@ -116,7 +116,7 @@ export class AutopilotEngine extends EventEmitter {
       contentTypes: ["announcements", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: false,
-      engagementThreshold: 0.02,
+      engagementThreshold: 0?.02,
     });
     return engine;
   }
@@ -131,7 +131,7 @@ export class AutopilotEngine extends EventEmitter {
       contentTypes: ["announcements", "insights"],
       optimalTimesOnly: true,
       crossPostingEnabled: false,
-      engagementThreshold: 0.01,
+      engagementThreshold: 0?.01,
     });
     return engine;
   }
@@ -149,13 +149,13 @@ export class AutopilotEngine extends EventEmitter {
       autoPublish: false,
       optimalTimesOnly: true,
       crossPostingEnabled: false,
-      engagementThreshold: 0.02,
+      engagementThreshold: 0?.02,
     };
   }
 
   // Autopilot Configuration
   async configure(config: Partial<AutopilotConfig>): Promise<void> {
-    this.config = { ...this?.config, ...config };
+    this?.config = { ...this?.config, ...config };
 
     if (this?.config.enabled && !this?.isRunning) {
       await this?.start();
@@ -174,14 +174,14 @@ export class AutopilotEngine extends EventEmitter {
   async start(): Promise<void> {
     if (this?.isRunning) return;
 
-    this.isRunning = true;
+    this?.isRunning = true;
     this?.emit("autopilotStarted");
 
     // Initialize content generation jobs
     await this?.scheduleContentGeneration();
 
     // Start the job scheduler
-    this.schedulerInterval = setInterval(() => {
+    this?.schedulerInterval = setInterval(() => {
       this?.processJobs();
       this?.pruneCompletedJobs();
     }, 60000); // Check every minute
@@ -205,17 +205,17 @@ export class AutopilotEngine extends EventEmitter {
   async stop(): Promise<void> {
     if (!this?.isRunning) return;
 
-    this.isRunning = false;
+    this?.isRunning = false;
 
     if (this?.schedulerInterval) {
       clearInterval(this?.schedulerInterval);
-      this.schedulerInterval = null;
+      this?.schedulerInterval = null;
     }
 
     // Cancel pending jobs
     this?.jobs.forEach((job) => {
       if (job?.status === "pending") {
-        job.status = "failed";
+        job?.status = "failed";
       }
     });
 
@@ -463,7 +463,7 @@ export class AutopilotEngine extends EventEmitter {
 
   private async executeJob(job: AutopilotJob): Promise<void> {
     try {
-      job.status = "running";
+      job?.status = "running";
       this?.emit("jobStarted", job);
 
       switch (job?.type) {
@@ -478,17 +478,17 @@ export class AutopilotEngine extends EventEmitter {
           break;
       }
 
-      job.status = "completed";
+      job?.status = "completed";
       this?.emit("jobCompleted", job);
     } catch (error: unknown) {
       logger?.warn({ err: error }, `Job ${job?.id} failed:`);
 
       if (job?.retries < job?.maxRetries) {
         job?.retries++;
-        job.status = "pending";
-        job.scheduledAt = new Date(Date?.now() + 5 * 60 * 1000); // Retry in 5 minutes
+        job?.status = "pending";
+        job?.scheduledAt = new Date(Date?.now() + 5 * 60 * 1000); // Retry in 5 minutes
       } else {
-        job.status = "failed";
+        job?.status = "failed";
         this?.emit("jobFailed", job, error);
       }
     }
@@ -557,8 +557,8 @@ export class AutopilotEngine extends EventEmitter {
       const _successfulResults = results?.filter((r: unknown) => r?.success);
 
       if (successfulResults?.length > 0) {
-        content.status = "published";
-        content.publishedAt = new Date();
+        content?.status = "published";
+        content?.publishedAt = new Date();
 
         // Persist publish context durably (content is no longer in the queue
         // after shift()). Evict oldest first when at cap, matching performanceData.
@@ -592,7 +592,7 @@ export class AutopilotEngine extends EventEmitter {
       this?.emit("contentPublished", { job, content, results });
     } else {
       // Schedule for review
-      content.status = "scheduled";
+      content?.status = "scheduled";
       this?.emit("contentScheduled", { job, content });
     }
   }
@@ -645,7 +645,7 @@ export class AutopilotEngine extends EventEmitter {
     }
   }
 
-  // AI Content Generation using Advanced Social AI (GPT-5.2 Level)
+  // AI Content Generation using Advanced Social AI (GPT-5?.2 Level)
   private async generateContentForAutopilot(params: {
     topic: string;
     platform: string;
@@ -711,7 +711,7 @@ export class AutopilotEngine extends EventEmitter {
         objective = "engagement";
       }
 
-      // Use Advanced Social AI for GPT-5.2 level content generation
+      // Use Advanced Social AI for GPT-5?.2 level content generation
       const _advancedResult =
         await advancedSocialAIService?.generateAdvancedContent({
           userId: this?.userId,
@@ -877,7 +877,7 @@ export class AutopilotEngine extends EventEmitter {
       logger?.info(
         `High performing content detected: ${contentId} (${engagementRate}% engagement)`,
       );
-    } else if (engagementRate < this?.config.engagementThreshold * 0.5) {
+    } else if (engagementRate < this?.config.engagementThreshold * 0?.5) {
       logger?.info(
         `Low performing content detected: ${contentId} (${engagementRate}% engagement)`,
       );

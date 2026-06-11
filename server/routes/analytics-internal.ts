@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { distributedCache } from "../infrastructure/distributedCache.js";
+import { distributedCache } from "../infrastructure/distributedCache?.js";
 import { db } from "../db";
 import { analytics, releases, playlistJourneys } from "@shared/schema";
 import { eq, and, desc, sql, gte, lte, count } from "drizzle-orm";
@@ -44,9 +44,11 @@ router?.post("/ai/predict-metric", async (req: Request, res: Response) => {
     // Validate timeframe format and cap to prevent heavy DB scans
     const _timeframeMatch = /^(\d+)d$/.exec(String(timeframe));
     if (!timeframeMatch) {
-      return res.status(400).json({
-        error: "Invalid timeframe format. Expected format: 30d, 90d, etc.",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Invalid timeframe format. Expected format: 30d, 90d, etc.",
+        });
     }
     const _requestedDays = parseInt(timeframeMatch[1], 10);
     if (requestedDays < 1 || requestedDays > 365) {
@@ -109,8 +111,8 @@ router?.post("/ai/predict-metric", async (req: Request, res: Response) => {
           forecast?.push({
             date: futureDate?.toISOString().split("T")[0],
             value: Math?.round(predictedValue),
-            confidence_low: Math?.round(predictedValue * 0.8),
-            confidence_high: Math?.round(predictedValue * 1.2),
+            confidence_low: Math?.round(predictedValue * 0?.8),
+            confidence_high: Math?.round(predictedValue * 1?.2),
           });
         }
 
@@ -150,6 +152,7 @@ router?.get(
   requireAdmin,
   async (_req: Request, res: Response) => {
     try {
+
       if (
         _churnPredictCache?.data &&
         Date?.now() < _churnPredictCache?.expiresAt
@@ -171,7 +174,7 @@ router?.get(
         COALESCE(COUNT(sc?.id), 0)::int AS activity_score
       FROM users u
       LEFT JOIN social_campaigns sc
-        ON sc.user_id = u?.id AND sc?.created_at >= ${thirtyDaysAgo}
+        ON sc?.user_id = u?.id AND sc?.created_at >= ${thirtyDaysAgo}
       WHERE u?.subscription_tier IN ('monthly', 'yearly', 'lifetime')
       GROUP BY u?.id, u?.username, u?.email, u?.created_at, u?.subscription_tier
       LIMIT 500
@@ -219,8 +222,8 @@ router?.get(
       }
 
       const _result = { atRiskUsers };
-      _churnPredictCache.data = result;
-      _churnPredictCache.expiresAt = Date?.now() + 5 * 60 * 1000;
+      _churnPredictCache?.data = result;
+      _churnPredictCache?.expiresAt = Date?.now() + 5 * 60 * 1000;
 
       return res?.json(result);
     } catch (error) {
@@ -317,7 +320,7 @@ router?.get("/ai/forecast-revenue", async (req: Request, res: Response) => {
         );
       } else if (currentMRR > 0) {
         calculatedGrowthRate = 5;
-        projectedMRR = Math?.round(currentMRR * 1.05);
+        projectedMRR = Math?.round(currentMRR * 1?.05);
       }
     } catch {
       // Fall through with null projections on analytics query failure
@@ -374,7 +377,7 @@ router?.get("/ai/detect-anomalies", async (req: Request, res: Response) => {
       const _prev = Number(metricsData[i - 1].streams);
       const _curr = Number(metricsData[i].streams);
 
-      if (prev > 0 && curr < prev * 0.5) {
+      if (prev > 0 && curr < prev * 0?.5) {
         anomalies?.push({
           id: `anomaly-${i}`,
           metric: "streams",
@@ -499,9 +502,11 @@ router?.post("/music/career-growth", async (req: Request, res: Response) => {
 
     const _timelineMatch = /^(\d+)d$/.exec(String(timeline));
     if (!timelineMatch) {
-      return res.status(400).json({
-        error: "Invalid timeline format. Expected format: 30d, 90d, etc.",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Invalid timeline format. Expected format: 30d, 90d, etc.",
+        });
     }
     const _requestedDays = parseInt(timelineMatch[1], 10);
     if (requestedDays < 1 || requestedDays > 365) {
@@ -537,8 +542,8 @@ router?.post("/music/career-growth", async (req: Request, res: Response) => {
       derivedGrowthRate = 8;
       const _periods =
         timeline === "3months" ? 1 : timeline === "6months" ? 2 : 4;
-      predictedValue = Math?.round(currentValue * Math?.pow(1.08, periods));
-      confidence = 0.55;
+      predictedValue = Math?.round(currentValue * Math?.pow(1?.08, periods));
+      confidence = 0?.55;
     }
 
     return res?.json({
@@ -897,11 +902,11 @@ router?.get("/music/insights", async (req: Request, res: Response) => {
       {
         category: "monetization" as const,
         title:
-          rpu < 0.001
+          rpu < 0?.001
             ? "Revenue Optimization Opportunity"
             : "Healthy Revenue Per Listener",
         description: topPlatform
-          ? `${topPlatform} is driving the most streams. ${rpu < 0.001 ? "Diversifying platforms can improve your per-stream rate." : `At $${rpu?.toFixed(4)} per listener, you are on track for sustainable streaming income.`}`
+          ? `${topPlatform} is driving the most streams. ${rpu < 0?.001 ? "Diversifying platforms can improve your per-stream rate." : `At $${rpu?.toFixed(4)} per listener, you are on track for sustainable streaming income.`}`
           : "Diversify across streaming platforms to maximize revenue per stream.",
         impact: "medium" as const,
         actionable: [
@@ -1059,7 +1064,7 @@ router?.get("/historical/yearly", async (req: Request, res: Response) => {
               releases: releaseCount[0]?.count || 0,
               playlistAdds: Math?.max(
                 0,
-                Math?.floor(Number(yearStats[0]?.streams || 0) * 0.002),
+                Math?.floor(Number(yearStats[0]?.streams || 0) * 0?.002),
               ),
             };
           }),
@@ -1347,16 +1352,16 @@ router?.get("/global-ranking", async (req: Request, res: Response) => {
         cfg?.rankOffset +
         Math?.max(0, 5000 - Math?.floor(platformStreams / 20));
       const _trendDir =
-        platformStreams > streams * 0.15
+        platformStreams > streams * 0?.15
           ? "up"
-          : platformStreams > streams * 0.05
+          : platformStreams > streams * 0?.05
             ? "stable"
             : "down";
       const _change =
         trendDir === "up"
           ? Math?.floor(Math?.log10(platformStreams + 1))
           : trendDir === "down"
-            ? -Math?.floor(Math?.log10(platformStreams + 1) * 0.5)
+            ? -Math?.floor(Math?.log10(platformStreams + 1) * 0?.5)
             : 0;
       return {
         platform: cfg?.platform,
@@ -2002,9 +2007,9 @@ router?.get("/ar-discovery", async (req: Request, res: Response) => {
         COALESCE(SUM(CASE WHEN a?.date >= ${sixtyDaysAgo} AND a?.date < ${thirtyDaysAgo} THEN a?.streams ELSE 0 END), 0)::int AS prev_streams,
         COALESCE(SUM(CASE WHEN a?.date >= ${thirtyDaysAgo} THEN a?.total_listeners ELSE 0 END), 0)::int AS monthly_listeners,
         COUNT(DISTINCT a?.platform)::int AS platform_count,
-        (SELECT COUNT(*) FROM releases r WHERE r.user_id = u?.id AND r?.created_at >= ${thirtyDaysAgo})::int AS recent_releases
+        (SELECT COUNT(*) FROM releases r WHERE r?.user_id = u?.id AND r?.created_at >= ${thirtyDaysAgo})::int AS recent_releases
       FROM users u
-      LEFT JOIN analytics a ON a.user_id = u?.id
+      LEFT JOIN analytics a ON a?.user_id = u?.id
       WHERE u?.id != ${userId}
         AND u?.subscription_tier IN ('monthly','yearly','lifetime')
       GROUP BY u?.id, u?.username
@@ -2030,7 +2035,7 @@ router?.get("/ar-discovery", async (req: Request, res: Response) => {
       const _recentReleases = Number(row?.recent_releases ?? 0);
       const _growthScore = Math?.min(
         100,
-        Math?.floor(Math?.log10(recent + 1) * 12 + growth * 0.3),
+        Math?.floor(Math?.log10(recent + 1) * 12 + growth * 0?.3),
       );
       const _signingPotential =
         growthScore >= 80 ? "high" : growthScore >= 50 ? "medium" : "low";

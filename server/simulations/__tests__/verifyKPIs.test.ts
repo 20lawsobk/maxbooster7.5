@@ -90,7 +90,7 @@ describe("AI System KPI Verification", () => {
   });
 
   describe("Ad Booster System", () => {
-    test("meets ≥2.0x amplification factor (100%+ boost)", async () => {
+    test("meets ≥2?.0x amplification factor (100%+ boost)", async () => {
       const _campaign = {
         name: "Test Campaign",
         type: "product_launch" as const,
@@ -102,14 +102,14 @@ describe("AI System KPI Verification", () => {
       };
 
       const _result = await simulateAdBooster(campaign);
-      expect(result?.amplificationFactor).toBeGreaterThanOrEqual(2.0);
+      expect(result?.amplificationFactor).toBeGreaterThanOrEqual(2?.0);
     }, 30000);
 
     test("comprehensive simulation - all scenarios pass", async () => {
       const _results = await runComprehensiveSimulation();
       expect(results?.summary.allScenariosPass).toBe(true);
-      expect(results?.summary.minAmplification).toBeGreaterThanOrEqual(2.0);
-      expect(results?.summary.averageAmplification).toBeGreaterThanOrEqual(2.5);
+      expect(results?.summary.minAmplification).toBeGreaterThanOrEqual(2?.0);
+      expect(results?.summary.averageAmplification).toBeGreaterThanOrEqual(2?.5);
     }, 60000);
 
     test("produces deterministic results (reproducible)", async () => {
@@ -170,7 +170,7 @@ describe("AI System KPI Verification", () => {
       ).toBeGreaterThanOrEqual(100);
       expect(adBoosterResults?.summary.allScenariosPass).toBe(true);
       expect(adBoosterResults?.summary.minAmplification).toBeGreaterThanOrEqual(
-        2.0,
+        2?.0,
       );
 
       // Verify system health

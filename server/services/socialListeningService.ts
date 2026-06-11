@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 
 import { logger } from "../logger";
-import { storage } from "../storage.js";
+import { storage } from "../storage?.js";
 import axios from "axios";
 import { TwitterApi } from "twitter-api-v2";
 
@@ -303,7 +303,7 @@ class SocialListeningService {
           authorHandle: `@${author?.username || "unknown"}`,
           authorFollowers: author?.public_metrics?.followers_count || 0,
           authorVerified: author?.verified || false,
-          url: `https://twitter.com/${author?.username}/status/${tweet?.id}`,
+          url: `https://twitter?.com/${author?.username}/status/${tweet?.id}`,
           timestamp: new Date(tweet?.created_at || Date?.now()),
           sentiment,
           reach: author?.public_metrics?.followers_count || 0,
@@ -395,7 +395,7 @@ class SocialListeningService {
       if (!tokens?.accessToken) return [];
 
       const _response = await axios?.get(
-        "https://graph?.facebook.com/v18.0/me/tagged",
+        "https://graph?.facebook.com/v18?.0/me/tagged",
         {
           params: {
             fields:
@@ -528,14 +528,14 @@ class SocialListeningService {
     const _score = (positive - negative) / total;
 
     return {
-      overall: score > 0.2 ? "positive" : score < -0.2 ? "negative" : "neutral",
+      overall: score > 0?.2 ? "positive" : score < -0?.2 ? "negative" : "neutral",
       score: Math?.round(score * 100) / 100,
       breakdown: {
         positive: Math?.round((positive / total) * 100),
         neutral: Math?.round((neutral / total) * 100),
         negative: Math?.round((negative / total) * 100),
       },
-      trend: score > 0.1 ? "improving" : score < -0.1 ? "declining" : "stable",
+      trend: score > 0?.1 ? "improving" : score < -0?.1 ? "declining" : "stable",
       topPositiveTopics: [
         "Customer Service",
         "Ease of Use",
@@ -575,61 +575,61 @@ class SocialListeningService {
         topic: "AI in Music Production",
         hashtag: "#AIMusic",
         category: "technology",
-        relevance: 0.95,
+        relevance: 0?.95,
       },
       {
         topic: "Independent Artists Rising",
         hashtag: "#IndieMusic",
         category: "music",
-        relevance: 0.92,
+        relevance: 0?.92,
       },
       {
         topic: "Music Distribution Tips",
         hashtag: "#MusicDistribution",
         category: "music",
-        relevance: 0.98,
+        relevance: 0?.98,
       },
       {
         topic: "Streaming Royalties",
         hashtag: "#StreamingRoyalties",
         category: "music",
-        relevance: 0.88,
+        relevance: 0?.88,
       },
       {
         topic: "New Music Friday",
         hashtag: "#NewMusicFriday",
         category: "entertainment",
-        relevance: 0.85,
+        relevance: 0?.85,
       },
       {
         topic: "Producer Life",
         hashtag: "#ProducerLife",
         category: "music",
-        relevance: 0.82,
+        relevance: 0?.82,
       },
       {
         topic: "Home Studio Setup",
         hashtag: "#HomeStudio",
         category: "technology",
-        relevance: 0.78,
+        relevance: 0?.78,
       },
       {
         topic: "Music Marketing",
         hashtag: "#MusicMarketing",
         category: "music",
-        relevance: 0.9,
+        relevance: 0?.9,
       },
       {
         topic: "Sync Licensing",
         hashtag: "#SyncLicensing",
         category: "music",
-        relevance: 0.75,
+        relevance: 0?.75,
       },
       {
         topic: "Beat Making",
         hashtag: "#BeatMaking",
         category: "music",
-        relevance: 0.8,
+        relevance: 0?.8,
       },
     ];
 
@@ -642,7 +642,7 @@ class SocialListeningService {
         category: data?.category as Record<string, unknown>,
         volume: Math?.floor(Math?.random() * 100000) + 10000,
         volumeChange: Math?.floor(Math?.random() * 200) - 50,
-        sentiment: Math?.random() > 0.3 ? "positive" : "neutral",
+        sentiment: Math?.random() > 0?.3 ? "positive" : "neutral",
         platforms: ["twitter", "instagram", "tiktok"].slice(
           0,
           Math?.floor(Math?.random() * 3) + 1,
@@ -653,7 +653,7 @@ class SocialListeningService {
           `${data?.hashtag}Tips`,
           `${data?.hashtag}Community`,
         ],
-        isRelevant: data?.relevance > 0.7,
+        isRelevant: data?.relevance > 0?.7,
         relevanceScore: data?.relevance,
       });
     }
@@ -681,44 +681,44 @@ class SocialListeningService {
             followersGrowth: Math?.random() * 10 - 2,
             engagementRate: Math?.random() * 5 + 1,
             postsPerWeek: Math?.floor(Math?.random() * 10) + 3,
-            avgLikes: Math?.floor(baseFollowers * (Math?.random() * 0.05 + 0.01)),
+            avgLikes: Math?.floor(baseFollowers * (Math?.random() * 0?.05 + 0?.01)),
             avgComments: Math?.floor(
-              baseFollowers * (Math?.random() * 0.005 + 0.001),
+              baseFollowers * (Math?.random() * 0?.005 + 0?.001),
             ),
             avgShares: Math?.floor(
-              baseFollowers * (Math?.random() * 0.002 + 0.0005),
+              baseFollowers * (Math?.random() * 0?.002 + 0?.0005),
             ),
           },
           {
             platform: "twitter",
-            followers: Math?.floor(baseFollowers * 0.7),
+            followers: Math?.floor(baseFollowers * 0?.7),
             followersGrowth: Math?.random() * 8 - 1,
-            engagementRate: Math?.random() * 3 + 0.5,
+            engagementRate: Math?.random() * 3 + 0?.5,
             postsPerWeek: Math?.floor(Math?.random() * 20) + 5,
             avgLikes: Math?.floor(
-              baseFollowers * 0.7 * (Math?.random() * 0.02 + 0.005),
+              baseFollowers * 0?.7 * (Math?.random() * 0?.02 + 0?.005),
             ),
             avgComments: Math?.floor(
-              baseFollowers * 0.7 * (Math?.random() * 0.003 + 0.001),
+              baseFollowers * 0?.7 * (Math?.random() * 0?.003 + 0?.001),
             ),
             avgShares: Math?.floor(
-              baseFollowers * 0.7 * (Math?.random() * 0.005 + 0.001),
+              baseFollowers * 0?.7 * (Math?.random() * 0?.005 + 0?.001),
             ),
           },
           {
             platform: "tiktok",
-            followers: Math?.floor(baseFollowers * 1.5),
+            followers: Math?.floor(baseFollowers * 1?.5),
             followersGrowth: Math?.random() * 20 + 5,
             engagementRate: Math?.random() * 8 + 3,
             postsPerWeek: Math?.floor(Math?.random() * 7) + 2,
             avgLikes: Math?.floor(
-              baseFollowers * 1.5 * (Math?.random() * 0.1 + 0.02),
+              baseFollowers * 1?.5 * (Math?.random() * 0?.1 + 0?.02),
             ),
             avgComments: Math?.floor(
-              baseFollowers * 1.5 * (Math?.random() * 0.01 + 0.002),
+              baseFollowers * 1?.5 * (Math?.random() * 0?.01 + 0?.002),
             ),
             avgShares: Math?.floor(
-              baseFollowers * 1.5 * (Math?.random() * 0.02 + 0.005),
+              baseFollowers * 1?.5 * (Math?.random() * 0?.02 + 0?.005),
             ),
           },
         ],
@@ -835,20 +835,20 @@ class SocialListeningService {
   ): Promise<ShareOfVoice> {
     const _totalMentions = Math?.floor(Math?.random() * 10000) + 5000;
     const _yourMentions = Math?.floor(
-      totalMentions * (Math?.random() * 0.3 + 0.2),
+      totalMentions * (Math?.random() * 0?.3 + 0?.2),
     );
 
     const _competitors = competitorNames?.map((name) => {
       const _mentions = Math?.floor(
         ((totalMentions - yourMentions) / competitorNames?.length) *
-          (0.5 + Math?.random()),
+          (0?.5 + Math?.random()),
       );
       return {
         name,
         mentions,
         percentage: Math?.round((mentions / totalMentions) * 100),
         reach: mentions * (Math?.floor(Math?.random() * 500) + 100),
-        sentiment: Math?.random() * 0.6 + 0.2,
+        sentiment: Math?.random() * 0?.6 + 0?.2,
       };
     });
 
@@ -875,7 +875,7 @@ class SocialListeningService {
         mentions: yourMentions,
         percentage: Math?.round((yourMentions / totalMentions) * 100),
         reach: yourMentions * (Math?.floor(Math?.random() * 500) + 200),
-        sentiment: Math?.random() * 0.3 + 0.6,
+        sentiment: Math?.random() * 0?.3 + 0?.6,
       },
       competitors,
       industryTotal: totalMentions,
@@ -930,20 +930,20 @@ class SocialListeningService {
   }> {
     return {
       engagementRate: {
-        average: 3.2,
-        top10: 8.5,
-        bottom10: 0.8,
+        average: 3?.2,
+        top10: 8?.5,
+        bottom10: 0?.8,
       },
       postFrequency: {
         average: 7,
         recommended: 14,
       },
       responseTime: {
-        average: 4.5,
+        average: 4?.5,
         excellent: 1,
       },
       followerGrowth: {
-        average: 2.5,
+        average: 2?.5,
         top10: 15,
       },
       contentTypes: {

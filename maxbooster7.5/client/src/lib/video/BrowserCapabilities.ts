@@ -259,9 +259,8 @@ class BrowserCapabilitiesDetector {
 
     if (audioContext) {
       try {
-        const ctx = new (
-          AudioContext || (window as Record<string, unknown>).webkitAudioContext
-        )();
+        const ctx = new (AudioContext ||
+          (window as Record<string, unknown>).webkitAudioContext)();
         webAudioApi = true;
         mediaElementSource = typeof ctx.createMediaElementSource === "function";
         analyserNode = typeof ctx.createAnalyser === "function";

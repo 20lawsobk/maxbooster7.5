@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { db } from "../db";
 import { hashtagResearch } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
@@ -47,6 +47,7 @@ interface TrendCache {
   fetchedAt: Date;
   expiresAt: Date;
 }
+
 
 const MUSIC_GENRE_TRENDS: Record<
   string,
@@ -421,7 +422,7 @@ class DynamicTrendsService {
       .sort((a, b) => b?.popularity - a?.popularity)
       .slice(0, 10);
 
-    this.trendCache = {
+    this?.trendCache = {
       data: sortedTrends,
       fetchedAt: new Date(),
       expiresAt: new Date(Date?.now() + this?.CACHE_DURATION_MS),
@@ -444,7 +445,7 @@ class DynamicTrendsService {
         category: "high-reach",
         popularity: 98,
         competition: 95,
-        avgEngagement: 3.2,
+        avgEngagement: 3?.2,
         trending: false,
         platform,
       },
@@ -453,7 +454,7 @@ class DynamicTrendsService {
         category: "high-reach",
         popularity: 95,
         competition: 90,
-        avgEngagement: 4.1,
+        avgEngagement: 4?.1,
         trending: true,
         platform,
       },
@@ -462,7 +463,7 @@ class DynamicTrendsService {
         category: "high-reach",
         popularity: 90,
         competition: 88,
-        avgEngagement: 3.8,
+        avgEngagement: 3?.8,
         trending: false,
         platform,
       },
@@ -471,7 +472,7 @@ class DynamicTrendsService {
         category: "high-reach",
         popularity: 88,
         competition: 85,
-        avgEngagement: 4.5,
+        avgEngagement: 4?.5,
         trending: false,
         platform,
       },
@@ -483,7 +484,7 @@ class DynamicTrendsService {
         category: "medium-reach",
         popularity: 75,
         competition: 65,
-        avgEngagement: 5.8,
+        avgEngagement: 5?.8,
         trending: false,
         platform,
       },
@@ -492,7 +493,7 @@ class DynamicTrendsService {
         category: "medium-reach",
         popularity: 72,
         competition: 60,
-        avgEngagement: 6.2,
+        avgEngagement: 6?.2,
         trending: false,
         platform,
       },
@@ -501,7 +502,7 @@ class DynamicTrendsService {
         category: "medium-reach",
         popularity: 70,
         competition: 58,
-        avgEngagement: 5.5,
+        avgEngagement: 5?.5,
         trending: false,
         platform,
       },
@@ -510,7 +511,7 @@ class DynamicTrendsService {
         category: "medium-reach",
         popularity: 68,
         competition: 55,
-        avgEngagement: 6.0,
+        avgEngagement: 6?.0,
         trending: false,
         platform,
       },
@@ -522,7 +523,7 @@ class DynamicTrendsService {
         category: "niche",
         popularity: 45,
         competition: 30,
-        avgEngagement: 9.2,
+        avgEngagement: 9?.2,
         trending: false,
         platform,
       },
@@ -531,7 +532,7 @@ class DynamicTrendsService {
         category: "niche",
         popularity: 48,
         competition: 35,
-        avgEngagement: 8.8,
+        avgEngagement: 8?.8,
         trending: false,
         platform,
       },
@@ -540,7 +541,7 @@ class DynamicTrendsService {
         category: "niche",
         popularity: 40,
         competition: 28,
-        avgEngagement: 10.5,
+        avgEngagement: 10?.5,
         trending: false,
         platform,
       },
@@ -549,7 +550,7 @@ class DynamicTrendsService {
         category: "niche",
         popularity: 42,
         competition: 32,
-        avgEngagement: 9.5,
+        avgEngagement: 9?.5,
         trending: false,
         platform,
       },
@@ -562,7 +563,7 @@ class DynamicTrendsService {
           category: i < 2 ? "high-reach" : "medium-reach",
           popularity: 85 - i * 5,
           competition: 70 - i * 5,
-          avgEngagement: 5.0 + i * 0.5,
+          avgEngagement: 5?.0 + i * 0?.5,
           trending: i === 0,
           platform,
         });
@@ -576,7 +577,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 99,
           competition: 98,
-          avgEngagement: 2.5,
+          avgEngagement: 2?.5,
           trending: true,
           platform: "tiktok",
         },
@@ -585,7 +586,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 98,
           competition: 97,
-          avgEngagement: 2.8,
+          avgEngagement: 2?.8,
           trending: true,
           platform: "tiktok",
         },
@@ -594,7 +595,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 80,
           competition: 70,
-          avgEngagement: 5.5,
+          avgEngagement: 5?.5,
           trending: true,
           platform: "tiktok",
         },
@@ -605,7 +606,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 96,
           competition: 92,
-          avgEngagement: 3.5,
+          avgEngagement: 3?.5,
           trending: true,
           platform: "instagram",
         },
@@ -614,7 +615,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 94,
           competition: 90,
-          avgEngagement: 3.2,
+          avgEngagement: 3?.2,
           trending: false,
           platform: "instagram",
         },
@@ -623,7 +624,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 75,
           competition: 65,
-          avgEngagement: 5.8,
+          avgEngagement: 5?.8,
           trending: false,
           platform: "instagram",
         },
@@ -634,7 +635,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 95,
           competition: 88,
-          avgEngagement: 4.0,
+          avgEngagement: 4?.0,
           trending: true,
           platform: "youtube",
         },
@@ -643,7 +644,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 78,
           competition: 68,
-          avgEngagement: 5.2,
+          avgEngagement: 5?.2,
           trending: false,
           platform: "youtube",
         },
@@ -668,7 +669,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 70 - i * 5,
           competition: 60 - i * 5,
-          avgEngagement: 6.0 + i * 0.3,
+          avgEngagement: 6?.0 + i * 0?.3,
           trending: i === 0,
           platform,
         });
@@ -701,8 +702,8 @@ class DynamicTrendsService {
 
     const result: HashtagData[] = [];
 
-    const _highCount = Math?.ceil(count * 0.3);
-    const _mediumCount = Math?.ceil(count * 0.4);
+    const _highCount = Math?.ceil(count * 0?.3);
+    const _mediumCount = Math?.ceil(count * 0?.4);
     const _nicheCount = count - highCount - mediumCount;
 
     result?.push(
@@ -773,7 +774,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 88,
           competition: 80,
-          avgEngagement: 4.5,
+          avgEngagement: 4?.5,
           trending: true,
           platform,
         },
@@ -782,7 +783,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 85,
           competition: 78,
-          avgEngagement: 4.8,
+          avgEngagement: 4?.8,
           trending: true,
           platform,
         },
@@ -791,7 +792,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 72,
           competition: 60,
-          avgEngagement: 5.5,
+          avgEngagement: 5?.5,
           trending: false,
           platform,
         },
@@ -802,7 +803,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 75,
           competition: 65,
-          avgEngagement: 6.2,
+          avgEngagement: 6?.2,
           trending: false,
           platform,
         },
@@ -811,7 +812,7 @@ class DynamicTrendsService {
           category: "niche",
           popularity: 55,
           competition: 40,
-          avgEngagement: 8.0,
+          avgEngagement: 8?.0,
           trending: false,
           platform,
         },
@@ -820,7 +821,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 68,
           competition: 55,
-          avgEngagement: 5.8,
+          avgEngagement: 5?.8,
           trending: false,
           platform,
         },
@@ -831,7 +832,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 70,
           competition: 58,
-          avgEngagement: 5.5,
+          avgEngagement: 5?.5,
           trending: false,
           platform,
         },
@@ -840,7 +841,7 @@ class DynamicTrendsService {
           category: "niche",
           popularity: 52,
           competition: 38,
-          avgEngagement: 7.5,
+          avgEngagement: 7?.5,
           trending: false,
           platform,
         },
@@ -851,7 +852,7 @@ class DynamicTrendsService {
           category: "high-reach",
           popularity: 82,
           competition: 75,
-          avgEngagement: 4.8,
+          avgEngagement: 4?.8,
           trending: false,
           platform,
         },
@@ -860,7 +861,7 @@ class DynamicTrendsService {
           category: "medium-reach",
           popularity: 65,
           competition: 52,
-          avgEngagement: 6.0,
+          avgEngagement: 6?.0,
           trending: false,
           platform,
         },

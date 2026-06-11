@@ -157,7 +157,7 @@ export function MixerPanel({
   onBusAssign,
 }: MixerPanelProps) {
   const { toast } = useToast();
-  const { isTrackFrozen } = useStudioStore();
+  const {  isTrackFrozen } = useStudioStore();
   const [masterVolume, setMasterVolume] = useState(0.8);
   const [trackEffects, setTrackEffects] = useState<
     Record<string, TrackEffects>

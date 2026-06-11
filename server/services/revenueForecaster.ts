@@ -1,11 +1,7 @@
 import { db } from "../db";
-import {
-  revenueForecasts,
-  dspAnalytics,
-  RevenueForecast,
-} from "@shared/schema";
+import { revenueForecasts, dspAnalytics, RevenueForecast } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, asc } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export type DSPPlatform =
   | "spotify"
@@ -70,8 +66,8 @@ interface ReleaseImpactProjection {
 }
 
 class RevenueForecaster {
-  private readonly CONFIDENCE_BASE = 0.7;
-  private readonly DECAY_FACTOR = 0.95;
+  private readonly CONFIDENCE_BASE = 0?.7;
+  private readonly DECAY_FACTOR = 0?.95;
 
   async generateForecast(
     userId: string,
@@ -110,8 +106,8 @@ class RevenueForecaster {
 
       const _predictedRevenue =
         baseRevenue * trendFactor * seasonalFactor * momentumFactor;
-      const _predictedStreams = Math?.floor(predictedRevenue / 0.004);
-      const _predictedListeners = Math?.floor(predictedStreams * 0.6);
+      const _predictedStreams = Math?.floor(predictedRevenue / 0?.004);
+      const _predictedListeners = Math?.floor(predictedStreams * 0?.6);
 
       const _confidenceLevel = this?.calculateConfidence(
         i,
@@ -281,9 +277,9 @@ class RevenueForecaster {
     const _avgDailyRevenue = this?.calculateBaseRevenue(historicalData);
 
     const _baseMultiplier = 3;
-    const _preSaveBoost = releaseData?.hasPreSaves ? 1.5 : 1;
+    const _preSaveBoost = releaseData?.hasPreSaves ? 1?.5 : 1;
     const _marketingBoost = releaseData?.marketingBudget
-      ? 1 + Math?.log10(releaseData?.marketingBudget) * 0.1
+      ? 1 + Math?.log10(releaseData?.marketingBudget) * 0?.1
       : 1;
     const _previousPerformanceFactor = releaseData?.previousReleasePerformance
       ? releaseData?.previousReleasePerformance / avgDailyRevenue
@@ -296,7 +292,7 @@ class RevenueForecaster {
       marketingBoost *
       previousPerformanceFactor;
     const _peakDay = 3;
-    const _decayRate = 0.85;
+    const _decayRate = 0?.85;
 
     let lifetimeRevenue = 0;
     for (let day = 0; day < 90; day++) {
@@ -307,7 +303,7 @@ class RevenueForecaster {
       lifetimeRevenue += dayRevenue;
     }
 
-    const _projectedStreams = Math?.floor(lifetimeRevenue / 0.004);
+    const _projectedStreams = Math?.floor(lifetimeRevenue / 0?.004);
 
     return {
       releaseDate: releaseData?.releaseDate,
@@ -391,10 +387,10 @@ class RevenueForecaster {
       total,
       byPlatform: platformBreakdown,
       bySource: [
-        { source: "Streaming", revenue: total * 0.75, percentage: 75 },
-        { source: "Playlists", revenue: total * 0.15, percentage: 15 },
-        { source: "Radio", revenue: total * 0.05, percentage: 5 },
-        { source: "Other", revenue: total * 0.05, percentage: 5 },
+        { source: "Streaming", revenue: total * 0?.75, percentage: 75 },
+        { source: "Playlists", revenue: total * 0?.15, percentage: 15 },
+        { source: "Radio", revenue: total * 0?.05, percentage: 5 },
+        { source: "Other", revenue: total * 0?.05, percentage: 5 },
       ],
       projectedNext30Days,
       projectedNext90Days,
@@ -410,7 +406,7 @@ class RevenueForecaster {
     const _weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const _weekdayPattern = weekdays?.map((day, i) => ({
       day,
-      factor: i === 0 || i === 6 ? 1.2 : i === 5 ? 1.15 : 1.0,
+      factor: i === 0 || i === 6 ? 1?.2 : i === 5 ? 1?.15 : 1?.0,
     }));
 
     const _months = [
@@ -430,19 +426,19 @@ class RevenueForecaster {
     const _monthlyPattern = months?.map((month, i) => ({
       month,
       factor: [11, 0].includes(i)
-        ? 1.3
+        ? 1?.3
         : [5, 6].includes(i)
-          ? 1.15
+          ? 1?.15
           : [1, 2].includes(i)
-            ? 0.9
-            : 1.0,
+            ? 0?.9
+            : 1?.0,
     }));
 
     const _currentYear = new Date().getFullYear();
     const _yearOverYear = [
       { year: currentYear - 2, revenue: 10000, growth: 0 },
       { year: currentYear - 1, revenue: 15000, growth: 50 },
-      { year: currentYear, revenue: 22000, growth: 46.7 },
+      { year: currentYear, revenue: 22000, growth: 46?.7 },
     ];
 
     const _today = new Date();
@@ -453,9 +449,9 @@ class RevenueForecaster {
     }[] = [];
 
     const _holidayPeriods = [
-      { month: 11, startDay: 20, endDay: 31, boost: 1.4 },
-      { month: 0, startDay: 1, endDay: 7, boost: 1.2 },
-      { month: 5, startDay: 15, endDay: 30, boost: 1.15 },
+      { month: 11, startDay: 20, endDay: 31, boost: 1?.4 },
+      { month: 0, startDay: 1, endDay: 7, boost: 1?.2 },
+      { month: 5, startDay: 15, endDay: 30, boost: 1?.15 },
     ];
 
     holidayPeriods?.forEach((period) => {
@@ -562,7 +558,7 @@ class RevenueForecaster {
     const _changePercent = ((lastWeekAvg - firstWeekAvg) / firstWeekAvg) * 100;
 
     return {
-      direction: slope > 0.1 ? "up" : slope < -0.1 ? "down" : "stable",
+      direction: slope > 0?.1 ? "up" : slope < -0?.1 ? "down" : "stable",
       slope,
       strength: Math?.min(1, strength),
       changePercent,
@@ -570,19 +566,19 @@ class RevenueForecaster {
   }
 
   private detectSeasonality(_data: TimeSeriesDataPoint[]): SeasonalityPattern {
-    const _dayOfWeek = [1, 1, 1, 1, 1, 1.1, 1.15];
+    const _dayOfWeek = [1, 1, 1, 1, 1, 1?.1, 1?.15];
     const _monthOfYear = [
-      0.9, 0.85, 0.95, 1, 1.05, 1.15, 1.1, 1.05, 1, 1.05, 1.2, 1.35,
+      0?.9, 0?.85, 0?.95, 1, 1?.05, 1?.15, 1?.1, 1?.05, 1, 1?.05, 1?.2, 1?.35,
     ];
 
     return {
       dayOfWeek,
       monthOfYear,
       holidays: [
-        { date: "12-25", factor: 1.5 },
-        { date: "12-31", factor: 1.4 },
-        { date: "01-01", factor: 1.3 },
-        { date: "07-04", factor: 1.2 },
+        { date: "12-25", factor: 1?.5 },
+        { date: "12-31", factor: 1?.4 },
+        { date: "01-01", factor: 1?.3 },
+        { date: "07-04", factor: 1?.2 },
       ],
     };
   }
@@ -603,7 +599,7 @@ class RevenueForecaster {
   }
 
   private applyTrend(daysAhead: number, trend: TrendAnalysis): number {
-    return 1 + trend?.slope * daysAhead * 0.01;
+    return 1 + trend?.slope * daysAhead * 0?.01;
   }
 
   private applySeasonality(date: Date, pattern: SeasonalityPattern): number {
@@ -624,17 +620,17 @@ class RevenueForecaster {
 
   private calculateConfidence(daysAhead: number, dataPoints: number): number {
     const _baseConfidence = this?.CONFIDENCE_BASE;
-    const _dataConfidence = Math?.min(0.2, dataPoints / 500);
-    const _timeDecay = Math?.pow(0.99, daysAhead);
+    const _dataConfidence = Math?.min(0?.2, dataPoints / 500);
+    const _timeDecay = Math?.pow(0?.99, daysAhead);
 
     return Math?.max(
-      0.3,
-      Math?.min(0.95, (baseConfidence + dataConfidence) * timeDecay),
+      0?.3,
+      Math?.min(0?.95, (baseConfidence + dataConfidence) * timeDecay),
     );
   }
 
   private calculateVolatility(data: TimeSeriesDataPoint[]): number {
-    if (data?.length < 2) return 0.2;
+    if (data?.length < 2) return 0?.2;
 
     const _values = data?.map((d) => d?.value);
     const _mean = values?.reduce((a, b) => a + b, 0) / values?.length;
@@ -651,14 +647,14 @@ class RevenueForecaster {
     trend: TrendAnalysis,
   ): ScenarioModel {
     const _bestMultiplier =
-      1 + volatility + (trend?.direction === "up" ? 0.1 : 0);
+      1 + volatility + (trend?.direction === "up" ? 0?.1 : 0);
     const _worstMultiplier =
-      1 - volatility - (trend?.direction === "down" ? 0.1 : 0);
+      1 - volatility - (trend?.direction === "down" ? 0?.1 : 0);
 
     return {
       best: predicted * bestMultiplier,
       expected: predicted,
-      worst: predicted * Math?.max(0.5, worstMultiplier),
+      worst: predicted * Math?.max(0?.5, worstMultiplier),
     };
   }
 

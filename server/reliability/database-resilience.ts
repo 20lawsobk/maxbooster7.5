@@ -1,8 +1,8 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
 import { EventEmitter } from "events";
-import { logger } from "../logger.js";
-import { env } from "../config/env.js";
+import { logger } from "../logger?.js";
+import { env } from "../config/env?.js";
 
 interface ConnectionPool {
   connections: unknown[];
@@ -26,12 +26,12 @@ class DatabaseResilience extends EventEmitter {
   private pool: ConnectionPool;
   private circuitBreaker: CircuitBreakerConfig;
   private connectionRetryCount = 0;
-  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private healthCheckInterval: NodeJS?.Timeout | null = null;
 
   constructor() {
     super();
 
-    this.pool = {
+    this?.pool = {
       connections: [],
       activeConnections: 0,
       maxConnections: 80000000000, // 80 billion for extreme scale
@@ -41,7 +41,7 @@ class DatabaseResilience extends EventEmitter {
       circuitBreakerState: "closed",
     };
 
-    this.circuitBreaker = {
+    this?.circuitBreaker = {
       failureThreshold: 1000000, // Allow more failures before opening circuit for scale
       timeout: 1000, // Shorter timeout for fast recovery
       retryAttempts: 10,
@@ -53,7 +53,7 @@ class DatabaseResilience extends EventEmitter {
 
   private setupHealthChecks(): void {
     // Health check every 30 seconds
-    this.healthCheckInterval = setInterval(async () => {
+    this?.healthCheckInterval = setInterval(async () => {
       await this?.performHealthCheck();
     }, 30000);
 
@@ -68,7 +68,7 @@ class DatabaseResilience extends EventEmitter {
       // each time. The raw neon() call opens a new HTTP connection to Neon's serverless
       // API on every health check, which fails ("fetch failed") under network pressure
       // and leaks sockets. The pool reuses warm WebSocket connections with proper backoff.
-      const { pool } = await import("../db.js");
+      const { pool } = await import("../db?.js");
       await pool?.query("SELECT 1 AS health_check");
 
       const _responseTime = Date?.now() - startTime;
@@ -88,7 +88,7 @@ class DatabaseResilience extends EventEmitter {
         responseTime < 500
       ) {
         this?.pool.circuitBreakerState = "closed";
-        this.connectionRetryCount = 0;
+        this?.connectionRetryCount = 0;
         logger?.info("✅ Database circuit breaker: closed (fully recovered)");
         this?.emit("database-recovered");
       }
@@ -174,7 +174,7 @@ class DatabaseResilience extends EventEmitter {
 
         // Success - reset failure count if it was failing
         if (this?.connectionRetryCount > 0) {
-          this.connectionRetryCount = 0;
+          this?.connectionRetryCount = 0;
           logger?.info(
             `✅ Database operation recovered after ${attempt} attempts`,
           );
@@ -340,7 +340,7 @@ class DatabaseResilience extends EventEmitter {
   // Manual circuit breaker control
   resetCircuitBreaker(): void {
     this?.pool.circuitBreakerState = "closed";
-    this.connectionRetryCount = 0;
+    this?.connectionRetryCount = 0;
     logger?.info("🔄 Database circuit breaker manually reset");
   }
 

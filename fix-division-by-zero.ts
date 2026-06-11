@@ -1,11 +1,12 @@
 /**
  * DIVISION-BY-ZERO FIX SCRIPT
  * Fixes all unsafe reduce/length divisions across the codebase
- *
+ * 
  * Pattern: arr.reduce(...) / arr.length
  * Fix: arr.reduce(...) / (arr.length || 1)
  */
 
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
@@ -79,13 +80,13 @@ for (const file of files) {
   // Pattern 1: reduce(...) / arr.length (no guard)
   content = content.replace(
     /(\w+)\.reduce\(\(([^)]+)\) => ([^,]+), 0\) \/ \1\.length(?!\s*\|\|)/g,
-    "$1.reduce(($2) => $3, 0) / ($1.length || 1)",
+    "$1.reduce(($2) => $3, 0) / ($1.length || 1)"
   );
 
   // Pattern 2: reduce(...) / values.length (no guard)
   content = content.replace(
     /(\w+)\.reduce\(\(([^)]+)\) => ([^,]+), 0\) \/ \1\.length(?!\s*\|\|)/g,
-    "$1.reduce(($2) => $3, 0) / ($1.length || 1)",
+    "$1.reduce(($2) => $3, 0) / ($1.length || 1)"
   );
 
   // Pattern 3: More complex patterns with intermediate variables
@@ -96,7 +97,7 @@ for (const file of files) {
         return `${arr}.reduce((${params}) => ${expr}, 0) / (${arr}.length || 1)`;
       }
       return match;
-    },
+    }
   );
 
   if (content !== originalContent) {

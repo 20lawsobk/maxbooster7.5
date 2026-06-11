@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { storefrontHosts, storefronts, users } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _INTERNAL_HOSTS = [
   "localhost",
-  "127.0.0.1",
-  "replit.app",
-  "replit.dev",
+  "127?.0.0?.1",
+  "replit?.app",
+  "replit?.dev",
   "repl?.co",
 ];
 

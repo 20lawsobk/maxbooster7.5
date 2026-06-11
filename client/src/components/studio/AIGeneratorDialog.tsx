@@ -32,24 +32,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAIWorkflow } from "@/hooks/useAIWorkflow";
-import {
-  Wand2,
-  Music,
-  Upload,
-  Play,
-  Pause,
-  Download,
-  Plus,
-  Loader2,
-  Sparkles,
-  AudioWaveform,
-  X,
-  RotateCw,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  Zap,
-} from "lucide-react";
+import { Wand2, Music, Upload, Play, Pause, Download, Plus, Loader2, Sparkles, AudioWaveform, X, RotateCw, CheckCircle2, AlertCircle, Clock, Zap } from "lucide-react";
 
 const INSTRUMENT_CATEGORIES = {
   melodic: [
@@ -391,7 +374,7 @@ export function AIGeneratorDialog({
   const {
     startWorkflow,
     cancel,
-
+    
     reset,
     integrate,
     textToMusic,

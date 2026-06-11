@@ -1,5 +1,5 @@
 import { securityService } from "./securityService";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface SystemMetric {
   name: string;

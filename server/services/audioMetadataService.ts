@@ -1,5 +1,5 @@
 import * as musicMetadata from "music-metadata";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface AudioMetadata {
   title?: string;
@@ -66,7 +66,7 @@ class AudioMetadataService {
 
   static getInstance(): AudioMetadataService {
     if (!AudioMetadataService?.instance) {
-      AudioMetadataService.instance = new AudioMetadataService();
+      AudioMetadataService?.instance = new AudioMetadataService();
     }
     return AudioMetadataService?.instance;
   }
@@ -128,7 +128,7 @@ class AudioMetadataService {
   }
 
   async extractFromStream(
-    stream: NodeJS.ReadableStream,
+    stream: NodeJS?.ReadableStream,
     mimeType?: string,
   ): Promise<AudioMetadata> {
     try {
@@ -221,7 +221,7 @@ class AudioMetadataService {
 
     if (metadata?.sampleRate < 44100) {
       issues?.push(
-        `Sample rate ${metadata?.sampleRate}Hz is below distribution minimum (44.1kHz)`,
+        `Sample rate ${metadata?.sampleRate}Hz is below distribution minimum (44?.1kHz)`,
       );
     }
 

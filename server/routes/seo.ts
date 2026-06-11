@@ -2,21 +2,21 @@ import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { listings, storefronts } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 
-const _SITE_URL = process?.env.SITE_URL || "https://max-booster.com";
+const _SITE_URL = process?.env.SITE_URL || "https://max-booster?.com";
 
-router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
+router?.get("/sitemap?.xml", async (_req: Request, res: Response) => {
   try {
     const _baseUrl = SITE_URL;
     const _now = new Date().toISOString().split("T")[0];
 
     const _staticPages = [
-      { loc: "/", changefreq: "daily", priority: "1.0" },
-      { loc: "/marketplace", changefreq: "daily", priority: "0.9" },
-      { loc: "/login", changefreq: "monthly", priority: "0.7" },
+      { loc: "/", changefreq: "daily", priority: "1?.0" },
+      { loc: "/marketplace", changefreq: "daily", priority: "0?.9" },
+      { loc: "/login", changefreq: "monthly", priority: "0?.7" },
     ];
 
     let beatUrls = "";
@@ -35,7 +35,7 @@ router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
     <loc>${baseUrl}/marketplace/beat/${b?.id}</loc>
     <lastmod>${b?.updatedAt ? new Date(b?.updatedAt).toISOString().split("T")[0] : now}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <priority>0?.7</priority>
   </url>`,
         )
         .join("\n");
@@ -60,7 +60,7 @@ router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
     <loc>${baseUrl}/storefront/${s?.slug}</loc>
     <lastmod>${s?.updatedAt ? new Date(s?.updatedAt).toISOString().split("T")[0] : now}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0?.6</priority>
   </url>`,
         )
         .join("\n");
@@ -83,9 +83,9 @@ router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
       )
       .join("\n");
 
-    const _xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www?.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www?.google.com/schemas/sitemap-image/1.1">
+    const _xml = `<?xml version="1?.0" encoding="UTF-8"?>
+<urlset xmlns="http://www?.sitemaps.org/schemas/sitemap/0?.9"
+        xmlns:image="http://www?.google.com/schemas/sitemap-image/1?.1">
 ${staticUrls}
 ${beatUrls}
 ${storefrontUrls}
@@ -99,12 +99,12 @@ ${storefrontUrls}
     res
       .status(500)
       .send(
-        '<?xml version="1.0"?><urlset xmlns="http://www?.sitemaps.org/schemas/sitemap/0.9"></urlset>',
+        '<?xml version="1?.0"?><urlset xmlns="http://www?.sitemaps.org/schemas/sitemap/0?.9"></urlset>',
       );
   }
 });
 
-router?.get("/robots.txt", (_req: Request, res: Response) => {
+router?.get("/robots?.txt", (_req: Request, res: Response) => {
   const _content = `User-agent: *
 Allow: /
 Allow: /marketplace
@@ -119,7 +119,7 @@ Disallow: /settings
 Disallow: /admin
 Disallow: /billing
 
-Sitemap: ${SITE_URL}/sitemap.xml
+Sitemap: ${SITE_URL}/sitemap?.xml
 `;
   res?.setHeader("Content-Type", "text/plain");
   res?.setHeader("Cache-Control", "public, max-age=86400");

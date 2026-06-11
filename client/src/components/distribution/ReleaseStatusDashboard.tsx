@@ -166,10 +166,10 @@ export function ReleaseStatusDashboard({
     useState<PlatformStatus | null>(null);
 
   // Fetch release status
-  const { data: statusData, isLoading } = useQuery<{
-    statuses: PlatformStatus[];
-    overallProgress: number;
-  }>({
+  const {
+    data: statusData,
+    isLoading,
+  } = useQuery<{ statuses: PlatformStatus[]; overallProgress: number }>({
     queryKey: [`/api/distribution/releases/${releaseId}/status`],
   });
 

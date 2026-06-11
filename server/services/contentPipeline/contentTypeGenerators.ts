@@ -11,9 +11,9 @@
  * visual prompts, story sequences.
  */
 
-import { MaxCoreAIClient } from "../unifiedAIController.js";
-import { logger } from "../../logger.js";
-import type { SupportedPlatform } from "./platformFormatters.js";
+import { MaxCoreAIClient } from "../unifiedAIController?.js";
+import { logger } from "../../logger?.js";
+import type { SupportedPlatform } from "./platformFormatters?.js";
 
 // ─── Shared Context ───────────────────────────────────────────────────────────
 
@@ -124,11 +124,11 @@ async function callMaxCore(
       target_audience: ctx?.targetAudience,
     };
     // Pass all available content-guidance signals as structured fields
-    if (ctx?.keywords?.length) payload.preferred_hashtags = ctx?.keywords;
-    if (ctx?.avoidTopics?.length) payload.avoid_topics = ctx?.avoidTopics;
-    if (ctx?.extraContext) payload.extra_context = ctx?.extraContext;
-    if (ctx?.trackTitle) payload.track_title = ctx?.trackTitle;
-    if (ctx?.releaseDate) payload.release_date = ctx?.releaseDate;
+    if (ctx?.keywords?.length) payload?.preferred_hashtags = ctx?.keywords;
+    if (ctx?.avoidTopics?.length) payload?.avoid_topics = ctx?.avoidTopics;
+    if (ctx?.extraContext) payload?.extra_context = ctx?.extraContext;
+    if (ctx?.trackTitle) payload?.track_title = ctx?.trackTitle;
+    if (ctx?.releaseDate) payload?.release_date = ctx?.releaseDate;
 
     const _result = await MaxCoreAIClient?.infer<{
       caption?: string;

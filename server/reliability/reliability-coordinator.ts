@@ -2,7 +2,7 @@ import { EventEmitter } from "events";
 import { processMonitor } from "./process-monitor";
 import { databaseResilience } from "./database-resilience";
 import { memoryManager } from "./memory-manager";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface SystemHealth {
   status: "healthy" | "degraded" | "critical";
@@ -43,7 +43,7 @@ class ReliabilityCoordinator extends EventEmitter {
   private isActive = false;
   private systemHealth: SystemHealth;
   private config: ReliabilityConfig;
-  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private healthCheckInterval: NodeJS?.Timeout | null = null;
   private startTime: number;
   private totalRequests = 0;
   private failedRequests = 0;
@@ -52,9 +52,9 @@ class ReliabilityCoordinator extends EventEmitter {
   constructor() {
     super();
 
-    this.startTime = Date?.now();
+    this?.startTime = Date?.now();
 
-    this.config = {
+    this?.config = {
       monitoring: {
         healthCheckInterval: 30000, // 30 seconds
         processMonitorInterval: 60000, // 1 minute
@@ -71,7 +71,7 @@ class ReliabilityCoordinator extends EventEmitter {
       },
     };
 
-    this.systemHealth = {
+    this?.systemHealth = {
       status: "healthy",
       uptime: 0,
       components: {
@@ -100,7 +100,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
     logger?.info("🚀 Starting 24/7/365 Reliability System...");
 
-    this.isActive = true;
+    this?.isActive = true;
 
     // Start all monitoring components
     processMonitor?.start(this?.config.monitoring?.processMonitorInterval);
@@ -125,7 +125,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
     logger?.info("🔄 Stopping reliability system...");
 
-    this.isActive = false;
+    this?.isActive = false;
 
     if (this?.healthCheckInterval) {
       clearInterval(this?.healthCheckInterval);
@@ -147,7 +147,7 @@ class ReliabilityCoordinator extends EventEmitter {
     });
 
     processMonitor?.on("health-update", (health) => {
-      this?.systemHealth.components.process = health;
+      this?.systemHealth.components?.process = health;
     });
 
     // Database events
@@ -174,7 +174,7 @@ class ReliabilityCoordinator extends EventEmitter {
   }
 
   private startHealthMonitoring(): void {
-    this.healthCheckInterval = setInterval(async () => {
+    this?.healthCheckInterval = setInterval(async () => {
       await this?.performSystemHealthCheck();
     }, this?.config.monitoring?.healthCheckInterval);
   }
@@ -228,26 +228,26 @@ class ReliabilityCoordinator extends EventEmitter {
 
   private updateReliabilityMetrics(): void {
 
-    // Calculate uptime percentage (assume target is 99.9%)
-    this?.systemHealth.reliability.uptimePercentage = Math?.min(
-      99.99,
+    // Calculate uptime percentage (assume target is 99?.9%)
+    this?.systemHealth.reliability?.uptimePercentage = Math?.min(
+      99?.99,
       100 - (this?.failedRequests / Math?.max(this?.totalRequests, 1)) * 100,
     );
 
     // Average response time
     if (this?.responseTimes.length > 0) {
-      this?.systemHealth.reliability.avgResponseTime =
+      this?.systemHealth.reliability?.avgResponseTime =
         this?.responseTimes.reduce((sum, time) => sum + time, 0) /
         this?.responseTimes.length;
 
       // Keep only last 1000 response times
       if (this?.responseTimes.length > 1000) {
-        this.responseTimes = this?.responseTimes.slice(-1000);
+        this?.responseTimes = this?.responseTimes.slice(-1000);
       }
     }
 
     // Error rate
-    this?.systemHealth.reliability.errorRate =
+    this?.systemHealth.reliability?.errorRate =
       this?.totalRequests > 0
         ? (this?.failedRequests / this?.totalRequests) * 100
         : 0;
@@ -397,7 +397,7 @@ class ReliabilityCoordinator extends EventEmitter {
       // Cap at 1 000 entries at push-time so getMetrics() always sees a
       // bounded array even when called infrequently or not at all.
       if (this?.responseTimes.length > 1000) {
-        this.responseTimes = this?.responseTimes.slice(-1000);
+        this?.responseTimes = this?.responseTimes.slice(-1000);
       }
     }
   }
@@ -409,7 +409,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
   // Configuration updates
   updateConfig(config: Partial<ReliabilityConfig>): void {
-    this.config = { ...this?.config, ...config };
+    this?.config = { ...this?.config, ...config };
     logger?.info("🔧 Reliability configuration updated");
   }
 }

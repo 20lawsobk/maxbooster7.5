@@ -5,7 +5,7 @@ import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger";
 import { invoiceService } from "../services/invoiceService";
 import { randomBytes } from "crypto";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 
 const _router = Router();
 
@@ -104,7 +104,7 @@ router?.post(
         0,
       );
 
-      const _taxCents = Math?.round(subtotalCents * 0.0); // Calculate based on location
+      const _taxCents = Math?.round(subtotalCents * 0?.0); // Calculate based on location
       const _totalCents = subtotalCents + taxCents;
 
       const _invoiceNumber = generateInvoiceNumber();

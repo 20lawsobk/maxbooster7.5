@@ -18,30 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { announce } from "@/lib/accessibility";
 import { cn } from "@/lib/utils";
-import {
-  Music,
-  Mic2,
-  Guitar,
-  Headphones,
-  Building2,
-  Users,
-  ArrowRight,
-  ArrowLeft,
-  Check,
-  X,
-  Sparkles,
-  Camera,
-  Upload,
-  User,
-  PartyPopper,
-  Rocket,
-  Share2,
-  DollarSign,
-  BarChart3,
-  Star,
-  Heart,
-  Trophy,
-} from "lucide-react";
+import { Music, Mic2, Guitar, Headphones, Building2, Users, ArrowRight, ArrowLeft, Check, X, Sparkles, Camera, Upload, User, PartyPopper, Rocket, Share2, DollarSign, BarChart3, Star, Heart, Trophy } from "lucide-react";
 
 interface WelcomeFlowProps {
   isOpen: boolean;

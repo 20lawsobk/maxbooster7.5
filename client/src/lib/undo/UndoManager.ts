@@ -23,7 +23,7 @@ export class UndoManager {
   private actionRegistry: Map<string, UndoableAction> = new Map();
 
   constructor(config: Partial<UndoManagerConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    this?.config = { ...DEFAULT_CONFIG, ...config };
     this?.loadFromStorage();
   }
 
@@ -37,7 +37,7 @@ export class UndoManager {
         parsed?.forEach((serialized) => {
           const _action = this?.actionRegistry.get(serialized?.id);
           if (action) {
-            action.isUndone = serialized?.isUndone;
+            action?.isUndone = serialized?.isUndone;
           }
         });
       }
@@ -83,10 +83,10 @@ export class UndoManager {
 
     try {
       const _result = await fullAction?.execute();
-      fullAction.result = result;
+      fullAction?.result = result;
 
       this?.addToHistory(fullAction);
-      this.redoStack = [];
+      this?.redoStack = [];
       this?.config.onActionExecuted?.(fullAction);
       this?.notifyHistoryChange();
 
@@ -139,7 +139,7 @@ export class UndoManager {
     }
 
     await action?.undo();
-    action.isUndone = true;
+    action?.isUndone = true;
     this?.redoStack.push(action);
     this?.config.onUndo?.(action);
     this?.notifyHistoryChange();
@@ -152,7 +152,7 @@ export class UndoManager {
     try {
       const _redoFn = action?.redo || action?.execute;
       await redoFn();
-      action.isUndone = false;
+      action?.isUndone = false;
       this?.config.onRedo?.(action);
       this?.notifyHistoryChange();
     } catch (error) {
@@ -176,13 +176,13 @@ export class UndoManager {
       isUndone: false,
     };
     this?.groups.set(groupId, group);
-    this.currentGroupId = groupId;
+    this?.currentGroupId = groupId;
     return groupId;
   }
 
   endGroup(groupId: string): void {
     if (this?.currentGroupId === groupId) {
-      this.currentGroupId = null;
+      this?.currentGroupId = null;
     }
   }
 
@@ -198,7 +198,7 @@ export class UndoManager {
       await this?.undoSingleAction(actionsToUndo[i]);
     }
 
-    group.isUndone = true;
+    group?.isUndone = true;
     this?.config.onUndo?.(group);
   }
 
@@ -237,11 +237,11 @@ export class UndoManager {
   }
 
   clearHistory(): void {
-    this.history = [];
-    this.redoStack = [];
+    this?.history = [];
+    this?.redoStack = [];
     this?.groups.clear();
     this?.actionRegistry.clear();
-    this.currentGroupId = null;
+    this?.currentGroupId = null;
 
     if (this?.config.persistToStorage) {
       sessionStorage?.removeItem(this?.config.storageKey);
@@ -251,7 +251,7 @@ export class UndoManager {
   }
 
   setConfig(config: Partial<UndoManagerConfig>): void {
-    this.config = { ...this?.config, ...config };
+    this?.config = { ...this?.config, ...config };
   }
 
   getConfig(): UndoManagerConfig {

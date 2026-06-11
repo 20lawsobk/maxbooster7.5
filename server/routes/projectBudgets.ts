@@ -7,9 +7,9 @@ import {
   insertBudgetLineItemSchema,
 } from "@shared/schema";
 import { and, eq, desc } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { parsePaginationParams } from "../middleware/pagination.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
 
 const _router = Router();
 

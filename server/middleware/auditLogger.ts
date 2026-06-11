@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { createWriteStream, mkdirSync, existsSync } from "fs";
 import { join } from "path";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { auditLogs } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface AuditEvent {
   timestamp: string;
@@ -20,8 +20,8 @@ interface AuditEvent {
 }
 
 class AuditLogger {
-  private logStream: NodeJS.WritableStream;
-  private securityStream: NodeJS.WritableStream;
+  private logStream: NodeJS?.WritableStream;
+  private securityStream: NodeJS?.WritableStream;
 
   constructor() {
     // Ensure log directory exists
@@ -31,10 +31,10 @@ class AuditLogger {
     }
 
     // Create audit log streams
-    this.logStream = createWriteStream(join(logDir, "audit.log"), {
+    this?.logStream = createWriteStream(join(logDir, "audit?.log"), {
       flags: "a",
     });
-    this.securityStream = createWriteStream(join(logDir, "security.log"), {
+    this?.securityStream = createWriteStream(join(logDir, "security?.log"), {
       flags: "a",
     });
   }
@@ -319,7 +319,7 @@ export function auditMiddleware(
   return (req: Request, res: Response, next: NextFunction) => {
     const _originalSend = res?.send;
 
-    res.send = function (data) {
+    res?.send = function (data) {
       const _user = (req as Record<string, unknown>).user;
       const _statusCode = res?.statusCode;
 

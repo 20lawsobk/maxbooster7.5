@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface TuningSystem {
   id: string;
@@ -293,7 +293,7 @@ const MICROTONAL_SCALES: Record<string, MicrotonalScale> = {
   maqamBayati: {
     id: "maqamBayati",
     name: "Maqam Bayati",
-    intervals: [0, 1.5, 3, 5, 7, 8, 10],
+    intervals: [0, 1?.5, 3, 5, 7, 8, 10],
     category: "eastern",
     description: "Arabic maqam with quarter tones",
   },
@@ -306,7 +306,7 @@ const MICROTONAL_SCALES: Record<string, MicrotonalScale> = {
   maqamRast: {
     id: "maqamRast",
     name: "Maqam Rast",
-    intervals: [0, 2, 3.5, 5, 7, 9, 10.5],
+    intervals: [0, 2, 3?.5, 5, 7, 9, 10?.5],
     category: "eastern",
   },
   ragBhairav: {

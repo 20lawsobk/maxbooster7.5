@@ -8,9 +8,9 @@
  * All methods throw on failure — no silent degradation.
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
-const _BASE_URL = `http://127.0.0.1:${process?.env.PORT || 5000}/api/boosterstate`;
+const _BASE_URL = `http://127?.0.0?.1:${process?.env.PORT || 5000}/api/boosterstate`;
 
 function authHeaders(): Record<string, string> {
   const _secret = process?.env.BOOSTERSTATE_SECRET;
@@ -173,8 +173,8 @@ export class BoosterStateClient {
     refillPerSec?: number,
   ): Promise<{ allowed: boolean; remaining: number }> {
     const body: Record<string, any> = { key, tokens };
-    if (capacity !== undefined) body.capacity = capacity;
-    if (refillPerSec !== undefined) body.refill_per_sec = refillPerSec;
+    if (capacity !== undefined) body?.capacity = capacity;
+    if (refillPerSec !== undefined) body?.refill_per_sec = refillPerSec;
     const _data = await post("/rate/take", body);
     return { allowed: data?.allowed ?? true, remaining: data?.remaining ?? 0 };
   }

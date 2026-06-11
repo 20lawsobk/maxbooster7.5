@@ -12,7 +12,7 @@ import {
   studioTracks,
   stemExports,
 } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 
@@ -149,11 +149,11 @@ router?.put("/releases/update", async (req: Request, res: Response) => {
     const _userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
-      allowedUpdate.title = data?.title;
+      allowedUpdate?.title = data?.title;
     if (data?.status && typeof data?.status === "string")
-      allowedUpdate.status = data?.status;
+      allowedUpdate?.status = data?.status;
     if (data?.artworkUrl && typeof data?.artworkUrl === "string")
-      allowedUpdate.artworkUrl = data?.artworkUrl;
+      allowedUpdate?.artworkUrl = data?.artworkUrl;
 
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
@@ -339,11 +339,11 @@ router?.put("/posts/update", async (req: Request, res: Response) => {
     const _userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.content && typeof data?.content === "string")
-      allowedUpdate.content = data?.content;
+      allowedUpdate?.content = data?.content;
     if (data?.status && typeof data?.status === "string")
-      allowedUpdate.status = data?.status;
+      allowedUpdate?.status = data?.status;
     if (data?.scheduledAt)
-      allowedUpdate.scheduledAt = new Date(data?.scheduledAt as string);
+      allowedUpdate?.scheduledAt = new Date(data?.scheduledAt as string);
 
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
@@ -547,11 +547,11 @@ router?.put("/files/update", async (req: Request, res: Response) => {
     const _userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.isPublic !== undefined)
-      allowedUpdate.isPublic = Boolean(data?.isPublic);
+      allowedUpdate?.isPublic = Boolean(data?.isPublic);
     if (data?.metadata && typeof data?.metadata === "object")
-      allowedUpdate.metadata = data?.metadata;
+      allowedUpdate?.metadata = data?.metadata;
     if (data?.folder && typeof data?.folder === "string")
-      allowedUpdate.folder = data?.folder;
+      allowedUpdate?.folder = data?.folder;
 
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
@@ -604,13 +604,13 @@ router?.put("/marketplace/update", async (req: Request, res: Response) => {
     const _userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
-      allowedUpdate.title = data?.title;
+      allowedUpdate?.title = data?.title;
     if (data?.description && typeof data?.description === "string")
-      allowedUpdate.description = data?.description;
+      allowedUpdate?.description = data?.description;
     if (typeof data?.isPublished === "boolean")
-      allowedUpdate.isPublished = data?.isPublished;
+      allowedUpdate?.isPublished = data?.isPublished;
     if (data?.priceCents !== undefined)
-      allowedUpdate.priceCents = Number(data?.priceCents);
+      allowedUpdate?.priceCents = Number(data?.priceCents);
 
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
@@ -904,8 +904,8 @@ router?.post("/tracks/move", async (req: Request, res: Response) => {
     const __settled13 = await Promise?.allSettled(
       ids?.map(async (id) => {
         const updatePayload: Record<string, unknown> = {};
-        if (targetProjectId) updatePayload.projectId = targetProjectId;
-        if (newOrder !== null) updatePayload.order = newOrder;
+        if (targetProjectId) updatePayload?.projectId = targetProjectId;
+        if (newOrder !== null) updatePayload?.order = newOrder;
         if (Object?.keys(updatePayload).length === 0) return id;
         const _result = await db
           .update(studioTracks)
@@ -1103,14 +1103,14 @@ router?.put("/beats/update", async (req: Request, res: Response) => {
     const _userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
-      allowedUpdate.title = data?.title;
+      allowedUpdate?.title = data?.title;
     if (data?.description && typeof data?.description === "string")
-      allowedUpdate.description = data?.description;
-    if (data?.price !== undefined) allowedUpdate.price = Number(data?.price);
+      allowedUpdate?.description = data?.description;
+    if (data?.price !== undefined) allowedUpdate?.price = Number(data?.price);
     if (data?.genre && typeof data?.genre === "string")
-      allowedUpdate.genre = data?.genre;
+      allowedUpdate?.genre = data?.genre;
     if (typeof data?.isPublished === "boolean")
-      allowedUpdate.isPublished = data?.isPublished;
+      allowedUpdate?.isPublished = data?.isPublished;
 
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];

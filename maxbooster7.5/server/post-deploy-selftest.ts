@@ -89,8 +89,9 @@ class PostDeploySelfTest {
   async testRedis(): Promise<SelfTestResult> {
     const startTime = Date.now();
     try {
-      const { getRedisClient } =
-        await import("./lib/redisConnectionFactory.js");
+      const { getRedisClient } = await import(
+        "./lib/redisConnectionFactory.js"
+      );
       const client = await getRedisClient();
 
       const testKey = `selftest:${Date.now()}`;

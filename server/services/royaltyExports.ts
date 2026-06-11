@@ -1,10 +1,10 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { royaltyStatements, recoupmentAccounts, type RoyaltyStatement } from "@shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { royaltiesTaxComplianceService } from "./royaltiesTaxComplianceService.js";
-import { royaltyEngine } from "./royaltyEngine.js";
+import { royaltiesTaxComplianceService } from "./royaltiesTaxComplianceService?.js";
+import { royaltyEngine } from "./royaltyEngine?.js";
 
 /**
  * Export-facing view of a royalty statement.
@@ -551,15 +551,15 @@ export class RoyaltyExportsService {
     };
 
     if (options?.includeLineItems) {
-      exportData.lineItems = statement?.lineItems;
+      exportData?.lineItems = statement?.lineItems;
     }
 
     if (options?.includeTerritoryBreakdown) {
-      exportData.territoryBreakdown = statement?.territoryBreakdown;
+      exportData?.territoryBreakdown = statement?.territoryBreakdown;
     }
 
     if (options?.includeDspBreakdown) {
-      exportData.dspBreakdown = statement?.dspBreakdown;
+      exportData?.dspBreakdown = statement?.dspBreakdown;
     }
 
     return {

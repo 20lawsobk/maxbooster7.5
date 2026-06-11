@@ -55,7 +55,7 @@ function ActionItem({
   onUndo?: () => void;
 }) {
   const label = getActionLabel(action);
-  const { module, isDestructive, timestamp } = action.metadata;
+  const { module,  isDestructive, timestamp } = action.metadata;
 
   return (
     <div

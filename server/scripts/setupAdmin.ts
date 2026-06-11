@@ -40,7 +40,7 @@ async function setupAdmin() {
       "❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set",
     );
     console?.error(
-      "   Example: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=yourSecurePassword npx tsx server/scripts/setupAdmin.ts",
+      "   Example: ADMIN_EMAIL=admin@example?.com ADMIN_PASSWORD=yourSecurePassword npx tsx server/scripts/setupAdmin?.ts",
     );
     process?.exit(1);
   }
@@ -127,12 +127,12 @@ async function setupAdmin() {
           primaryColor: "#8B5CF6",
           secondaryColor: "#EC4899",
           fontFamily: "Inter",
-          heroImage: "/assets/hero-bg.jpg",
-          logoUrl: "/assets/blawz-logo.png",
+          heroImage: "/assets/hero-bg?.jpg",
+          logoUrl: "/assets/blawz-logo?.png",
           socialLinks: {
-            instagram: "https://instagram.com/blawzmusic",
-            twitter: "https://twitter.com/blawzmusic",
-            youtube: "https://youtube.com/@blawzmusic",
+            instagram: "https://instagram?.com/blawzmusic",
+            twitter: "https://twitter?.com/blawzmusic",
+            youtube: "https://youtube?.com/@blawzmusic",
             spotify: "https://open?.spotify.com/artist/blawzmusic",
           },
           bio: "Official store for B-Lawz Music. Premium beats, exclusive content, and more.",
@@ -257,7 +257,7 @@ async function setupAdmin() {
           releaseDate: new Date("2024-12-15"),
           status: "released",
           upc: "195169123456",
-          artworkUrl: "/assets/releases/midnight-sessions.jpg",
+          artworkUrl: "/assets/releases/midnight-sessions?.jpg",
           metadata: {
             label: "B-Lawz Music",
             copyright: "2024 B-Lawz Music",
@@ -277,7 +277,7 @@ async function setupAdmin() {
           releaseDate: new Date("2024-10-01"),
           status: "released",
           upc: "195169123457",
-          artworkUrl: "/assets/releases/late-night-drive.jpg",
+          artworkUrl: "/assets/releases/late-night-drive?.jpg",
           metadata: {
             label: "B-Lawz Music",
             copyright: "2024 B-Lawz Music",
@@ -290,7 +290,7 @@ async function setupAdmin() {
           title: "Summer Vibes EP",
           releaseDate: new Date("2025-06-01"),
           status: "scheduled",
-          artworkUrl: "/assets/releases/summer-vibes.jpg",
+          artworkUrl: "/assets/releases/summer-vibes?.jpg",
           metadata: {
             label: "B-Lawz Music",
             isPreOrder: true,
@@ -317,7 +317,7 @@ async function setupAdmin() {
           platform: "instagram",
           platformUserId: "blawzmusic",
           username: "blawzmusic",
-          profileUrl: "https://instagram.com/blawzmusic",
+          profileUrl: "https://instagram?.com/blawzmusic",
           followerCount: 15420,
           isActive: true,
           metadata: { verified: true, businessAccount: true },
@@ -327,7 +327,7 @@ async function setupAdmin() {
           platform: "twitter",
           platformUserId: "blawzmusic",
           username: "blawzmusic",
-          profileUrl: "https://twitter.com/blawzmusic",
+          profileUrl: "https://twitter?.com/blawzmusic",
           followerCount: 8750,
           isActive: true,
           metadata: { verified: false },
@@ -337,7 +337,7 @@ async function setupAdmin() {
           platform: "youtube",
           platformUserId: "UC_blawzmusic",
           username: "B-Lawz Music",
-          profileUrl: "https://youtube.com/@blawzmusic",
+          profileUrl: "https://youtube?.com/@blawzmusic",
           followerCount: 25000,
           isActive: true,
           metadata: { subscribers: 25000, totalViews: 1500000 },
@@ -347,7 +347,7 @@ async function setupAdmin() {
           platform: "tiktok",
           platformUserId: "blawzmusic",
           username: "blawzmusic",
-          profileUrl: "https://tiktok.com/@blawzmusic",
+          profileUrl: "https://tiktok?.com/@blawzmusic",
           followerCount: 45000,
           isActive: true,
           metadata: { verified: false, totalLikes: 850000 },
@@ -367,7 +367,7 @@ async function setupAdmin() {
           platform: "facebook",
           platformUserId: "blawzmusicofficial",
           username: "B-Lawz Music",
-          profileUrl: "https://facebook.com/blawzmusicofficial",
+          profileUrl: "https://facebook?.com/blawzmusicofficial",
           followerCount: 5200,
           isActive: true,
           metadata: { pageType: "musician" },
@@ -397,14 +397,14 @@ async function setupAdmin() {
         // Generate realistic varying data
         const _baseStreams = 1500 + Math?.floor(Math?.random() * 500);
         const _weekendBoost =
-          date?.getDay() === 0 || date?.getDay() === 6 ? 1.3 : 1;
+          date?.getDay() === 0 || date?.getDay() === 6 ? 1?.3 : 1;
 
         analyticsData?.push({
           userId: adminId,
           date: date,
           streams: Math?.floor(baseStreams * weekendBoost),
-          revenue: parseFloat((baseStreams * weekendBoost * 0.004).toFixed(2)),
-          totalListeners: Math?.floor(baseStreams * weekendBoost * 0.7),
+          revenue: parseFloat((baseStreams * weekendBoost * 0?.004).toFixed(2)),
+          totalListeners: Math?.floor(baseStreams * weekendBoost * 0?.7),
           followers: 12500 + (30 - i) * 15,
           platform: "all",
           metadata: {
@@ -435,7 +435,7 @@ async function setupAdmin() {
           userId: adminId,
           title: "Trap Symphony",
           description: "Hard-hitting trap beat with orchestral elements",
-          price: 49.99,
+          price: 49?.99,
           genre: "Trap",
           bpm: 145,
           key: "D Minor",
@@ -449,7 +449,7 @@ async function setupAdmin() {
           userId: adminId,
           title: "Sunset Boulevard",
           description: "Smooth R&B beat with guitar and piano",
-          price: 29.99,
+          price: 29?.99,
           genre: "R&B",
           bpm: 85,
           key: "G Major",
@@ -463,7 +463,7 @@ async function setupAdmin() {
           userId: adminId,
           title: "Night Rider",
           description: "Dark drill beat with UK influence",
-          price: 39.99,
+          price: 39?.99,
           genre: "Drill",
           bpm: 140,
           key: "F Minor",
@@ -567,16 +567,16 @@ async function setupAdmin() {
         userId: adminId,
         title: "B-Lawz Music - Midnight Sessions",
         slug: "blawz-midnight-sessions",
-        imageUrl: "/assets/releases/midnight-sessions.jpg",
+        imageUrl: "/assets/releases/midnight-sessions?.jpg",
         links: {
           spotify: "https://open?.spotify.com/album/midnight-sessions",
           appleMusic: "https://music?.apple.com/album/midnight-sessions",
           youtubeMusic:
             "https://music?.youtube.com/playlist?list=midnight-sessions",
-          tidal: "https://tidal.com/album/midnight-sessions",
+          tidal: "https://tidal?.com/album/midnight-sessions",
           amazonMusic: "https://music?.amazon.com/albums/midnight-sessions",
           soundcloud:
-            "https://soundcloud.com/blawzmusic/sets/midnight-sessions",
+            "https://soundcloud?.com/blawzmusic/sets/midnight-sessions",
         },
       });
       console?.log("   ✓ HyperFollow page created");

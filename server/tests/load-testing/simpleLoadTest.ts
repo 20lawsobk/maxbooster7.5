@@ -1,5 +1,6 @@
 import http from "http";
-import { logger } from "../../logger.js";
+import { logger } from "../../logger?.js";
+
 
 interface LoadTestResult {
   endpoint: string;
@@ -201,7 +202,7 @@ function projectToScale(
   targetUsers: number,
 ): ScaleProjection {
   const _scaleFactor = targetUsers / baseResult?.concurrentUsers;
-  const _degradationFactor = 1 + Math?.log10(Math?.max(1, scaleFactor)) * 0.15;
+  const _degradationFactor = 1 + Math?.log10(Math?.max(1, scaleFactor)) * 0?.15;
 
   const _projectedThroughput =
     baseResult?.requestsPerSecond * Math?.min(scaleFactor, 100000);
@@ -220,7 +221,7 @@ function projectToScale(
     recommendations?.push("Add Redis caching");
   }
 
-  if (baseResult?.failedRequests / baseResult?.totalRequests > 0.01) {
+  if (baseResult?.failedRequests / baseResult?.totalRequests > 0?.01) {
     issues?.push("Error rate above 1%");
     recommendations?.push("Add retry logic");
   }
@@ -422,7 +423,7 @@ async function main() {
   const _successfulEndpoints = Array?.from(allResults?.values()).filter(
     (r) =>
       r?.length > 0 &&
-      r[r?.length - 1].failedRequests / r[r?.length - 1].totalRequests < 0.05,
+      r[r?.length - 1].failedRequests / r[r?.length - 1].totalRequests < 0?.05,
   ).length;
 
   logger?.info("Load testing complete", {

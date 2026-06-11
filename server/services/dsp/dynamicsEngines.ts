@@ -1,16 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  msToSamples,
-  dbToLinear,
-  linearToDb,
-  clamp,
-  softClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
 
 export class GateProcessor implements DSPProcessor {
   private envelope: number = 0;
@@ -27,11 +15,11 @@ export class GateProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _threshold = (params?.threshold as number) ?? -40;
     const _hysteresis = (params?.hysteresis as number) ?? 4;
-    const _attackMs = (params?.attack as number) ?? 0.5;
+    const _attackMs = (params?.attack as number) ?? 0?.5;
     const _holdMs = (params?.hold as number) ?? 50;
     const _releaseMs = (params?.release as number) ?? 100;
     const _range = (params?.range as number) ?? -80;
@@ -49,19 +37,20 @@ export class GateProcessor implements DSPProcessor {
       const _inputR = input?.samples[1][i];
       const _inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
 
-      this.envelope = this?.envelope * 0.9995 + inputLevel * 0.0005;
+      this?.envelope = this?.envelope * 0?.9995 + inputLevel * 0?.0005;
+
 
       if (inputLevel > thresholdLin) {
-        this.gateState = "open";
-        this.holdCounter = holdSamples;
+        this?.gateState = "open";
+        this?.holdCounter = holdSamples;
       } else if (inputLevel < hysteresisLin && this?.gateState === "open") {
-        this.gateState = "hold";
+        this?.gateState = "hold";
       }
 
       if (this?.gateState === "hold") {
         this?.holdCounter--;
         if (this?.holdCounter <= 0) {
-          this.gateState = "closing";
+          this?.gateState = "closing";
         }
       }
 
@@ -73,8 +62,8 @@ export class GateProcessor implements DSPProcessor {
         case "closing":
         case "closed":
           targetGain = rangeLin;
-          if (this?.hysteresisState <= rangeLin + 0.001) {
-            this.gateState = "closed";
+          if (this?.hysteresisState <= rangeLin + 0?.001) {
+            this?.gateState = "closed";
           }
           break;
         default:
@@ -83,7 +72,7 @@ export class GateProcessor implements DSPProcessor {
 
       const _coeff =
         targetGain > this?.hysteresisState ? attackCoeff : releaseCoeff;
-      this.hysteresisState =
+      this?.hysteresisState =
         this?.hysteresisState * coeff + targetGain * (1 - coeff);
 
       const _processedL = inputL * this?.hysteresisState;
@@ -97,11 +86,11 @@ export class GateProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
-    this.gateState = "closed";
-    this.holdCounter = 0;
-    this.releaseCounter = 0;
-    this.hysteresisState = 0;
+    this?.envelope = 0;
+    this?.gateState = "closed";
+    this?.holdCounter = 0;
+    this?.releaseCounter = 0;
+    this?.hysteresisState = 0;
   }
 }
 
@@ -115,7 +104,7 @@ export class ExpanderProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _threshold = (params?.threshold as number) ?? -30;
     const _ratio = (params?.ratio as number) ?? 2;
@@ -137,7 +126,7 @@ export class ExpanderProcessor implements DSPProcessor {
       const _inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
 
       const _coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      this?.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
 
       const _inputDb = linearToDb(this?.envelope);
       let gainReduction = 0;
@@ -164,7 +153,7 @@ export class ExpanderProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
+    this?.envelope = 0;
   }
 }
 
@@ -176,9 +165,9 @@ export class DeEsserProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.sibilanceFilter = new BiquadFilter();
-    this.listenFilterL = new BiquadFilter();
-    this.listenFilterR = new BiquadFilter();
+    this?.sibilanceFilter = new BiquadFilter();
+    this?.listenFilterL = new BiquadFilter();
+    this?.listenFilterR = new BiquadFilter();
   }
 
   process(
@@ -187,12 +176,12 @@ export class DeEsserProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _frequency = (params?.frequency as number) ?? 6000;
     const _threshold = (params?.threshold as number) ?? -20;
     const _ratio = (params?.ratio as number) ?? 4;
-    const _attackMs = (params?.attack as number) ?? 0.5;
+    const _attackMs = (params?.attack as number) ?? 0?.5;
     const _releaseMs = (params?.release as number) ?? 50;
     const _range = (params?.range as number) ?? -12;
     const _bandwidth = (params?.bandwidth as number) ?? 2;
@@ -220,13 +209,13 @@ export class DeEsserProcessor implements DSPProcessor {
     for (let i = 0; i < input?.samples[0].length; i++) {
       const _inputL = input?.samples[0][i];
       const _inputR = input?.samples[1][i];
-      const _mono = (inputL + inputR) * 0.5;
+      const _mono = (inputL + inputR) * 0?.5;
 
       const _sibilance = this?.sibilanceFilter.process(mono);
       const _sibilanceLevel = Math?.abs(sibilance);
 
       const _coeff = sibilanceLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + sibilanceLevel * (1 - coeff);
+      this?.envelope = this?.envelope * coeff + sibilanceLevel * (1 - coeff);
 
       let gainReduction = 0;
       if (this?.envelope > thresholdLin) {
@@ -254,7 +243,7 @@ export class DeEsserProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
+    this?.envelope = 0;
     this?.sibilanceFilter.clear();
     this?.listenFilterL.clear();
     this?.listenFilterR.clear();
@@ -272,7 +261,7 @@ export class TransientShaperProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _attack = (params?.attack as number) ?? 0;
     const _sustain = (params?.sustain as number) ?? 0;
@@ -280,7 +269,7 @@ export class TransientShaperProcessor implements DSPProcessor {
     const _outputGain = (params?.output as number) ?? 0;
     const _mix = (params?.mix as number) ?? 1;
 
-    const _fastAttack = Math?.exp(-1 / msToSamples(0.1, this?.sampleRate));
+    const _fastAttack = Math?.exp(-1 / msToSamples(0?.1, this?.sampleRate));
     const _fastRelease = Math?.exp(-1 / msToSamples(5, this?.sampleRate));
     const _slowAttack = Math?.exp(-1 / msToSamples(50, this?.sampleRate));
     const _slowRelease = Math?.exp(-1 / msToSamples(200, this?.sampleRate));
@@ -294,12 +283,12 @@ export class TransientShaperProcessor implements DSPProcessor {
 
       const _fastCoeff =
         inputLevel > this?.fastEnvelope ? fastAttack : fastRelease;
-      this.fastEnvelope =
+      this?.fastEnvelope =
         this?.fastEnvelope * fastCoeff + inputLevel * (1 - fastCoeff);
 
       const _slowCoeff =
         inputLevel > this?.slowEnvelope ? slowAttack : slowRelease;
-      this.slowEnvelope =
+      this?.slowEnvelope =
         this?.slowEnvelope * slowCoeff + inputLevel * (1 - slowCoeff);
 
       const _transientDiff =
@@ -313,14 +302,14 @@ export class TransientShaperProcessor implements DSPProcessor {
       }
 
       const _sustainAmount = this?.slowEnvelope * sensitivityFactor;
-      if (sustainAmount > 0.01) {
+      if (sustainAmount > 0?.01) {
         sustainGain = 1 + (sustain / 100) * sustainAmount * 5;
       }
 
-      const _totalGain = clamp(attackGain * sustainGain * outputLin, 0.01, 10);
+      const _totalGain = clamp(attackGain * sustainGain * outputLin, 0?.01, 10);
 
-      const _processedL = softClip(inputL * totalGain, 0.9);
-      const _processedR = softClip(inputR * totalGain, 0.9);
+      const _processedL = softClip(inputL * totalGain, 0?.9);
+      const _processedR = softClip(inputR * totalGain, 0?.9);
 
       output?.samples[0][i] = inputL * (1 - mix) + processedL * mix;
       output?.samples[1][i] = inputR * (1 - mix) + processedR * mix;
@@ -330,8 +319,8 @@ export class TransientShaperProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.fastEnvelope = 0;
-    this.slowEnvelope = 0;
+    this?.fastEnvelope = 0;
+    this?.slowEnvelope = 0;
   }
 }
 
@@ -342,8 +331,8 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.lpFilterL = new OnePoleFilter();
-    this.lpFilterR = new OnePoleFilter();
+    this?.lpFilterL = new OnePoleFilter();
+    this?.lpFilterR = new OnePoleFilter();
   }
 
   process(
@@ -352,7 +341,7 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _attackMs = (params?.attack as number) ?? 10;
     const _releaseMs = (params?.release as number) ?? 100;
@@ -373,7 +362,7 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
         Math?.max(Math?.abs(inputL), Math?.abs(inputR)) * sensitivityLin;
 
       const _coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      this?.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
 
       const _envAmount = clamp(this?.envelope * (depth / 50), 0, 1);
 
@@ -390,7 +379,7 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
           break;
         case "amplitude":
         default:
-          const _ampMod = 1 - envAmount * 0.5;
+          const _ampMod = 1 - envAmount * 0?.5;
           processedL = inputL * ampMod;
           processedR = inputR * ampMod;
           break;
@@ -404,7 +393,7 @@ export class EnvelopeFollowerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
+    this?.envelope = 0;
     this?.lpFilterL.clear();
     this?.lpFilterR.clear();
   }
@@ -421,7 +410,7 @@ export class DuckerProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _threshold = (params?.threshold as number) ?? -20;
     const _range = (params?.range as number) ?? -20;
@@ -442,7 +431,7 @@ export class DuckerProcessor implements DSPProcessor {
       const _inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
 
       const _coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      this?.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
 
       let targetGain = 1;
       if (this?.envelope > thresholdLin) {
@@ -451,7 +440,7 @@ export class DuckerProcessor implements DSPProcessor {
       }
 
       const _gainCoeff = targetGain < this?.duckGain ? attackCoeff : releaseCoeff;
-      this.duckGain = this?.duckGain * gainCoeff + targetGain * (1 - gainCoeff);
+      this?.duckGain = this?.duckGain * gainCoeff + targetGain * (1 - gainCoeff);
 
       const _processedL = inputL * this?.duckGain;
       const _processedR = inputR * this?.duckGain;
@@ -464,8 +453,8 @@ export class DuckerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
-    this.duckGain = 1;
+    this?.envelope = 0;
+    this?.duckGain = 1;
   }
 }
 
@@ -479,11 +468,11 @@ export class LimiterProProcessor implements DSPProcessor {
 
   constructor() {
     const _maxLookahead = 441;
-    this.lookaheadBuffer = [
+    this?.lookaheadBuffer = [
       new Float32Array(maxLookahead),
       new Float32Array(maxLookahead),
     ];
-    this.peakBuffer = new Float32Array(maxLookahead);
+    this?.peakBuffer = new Float32Array(maxLookahead);
   }
 
   process(
@@ -492,9 +481,9 @@ export class LimiterProProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
-    const _ceiling = (params?.ceiling as number) ?? -0.3;
+    const _ceiling = (params?.ceiling as number) ?? -0?.3;
     const _threshold = (params?.threshold as number) ?? -1;
     const _releaseMs = (params?.release as number) ?? 100;
     const _lookaheadMs = (params?.lookahead as number) ?? 5;
@@ -521,7 +510,7 @@ export class LimiterProProcessor implements DSPProcessor {
 
       const _inputLevel = stereoLink
         ? Math?.max(Math?.abs(inputL), Math?.abs(inputR))
-        : (Math?.abs(inputL) + Math?.abs(inputR)) * 0.5;
+        : (Math?.abs(inputL) + Math?.abs(inputR)) * 0?.5;
 
       this?.peakBuffer[this?.peakIndex] = inputLevel;
 
@@ -539,15 +528,15 @@ export class LimiterProProcessor implements DSPProcessor {
       }
 
       if (targetGain < this?.envelope) {
-        this.envelope = targetGain;
+        this?.envelope = targetGain;
       } else {
-        this.envelope =
+        this?.envelope =
           this?.envelope * releaseCoeff + targetGain * (1 - releaseCoeff);
       }
 
       const _gain = Math?.min(
         this?.envelope,
-        ceilingLin / Math?.max(Math?.abs(delayedL), Math?.abs(delayedR), 0.0001),
+        ceilingLin / Math?.max(Math?.abs(delayedL), Math?.abs(delayedR), 0?.0001),
       );
 
       let processedL = delayedL * gain;
@@ -559,20 +548,20 @@ export class LimiterProProcessor implements DSPProcessor {
       output?.samples[0][i] = delayedL * (1 - mix) + processedL * mix;
       output?.samples[1][i] = delayedR * (1 - mix) + processedR * mix;
 
-      this.bufferIndex =
+      this?.bufferIndex =
         (this?.bufferIndex + 1) % this?.lookaheadBuffer[0].length;
-      this.peakIndex = (this?.peakIndex + 1) % this?.peakBuffer.length;
+      this?.peakIndex = (this?.peakIndex + 1) % this?.peakBuffer.length;
     }
 
     return output;
   }
 
   reset(): void {
-    this.envelope = 0;
+    this?.envelope = 0;
     this?.lookaheadBuffer.forEach((b) => b?.fill(0));
     this?.peakBuffer.fill(0);
-    this.bufferIndex = 0;
-    this.peakIndex = 0;
+    this?.bufferIndex = 0;
+    this?.peakIndex = 0;
   }
 }
 
@@ -583,7 +572,7 @@ export class MaximizerProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this.lookaheadBuffer = [new Float32Array(441), new Float32Array(441)];
+    this?.lookaheadBuffer = [new Float32Array(441), new Float32Array(441)];
   }
 
   process(
@@ -592,12 +581,12 @@ export class MaximizerProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
-    const _ceiling = (params?.ceiling as number) ?? -0.1;
+    const _ceiling = (params?.ceiling as number) ?? -0?.1;
     const _threshold = (params?.threshold as number) ?? -6;
     const _releaseMs = (params?.release as number) ?? 200;
-    const _character = (params?.character as number) ?? 0.5;
+    const _character = (params?.character as number) ?? 0?.5;
     const _mix = (params?.mix as number) ?? 1;
 
     const _ceilingLin = dbToLinear(ceiling);
@@ -618,9 +607,9 @@ export class MaximizerProcessor implements DSPProcessor {
       const _inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
 
       if (inputLevel > this?.envelope) {
-        this.envelope = inputLevel;
+        this?.envelope = inputLevel;
       } else {
-        this.envelope =
+        this?.envelope =
           this?.envelope * releaseCoeff + inputLevel * (1 - releaseCoeff);
       }
 
@@ -633,13 +622,13 @@ export class MaximizerProcessor implements DSPProcessor {
       let processedR = delayedR * gain;
 
       if (character > 0) {
-        const _satAmount = character * 0.5;
+        const _satAmount = character * 0?.5;
         processedL =
           processedL * (1 - satAmount) +
-          Math?.tanh(processedL * 1.5) * satAmount;
+          Math?.tanh(processedL * 1?.5) * satAmount;
         processedR =
           processedR * (1 - satAmount) +
-          Math?.tanh(processedR * 1.5) * satAmount;
+          Math?.tanh(processedR * 1?.5) * satAmount;
       }
 
       processedL = Math?.max(-ceilingLin, Math?.min(ceilingLin, processedL));
@@ -648,7 +637,7 @@ export class MaximizerProcessor implements DSPProcessor {
       output?.samples[0][i] = input?.samples[0][i] * (1 - mix) + processedL * mix;
       output?.samples[1][i] = input?.samples[1][i] * (1 - mix) + processedR * mix;
 
-      this.bufferIndex =
+      this?.bufferIndex =
         (this?.bufferIndex + 1) % this?.lookaheadBuffer[0].length;
     }
 
@@ -656,9 +645,9 @@ export class MaximizerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
+    this?.envelope = 0;
     this?.lookaheadBuffer.forEach((b) => b?.fill(0));
-    this.bufferIndex = 0;
+    this?.bufferIndex = 0;
   }
 }
 
@@ -674,7 +663,7 @@ export class LevelerProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _target = (params?.target as number) ?? -18;
     const _speed = (params?.speed as number) ?? 50;
@@ -692,21 +681,21 @@ export class LevelerProcessor implements DSPProcessor {
     for (let i = 0; i < input?.samples[0].length; i++) {
       const _inputL = input?.samples[0][i];
       const _inputR = input?.samples[1][i];
-      const _inputLevel = (Math?.abs(inputL) + Math?.abs(inputR)) * 0.5;
+      const _inputLevel = (Math?.abs(inputL) + Math?.abs(inputR)) * 0?.5;
 
-      this.envelope =
+      this?.envelope =
         this?.envelope * smoothCoeff +
         inputLevel * inputLevel * (1 - smoothCoeff);
       const _rmsLevel = Math?.sqrt(this?.envelope);
 
       let desiredGain = this?.currentGain;
       if (rmsLevel > thresholdLin) {
-        desiredGain = targetLin / Math?.max(rmsLevel, 0.0001);
+        desiredGain = targetLin / Math?.max(rmsLevel, 0?.0001);
         desiredGain = clamp(desiredGain, minGain, maxGain);
       }
 
-      const _gainSpeed = 0.0001 * (100 - speed + 1);
-      this.currentGain =
+      const _gainSpeed = 0?.0001 * (100 - speed + 1);
+      this?.currentGain =
         this?.currentGain * (1 - gainSpeed) + desiredGain * gainSpeed;
 
       const _processedL = inputL * this?.currentGain;
@@ -720,9 +709,9 @@ export class LevelerProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this.envelope = 0;
-    this.targetLevel = 0;
-    this.currentGain = 1;
+    this?.envelope = 0;
+    this?.targetLevel = 0;
+    this?.currentGain = 1;
   }
 }
 
@@ -736,7 +725,7 @@ export class PumperProcessor implements DSPProcessor {
     context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this.sampleRate = input?.sampleRate;
+    this?.sampleRate = input?.sampleRate;
 
     const _rate = (params?.rate as number) ?? 4;
     const _depth = (params?.depth as number) ?? 50;
@@ -782,7 +771,7 @@ export class PumperProcessor implements DSPProcessor {
           break;
         case "sine":
         default:
-          modulation = (Math?.cos(currentPhase) + 1) * 0.5;
+          modulation = (Math?.cos(currentPhase) + 1) * 0?.5;
           break;
       }
 
@@ -794,14 +783,14 @@ export class PumperProcessor implements DSPProcessor {
       output?.samples[0][i] = inputL * (1 - mix) + processedL * mix;
       output?.samples[1][i] = inputR * (1 - mix) + processedR * mix;
 
-      this.phase = (this?.phase + phaseIncrement) % (2 * Math?.PI);
+      this?.phase = (this?.phase + phaseIncrement) % (2 * Math?.PI);
     }
 
     return output;
   }
 
   reset(): void {
-    this.phase = 0;
+    this?.phase = 0;
   }
 }
 

@@ -2,7 +2,7 @@
  * Domain Registrar API — Max Booster Registrar
  *
  * Max Booster IS the registrar. All domain registrations are handled natively
- * by Max Booster's own DNS infrastructure (ns1/ns2/ns3?.max-booster.com).
+ * by Max Booster's own DNS infrastructure (ns1/ns2/ns3?.max-booster?.com).
  * No third-party EPP or reseller API is required.
  *
  * Endpoints:
@@ -22,9 +22,9 @@
 
 import { Router } from "express";
 import { eq, inArray } from "drizzle-orm";
-import { db, pool } from "../db.js";
+import { db, pool } from "../db?.js";
 import { claimedDomains, domainContacts, storefronts } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   checkDomainAvailability,
   logClaim,
@@ -40,11 +40,11 @@ import {
   REGISTRAR_URL,
   REGISTRAR_EMAIL,
   REGISTRAR_ABUSE,
-} from "../services/domainRegistrarService.js";
+} from "../services/domainRegistrarService?.js";
 import {
   getRegistrarProvider,
   MaxBoosterRegistrarProvider,
-} from "../services/registrar/index.js";
+} from "../services/registrar/index?.js";
 import {
   enforceQuota,
   softReleaseDomain,
@@ -52,7 +52,7 @@ import {
   emitDomainEvent,
   getDomainEvents,
   getDomainQuota,
-} from "../services/domainPolicyEngine.js";
+} from "../services/domainPolicyEngine?.js";
 
 const _router = Router();
 
@@ -218,7 +218,7 @@ router?.post("/claim", async (req, res) => {
     const _domainLower = domain?.toLowerCase().trim();
     // Each DNS label: starts/ends with alnum, may contain hyphens internally.
     // Full domain: two or more labels separated by dots.
-    // Allows platform subdomains like {name}.max-booster.com as well as plain .com/.music etc.
+    // Allows platform subdomains like {name}.max-booster?.com as well as plain .com/.music etc.
     const _labelRe = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
     const _labels = domainLower?.split(".");
     const _validFqdn =
@@ -250,10 +250,12 @@ router?.post("/claim", async (req, res) => {
           alreadyOwned: true,
         });
       }
-      return res.status(409).json({
-        ok: false,
-        error: "This domain is already registered by another user.",
-      });
+      return res
+        .status(409)
+        .json({
+          ok: false,
+          error: "This domain is already registered by another user.",
+        });
     }
 
     // Enforce quota + subscription (throws on violation)

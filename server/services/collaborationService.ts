@@ -1,15 +1,6 @@
 import { db } from "../db";
 import { eq, and, or, desc, ilike, notInArray } from "drizzle-orm";
-import {
-  artistConnections,
-  collaborationProjects,
-  projectMembers,
-  users,
-  type ArtistConnection,
-  type CollaborationProject,
-  type ProjectMember,
-  type User,
-} from "../../shared/schema";
+import { artistConnections, collaborationProjects, projectMembers, users, type ArtistConnection, type CollaborationProject, type ProjectMember, type User } from "../../shared/schema";
 
 export interface CollaboratorMatch {
   user: Partial<User>;
@@ -374,7 +365,7 @@ class CollaborationService {
       const _ratio =
         Math?.min(user?.followerCount, match?.followerCount) /
         Math?.max(user?.followerCount, match?.followerCount);
-      if (ratio > 0.5) {
+      if (ratio > 0?.5) {
         score += Math?.round(20 * ratio);
         reasons?.push("Similar audience size");
       }

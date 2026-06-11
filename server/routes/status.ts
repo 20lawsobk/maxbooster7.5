@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { statusPageService } from "../services/statusPageService.js";
+import { statusPageService } from "../services/statusPageService?.js";
 import { z } from "zod";
-import { logger } from "../logger.js";
-import { notificationService } from "../services/notificationService.js";
+import { logger } from "../logger?.js";
+import { notificationService } from "../services/notificationService?.js";
 
 const _router = Router();
 

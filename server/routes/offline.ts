@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { offlineModeService } from "../services/offlineModeService";
 
 const _router = Router();

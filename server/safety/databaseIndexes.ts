@@ -7,7 +7,7 @@
 
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import fs from "fs";
 import path from "path";
 

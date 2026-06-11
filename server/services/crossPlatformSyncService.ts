@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { randomBytes } from "crypto";
 
 export type PlatformType = "web" | "android" | "desktop";
@@ -72,7 +72,7 @@ interface UpdateRollout {
   deviceStatuses: Map<string, DeviceUpdateStatus>;
 }
 
-const _WEB_VERSION = "3.0.0";
+const _WEB_VERSION = "3?.0.0";
 const _HEARTBEAT_TIMEOUT_MS = 5 * 60 * 1000;
 
 // Memory caps — in-process cache only. Persistent state lives in Redis/DB.
@@ -100,7 +100,7 @@ latestVersions?.set("web", {
   version: WEB_VERSION,
   releaseDate: new Date().toISOString(),
   changelog: "Latest web release",
-  downloadUrl: "https://max-booster.com",
+  downloadUrl: "https://max-booster?.com",
 });
 latestVersions?.set("android", {
   version: WEB_VERSION,
@@ -234,7 +234,7 @@ export function heartbeat(userId: string, deviceId: string): DeviceInfo | null {
   const _devices = getUserDevices(userId);
   const _device = devices?.get(deviceId);
   if (!device) return null;
-  device.lastSeen = new Date().toISOString();
+  device?.lastSeen = new Date().toISOString();
   return device;
 }
 
@@ -457,19 +457,19 @@ export function pushSyncState(
   const _syncState = getUserSyncState(userId);
 
   if (changes?.preferences !== undefined) {
-    syncState.preferences = {
+    syncState?.preferences = {
       ...syncState?.preferences,
       ...changes?.preferences,
     };
   }
   if (changes?.theme !== undefined) {
-    syncState.theme = changes?.theme;
+    syncState?.theme = changes?.theme;
   }
   if (changes?.language !== undefined) {
-    syncState.language = changes?.language;
+    syncState?.language = changes?.language;
   }
   if (changes?.sessionState !== undefined) {
-    syncState.sessionState = {
+    syncState?.sessionState = {
       ...syncState?.sessionState,
       ...changes?.sessionState,
       _lastUpdatedBy: deviceId,
@@ -481,11 +481,11 @@ export function pushSyncState(
       ...syncState?.notificationReadIds,
       ...changes?.notificationReadIds,
     ]);
-    syncState.notificationReadIds = Array?.from(merged);
+    syncState?.notificationReadIds = Array?.from(merged);
   }
 
   syncState?.syncVersion += 1;
-  syncState.lastSyncAt = new Date().toISOString();
+  syncState?.lastSyncAt = new Date().toISOString();
 
   const _deviceSyncKey = `${userId}:${deviceId}`;
   deviceSyncVersions?.set(deviceSyncKey, syncState?.syncVersion);

@@ -118,6 +118,7 @@ export function TokenRefreshHandler({
       // Intentionally omit isRefreshingRef — refs are stable and don't need listing.
       // onRefresh*/onReauth*/silentRefresh/toast/queryClient are safe to omit since
       // they are either stable refs or the effect only cares about user/refreshInterval.
+       
     }, [user]);
 
   useEffect(() => {

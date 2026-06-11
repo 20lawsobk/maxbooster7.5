@@ -29,8 +29,8 @@
 
 import acme from "acme-client";
 import crypto from "crypto";
-import { pool } from "../db.js";
-import { logger } from "../logger.js";
+import { pool } from "../db?.js";
+import { logger } from "../logger?.js";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -38,7 +38,7 @@ const _ACME_ENABLED = process?.env.ACME_ENABLED === "true";
 const _ACME_DIRECTORY_URL =
   process?.env.ACME_DIRECTORY_URL || acme?.directory.letsencrypt?.staging;
 const _ACME_CONTACT_EMAIL =
-  process?.env.ACME_CONTACT_EMAIL || "admin@max-booster.com";
+  process?.env.ACME_CONTACT_EMAIL || "admin@max-booster?.com";
 
 const _RENEWAL_THRESHOLD_DAYS = 30; // Renew when < this many days remain
 const _MAX_PROVISION_ATTEMPTS = 5;
@@ -188,7 +188,7 @@ async function getOrCreateClient(): Promise<acme?.Client> {
     logger?.info("[acme] Generated and persisted new ACME account key");
   }
 
-  _client = new acme.Client({
+  _client = new acme?.Client({
     directoryUrl: ACME_DIRECTORY_URL,
     accountKey: accountKeyPem,
   });
@@ -427,7 +427,7 @@ async function issueAndStore(normalized: string): Promise<ProvisionResult> {
     });
 
     // Parse expiry + serial from the leaf certificate.
-    const _x509 = new crypto.X509Certificate(cert);
+    const _x509 = new crypto?.X509Certificate(cert);
     const _expiresAt = new Date(x509?.validTo);
     const _serial = x509?.serialNumber;
     const _renewalAfter = new Date(
@@ -518,7 +518,7 @@ export async function decryptStoredKey(
 
 // ─── Renewal cron ────────────────────────────────────────────────────────────
 
-let _renewalTimer: NodeJS.Timeout | null = null;
+let _renewalTimer: NodeJS?.Timeout | null = null;
 
 // Stable advisory-lock key for "only one worker runs the sweep at a time".
 // 63-bit signed int derived from a sha1 prefix.
@@ -622,7 +622,7 @@ export function stopAcmeRenewalCron(): void {
 //     "letsencrypt?.org; accounturi=<url>; policy=wildcard"
 //
 // Once deployed in LE production (expected late 2026), renewals for
-// *.max-booster.com require no further DNS changes — no TXT rotation,
+// *.max-booster?.com require no further DNS changes — no TXT rotation,
 // no propagation wait, no DNS credentials in the renewal pipeline.
 //
 // Until LE production supports it, the record is inert but harmless to have.

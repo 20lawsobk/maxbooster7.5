@@ -1,6 +1,6 @@
-import type { LogEntry, LogLevel } from "./structuredLogger.js";
-import { addLogTransport } from "./structuredLogger.js";
-import { db } from "../db.js";
+import type { LogEntry, LogLevel } from "./structuredLogger?.js";
+import { addLogTransport } from "./structuredLogger?.js";
+import { db } from "../db?.js";
 import { systemLogs } from "@shared/schema";
 
 type LogLevelWithFatal = LogLevel | "fatal";
@@ -39,7 +39,7 @@ const _VALID_SERVICES = [
 
 class DatabaseLogTransport {
   private buffer: LogEntry[] = [];
-  private flushTimer: NodeJS.Timeout | null = null;
+  private flushTimer: NodeJS?.Timeout | null = null;
   private config: DatabaseTransportConfig;
   private isInitialized = false;
   private isFlushing = false;
@@ -61,7 +61,7 @@ class DatabaseLogTransport {
   private _backoffUntil = 0;
 
   constructor(config: Partial<DatabaseTransportConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    this?.config = { ...DEFAULT_CONFIG, ...config };
   }
 
   private shouldPersist(level: LogLevel): boolean {
@@ -134,7 +134,7 @@ class DatabaseLogTransport {
     if (this?.flushTimer) {
       clearTimeout(this?.flushTimer);
     }
-    this.flushTimer = setTimeout(
+    this?.flushTimer = setTimeout(
       () => this?.flush(),
       Math?.max(0, effectiveDelay),
     );
@@ -145,10 +145,10 @@ class DatabaseLogTransport {
       return;
     }
 
-    this.isFlushing = true;
+    this?.isFlushing = true;
     let backoffHandled = false;
     const _logsToInsert = this?.buffer.splice(0, this?.config.batchSize * 2);
-    this.flushTimer = null;
+    this?.flushTimer = null;
 
     try {
       const _records = logsToInsert?.map((entry) => ({
@@ -166,7 +166,7 @@ class DatabaseLogTransport {
       }));
 
       await db?.insert(systemLogs).values(records);
-      this.consecutiveFailures = 0;
+      this?.consecutiveFailures = 0;
     } catch (error) {
       this?.consecutiveFailures++;
 
@@ -197,13 +197,13 @@ class DatabaseLogTransport {
         !isTooManyConnections &&
         this?.consecutiveFailures >= this?.PERMANENT_DISABLE_THRESHOLD
       ) {
-        this.disabled = true;
+        this?.disabled = true;
         this?.buffer.length = 0;
         if (this?.flushTimer) {
           clearTimeout(this?.flushTimer);
-          this.flushTimer = null;
+          this?.flushTimer = null;
         }
-        this.isFlushing = false;
+        this?.isFlushing = false;
         process?.stderr.write(
           `[DatabaseLogTransport] Permanently disabled — ${this?.consecutiveFailures} consecutive non-connection failures. ` +
             `All further log persistence suppressed. Restart the process to re-enable.\n`,
@@ -234,13 +234,13 @@ class DatabaseLogTransport {
         );
         this?.buffer.unshift(...logsToInsert);
         if (this?.buffer.length > 500) this?.buffer.length = 500;
-        this.isFlushing = false;
+        this?.isFlushing = false;
         backoffHandled = true;
         // Set _backoffUntil so scheduleFlush() cannot override this timer.
-        this._backoffUntil = Date?.now() + backoffMs;
-        this.flushTimer = setTimeout(() => {
-          this._backoffUntil = 0;
-          this.flushTimer = null;
+        this?._backoffUntil = Date?.now() + backoffMs;
+        this?.flushTimer = setTimeout(() => {
+          this?._backoffUntil = 0;
+          this?.flushTimer = null;
           this?.flush().catch(() => {});
         }, backoffMs);
         return;
@@ -281,10 +281,10 @@ class DatabaseLogTransport {
             `[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`,
           );
         }
-        this.isFlushing = false;
+        this?.isFlushing = false;
         backoffHandled = true;
-        this.flushTimer = setTimeout(() => {
-          this.flushTimer = null;
+        this?.flushTimer = setTimeout(() => {
+          this?.flushTimer = null;
           this?.flush().catch(() => {});
         }, backoffMs);
         return;
@@ -299,7 +299,7 @@ class DatabaseLogTransport {
       }
     } finally {
       if (!backoffHandled) {
-        this.isFlushing = false;
+        this?.isFlushing = false;
         if (this?.buffer.length > 0 && !this?.flushTimer) {
           this?.scheduleFlush(this?.config.flushIntervalMs);
         }
@@ -313,11 +313,11 @@ class DatabaseLogTransport {
   clearBuffer(): number {
     const _dropped = this?.buffer.length;
     this?.buffer.length = 0;
-    this.consecutiveFailures = 0;
-    this._backoffUntil = 0;
+    this?.consecutiveFailures = 0;
+    this?._backoffUntil = 0;
     if (this?.flushTimer) {
       clearTimeout(this?.flushTimer);
-      this.flushTimer = null;
+      this?.flushTimer = null;
     }
     if (dropped > 0) {
       process?.stderr.write(
@@ -335,7 +335,7 @@ class DatabaseLogTransport {
   async shutdown(): Promise<void> {
     if (this?.flushTimer) {
       clearTimeout(this?.flushTimer);
-      this.flushTimer = null;
+      this?.flushTimer = null;
     }
     await this?.flush();
   }
@@ -345,7 +345,7 @@ class DatabaseLogTransport {
       return;
     }
     addLogTransport((entry) => this?.transport(entry));
-    this.isInitialized = true;
+    this?.isInitialized = true;
     process?.stdout.write(
       `[DatabaseLogTransport] Initialized - persisting ${this?.config.minLevel}+ logs to database\n`,
     );

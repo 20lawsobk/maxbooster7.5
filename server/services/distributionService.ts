@@ -1,42 +1,21 @@
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { dspAnalytics, releases, royaltySplits } from "@shared/schema";
 import { eq, sql as drizzleSql } from "drizzle-orm";
-import { notificationService } from "./notificationService.js";
+import { notificationService } from "./notificationService?.js";
 
-import type {
-  InsertRelease,
-  Release,
-  DistributionPackage,
-  InsertDistributionPackage,
-  DistributionTrack,
-  InsertDistributionTrack,
-  DistributionSLAMetric,
-  ContentIdRegistration,
-  InsertSyncLicense,
-  SyncLicense,
-  InsertSyncLicenseInquiry,
-  SyncLicenseInquiry,
-  InsertRoyaltySplit,
-  RoyaltySplit,
-  InsertRoyaltyTransaction,
-  RoyaltyTransaction,
-  InsertPreSaveCampaign,
-  PreSaveCampaign,
-  InsertPreSaveEntry,
-  PreSaveEntry,
-} from "@shared/schema";
+import type { InsertRelease, Release, DistributionPackage, InsertDistributionPackage, DistributionTrack, InsertDistributionTrack, DistributionSLAMetric, ContentIdRegistration, InsertSyncLicense, SyncLicense, InsertSyncLicenseInquiry, SyncLicenseInquiry, InsertRoyaltySplit, RoyaltySplit, InsertRoyaltyTransaction, RoyaltyTransaction, InsertPreSaveCampaign, PreSaveCampaign, InsertPreSaveEntry, PreSaveEntry } from "@shared/schema";
 import archiver from "archiver";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
 import { createWriteStream } from "fs";
-import { storageService } from "./storageService.js";
+import { storageService } from "./storageService?.js";
 import os from "os";
 import { randomUUID } from "crypto";
-import { labelGridService } from "./labelgrid-service.js";
-import { logger } from "../logger.js";
+import { labelGridService } from "./labelgrid-service?.js";
+import { logger } from "../logger?.js";
 
 const _DEFAULT_SLA_TARGET_HOURS = 48;
 
@@ -514,7 +493,7 @@ export class DistributionService {
   ) {
     try {
       const _total = splits?.reduce((sum, s) => sum + s?.percentage, 0);
-      if (Math?.abs(total - 100) > 0.01) {
+      if (Math?.abs(total - 100) > 0?.01) {
         throw new Error(
           `Split percentages must total 100% (got ${total?.toFixed(2)}%)`,
         );
@@ -669,7 +648,7 @@ export class DistributionService {
           rights: ["streaming", "download"],
           restrictions: [],
         },
-        metadata_version: "1.0",
+        metadata_version: "1?.0",
         generated_at: new Date().toISOString(),
       };
 
@@ -677,7 +656,7 @@ export class DistributionService {
       // These IDs instruct DSPs to map the release to an existing artist page
       // rather than creating a new one (DistroKid-style identity anchoring).
       if (artistProfileData) {
-        metadata.artist_identifiers = {
+        metadata?.artist_identifiers = {
           is_new_artist: artistProfileData?.isNewArtist === "true",
           spotify_artist_id: artistProfileData?.spotifyArtistId ?? null,
           spotify_artist_uri: artistProfileData?.spotifyArtistUri ?? null,
@@ -768,7 +747,7 @@ export class DistributionService {
         this?.generateMetadataJSON(packageId)
           .then((metadata) => {
             archive?.append(JSON?.stringify(metadata, null, 2), {
-              name: "metadata.json",
+              name: "metadata?.json",
             });
 
             // Add tracks?.csv
@@ -779,7 +758,7 @@ export class DistributionService {
                 // Add artwork if available
                 if (pkg?.artworkUrl) {
                   // Convert public URL path to filesystem path
-                  // pkg?.artworkUrl is like "/distribution/artwork/artwork_123.jpg"
+                  // pkg?.artworkUrl is like "/distribution/artwork/artwork_123?.jpg"
                   const _artworkFilePath = path?.join(
                     process?.cwd(),
                     "public",
@@ -813,7 +792,7 @@ ${pkg?.artworkUrl ? "- artwork: Album artwork" : ""}
 
 Generated: ${new Date().toISOString()}
 `;
-                archive?.append(readme, { name: "README.txt" });
+                archive?.append(readme, { name: "README?.txt" });
 
                 archive?.finalize();
               })
@@ -1655,22 +1634,22 @@ Generated: ${new Date().toISOString()}
         };
 
         if (data?.platform === "spotify") {
-          updates.spotifySaves = (campaign?.spotifySaves || 0) + 1;
+          updates?.spotifySaves = (campaign?.spotifySaves || 0) + 1;
         } else if (data?.platform === "apple_music") {
-          updates.appleMusicSaves = (campaign?.appleMusicSaves || 0) + 1;
+          updates?.appleMusicSaves = (campaign?.appleMusicSaves || 0) + 1;
         } else if (data?.platform === "deezer") {
-          updates.deezerSaves = (campaign?.deezerSaves || 0) + 1;
+          updates?.deezerSaves = (campaign?.deezerSaves || 0) + 1;
         }
 
         if (data?.email) {
-          updates.emailSignups = (campaign?.emailSignups || 0) + 1;
+          updates?.emailSignups = (campaign?.emailSignups || 0) + 1;
         }
 
         // Calculate conversion rate
         const _totalSaves = updates?.totalSaves || campaign?.totalSaves || 0;
         const _pageViews =
           (campaign?.metadata as Record<string, unknown>)?.pageViews || 1;
-        updates.conversionRate = (totalSaves / pageViews) * 100;
+        updates?.conversionRate = (totalSaves / pageViews) * 100;
 
         await storage?.updatePreSaveCampaign(data?.campaignId, updates);
       }

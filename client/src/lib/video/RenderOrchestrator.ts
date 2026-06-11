@@ -1,16 +1,5 @@
 import { logger } from "../logger";
-import type {
-  VideoProject,
-  LayerConfig,
-  TransformConfig,
-  RenderProgress,
-  BackgroundConfig,
-  VisualizerConfig,
-  TextConfig,
-  ImageConfig,
-  ShapeConfig,
-  ParticleConfig,
-} from "../../../../shared/video/VideoRendererEngine";
+import type { VideoProject, LayerConfig, TransformConfig, RenderProgress, BackgroundConfig, VisualizerConfig, TextConfig, ImageConfig, ShapeConfig, ParticleConfig } from "../../../../shared/video/VideoRendererEngine";
 import { DEFAULT_TRANSFORM } from "../../../../shared/video/VideoRendererEngine";
 import { Scene, Layer, type EasingName } from "./SceneGraph";
 import {
@@ -109,18 +98,18 @@ export class RenderOrchestrator {
   private exportFrameCallback: ((time: number) => void) | null = null;
 
   constructor(options: OrchestratorOptions = {}) {
-    this.width = options?.width ?? 1920;
-    this.height = options?.height ?? 1080;
-    this.fps = options?.fps ?? 30;
-    this.enableAudioAnalysis = options?.enableAudioAnalysis ?? true;
-    this.mockAudio = options?.mockAudio ?? false;
-    this.audioElement = options?.audioElement ?? null;
-    this.events = options?.events ?? {};
+    this?.width = options?.width ?? 1920;
+    this?.height = options?.height ?? 1080;
+    this?.fps = options?.fps ?? 30;
+    this?.enableAudioAnalysis = options?.enableAudioAnalysis ?? true;
+    this?.mockAudio = options?.mockAudio ?? false;
+    this?.audioElement = options?.audioElement ?? null;
+    this?.events = options?.events ?? {};
 
     if (options?.useOffscreen && typeof OffscreenCanvas !== "undefined") {
-      this.canvas = new OffscreenCanvas(this?.width, this?.height);
+      this?.canvas = new OffscreenCanvas(this?.width, this?.height);
     } else {
-      this.canvas = document?.createElement("canvas");
+      this?.canvas = document?.createElement("canvas");
       this?.canvas.width = this?.width;
       this?.canvas.height = this?.height;
     }
@@ -129,9 +118,9 @@ export class RenderOrchestrator {
     if (!ctx) {
       throw new Error("Failed to create 2D rendering context");
     }
-    this.ctx = ctx;
+    this?.ctx = ctx;
 
-    this.textAnimator = new TextAnimator(
+    this?.textAnimator = new TextAnimator(
       this?.ctx as CanvasRenderingContext2D,
       this?.width,
       this?.height,
@@ -139,10 +128,10 @@ export class RenderOrchestrator {
   }
 
   async initialize(): Promise<void> {
-    this.capabilities = await getBrowserCapabilities();
+    this?.capabilities = await getBrowserCapabilities();
 
     if (this?.enableAudioAnalysis) {
-      this.audioAnalyzer = new AudioAnalyzer();
+      this?.audioAnalyzer = new AudioAnalyzer();
       await this?.audioAnalyzer.initialize();
 
       if (this?.audioElement) {
@@ -158,18 +147,18 @@ export class RenderOrchestrator {
     this?.setState("loading");
 
     try {
-      this.project = project;
-      this.audioReactiveBindings = audioReactiveBindings;
+      this?.project = project;
+      this?.audioReactiveBindings = audioReactiveBindings;
 
       if (project?.width !== this?.width || project?.height !== this?.height) {
         this?.resize(project?.width, project?.height);
       }
 
-      this.fps = project?.fps;
-      this.duration = project?.duration;
-      this.currentTime = 0;
+      this?.fps = project?.fps;
+      this?.duration = project?.duration;
+      this?.currentTime = 0;
 
-      this.scene = new Scene(
+      this?.scene = new Scene(
         {
           width: project?.width,
           height: project?.height,
@@ -247,10 +236,10 @@ export class RenderOrchestrator {
           barGap: config?.barGap ?? 2,
           color: config?.color,
           secondaryColor: config?.secondaryColor ?? config?.color,
-          sensitivity: config?.sensitivity ?? 1.5,
+          sensitivity: config?.sensitivity ?? 1?.5,
           glow: config?.glow ?? true,
           glowColor: config?.color,
-          glowIntensity: config?.glowIntensity ?? 0.8,
+          glowIntensity: config?.glowIntensity ?? 0?.8,
           mirror: config?.mirror ?? false,
         });
         break;
@@ -264,7 +253,7 @@ export class RenderOrchestrator {
           lineWidth: config?.lineWidth ?? 2,
           glow: config?.glow ?? true,
           glowColor: config?.color,
-          glowIntensity: config?.glowIntensity ?? 0.6,
+          glowIntensity: config?.glowIntensity ?? 0?.6,
         });
         break;
 
@@ -277,7 +266,7 @@ export class RenderOrchestrator {
           color: config?.color,
           secondaryColor: config?.secondaryColor ?? config?.color,
           glow: config?.glow ?? true,
-          glowIntensity: config?.glowIntensity ?? 0.8,
+          glowIntensity: config?.glowIntensity ?? 0?.8,
         });
         break;
 
@@ -287,7 +276,7 @@ export class RenderOrchestrator {
           maxParticles: 500,
           color: config?.color,
           size: { min: 2, max: 6 },
-          speed: { min: 0.5, max: 2 },
+          speed: { min: 0?.5, max: 2 },
         });
         break;
 
@@ -301,19 +290,19 @@ export class RenderOrchestrator {
   private async loadImage(layerId: string, src: string): Promise<void> {
     return new Promise((resolve, _reject) => {
       const _img = new Image();
-      img.crossOrigin = "anonymous";
+      img?.crossOrigin = "anonymous";
 
-      img.onload = () => {
+      img?.onload = () => {
         this?.imageCache.set(layerId, { image: img, loaded: true });
         resolve();
       };
 
-      img.onerror = () => {
+      img?.onerror = () => {
         this?.imageCache.set(layerId, { image: img, loaded: false });
         resolve();
       };
 
-      img.src = src;
+      img?.src = src;
     });
   }
 
@@ -330,9 +319,9 @@ export class RenderOrchestrator {
   play(): void {
     if (this?.state !== "ready" && this?.state !== "paused") return;
 
-    this.isPlaying = true;
+    this?.isPlaying = true;
     this?.setState("playing");
-    this.lastFrameTime = performance?.now();
+    this?.lastFrameTime = performance?.now();
     this?.startRenderLoop();
 
     if (this?.audioElement) {
@@ -344,7 +333,7 @@ export class RenderOrchestrator {
   pause(): void {
     if (this?.state !== "playing") return;
 
-    this.isPlaying = false;
+    this?.isPlaying = false;
     this?.setState("paused");
     this?.stopRenderLoop();
 
@@ -359,7 +348,7 @@ export class RenderOrchestrator {
   }
 
   seek(time: number): void {
-    this.currentTime = Math?.max(0, Math?.min(time, this?.duration));
+    this?.currentTime = Math?.max(0, Math?.min(time, this?.duration));
 
     if (this?.scene) {
       this?.scene.setTime(this?.currentTime);
@@ -389,28 +378,28 @@ export class RenderOrchestrator {
         this?.currentTime += elapsed / 1000;
 
         if (this?.currentTime >= this?.duration) {
-          this.currentTime = 0;
+          this?.currentTime = 0;
           if (this?.audioElement) {
             this?.audioElement.currentTime = 0;
           }
         }
 
         this?.renderFrame(this?.currentTime);
-        this.lastFrameTime = now - (elapsed % frameInterval);
+        this?.lastFrameTime = now - (elapsed % frameInterval);
 
         this?.events.onTimeUpdate?.(this?.currentTime);
       }
 
-      this.animationFrameId = requestAnimationFrame(loop);
+      this?.animationFrameId = requestAnimationFrame(loop);
     };
 
-    this.animationFrameId = requestAnimationFrame(loop);
+    this?.animationFrameId = requestAnimationFrame(loop);
   }
 
   private stopRenderLoop(): void {
     if (this?.animationFrameId !== null) {
       cancelAnimationFrame(this?.animationFrameId);
-      this.animationFrameId = null;
+      this?.animationFrameId = null;
     }
   }
 
@@ -538,13 +527,13 @@ export class RenderOrchestrator {
 
       switch (binding?.property) {
         case "scale":
-          this?.ctx.scale(1 + effect * 0.1, 1 + effect * 0.1);
+          this?.ctx.scale(1 + effect * 0?.1, 1 + effect * 0?.1);
           break;
         case "opacity":
-          this?.ctx.globalAlpha *= 1 - effect * 0.3;
+          this?.ctx.globalAlpha *= 1 - effect * 0?.3;
           break;
         case "rotation":
-          this?.ctx.rotate(effect * 0.1);
+          this?.ctx.rotate(effect * 0?.1);
           break;
       }
     }
@@ -626,10 +615,10 @@ export class RenderOrchestrator {
     };
 
     if (textConfig?.shadow) {
-      style.shadowColor = textConfig?.shadow.color;
-      style.shadowBlur = textConfig?.shadow.blur;
-      style.shadowOffsetX = textConfig?.shadow.offsetX;
-      style.shadowOffsetY = textConfig?.shadow.offsetY;
+      style?.shadowColor = textConfig?.shadow.color;
+      style?.shadowBlur = textConfig?.shadow.blur;
+      style?.shadowOffsetX = textConfig?.shadow.offsetX;
+      style?.shadowOffsetY = textConfig?.shadow.offsetY;
     }
 
     if (this?.textAnimator) {
@@ -723,8 +712,8 @@ export class RenderOrchestrator {
       case "triangle":
         const _size = config?.radius || 50;
         this?.ctx.moveTo(x, y - size);
-        this?.ctx.lineTo(x + size * 0.866, y + size * 0.5);
-        this?.ctx.lineTo(x - size * 0.866, y + size * 0.5);
+        this?.ctx.lineTo(x + size * 0?.866, y + size * 0?.5);
+        this?.ctx.lineTo(x - size * 0?.866, y + size * 0?.5);
         this?.ctx.closePath();
         break;
 
@@ -834,8 +823,8 @@ export class RenderOrchestrator {
   }
 
   resize(width: number, height: number): void {
-    this.width = width;
-    this.height = height;
+    this?.width = width;
+    this?.height = height;
 
     if (this?.canvas instanceof HTMLCanvasElement) {
       this?.canvas.width = width;
@@ -855,7 +844,7 @@ export class RenderOrchestrator {
   }
 
   setAudioElement(audioElement: HTMLAudioElement): void {
-    this.audioElement = audioElement;
+    this?.audioElement = audioElement;
 
     if (this?.audioAnalyzer && this?.enableAudioAnalysis) {
       this?.audioAnalyzer.connectAudioElement(audioElement);
@@ -866,8 +855,8 @@ export class RenderOrchestrator {
     enabled: boolean,
     frameCallback?: (time: number) => void,
   ): void {
-    this.exportMode = enabled;
-    this.exportFrameCallback = frameCallback || null;
+    this?.exportMode = enabled;
+    this?.exportFrameCallback = frameCallback || null;
 
     if (enabled) {
       this?.setState("exporting");
@@ -897,7 +886,7 @@ export class RenderOrchestrator {
   }
 
   private setState(state: OrchestratorState): void {
-    this.state = state;
+    this?.state = state;
     this?.events.onStateChange?.(state);
   }
 
@@ -906,7 +895,7 @@ export class RenderOrchestrator {
 
     if (this?.audioAnalyzer) {
       this?.audioAnalyzer.dispose();
-      this.audioAnalyzer = null;
+      this?.audioAnalyzer = null;
     }
 
     for (const visualizer of this?.visualizers.values()) {
@@ -915,10 +904,10 @@ export class RenderOrchestrator {
     this?.visualizers.clear();
 
     this?.imageCache.clear();
-    this.scene = null;
-    this.project = null;
-    this.textAnimator = null;
-    this.lyricEngine = null;
+    this?.scene = null;
+    this?.project = null;
+    this?.textAnimator = null;
+    this?.lyricEngine = null;
 
     this?.setState("idle");
   }

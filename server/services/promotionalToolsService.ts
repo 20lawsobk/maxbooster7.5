@@ -49,6 +49,7 @@ const PROMO_CARD_DIMENSIONS: Record<string, { width: number; height: number }> =
     twitter: { width: 1200, height: 675 },
   };
 
+
 class PromotionalToolsService {
   private autopilotEngines: Map<string, AutopilotEngine> = new Map();
   private autonomousAutopilots: Map<string, AutonomousAutopilot> = new Map();
@@ -181,20 +182,20 @@ class PromotionalToolsService {
     const updates: Partial<PreSavePage> = {};
     switch (event) {
       case "view":
-        updates.views = (page?.views || 0) + 1;
+        updates?.views = (page?.views || 0) + 1;
         break;
       case "presave":
-        updates.preSaves = (page?.preSaves || 0) + 1;
+        updates?.preSaves = (page?.preSaves || 0) + 1;
         break;
       case "email":
-        updates.emailSignups = (page?.emailSignups || 0) + 1;
+        updates?.emailSignups = (page?.emailSignups || 0) + 1;
         break;
       case "click":
         if (platform) {
           const _clicks =
             (page?.clicksByPlatform as Record<string, number>) || {};
           clicks[platform] = (clicks[platform] || 0) + 1;
-          updates.clicksByPlatform = clicks;
+          updates?.clicksByPlatform = clicks;
         }
         break;
     }
@@ -668,10 +669,10 @@ class PromotionalToolsService {
     const _radioScore = Math?.random() * 100;
 
     const _artistScore =
-      streamingScore * 0.4 +
-      socialScore * 0.25 +
-      playlistScore * 0.25 +
-      radioScore * 0.1;
+      streamingScore * 0?.4 +
+      socialScore * 0?.25 +
+      playlistScore * 0?.25 +
+      radioScore * 0?.1;
 
     let careerStage = "undiscovered";
     if (artistScore > 80) careerStage = "superstar";
@@ -800,7 +801,7 @@ class PromotionalToolsService {
           recommendationType: type,
           score: Math?.random() * 100,
           reason: `Based on your ${type === "for_you" ? "listening history" : type}`,
-          metadata: { algorithm: "collaborative_filtering", version: "2.0" },
+          metadata: { algorithm: "collaborative_filtering", version: "2?.0" },
           expiresAt: new Date(Date?.now() + 24 * 60 * 60 * 1000),
         });
       }

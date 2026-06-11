@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 
@@ -83,7 +83,7 @@ router?.post("/start", requireAuth, async (req, res) => {
     const _userId = req?.user!.id;
     const _state = getState(userId);
 
-    state.isRunning = true;
+    state?.isRunning = true;
     state?.config.enabled = true;
 
     logger?.info(`✅ Autonomous social mode started for user ${userId}`);
@@ -104,7 +104,7 @@ router?.post("/stop", requireAuth, async (req, res) => {
     const _userId = req?.user!.id;
     const _state = getState(userId);
 
-    state.isRunning = false;
+    state?.isRunning = false;
     state?.config.enabled = false;
 
     logger?.info(`⏸️ Autonomous social mode stopped for user ${userId}`);

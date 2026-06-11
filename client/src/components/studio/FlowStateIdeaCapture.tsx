@@ -1,17 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Mic,
-  MicOff,
-  Music,
-  Play,
-  Pause,
-  Trash2,
-  Download,
-  Lightbulb,
-  Zap,
-  Volume2,
-} from "lucide-react";
+import { Mic, MicOff, Music, Play, Pause, Trash2, Download, Lightbulb, Zap, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";

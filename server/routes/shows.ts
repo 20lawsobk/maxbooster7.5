@@ -1,4 +1,4 @@
-import { requireUUIDParam } from "../middleware/requestValidation.js";
+import { requireUUIDParam } from "../middleware/requestValidation?.js";
 import { Router } from "express";
 import { requireAuth } from "../middleware/auth";
 import { asyncHandler } from "../middleware/errorHandler";

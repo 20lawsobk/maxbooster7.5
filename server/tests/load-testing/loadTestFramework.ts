@@ -1,7 +1,7 @@
 import http from "http";
 import https from "https";
 import { EventEmitter } from "events";
-import { logger } from "../../logger.js";
+import { logger } from "../../logger?.js";
 
 export interface LoadTestConfig {
   targetUrl: string;
@@ -51,7 +51,7 @@ export class LoadTestFramework extends EventEmitter {
 
   async runLoadTest(config: LoadTestConfig): Promise<LoadTestResult> {
     this?.reset();
-    this.startTime = Date?.now();
+    this?.startTime = Date?.now();
 
     const _usersPerBatch = Math?.min(config?.concurrentUsers, 100);
     const _batches = Math?.ceil(config?.concurrentUsers / usersPerBatch);
@@ -84,7 +84,7 @@ export class LoadTestFramework extends EventEmitter {
       await this?.makeRequest(config);
       if (config?.thinkTimeMs > 0) {
         await this?.sleep(
-          config?.thinkTimeMs + Math?.random() * config?.thinkTimeMs * 0.5,
+          config?.thinkTimeMs + Math?.random() * config?.thinkTimeMs * 0?.5,
         );
       }
     }
@@ -127,7 +127,7 @@ export class LoadTestFramework extends EventEmitter {
       const _isHttps = url?.protocol === "https:";
       const _lib = isHttps ? https : http;
 
-      const options: http.RequestOptions = {
+      const options: http?.RequestOptions = {
         hostname: url?.hostname,
         port: url?.port || (isHttps ? 443 : 80),
         path: url?.pathname + url?.search,
@@ -195,10 +195,10 @@ export class LoadTestFramework extends EventEmitter {
   }
 
   private reset(): void {
-    this.responseTimes = [];
-    this.errors = new Map();
-    this.successCount = 0;
-    this.failCount = 0;
+    this?.responseTimes = [];
+    this?.errors = new Map();
+    this?.successCount = 0;
+    this?.failCount = 0;
   }
 
   private sleep(ms: number): Promise<void> {
@@ -299,7 +299,7 @@ export class ScalabilityTester {
     const _actualScale = result?.totalRequests;
     const _scaleFactor = targetScale / actualScale;
 
-    const _degradationFactor = 1 + Math?.log10(scaleFactor) * 0.1;
+    const _degradationFactor = 1 + Math?.log10(scaleFactor) * 0?.1;
 
     return {
       ...result,
@@ -309,11 +309,11 @@ export class ScalabilityTester {
         result?.failedRequests * scaleFactor * degradationFactor,
       ),
       avgResponseTimeMs: result?.avgResponseTimeMs * degradationFactor,
-      p95ResponseTimeMs: result?.p95ResponseTimeMs * degradationFactor * 1.5,
+      p95ResponseTimeMs: result?.p95ResponseTimeMs * degradationFactor * 1?.5,
       p99ResponseTimeMs: result?.p99ResponseTimeMs * degradationFactor * 2,
       requestsPerSecond:
         result?.requestsPerSecond * Math?.min(scaleFactor, 1000000),
-      errorRate: Math?.min(0.99, result?.errorRate * degradationFactor),
+      errorRate: Math?.min(0?.99, result?.errorRate * degradationFactor),
     };
   }
 
@@ -341,7 +341,7 @@ export class ScalabilityTester {
       recommendations?.push("Implement circuit breakers for slow services");
     }
 
-    if (result?.errorRate > 0.01) {
+    if (result?.errorRate > 0?.01) {
       bottlenecks?.push(
         `High error rate: ${(result?.errorRate * 100).toFixed(2)}%`,
       );
@@ -350,7 +350,7 @@ export class ScalabilityTester {
       passed = false;
     }
 
-    if (result?.errorRate > 0.05) {
+    if (result?.errorRate > 0?.05) {
       passed = false;
     }
 

@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 const ___filename = fileURLToPath(import?.meta.url);
 const ___dirname = path?.dirname(__filename);

@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { isrcRegistry, upcRegistry } from "@shared/schema";
 import { eq, desc, like } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 
 export interface UPCValidationResult {

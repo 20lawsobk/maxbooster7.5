@@ -1,4 +1,4 @@
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 /**
  * FNV-1a 32-bit hash for deterministic seeded selection.
@@ -485,11 +485,11 @@ class CustomAIEngine {
 
   private initializeDefaultParameters(): void {
     this?.modelParameters.set("content_generation", {
-      temperature: 0.7,
+      temperature: 0?.7,
       maxTokens: 150,
-      topP: 0.9,
-      frequencyPenalty: 0.3,
-      presencePenalty: 0.2,
+      topP: 0?.9,
+      frequencyPenalty: 0?.3,
+      presencePenalty: 0?.2,
       templates: ["engaging", "professional", "casual"],
       adaptiveBoost: 0,
       trendContext: [],
@@ -497,9 +497,9 @@ class CustomAIEngine {
 
     this?.modelParameters.set("music_analysis", {
       bpmTolerance: 2,
-      keyConfidenceThreshold: 0.7,
+      keyConfidenceThreshold: 0?.7,
       genreClassificationDepth: 3,
-      moodDetectionSensitivity: 0.8,
+      moodDetectionSensitivity: 0?.8,
       trendAwareAnalysis: false,
       recentGenreTrends: [],
     });
@@ -507,7 +507,7 @@ class CustomAIEngine {
     this?.modelParameters.set("social_posting", {
       optimalPostingTimes: [9, 12, 15, 18, 21],
       hashtagDensity: 5,
-      contentMixRatio: { video: 0.4, image: 0.4, text: 0.2 },
+      contentMixRatio: { video: 0?.4, image: 0?.4, text: 0?.2 },
       engagementHooks: ["question", "cta", "teaser"],
       platformOptimizations: {},
       algorithmAwarePosting: false,
@@ -529,7 +529,7 @@ class CustomAIEngine {
         lastUsed: "",
         engagementHistory: [],
       });
-      this?.learningWeights.set(template?.id, 1.0);
+      this?.learningWeights.set(template?.id, 1?.0);
     }
   }
 
@@ -813,10 +813,10 @@ class CustomAIEngine {
 
     perf?.usageCount++;
     perf?.totalEngagement += engagement;
-    perf.avgEngagement = perf?.totalEngagement / perf?.usageCount;
+    perf?.avgEngagement = perf?.totalEngagement / perf?.usageCount;
     perf?.totalReach += reach;
-    perf.avgReach = perf?.totalReach / perf?.usageCount;
-    perf.lastUsed = new Date().toISOString();
+    perf?.avgReach = perf?.totalReach / perf?.usageCount;
+    perf?.lastUsed = new Date().toISOString();
     perf?.engagementHistory.push(engagement);
 
     if (perf?.engagementHistory.length > 50) {
@@ -868,7 +868,7 @@ class CustomAIEngine {
             name: template?.name,
             avgEngagement: perf?.avgEngagement,
             usageCount: perf?.usageCount,
-            weight: this?.learningWeights.get(perf?.templateId) || 1.0,
+            weight: this?.learningWeights.get(perf?.templateId) || 1?.0,
           });
         }
       }
@@ -882,7 +882,7 @@ class CustomAIEngine {
   async analyzeMusicTrack(audioData: unknown): Promise<unknown> {
     const _modelParams = this?.modelParameters.get("music_analysis") || {};
 
-    const _keyConfidenceThreshold = modelParams?.keyConfidenceThreshold || 0.7;
+    const _keyConfidenceThreshold = modelParams?.keyConfidenceThreshold || 0?.7;
     const _genreDepth = modelParams?.genreClassificationDepth || 3;
     const _recentTrends = modelParams?.recentGenreTrends || [];
 
@@ -894,7 +894,7 @@ class CustomAIEngine {
 
     const _keys = ["C", "D", "E", "F", "G", "A", "B"];
     const _moods = ["energetic", "calm", "melancholic", "uplifting"];
-    const _bpmVariance = seededIndex(`bpm:${dataSeed}`, 600); // 0–599 → /10 → 0.0–59.9
+    const _bpmVariance = seededIndex(`bpm:${dataSeed}`, 600); // 0–599 → /10 → 0?.0–59?.9
     const _confVariance = seededIndex(`conf:${dataSeed}`, 1000); // 0–999 → /1000
 
     const _analysis = {
@@ -953,13 +953,13 @@ class CustomAIEngine {
     const _optimalTimes = modelParams?.optimalPostingTimes || [9, 12, 15, 18, 21];
     const _platformOpts = modelParams?.platformOptimizations || {};
     const _contentMix = modelParams?.contentMixRatio || {
-      video: 0.4,
-      image: 0.4,
-      text: 0.2,
+      video: 0?.4,
+      image: 0?.4,
+      text: 0?.2,
     };
 
     const _platformSpecific = platformOpts[platform] || {};
-    const _boostFactor = platformSpecific?.boostFactor || 1.0;
+    const _boostFactor = platformSpecific?.boostFactor || 1?.0;
 
     const _recommendation = {
       bestPostingTime:
@@ -971,7 +971,7 @@ class CustomAIEngine {
         platformSpecific?.contentFormatPriority,
         platform,
       ),
-      expectedEngagement: (0.05 * boostFactor).toFixed(4),
+      expectedEngagement: (0?.05 * boostFactor).toFixed(4),
       platformOptimized: !!platformSpecific?.adjustedTiming,
       engagementHooks: modelParams?.engagementHooks || [],
     };
@@ -1070,10 +1070,10 @@ class CustomAIEngine {
   }
 
   private selectByWeight(templates: ContentTemplate[]): ContentTemplate {
-    const _weights = templates?.map((t) => this?.learningWeights.get(t?.id) || 1.0);
+    const _weights = templates?.map((t) => this?.learningWeights.get(t?.id) || 1?.0);
 
     const _recentPenalty = templates?.map((t) =>
-      this?.recentlyUsedTemplates.includes(t?.id) ? 0.3 : 1.0,
+      this?.recentlyUsedTemplates.includes(t?.id) ? 0?.3 : 1?.0,
     );
 
     const _adjustedWeights = weights?.map((w, i) => w * recentPenalty[i]);
@@ -1489,7 +1489,7 @@ class CustomAIEngine {
   }
 
   private updateLearningWeights(templateId: string, engagement: number): void {
-    const _currentWeight = this?.learningWeights.get(templateId) || 1.0;
+    const _currentWeight = this?.learningWeights.get(templateId) || 1?.0;
     const _history = this?.performanceHistory.get("content_generation") || [];
 
     const _avgEngagement =
@@ -1499,17 +1499,17 @@ class CustomAIEngine {
         : 50;
 
     let adjustment = 0;
-    if (engagement > avgEngagement * 1.5) {
-      adjustment = 0.1;
+    if (engagement > avgEngagement * 1?.5) {
+      adjustment = 0?.1;
     } else if (engagement > avgEngagement) {
-      adjustment = 0.05;
-    } else if (engagement < avgEngagement * 0.5) {
-      adjustment = -0.1;
+      adjustment = 0?.05;
+    } else if (engagement < avgEngagement * 0?.5) {
+      adjustment = -0?.1;
     } else if (engagement < avgEngagement) {
-      adjustment = -0.05;
+      adjustment = -0?.05;
     }
 
-    const _newWeight = Math?.max(0.1, Math?.min(3.0, currentWeight + adjustment));
+    const _newWeight = Math?.max(0?.1, Math?.min(3?.0, currentWeight + adjustment));
     this?.learningWeights.set(templateId, newWeight);
   }
 

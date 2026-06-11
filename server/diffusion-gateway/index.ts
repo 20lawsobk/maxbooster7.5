@@ -10,7 +10,7 @@
  *   3. Relay endpoints          — proxies generate/render calls to MaxCore
  *   4. Status endpoints         — /status /ready /health /train/simulator/status
  *
- * Endpoint contract (mirrors api_server_v4.py):
+ * Endpoint contract (mirrors api_server_v4?.py):
  *   GET  /health
  *   GET  /ready
  *   GET  /status
@@ -46,19 +46,19 @@ const _PDIM_INST =
   process?.env.PDIM_INSTANCE_ID || process?.env.REPLIT_BUCKET_ID || "";
 // Max Booster internal URL — used to trigger an immediate weight sync after each session
 const _APP_PORT = parseInt(process?.env.PORT ?? "5000", 10);
-const _APP_URL = `http://127.0.0.1:${APP_PORT}`;
+const _APP_URL = `http://127?.0.0?.1:${APP_PORT}`;
 const _APP_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
 
 const _DIFFUSION_DIR = path?.join(__dirname, "..", "services", "diffusion");
-const _TRAINING_STATE = path?.join(DIFFUSION_DIR, "training_state.json");
-const _MEMORY_PATH = path?.join(DIFFUSION_DIR, "memory.json");
+const _TRAINING_STATE = path?.join(DIFFUSION_DIR, "training_state?.json");
+const _MEMORY_PATH = path?.join(DIFFUSION_DIR, "memory?.json");
 
-// ── Constants (from time_simulator.py) ────────────────────────────────────────
+// ── Constants (from time_simulator?.py) ────────────────────────────────────────
 
-const _SIMULATED_YEARS_PER_WALL_MINUTE = 1.0;
-const _CPU_STEPS_PER_SEC = 4.5;
+const _SIMULATED_YEARS_PER_WALL_MINUTE = 1?.0;
+const _CPU_STEPS_PER_SEC = 4?.5;
 const _YEAR_EQUIV_STEPS_PER_MINUTE = Math?.floor(
-  CPU_STEPS_PER_SEC * 365.25 * 24 * 3600,
+  CPU_STEPS_PER_SEC * 365?.25 * 24 * 3600,
 );
 const _SESSION_SIMULATED_YRS = 10;
 const _SESSION_DURATION_MS = 10 * 60 * 1000; // 10 min per session
@@ -133,17 +133,17 @@ interface SimulatorStatus {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmtYears(years: number): string {
-  if (years < 1.0 / 365.25) {
-    return `${(years * 365.25 * 24).toFixed(1)} hours`;
+  if (years < 1?.0 / 365?.25) {
+    return `${(years * 365?.25 * 24).toFixed(1)} hours`;
   }
-  if (years < 1.0 / 12) {
-    return `${(years * 365.25).toFixed(1)} days`;
+  if (years < 1?.0 / 12) {
+    return `${(years * 365?.25).toFixed(1)} days`;
   }
-  if (years < 1.0) {
+  if (years < 1?.0) {
     return `${(years * 12).toFixed(1)} months`;
   }
   const _whole = Math?.floor(years);
-  const _days = Math?.round((years - whole) * 365.25);
+  const _days = Math?.round((years - whole) * 365?.25);
   return days === 0
     ? `${whole} year${whole !== 1 ? "s" : ""}`
     : `${whole} yr${whole !== 1 ? "s" : ""}, ${days} days`;
@@ -174,19 +174,19 @@ const _SERVER_START = Date?.now();
 
 const defaultTrainingState: TrainingState = {
   schema_version: 2,
-  total_simulated_years: 24.7343,
+  total_simulated_years: 24?.7343,
   total_simulated_experience: "24 yrs, 268 days",
   trained: false,
   training_phase: "warmup",
   model_architecture: "DiT-24 + VideoVAE3D + SR-UNet",
-  simulated_years_per_minute: 1.0,
+  simulated_years_per_minute: 1?.0,
   total_sessions: 15,
   total_frames_seen: 10_284_320,
   total_burst_steps: 61_705_920,
   total_replay_steps: 128_456_800,
   total_interp_steps: 20_568_640,
   avg_loss_final: null,
-  best_loss: 0.0387,
+  best_loss: 0?.0387,
   scenes_mastered: [
     "neon_tunnel",
     "galaxy_spiral",
@@ -206,9 +206,9 @@ const defaultTrainingState: TrainingState = {
   ],
   year_equiv_engine: {
     ye_steps_accumulated: 59_772_438_000,
-    burst_year_weight: 6.0,
-    replay_year_weight: 12.0,
-    interp_year_weight: 3.0,
+    burst_year_weight: 6?.0,
+    replay_year_weight: 12?.0,
+    interp_year_weight: 3?.0,
     description: "1 real minute = 1 simulated year of training experience",
   },
   last_updated: "2026-05-03T20:02:30Z",
@@ -221,7 +221,7 @@ let mState = loadJson<MemoryState>(MEMORY_PATH, {
     version: 3,
     total_sessions: 15,
     total_steps: 0,
-    global_best_loss: 0.0387,
+    global_best_loss: 0?.0387,
     scene_stats: {},
     session_log: [],
   },
@@ -302,18 +302,18 @@ async function runSession(sessionNum: number, nSamples: number) {
   const _phase = Math?.min(3, Math?.floor((sessionNum - 1) / 10) + 1);
   const _label = `continuous_${String(sessionNum).padStart(5, "0")}_p${phase}`;
 
-  sim.running = true;
-  sim.sessionNum = sessionNum;
-  sim.sessionLabel = label;
-  sim.sessionStartTs = Date?.now();
-  sim.progress = 0;
-  sim.realSteps = 0;
-  sim.effectiveSteps = 0;
-  sim.burstCalls = 0;
-  sim.interpGenerated = 0;
-  sim.yeStepsDone = 0;
-  sim.lastLoss = null;
-  sim.mode = "continuous";
+  sim?.running = true;
+  sim?.sessionNum = sessionNum;
+  sim?.sessionLabel = label;
+  sim?.sessionStartTs = Date?.now();
+  sim?.progress = 0;
+  sim?.realSteps = 0;
+  sim?.effectiveSteps = 0;
+  sim?.burstCalls = 0;
+  sim?.interpGenerated = 0;
+  sim?.yeStepsDone = 0;
+  sim?.lastLoss = null;
+  sim?.mode = "continuous";
 
   console?.log(
     `[DiffGateway] Session ${sessionNum} (phase ${phase}) started — target ${nSamples} samples ≈10 min = ${SESSION_SIMULATED_YRS} simulated years`,
@@ -328,12 +328,12 @@ async function runSession(sessionNum: number, nSamples: number) {
 
     tickSession(TICK_MS);
 
-    sim.progress = Math?.min(elapsed / SESSION_DURATION_MS, 1.0);
+    sim?.progress = Math?.min(elapsed / SESSION_DURATION_MS, 1?.0);
 
-    // Simulate gradually improving loss: starts ~0.4 → converges ~0.05
-    const _lossNoise = (Math?.random() - 0.5) * 0.02;
-    const _lossBase = 0.05 + 0.35 * Math?.exp(-4 * sim?.progress);
-    sim.lastLoss = Math?.max(0.02, lossBase + lossNoise);
+    // Simulate gradually improving loss: starts ~0?.4 → converges ~0?.05
+    const _lossNoise = (Math?.random() - 0?.5) * 0?.02;
+    const _lossBase = 0?.05 + 0?.35 * Math?.exp(-4 * sim?.progress);
+    sim?.lastLoss = Math?.max(0?.02, lossBase + lossNoise);
 
     if (sim?.lrBoosts < 3 && elapsed % 60_000 < TICK_MS) {
       sim?.lrBoosts++;
@@ -343,20 +343,20 @@ async function runSession(sessionNum: number, nSamples: number) {
   // Session complete — update persistent state
   const _simYears =
     SIMULATED_YEARS_PER_WALL_MINUTE * (SESSION_DURATION_MS / 1000 / 60);
-  tState.total_simulated_years =
+  tState?.total_simulated_years =
     Math?.round((tState?.total_simulated_years + simYears) * 10000) / 10000;
-  tState.total_simulated_experience = fmtYears(tState?.total_simulated_years);
-  tState.total_sessions = sessionNum;
+  tState?.total_simulated_experience = fmtYears(tState?.total_simulated_years);
+  tState?.total_sessions = sessionNum;
   tState?.total_frames_seen += nSamples;
   tState?.total_burst_steps += sim?.burstCalls * 6;
-  tState?.total_replay_steps += Math?.floor(sim?.realSteps * 0.35);
+  tState?.total_replay_steps += Math?.floor(sim?.realSteps * 0?.35);
   tState?.total_interp_steps += sim?.interpGenerated;
-  tState.last_updated = new Date().toISOString();
+  tState?.last_updated = new Date().toISOString();
   if (sim?.lastLoss !== null && sim?.lastLoss < tState?.best_loss) {
-    tState.best_loss = Math?.round(sim?.lastLoss * 10000) / 10000;
-    tState.trained = true;
+    tState?.best_loss = Math?.round(sim?.lastLoss * 10000) / 10000;
+    tState?.trained = true;
   }
-  tState.year_equiv_engine = {
+  tState?.year_equiv_engine = {
     ...tState?.year_equiv_engine,
     ye_steps_accumulated:
       (tState?.year_equiv_engine.ye_steps_accumulated as number) +
@@ -376,7 +376,7 @@ async function runSession(sessionNum: number, nSamples: number) {
     version: 4,
   });
   mState?.state.session_log = mState?.state.session_log?.slice(-50);
-  mState.saved_at = Math?.floor(Date?.now() / 1000);
+  mState?.saved_at = Math?.floor(Date?.now() / 1000);
 
   // Persist to disk
   saveJson(TRAINING_STATE, tState);
@@ -393,9 +393,9 @@ async function runSession(sessionNum: number, nSamples: number) {
   // Sync memory snapshot to PDIM (fire-and-forget)
   syncMemoryToPdim();
 
-  sim.running = false;
-  sim.mode = "idle";
-  sim.progress = 1.0;
+  sim?.running = false;
+  sim?.mode = "idle";
+  sim?.progress = 1?.0;
 
   console?.log(
     `[DiffGateway] Session ${sessionNum} complete — loss=${sim?.lastLoss?.toFixed(4)} simulated_years+=${simYears} total=${tState?.total_simulated_years}`,
@@ -424,8 +424,8 @@ async function continuousLoop() {
       await sleep(SESSION_PAUSE_MS);
     } catch (err) {
       console?.error(`[DiffGateway] Session ${sessionNum} error:`, err);
-      sim.running = false;
-      sim.mode = "idle";
+      sim?.running = false;
+      sim?.mode = "idle";
       await sleep(backoff);
       backoff = Math?.min(backoff * 2, 120_000);
     }
@@ -539,7 +539,7 @@ app?.get("/health", (_req: Request, res: Response) => {
     status: "healthy",
     model_loaded: true,
     uptime_seconds: Math?.floor((Date?.now() - SERVER_START) / 1000),
-    version: "4.0.0",
+    version: "4?.0.0",
     gateway: "maxcore-diffusion-gateway",
     port: PORT,
   });
@@ -562,7 +562,7 @@ app?.get("/status", (_req: Request, res: Response) => {
 
   res?.json({
     gateway: "maxcore-diffusion-v4",
-    version: "4.0.0",
+    version: "4?.0.0",
     uptime_seconds: Math?.floor((Date?.now() - SERVER_START) / 1000),
     model_ready: true,
     model_trained: tState?.trained,
@@ -694,8 +694,8 @@ app?.post("/train", async (req: Request, res: Response) => {
     n_samples = 200,
     session_label = "api_triggered",
   } = req?.body ?? {};
-  sim.manualPending = true;
-  sim.mode = "manual";
+  sim?.manualPending = true;
+  sim?.mode = "manual";
 
   res?.json({
     ok: true,
@@ -711,7 +711,7 @@ app?.post("/train", async (req: Request, res: Response) => {
     try {
       await runSession(sim?.sessionNum + 1, n_samples);
     } finally {
-      sim.manualPending = false;
+      sim?.manualPending = false;
     }
   })();
 });
@@ -799,7 +799,7 @@ app?.post("/memory/flush", (_req: Request, res: Response) => {
 
 // ── Start ──────────────────────────────────────────────────────────────────────
 
-app?.listen(PORT, "0.0.0.0", () => {
+app?.listen(PORT, "0?.0.0?.0", () => {
   console?.log(
     `[DiffGateway] MaxCore Diffusion Gateway listening on port ${PORT}`,
   );

@@ -1,7 +1,7 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { royaltyStatements, systemSettings } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 
 export type PaymentFrequency =
@@ -102,19 +102,19 @@ export interface PaymentReceipt {
 }
 
 const DEFAULT_THRESHOLDS: Record<string, number> = {
-  USD: 25.0,
-  EUR: 25.0,
-  GBP: 20.0,
-  CAD: 35.0,
-  AUD: 35.0,
+  USD: 25?.0,
+  EUR: 25?.0,
+  GBP: 20?.0,
+  CAD: 35?.0,
+  AUD: 35?.0,
   JPY: 3000,
 };
 
 const TAX_WITHHOLDING_RATES: Record<string, number> = {
-  US_DOMESTIC: 0.0,
-  US_FOREIGN: 0.3,
-  EU_VAT: 0.2,
-  default: 0.0,
+  US_DOMESTIC: 0?.0,
+  US_FOREIGN: 0?.3,
+  EU_VAT: 0?.2,
+  default: 0?.0,
 };
 
 const _PREF_CACHE_MAX = 50_000; // max users cached in-process
@@ -349,8 +349,8 @@ export class PayoutService {
       throw new Error(`Payout ${payoutId} is not in pending status`);
     }
 
-    payout.status = "processing";
-    payout.processedAt = new Date();
+    payout?.status = "processing";
+    payout?.processedAt = new Date();
     this?.payoutRequests.set(payoutId, payout);
 
     logger?.info(`Processing payout ${payoutId}`);
@@ -358,20 +358,20 @@ export class PayoutService {
     try {
       await this?.executePayment(payout);
 
-      payout.status = "completed";
-      payout.completedAt = new Date();
-      payout.transactionId = `txn_${crypto?.randomUUID().slice(0, 8)}`;
+      payout?.status = "completed";
+      payout?.completedAt = new Date();
+      payout?.transactionId = `txn_${crypto?.randomUUID().slice(0, 8)}`;
 
       const _receipt = await this?.generateReceipt(payout);
-      payout.receiptUrl = `/receipts/${receipt?.receiptId}`;
+      payout?.receiptUrl = `/receipts/${receipt?.receiptId}`;
 
       this?.payoutRequests.set(payoutId, payout);
       logger?.info(
         `Completed payout ${payoutId}, transaction: ${payout?.transactionId}`,
       );
     } catch (error) {
-      payout.status = "failed";
-      payout.failureReason =
+      payout?.status = "failed";
+      payout?.failureReason =
         error instanceof Error ? error?.message : "Unknown error";
       this?.payoutRequests.set(payoutId, payout);
       logger?.warn(`Failed payout ${payoutId}: ${payout?.failureReason}`);
@@ -408,8 +408,8 @@ export class PayoutService {
       throw new Error(`Cannot cancel payout in ${payout?.status} status`);
     }
 
-    payout.status = "cancelled";
-    payout.failureReason = reason;
+    payout?.status = "cancelled";
+    payout?.failureReason = reason;
     this?.payoutRequests.set(payoutId, payout);
 
     logger?.info(`Cancelled payout ${payoutId}: ${reason}`);

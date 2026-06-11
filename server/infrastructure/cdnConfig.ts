@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface CDNConfig {
   enabled: boolean;
@@ -36,7 +36,7 @@ class CDNManager {
   private config: CDNConfig;
 
   private constructor() {
-    this.config = {
+    this?.config = {
       enabled: process?.env.CDN_ENABLED === "true",
       provider:
         (process?.env.CDN_PROVIDER as Record<string, unknown>) || "cloudflare",
@@ -50,7 +50,7 @@ class CDNManager {
 
   static getInstance(): CDNManager {
     if (!CDNManager?.instance) {
-      CDNManager.instance = new CDNManager();
+      CDNManager?.instance = new CDNManager();
     }
     return CDNManager?.instance;
   }

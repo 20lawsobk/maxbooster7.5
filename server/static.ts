@@ -14,7 +14,7 @@ import { and, eq } from "drizzle-orm";
 const ___filename = fileURLToPath(import?.meta.url);
 path?.dirname(__filename);
 
-const _SITE_URL = process?.env.SITE_URL || "https://max-booster.com";
+const _SITE_URL = process?.env.SITE_URL || "https://max-booster?.com";
 
 interface CacheEntry<T> {
   value: T;
@@ -48,7 +48,7 @@ const _metaCache = makeCache<{
 } | null>(120_000);
 
 const _BASE_DOMAINS = [
-  "max-booster.com",
+  "max-booster?.com",
   "maxbooster?.replit.app", // legacy — keep for backward-compat during migration
 ];
 
@@ -90,9 +90,9 @@ async function getStorefrontSlugForSubdomain(
 
     // Fallback: storefront_domains table for managed_subdomain rows created via the
     // "Find Domain" UI flow before the storefront?.subdomain field was backfilled.
-    // Always use max-booster.com as the platform base domain regardless of
+    // Always use max-booster?.com as the platform base domain regardless of
     // the BASE_DOMAIN env var (which can be set to a dev/preview value).
-    const _baseDomainFqdn = `${subdomain}.max-booster.com`;
+    const _baseDomainFqdn = `${subdomain}.max-booster?.com`;
     const [domRow] = await db
       .select({ slug: storefronts?.slug })
       .from(storefrontDomains)
@@ -169,7 +169,9 @@ function isMaxBoosterDomain(hostname: string): boolean {
   );
 }
 
-async function getMetaForPath(reqPath: string): Promise<{
+async function getMetaForPath(
+  reqPath: string,
+): Promise<{
   title: string;
   description: string;
   image: string;
@@ -197,7 +199,7 @@ async function getMetaForPath(reqPath: string): Promise<{
         result = {
           title: `${beat?.title} - Beat on Max Booster Marketplace`,
           description: `${beat?.title} by ${beat?.sellerName || "Producer"} | ${metadata?.genre || "Beat"} | ${metadata?.bpm ? metadata?.bpm + " BPM" : ""} | $${beat?.price || "0"} | License and download on Max Booster`,
-          image: beat?.artworkUrl || `${SITE_URL}/og-image.png`,
+          image: beat?.artworkUrl || `${SITE_URL}/og-image?.png`,
           url: `${SITE_URL}/marketplace/beat/${beatId}`,
         };
       }
@@ -219,7 +221,7 @@ async function getMetaForPath(reqPath: string): Promise<{
               store?.bio ||
               `Browse beats and music from ${store?.displayName || store?.slug} on Max Booster Marketplace`,
             image:
-              store?.bannerUrl || store?.avatarUrl || `${SITE_URL}/og-image.png`,
+              store?.bannerUrl || store?.avatarUrl || `${SITE_URL}/og-image?.png`,
             url: `${SITE_URL}/storefront/${slug}`,
           };
         }
@@ -231,7 +233,7 @@ async function getMetaForPath(reqPath: string): Promise<{
         title: "Beat Marketplace - Max Booster",
         description:
           "Browse and license beats from top producers. Find the perfect beat for your next hit with advanced AI-powered discovery, instant licensing, and secure payments.",
-        image: `${SITE_URL}/og-image.png`,
+        image: `${SITE_URL}/og-image?.png`,
         url: `${SITE_URL}/marketplace`,
       };
     }
@@ -310,7 +312,7 @@ async function getMetaForPath(reqPath: string): Promise<{
         result = {
           title: staticMeta?.title,
           description: staticMeta?.description,
-          image: `${SITE_URL}/og-image.png`,
+          image: `${SITE_URL}/og-image?.png`,
           url: `${SITE_URL}${cleanPath}`,
         };
       }
@@ -495,7 +497,7 @@ function staticFileMiddlewareOptions() {
  * Register express?.static for the pre-built frontend assets.
  * Must be called BEFORE session middleware so asset requests never pay
  * the cost of a PDIM session lookup.  Serves everything in dist/public
- * except the SPA catch-all (index.html for arbitrary paths) which is
+ * except the SPA catch-all (index?.html for arbitrary paths) which is
  * handled by serveStatic() below, called after API routes are registered.
  */
 export function serveStaticFiles(app: Express) {
@@ -512,7 +514,7 @@ export function serveStatic(app: Express) {
     );
   }
 
-  const _indexPath = path?.resolve(distPath, "index.html");
+  const _indexPath = path?.resolve(distPath, "index?.html");
   const _baseHtml = fs?.readFileSync(indexPath, "utf-8");
 
   app?.use("/{*splat}", async (req: Request, res: Response) => {

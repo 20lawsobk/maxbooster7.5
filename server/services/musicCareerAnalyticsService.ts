@@ -171,7 +171,7 @@ export async function predictCareerGrowth(
     growthRate: Number(growthRate?.toFixed(2)),
     timeline,
     recommendations,
-    confidence: Math?.min(0.95, 0.6 + historicalData?.length / 100),
+    confidence: Math?.min(0?.95, 0?.6 + historicalData?.length / 100),
   };
 }
 
@@ -259,7 +259,7 @@ export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
     engagement: 0,
   };
 
-  const _engagementRate = Number(stats?.engagement) || 3.5;
+  const _engagementRate = Number(stats?.engagement) || 3?.5;
 
   const growthOpportunities: string[] = [];
 
@@ -293,7 +293,7 @@ export async function analyzeFanbase(userId: string): Promise<FanbaseInsight> {
 
   return {
     totalFans: Number(stats?.totalListeners) || 0,
-    activeListeners: Math?.round((Number(stats?.totalListeners) || 0) * 0.6),
+    activeListeners: Math?.round((Number(stats?.totalListeners) || 0) * 0?.6),
     engagementRate: Number(engagementRate?.toFixed(2)),
     topPlatforms: [
       { platform: "Spotify", percentage: 45 },

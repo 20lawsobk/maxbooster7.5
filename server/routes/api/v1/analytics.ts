@@ -3,9 +3,9 @@ import { db } from "../../../db";
 import { analytics, projects, users } from "@shared/schema";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 import { apiKeyService, ApiKeyRequest } from "../../../services/apiKeyService";
-import { logger } from "../../../logger.js";
+import { logger } from "../../../logger?.js";
 import { advancedAnalyticsService } from "../../../services/advancedAnalyticsService";
-import { distributedCache } from "../../../infrastructure/distributedCache.js";
+import { distributedCache } from "../../../infrastructure/distributedCache?.js";
 
 const _router = Router();
 
@@ -612,11 +612,13 @@ router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
       !playlistType ||
       !action
     ) {
-      return res.status(400).json({
-        error: "Bad Request",
-        message:
-          "Missing required fields: trackId, playlistId, playlistName, platform, playlistType, action",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Bad Request",
+          message:
+            "Missing required fields: trackId, playlistId, playlistName, platform, playlistType, action",
+        });
     }
 
     await advancedAnalyticsService?.trackPlaylistJourney(userId, {
@@ -760,10 +762,12 @@ router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
     const { query } = req?.body;
 
     if (!query || typeof query !== "string") {
-      return res.status(400).json({
-        error: "Bad Request",
-        message: "Query is required and must be a string",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Bad Request",
+          message: "Query is required and must be a string",
+        });
     }
 
     const _result = await advancedAnalyticsService?.processNlpQuery(
@@ -809,14 +813,14 @@ router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
       period?: "daily" | "weekly" | "monthly" | "yearly";
     } = {};
 
-    if (trackId) options.trackId = trackId as string;
-    if (startDate) options.startDate = new Date(startDate as string);
-    if (endDate) options.endDate = new Date(endDate as string);
+    if (trackId) options?.trackId = trackId as string;
+    if (startDate) options?.startDate = new Date(startDate as string);
+    if (endDate) options?.endDate = new Date(endDate as string);
     if (
       period &&
       ["daily", "weekly", "monthly", "yearly"].includes(period as string)
     ) {
-      options.period = period as "daily" | "weekly" | "monthly" | "yearly";
+      options?.period = period as "daily" | "weekly" | "monthly" | "yearly";
     }
 
     const _historicalData = await advancedAnalyticsService?.getHistoricalData(

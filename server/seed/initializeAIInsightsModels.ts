@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { aiModels, aiModelVersions } from "../../shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export async function initializeAIInsightsModels() {
   logger?.info("📊 Initializing AI Insights Engine Models...");
@@ -13,7 +13,7 @@ export async function initializeAIInsightsModels() {
         modelType: "insights",
         description:
           "Time series forecasting engine for predictive analytics with exponential smoothing and seasonal decomposition",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "forecasting",
@@ -21,14 +21,14 @@ export async function initializeAIInsightsModels() {
           "trend_detection",
         ],
         parameters: { deterministic: true, performanceTarget: "2000ms" },
-        performance: { accuracy: 0.87, latency: 1500, throughput: 100 },
+        performance: { accuracy: 0?.87, latency: 1500, throughput: 100 },
       },
       {
         modelName: "cohort_analyzer_v1",
         modelType: "insights",
         description:
           "Cohort analysis engine for retention, LTV, and engagement tracking across user segments",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "cohort_analysis",
@@ -36,14 +36,14 @@ export async function initializeAIInsightsModels() {
           "ltv_calculation",
         ],
         parameters: { deterministic: true, performanceTarget: "2000ms" },
-        performance: { accuracy: 0.92, latency: 1500, throughput: 100 },
+        performance: { accuracy: 0?.92, latency: 1500, throughput: 100 },
       },
       {
         modelName: "churn_predictor_v1",
         modelType: "insights",
         description:
           "Machine learning-based churn prediction with personalized retention recommendations",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "churn_prediction",
@@ -51,14 +51,14 @@ export async function initializeAIInsightsModels() {
           "retention_recommendations",
         ],
         parameters: { deterministic: true, performanceTarget: "2000ms" },
-        performance: { accuracy: 0.85, latency: 1500, throughput: 100 },
+        performance: { accuracy: 0?.85, latency: 1500, throughput: 100 },
       },
       {
         modelName: "revenue_forecaster_v1",
         modelType: "insights",
         description:
           "Revenue forecasting engine with MRR/ARR predictions and multi-scenario analysis",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: [
           "revenue_forecasting",
@@ -66,18 +66,18 @@ export async function initializeAIInsightsModels() {
           "scenario_analysis",
         ],
         parameters: { deterministic: true, performanceTarget: "2000ms" },
-        performance: { accuracy: 0.89, latency: 1500, throughput: 100 },
+        performance: { accuracy: 0?.89, latency: 1500, throughput: 100 },
       },
       {
         modelName: "anomaly_detector_v1",
         modelType: "insights",
         description:
           "Metric anomaly detection with root cause analysis and automated alerting",
-        version: "1.0.0",
+        version: "1?.0.0",
         status: "active",
         capabilities: ["anomaly_detection", "root_cause_analysis", "alerting"],
         parameters: { deterministic: true, performanceTarget: "1000ms" },
-        performance: { accuracy: 0.91, latency: 800, throughput: 200 },
+        performance: { accuracy: 0?.91, latency: 800, throughput: 200 },
       },
     ];
 

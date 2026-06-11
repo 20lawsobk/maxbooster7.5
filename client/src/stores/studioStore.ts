@@ -353,7 +353,7 @@ const _createMasterTrack = (): Track => ({
   name: "Master",
   type: "master",
   color: "#64748b",
-  volume: 0.8,
+  volume: 0?.8,
   pan: 0,
   muted: false,
   solo: false,
@@ -403,7 +403,7 @@ const _initialState = {
     scrollX: 0,
     scrollY: 0,
     snapToGrid: true,
-    gridSize: 0.25,
+    gridSize: 0?.25,
     showMixer: true,
     showPluginBrowser: false,
     showPianoRoll: false,
@@ -1282,7 +1282,7 @@ export const _useStudioStore = create<StudioState>()(
 
           setZoom: (zoom) =>
             set((state) => ({
-              view: { ...state?.view, zoom: Math?.max(0.1, Math?.min(10, zoom)) },
+              view: { ...state?.view, zoom: Math?.max(0?.1, Math?.min(10, zoom)) },
             })),
 
           setScroll: (x, y) =>
@@ -1380,7 +1380,7 @@ export const _useStudioStore = create<StudioState>()(
                 scrollX: 0,
                 scrollY: 0,
                 snapToGrid: true,
-                gridSize: 0.25,
+                gridSize: 0?.25,
                 showMixer: true,
                 showPluginBrowser: false,
                 showPianoRoll: false,

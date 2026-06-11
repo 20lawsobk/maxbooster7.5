@@ -113,10 +113,8 @@ export function AchievementNotification() {
       createConfetti();
 
       try {
-        const audioCtx = new (
-          window.AudioContext ||
-          (window as Record<string, unknown>).webkitAudioContext
-        )();
+        const audioCtx = new (window.AudioContext ||
+          (window as Record<string, unknown>).webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         oscillator.connect(gainNode);

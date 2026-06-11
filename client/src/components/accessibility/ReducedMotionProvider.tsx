@@ -1,10 +1,4 @@
-import {
-  createContext,
-  useContext,
-  type ReactNode,
-  useMemo,
-  useCallback,
-} from "react";
+import { createContext, useContext, type ReactNode, useMemo, useCallback } from "react";
 import {
   useReducedMotion,
   type ReducedMotionResult,

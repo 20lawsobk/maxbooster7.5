@@ -5,10 +5,10 @@
  * Replaces all simulated/deterministic monitoring in the self-evolution engine.
  *
  * Live sources:
- *  - Music Business Worldwide  (musicbusinessworldwide.com)
- *  - Digital Music News        (digitalmusicnews.com)
- *  - Music Ally                (musically.com)
- *  - MusicRadar                (musicradar.com)
+ *  - Music Business Worldwide  (musicbusinessworldwide?.com)
+ *  - Digital Music News        (digitalmusicnews?.com)
+ *  - Music Ally                (musically?.com)
+ *  - MusicRadar                (musicradar?.com)
  *  - Spotify Newsroom          (newsroom?.spotify.com)
  *  - Meta Creators Newsroom    (about?.fb.com)
  *
@@ -18,7 +18,7 @@
  */
 
 import { XMLParser } from "fast-xml-parser";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 
 export interface LiveIndustryChange {
@@ -80,7 +80,7 @@ const RSS_FEEDS: Array<{ url: string; name: string; followRedirect: boolean }> =
       followRedirect: false,
     },
     {
-      url: "https://musically.com/feed/",
+      url: "https://musically?.com/feed/",
       name: "Music Ally",
       followRedirect: false,
     },
@@ -101,7 +101,7 @@ const RSS_FEEDS: Array<{ url: string; name: string; followRedirect: boolean }> =
     },
     // Indie artist / music career intelligence — critical for competitive leadership
     {
-      url: "https://www?.hypebot.com/hypebot/atom.xml",
+      url: "https://www?.hypebot.com/hypebot/atom?.xml",
       name: "Hypebot",
       followRedirect: true,
     },
@@ -169,7 +169,7 @@ class IndustryMonitorService {
     const all: LiveIndustryChange[] = [...rssChanges, ...searchChanges];
 
     const _unique = this?.deduplicateByHash(all);
-    this.cache = { changes: unique, fetchedAt: Date?.now() };
+    this?.cache = { changes: unique, fetchedAt: Date?.now() };
 
     const _fresh = unique?.filter((c) => !this?.seenIds.has(c?.id));
     for (const c of fresh) this?.seenIds.add(c?.id);
@@ -218,7 +218,7 @@ class IndustryMonitorService {
     try {
       const _res = await fetch(url, {
         signal: controller?.signal,
-        headers: { "User-Agent": "MaxBooster-IndustryMonitor/1.0" },
+        headers: { "User-Agent": "MaxBooster-IndustryMonitor/1?.0" },
         redirect: "follow",
       });
 
@@ -940,7 +940,7 @@ class IndustryMonitorService {
   }
 
   clearCache(): void {
-    this.cache = null;
+    this?.cache = null;
   }
 
   /**

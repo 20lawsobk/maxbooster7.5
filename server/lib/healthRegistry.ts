@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export type HealthStatus = "ok" | "degraded" | "down" | "unknown";
 
@@ -99,7 +99,7 @@ export function registerCoreProbes(): void {
   // DB probe
   healthRegistry?.register("database", async () => {
     try {
-      const { db } = await import("../db.js");
+      const { db } = await import("../db?.js");
       await (db as Record<string, unknown>).execute?.("SELECT 1");
       return { status: "ok" };
     } catch (e) {
@@ -111,7 +111,7 @@ export function registerCoreProbes(): void {
   // platform falls back to in-memory rate limiting.
   healthRegistry?.register("redis", async () => {
     try {
-      const { getRedisClient } = await import("./redisConnectionFactory.js");
+      const { getRedisClient } = await import("./redisConnectionFactory?.js");
       const _client = await getRedisClient();
       if (!client) return { status: "degraded", detail: "no client" };
       await (client as Record<string, unknown>).ping?.();
@@ -124,7 +124,7 @@ export function registerCoreProbes(): void {
   // Audit subsystem probe
   healthRegistry?.register("audit", async () => {
     try {
-      const _mod = await import("../audit-system.js");
+      const _mod = await import("../audit-system?.js");
       const _audit =
         (mod as Record<string, unknown>).default?.getInstance?.() ??
         (mod as Record<string, unknown>).AuditSystem?.getInstance?.();
@@ -143,7 +143,7 @@ export function registerCoreProbes(): void {
   // Automation subsystem probe
   healthRegistry?.register("automation", async () => {
     try {
-      const _mod = await import("../automation-system.js");
+      const _mod = await import("../automation-system?.js");
       const _auto =
         (mod as Record<string, unknown>).default?.getInstance?.() ??
         (mod as Record<string, unknown>).AutomationSystem?.getInstance?.();

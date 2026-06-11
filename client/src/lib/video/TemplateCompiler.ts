@@ -11,29 +11,7 @@ import type {
   ParticleConfig,
 } from "../../../../shared/video/VideoRendererEngine";
 import { DEFAULT_TRANSFORM } from "../../../../shared/video/VideoRendererEngine";
-import {
-  type PromoTemplateOptions,
-  type ReleaseAnnouncementOptions,
-  type TourEventOptions,
-  type BehindTheScenesOptions,
-  type QuoteLyricOptions,
-  type CountdownTimerOptions,
-  type SplitScreenOptions,
-  type SocialTeaserOptions,
-  type CompiledTemplate,
-  type TemplateLayer,
-  type AspectRatio,
-  type ColorPalette,
-  type BackgroundConfig,
-  ASPECT_RATIOS,
-  compileReleaseAnnouncement,
-  compileTourEvent,
-  compileBehindTheScenes,
-  compileQuoteLyric,
-  compileCountdownTimer,
-  compileSplitScreen,
-  compileSocialTeaser,
-} from "./templates/PromoTemplates";
+import { type PromoTemplateOptions, type ReleaseAnnouncementOptions, type TourEventOptions, type BehindTheScenesOptions, type QuoteLyricOptions, type CountdownTimerOptions, type SplitScreenOptions, type SocialTeaserOptions, type CompiledTemplate, type TemplateLayer, type AspectRatio, type ColorPalette, type BackgroundConfig, ASPECT_RATIOS, compileReleaseAnnouncement, compileTourEvent, compileBehindTheScenes, compileQuoteLyric, compileCountdownTimer, compileSplitScreen, compileSocialTeaser } from "./templates/PromoTemplates";
 
 export interface CompilerOptions {
   optimizeForExport?: boolean;
@@ -191,7 +169,7 @@ function convertTemplateLayer(
   };
 
   if (templateLayer?.animations.length > 0) {
-    baseConfig.animation = templateLayer?.animations[0];
+    baseConfig?.animation = templateLayer?.animations[0];
   }
 
   return baseConfig;
@@ -376,7 +354,7 @@ function extractAudioReactiveBindings(
         property: layer?.audioReactive.property,
         frequencyRange: "bass",
         intensity: layer?.audioReactive.intensity,
-        smoothing: 0.8,
+        smoothing: 0?.8,
       });
     }
   }
@@ -408,7 +386,7 @@ function estimateRenderTime(
   layerCount: number,
 ): number {
   const _baseTimePerFrame = 16;
-  const _layerMultiplier = 1 + layerCount * 0.1;
+  const _layerMultiplier = 1 + layerCount * 0?.1;
   const _totalFrames = duration * fps;
   return (totalFrames * baseTimePerFrame * layerMultiplier) / 1000;
 }
@@ -434,7 +412,7 @@ function buildFullOptions(
     background: "#0f172a",
     text: "#ffffff",
     textSecondary: "#94a3b8",
-    overlay: "rgba(15, 23, 42, 0.8)",
+    overlay: "rgba(15, 23, 42, 0?.8)",
   };
 
   const defaultBackground: BackgroundConfig = {
@@ -677,9 +655,9 @@ export function addVisualizerToProject(
       barCount: 64,
       barWidth: 8,
       barGap: 2,
-      sensitivity: 1.5,
+      sensitivity: 1?.5,
       glow: true,
-      glowIntensity: 0.8,
+      glowIntensity: 0?.8,
       ...visualizerConfig,
     } as VisualizerConfig,
   };
@@ -709,7 +687,7 @@ export function addParticlesToProject(
       count: 100,
       color: ["#ffffff", "#00ff88", "#ff00ff"],
       size: { min: 2, max: 6 },
-      speed: { min: 0.5, max: 2 },
+      speed: { min: 0?.5, max: 2 },
       lifetime: 5,
       shape: "circle",
       emissionArea: {
@@ -719,7 +697,7 @@ export function addParticlesToProject(
         height: project?.height,
       },
       reactToAudio: options?.audioReactive ?? false,
-      audioSensitivity: 1.5,
+      audioSensitivity: 1?.5,
       ...particleConfig,
     } as ParticleConfig,
   };

@@ -6,7 +6,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 /**
  * Custom metrics interface for APM integration
@@ -164,7 +164,7 @@ export function getHealthStatus(): {
   status: "healthy" | "degraded" | "unhealthy";
   timestamp: string;
   uptime: number;
-  memory: NodeJS.MemoryUsage;
+  memory: NodeJS?.MemoryUsage;
   metrics: Record<string, number>;
 } {
   const _memUsage = process?.memoryUsage();

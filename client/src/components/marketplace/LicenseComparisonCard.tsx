@@ -11,18 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import {
-  Check,
-  X,
-  Info,
-  Crown,
-  Shield,
-  Music,
-  Clock,
-  Infinity as InfinityIcon,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Check, X, Info, Crown, Shield, Music, Clock, Infinity as InfinityIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,

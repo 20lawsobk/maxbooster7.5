@@ -1,13 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 import { useStudioStore, LyricLine } from "@/lib/studioStore";
-import {
-  Plus,
-  Trash2,
-  Music2,
-  GripVertical,
-  Maximize2,
-  FileText,
-} from "lucide-react";
+import { Plus, Trash2, Music2, GripVertical, Maximize2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

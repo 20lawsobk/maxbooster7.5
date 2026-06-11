@@ -2,17 +2,13 @@ import { db } from "../db";
 import { pluginCatalog, pluginInstances, pluginPresets } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   EXPANDED_INSTRUMENTS,
   EXPANDED_EFFECTS,
   ALL_PLUGINS,
 } from "./plugins/index";
-import {
-  getEffectProcessor,
-  getInstrumentSynthesizer,
-  getProcessorInfo,
-} from "./dsp/index";
+import { getEffectProcessor, getInstrumentSynthesizer, getProcessorInfo } from "./dsp/index";
 
 export type {
   PluginCategory,
@@ -22,7 +18,7 @@ export type {
   PluginDefinition,
   OscillatorConfig,
   EnvelopeConfig,
-} from "./plugins/definitions.js";
+} from "./plugins/definitions?.js";
 
 export interface PluginInstance {
   id: string;
@@ -193,8 +189,8 @@ class PluginHostService {
       })
       .where(eq(pluginInstances?.id, instanceId));
 
-    instance.parameters = updatedParams;
-    instance.updatedAt = new Date();
+    instance?.parameters = updatedParams;
+    instance?.updatedAt = new Date();
     this?.instanceCache.set(instanceId, instance);
 
     return instance;
@@ -211,7 +207,7 @@ class PluginHostService {
 
     const _cached = this?.instanceCache.get(instanceId);
     if (cached) {
-      cached.bypassed = bypassed;
+      cached?.bypassed = bypassed;
     }
   }
 
@@ -310,7 +306,7 @@ class PluginHostService {
       );
     }
 
-    const _volume = (instance?.parameters.volume as number) || 0.8;
+    const _volume = (instance?.parameters.volume as number) || 0?.8;
     for (let i = 0; i < numSamples; i++) {
       leftChannel[i] *= volume;
       rightChannel[i] *= volume;
@@ -338,10 +334,10 @@ class PluginHostService {
     const _frequency = 440 * Math?.pow(2, (note?.note - 69) / 12);
     const _startSample = Math?.floor(note?.startTime * sampleRate);
     const _envelope = plugin?.envelope || {
-      attack: 0.01,
-      decay: 0.1,
-      sustain: 0.7,
-      release: 0.3,
+      attack: 0?.01,
+      decay: 0?.1,
+      sustain: 0?.7,
+      release: 0?.3,
     };
 
     const _attackSamples = Math?.floor(
@@ -401,7 +397,7 @@ class PluginHostService {
         sample += oscSample * osc?.gain;
       }
 
-      const _finalSample = sample * envValue * velocityGain * 0.3;
+      const _finalSample = sample * envValue * velocityGain * 0?.3;
       const _idx = startSample + i;
       if (idx >= 0 && idx < left?.length) {
         left[idx] += finalSample;
@@ -418,7 +414,7 @@ class PluginHostService {
     timeoutMs: number,
     pluginId: string,
   ): Promise<T> {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS?.Timeout;
     const _timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(
@@ -633,12 +629,12 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _mix = (params?.mix as number) || 0.3;
-    const _decay = (params?.decay as number) || 2.0;
-    const _roomSize = (params?.roomSize as number) || 0.5;
-    const _damping = (params?.damping as number) || 0.5;
+    const _mix = (params?.mix as number) || 0?.3;
+    const _decay = (params?.decay as number) || 2?.0;
+    const _roomSize = (params?.roomSize as number) || 0?.5;
+    const _damping = (params?.damping as number) || 0?.5;
 
-    const _delayLength = Math?.floor(roomSize * 0.1 * sampleRate);
+    const _delayLength = Math?.floor(roomSize * 0?.1 * sampleRate);
     const _delayBuffer = new Float32Array(delayLength);
     let delayIndex = 0;
 
@@ -649,7 +645,7 @@ class PluginHostService {
       const _delayed = delayBuffer[delayIndex];
       const _wetSample = delayed * decay * (1 - damping);
 
-      delayBuffer[delayIndex] = (dryL + dryR) * 0.5 + wetSample * 0.5;
+      delayBuffer[delayIndex] = (dryL + dryR) * 0?.5 + wetSample * 0?.5;
       delayIndex = (delayIndex + 1) % delayLength;
 
       left[i] = dryL * (1 - mix) + wetSample * mix;
@@ -663,8 +659,8 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _mix = (params?.mix as number) || 0.3;
-    const _feedback = (params?.feedback as number) || 0.4;
+    const _mix = (params?.mix as number) || 0?.3;
+    const _feedback = (params?.feedback as number) || 0?.4;
     const _timeLeft = ((params?.timeLeft as number) || 250) / 1000;
     const _timeRight = ((params?.timeRight as number) || 375) / 1000;
 
@@ -700,20 +696,20 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _mix = (params?.mix as number) || 0.5;
-    const _rate = (params?.rate as number) || 1.0;
-    const _depth = (params?.depth as number) || 0.5;
+    const _mix = (params?.mix as number) || 0?.5;
+    const _rate = (params?.rate as number) || 1?.0;
+    const _depth = (params?.depth as number) || 0?.5;
     const _baseDelay = ((params?.delay as number) || 7) / 1000;
 
-    const _maxDelaySamples = Math?.floor((baseDelay + 0.01) * sampleRate);
+    const _maxDelaySamples = Math?.floor((baseDelay + 0?.01) * sampleRate);
     const _delayBufferL = new Float32Array(maxDelaySamples);
     const _delayBufferR = new Float32Array(maxDelaySamples);
     let writeIndex = 0;
 
     for (let i = 0; i < left?.length; i++) {
       const _lfo =
-        Math?.sin((2 * Math?.PI * rate * i) / sampleRate) * depth * 0.5 + 0.5;
-      const _delaySamples = Math?.floor((baseDelay * lfo + 0.001) * sampleRate);
+        Math?.sin((2 * Math?.PI * rate * i) / sampleRate) * depth * 0?.5 + 0?.5;
+      const _delaySamples = Math?.floor((baseDelay * lfo + 0?.001) * sampleRate);
       const _readIndex =
         (writeIndex - delaySamples + maxDelaySamples) % maxDelaySamples;
 
@@ -743,7 +739,7 @@ class PluginHostService {
     const _attackMs = (params?.attack as number) || 10;
     const _releaseMs = (params?.release as number) || 100;
     const _makeupGain = (params?.makeupGain as number) || 0;
-    const _mix = (params?.mix as number) || 1.0;
+    const _mix = (params?.mix as number) || 1?.0;
 
     const _attackCoeff = Math?.exp(-1 / ((attackMs / 1000) * sampleRate));
     const _releaseCoeff = Math?.exp(-1 / ((releaseMs / 1000) * sampleRate));
@@ -793,7 +789,7 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     _sampleRate: number,
   ): void {
-    const _ceiling = Math?.pow(10, ((params?.ceiling as number) || -0.3) / 20);
+    const _ceiling = Math?.pow(10, ((params?.ceiling as number) || -0?.3) / 20);
     const _threshold = Math?.pow(10, ((params?.threshold as number) || -6) / 20);
 
     for (let i = 0; i < left?.length; i++) {
@@ -898,10 +894,10 @@ class PluginHostService {
     _sampleRate: number,
   ): void {
     const _mode = (params?.mode as string) || "tube";
-    const _drive = (params?.drive as number) || 0.5;
-    const _tone = (params?.tone as number) || 0.5;
+    const _drive = (params?.drive as number) || 0?.5;
+    const _tone = (params?.tone as number) || 0?.5;
     const _outputGain = Math?.pow(10, ((params?.output as number) || 0) / 20);
-    const _mix = (params?.mix as number) || 1.0;
+    const _mix = (params?.mix as number) || 1?.0;
     const _bias = (params?.bias as number) || 0;
 
     const _driveAmount = 1 + drive * 20;
@@ -919,12 +915,12 @@ class PluginHostService {
           wetR = Math?.tanh(wetR);
           break;
         case "tape":
-          wetL = (wetL / (1 + Math?.abs(wetL))) * 1.2;
-          wetR = (wetR / (1 + Math?.abs(wetR))) * 1.2;
+          wetL = (wetL / (1 + Math?.abs(wetL))) * 1?.2;
+          wetR = (wetR / (1 + Math?.abs(wetR))) * 1?.2;
           break;
         case "transistor":
-          wetL = Math?.sign(wetL) * Math?.pow(Math?.abs(wetL), 0.7);
-          wetR = Math?.sign(wetR) * Math?.pow(Math?.abs(wetR), 0.7);
+          wetL = Math?.sign(wetL) * Math?.pow(Math?.abs(wetL), 0?.7);
+          wetR = Math?.sign(wetR) * Math?.pow(Math?.abs(wetR), 0?.7);
           break;
         case "fuzz":
           wetL = Math?.sign(wetL) * (1 - Math?.exp(-Math?.abs(wetL * 3)));
@@ -938,12 +934,12 @@ class PluginHostService {
           break;
       }
 
-      if (tone !== 0.5) {
-        const _toneAlpha = 1 - Math?.abs(tone - 0.5) * 0.3;
+      if (tone !== 0?.5) {
+        const _toneAlpha = 1 - Math?.abs(tone - 0?.5) * 0?.3;
         wetL =
-          wetL * toneAlpha + wetL * (1 - toneAlpha) * (tone > 0.5 ? 1.2 : 0.8);
+          wetL * toneAlpha + wetL * (1 - toneAlpha) * (tone > 0?.5 ? 1?.2 : 0?.8);
         wetR =
-          wetR * toneAlpha + wetR * (1 - toneAlpha) * (tone > 0.5 ? 1.2 : 0.8);
+          wetR * toneAlpha + wetR * (1 - toneAlpha) * (tone > 0?.5 ? 1?.2 : 0?.8);
       }
 
       wetL *= outputGain;
@@ -960,13 +956,13 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _rate = (params?.rate as number) || 0.5;
-    const _depth = (params?.depth as number) || 0.7;
-    const _feedback = (params?.feedback as number) || 0.5;
+    const _rate = (params?.rate as number) || 0?.5;
+    const _depth = (params?.depth as number) || 0?.7;
+    const _feedback = (params?.feedback as number) || 0?.5;
     const _stages = (params?.stages as number) || 4;
     const _centerFreq = (params?.centerFreq as number) || 1000;
-    const _spread = (params?.spread as number) || 0.5;
-    const _mix = (params?.mix as number) || 0.5;
+    const _spread = (params?.spread as number) || 0?.5;
+    const _mix = (params?.mix as number) || 0?.5;
 
     const allpassStatesL: number[][] = Array(stages)
       .fill(null)
@@ -981,10 +977,10 @@ class PluginHostService {
       const _lfoPhaseL = (2 * Math?.PI * rate * i) / sampleRate;
       const _lfoPhaseR = lfoPhaseL + spread * Math?.PI;
 
-      const _lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
-      const _lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
+      const _lfoL = (Math?.sin(lfoPhaseL) + 1) * 0?.5;
+      const _lfoR = (Math?.sin(lfoPhaseR) + 1) * 0?.5;
 
-      const _minFreq = centerFreq * 0.5;
+      const _minFreq = centerFreq * 0?.5;
       const _maxFreq = centerFreq * 2;
       const _freqL = minFreq + (maxFreq - minFreq) * lfoL * depth;
       const _freqR = minFreq + (maxFreq - minFreq) * lfoR * depth;
@@ -993,8 +989,8 @@ class PluginHostService {
       let inputR = right[i] + feedbackR * feedback;
 
       for (let s = 0; s < stages; s++) {
-        const _stageFreqL = freqL * (1 + s * 0.3);
-        const _stageFreqR = freqR * (1 + s * 0.3);
+        const _stageFreqL = freqL * (1 + s * 0?.3);
+        const _stageFreqR = freqR * (1 + s * 0?.3);
 
         const _coeffL = (stageFreqL - sampleRate) / (stageFreqL + sampleRate);
         const _coeffR = (stageFreqR - sampleRate) / (stageFreqR + sampleRate);
@@ -1012,8 +1008,8 @@ class PluginHostService {
       feedbackL = inputL;
       feedbackR = inputR;
 
-      left[i] = left[i] * (1 - mix) + (left[i] + inputL) * 0.5 * mix;
-      right[i] = right[i] * (1 - mix) + (right[i] + inputR) * 0.5 * mix;
+      left[i] = left[i] * (1 - mix) + (left[i] + inputL) * 0?.5 * mix;
+      right[i] = right[i] * (1 - mix) + (right[i] + inputR) * 0?.5 * mix;
     }
   }
 
@@ -1023,16 +1019,16 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _rate = (params?.rate as number) || 0.3;
-    const _depth = (params?.depth as number) || 0.6;
+    const _rate = (params?.rate as number) || 0?.3;
+    const _depth = (params?.depth as number) || 0?.6;
     const _baseDelay = ((params?.delay as number) || 5) / 1000;
-    const _feedback = (params?.feedback as number) || 0.5;
-    const _mix = (params?.mix as number) || 0.5;
-    const _stereoPhase = (params?.stereoPhase as number) || 0.25;
+    const _feedback = (params?.feedback as number) || 0?.5;
+    const _mix = (params?.mix as number) || 0?.5;
+    const _stereoPhase = (params?.stereoPhase as number) || 0?.25;
     const _manualMode = (params?.manualMode as boolean) || false;
     const _manualDelay = ((params?.manualDelay as number) || 5) / 1000;
 
-    const _maxDelaySamples = Math?.floor(0.025 * sampleRate);
+    const _maxDelaySamples = Math?.floor(0?.025 * sampleRate);
     const _delayBufferL = new Float32Array(maxDelaySamples);
     const _delayBufferR = new Float32Array(maxDelaySamples);
     let writeIndex = 0;
@@ -1049,10 +1045,10 @@ class PluginHostService {
         const _lfoPhaseL = (2 * Math?.PI * rate * i) / sampleRate;
         const _lfoPhaseR = lfoPhaseL + stereoPhase * 2 * Math?.PI;
 
-        const _lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
-        const _lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
+        const _lfoL = (Math?.sin(lfoPhaseL) + 1) * 0?.5;
+        const _lfoR = (Math?.sin(lfoPhaseR) + 1) * 0?.5;
 
-        const _minDelay = baseDelay * 0.1;
+        const _minDelay = baseDelay * 0?.1;
         const _maxDelay = baseDelay;
         delayTimeL = minDelay + (maxDelay - minDelay) * lfoL * depth;
         delayTimeR = minDelay + (maxDelay - minDelay) * lfoR * depth;
@@ -1085,8 +1081,8 @@ class PluginHostService {
 
       writeIndex = (writeIndex + 1) % maxDelaySamples;
 
-      const _wetL = (left[i] + delayedL) * 0.5;
-      const _wetR = (right[i] + delayedR) * 0.5;
+      const _wetL = (left[i] + delayedL) * 0?.5;
+      const _wetR = (right[i] + delayedR) * 0?.5;
 
       left[i] = left[i] * (1 - mix) + wetL * mix;
       right[i] = right[i] * (1 - mix) + wetR * mix;
@@ -1213,7 +1209,9 @@ class PluginHostService {
     return this?.updateInstanceParameters(instanceId, preset?.parameters);
   }
 
-  getFactoryPresets(pluginId: string): Array<{
+  getFactoryPresets(
+    pluginId: string,
+  ): Array<{
     name: string;
     parameters: Record<string, number | boolean | string>;
   }> {
@@ -1230,28 +1228,28 @@ class PluginHostService {
           name: "Small Room",
           parameters: {
             ...plugin?.defaultPreset,
-            roomSize: 0.2,
-            decay: 0.8,
-            damping: 0.7,
+            roomSize: 0?.2,
+            decay: 0?.8,
+            damping: 0?.7,
           },
         },
         {
           name: "Large Hall",
           parameters: {
             ...plugin?.defaultPreset,
-            roomSize: 0.9,
-            decay: 4.0,
-            damping: 0.3,
+            roomSize: 0?.9,
+            decay: 4?.0,
+            damping: 0?.3,
           },
         },
         {
           name: "Plate",
           parameters: {
             ...plugin?.defaultPreset,
-            roomSize: 0.6,
-            decay: 2.5,
-            diffusion: 0.95,
-            damping: 0.4,
+            roomSize: 0?.6,
+            decay: 2?.5,
+            diffusion: 0?.95,
+            damping: 0?.4,
           },
         },
       );
@@ -1304,7 +1302,7 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             midFreq: 3000,
             midGain: 4,
-            midQ: 1.5,
+            midQ: 1?.5,
           },
         },
       );
@@ -1318,9 +1316,9 @@ class PluginHostService {
             osc2Wave: "sawtooth",
             osc2Detune: 12,
             filterCutoff: 3000,
-            filterResonance: 0.5,
-            attack: 0.01,
-            release: 0.2,
+            filterResonance: 0?.5,
+            attack: 0?.01,
+            release: 0?.2,
           },
         },
         {
@@ -1329,12 +1327,12 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             osc1Wave: "square",
             osc2Wave: "sawtooth",
-            oscMix: 0.7,
+            oscMix: 0?.7,
             filterCutoff: 800,
-            filterResonance: 0.6,
-            attack: 0.001,
-            decay: 0.2,
-            sustain: 0.8,
+            filterResonance: 0?.6,
+            attack: 0?.001,
+            decay: 0?.2,
+            sustain: 0?.8,
           },
         },
         {
@@ -1344,10 +1342,10 @@ class PluginHostService {
             osc1Wave: "triangle",
             osc2Wave: "sine",
             filterCutoff: 2000,
-            lfoRate: 0.3,
-            lfoDepth: 0.4,
-            attack: 1.0,
-            release: 2.0,
+            lfoRate: 0?.3,
+            lfoDepth: 0?.4,
+            attack: 1?.0,
+            release: 2?.0,
           },
         },
         {
@@ -1356,11 +1354,11 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             osc1Wave: "square",
             filterCutoff: 8000,
-            filterEnvAmount: 0.8,
-            attack: 0.001,
-            decay: 0.15,
-            sustain: 0.1,
-            release: 0.1,
+            filterEnvAmount: 0?.8,
+            attack: 0?.001,
+            decay: 0?.15,
+            sustain: 0?.1,
+            release: 0?.1,
           },
         },
       );
@@ -1373,11 +1371,11 @@ class PluginHostService {
             algorithm: 1,
             op1Ratio: 1,
             op2Ratio: 14,
-            op2Level: 0.3,
-            modIndex: 1.5,
-            attack: 0.001,
-            decay: 0.8,
-            sustain: 0.2,
+            op2Level: 0?.3,
+            modIndex: 1?.5,
+            attack: 0?.001,
+            decay: 0?.8,
+            sustain: 0?.2,
           },
         },
         {
@@ -1387,11 +1385,11 @@ class PluginHostService {
             algorithm: 1,
             op1Ratio: 1,
             op2Ratio: 1,
-            op2Level: 0.8,
-            modIndex: 3.0,
-            attack: 0.001,
-            decay: 0.3,
-            sustain: 0.5,
+            op2Level: 0?.8,
+            modIndex: 3?.0,
+            attack: 0?.001,
+            decay: 0?.3,
+            sustain: 0?.5,
           },
         },
         {
@@ -1400,11 +1398,11 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             algorithm: 2,
             op1Ratio: 1,
-            op2Ratio: 3.5,
-            op2Level: 0.6,
-            modIndex: 4.0,
-            attack: 0.001,
-            decay: 2.0,
+            op2Ratio: 3?.5,
+            op2Level: 0?.6,
+            modIndex: 4?.0,
+            attack: 0?.001,
+            decay: 2?.0,
             sustain: 0,
           },
         },
@@ -1416,8 +1414,8 @@ class PluginHostService {
             op1Ratio: 1,
             op2Ratio: 7,
             op3Ratio: 11,
-            modIndex: 5.0,
-            feedback: 0.3,
+            modIndex: 5?.0,
+            feedback: 0?.3,
           },
         },
         {
@@ -1425,13 +1423,13 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             algorithm: 4,
-            op1Ratio: 0.5,
+            op1Ratio: 0?.5,
             op2Ratio: 1,
             op3Ratio: 2,
             op4Ratio: 4,
-            modIndex: 0.5,
-            sustain: 1.0,
-            release: 0.1,
+            modIndex: 0?.5,
+            sustain: 1?.0,
+            release: 0?.1,
           },
         },
       );
@@ -1442,11 +1440,11 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             wavetable: "digital",
-            wavePosition: 0.5,
+            wavePosition: 0?.5,
             unison: 4,
             unisonDetune: 20,
-            attack: 0.5,
-            release: 1.5,
+            attack: 0?.5,
+            release: 1?.5,
           },
         },
         {
@@ -1454,8 +1452,8 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             wavetable: "vocal",
-            wavePosition: 0.3,
-            morphSpeed: 0.5,
+            wavePosition: 0?.3,
+            morphSpeed: 0?.5,
             filterCutoff: 5000,
           },
         },
@@ -1464,10 +1462,10 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             wavetable: "metallic",
-            wavePosition: 0.7,
+            wavePosition: 0?.7,
             unison: 2,
             filterCutoff: 2000,
-            attack: 0.001,
+            attack: 0?.001,
           },
         },
         {
@@ -1475,10 +1473,10 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             wavetable: "chaos",
-            morphSpeed: 0.2,
-            lfoToPosition: 0.8,
-            lfoRate: 0.1,
-            attack: 2.0,
+            morphSpeed: 0?.2,
+            lfoToPosition: 0?.8,
+            lfoRate: 0?.1,
+            attack: 2?.0,
           },
         },
       );
@@ -1489,9 +1487,9 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             sampleBank: "piano",
-            velocitySensitivity: 1.0,
-            attack: 0.001,
-            release: 0.5,
+            velocitySensitivity: 1?.0,
+            attack: 0?.001,
+            release: 0?.5,
           },
         },
         {
@@ -1500,8 +1498,8 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             sampleBank: "strings",
             loopEnabled: true,
-            attack: 0.3,
-            release: 0.8,
+            attack: 0?.3,
+            release: 0?.8,
           },
         },
         {
@@ -1509,9 +1507,9 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             sampleBank: "brass",
-            attack: 0.05,
-            decay: 0.3,
-            sustain: 0.7,
+            attack: 0?.05,
+            decay: 0?.3,
+            sustain: 0?.7,
           },
         },
         {
@@ -1520,8 +1518,8 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             sampleBank: "choir",
             loopEnabled: true,
-            attack: 0.8,
-            release: 1.5,
+            attack: 0?.8,
+            release: 1?.5,
           },
         },
         {
@@ -1530,7 +1528,7 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             sampleBank: "percussion",
             playbackMode: "oneshot",
-            velocitySensitivity: 0.9,
+            velocitySensitivity: 0?.9,
           },
         },
       );
@@ -1541,9 +1539,9 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             mode: "tube",
-            drive: 0.3,
-            tone: 0.6,
-            mix: 0.7,
+            drive: 0?.3,
+            tone: 0?.6,
+            mix: 0?.7,
           },
         },
         {
@@ -1551,9 +1549,9 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             mode: "tape",
-            drive: 0.4,
-            tone: 0.5,
-            mix: 0.5,
+            drive: 0?.4,
+            tone: 0?.5,
+            mix: 0?.5,
           },
         },
         {
@@ -1561,8 +1559,8 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             mode: "fuzz",
-            drive: 0.8,
-            tone: 0.4,
+            drive: 0?.8,
+            tone: 0?.4,
             output: -6,
           },
         },
@@ -1571,9 +1569,9 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             mode: "bitcrush",
-            drive: 0.7,
-            tone: 0.3,
-            mix: 0.8,
+            drive: 0?.7,
+            tone: 0?.3,
+            mix: 0?.8,
           },
         },
         {
@@ -1581,9 +1579,9 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             mode: "transistor",
-            drive: 0.5,
-            tone: 0.55,
-            bias: 0.1,
+            drive: 0?.5,
+            tone: 0?.55,
+            bias: 0?.1,
           },
         },
       );
@@ -1593,9 +1591,9 @@ class PluginHostService {
           name: "Classic Sweep",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.3,
-            depth: 0.8,
-            feedback: 0.6,
+            rate: 0?.3,
+            depth: 0?.8,
+            feedback: 0?.6,
             stages: 4,
           },
         },
@@ -1603,31 +1601,31 @@ class PluginHostService {
           name: "Deep Space",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.1,
-            depth: 1.0,
-            feedback: 0.8,
+            rate: 0?.1,
+            depth: 1?.0,
+            feedback: 0?.8,
             stages: 8,
-            spread: 0.7,
+            spread: 0?.7,
           },
         },
         {
           name: "Subtle Motion",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.5,
-            depth: 0.3,
-            feedback: 0.2,
+            rate: 0?.5,
+            depth: 0?.3,
+            feedback: 0?.2,
             stages: 2,
-            mix: 0.3,
+            mix: 0?.3,
           },
         },
         {
           name: "Jet Engine",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 2.0,
-            depth: 0.9,
-            feedback: 0.7,
+            rate: 2?.0,
+            depth: 0?.9,
+            feedback: 0?.7,
             stages: 6,
           },
         },
@@ -1638,31 +1636,31 @@ class PluginHostService {
           name: "Classic Jet",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.2,
-            depth: 0.7,
+            rate: 0?.2,
+            depth: 0?.7,
             delay: 4,
-            feedback: 0.6,
+            feedback: 0?.6,
           },
         },
         {
           name: "Metallic Sweep",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.5,
-            depth: 0.9,
+            rate: 0?.5,
+            depth: 0?.9,
             delay: 2,
-            feedback: 0.8,
+            feedback: 0?.8,
           },
         },
         {
           name: "Subtle Width",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.1,
-            depth: 0.3,
-            feedback: 0.2,
-            stereoPhase: 0.5,
-            mix: 0.3,
+            rate: 0?.1,
+            depth: 0?.3,
+            feedback: 0?.2,
+            stereoPhase: 0?.5,
+            mix: 0?.3,
           },
         },
         {
@@ -1670,18 +1668,18 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             throughZero: true,
-            rate: 0.15,
-            depth: 1.0,
-            feedback: 0.4,
+            rate: 0?.15,
+            depth: 1?.0,
+            feedback: 0?.4,
           },
         },
         {
           name: "Negative Feedback",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.3,
-            depth: 0.6,
-            feedback: -0.7,
+            rate: 0?.3,
+            depth: 0?.6,
+            feedback: -0?.7,
           },
         },
       );
@@ -1693,8 +1691,8 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             timeLeft: 100,
             timeRight: 100,
-            feedback: 0.1,
-            mix: 0.4,
+            feedback: 0?.1,
+            mix: 0?.4,
           },
         },
         {
@@ -1703,8 +1701,8 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             timeLeft: 250,
             timeRight: 500,
-            feedback: 0.5,
-            mix: 0.35,
+            feedback: 0?.5,
+            mix: 0?.35,
           },
         },
         {
@@ -1713,9 +1711,9 @@ class PluginHostService {
             ...plugin?.defaultPreset,
             timeLeft: 500,
             timeRight: 750,
-            feedback: 0.6,
-            mix: 0.3,
-            damping: 0.5,
+            feedback: 0?.6,
+            mix: 0?.3,
+            damping: 0?.5,
           },
         },
       );
@@ -1725,29 +1723,29 @@ class PluginHostService {
           name: "Light Shimmer",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 1.5,
-            depth: 0.3,
-            mix: 0.3,
+            rate: 1?.5,
+            depth: 0?.3,
+            mix: 0?.3,
           },
         },
         {
           name: "Rich Ensemble",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.8,
-            depth: 0.7,
+            rate: 0?.8,
+            depth: 0?.7,
             voices: 4,
-            mix: 0.5,
+            mix: 0?.5,
           },
         },
         {
           name: "Vintage",
           parameters: {
             ...plugin?.defaultPreset,
-            rate: 0.5,
-            depth: 0.5,
+            rate: 0?.5,
+            depth: 0?.5,
             delay: 10,
-            mix: 0.4,
+            mix: 0?.4,
           },
         },
       );
@@ -1758,7 +1756,7 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             threshold: -30,
-            attack: 0.5,
+            attack: 0?.5,
             hold: 20,
             release: 50,
           },
@@ -1778,7 +1776,7 @@ class PluginHostService {
           parameters: {
             ...plugin?.defaultPreset,
             threshold: -20,
-            attack: 0.1,
+            attack: 0?.1,
             hold: 10,
             release: 20,
             range: -60,
@@ -1791,7 +1789,7 @@ class PluginHostService {
           name: "Transparent Master",
           parameters: {
             ...plugin?.defaultPreset,
-            ceiling: -0.1,
+            ceiling: -0?.1,
             threshold: -3,
             release: 150,
           },
@@ -1800,7 +1798,7 @@ class PluginHostService {
           name: "Loud Master",
           parameters: {
             ...plugin?.defaultPreset,
-            ceiling: -0.3,
+            ceiling: -0?.3,
             threshold: -8,
             release: 80,
           },
@@ -1809,7 +1807,7 @@ class PluginHostService {
           name: "Brick Wall",
           parameters: {
             ...plugin?.defaultPreset,
-            ceiling: -0.5,
+            ceiling: -0?.5,
             threshold: -1,
             release: 50,
             lookahead: 10,

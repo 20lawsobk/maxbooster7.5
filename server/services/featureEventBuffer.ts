@@ -21,9 +21,9 @@
  *              → Scans feat:processing:* keys, re-queues items to feat:buf, deletes stale keys
  */
 
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisClient.js";
-import { db } from "../db.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisClient?.js";
+import { db } from "../db?.js";
 import { featureEvents } from "@shared/schema";
 import crypto from "crypto";
 

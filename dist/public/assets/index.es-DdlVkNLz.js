@@ -3956,6 +3956,7 @@ function af() {
                     (k = z),
                     I.length >= C)
                   ));
+
                 )
                   F.lastIndex === G.index && F.lastIndex++;
                 return (
@@ -6385,6 +6386,7 @@ class zf {
     for (
       var { window: t, ctx: i } = this.screen, a = new J(e, r), s = i.canvas;
       s;
+
     )
       ((a.x -= s.offsetLeft), (a.y -= s.offsetTop), (s = s.offsetParent));
     return (

@@ -1,6 +1,6 @@
 import { db } from "../db";
 import { storefrontTemplates } from "../../shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { count } from "drizzle-orm";
 
 const _TEMPLATES = [

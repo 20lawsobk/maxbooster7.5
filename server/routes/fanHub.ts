@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db.js";
-import { fanSubscribers, fanMessages, users } from "../../shared/schema.js";
+import { db } from "../db?.js";
+import { fanSubscribers, fanMessages, users } from "../../shared/schema?.js";
 import { eq, and, or, ilike, sql, desc } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { z } from "zod";
-import { emailService } from "../services/emailService.js";
+import { emailService } from "../services/emailService?.js";
 
 const _router = Router();
 
@@ -228,8 +228,8 @@ router?.get("/stats", async (req: Request, res: Response) => {
         Number(stats?.totalFans) > 0
           ? Number(stats?.totalSpent || 0) / Number(stats?.totalFans)
           : 0,
-      growthRate: 15.5,
-      emailOpenRate: 24.8,
+      growthRate: 15?.5,
+      emailOpenRate: 24?.8,
     });
   } catch (error) {
     logger?.warn("Error fetching fan hub stats:", error);
@@ -290,7 +290,7 @@ router?.post("/message", async (req: Request, res: Response) => {
             <h2 style="margin:0;color:#a78bfa">${artistName}</h2>
           </div>
           <div style="background:#fff;padding:24px;border:1px solid #e5e7eb;border-radius:0 0 8px 8px">
-            <p style="color:#374151;font-size:16px;line-height:1.6">${htmlBody}</p>
+            <p style="color:#374151;font-size:16px;line-height:1?.6">${htmlBody}</p>
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0">
             <p style="color:#9ca3af;font-size:12px">You're receiving this because you subscribed to updates from ${artistName} via Max Booster.</p>
           </div>

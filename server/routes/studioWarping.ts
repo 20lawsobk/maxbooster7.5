@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { db } from "../db";
 import {
   audioClips,
@@ -10,8 +10,8 @@ import {
 import { insertWarpMarkerSchema, updateWarpMarkerSchema } from "@shared/schema";
 import { eq, and, asc } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger.js";
-import { queueService } from "../services/queueService.js";
+import { logger } from "../logger?.js";
+import { queueService } from "../services/queueService?.js";
 import { randomUUID } from "crypto";
 
 const _router = Router();
@@ -40,8 +40,8 @@ const _warpCommitSchema = z?.object({
 });
 
 const _transientDetectionSchema = z?.object({
-  sensitivity: z?.number().min(0).max(1).optional().default(0.5),
-  minTransientGap: z?.number().min(0.01).max(1).optional().default(0.05),
+  sensitivity: z?.number().min(0).max(1).optional().default(0?.5),
+  minTransientGap: z?.number().min(0?.01).max(1).optional().default(0?.05),
   createMarkers: z?.boolean().optional().default(false),
 });
 
@@ -414,8 +414,8 @@ router?.post("/clips/:clipId/warp/quantize", requireAuth, async (req, res) => {
 
     const _quantizeSchema = z?.object({
       targetBpm: z?.number().min(20).max(300),
-      strength: z?.number().min(0).max(1).optional().default(1.0),
-      sensitivity: z?.number().min(0).max(1).optional().default(0.5),
+      strength: z?.number().min(0).max(1).optional().default(1?.0),
+      sensitivity: z?.number().min(0).max(1).optional().default(0?.5),
     });
 
     const _options = quantizeSchema?.parse(req?.body);
@@ -493,7 +493,7 @@ router?.get("/clips/:clipId/warp/tempo", requireAuth, async (req, res) => {
       orderBy: [asc(warpMarkers?.sourceTime)],
     });
 
-    const _stretchRatio = clip?.timeStretch || 1.0;
+    const _stretchRatio = clip?.timeStretch || 1?.0;
     const _originalDuration = clip?.duration / stretchRatio;
 
     res?.json({

@@ -32,7 +32,7 @@ export function useDAWAudioPlayback({
       const _AudioCtx =
         window?.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext;
-      contextRef.current = new AudioCtx({ latencyHint: "interactive" });
+      contextRef?.current = new AudioCtx({ latencyHint: "interactive" });
     }
     return contextRef?.current;
   }, []);
@@ -78,8 +78,8 @@ export function useDAWAudioPlayback({
     activeSourcesRef?.current.forEach(({ node, gainNode }) => {
       try {
         if (fadeOut && ctx) {
-          gainNode?.gain.setTargetAtTime(0, ctx?.currentTime, 0.05);
-          node?.stop(ctx?.currentTime + 0.15);
+          gainNode?.gain.setTargetAtTime(0, ctx?.currentTime, 0?.05);
+          node?.stop(ctx?.currentTime + 0?.15);
         } else {
           node?.stop();
         }
@@ -98,8 +98,8 @@ export function useDAWAudioPlayback({
       stopAllSources(false);
 
       const _contextNow = ctx?.currentTime;
-      playStartContextTimeRef.current = contextNow;
-      playStartPositionRef.current = position;
+      playStartContextTimeRef?.current = contextNow;
+      playStartPositionRef?.current = position;
 
       const _soloExists = tracks?.some((t) => t?.solo);
 
@@ -118,10 +118,10 @@ export function useDAWAudioPlayback({
           if (position > clipEnd) continue;
 
           const _sourceNode = ctx?.createBufferSource();
-          sourceNode.buffer = buffer;
+          sourceNode?.buffer = buffer;
 
           const _gainNode = ctx?.createGain();
-          gainNode?.gain.value = Math?.max(0, Math?.min(1, track?.volume ?? 0.8));
+          gainNode?.gain.value = Math?.max(0, Math?.min(1, track?.volume ?? 0?.8));
           sourceNode?.connect(gainNode);
           gainNode?.connect(ctx?.destination);
 
@@ -151,7 +151,7 @@ export function useDAWAudioPlayback({
               clipId: clip?.id,
             });
 
-            sourceNode.onended = () => {
+            sourceNode?.onended = () => {
               activeSourcesRef?.current.delete(clip?.id);
             };
           } catch (err) {
@@ -169,10 +169,10 @@ export function useDAWAudioPlayback({
 
   useEffect(() => {
     if (transport?.isPlaying && !isPlayingRef?.current) {
-      isPlayingRef.current = true;
+      isPlayingRef?.current = true;
       scheduleClips(transport?.position);
     } else if (!transport?.isPlaying && isPlayingRef?.current) {
-      isPlayingRef.current = false;
+      isPlayingRef?.current = false;
       stopAllSources(true);
     }
   }, [transport?.isPlaying]);

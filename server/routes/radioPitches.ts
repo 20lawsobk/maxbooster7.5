@@ -2,10 +2,10 @@ import { Router } from "express";
 import { db } from "../db";
 import { radioPitches, insertRadioPitchSchema } from "@shared/schema";
 import { and, eq, desc, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { queryCache, createCacheKey } from "../lib/queryCache.js";
-import { parsePaginationParams } from "../middleware/pagination.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { queryCache, createCacheKey } from "../lib/queryCache?.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
 import { z } from "zod";
 
 const _router = Router();
@@ -176,11 +176,11 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       status,
       updatedAt: new Date(),
     };
-    if (responseNote !== undefined) setFields.responseNote = responseNote;
-    if (featureUrl !== undefined) setFields.featureUrl = featureUrl;
+    if (responseNote !== undefined) setFields?.responseNote = responseNote;
+    if (featureUrl !== undefined) setFields?.featureUrl = featureUrl;
     if (["featured", "aired", "rejected"].includes(status))
-      setFields.responseAt = new Date();
-    if (status === "submitted") setFields.submittedAt = new Date();
+      setFields?.responseAt = new Date();
+    if (status === "submitted") setFields?.submittedAt = new Date();
 
     const [item] = await db
       .update(radioPitches)

@@ -34,10 +34,8 @@ export function useSharedAudioContext() {
 
     if (!sharedAudioContext) {
       try {
-        sharedAudioContext = new (
-          window.AudioContext ||
-          (window as Record<string, unknown>).webkitAudioContext
-        )();
+        sharedAudioContext = new (window.AudioContext ||
+          (window as Record<string, unknown>).webkitAudioContext)();
 
         if (sharedAudioContext.state === "suspended") {
           const resumeOnInteraction = () => {

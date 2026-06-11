@@ -1,15 +1,15 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "crypto";
-import { requireAuthOnly } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { handleGeneration } from "../services/multimodalGenerationService.js";
+import { requireAuthOnly } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { handleGeneration } from "../services/multimodalGenerationService?.js";
 import {
   type GenerationRequest,
   type Platform,
   type PackId,
   PACK_DEFINITIONS,
-} from "@shared/types/multimodalGeneration.js";
-import { PLATFORM_RULES } from "@shared/config/platformRules.js";
+} from "@shared/types/multimodalGeneration?.js";
+import { PLATFORM_RULES } from "@shared/config/platformRules?.js";
 
 const _router = Router();
 

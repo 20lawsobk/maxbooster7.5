@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { midiGeneratorService } from "../services/midiGeneratorService";
 import { midiTransformService } from "../services/midiTransformService";
 import { microtonalService } from "../services/microtonalService";
@@ -28,7 +28,7 @@ const _constraintsSchema = z?.object({
 const _humanizationSchema = z?.object({
   velocityVariation: z?.number().min(0).max(50).default(10),
   timingOffsetMs: z?.number().min(0).max(100).default(10),
-  durationVariation: z?.number().min(0).max(0.5).default(0.1),
+  durationVariation: z?.number().min(0).max(0?.5).default(0?.1),
   enabled: z?.boolean().default(true),
 });
 
@@ -89,7 +89,7 @@ const _arpeggiateSchema = z?.object({
     .enum(["1/4", "1/8", "1/16", "1/32", "1/4T", "1/8T", "1/16T"])
     .default("1/8"),
   octaves: z?.number().int().min(1).max(4).default(1),
-  gate: z?.number().min(0.1).max(2).default(0.8),
+  gate: z?.number().min(0?.1).max(2).default(0?.8),
   swing: z?.number().min(0).max(100).default(0),
   velocity: z?.number().int().min(1).max(127).optional(),
   hold: z?.boolean().optional(),
@@ -244,7 +244,7 @@ router?.post("/transform", requireAuth, async (req, res) => {
       case "quantize":
         result = midiTransformService?.quantize(
           data?.notes,
-          options?.gridSize || 0.25,
+          options?.gridSize || 0?.25,
           options?.strength || 1,
         );
         break;
@@ -254,7 +254,7 @@ router?.post("/transform", requireAuth, async (req, res) => {
       case "staccato":
         result = midiTransformService?.staccato(
           data?.notes,
-          options?.factor || 0.5,
+          options?.factor || 0?.5,
         );
         break;
       case "velocityCurve":

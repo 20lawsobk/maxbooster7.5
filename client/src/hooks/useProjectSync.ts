@@ -3,16 +3,7 @@ import { getCsrfTokenFromCookie } from "../lib/queryClient";
 import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStudioStore } from "@/stores/studioStore";
-import type {
-  TrackType,
-  MidiClip,
-  Track,
-  ViewState,
-  MixerState,
-  PluginInstance,
-  TrackSend,
-  AutomationLane,
-} from "@/stores/studioStore";
+import type { TrackType, MidiClip, Track, ViewState, MixerState, PluginInstance, TrackSend, AutomationLane } from "@/stores/studioStore";
 
 const _SYNC_DEBOUNCE_MS = 2000;
 const _DAW_STATE_VERSION = 1;
@@ -267,7 +258,7 @@ export function useProjectSync(projectId: string | null) {
           scrollX: dawState?.view.scrollX ?? 0,
           scrollY: dawState?.view.scrollY ?? 0,
           snapToGrid: dawState?.view.snapToGrid ?? true,
-          gridSize: dawState?.view.gridSize ?? 0.25,
+          gridSize: dawState?.view.gridSize ?? 0?.25,
           showMixer: dawState?.view.showMixer ?? true,
           showPluginBrowser: dawState?.view.showPluginBrowser ?? false,
           showPianoRoll: dawState?.view.showPianoRoll ?? false,
@@ -507,7 +498,7 @@ export function useProjectSync(projectId: string | null) {
             deserializeAndRestoreState(dawState);
 
             if (data?.dawVersion) {
-              stateVersionRef.current = data?.dawVersion;
+              stateVersionRef?.current = data?.dawVersion;
             }
 
             store?.markSaved();
@@ -533,7 +524,7 @@ export function useProjectSync(projectId: string | null) {
 
     const _now = Date?.now();
     if (now - lastSyncRef?.current < SYNC_DEBOUNCE_MS) return;
-    lastSyncRef.current = now;
+    lastSyncRef?.current = now;
 
     await saveFullState();
   }, [projectId, saveFullState]);
@@ -542,7 +533,7 @@ export function useProjectSync(projectId: string | null) {
     if (syncTimeoutRef?.current) {
       clearTimeout(syncTimeoutRef?.current);
     }
-    syncTimeoutRef.current = setTimeout(syncToBackend, SYNC_DEBOUNCE_MS);
+    syncTimeoutRef?.current = setTimeout(syncToBackend, SYNC_DEBOUNCE_MS);
   }, [syncToBackend]);
 
   useEffect(() => {

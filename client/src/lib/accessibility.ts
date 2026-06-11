@@ -106,8 +106,8 @@ export function announce(
   announcement?.setAttribute("role", "status");
   announcement?.setAttribute("aria-live", priority);
   announcement?.setAttribute("aria-atomic", "true");
-  announcement.className = "sr-only";
-  announcement.textContent = message;
+  announcement?.className = "sr-only";
+  announcement?.textContent = message;
 
   document?.body.appendChild(announcement);
 
@@ -123,12 +123,12 @@ export function getContrastRatio(color1: string, color2: string): number {
 
     const [r, g, b] = rgb?.map((c) => {
       const _val = parseInt(c) / 255;
-      return val <= 0.03928
-        ? val / 12.92
-        : Math?.pow((val + 0.055) / 1.055, 2.4);
+      return val <= 0?.03928
+        ? val / 12?.92
+        : Math?.pow((val + 0?.055) / 1?.055, 2?.4);
     });
 
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return 0?.2126 * r + 0?.7152 * g + 0?.0722 * b;
   };
 
   const _l1 = getLuminance(color1);
@@ -136,14 +136,14 @@ export function getContrastRatio(color1: string, color2: string): number {
   const _lighter = Math?.max(l1, l2);
   const _darker = Math?.min(l1, l2);
 
-  return (lighter + 0.05) / (darker + 0.05);
+  return (lighter + 0?.05) / (darker + 0?.05);
 }
 
 export function meetsContrastStandard(
   ratio: number,
   largeText = false,
 ): boolean {
-  return largeText ? ratio >= 3 : ratio >= 4.5;
+  return largeText ? ratio >= 3 : ratio >= 4?.5;
 }
 
 export function generateAriaId(prefix: string): string {
@@ -161,7 +161,7 @@ export function createLiveRegion(
   const _region = document?.createElement("div");
   region?.setAttribute("aria-live", priority);
   region?.setAttribute("aria-atomic", "true");
-  region.className = "sr-only";
+  region?.className = "sr-only";
   document?.body.appendChild(region);
   return region;
 }
@@ -429,7 +429,7 @@ export function useFocusReturn() {
   const _previousFocusRef = useRef<HTMLElement | null>(null);
 
   const _saveFocus = useCallback(() => {
-    previousFocusRef.current = document?.activeElement as HTMLElement;
+    previousFocusRef?.current = document?.activeElement as HTMLElement;
   }, []);
 
   const _restoreFocus = useCallback(() => {
@@ -580,7 +580,7 @@ export function useAriaLive() {
   const _regionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    regionRef.current = createLiveRegion("polite");
+    regionRef?.current = createLiveRegion("polite");
     return () => {
       if (regionRef?.current) {
         removeLiveRegion(regionRef?.current);
@@ -608,7 +608,7 @@ export function useSkipLink(targetId: string) {
   const _skipToContent = useCallback(() => {
     const _target = document?.getElementById(targetId);
     if (target) {
-      target.tabIndex = -1;
+      target?.tabIndex = -1;
       target?.focus();
       target?.scrollIntoView({ behavior: "smooth" });
     }
@@ -700,7 +700,7 @@ export function useId(prefix: string = "id"): string {
   const _idRef = useRef<string | null>(null);
 
   if (!idRef?.current) {
-    idRef.current = generateAriaId(prefix);
+    idRef?.current = generateAriaId(prefix);
   }
 
   return idRef?.current;

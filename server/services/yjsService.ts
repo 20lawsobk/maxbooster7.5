@@ -1,12 +1,12 @@
 import * as Y from "yjs";
 import { storage } from "../storage";
 import crypto from "crypto";
-import { config } from "../config/defaults.js";
+import { config } from "../config/defaults?.js";
 import {
   getRedisClient,
   createRedisClient,
-} from "../lib/redisConnectionFactory.js";
-import { logger } from "../logger.js";
+} from "../lib/redisConnectionFactory?.js";
+import { logger } from "../logger?.js";
 
 // Yjs document structure:
 // {
@@ -21,7 +21,7 @@ function generateHash(data: Uint8Array): string {
 }
 
 export class YjsCollaborationService {
-  private saveTimers: Map<string, NodeJS.Timeout> = new Map();
+  private saveTimers: Map<string, NodeJS?.Timeout> = new Map();
   private readonly SAVE_DEBOUNCE_MS = 2000; // Save snapshots every 2 seconds max
   private readonly REDIS_DOC_PREFIX = "yjs:doc:";
   private readonly REDIS_TTL = 3600; // 1 hour cache TTL
@@ -41,7 +41,7 @@ export class YjsCollaborationService {
 
   private async initPubSub() {
     try {
-      this.subClient = await createRedisClient();
+      this?.subClient = await createRedisClient();
       if (this?.subClient && typeof this?.subClient.on === "function") {
         this?.subClient.on("message", (channel: string, message: string) => {
           if (channel?.startsWith("yjs:updates:")) {
@@ -95,7 +95,7 @@ export class YjsCollaborationService {
       // Gracefully degrade to database if Redis unavailable
     }
 
-    const _doc = new Y.Doc();
+    const _doc = new Y?.Doc();
 
     // CRITICAL: Initialize document schema BEFORE applying updates
     // This ensures all required collections exist for clients

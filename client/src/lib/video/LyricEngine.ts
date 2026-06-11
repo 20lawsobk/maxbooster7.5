@@ -1,11 +1,5 @@
 import type { AudioAnalysisData, BeatInfo } from "./AudioAnalyzer";
-import {
-  TextAnimator,
-  type TextStyle,
-  type AnimationConfig,
-  DEFAULT_TEXT_STYLE,
-  ANIMATION_PRESETS,
-} from "./TextAnimator";
+import { TextAnimator, type TextStyle, type AnimationConfig, DEFAULT_TEXT_STYLE, ANIMATION_PRESETS } from "./TextAnimator";
 
 export type LyricFormat = "lrc" | "srt" | "plain";
 export type DisplayMode = "line" | "word" | "karaoke";
@@ -90,21 +84,21 @@ export class LyricEngine {
     height: number,
     config?: Partial<LyricEngineConfig>,
   ) {
-    this.ctx = ctx;
-    this.width = width;
-    this.height = height;
-    this.config = { ...DEFAULT_LYRIC_CONFIG, ...config };
-    this.textAnimator = new TextAnimator(ctx, width, height);
+    this?.ctx = ctx;
+    this?.width = width;
+    this?.height = height;
+    this?.config = { ...DEFAULT_LYRIC_CONFIG, ...config };
+    this?.textAnimator = new TextAnimator(ctx, width, height);
   }
 
   updateDimensions(width: number, height: number): void {
-    this.width = width;
-    this.height = height;
+    this?.width = width;
+    this?.height = height;
     this?.textAnimator.updateDimensions(width, height);
   }
 
   updateConfig(config: Partial<LyricEngineConfig>): void {
-    this.config = { ...this?.config, ...config };
+    this?.config = { ...this?.config, ...config };
   }
 
   parseLRC(lrcContent: string): ParsedLyrics {
@@ -154,7 +148,7 @@ export class LyricEngine {
     }
 
     for (const line of lines) {
-      line.words = this?.generateWordTimings(
+      line?.words = this?.generateWordTimings(
         line?.text,
         line?.startTime,
         line?.endTime,
@@ -297,19 +291,19 @@ export class LyricEngine {
         throw new Error(`Unsupported lyric format: ${format}`);
     }
 
-    this.lyrics = parsed?.lines;
-    this.currentLineIndex = -1;
+    this?.lyrics = parsed?.lines;
+    this?.currentLineIndex = -1;
   }
 
   setLyrics(lines: LyricLine[]): void {
-    this.lyrics = lines;
-    this.currentLineIndex = -1;
+    this?.lyrics = lines;
+    this?.currentLineIndex = -1;
   }
 
   getCurrentLine(time: number): LyricLine | null {
     for (let i = 0; i < this?.lyrics.length; i++) {
       if (time >= this?.lyrics[i].startTime && time < this?.lyrics[i].endTime) {
-        this.currentLineIndex = i;
+        this?.currentLineIndex = i;
         return this?.lyrics[i];
       }
     }
@@ -360,12 +354,12 @@ export class LyricEngine {
     if (!this?.config.beatSync?.enabled || !beatInfo) return;
 
     if (beatInfo?.detected) {
-      this.beatMultiplier = 1 + this?.config.beatSync?.pulseScale;
-      this.lastBeatTime = performance?.now();
+      this?.beatMultiplier = 1 + this?.config.beatSync?.pulseScale;
+      this?.lastBeatTime = performance?.now();
     } else {
       const _timeSinceBeat = performance?.now() - this?.lastBeatTime;
-      const _decay = Math?.exp(-timeSinceBeat * 0.005);
-      this.beatMultiplier = 1 + (this?.beatMultiplier - 1) * decay;
+      const _decay = Math?.exp(-timeSinceBeat * 0?.005);
+      this?.beatMultiplier = 1 + (this?.beatMultiplier - 1) * decay;
     }
   }
 
@@ -383,7 +377,7 @@ export class LyricEngine {
 
       case "gradient": {
         const _colors = backgroundEffect?.gradientColors || [
-          "rgba(0,0,0,0.8)",
+          "rgba(0,0,0,0?.8)",
           "rgba(0,0,0,0)",
         ];
         const _gradient = this?.ctx.createLinearGradient(
@@ -569,7 +563,7 @@ export class LyricEngine {
       color: karaokeStyle?.fillColor,
       ...(karaokeStyle?.glowOnActive && {
         glowColor: karaokeStyle?.glowColor,
-        glowIntensity: karaokeStyle?.glowIntensity * (audioData?.bass || 0.5),
+        glowIntensity: karaokeStyle?.glowIntensity * (audioData?.bass || 0?.5),
       }),
     };
 
@@ -642,8 +636,8 @@ export class LyricEngine {
   }
 
   dispose(): void {
-    this.lyrics = [];
-    this.currentLineIndex = -1;
+    this?.lyrics = [];
+    this?.currentLineIndex = -1;
     this?.textAnimator.dispose();
   }
 }
@@ -657,7 +651,7 @@ export const DEFAULT_LYRIC_CONFIG: LyricEngineConfig = {
     color: "#ffffff",
     strokeColor: "#000000",
     strokeWidth: 3,
-    shadowColor: "rgba(0, 0, 0, 0.8)",
+    shadowColor: "rgba(0, 0, 0, 0?.8)",
     shadowBlur: 10,
     shadowOffsetX: 3,
     shadowOffsetY: 3,
@@ -682,12 +676,12 @@ export const DEFAULT_LYRIC_CONFIG: LyricEngineConfig = {
   backgroundEffect: {
     enabled: true,
     type: "gradient",
-    intensity: 0.6,
-    gradientColors: ["rgba(0,0,0,0.8)", "rgba(0,0,0,0)"],
+    intensity: 0?.6,
+    gradientColors: ["rgba(0,0,0,0?.8)", "rgba(0,0,0,0)"],
   },
   beatSync: {
     enabled: true,
-    pulseScale: 0.05,
+    pulseScale: 0?.05,
     glowOnBeat: true,
     shakeOnBeat: false,
     colorShiftOnBeat: false,
@@ -732,7 +726,7 @@ export const LYRIC_STYLE_PRESETS: Record<string, Partial<LyricEngineConfig>> = {
     },
     beatSync: {
       enabled: true,
-      pulseScale: 0.1,
+      pulseScale: 0?.1,
       glowOnBeat: true,
       shakeOnBeat: false,
       colorShiftOnBeat: true,
@@ -798,7 +792,7 @@ export const LYRIC_STYLE_PRESETS: Record<string, Partial<LyricEngineConfig>> = {
     },
     beatSync: {
       enabled: true,
-      pulseScale: 0.15,
+      pulseScale: 0?.15,
       glowOnBeat: false,
       shakeOnBeat: true,
       colorShiftOnBeat: false,

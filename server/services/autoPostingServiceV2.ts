@@ -1,13 +1,13 @@
-import { getBoosterStateClient } from "../lib/boosterStateClient.js";
+import { getBoosterStateClient } from "../lib/boosterStateClient?.js";
 import { randomBytes } from "crypto";
-import { BoosterQueue } from "./queueService.js";
-import { storage } from "../storage.js";
-import { logger } from "../logger.js";
+import { BoosterQueue } from "./queueService?.js";
+import { storage } from "../storage?.js";
+import { logger } from "../logger?.js";
 import axios from "axios";
-import type { User } from "../../shared/schema.js";
-import { autopilotLearningService } from "./autopilotLearningService.js";
-import { detectHookPattern } from "./postingUtils.js";
-import { notificationService } from "./notificationService.js";
+import type { User } from "../../shared/schema?.js";
+import { autopilotLearningService } from "./autopilotLearningService?.js";
+import { detectHookPattern } from "./postingUtils?.js";
+import { notificationService } from "./notificationService?.js";
 
 // Max posts to dequeue and process concurrently per 2-second tick.
 // Override with AUTO_POST_BATCH_SIZE env var.
@@ -58,11 +58,11 @@ export interface PostResult {
 
 class AutoPostingServiceV2 {
   private postQueue: BoosterQueue;
-  private workerInterval: NodeJS.Timeout | null = null;
+  private workerInterval: NodeJS?.Timeout | null = null;
   private isInitialized: boolean = false;
 
   constructor() {
-    this.postQueue = new BoosterQueue("scheduled-posts");
+    this?.postQueue = new BoosterQueue("scheduled-posts");
   }
 
   async initialize() {
@@ -71,7 +71,7 @@ class AutoPostingServiceV2 {
     this?.startWorker();
     await this?.reloadPendingJobs();
 
-    this.isInitialized = true;
+    this?.isInitialized = true;
     logger?.info("✅ Auto-posting service initialized (boosterstate-backed)");
   }
 
@@ -198,7 +198,7 @@ class AutoPostingServiceV2 {
   }
 
   private startWorker() {
-    this.workerInterval = setInterval(async () => {
+    this?.workerInterval = setInterval(async () => {
       try {
         const _client = await getBoosterStateClient();
 
@@ -402,7 +402,7 @@ class AutoPostingServiceV2 {
     };
 
     const _response = await axios?.post(
-      "https://graph?.facebook.com/v18.0/me/media",
+      "https://graph?.facebook.com/v18?.0/me/media",
       postData,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
@@ -411,7 +411,7 @@ class AutoPostingServiceV2 {
       platform: "instagram",
       success: true,
       postId: response?.data.id,
-      postUrl: `https://instagram.com/p/${response?.data.id}`,
+      postUrl: `https://instagram?.com/p/${response?.data.id}`,
       postedAt: new Date(),
     };
   }
@@ -429,7 +429,7 @@ class AutoPostingServiceV2 {
     };
 
     const _response = await axios?.post(
-      "https://graph?.facebook.com/v18.0/me/feed",
+      "https://graph?.facebook.com/v18?.0/me/feed",
       postData,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
@@ -438,7 +438,7 @@ class AutoPostingServiceV2 {
       platform: "facebook",
       success: true,
       postId: response?.data.id,
-      postUrl: `https://facebook.com/${response?.data.id}`,
+      postUrl: `https://facebook?.com/${response?.data.id}`,
       postedAt: new Date(),
     };
   }
@@ -462,7 +462,7 @@ class AutoPostingServiceV2 {
       platform: "twitter",
       success: true,
       postId: response?.data.data?.id,
-      postUrl: `https://twitter.com/i/web/status/${response?.data.data?.id}`,
+      postUrl: `https://twitter?.com/i/web/status/${response?.data.data?.id}`,
       postedAt: new Date(),
     };
   }
@@ -640,7 +640,7 @@ class AutoPostingServiceV2 {
         platform: "youtube",
         success: true,
         postId: videoId || `youtube_${Date?.now()}`,
-        postUrl: videoId ? `https://youtube.com/watch?v=${videoId}` : undefined,
+        postUrl: videoId ? `https://youtube?.com/watch?v=${videoId}` : undefined,
         postedAt: new Date(),
       };
     } else {
@@ -721,7 +721,7 @@ class AutoPostingServiceV2 {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
-            "X-Restli-Protocol-Version": "2.0.0",
+            "X-Restli-Protocol-Version": "2?.0.0",
           },
         },
       );
@@ -779,7 +779,7 @@ class AutoPostingServiceV2 {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
-          "X-Restli-Protocol-Version": "2.0.0",
+          "X-Restli-Protocol-Version": "2?.0.0",
         },
       },
     );
@@ -807,7 +807,7 @@ class AutoPostingServiceV2 {
     const _caption = `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`;
 
     const _userResponse = await axios?.get(
-      `https://graph?.threads.net/v1.0/me?access_token=${accessToken}&fields=id,username`,
+      `https://graph?.threads.net/v1?.0/me?access_token=${accessToken}&fields=id,username`,
     );
     const _threadsUserId = userResponse?.data.id;
     const _threadsUsername = userResponse?.data.username;
@@ -819,14 +819,14 @@ class AutoPostingServiceV2 {
 
     if (content?.mediaUrl && content?.mediaType === "image") {
       mediaType = "IMAGE";
-      containerData.image_url = content?.mediaUrl;
+      containerData?.image_url = content?.mediaUrl;
     } else if (content?.mediaUrl && content?.mediaType === "video") {
       mediaType = "VIDEO";
-      containerData.video_url = content?.mediaUrl;
+      containerData?.video_url = content?.mediaUrl;
     }
 
     const _createUrl = new URL(
-      `https://graph?.threads.net/v1.0/${threadsUserId}/threads`,
+      `https://graph?.threads.net/v1?.0/${threadsUserId}/threads`,
     );
     createUrl?.searchParams.set("access_token", accessToken);
     createUrl?.searchParams.set("media_type", mediaType);
@@ -851,7 +851,7 @@ class AutoPostingServiceV2 {
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
         const _statusResponse = await axios?.get(
-          `https://graph?.threads.net/v1.0/${creationId}?access_token=${accessToken}&fields=status`,
+          `https://graph?.threads.net/v1?.0/${creationId}?access_token=${accessToken}&fields=status`,
         );
 
         if (statusResponse?.data.status === "FINISHED") {
@@ -863,7 +863,7 @@ class AutoPostingServiceV2 {
     }
 
     const _publishUrl = new URL(
-      `https://graph?.threads.net/v1.0/${threadsUserId}/threads_publish`,
+      `https://graph?.threads.net/v1?.0/${threadsUserId}/threads_publish`,
     );
     publishUrl?.searchParams.set("access_token", accessToken);
     publishUrl?.searchParams.set("creation_id", creationId);
@@ -918,7 +918,7 @@ class AutoPostingServiceV2 {
     };
 
     if (content?.mediaUrl) {
-      postData.media = [
+      postData?.media = [
         {
           mediaFormat: content?.mediaType === "video" ? "VIDEO" : "PHOTO",
           sourceUrl: content?.mediaUrl,
@@ -927,7 +927,7 @@ class AutoPostingServiceV2 {
     }
 
     if (content?.link) {
-      postData.callToAction = {
+      postData?.callToAction = {
         actionType: "LEARN_MORE",
         url: content?.link,
       };
@@ -967,7 +967,7 @@ class AutoPostingServiceV2 {
   pause(): void {
     if (this?.workerInterval) {
       clearInterval(this?.workerInterval);
-      this.workerInterval = null;
+      this?.workerInterval = null;
     }
     logger?.info("[AutoPostingService V2] Paused by kill switch");
   }
@@ -984,7 +984,7 @@ class AutoPostingServiceV2 {
 
     if (this?.workerInterval) {
       clearInterval(this?.workerInterval);
-      this.workerInterval = null;
+      this?.workerInterval = null;
     }
     await this?.postQueue.close();
 

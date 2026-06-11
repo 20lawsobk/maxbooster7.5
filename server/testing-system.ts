@@ -1,6 +1,6 @@
 import { promisify } from "util";
 import { exec } from "child_process";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 promisify(exec);
 
@@ -16,7 +16,7 @@ export class TestingSystem {
   private accessibilityTester: AccessibilityTester;
 
   private constructor() {
-    this.testResults = {
+    this?.testResults = {
       overallScore: 0,
       unitTestScore: 0,
       integrationTestScore: 0,
@@ -38,19 +38,19 @@ export class TestingSystem {
       },
     };
 
-    this.unitTester = new UnitTester();
-    this.integrationTester = new IntegrationTester();
-    this.e2eTester = new E2ETester();
-    this.performanceTester = new PerformanceTester();
-    this.securityTester = new SecurityTester();
-    this.accessibilityTester = new AccessibilityTester();
+    this?.unitTester = new UnitTester();
+    this?.integrationTester = new IntegrationTester();
+    this?.e2eTester = new E2ETester();
+    this?.performanceTester = new PerformanceTester();
+    this?.securityTester = new SecurityTester();
+    this?.accessibilityTester = new AccessibilityTester();
 
     this?.initializeTestingSystem();
   }
 
   public static getInstance(): TestingSystem {
     if (!TestingSystem?.instance) {
-      TestingSystem.instance = new TestingSystem();
+      TestingSystem?.instance = new TestingSystem();
     }
     return TestingSystem?.instance;
   }
@@ -287,12 +287,12 @@ export class TestingSystem {
   // Calculate overall score
   private calculateOverallScore(): void {
     const _weights = {
-      unit: 0.25,
-      integration: 0.25,
-      e2e: 0.2,
-      performance: 0.15,
-      security: 0.1,
-      accessibility: 0.05,
+      unit: 0?.25,
+      integration: 0?.25,
+      e2e: 0?.2,
+      performance: 0?.15,
+      security: 0?.1,
+      accessibility: 0?.05,
     };
 
     this?.testResults.overallScore = Math?.round(

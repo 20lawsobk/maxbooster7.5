@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { EventEmitter } from "events";
 import { db } from "../db";
 import { projects, studioTracks, audioClips } from "@shared/schema";
@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import * as fs from "fs";
 import fsPromises from "fs/promises";
 import * as path from "path";
-import { PocketDimensionManager } from "../pocket-dimension/index.js";
+import { PocketDimensionManager } from "../pocket-dimension/index?.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -132,14 +132,14 @@ class OfflineModeService extends EventEmitter {
   constructor() {
     super();
     fs?.mkdirSync(OFFLINE_AUDIO_DIR, { recursive: true });
-    this.pocketReady = this?.initPocket();
+    this?.pocketReady = this?.initPocket();
     this?.startConnectivityMonitor();
   }
 
   private async initPocket(): Promise<void> {
     try {
       const _manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this.pocket = await manager?.openPocket(POCKET_ID, {
+      this?.pocket = await manager?.openPocket(POCKET_ID, {
         compressionLevel: 9,
         enableDeduplication: true,
         enableVersioning: false,
@@ -160,18 +160,18 @@ class OfflineModeService extends EventEmitter {
   private async loadCacheIndex(): Promise<void> {
     if (!this?.pocket) return;
     try {
-      const _raw = await this?.pocket.read("index/cache-index.json");
+      const _raw = await this?.pocket.read("index/cache-index?.json");
       const _index = JSON?.parse(raw?.toString("utf-8"));
       for (const [projectId, rawProject] of Object?.entries(
         index?.projects || {},
       )) {
         const _project = rawProject as Record<string, unknown>;
-        project.cachedAt = new Date(project?.cachedAt);
-        project.lastSyncAt = new Date(project?.lastSyncAt);
+        project?.cachedAt = new Date(project?.cachedAt);
+        project?.lastSyncAt = new Date(project?.lastSyncAt);
         if (project?.audioFiles) {
           for (const af of project?.audioFiles)
-            af.cachedAt = new Date(af?.cachedAt);
-          project.audioFiles = project?.audioFiles.filter(
+            af?.cachedAt = new Date(af?.cachedAt);
+          project?.audioFiles = project?.audioFiles.filter(
             (af: OfflineAudioFile) => {
               if (
                 af?.path.startsWith("/") ||
@@ -185,14 +185,14 @@ class OfflineModeService extends EventEmitter {
         }
         try {
           const _projBuf = await this?.pocket.read(`projects/${projectId}.json`);
-          project.projectData = JSON?.parse(projBuf?.toString("utf-8"));
+          project?.projectData = JSON?.parse(projBuf?.toString("utf-8"));
         } catch {
           /* project data missing */
         }
         this?.cachedProjects.set(projectId, project as OfflineProject);
       }
       if (index?.settings)
-        this.settings = { ...DEFAULT_SETTINGS, ...index?.settings };
+        this?.settings = { ...DEFAULT_SETTINGS, ...index?.settings };
       logger?.info(
         `[OfflineCache] Loaded ${this?.cachedProjects.size} cached projects from Pocket Dimension`,
       );
@@ -211,7 +211,7 @@ class OfflineModeService extends EventEmitter {
     };
     this?.pocket
       .write(
-        "index/cache-index.json",
+        "index/cache-index?.json",
         Buffer?.from(JSON?.stringify(index, null, 2)),
       )
       .catch((err: Error) =>
@@ -273,8 +273,8 @@ class OfflineModeService extends EventEmitter {
   private async checkConnectivity(): Promise<void> {
     const _wasOnline = this?.isOnline;
     try {
-      this.isOnline = true;
-      this.lastOnlineCheck = new Date();
+      this?.isOnline = true;
+      this?.lastOnlineCheck = new Date();
 
       if (!wasOnline && this?.isOnline) {
         this?.emit("online");
@@ -283,7 +283,7 @@ class OfflineModeService extends EventEmitter {
         }
       }
     } catch (error) {
-      this.isOnline = false;
+      this?.isOnline = false;
       if (wasOnline) {
         this?.emit("offline");
       }
@@ -474,7 +474,7 @@ class OfflineModeService extends EventEmitter {
 
     try {
       this?.emit("syncStart", { projectId });
-      cached.status = "syncing";
+      cached?.status = "syncing";
 
       const _serverProject = await db?.query.projects?.findFirst({
         where: eq(projects?.id, projectId),
@@ -502,10 +502,10 @@ class OfflineModeService extends EventEmitter {
         filesDownloaded = cached?.serverChanges;
       }
 
-      cached.lastSyncAt = new Date();
-      cached.status = "cached";
-      cached.localChanges = 0;
-      cached.serverChanges = 0;
+      cached?.lastSyncAt = new Date();
+      cached?.status = "cached";
+      cached?.localChanges = 0;
+      cached?.serverChanges = 0;
 
       const _syncTime = Date?.now() - startTime;
       this?.emit("syncComplete", { projectId, syncTime });
@@ -528,7 +528,7 @@ class OfflineModeService extends EventEmitter {
         syncTime,
       };
     } catch (error) {
-      cached.status = "outdated";
+      cached?.status = "outdated";
       this?.emit("syncError", { projectId, error: error?.message });
 
       return {
@@ -548,7 +548,7 @@ class OfflineModeService extends EventEmitter {
       throw new Error("Sync already in progress");
     }
 
-    this.isSyncing = true;
+    this?.isSyncing = true;
     const _startTime = Date?.now();
     const results: SyncResult[] = [];
 
@@ -565,14 +565,14 @@ class OfflineModeService extends EventEmitter {
         results?.push(result);
       }
 
-      this.syncQueue = [];
+      this?.syncQueue = [];
 
       return {
         results,
         totalTime: Date?.now() - startTime,
       };
     } finally {
-      this.isSyncing = false;
+      this?.isSyncing = false;
     }
   }
 
@@ -580,7 +580,7 @@ class OfflineModeService extends EventEmitter {
     const _cached = this?.cachedProjects.get(projectId);
     if (cached) {
       cached?.localChanges++;
-      cached.status = "outdated";
+      cached?.status = "outdated";
       this?.emit("localChange", { projectId, changes: cached?.localChanges });
     }
   }
@@ -589,7 +589,7 @@ class OfflineModeService extends EventEmitter {
     const _cached = this?.cachedProjects.get(projectId);
     if (cached) {
       cached?.serverChanges++;
-      cached.status = "outdated";
+      cached?.status = "outdated";
       this?.emit("serverChange", { projectId, changes: cached?.serverChanges });
     }
   }
@@ -620,7 +620,7 @@ class OfflineModeService extends EventEmitter {
   }
 
   updateSettings(updates: Partial<OfflineSettings>): OfflineSettings {
-    this.settings = { ...this?.settings, ...updates };
+    this?.settings = { ...this?.settings, ...updates };
     this?.emit("settingsUpdated", this?.settings);
     return this?.settings;
   }

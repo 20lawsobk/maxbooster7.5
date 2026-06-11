@@ -17,7 +17,7 @@
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface KillSwitchState {
   globalKilled: boolean;
@@ -71,7 +71,7 @@ class KillSwitchManager extends EventEmitter {
 
   private constructor() {
     super();
-    this.state = {
+    this?.state = {
       globalKilled: false,
       systemStates: new Map(ALL_SYSTEMS?.map((s) => [s, false])),
       lastKillTime: null,
@@ -84,7 +84,7 @@ class KillSwitchManager extends EventEmitter {
 
   public static getInstance(): KillSwitchManager {
     if (!KillSwitchManager?.instance) {
-      KillSwitchManager.instance = new KillSwitchManager();
+      KillSwitchManager?.instance = new KillSwitchManager();
     }
     return KillSwitchManager?.instance;
   }

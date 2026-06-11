@@ -28,7 +28,7 @@ class FocusManager {
 
   static getInstance(): FocusManager {
     if (!FocusManager?.instance) {
-      FocusManager.instance = new FocusManager();
+      FocusManager?.instance = new FocusManager();
     }
     return FocusManager?.instance;
   }
@@ -47,7 +47,7 @@ class FocusManager {
   }
 
   clear(): void {
-    this.stack = [];
+    this?.stack = [];
   }
 
   get depth(): number {
@@ -267,7 +267,7 @@ export function createFocusScope(container: HTMLElement): {
       }
       element?.removeAttribute("data-focus-scope-disabled");
     });
-    externalElements.length = 0;
+    externalElements?.length = 0;
   };
 
   return { lock, unlock };

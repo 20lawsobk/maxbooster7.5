@@ -252,8 +252,8 @@ export function useUniversalUpload() {
         });
 
         xhr?.open("POST", options?.endpoint);
-        xhr.withCredentials = options?.withCredentials ?? true;
-        xhr.timeout = 10 * 60 * 1000;
+        xhr?.withCredentials = options?.withCredentials ?? true;
+        xhr?.timeout = 10 * 60 * 1000;
         xhr?.send(formData);
       });
     },

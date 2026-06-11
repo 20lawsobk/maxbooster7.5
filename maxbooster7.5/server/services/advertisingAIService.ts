@@ -320,7 +320,9 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #2: Audience Clustering (Deterministic AI)
    * Segments audience into 5-10 clusters based on demographics, behavior, interests
    */
-  async clusterAudience(campaignId: number): Promise<{
+  async clusterAudience(
+    campaignId: number,
+  ): Promise<{
     segments: AudienceSegment[];
     summary: Record<string, unknown>;
   }> {

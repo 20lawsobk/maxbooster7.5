@@ -25,23 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Loader2,
-  Download,
-  Sparkles,
-  Clock,
-  Layout,
-  Film,
-  Zap,
-  Layers,
-  Mic,
-  Image,
-  FileText,
-  Upload,
-  CheckCircle,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ServerVideoGeneratorProps {
   platform: string;
@@ -427,6 +411,7 @@ export function ServerVideoGenerator({
     // INTENTIONAL: mount-only effect — the handler only needs to access refs (stable) and
     // activeJobIdRef/applyVideoResult are always current via ref indirection. Adding them
     // as deps would re-register the visibilitychange listener on every render.
+     
   }, []);
 
   // Clean up image preview URL on unmount
@@ -750,6 +735,7 @@ export function ServerVideoGenerator({
     // INTENTIONAL: mount-only effect — all props accessed here (topic, hook, template, etc.)
     // are captured at mount time intentionally. Including them would re-trigger auto-start on
     // every prop change; the ref guard (autoStartFiredRef) is sufficient to ensure single-fire.
+     
   }, []);
 
   // ── Text mode ────────────────────────────────────────────────────────────────

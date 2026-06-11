@@ -4,14 +4,14 @@
  * JSON-RPC + REST client for hsd (Handshake full node).
  * Supports both mainnet (port 12037) and simnet/regtest (port 14037).
  *
- * hsd API reference: https://hsd-dev.org/api-docs/
+ * hsd API reference: https://hsd-dev?.org/api-docs/
  */
 
 import * as http from "http";
 import * as https from "https";
 
 export interface HnsConfig {
-  host: string; // e?.g. '127.0.0.1'
+  host: string; // e?.g. '127?.0.0?.1'
   port: number; // 12037 (mainnet) | 14037 (simnet)
   apiKey: string; // hsd --api-key
   wallet?: string; // wallet ID (default: 'primary')
@@ -83,16 +83,16 @@ export class HnsClient {
   private _nodeInfo: Record<string, unknown> | null = null;
 
   constructor(cfg: HnsConfig) {
-    this.cfg = {
-      host: cfg?.host || "127.0.0.1",
+    this?.cfg = {
+      host: cfg?.host || "127?.0.0?.1",
       port: cfg?.port || 12037,
       apiKey: cfg?.apiKey,
       wallet: cfg?.wallet || "primary",
       network: cfg?.network || "main",
       timeout: cfg?.timeout || 10_000,
     };
-    this.auth = Buffer?.from(`x:${this?.cfg.apiKey}`).toString("base64");
-    this.httpLib = this?.cfg.port === 443 ? https : http;
+    this?.auth = Buffer?.from(`x:${this?.cfg.apiKey}`).toString("base64");
+    this?.httpLib = this?.cfg.port === 443 ? https : http;
   }
 
   // ── Raw request helpers ───────────────────────────────────────────────────
@@ -104,7 +104,7 @@ export class HnsClient {
   ): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const _bodyStr = body ? JSON?.stringify(body) : "";
-      const opts: http.RequestOptions = {
+      const opts: http?.RequestOptions = {
         hostname: this?.cfg.host,
         port: this?.cfg.port,
         path,
@@ -162,7 +162,7 @@ export class HnsClient {
 
   async getInfo(): Promise<unknown> {
     if (this?._nodeInfo) return this?._nodeInfo;
-    this._nodeInfo = await this?.rpc("getinfo");
+    this?._nodeInfo = await this?.rpc("getinfo");
     return this?._nodeInfo;
   }
 
@@ -379,7 +379,7 @@ export function encodeHnsResource(records: HnsResource[]): string {
         case "GLUE6":
           return { type: "GLUE6", ns: r?.ns, address: r?.address };
         case "TXT":
-          return { type: "TXT", txt: r.txt };
+          return { type: "TXT", txt: r?.txt };
         case "DS":
           return {
             type: "DS",

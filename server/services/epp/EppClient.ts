@@ -13,8 +13,8 @@
  */
 
 import * as tls from "tls";
-import { logger } from "../../logger.js";
-import type { EppConfig } from "./types.js";
+import { logger } from "../../logger?.js";
+import type { EppConfig } from "./types?.js";
 
 const _DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -31,8 +31,8 @@ export class EppClient {
   private readonly timeoutMs: number;
 
   constructor(cfg: EppConfig) {
-    this.cfg = cfg;
-    this.timeoutMs = cfg?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    this?.cfg = cfg;
+    this?.timeoutMs = cfg?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   }
 
   // ── Connection ──────────────────────────────────────────────────────────────
@@ -47,7 +47,7 @@ export class EppClient {
     if (this?.socket?.writable) return "";
 
     return new Promise<string>((resolve, reject) => {
-      const opts: tls.ConnectionOptions = {
+      const opts: tls?.ConnectionOptions = {
         host: this?.cfg.host,
         port: this?.cfg.port,
         rejectUnauthorized: this?.cfg.rejectUnauthorized ?? false,
@@ -55,8 +55,8 @@ export class EppClient {
       };
 
       if (this?.cfg.tlsCert && this?.cfg.tlsKey) {
-        opts.cert = this?.cfg.tlsCert;
-        opts.key = this?.cfg.tlsKey;
+        opts?.cert = this?.cfg.tlsCert;
+        opts?.key = this?.cfg.tlsKey;
       }
 
       const _sock = tls?.connect(opts);
@@ -101,7 +101,7 @@ export class EppClient {
         }
       });
 
-      this.socket = sock;
+      this?.socket = sock;
       logger?.info(`[EPP] Connecting to ${this?.cfg.host}:${this?.cfg.port}`);
     });
   }
@@ -109,14 +109,14 @@ export class EppClient {
   // ── Framing ─────────────────────────────────────────────────────────────────
 
   private onData(chunk: Buffer): void {
-    this.rxBuf = Buffer?.concat([this?.rxBuf, chunk]);
+    this?.rxBuf = Buffer?.concat([this?.rxBuf, chunk]);
 
     while (this?.rxBuf.length >= 4) {
       const _totalLen = this?.rxBuf.readUInt32BE(0); // includes the 4-byte header
       if (this?.rxBuf.length < totalLen) break;
 
       const _xmlBuf = this?.rxBuf.slice(4, totalLen);
-      this.rxBuf = this?.rxBuf.slice(totalLen);
+      this?.rxBuf = this?.rxBuf.slice(totalLen);
       const _xml = xmlBuf?.toString("utf8");
 
       const _resolve = this?.queue.shift();
@@ -138,7 +138,7 @@ export class EppClient {
    */
   send(xml: string): Promise<string> {
     const _task = this?.lastCmd.then(() => this?._sendImmediate(xml));
-    this.lastCmd = task?.catch(() => {
+    this?.lastCmd = task?.catch(() => {
       /* allow next command to proceed */
     });
     return task;
@@ -188,9 +188,9 @@ export class EppClient {
       } catch {
         /* ignore */
       }
-      this.socket = null;
+      this?.socket = null;
     }
-    this.rxBuf = Buffer?.alloc(0);
+    this?.rxBuf = Buffer?.alloc(0);
   }
 
   disconnect(): void {

@@ -91,11 +91,11 @@ export function useAudioEngine(): AudioEngineHook {
 
         case "position-update":
           const _pos = event?.data as { sample: number; time: number };
-          positionRef.current = pos;
+          positionRef?.current = pos;
           if (!positionUpdateScheduledRef?.current) {
-            positionUpdateScheduledRef.current = true;
+            positionUpdateScheduledRef?.current = true;
             requestAnimationFrame(() => {
-              positionUpdateScheduledRef.current = false;
+              positionUpdateScheduledRef?.current = false;
               const _latestPos = positionRef?.current;
               setPlaybackState((prev) => ({
                 ...prev,

@@ -49,12 +49,12 @@
  */
 
 import { randomUUID } from "crypto";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import {
   autopilotLearningService,
   type PostData,
   type AnalyticsData,
-} from "./autopilotLearningService.js";
+} from "./autopilotLearningService?.js";
 
 // ─── MaxCore connection (mirrors multimodalGenerationService pattern) ──────────
 
@@ -182,6 +182,12 @@ interface GenerateTextResponse {
   script?: string;
   caption?: string;
   outputs?: Array<{ text?: string }>;
+}
+
+interface GenerateImageResponse {
+  url?: string;
+  image_url?: string;
+  path?: string;
 }
 
 interface RawBeat {
@@ -322,7 +328,7 @@ async function analyzeMusicStage(
           ],
       energyCurve: Array?.isArray(raw?.energy_curve)
         ? raw?.energy_curve
-        : [0.4, 0.7, 0.9, 0.6],
+        : [0?.4, 0?.7, 0?.9, 0?.6],
       mood: Array?.isArray(raw?.mood) ? raw?.mood : [brief?.tone],
     };
   } catch (err) {
@@ -339,7 +345,7 @@ async function analyzeMusicStage(
         { name: "verse", start: 8, end: 24 },
         { name: "chorus", start: 24, end: 40 },
       ],
-      energyCurve: [0.4, 0.7, 0.9, 0.6],
+      energyCurve: [0?.4, 0?.7, 0?.9, 0?.6],
       mood: [brief?.tone],
     };
   }
@@ -348,22 +354,22 @@ async function analyzeMusicStage(
 // ─── In-house model singletons (lazy-loaded, shared across requests) ──────────
 
 let _planner:
-  | import("../../shared/ml/models/CreativePlannerModel.js").CreativePlannerModel
+  | import("../../shared/ml/models/CreativePlannerModel?.js").CreativePlannerModel
   | null = null;
 let _aligner:
-  | import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatSyncAlignmentModel
+  | import("../../shared/ml/models/BeatSyncAlignmentModel?.js").BeatSyncAlignmentModel
   | null = null;
 let _scorer:
-  | import("../../shared/ml/models/VideoCreativeScorer.js").VideoCreativeScorer
+  | import("../../shared/ml/models/VideoCreativeScorer?.js").VideoCreativeScorer
   | null = null;
 let _styleSelector:
-  | import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeStyleSelector
+  | import("../../shared/ml/models/KeyframeStyleSelector?.js").KeyframeStyleSelector
   | null = null;
 
 async function getPlanner() {
   if (!_planner) {
     const { CreativePlannerModel } = await import(
-      "../../shared/ml/models/CreativePlannerModel.js"
+      "../../shared/ml/models/CreativePlannerModel?.js"
     );
     _planner = new CreativePlannerModel();
     await _planner?.initialize();
@@ -373,7 +379,7 @@ async function getPlanner() {
 async function getAligner() {
   if (!_aligner) {
     const { BeatSyncAlignmentModel } = await import(
-      "../../shared/ml/models/BeatSyncAlignmentModel.js"
+      "../../shared/ml/models/BeatSyncAlignmentModel?.js"
     );
     _aligner = new BeatSyncAlignmentModel();
     await _aligner?.initialize();
@@ -383,7 +389,7 @@ async function getAligner() {
 async function getScorer() {
   if (!_scorer) {
     const { VideoCreativeScorer } = await import(
-      "../../shared/ml/models/VideoCreativeScorer.js"
+      "../../shared/ml/models/VideoCreativeScorer?.js"
     );
     _scorer = new VideoCreativeScorer();
     await _scorer?.initialize();
@@ -393,7 +399,7 @@ async function getScorer() {
 async function getStyleSelector() {
   if (!_styleSelector) {
     const { KeyframeStyleSelector } = await import(
-      "../../shared/ml/models/KeyframeStyleSelector.js"
+      "../../shared/ml/models/KeyframeStyleSelector?.js"
     );
     _styleSelector = new KeyframeStyleSelector();
     await _styleSelector?.initialize();
@@ -406,15 +412,15 @@ async function getStyleSelector() {
 interface CreativeContext {
   /** CreativePlannerModel output — structural frame for the whole video */
   plannerSuggestion:
-    | import("../../shared/ml/models/CreativePlannerModel.js").CreativePlannerOutput
+    | import("../../shared/ml/models/CreativePlannerModel?.js").CreativePlannerOutput
     | null;
   /** Per-beat style selections from KeyframeStyleSelector (keyed by beat index) */
   styleMap: Map<
     number,
-    import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeSelectorOutput
+    import("../../shared/ml/models/KeyframeStyleSelector?.js").KeyframeSelectorOutput
   >;
   /** Per-beat alignment data from BeatSyncAlignmentModel */
-  alignmentMap: import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
+  alignmentMap: import("../../shared/ml/models/BeatSyncAlignmentModel?.js").BeatAlignmentOutput[];
   energyMean: number;
   energyPeak: number;
   energyVariance: number;
@@ -435,13 +441,13 @@ async function precomputeMusicalIntelligence(
     musicMeta?.energyCurve.length > 0
       ? musicMeta?.energyCurve.reduce((a, b) => a + b, 0) /
         musicMeta?.energyCurve.length
-      : 0.6;
+      : 0?.6;
   const _energyPeak =
-    musicMeta?.energyCurve.length > 0 ? Math?.max(...musicMeta?.energyCurve) : 0.9;
+    musicMeta?.energyCurve.length > 0 ? Math?.max(...musicMeta?.energyCurve) : 0?.9;
   const _energyVariance =
     musicMeta?.energyCurve.length > 1
       ? energyPeak - Math?.min(...musicMeta?.energyCurve)
-      : 0.3;
+      : 0?.3;
 
   const _plannerInput = {
     platform: brief?.platform,
@@ -457,12 +463,12 @@ async function precomputeMusicalIntelligence(
         s?.name.toLowerCase().includes("chorus"),
     ),
     isMinor: musicMeta?.key.toLowerCase().includes("minor"),
-    tempoStability: 0.8,
+    tempoStability: 0?.8,
     energyPeak,
     moodEnergy:
       musicMeta?.mood.includes("driving") || musicMeta?.mood.includes("energetic")
-        ? 0.85
-        : 0.55,
+        ? 0?.85
+        : 0?.55,
   };
 
   // Compute planner first to get beat count for style/alignment maps
@@ -512,7 +518,7 @@ async function precomputeMusicalIntelligence(
           ] ?? energyMean;
         const _acc = Math?.min(
           1,
-          (i / beatCount) * energyMean + energyAtBeat * 0.2,
+          (i / beatCount) * energyMean + energyAtBeat * 0?.2,
         );
         const _al = await getAligner().catch(() => null);
         if (!al) return null;
@@ -540,7 +546,7 @@ async function precomputeMusicalIntelligence(
 
   const _styleMap = new Map<
     number,
-    import("../../shared/ml/models/KeyframeStyleSelector.js").KeyframeSelectorOutput
+    import("../../shared/ml/models/KeyframeStyleSelector?.js").KeyframeSelectorOutput
   >();
   styleResults?.forEach((r, i) => {
     if (r) styleMap?.set(i, r);
@@ -548,7 +554,7 @@ async function precomputeMusicalIntelligence(
 
   const _alignmentMap = alignmentResults?.filter(
     Boolean,
-  ) as import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
+  ) as import("../../shared/ml/models/BeatSyncAlignmentModel?.js").BeatAlignmentOutput[];
 
   logger?.info("[CreativeModel] Musical intelligence pre-computed", {
     plannerBeatCount: plannerSuggestion?.optimalBeatCount,
@@ -577,16 +583,16 @@ async function planningStage(
 
   const _ps = ctx?.plannerSuggestion;
   const _ctaLabel = ps
-    ? ps?.ctaUrgency > 0.75
+    ? ps?.ctaUrgency > 0?.75
       ? "HIGH-PRESSURE"
-      : ps?.ctaUrgency > 0.45
+      : ps?.ctaUrgency > 0?.45
         ? "MODERATE"
         : "SOFT"
     : "MODERATE";
   const _variantCount = ps
-    ? ps?.variantDiversity > 0.7
+    ? ps?.variantDiversity > 0?.7
       ? 4
-      : ps?.variantDiversity > 0.4
+      : ps?.variantDiversity > 0?.4
         ? 3
         : 2
     : 3;
@@ -595,7 +601,7 @@ async function planningStage(
     ? `
 MUSIC INTELLIGENCE CONSTRAINTS (computed from audio — treat as ground truth):
 - Optimal beat count: ${ps?.optimalBeatCount} (your "beats" array MUST have exactly ${ps?.optimalBeatCount} items)
-- Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% (${ps?.hookEmotionalWeight > 0.7 ? "high-impact opener needed" : ps?.hookEmotionalWeight > 0.4 ? "moderate emotional draw" : "informational hook"})
+- Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% (${ps?.hookEmotionalWeight > 0?.7 ? "high-impact opener needed" : ps?.hookEmotionalWeight > 0?.4 ? "moderate emotional draw" : "informational hook"})
 - CTA urgency: ${ctaLabel} (${Math?.round(ps?.ctaUrgency * 100)}%)
 - Testing variants: generate ${variantCount} distinct variants
 `.trim()
@@ -704,7 +710,7 @@ Return JSON only — beats array must match the constraint count exactly:
 
     const _beatCount = ps?.optimalBeatCount ?? 3;
     const _beats = defaultBeats(brief).slice(0, Math?.min(beatCount, 5));
-    if (ps && ps?.ctaUrgency > 0.65 && beats?.length < beatCount) {
+    if (ps && ps?.ctaUrgency > 0?.65 && beats?.length < beatCount) {
       beats?.push({
         timecodeHint: `${beats?.length * 4}-${beats?.length * 4 + 3}s`,
         description: `Urgent CTA: ${brief?.callToAction}`,
@@ -757,10 +763,10 @@ async function scriptStage(
 
   const _ps = ctx?.plannerSuggestion;
   const _hookGuidance = ps
-    ? `Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% — ${ps?.hookEmotionalWeight > 0.7 ? "make it visceral and immediate" : ps?.hookEmotionalWeight > 0.4 ? "draw viewers in with curiosity" : "lead with information"}`
+    ? `Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% — ${ps?.hookEmotionalWeight > 0?.7 ? "make it visceral and immediate" : ps?.hookEmotionalWeight > 0?.4 ? "draw viewers in with curiosity" : "lead with information"}`
     : "";
   const _ctaGuidance = ps
-    ? `CTA pressure: ${ps?.ctaUrgency > 0.75 ? "urgent — create scarcity or FOMO" : ps?.ctaUrgency > 0.45 ? "direct — clear next step" : "soft — invite, do not demand"}`
+    ? `CTA pressure: ${ps?.ctaUrgency > 0?.75 ? "urgent — create scarcity or FOMO" : ps?.ctaUrgency > 0?.45 ? "direct — clear next step" : "soft — invite, do not demand"}`
     : "";
 
   try {
@@ -818,8 +824,8 @@ async function keyframesStage(
       const _primaryStyle = styleResult?.primaryStyle ?? "neon_tunnel";
       const _altStyle = styleResult?.topStyles[1]?.style;
       const _altProb = styleResult?.topStyles[1]?.probability ?? 0;
-      const _primaryProb = styleResult?.topStyles[0]?.probability ?? 0.8;
-      const _closeMatch = altStyle && primaryProb - altProb < 0.15;
+      const _primaryProb = styleResult?.topStyles[0]?.probability ?? 0?.8;
+      const _closeMatch = altStyle && primaryProb - altProb < 0?.15;
 
       // Refine style selection with the now-known emotional goal from the plan
       const _refinedSelector = await getStyleSelector().catch(() => null);
@@ -929,10 +935,10 @@ async function alignmentStage(
     if (alignment) return alignment?.transitionType;
     const _energyAtBeat =
       musicMeta?.energyCurve[i % Math?.max(1, musicMeta?.energyCurve.length)] ??
-      0.6;
-    return energyAtBeat > 0.7
+      0?.6;
+    return energyAtBeat > 0?.7
       ? "cut_on_beat"
-      : energyAtBeat > 0.4
+      : energyAtBeat > 0?.4
         ? "crossfade"
         : "dissolve";
   });
@@ -962,7 +968,7 @@ Only override a beat's timing or transition if there is a strong narrative reaso
       ].join("\n"),
       prompt: `Validate and optionally enhance the provided beat alignment map. For each beat, only change start/end/transition if there is a clear narrative or musical reason. Return JSON:
 {
-  "timeline": [{ "start": 0.0, "end": 3.0, "note": "optional reason for any change" }],
+  "timeline": [{ "start": 0?.0, "end": 3?.0, "note": "optional reason for any change" }],
   "transitions": ["cut_on_beat", "crossfade", ...]
 }`,
     })) as GenerateTextResponse;
@@ -1182,8 +1188,8 @@ async function scoringStage(
     hasCTA: !!brief?.callToAction,
     genreEnergy:
       musicMeta?.mood.includes("driving") || musicMeta?.mood.includes("energetic")
-        ? 0.85
-        : 0.55,
+        ? 0?.85
+        : 0?.55,
     moodEnergy: ctx?.energyPeak,
     scriptLength: script?.length,
   };
@@ -1211,9 +1217,9 @@ async function scoringStage(
       }),
       prompt: `Predict engagement for this short-form video creative. Consider beat count, hook type, CTA urgency (${ctx?.plannerSuggestion ? Math?.round(ctx?.plannerSuggestion.ctaUrgency * 100) : 50}%), and energy peak (${ctx?.energyPeak.toFixed(2)}). Return JSON only:
 {
-  "watchTimeScore": 0.0-1.0,
-  "hookStrength": 0.0-1.0,
-  "conversionScore": 0.0-1.0
+  "watchTimeScore": 0?.0-1?.0,
+  "hookStrength": 0?.0-1?.0,
+  "conversionScore": 0?.0-1?.0
 }`,
     }),
     getScorer().then((m) => m?.scoreCreative(localScorerInput)),
@@ -1256,13 +1262,13 @@ async function scoringStage(
 
     return {
       watchTimeScore: clamp(
-        maxcore?.watchTimeScore * 0.6 + local?.watchTimeScore * 0.4,
+        maxcore?.watchTimeScore * 0?.6 + local?.watchTimeScore * 0?.4,
       ),
       hookStrength: clamp(
-        maxcore?.hookStrength * 0.6 + local?.hookStrength * 0.4,
+        maxcore?.hookStrength * 0?.6 + local?.hookStrength * 0?.4,
       ),
       conversionScore: clamp(
-        maxcore?.conversionScore * 0.6 + local?.conversionScore * 0.4,
+        maxcore?.conversionScore * 0?.6 + local?.conversionScore * 0?.4,
       ),
     };
   }
@@ -1286,7 +1292,7 @@ async function scoringStage(
   }
 
   logger?.warn("[CreativeModel] Scoring: both failed — using safe defaults");
-  return { watchTimeScore: 0.7, hookStrength: 0.75, conversionScore: 0.65 };
+  return { watchTimeScore: 0?.7, hookStrength: 0?.75, conversionScore: 0?.65 };
 }
 
 function clamp(v: unknown, min = 0, max = 1): number {
@@ -1428,7 +1434,7 @@ export async function scoreCreative(
     bpm: 120,
     key: "C major",
     sections: [],
-    energyCurve: [0.65],
+    energyCurve: [0?.65],
     mood: [brief?.tone],
   };
   const _ctx = await precomputeMusicalIntelligence(

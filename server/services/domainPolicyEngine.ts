@@ -12,11 +12,11 @@
  */
 
 import { eq, sql, and, inArray } from "drizzle-orm";
-import { db, pool } from "../db.js";
+import { db, pool } from "../db?.js";
 import { claimedDomains, users } from "@shared/schema";
-import { logger } from "../logger.js";
-import { getRegistrarProvider } from "./registrar/index.js";
-import type { ContactProfile, DomainEventType } from "./registrar/types.js";
+import { logger } from "../logger?.js";
+import { getRegistrarProvider } from "./registrar/index?.js";
+import type { ContactProfile, DomainEventType } from "./registrar/types?.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -262,7 +262,7 @@ export async function buildContactProfile(
     email: user?.email,
     // Phone is not collected at signup — users should add it in Profile Settings.
     // A generic registrar-compliant placeholder is used until then.
-    phone: "+1.5555550100",
+    phone: "+1?.5555550100",
     address: {
       street: "100 Music Ave",
       city,

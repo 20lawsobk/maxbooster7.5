@@ -5,7 +5,7 @@
 
 import { simulateAutonomousUpgrade } from "./autonomousUpgradeSimulation";
 import { simulateAdBooster } from "./adBoosterSimulation";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 async function verifyDeterministicBehavior() {
   logger?.info("🔍 Verifying Deterministic Behavior\n");
@@ -119,7 +119,7 @@ async function verifyDeterministicBehavior() {
   logger?.info(`Run 2 Amplification: ${ad2?.amplificationFactor}x`);
   logger?.info(`Results Match: ${adMatch ? "✅ YES" : "❌ NO"}`);
   logger?.info(
-    `Meets ≥2.0x threshold: ${ad1?.amplificationFactor >= 2.0 ? "✅ YES" : "❌ NO"}`,
+    `Meets ≥2?.0x threshold: ${ad1?.amplificationFactor >= 2?.0 ? "✅ YES" : "❌ NO"}`,
   );
 
   if (!adMatch) {
@@ -127,9 +127,9 @@ async function verifyDeterministicBehavior() {
     return false;
   }
 
-  if (ad1?.amplificationFactor < 2.0) {
+  if (ad1?.amplificationFactor < 2?.0) {
     logger?.info(
-      "\n⚠️  FAILURE: Ad Booster amplification below 2.0x threshold!",
+      "\n⚠️  FAILURE: Ad Booster amplification below 2?.0x threshold!",
     );
     return false;
   }

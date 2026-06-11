@@ -23,12 +23,12 @@
  */
 
 import { spawn, ChildProcess } from "child_process";
-import { PYTHON } from "./pythonPath.js";
+import { PYTHON } from "./pythonPath?.js";
 import path from "path";
 import fs from "fs";
 import os from "os";
 import { fileURLToPath } from "url";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const ___metaUrl = (import?.meta as Record<string, unknown>)?.url as
   | string
@@ -38,10 +38,10 @@ const ___filename = __metaUrl
   : path?.resolve(process?.argv[1] ?? "");
 const ___dirname = path?.dirname(__filename);
 
-const _SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
-const _META_PATH = path?.join(__dirname, "diffusion", "meta.json");
-const _MEMORY_PATH = path?.join(__dirname, "diffusion", "memory.json");
-const _STATUS_PATH = path?.join(os?.tmpdir(), "diffusion_bg_status.json");
+const _SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer?.py");
+const _META_PATH = path?.join(__dirname, "diffusion", "meta?.json");
+const _MEMORY_PATH = path?.join(__dirname, "diffusion", "memory?.json");
+const _STATUS_PATH = path?.join(os?.tmpdir(), "diffusion_bg_status?.json");
 
 const TIER_SEQUENCE: Array<"quick" | "medium" | "deep"> = [
   "quick",
@@ -83,7 +83,7 @@ const state: BgStatus = {
 
 let _proc: ChildProcess | null = null;
 let _stopFlag: boolean = false;
-let _loopTimer: NodeJS.Timeout | null = null;
+let _loopTimer: NodeJS?.Timeout | null = null;
 
 const _MAX_LOG_LINES = 50;
 
@@ -103,13 +103,13 @@ function _syncMemoryStats() {
     if (fs?.existsSync(MEMORY_PATH)) {
       const _raw = JSON?.parse(fs?.readFileSync(MEMORY_PATH, "utf8"));
       const _s = raw?.state ?? {};
-      state.totalSessions = s?.total_sessions ?? state?.totalSessions;
-      state.totalSteps = s?.total_steps ?? state?.totalSteps;
-      state.replayBuffer = (raw?.replay_buffer ?? []).length;
+      state?.totalSessions = s?.total_sessions ?? state?.totalSessions;
+      state?.totalSteps = s?.total_steps ?? state?.totalSteps;
+      state?.replayBuffer = (raw?.replay_buffer ?? []).length;
     }
     if (fs?.existsSync(META_PATH)) {
       const _meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
-      state.lastLoss = meta?.final_loss ?? state?.lastLoss;
+      state?.lastLoss = meta?.final_loss ?? state?.lastLoss;
     }
   } catch {
     /* non-critical */
@@ -135,8 +135,8 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
       return;
     }
 
-    state.currentTier = tier;
-    state.startedAt = Date?.now();
+    state?.currentTier = tier;
+    state?.startedAt = Date?.now();
     _appendLog(
       `[BgTrainer] Session ${state?.session + 1} starting  tier=${tier}`,
     );
@@ -148,8 +148,8 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
       detached: false,
     });
 
-    state.pid = _proc.pid ?? null;
-    state.running = true;
+    state?.pid = _proc?.pid ?? null;
+    state?.running = true;
 
     _proc?.stdout?.on("data", (d: Buffer) => {
       d?.toString()
@@ -176,7 +176,7 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
     });
 
     _proc?.on("close", (code: number | null) => {
-      state.pid = null;
+      state?.pid = null;
       _syncMemoryStats();
       if (code === 0) {
         state?.session++;
@@ -195,7 +195,7 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
 
     _proc?.on("error", (err: Error) => {
       _appendLog(`[BgTrainer] Process error: ${err?.message}`);
-      state.pid = null;
+      state?.pid = null;
       resolve(false);
     });
   });
@@ -221,8 +221,8 @@ async function _trainingLoop() {
     }
   }
 
-  state.running = false;
-  state.paused = false;
+  state?.running = false;
+  state?.paused = false;
   _saveStatus();
   _appendLog("[BgTrainer] Background training loop stopped");
 }
@@ -268,7 +268,7 @@ export async function startBackgroundTraining(): Promise<void> {
   }
 
   // ── MaxCore Gateway check ────────────────────────────────────────────────
-  // The MaxCore Diffusion Gateway (api_server_v4.py on port 8008) is the
+  // The MaxCore Diffusion Gateway (api_server_v4?.py on port 8008) is the
   // authoritative diffusion training source. If it is online, we yield to it
   // and skip the local synthesizer — running both would conflict on the same
   // weights_v4?.npz file and waste CPU resources.
@@ -287,8 +287,8 @@ export async function startBackgroundTraining(): Promise<void> {
   );
 
   _stopFlag = false;
-  state.running = true;
-  state.paused = false;
+  state?.running = true;
+  state?.paused = false;
   _syncMemoryStats();
   _trainingLoop().catch((err) =>
     logger?.warn({ err: err }, "[DiffBG] Unhandled loop error:"),
@@ -306,7 +306,7 @@ export function stopBackgroundTraining(): void {
     clearTimeout(_loopTimer);
     _loopTimer = null;
   }
-  state.paused = true;
+  state?.paused = true;
   _saveStatus();
   logger?.info("[DiffBG] Stop requested — will halt after current session");
 }
@@ -326,9 +326,9 @@ export function forceStopBackgroundTraining(): void {
       if (_proc && !_proc?.killed) _proc?.kill("SIGKILL");
     }, 5000);
   }
-  state.running = false;
-  state.paused = false;
-  state.pid = null;
+  state?.running = false;
+  state?.paused = false;
+  state?.pid = null;
   _saveStatus();
   logger?.info("[DiffBG] Force-stopped");
 }

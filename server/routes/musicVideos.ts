@@ -1,4 +1,4 @@
-import { requireUUIDParam } from "../middleware/requestValidation.js";
+import { requireUUIDParam } from "../middleware/requestValidation?.js";
 import { Router } from "express";
 import { db } from "../db";
 import {
@@ -6,15 +6,15 @@ import {
   insertMusicVideoProductionSchema,
 } from "@shared/schema";
 import { and, eq, desc, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { queryCache, createCacheKey } from "../lib/queryCache.js";
-import { parsePaginationParams } from "../middleware/pagination.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { queryCache, createCacheKey } from "../lib/queryCache?.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
 import {
   getDiffusionTrainingStatus,
   trainDiffusionModel,
   generateDiffusionFrames,
-} from "../services/diffusionVideoService.js";
+} from "../services/diffusionVideoService?.js";
 
 const _router = Router();
 const _CACHE_TTL = 300;
@@ -266,7 +266,7 @@ router?.post("/diffusion/train", requireAuth, async (req, res) => {
     nEpochs: finalEpochs,
     estimatedTime: cfg?.eta,
     architecture: {
-      parameters: "1.2M",
+      parameters: "1?.2M",
       channels: [32, 64, 96],
       attention: true,
       residualBlocks: true,
@@ -305,7 +305,7 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
       nFrames = 15,
       fps = 30,
       frameSize = 512,
-      guidanceScale = 5.0,
+      guidanceScale = 5?.0,
     } = req?.body ?? {};
 
     const _status = getDiffusionTrainingStatus();
@@ -349,7 +349,7 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
 router?.get("/diffusion/background/status", requireAuth, async (_req, res) => {
   try {
     const { getBackgroundStatus } = await import(
-      "../services/diffusionBackgroundTrainer.js"
+      "../services/diffusionBackgroundTrainer?.js"
     );
     res?.json(getBackgroundStatus());
   } catch {
@@ -360,7 +360,7 @@ router?.get("/diffusion/background/status", requireAuth, async (_req, res) => {
 router?.post("/diffusion/background/start", requireAuth, async (_req, res) => {
   try {
     const { startBackgroundTraining, getBackgroundStatus } = await import(
-      "../services/diffusionBackgroundTrainer.js"
+      "../services/diffusionBackgroundTrainer?.js"
     );
     startBackgroundTraining();
     res?.json({
@@ -368,10 +368,12 @@ router?.post("/diffusion/background/start", requireAuth, async (_req, res) => {
       status: getBackgroundStatus(),
     });
   } catch (err) {
-    res.status(500).json({
-      error: "Could not start background trainer",
-      details: String(err),
-    });
+    res
+      .status(500)
+      .json({
+        error: "Could not start background trainer",
+        details: String(err),
+      });
   }
 });
 
@@ -382,7 +384,7 @@ router?.post("/diffusion/background/stop", requireAuth, async (req, res) => {
       stopBackgroundTraining,
       forceStopBackgroundTraining,
       getBackgroundStatus,
-    } = await import("../services/diffusionBackgroundTrainer.js");
+    } = await import("../services/diffusionBackgroundTrainer?.js");
     if (force) {
       forceStopBackgroundTraining();
     } else {
@@ -395,10 +397,12 @@ router?.post("/diffusion/background/stop", requireAuth, async (req, res) => {
       status: getBackgroundStatus(),
     });
   } catch (err) {
-    res.status(500).json({
-      error: "Could not stop background trainer",
-      details: String(err),
-    });
+    res
+      .status(500)
+      .json({
+        error: "Could not stop background trainer",
+        details: String(err),
+      });
   }
 });
 

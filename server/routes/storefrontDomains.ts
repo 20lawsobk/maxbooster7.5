@@ -6,15 +6,15 @@ import {
   publishStorefront,
   unpublishStorefront,
 } from "../modules/publish/publish?.service.js";
-import { logger } from "../logger.js";
-import { db, pool } from "../db.js";
+import { logger } from "../logger?.js";
+import { db, pool } from "../db?.js";
 import {
   storefrontDomains,
   storefronts,
   storefrontHosts,
 } from "@shared/schema";
-import { validateFreeDomain } from "@shared/domainValidation.js";
-import { validateDomain } from "../modules/domains/dnsValidators.js";
+import { validateFreeDomain } from "@shared/domainValidation?.js";
+import { validateDomain } from "../modules/domains/dnsValidators?.js";
 
 const _dnsResolve = dns?.promises.resolve;
 
@@ -29,8 +29,8 @@ async function getUserDomainUsage(
        UNION
        SELECT sd?.domain
        FROM storefront_domains sd
-       JOIN storefronts s ON s.id = sd?.storefront_id
-       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
+       JOIN storefronts s ON s?.id = sd?.storefront_id
+       WHERE s?.user_id = $1 AND sd?.type = 'platform_subdomain'
      ) combined`,
     [userId],
   );
@@ -80,7 +80,7 @@ async function isDomainRegisteredExternally(domain: string): Promise<boolean> {
   return false;
 }
 
-const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
+const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster?.com";
 
 const _router = Router();
 
@@ -151,7 +151,7 @@ router?.post("/custom/request", async (req, res) => {
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { attachDomainToStorefront } = await import(
-      "../services/storefrontDnsService.js"
+      "../services/storefrontDnsService?.js"
     );
     const _result = await attachDomainToStorefront(
       storefrontId,
@@ -168,7 +168,7 @@ router?.post("/custom/request", async (req, res) => {
       nameservers: result?.nameservers,
       instructions: result?.instructions,
       // Legacy-compat fields the old controller used to return
-      platformIp: process?.env.DNS_SERVER_IP || "34.111.179.208",
+      platformIp: process?.env.DNS_SERVER_IP || "34?.111.179?.208",
     });
   } catch (err) {
     logger?.warn({ err }, "[storefrontDomains] custom/request error");
@@ -261,7 +261,7 @@ router?.post("/custom/verify", async (req, res) => {
         .json({ ok: false, error: "domain or domainId required." });
 
     const { verifyStorefrontDomain } = await import(
-      "../services/storefrontDnsService.js"
+      "../services/storefrontDnsService?.js"
     );
     const _result = await verifyStorefrontDomain(resolvedId);
 
@@ -331,7 +331,7 @@ router?.post("/storefront/:storefrontId/unpublish", async (req, res) => {
   }
 });
 
-// ── Free Platform Domain (user's own full domain, e?.g. mybeats.com) ─────────
+// ── Free Platform Domain (user's own full domain, e?.g. mybeats?.com) ─────────
 // Check availability of a full domain name (no auth required).
 // Performs two checks in parallel:
 //   1. Internal DB — is the domain already claimed on Max Booster?
@@ -487,10 +487,12 @@ router?.post("/platform/claim", async (req, res) => {
           alreadyOwned: true,
         });
       }
-      return res.status(409).json({
-        ok: false,
-        error: "This domain is already registered on another storefront.",
-      });
+      return res
+        .status(409)
+        .json({
+          ok: false,
+          error: "This domain is already registered on another storefront.",
+        });
     }
 
     // Enforce 2-domain limit — count BEFORE removing the old one for this storefront
@@ -738,7 +740,7 @@ router?.get("/propagation", async (req, res) => {
     }
 
     const { checkPropagation } = await import(
-      "../services/dnsPropagationCheck.js"
+      "../services/dnsPropagationCheck?.js"
     );
     const _result = await checkPropagation(domain, type, expected);
     return res?.json({ ok: true, ...result });
@@ -775,12 +777,12 @@ router?.get("/propagation/setup", async (req, res) => {
         .json({ ok: false, error: "storefrontId required." });
     }
 
-    const _platformIp = process?.env.DNS_SERVER_IP || "34.111.179.208";
+    const _platformIp = process?.env.DNS_SERVER_IP || "34?.111.179?.208";
     const _ns1 = `ns1.${BASE_DOMAIN}`;
     const _ns2 = `ns2.${BASE_DOMAIN}`;
 
     const { checkDomainSetupPropagation } = await import(
-      "../services/dnsPropagationCheck.js"
+      "../services/dnsPropagationCheck?.js"
     );
     const _result = await checkDomainSetupPropagation(
       domain,
@@ -829,7 +831,7 @@ router?.get("/domain-status/:domainId", async (req, res) => {
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { getDomainStatus } = await import(
-      "../services/storefrontDnsService.js"
+      "../services/storefrontDnsService?.js"
     );
     const _status = await getDomainStatus(domainId);
     return res?.json({ ok: true, ...status });
@@ -848,7 +850,7 @@ router?.get("/dns/status", async (req, res) => {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ ok: false, error: "Unauthorized." });
     const { getDNSInfo, isDNSRunning } = await import(
-      "../services/dnsServer.js"
+      "../services/dnsServer?.js"
     );
     return res?.json({ ok: true, ...getDNSInfo(), running: isDNSRunning() });
   } catch (err) {
@@ -896,7 +898,7 @@ router?.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
     }
 
     const { attachDomainToStorefront } = await import(
-      "../services/storefrontDnsService.js"
+      "../services/storefrontDnsService?.js"
     );
     const _result = await attachDomainToStorefront(
       storefrontId,
@@ -955,7 +957,7 @@ router?.post("/custom/verify-status/:domainId", async (req, res) => {
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
     const { verifyStorefrontDomain } = await import(
-      "../services/storefrontDnsService.js"
+      "../services/storefrontDnsService?.js"
     );
     const _result = await verifyStorefrontDomain(domainId);
     return res?.json({ ok: true, result });
@@ -999,7 +1001,7 @@ router?.delete("/custom/detach/:domainId", async (req, res) => {
     }
 
     const { detachDomainFromStorefront } = await import(
-      "../services/storefrontDnsService.js"
+      "../services/storefrontDnsService?.js"
     );
     await detachDomainFromStorefront(domainId);
     return res?.json({ ok: true });
@@ -1023,7 +1025,7 @@ router?.get("/hosts/:host", async (req, res) => {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ ok: false, error: "Unauthorized." });
     const { lookupStorefrontByHost } = await import(
-      "../services/storefrontDnsService.js"
+      "../services/storefrontDnsService?.js"
     );
     const _storefrontId = await lookupStorefrontByHost(req?.params.host);
     if (!storefrontId)

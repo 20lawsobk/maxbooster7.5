@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from "express";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { promises as fsPromises } from "fs";
 import path from "path";
 import { db } from "../db";
@@ -16,16 +16,16 @@ import {
   pluginPresets,
   studioSamples,
 } from "@shared/schema";
-import { notificationService } from "../services/notificationService.js";
+import { notificationService } from "../services/notificationService?.js";
 import { eq, and, or, desc, inArray, sql as drizzleSql, ilike, arrayOverlaps, type SQL } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { randomBytes } from "crypto";
 import {
   audioUpload,
   storeUploadedFile,
   handleUploadError,
-} from "../middleware/uploadHandler.js";
+} from "../middleware/uploadHandler?.js";
 
 const _router = Router();
 
@@ -373,7 +373,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "kicks",
     tags: ["808", "hard", "trap"],
     tempo: undefined,
-    duration: 0.8,
+    duration: 0?.8,
     audioUrl: "/samples/drums/808-kick-hard?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -384,7 +384,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "drums",
     subcategory: "kicks",
     tags: ["808", "soft", "rnb"],
-    duration: 0.6,
+    duration: 0?.6,
     audioUrl: "/samples/drums/808-kick-soft?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -395,7 +395,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "drums",
     subcategory: "kicks",
     tags: ["punchy", "hip-hop"],
-    duration: 0.4,
+    duration: 0?.4,
     audioUrl: "/samples/drums/punchy-kick?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -406,7 +406,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "drums",
     subcategory: "snares",
     tags: ["trap", "crisp"],
-    duration: 0.3,
+    duration: 0?.3,
     audioUrl: "/samples/drums/trap-snare?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -417,7 +417,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "drums",
     subcategory: "snares",
     tags: ["rnb", "smooth"],
-    duration: 0.35,
+    duration: 0?.35,
     audioUrl: "/samples/drums/rnb-snare?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -428,7 +428,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "drums",
     subcategory: "hi-hats",
     tags: ["closed", "crisp"],
-    duration: 0.1,
+    duration: 0?.1,
     audioUrl: "/samples/drums/hihat-closed?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -439,7 +439,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "drums",
     subcategory: "hi-hats",
     tags: ["open", "shimmer"],
-    duration: 0.5,
+    duration: 0?.5,
     audioUrl: "/samples/drums/hihat-open?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -450,7 +450,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "drums",
     subcategory: "percussion",
     tags: ["clap", "thick", "layered"],
-    duration: 0.25,
+    duration: 0?.25,
     audioUrl: "/samples/drums/clap-thick?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -462,7 +462,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "808s",
     tags: ["808", "deep"],
     key: "C",
-    duration: 2.0,
+    duration: 2?.0,
     audioUrl: "/samples/bass/808-c?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -474,7 +474,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "sub-bass",
     tags: ["sub", "deep"],
     key: "D",
-    duration: 1.5,
+    duration: 1?.5,
     audioUrl: "/samples/bass/sub-d?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -486,7 +486,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "plucks",
     tags: ["pluck", "bright"],
     key: "A",
-    duration: 0.8,
+    duration: 0?.8,
     audioUrl: "/samples/synths/pluck-lead?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -498,7 +498,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "pads",
     tags: ["pad", "warm", "ambient"],
     key: "E",
-    duration: 4.0,
+    duration: 4?.0,
     audioUrl: "/samples/synths/warm-pad?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -509,7 +509,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "fx",
     subcategory: "risers",
     tags: ["riser", "tension"],
-    duration: 4.0,
+    duration: 4?.0,
     audioUrl: "/samples/fx/riser-white?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -520,7 +520,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     category: "fx",
     subcategory: "impacts",
     tags: ["impact", "cinematic", "big"],
-    duration: 2.0,
+    duration: 2?.0,
     audioUrl: "/samples/fx/impact-cinematic?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -532,7 +532,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "chops",
     tags: ["chop", "female"],
     key: "G",
-    duration: 0.5,
+    duration: 0?.5,
     audioUrl: "/samples/vocals/chop-ah?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -544,7 +544,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "drum-loops",
     tags: ["trap", "drums"],
     tempo: 140,
-    duration: 4.0,
+    duration: 4?.0,
     audioUrl: "/samples/loops/trap-140?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -556,7 +556,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "drum-loops",
     tags: ["rnb", "groove"],
     tempo: 90,
-    duration: 4.0,
+    duration: 4?.0,
     audioUrl: "/samples/loops/rnb-90?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -568,7 +568,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "drum-loops",
     tags: ["hip-hop", "boom-bap"],
     tempo: 95,
-    duration: 4.0,
+    duration: 4?.0,
     audioUrl: "/samples/loops/hiphop-95?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -580,7 +580,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "hits",
     tags: ["brass", "stab", "orchestral"],
     key: "F",
-    duration: 0.6,
+    duration: 0?.6,
     audioUrl: "/samples/oneshots/brass-stab?.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
@@ -1181,11 +1181,11 @@ router?.post(
       };
 
       if (transport?.tempo) {
-        updates.bpm = transport?.tempo;
+        updates?.bpm = transport?.tempo;
       }
 
       if (transport?.timeSignature) {
-        updates.timeSignature = transport?.timeSignature;
+        updates?.timeSignature = transport?.timeSignature;
       }
 
       const [updated] = await db
@@ -1367,7 +1367,7 @@ router?.post(
             renderJob?.settings.sampleRate *
             channels *
             bytesPerSample *
-            0.5;
+            0?.5;
           break;
         case "mp3":
           fileSize =
@@ -1397,7 +1397,7 @@ router?.post(
         downloadUrl: `/api/studio/projects/${projectId}/download/${renderJob?.id}`,
         duration: estimatedDuration,
         fileSize,
-        peakLevel: -0.3,
+        peakLevel: -0?.3,
         lufs: renderJob?.settings.normalizeTarget,
         truePeak: renderJob?.settings.truePeakCeiling,
         warnings: [] as string[],
@@ -1426,10 +1426,10 @@ router?.post(
 
       if (
         renderJob?.settings.format === "mp3" &&
-        renderJob?.settings.truePeakCeiling > -0.5
+        renderJob?.settings.truePeakCeiling > -0?.5
       ) {
         result?.warnings.push(
-          "True peak above -0.5 dBTP may cause intersample peaks in MP3",
+          "True peak above -0?.5 dBTP may cause intersample peaks in MP3",
         );
       }
 
@@ -1595,7 +1595,7 @@ router?.get(
               type: "audio",
               order: 0,
               color: "#3b82f6",
-              volume: 0.8,
+              volume: 0?.8,
               pan: 0,
               isMuted: false,
               isSolo: false,
@@ -1673,18 +1673,18 @@ router?.patch(
       const _data = updateTrackSchema?.parse(req?.body);
 
       const dbData: Record<string, unknown> = {};
-      if (data?.name !== undefined) dbData.name = data?.name;
-      if (data?.volume !== undefined) dbData.volume = data?.volume;
-      if (data?.pan !== undefined) dbData.pan = data?.pan;
-      if (data?.color !== undefined) dbData.color = data?.color;
-      if (data?.outputBus !== undefined) dbData.outputBus = data?.outputBus;
-      if (data?.order !== undefined) dbData.order = data?.order;
-      if (data?.mute !== undefined) dbData.isMuted = data?.mute;
-      if (data?.solo !== undefined) dbData.isSolo = data?.solo;
-      if (data?.armed !== undefined) dbData.isArmed = data?.armed;
-      if (data?.isMuted !== undefined) dbData.isMuted = data?.isMuted;
-      if (data?.isSolo !== undefined) dbData.isSolo = data?.isSolo;
-      if (data?.isArmed !== undefined) dbData.isArmed = data?.isArmed;
+      if (data?.name !== undefined) dbData?.name = data?.name;
+      if (data?.volume !== undefined) dbData?.volume = data?.volume;
+      if (data?.pan !== undefined) dbData?.pan = data?.pan;
+      if (data?.color !== undefined) dbData?.color = data?.color;
+      if (data?.outputBus !== undefined) dbData?.outputBus = data?.outputBus;
+      if (data?.order !== undefined) dbData?.order = data?.order;
+      if (data?.mute !== undefined) dbData?.isMuted = data?.mute;
+      if (data?.solo !== undefined) dbData?.isSolo = data?.solo;
+      if (data?.armed !== undefined) dbData?.isArmed = data?.armed;
+      if (data?.isMuted !== undefined) dbData?.isMuted = data?.isMuted;
+      if (data?.isSolo !== undefined) dbData?.isSolo = data?.isSolo;
+      if (data?.isArmed !== undefined) dbData?.isArmed = data?.isArmed;
 
       // Handle parentFolderId changes in project metadata
       let parentFolderId: string | null = null;
@@ -2546,17 +2546,17 @@ router?.get(
           {
             type: "eq",
             description: "Boost high frequencies for more clarity",
-            confidence: 0.85,
+            confidence: 0?.85,
           },
           {
             type: "compression",
             description: "Add gentle compression to drums",
-            confidence: 0.78,
+            confidence: 0?.78,
           },
           {
             type: "reverb",
             description: "Consider adding room reverb to vocals",
-            confidence: 0.72,
+            confidence: 0?.72,
           },
         ],
       });
@@ -2628,11 +2628,11 @@ router?.post(
   async (_req: Request, res: Response) => {
     try {
       res?.json({
-        integrated: -14.2,
-        truePeak: -1.0,
-        shortTerm: -12.8,
-        momentary: -10.5,
-        dynamicRange: 8.5,
+        integrated: -14?.2,
+        truePeak: -1?.0,
+        shortTerm: -12?.8,
+        momentary: -10?.5,
+        dynamicRange: 8?.5,
         recommendations: ["Track is well balanced for streaming platforms"],
       });
     } catch (error: unknown) {
@@ -2649,7 +2649,7 @@ router?.post(
     try {
       res?.json({
         success: true,
-        matchScore: 0.82,
+        matchScore: 0?.82,
         adjustments: [
           { type: "eq", description: "Boost 2-4kHz by 2dB" },
           { type: "compression", description: "Reduce attack on drums" },
@@ -3258,8 +3258,8 @@ router?.patch(
       }
 
       const updates: Record<string, unknown> = {};
-      if (name !== undefined) updates.name = name;
-      if (color !== undefined) updates.color = color;
+      if (name !== undefined) updates?.name = name;
+      if (color !== undefined) updates?.color = color;
 
       const _updated = await db
         .update(studioTracks)
@@ -3849,12 +3849,12 @@ router?.post(
 
         // Optionally include plugins
         if (includePlugins !== false && trackState?.plugins) {
-          updateData.plugins = trackState?.plugins;
+          updateData?.plugins = trackState?.plugins;
         }
 
         // Optionally include bus routing
         if (includeBusConfig !== false && trackState?.routingBus) {
-          updateData.routingBus = trackState?.routingBus;
+          updateData?.routingBus = trackState?.routingBus;
         }
 
         await db
@@ -4955,7 +4955,7 @@ router?.post(
           volume:
             typeof track?.volume === "number"
               ? Math?.max(0, Math?.min(1, track?.volume))
-              : 0.8,
+              : 0?.8,
           pan:
             typeof track?.pan === "number"
               ? Math?.max(-1, Math?.min(1, track?.pan))
@@ -5260,12 +5260,12 @@ router?.patch(
         (template?.templateData as Record<string, unknown>) || {};
       const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
-      if (category !== undefined) updateData.category = category;
-      if (coverImageUrl !== undefined) updateData.coverImageUrl = coverImageUrl;
+      if (name !== undefined) updateData?.name = name;
+      if (description !== undefined) updateData?.description = description;
+      if (category !== undefined) updateData?.category = category;
+      if (coverImageUrl !== undefined) updateData?.coverImageUrl = coverImageUrl;
       if (tags !== undefined) {
-        updateData.templateData = { ...templateData, tags };
+        updateData?.templateData = { ...templateData, tags };
       }
 
       const [updated] = await db
@@ -5659,12 +5659,12 @@ const _mixSettingsSchema = z?.object({
   compression: z?.object({
     threshold: z?.number().min(-60).max(0).default(-20),
     ratio: z?.number().min(1).max(20).default(4),
-    attack: z?.number().min(0.1).max(100).default(10),
+    attack: z?.number().min(0?.1).max(100).default(10),
     release: z?.number().min(10).max(1000).default(100),
   }),
   reverb: z?.object({
-    amount: z?.number().min(0).max(1).default(0.2),
-    size: z?.number().min(0).max(1).default(0.5),
+    amount: z?.number().min(0).max(1).default(0?.2),
+    size: z?.number().min(0).max(1).default(0?.5),
   }),
   stereoWidth: z?.number().min(0).max(2).default(1),
 });
@@ -5708,19 +5708,19 @@ router?.post(
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const _lufsReduction = (mixSettings?.compression.ratio - 1) * 0.5;
+      const _lufsReduction = (mixSettings?.compression.ratio - 1) * 0?.5;
       const _eqShift =
         ((mixSettings?.eq?.low || 0) +
           (mixSettings?.eq?.mid || 0) +
           (mixSettings?.eq?.high || 0)) *
-        0.02;
+        0?.02;
       const _estimatedLUFS = -14 + lufsReduction + eqShift;
       const _truePeakEstimate =
-        -1.2 +
+        -1?.2 +
         (mixSettings?.compression.ratio > 4
-          ? 0.3
+          ? 0?.3
           : mixSettings?.compression.ratio > 2
-            ? 0.15
+            ? 0?.15
             : 0);
 
       res?.json({
@@ -5771,23 +5771,23 @@ router?.post(
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const _limiterGain = masterSettings?.limiterCeiling
-        ? Math?.abs(masterSettings?.limiterCeiling) * 0.1
+        ? Math?.abs(masterSettings?.limiterCeiling) * 0?.1
         : 0;
       const _loudnessMetrics = {
         integratedLUFS: parseFloat(
-          (masterSettings?.targetLUFS + limiterGain * 0.1).toFixed(1),
+          (masterSettings?.targetLUFS + limiterGain * 0?.1).toFixed(1),
         ),
         shortTermLUFS: parseFloat(
-          (masterSettings?.targetLUFS + 1.5 + limiterGain * 0.15).toFixed(1),
+          (masterSettings?.targetLUFS + 1?.5 + limiterGain * 0?.15).toFixed(1),
         ),
         momentaryLUFS: parseFloat(
-          (masterSettings?.targetLUFS + 3 + limiterGain * 0.2).toFixed(1),
+          (masterSettings?.targetLUFS + 3 + limiterGain * 0?.2).toFixed(1),
         ),
         truePeak: parseFloat(
-          (masterSettings?.truePeakLimit + limiterGain * 0.05).toFixed(2),
+          (masterSettings?.truePeakLimit + limiterGain * 0?.05).toFixed(2),
         ),
-        dynamicRange: parseFloat((8.5 - limiterGain * 0.3).toFixed(1)),
-        loudnessRange: parseFloat((6.5 - limiterGain * 0.2).toFixed(1)),
+        dynamicRange: parseFloat((8?.5 - limiterGain * 0?.3).toFixed(1)),
+        loudnessRange: parseFloat((6?.5 - limiterGain * 0?.2).toFixed(1)),
       };
 
       res?.json({
@@ -6361,12 +6361,12 @@ router?.post("/generate", requireAuth, async (req: Request, res: Response) => {
           {
             type: "melody",
             description: "AI-generated melody suggestion",
-            confidence: 0.85,
+            confidence: 0?.85,
           },
           {
             type: "chord",
             description: "Suggested chord progression",
-            confidence: 0.78,
+            confidence: 0?.78,
           },
         ],
         metadata: {

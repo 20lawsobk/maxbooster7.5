@@ -2,11 +2,11 @@ import { Router } from "express";
 import { db } from "../db";
 import { customWorkflows } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { notificationService } from "../services/notificationService.js";
-import { logger } from "../logger.js";
-import { requireAuth } from "../middleware/auth.js";
+import { notificationService } from "../services/notificationService?.js";
+import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { z } from "zod";
-import { parsePaginationParams } from "../middleware/pagination.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
 
 const _router = Router();
 

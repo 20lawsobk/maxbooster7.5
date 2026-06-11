@@ -1260,21 +1260,27 @@ router.post(
       const bitDepth = settings.bitDepth || 24;
 
       if (!validFormats.includes(format)) {
-        return res.status(400).json({
-          error: `Invalid format. Supported: ${validFormats.join(", ")}`,
-        });
+        return res
+          .status(400)
+          .json({
+            error: `Invalid format. Supported: ${validFormats.join(", ")}`,
+          });
       }
 
       if (!validSampleRates.includes(sampleRate)) {
-        return res.status(400).json({
-          error: `Invalid sample rate. Supported: ${validSampleRates.join(", ")}`,
-        });
+        return res
+          .status(400)
+          .json({
+            error: `Invalid sample rate. Supported: ${validSampleRates.join(", ")}`,
+          });
       }
 
       if (!validBitDepths.includes(bitDepth)) {
-        return res.status(400).json({
-          error: `Invalid bit depth. Supported: ${validBitDepths.join(", ")}`,
-        });
+        return res
+          .status(400)
+          .json({
+            error: `Invalid bit depth. Supported: ${validBitDepths.join(", ")}`,
+          });
       }
 
       if (
@@ -5706,10 +5712,12 @@ router.post(
 
       const validation = mixSettingsSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({
-          error: "Invalid mix settings",
-          details: validation.error.errors,
-        });
+        return res
+          .status(400)
+          .json({
+            error: "Invalid mix settings",
+            details: validation.error.errors,
+          });
       }
 
       const mixSettings = validation.data;
@@ -5766,10 +5774,12 @@ router.post(
 
       const validation = masterSettingsSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({
-          error: "Invalid master settings",
-          details: validation.error.errors,
-        });
+        return res
+          .status(400)
+          .json({
+            error: "Invalid master settings",
+            details: validation.error.errors,
+          });
       }
 
       const masterSettings = validation.data;

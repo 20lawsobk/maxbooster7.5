@@ -18,7 +18,7 @@ import fs from "fs";
 import fsPromises from "fs/promises";
 import archiver from "archiver";
 import os from "os";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   stemExports,
   studioTracks,
@@ -26,9 +26,9 @@ import {
   audioClips,
 } from "@shared/schema";
 import { eq, and, inArray } from "drizzle-orm";
-import { storageService } from "./storageService.js";
-import { logger } from "../logger.js";
-import { SAMPLE_RATES, BIT_DEPTHS, isSupportedSampleRate, isSupportedBitDepth, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";
+import { storageService } from "./storageService?.js";
+import { logger } from "../logger?.js";
+import { SAMPLE_RATES, BIT_DEPTHS, isSupportedSampleRate, isSupportedBitDepth, type SampleRate, type BitDepth } from "../../shared/audioConstants?.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -104,6 +104,7 @@ export interface ExportProgress {
   estimatedCompletion?: Date;
 }
 
+
 class StemExportService {
   private readonly SUPPORTED_FORMATS: ExportFormat[] = [
     "wav",
@@ -124,6 +125,7 @@ class StemExportService {
     mp3: "audio/mpeg",
     aac: "audio/aac",
   };
+
 
   async startStemExport(options: StemExportOptions): Promise<StemExportResult> {
     const {
@@ -610,7 +612,7 @@ class StemExportService {
         }
 
         trackStemPaths?.push(clipPath);
-        trackVolumes?.push(track?.volume || 0.8);
+        trackVolumes?.push(track?.volume || 0?.8);
       }
     }
 
@@ -697,13 +699,13 @@ class StemExportService {
 
     switch (normalizationType) {
       case "peak":
-        filterOptions = `loudnorm=I=${normalizeTargetLevel}:TP=-1.5:LRA=11`;
+        filterOptions = `loudnorm=I=${normalizeTargetLevel}:TP=-1?.5:LRA=11`;
         break;
       case "rms":
         filterOptions = `volume=enable='1':volume=${Math?.pow(10, normalizeTargetLevel / 20)}`;
         break;
       case "lufs":
-        filterOptions = `loudnorm=I=${normalizeTargetLevel}:TP=-1.5:LRA=7`;
+        filterOptions = `loudnorm=I=${normalizeTargetLevel}:TP=-1?.5:LRA=7`;
         break;
       default:
         return;

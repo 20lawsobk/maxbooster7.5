@@ -3,20 +3,20 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { randomUUID } from "crypto";
 import cron from "node-cron";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 promisify(exec);
 
 // Lazy service loaders — avoid circular imports at module load time.
 async function loadNotificationService() {
-  const _m = await import("./services/notificationService.js");
+  const _m = await import("./services/notificationService?.js");
   return (
     (m as Record<string, unknown>).notificationService ??
     (m as Record<string, unknown>).default
   );
 }
 async function loadDistributionService() {
-  const _m = await import("./services/distributionService.js");
+  const _m = await import("./services/distributionService?.js");
   return (
     (m as Record<string, unknown>).distributionService ??
     (m as Record<string, unknown>).default
@@ -24,13 +24,13 @@ async function loadDistributionService() {
 }
 async function loadAutoPostingService() {
   try {
-    const _m = await import("./services/autoPostingServiceV2.js");
+    const _m = await import("./services/autoPostingServiceV2?.js");
     return (
       (m as Record<string, unknown>).autoPostingServiceV2 ??
       (m as Record<string, unknown>).default
     );
   } catch {
-    const _m = await import("./services/autoPostingService.js");
+    const _m = await import("./services/autoPostingService?.js");
     return (
       (m as Record<string, unknown>).autoPostingService ??
       (m as Record<string, unknown>).default
@@ -38,7 +38,7 @@ async function loadAutoPostingService() {
   }
 }
 async function loadStorage() {
-  const _m = await import("./storage.js");
+  const _m = await import("./storage?.js");
   return (m as Record<string, unknown>).storage;
 }
 
@@ -82,7 +82,7 @@ export class AutomationSystem extends EventEmitter {
 
   private constructor() {
     super();
-    this.automationMetrics = {
+    this?.automationMetrics = {
       totalWorkflows: 0,
       activeWorkflows: 0,
       completedWorkflows: 0,
@@ -99,7 +99,7 @@ export class AutomationSystem extends EventEmitter {
 
   public static getInstance(): AutomationSystem {
     if (!AutomationSystem?.instance) {
-      AutomationSystem.instance = new AutomationSystem();
+      AutomationSystem?.instance = new AutomationSystem();
     }
     return AutomationSystem?.instance;
   }
@@ -605,7 +605,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Start automation engine
   private startAutomationEngine(): void {
-    this.isRunning = true;
+    this?.isRunning = true;
 
     // Start monitoring workflows
     setInterval(() => {
@@ -666,9 +666,9 @@ export class AutomationSystem extends EventEmitter {
 
   // Trigger workflow
   private async triggerWorkflow(workflow: Workflow): Promise<void> {
-    workflow.status = "triggered";
-    workflow.nextAction = 0;
-    workflow.startTime = Date?.now();
+    workflow?.status = "triggered";
+    workflow?.nextAction = 0;
+    workflow?.startTime = Date?.now();
 
     logger?.info(`🎯 Workflow triggered: ${workflow?.name}`);
 
@@ -683,7 +683,7 @@ export class AutomationSystem extends EventEmitter {
 
     if (!action) {
       logger?.warn(`Action not found: ${actionConfig?.type}`);
-      workflow.status = "failed";
+      workflow?.status = "failed";
       return;
     }
 
@@ -724,9 +724,9 @@ export class AutomationSystem extends EventEmitter {
 
       // Check if workflow is complete
       if (workflow?.nextAction >= workflow?.actions.length) {
-        workflow.status = "completed";
-        workflow.endTime = Date?.now();
-        workflow.executionTime = workflow?.endTime - workflow?.startTime;
+        workflow?.status = "completed";
+        workflow?.endTime = Date?.now();
+        workflow?.executionTime = workflow?.endTime - workflow?.startTime;
 
         this?.automationMetrics.completedWorkflows++;
         logger?.info(`🎉 Workflow completed: ${workflow?.name}`);
@@ -739,9 +739,9 @@ export class AutomationSystem extends EventEmitter {
         { err: error },
         `Action execution failed: ${actionConfig?.type}`,
       );
-      workflow.status = "failed";
-      workflow.endTime = Date?.now();
-      workflow.error = error instanceof Error ? error?.message : String(error);
+      workflow?.status = "failed";
+      workflow?.endTime = Date?.now();
+      workflow?.error = error instanceof Error ? error?.message : String(error);
 
       this?.automationMetrics.failedWorkflows++;
 
@@ -777,8 +777,8 @@ export class AutomationSystem extends EventEmitter {
     const _workflow = this?.workflows.get(workflowId);
     if (!workflow) return false;
 
-    workflow.status = "active";
-    workflow.updatedAt = Date?.now();
+    workflow?.status = "active";
+    workflow?.updatedAt = Date?.now();
 
     // Start triggers
     for (const triggerConfig of workflow?.triggers) {
@@ -787,7 +787,7 @@ export class AutomationSystem extends EventEmitter {
         const _triggerInstance = trigger?.start(triggerConfig?.parameters, () => {
           this?.triggerWorkflow(workflow);
         });
-        workflow.triggerInstances = workflow?.triggerInstances || [];
+        workflow?.triggerInstances = workflow?.triggerInstances || [];
         workflow?.triggerInstances.push(triggerInstance);
       }
     }
@@ -803,8 +803,8 @@ export class AutomationSystem extends EventEmitter {
     const _workflow = this?.workflows.get(workflowId);
     if (!workflow) return false;
 
-    workflow.status = "inactive";
-    workflow.updatedAt = Date?.now();
+    workflow?.status = "inactive";
+    workflow?.updatedAt = Date?.now();
 
     // Stop triggers
     if (workflow?.triggerInstances) {
@@ -814,7 +814,7 @@ export class AutomationSystem extends EventEmitter {
           trigger?.stop(triggerInstance);
         }
       }
-      workflow.triggerInstances = [];
+      workflow?.triggerInstances = [];
     }
 
     this?.automationMetrics.activeWorkflows--;

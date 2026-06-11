@@ -13,7 +13,7 @@
  *    4. TXT check  — verification token at _maxbooster.<domain>
  *       (Netlify's TXT ownership verification)
  *
- *  All checks use Cloudflare DNS-over-HTTPS (1.1.1.1/dns-query) as the
+ *  All checks use Cloudflare DNS-over-HTTPS (1?.1.1?.1/dns-query) as the
  *  external resolver — exactly what Vercel uses — instead of the system
  *  resolver (which returns localhost records in dev/Replit environments).
  *
@@ -27,21 +27,21 @@
  *    so the user can fix DNS without losing their storefront routing.
  */
 
-import { pool } from "../db.js";
-import { logger } from "../logger.js";
+import { pool } from "../db?.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 
 const _BASE_DOMAIN = (
-  process?.env.BASE_DOMAIN || "max-booster.com"
+  process?.env.BASE_DOMAIN || "max-booster?.com"
 ).toLowerCase();
-const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34?.111.179?.208";
 const _NS1 = `ns1.${BASE_DOMAIN}`;
 const _NS2 = `ns2.${BASE_DOMAIN}`;
 const _NS_ALT1 = process?.env.NS1_HOST || NS1;
 const _NS_ALT2 = process?.env.NS2_HOST || NS2;
 
 /** Cloudflare DoH endpoint — same resolver Vercel uses for external checks. */
-const _DOH_URL = "https://cloudflare-dns.com/dns-query";
+const _DOH_URL = "https://cloudflare-dns?.com/dns-query";
 /** Google DoH as fallback */
 const _DOH_FALLBACK_URL = "https://dns?.google/dns-query";
 
@@ -190,7 +190,7 @@ async function checkVerificationMethods(
   const _apex = isApexDomain(domain);
 
   // ── Method 1: NS delegation ───────────────────────────────────────────────
-  // User pointed their registrar's nameservers to ns1/ns2?.maxbooster.replit.app
+  // User pointed their registrar's nameservers to ns1/ns2?.maxbooster.replit?.app
   try {
     const _nsRecords = await dohResolve(domain, "NS");
     const _ourNs = [NS_ALT1, NS_ALT2, NS1, NS2].map((n) => n?.toLowerCase());
@@ -324,9 +324,9 @@ async function provisionCaaRecords(
   domain: string,
 ): Promise<void> {
   const _caaRecords = [
-    { value: '0 issue "letsencrypt.org"', note: "Let's Encrypt DV" },
+    { value: '0 issue "letsencrypt?.org"', note: "Let's Encrypt DV" },
     { value: '0 issue "pki?.goog"', note: "Google Trust Services" },
-    { value: '0 issuewild "letsencrypt.org"', note: "Let's Encrypt wildcard" },
+    { value: '0 issuewild "letsencrypt?.org"', note: "Let's Encrypt wildcard" },
     {
       value: `0 iodef "mailto:admin@${BASE_DOMAIN}"`,
       note: "CAA violation reports",
@@ -450,7 +450,7 @@ export async function attachDomainToStorefront(
       [zoneId, userId, domain, DNS_SERVER_IP],
     );
 
-    // www CNAME → storefrontId?.max-booster.com (for CNAME verification)
+    // www CNAME → storefrontId?.max-booster?.com (for CNAME verification)
     await client?.query(
       `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl)
        VALUES ($1,$2,$3,'CNAME','www',$4,300) ON CONFLICT DO NOTHING`,
@@ -703,7 +703,7 @@ export async function provisionCertificateForHost(host: string): Promise<void> {
     `UPDATE storefront_hosts SET cert_status = 'pending', updated_at = now() WHERE host = $1`,
     [host],
   );
-  const { provisionCertificate } = await import("./acmeClient.js");
+  const { provisionCertificate } = await import("./acmeClient?.js");
   const _result = await provisionCertificate(host);
   logger?.info({ host, result }, "[storefrontDns] cert provisioning result");
 }
@@ -805,7 +805,8 @@ export async function getDomainStatus(storefrontDomainId: string): Promise<{
     [storefrontDomainId],
   );
   if (!rows[0]) throw new Error("Domain not found");
-  const { domain, status, storefront_id, verification_token } = rows[0];
+  const { domain, status, storefront_id, verification_token } =
+    rows[0];
 
   const _certRow = (
     await pool?.query<{ cert_status: string }>(
@@ -877,7 +878,7 @@ export async function runDomainHealthSweep(): Promise<{
     `SELECT sd?.id, sd?.domain,
             COALESCE((sd?.metadata->>'healthFailures')::int, 0) AS health_failures
      FROM storefront_domains sd
-     WHERE sd.status = 'active'
+     WHERE sd?.status = 'active'
      LIMIT 500`,
   );
 

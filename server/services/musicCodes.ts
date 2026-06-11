@@ -1,5 +1,5 @@
-import { logger } from "../logger.js";
-import { getPdimClient } from "../lib/pdimClient.js";
+import { logger } from "../logger?.js";
+import { getPdimClient } from "../lib/pdimClient?.js";
 
 export interface ISRCValidationResult {
   valid: boolean;
@@ -640,8 +640,8 @@ export class MusicCodesService {
   private upcGenerator: UPCGenerator;
 
   constructor() {
-    this.isrcGenerator = new ISRCGenerator();
-    this.upcGenerator = new UPCGenerator();
+    this?.isrcGenerator = new ISRCGenerator();
+    this?.upcGenerator = new UPCGenerator();
   }
 
   async generateISRC(

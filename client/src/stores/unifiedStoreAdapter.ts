@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useStudioStore as useNewStore } from "./studioStore";
 import { useStudioStore as useLegacyStore } from "@/lib/studioStore";
-import type {
-  Track,
-  AudioClip,
-  MidiClip,
-  PluginInstance,
-  ViewState,
-  TrackType,
-} from "./studioStore";
+import type { Track, AudioClip, MidiClip, PluginInstance, ViewState, TrackType } from "./studioStore";
 
 export interface UnifiedTrack {
   id: string;
@@ -116,7 +109,7 @@ export function useUnifiedStore(): UnifiedStoreState {
         if (legacyStore?.isPlaying !== isPlaying) {
           legacyStore?.setIsPlaying(isPlaying);
         }
-        if (Math?.abs(legacyStore?.currentTime - position) > 0.1) {
+        if (Math?.abs(legacyStore?.currentTime - position) > 0?.1) {
           legacyStore?.setCurrentTime(position);
         }
       },
@@ -365,7 +358,7 @@ export function useLegacyStoreSync() {
   }, [legacyStore?.isPlaying, newStore]);
 
   useEffect(() => {
-    if (Math?.abs(legacyStore?.currentTime - newStore?.transport.position) > 0.1) {
+    if (Math?.abs(legacyStore?.currentTime - newStore?.transport.position) > 0?.1) {
       newStore?.setPosition(legacyStore?.currentTime);
     }
   }, [legacyStore?.currentTime, newStore]);

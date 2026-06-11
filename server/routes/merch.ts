@@ -1,12 +1,12 @@
-import { requireUUIDParam } from "../middleware/requestValidation.js";
+import { requireUUIDParam } from "../middleware/requestValidation?.js";
 import { Router, Request, Response } from "express";
 import { db } from "../db";
 import { merchItems, merchOrders } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth?.js";
 import { z } from "zod";
-import { parsePaginationParams } from "../middleware/pagination.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
 
 const _router = Router();
 
@@ -140,25 +140,25 @@ router?.put(
 
       const _data = parsed?.data;
       const allowedUpdates: Record<string, unknown> = {};
-      if (data?.name !== undefined) allowedUpdates.name = data?.name;
+      if (data?.name !== undefined) allowedUpdates?.name = data?.name;
       if (data?.description !== undefined)
-        allowedUpdates.description = data?.description;
-      if (data?.price !== undefined) allowedUpdates.price = String(data?.price);
+        allowedUpdates?.description = data?.description;
+      if (data?.price !== undefined) allowedUpdates?.price = String(data?.price);
       if (data?.salePrice !== undefined)
-        allowedUpdates.salePrice =
+        allowedUpdates?.salePrice =
           data?.salePrice != null ? String(data?.salePrice) : null;
       if (data?.imageUrl !== undefined)
-        allowedUpdates.imageUrl = data?.imageUrl || null;
-      if (data?.category !== undefined) allowedUpdates.category = data?.category;
-      if (data?.variants !== undefined) allowedUpdates.variants = data?.variants;
+        allowedUpdates?.imageUrl = data?.imageUrl || null;
+      if (data?.category !== undefined) allowedUpdates?.category = data?.category;
+      if (data?.variants !== undefined) allowedUpdates?.variants = data?.variants;
       if (data?.inventory !== undefined)
-        allowedUpdates.inventory = data?.inventory;
-      if (data?.sku !== undefined) allowedUpdates.sku = data?.sku;
-      if (data?.isActive !== undefined) allowedUpdates.isActive = data?.isActive;
+        allowedUpdates?.inventory = data?.inventory;
+      if (data?.sku !== undefined) allowedUpdates?.sku = data?.sku;
+      if (data?.isActive !== undefined) allowedUpdates?.isActive = data?.isActive;
       if (data?.isDigital !== undefined)
-        allowedUpdates.isDigital = data?.isDigital;
+        allowedUpdates?.isDigital = data?.isDigital;
       if (data?.downloadUrl !== undefined)
-        allowedUpdates.downloadUrl = data?.downloadUrl || null;
+        allowedUpdates?.downloadUrl = data?.downloadUrl || null;
 
       if (Object?.keys(allowedUpdates).length === 0) {
         return res?.status(400).json({ error: "No valid fields to update" });

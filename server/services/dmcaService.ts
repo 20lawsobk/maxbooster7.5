@@ -1,8 +1,8 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { dmcaNotices, dmcaStrikes, legalHolds, users, projects, type DMCANotice, type DMCAStrike, type LegalHold } from "@shared/schema";
 import { eq, and, desc, count } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { emailService } from "./emailService.js";
+import { logger } from "../logger?.js";
+import { emailService } from "./emailService?.js";
 
 export type DMCANoticeType = "takedown" | "counter";
 export type DMCANoticeStatus =

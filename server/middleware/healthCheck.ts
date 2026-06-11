@@ -4,7 +4,7 @@ import {
   getCachedHealthCheck,
   getLivenessProbe,
   getReadinessProbe,
-} from "../lib/cachedHealthCheck.js";
+} from "../lib/cachedHealthCheck?.js";
 
 interface HealthStatus {
   status: "healthy" | "degraded" | "unhealthy";
@@ -48,9 +48,9 @@ function checkCPU(): {
   const _normalizedLoad = loadAverage[0] / cpuCount;
 
   let status: "healthy" | "degraded" | "unhealthy" = "healthy";
-  if (normalizedLoad > 0.9) {
+  if (normalizedLoad > 0?.9) {
     status = "unhealthy";
-  } else if (normalizedLoad > 0.7) {
+  } else if (normalizedLoad > 0?.7) {
     status = "degraded";
   }
 
@@ -94,7 +94,7 @@ export async function healthCheck(_req: Request, res: Response): Promise<void> {
       status: "healthy",
       timestamp: new Date().toISOString(),
       uptime: Math?.floor(process?.uptime()),
-      version: process?.env.npm_package_version || "1.0.0",
+      version: process?.env.npm_package_version || "1?.0.0",
       services: {
         database: databaseCheck,
         memory: memoryCheck,
@@ -110,9 +110,9 @@ export async function healthCheck(_req: Request, res: Response): Promise<void> {
       cpuCheck?.status,
     ];
     if (services?.includes("unhealthy")) {
-      health.status = "unhealthy";
+      health?.status = "unhealthy";
     } else if (services?.includes("degraded")) {
-      health.status = "degraded";
+      health?.status = "degraded";
     }
 
     const _responseTime = Date?.now() - startTime;

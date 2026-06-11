@@ -39,6 +39,7 @@ export interface PrecisionTransportControls {
   toggleCountIn: () => void;
 }
 
+
 export function usePrecisionTransport(): [
   PrecisionTransportState,
   PrecisionTransportControls,
@@ -133,7 +134,7 @@ export function usePrecisionTransport(): [
 
   const _play = useCallback(() => {
     audioEngineRef?.current.play();
-    lastTimeRef.current = performance?.now();
+    lastTimeRef?.current = performance?.now();
     store?.play();
   }, [store]);
 
@@ -150,7 +151,7 @@ export function usePrecisionTransport(): [
 
   const _record = useCallback(() => {
     audioEngineRef?.current.play();
-    lastTimeRef.current = performance?.now();
+    lastTimeRef?.current = performance?.now();
     store?.record();
   }, [store]);
 
@@ -263,14 +264,14 @@ export function useTransportShortcuts(controls: PrecisionTransportControls) {
           if (e?.shiftKey) {
             controls?.nudgeBackward(4);
           } else {
-            controls?.nudgeBackward(0.25);
+            controls?.nudgeBackward(0?.25);
           }
           break;
         case "ArrowRight":
           if (e?.shiftKey) {
             controls?.nudgeForward(4);
           } else {
-            controls?.nudgeForward(0.25);
+            controls?.nudgeForward(0?.25);
           }
           break;
         case "KeyC":

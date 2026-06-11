@@ -1,14 +1,14 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { artistProfileService } from "../services/artistProfileService.js";
-import type { ClaimState } from "../services/artistProfileService.js";
-import { CLAIM_STATES } from "../services/artistProfileService.js";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { requireUUIDParam } from "../middleware/requestValidation.js";
-import { labelGridService } from "../services/labelgrid-service.js";
-import { storage } from "../storage.js";
+import { artistProfileService } from "../services/artistProfileService?.js";
+import type { ClaimState } from "../services/artistProfileService?.js";
+import { CLAIM_STATES } from "../services/artistProfileService?.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { requireUUIDParam } from "../middleware/requestValidation?.js";
+import { labelGridService } from "../services/labelgrid-service?.js";
+import { storage } from "../storage?.js";
 
 const _router = Router();
 
@@ -393,10 +393,12 @@ router?.post(
         profile?.spotifyArtistId,
       );
       if (!spotifyData) {
-        return res.status(422).json({
-          error:
-            "Spotify artist ID could not be verified. Check that the ID is correct.",
-        });
+        return res
+          .status(422)
+          .json({
+            error:
+              "Spotify artist ID could not be verified. Check that the ID is correct.",
+          });
       }
 
       const _verified = await artistProfileService?.updateProfile(

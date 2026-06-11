@@ -62,16 +62,16 @@ export function useAudioRecorder() {
         };
 
         const _stream = await navigator?.mediaDevices.getUserMedia(constraints);
-        streamRef.current = stream;
+        streamRef?.current = stream;
 
         const _source = context?.createMediaStreamSource(stream);
-        sourceNodeRef.current = source;
+        sourceNodeRef?.current = source;
 
         const _analyser = context?.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.8;
+        analyser?.fftSize = 256;
+        analyser?.smoothingTimeConstant = 0?.8;
         source?.connect(analyser);
-        analyserRef.current = analyser;
+        analyserRef?.current = analyser;
 
         const _dataArray = new Float32Array(analyser?.fftSize);
 
@@ -86,7 +86,7 @@ export function useAudioRecorder() {
             const _db = 20 * Math?.log10(Math?.max(rms, 1e-10));
             const _normalizedLevel = Math?.max(0, Math?.min(1, (db + 60) / 60));
             setState((prev) => ({ ...prev, inputLevel: normalizedLevel }));
-            animationFrameRef.current = requestAnimationFrame(updateLevel);
+            animationFrameRef?.current = requestAnimationFrame(updateLevel);
           }
         };
         updateLevel();
@@ -103,19 +103,19 @@ export function useAudioRecorder() {
   const _stopMonitoring = useCallback(() => {
     if (animationFrameRef?.current) {
       cancelAnimationFrame(animationFrameRef?.current);
-      animationFrameRef.current = null;
+      animationFrameRef?.current = null;
     }
 
     if (sourceNodeRef?.current) {
       sourceNodeRef?.current.disconnect();
-      sourceNodeRef.current = null;
+      sourceNodeRef?.current = null;
     }
 
-    analyserRef.current = null;
+    analyserRef?.current = null;
 
     if (streamRef?.current && !state?.isRecording) {
       streamRef?.current.getTracks().forEach((track) => track?.stop());
-      streamRef.current = null;
+      streamRef?.current = null;
     }
 
     setState((prev) => ({ ...prev, inputLevel: 0 }));
@@ -143,13 +143,13 @@ export function useAudioRecorder() {
         const _mediaRecorder = new MediaRecorder(stream, { mimeType });
         const chunks: Blob[] = [];
 
-        mediaRecorder.ondataavailable = (event) => {
+        mediaRecorder?.ondataavailable = (event) => {
           if (event?.data.size > 0) {
             chunks?.push(event?.data);
           }
         };
 
-        mediaRecorder.onstop = () => {
+        mediaRecorder?.onstop = () => {
           const _blob = new Blob(chunks, { type: mimeType });
           const _audioUrl = URL?.createObjectURL(blob);
 
@@ -162,12 +162,12 @@ export function useAudioRecorder() {
 
           if (durationIntervalRef?.current) {
             clearInterval(durationIntervalRef?.current);
-            durationIntervalRef.current = null;
+            durationIntervalRef?.current = null;
           }
         };
 
-        mediaRecorderRef.current = mediaRecorder;
-        startTimeRef.current = Date?.now();
+        mediaRecorderRef?.current = mediaRecorder;
+        startTimeRef?.current = Date?.now();
         mediaRecorder?.start(100);
 
         setState((prev) => ({
@@ -178,7 +178,7 @@ export function useAudioRecorder() {
           audioUrl: null,
         }));
 
-        durationIntervalRef.current = setInterval(() => {
+        durationIntervalRef?.current = setInterval(() => {
           if (mediaRecorderRef?.current?.state === "recording") {
             const _duration = (Date?.now() - startTimeRef?.current) / 1000;
             setState((prev) => ({ ...prev, duration }));
@@ -195,7 +195,7 @@ export function useAudioRecorder() {
   const _stopRecording = useCallback(() => {
     if (durationIntervalRef?.current) {
       clearInterval(durationIntervalRef?.current);
-      durationIntervalRef.current = null;
+      durationIntervalRef?.current = null;
     }
 
     if (
@@ -207,7 +207,7 @@ export function useAudioRecorder() {
 
     if (streamRef?.current) {
       streamRef?.current.getTracks().forEach((track) => track?.stop());
-      streamRef.current = null;
+      streamRef?.current = null;
     }
 
     stopMonitoring();
@@ -230,18 +230,18 @@ export function useAudioRecorder() {
   const _playRecording = useCallback(() => {
     if (state?.audioUrl && !state?.isPlaying) {
       if (!audioElementRef?.current) {
-        audioElementRef.current = new Audio();
+        audioElementRef?.current = new Audio();
       }
 
       const _audio = audioElementRef?.current;
-      audio.src = state?.audioUrl;
-      audio.currentTime = state?.currentTime;
+      audio?.src = state?.audioUrl;
+      audio?.currentTime = state?.currentTime;
 
-      audio.ontimeupdate = () => {
+      audio?.ontimeupdate = () => {
         setState((prev) => ({ ...prev, currentTime: audio?.currentTime }));
       };
 
-      audio.onended = () => {
+      audio?.onended = () => {
         setState((prev) => ({ ...prev, isPlaying: false, currentTime: 0 }));
       };
 

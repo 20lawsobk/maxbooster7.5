@@ -5,21 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  Upload,
-  Link,
-  Compass,
-  TrendingUp,
-  Users,
-  DollarSign,
-  Music,
-  Clock,
-  Zap,
-  ArrowRight,
-  Sparkles,
-  AlertCircle,
-  Calendar,
-} from "lucide-react";
+import { Upload, Link, Compass, TrendingUp, Users, DollarSign, Music, Clock, Zap, ArrowRight, Sparkles, AlertCircle, Calendar } from "lucide-react";
 
 interface ActionSuggestion {
   id: string;

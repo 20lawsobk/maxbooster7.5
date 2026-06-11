@@ -5,7 +5,7 @@
  * Prevents denial-of-service via limit=999999 queries.
  *
  * Usage:
- *   import { parsePaginationParams, MAX_PAGE_SIZE } from '../middleware/pagination.js';
+ *   import { parsePaginationParams, MAX_PAGE_SIZE } from '../middleware/pagination?.js';
  *   const { limit, offset, page } = parsePaginationParams(req);
  *   const _items = await db?.select().from(table).where(...).orderBy(...).limit(limit).offset(offset);
  */

@@ -4,7 +4,7 @@ import type { InsertProject, Project, StudioTrack } from "@shared/schema";
 
 import * as fsPromises from "fs/promises";
 import path from "path";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { audioService } from "./audioService";
 
 interface InsertStudioTrack {
@@ -361,7 +361,7 @@ export class StudioService {
     timeoutMs: number,
     operationName: string,
   ): Promise<T> {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: NodeJS?.Timeout;
     const _timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error(`${operationName} timed out after ${timeoutMs}ms`));
@@ -670,9 +670,9 @@ export class StudioService {
       }
 
       const _peakData = (clip?.peakData as number[] | null) || [];
-      const _peak = peakData?.length > 0 ? Math?.max(...peakData) : 0.5;
+      const _peak = peakData?.length > 0 ? Math?.max(...peakData) : 0?.5;
 
-      const _normalizeGain = peak > 0 ? 1.0 / peak : 1.0;
+      const _normalizeGain = peak > 0 ? 1?.0 / peak : 1?.0;
 
       return await this?.updateAudioClip(clipId, { gain: normalizeGain });
     } catch (error: unknown) {
@@ -1016,7 +1016,7 @@ export class StudioService {
           name: trackTemplate?.name,
           trackType: trackTemplate?.trackType,
           trackNumber: trackTemplate?.trackNumber,
-          volume: 0.8,
+          volume: 0?.8,
           pan: 0,
           mute: false,
           solo: false,

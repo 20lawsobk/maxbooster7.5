@@ -20,10 +20,7 @@ import type {
   Notification,
   NotificationCategory,
 } from "@/components/notifications/types";
-import {
-  categoryConfig,
-  typeToCategory,
-} from "@/components/notifications/types";
+import { categoryConfig, typeToCategory } from "@/components/notifications/types";
 
 function resolveActionUrl(url: string): string {
   if (url.startsWith("/marketplace/beat/")) return "/marketplace";
@@ -76,6 +73,7 @@ export default function NotificationDetail() {
     if (notification && !notification.isRead) {
       markAsReadMutation.mutate();
     }
+     
   }, [notification?.id]);
 
   const category: NotificationCategory =

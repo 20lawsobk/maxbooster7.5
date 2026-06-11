@@ -22,22 +22,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import {
-  RefreshCw,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  XCircle,
-  Loader2,
-  ExternalLink,
-  RotateCcw,
-  ChevronRight,
-  Calendar,
-  Users,
-  Info,
-  Zap,
-  AlertTriangle,
-} from "lucide-react";
+import { RefreshCw, CheckCircle2, Clock, AlertCircle, XCircle, Loader2, ExternalLink, RotateCcw, ChevronRight, Calendar, Users, Info, Zap, AlertTriangle } from "lucide-react";
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -197,7 +182,10 @@ export function SubmissionStatusTracker({
     "all" | "live" | "processing" | "failed"
   >("all");
 
-  const { data: statusData, isLoading } = useQuery<{
+  const {
+    data: statusData,
+    isLoading,
+  } = useQuery<{
     statuses: PlatformSubmissionStatus[];
     summary: SubmissionSummary;
   }>({

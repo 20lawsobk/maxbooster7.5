@@ -21,11 +21,11 @@ export function useCommands(options: UseCommandsOptions) {
       registerCommand(command);
       ids?.push(command?.id);
     });
-    registeredIdsRef.current = ids;
+    registeredIdsRef?.current = ids;
 
     return () => {
       ids?.forEach((id) => unregisterCommand(id));
-      registeredIdsRef.current = [];
+      registeredIdsRef?.current = [];
     };
   }, [commands, enabled, registerCommand, unregisterCommand]);
 

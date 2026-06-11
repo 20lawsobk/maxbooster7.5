@@ -36,26 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Inbox,
-  Send,
-  Archive,
-  Clock,
-  CheckCircle,
-  MoreHorizontal,
-  Search,
-  User,
-  Users,
-  MessageSquare,
-  AlertTriangle,
-  Smile,
-  Meh,
-  Frown,
-  Trash2,
-  Eye,
-  Tag,
-  RefreshCw,
-} from "lucide-react";
+import { Inbox, Send, Archive, Clock, CheckCircle, MoreHorizontal, Search, User, Users, MessageSquare, AlertTriangle, Smile, Meh, Frown, Trash2, Eye, Tag, RefreshCw } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -206,13 +187,13 @@ export function UnifiedInbox() {
     ).length,
   };
 
-  (checked: boolean) => {
+  ((checked: boolean) => {
     if (checked) {
       setSelectedMessages(filteredMessages.map((m: Message) => m.id));
     } else {
       setSelectedMessages([]);
     }
-  };
+  });
 
   const handleSelectMessage = (id: string, checked: boolean) => {
     if (checked) {
@@ -242,18 +223,18 @@ export function UnifiedInbox() {
     setReplyContent("");
   };
 
-  (template: ReplyTemplate) => {
+  ((template: ReplyTemplate) => {
     setReplyContent(template.content);
     setShowTemplates(false);
-  };
+  });
 
-  (teamMember: TeamMember) => {
+  ((teamMember: TeamMember) => {
     toast({
       title: "Message Assigned",
       description: `Message assigned to ${teamMember.name}`,
     });
     setShowAssignDialog(false);
-  };
+  });
 
   const handleSnooze = () => {
     toast({

@@ -84,7 +84,7 @@ export class ProjectManager {
   private lastSnapshot: string = "";
 
   constructor() {
-    this.state = {
+    this?.state = {
       currentProject: null,
       isDirty: false,
       versions: [],
@@ -152,8 +152,8 @@ export class ProjectManager {
     try {
       localStorage?.setItem(STORAGE_KEY, serialized);
 
-      this?.state.currentProject.lastSavedAt = Date?.now();
-      this?.state.currentProject.modifiedAt = Date?.now();
+      this?.state.currentProject?.lastSavedAt = Date?.now();
+      this?.state.currentProject?.modifiedAt = Date?.now();
       this?.state.isDirty = false;
 
       this?.takeSnapshot();
@@ -311,7 +311,7 @@ export class ProjectManager {
   updateMediaPoolUsage(itemId: string, delta: number): void {
     const _item = this?.state.mediaPool?.find((i) => i?.id === itemId);
     if (item) {
-      item.usageCount = Math?.max(0, item?.usageCount + delta);
+      item?.usageCount = Math?.max(0, item?.usageCount + delta);
       this?.notify();
     }
   }
@@ -320,7 +320,7 @@ export class ProjectManager {
     this?.state.missingFiles = [];
 
     for (const item of this?.state.mediaPool) {
-      item.missing = false;
+      item?.missing = false;
     }
 
     this?.notify();
@@ -329,8 +329,8 @@ export class ProjectManager {
   resolveMissingFile(originalPath: string, newPath: string): void {
     const _item = this?.state.mediaPool?.find((i) => i?.path === originalPath);
     if (item) {
-      item.path = newPath;
-      item.missing = false;
+      item?.path = newPath;
+      item?.missing = false;
       this?.state.missingFiles = this?.state.missingFiles?.filter(
         (p) => p !== originalPath,
       );
@@ -345,7 +345,7 @@ export class ProjectManager {
     }
 
     if (this?.state.autosaveEnabled) {
-      this.autosaveTimer = window?.setInterval(() => {
+      this?.autosaveTimer = window?.setInterval(() => {
         this?.performAutosave();
       }, this?.state.autosaveInterval);
     }
@@ -354,7 +354,7 @@ export class ProjectManager {
   private stopAutosave(): void {
     if (this?.autosaveTimer !== null) {
       clearInterval(this?.autosaveTimer);
-      this.autosaveTimer = null;
+      this?.autosaveTimer = null;
     }
   }
 
@@ -433,7 +433,7 @@ export class ProjectManager {
   }
 
   private startDirtyCheck(): void {
-    this.dirtyCheckTimer = window?.setInterval(() => {
+    this?.dirtyCheckTimer = window?.setInterval(() => {
       const _currentSnapshot = this?.takeSnapshotString();
       if (currentSnapshot !== this?.lastSnapshot) {
         this?.markDirty();
@@ -442,7 +442,7 @@ export class ProjectManager {
   }
 
   private takeSnapshot(): void {
-    this.lastSnapshot = this?.takeSnapshotString();
+    this?.lastSnapshot = this?.takeSnapshotString();
   }
 
   private takeSnapshotString(): string {
@@ -516,7 +516,7 @@ export class ProjectManager {
 
         this?.state.isDirty = false;
         if (this?.state.currentProject) {
-          this?.state.currentProject.lastSavedAt = Date?.now();
+          this?.state.currentProject?.lastSavedAt = Date?.now();
         }
         this?.notify();
 
@@ -535,8 +535,8 @@ export class ProjectManager {
         const _newProjectId = data?.id;
 
         if (this?.state.currentProject) {
-          this?.state.currentProject.id = newProjectId;
-          this?.state.currentProject.lastSavedAt = Date?.now();
+          this?.state.currentProject?.id = newProjectId;
+          this?.state.currentProject?.lastSavedAt = Date?.now();
         }
         this?.state.isDirty = false;
         this?.notify();

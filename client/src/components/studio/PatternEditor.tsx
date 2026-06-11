@@ -26,23 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Play,
-  Square,
-  Circle,
-  Copy,
-  Trash2,
-  Plus,
-  Music,
-  ChevronRight,
-  SkipForward,
-  Repeat,
-  ArrowRight,
-  Shuffle,
-  Clock,
-  Layers,
-  Edit3,
-} from "lucide-react";
+import { Play, Square, Circle, Copy, Trash2, Plus, Music, ChevronRight, SkipForward, Repeat, ArrowRight, Shuffle, Clock, Layers, Edit3 } from "lucide-react";
 
 export interface Pattern {
   id: string;

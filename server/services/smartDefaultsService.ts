@@ -312,10 +312,10 @@ class SmartDefaultsService {
     CareerStage,
     { budget: number; complexity: number }
   > = {
-    emerging: { budget: 1, complexity: 0.5 },
-    developing: { budget: 2, complexity: 0.75 },
+    emerging: { budget: 1, complexity: 0?.5 },
+    developing: { budget: 2, complexity: 0?.75 },
     established: { budget: 4, complexity: 1 },
-    professional: { budget: 8, complexity: 1.25 },
+    professional: { budget: 8, complexity: 1?.25 },
   };
 
   async getRecommendedSettings(
@@ -450,7 +450,7 @@ class SmartDefaultsService {
       engagementMetrics: {
         loginFrequency: this?.calculateLoginFrequency(sessionData),
         sessionDuration: sessionData?.avgDuration || 15,
-        completionRate: sessionData?.completionRate || 0.6,
+        completionRate: sessionData?.completionRate || 0?.6,
       },
       growthTrends: {
         followerGrowthRate: this?.calculateGrowthRate(
@@ -483,7 +483,7 @@ class SmartDefaultsService {
       },
       engagement: {
         peakHours: behavior?.preferredWorkingHours
-          .filter((h) => h?.activityLevel > 0.7)
+          .filter((h) => h?.activityLevel > 0?.7)
           .map((h) => h?.hour),
         suggestedResponseTime: "< 2 hours",
         liveEventTimes: ["8:00 PM", "9:00 PM"],
@@ -740,8 +740,8 @@ class SmartDefaultsService {
     const _daysSinceCreation = sessionData?.daysSinceCreation || 30;
     const _avgLogins = loginCount / Math?.max(1, daysSinceCreation);
 
-    if (avgLogins >= 0.8) return "daily";
-    if (avgLogins >= 0.3) return "weekly";
+    if (avgLogins >= 0?.8) return "daily";
+    if (avgLogins >= 0?.3) return "weekly";
     return "occasional";
   }
 
@@ -765,7 +765,7 @@ class SmartDefaultsService {
     const _hourlyActivity =
       (sessionData?.hourlyActivity as number[]) ||
       Array?.from({ length: 24 }, (_, i) =>
-        i >= 9 && i <= 22 ? Math?.random() * 0.5 + 0.5 : Math?.random() * 0.3,
+        i >= 9 && i <= 22 ? Math?.random() * 0?.5 + 0?.5 : Math?.random() * 0?.3,
       );
 
     return hourlyActivity?.map((level, hour) => ({
@@ -809,7 +809,7 @@ class SmartDefaultsService {
       bestDays: times?.bestDays,
       bestTimes: times?.bestTimes,
       frequency: artistType === "label" ? "multiple-daily" : "daily",
-      audienceActivity: 0.7 + Math?.random() * 0.2,
+      audienceActivity: 0?.7 + Math?.random() * 0?.2,
     }));
   }
 
@@ -926,12 +926,12 @@ class SmartDefaultsService {
         timeSlot: "evening" as const,
         specificTime: "6:00 PM",
         timezone: "America/New_York",
-        confidence: 0.87,
+        confidence: 0?.87,
         estimatedEngagement: 23,
         reasoning: "Your audience is most active during mid-week evenings",
         platforms:
           platform === "all" ? ["instagram", "tiktok", "twitter"] : [platform],
-        audienceActivity: 0.85,
+        audienceActivity: 0?.85,
       },
       {
         id: "sched-2",
@@ -939,11 +939,11 @@ class SmartDefaultsService {
         timeSlot: "afternoon" as const,
         specificTime: "2:00 PM",
         timezone: "America/New_York",
-        confidence: 0.82,
+        confidence: 0?.82,
         estimatedEngagement: 19,
         reasoning: "High engagement before weekend activities",
         platforms: platform === "all" ? ["instagram", "tiktok"] : [platform],
-        audienceActivity: 0.78,
+        audienceActivity: 0?.78,
       },
       {
         id: "sched-3",
@@ -951,11 +951,11 @@ class SmartDefaultsService {
         timeSlot: "morning" as const,
         specificTime: "10:00 AM",
         timezone: "America/New_York",
-        confidence: 0.75,
+        confidence: 0?.75,
         estimatedEngagement: 15,
         reasoning: "Relaxed weekend browsing time",
         platforms: platform === "all" ? ["twitter", "facebook"] : [platform],
-        audienceActivity: 0.72,
+        audienceActivity: 0?.72,
       },
     ];
 
@@ -963,13 +963,13 @@ class SmartDefaultsService {
       suggestions,
       bestOverallTime: suggestions[0],
       weeklyPattern: {
-        monday: 0.55,
-        tuesday: 0.62,
-        wednesday: 0.85,
-        thursday: 0.7,
-        friday: 0.78,
-        saturday: 0.65,
-        sunday: 0.72,
+        monday: 0?.55,
+        tuesday: 0?.62,
+        wednesday: 0?.85,
+        thursday: 0?.7,
+        friday: 0?.78,
+        saturday: 0?.65,
+        sunday: 0?.72,
       },
       audienceTimezones: [
         { timezone: "America/New_York", percentage: 35 },

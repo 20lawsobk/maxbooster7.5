@@ -85,8 +85,8 @@ class PaymentBypassService {
         });
       }
 
-      this.cachedConfig = config;
-      this.cacheExpiry = Date?.now() + this?.CACHE_TTL_MS;
+      this?.cachedConfig = config;
+      this?.cacheExpiry = Date?.now() + this?.CACHE_TTL_MS;
 
       logger?.info("[PaymentBypass] Config saved successfully");
     } catch (error) {
@@ -115,8 +115,8 @@ class PaymentBypassService {
     }
 
     const _config = await this?.loadConfig();
-    this.cachedConfig = config;
-    this.cacheExpiry = now + this?.CACHE_TTL_MS;
+    this?.cachedConfig = config;
+    this?.cacheExpiry = now + this?.CACHE_TTL_MS;
 
     if (!config?.enabled) {
       return false;
@@ -224,8 +224,8 @@ class PaymentBypassService {
       currentExpiry?.getTime() + additionalHours * 60 * 60 * 1000,
     );
 
-    config.expiresAt = newExpiry?.toISOString();
-    config.reason = `${config?.reason} | Extended by ${additionalHours}h by ${adminId}`;
+    config?.expiresAt = newExpiry?.toISOString();
+    config?.reason = `${config?.reason} | Extended by ${additionalHours}h by ${adminId}`;
 
     await this?.saveConfig(config, adminId);
     logger?.info(

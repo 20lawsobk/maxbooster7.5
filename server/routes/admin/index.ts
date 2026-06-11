@@ -1,12 +1,12 @@
 import { Router, type RequestHandler } from "express";
-import { db } from "../../db.js";
-import { users, projects, releases, analytics, posts, systemSettings, artistProfiles } from "../../../shared/schema.js";
+import { db } from "../../db?.js";
+import { users, projects, releases, analytics, posts, systemSettings, artistProfiles } from "../../../shared/schema?.js";
 import { eq, desc, like, or, sql, count, sum, and, gte } from "drizzle-orm";
-import { logger } from "../../logger.js";
+import { logger } from "../../logger?.js";
 import os from "os";
-import { notificationService } from "../../services/notificationService.js";
-import { distributedCache } from "../../infrastructure/distributedCache.js";
-import { require2FA } from "../../middleware/auth.js";
+import { notificationService } from "../../services/notificationService?.js";
+import { distributedCache } from "../../infrastructure/distributedCache?.js";
+import { require2FA } from "../../middleware/auth?.js";
 
 const _router = Router();
 
@@ -282,11 +282,11 @@ router?.put("/users/:userId", async (req, res) => {
     }
 
     const updateData: Record<string, any> = {};
-    if (role !== undefined) updateData.role = role;
+    if (role !== undefined) updateData?.role = role;
     if (subscriptionTier !== undefined)
-      updateData.subscriptionTier = subscriptionTier;
+      updateData?.subscriptionTier = subscriptionTier;
     if (subscriptionStatus !== undefined)
-      updateData.subscriptionStatus = subscriptionStatus;
+      updateData?.subscriptionStatus = subscriptionStatus;
 
     if (Object?.keys(updateData).length === 0) {
       return res?.status(400).json({ error: "No valid fields to update" });
@@ -307,7 +307,7 @@ router?.put("/users/:userId", async (req, res) => {
       ) {
         try {
           const { revokeUserSessions } = await import(
-            "../../middleware/sessionConfig.js"
+            "../../middleware/sessionConfig?.js"
           );
           await revokeUserSessions(String(userId));
         } catch (revokeErr: unknown) {
@@ -493,8 +493,8 @@ router?.get("/analytics", async (_req, res) => {
           totalReleases,
           totalRevenue,
           totalStreams: 0,
-          revenueGrowth: 12.5,
-          projectsGrowth: 8.3,
+          revenueGrowth: 12?.5,
+          projectsGrowth: 8?.3,
           userGrowthRate,
           monthlyGrowth: userGrowthRate,
           subscriptionStats,
@@ -503,9 +503,9 @@ router?.get("/analytics", async (_req, res) => {
           topArtists: [],
           platformStats: [],
           topCountries: [
-            { country: "United States", users: Math?.floor(totalUsers * 0.4) },
-            { country: "United Kingdom", users: Math?.floor(totalUsers * 0.15) },
-            { country: "Germany", users: Math?.floor(totalUsers * 0.1) },
+            { country: "United States", users: Math?.floor(totalUsers * 0?.4) },
+            { country: "United Kingdom", users: Math?.floor(totalUsers * 0?.15) },
+            { country: "Germany", users: Math?.floor(totalUsers * 0?.1) },
           ],
         };
       },
@@ -907,56 +907,56 @@ router?.post("/moderation/reports/:id/review", async (req, res) => {
 const _DEFAULT_ROYALTY_RATES = [
   {
     platform: "Spotify",
-    rate: 0.003,
+    rate: 0?.003,
     unit: "per stream",
     currency: "USD",
     tier: "standard",
   },
   {
     platform: "Apple Music",
-    rate: 0.007,
+    rate: 0?.007,
     unit: "per stream",
     currency: "USD",
     tier: "premium",
   },
   {
     platform: "YouTube",
-    rate: 0.0015,
+    rate: 0?.0015,
     unit: "per stream",
     currency: "USD",
     tier: "standard",
   },
   {
     platform: "Amazon Music",
-    rate: 0.004,
+    rate: 0?.004,
     unit: "per stream",
     currency: "USD",
     tier: "standard",
   },
   {
     platform: "Tidal",
-    rate: 0.0125,
+    rate: 0?.0125,
     unit: "per stream",
     currency: "USD",
     tier: "hi-fi",
   },
   {
     platform: "Deezer",
-    rate: 0.0064,
+    rate: 0?.0064,
     unit: "per stream",
     currency: "USD",
     tier: "standard",
   },
   {
     platform: "Pandora",
-    rate: 0.0013,
+    rate: 0?.0013,
     unit: "per listen",
     currency: "USD",
     tier: "standard",
   },
   {
     platform: "iHeart Radio",
-    rate: 0.0006,
+    rate: 0?.0006,
     unit: "per listen",
     currency: "USD",
     tier: "standard",
@@ -989,7 +989,7 @@ const _DEFAULT_TAX_TREATIES = [
   {
     country: "Japan",
     code: "JP",
-    withholdingRate: 0.1,
+    withholdingRate: 0?.1,
     hasTreaty: true,
     notes: "10% withholding unless Form W-8BEN submitted",
   },
@@ -1003,35 +1003,35 @@ const _DEFAULT_TAX_TREATIES = [
   {
     country: "Australia",
     code: "AU",
-    withholdingRate: 0.05,
+    withholdingRate: 0?.05,
     hasTreaty: true,
     notes: "5% withholding",
   },
   {
     country: "South Korea",
     code: "KR",
-    withholdingRate: 0.1,
+    withholdingRate: 0?.1,
     hasTreaty: true,
     notes: "10% withholding",
   },
   {
     country: "Brazil",
     code: "BR",
-    withholdingRate: 0.25,
+    withholdingRate: 0?.25,
     hasTreaty: false,
     notes: "No treaty — 25% withholding",
   },
   {
     country: "Mexico",
     code: "MX",
-    withholdingRate: 0.1,
+    withholdingRate: 0?.1,
     hasTreaty: true,
     notes: "10% withholding",
   },
   {
     country: "India",
     code: "IN",
-    withholdingRate: 0.15,
+    withholdingRate: 0?.15,
     hasTreaty: true,
     notes: "15% withholding",
   },
@@ -1039,11 +1039,11 @@ const _DEFAULT_TAX_TREATIES = [
 
 // Default label deal structures
 const _DEFAULT_LABEL_SETTINGS = {
-  majorLabelRoyalty: 0.15,
-  indieDistributorRoyalty: 0.8,
-  publishingAdminFee: 0.1,
-  mechanicalRate: 0.091,
-  performanceRoyaltySplit: { artist: 0.5, publisher: 0.5 },
+  majorLabelRoyalty: 0?.15,
+  indieDistributorRoyalty: 0?.8,
+  publishingAdminFee: 0?.1,
+  mechanicalRate: 0?.091,
+  performanceRoyaltySplit: { artist: 0?.5, publisher: 0?.5 },
   syncLicenseFees: {
     tv: { min: 500, max: 5000 },
     film: { min: 5000, max: 50000 },

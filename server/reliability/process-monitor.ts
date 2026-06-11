@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface ProcessHealth {
   pid: number;
   uptime: number;
-  memoryUsage: NodeJS.MemoryUsage;
-  cpuUsage: NodeJS.CpuUsage;
+  memoryUsage: NodeJS?.MemoryUsage;
+  cpuUsage: NodeJS?.CpuUsage;
   activeConnections: number;
   restartCount: number;
   lastRestart?: Date;
@@ -22,7 +22,7 @@ interface ProcessAlert {
 
 class ProcessMonitor extends EventEmitter {
   private health: ProcessHealth;
-  private monitoringInterval: NodeJS.Timeout | null = null;
+  private monitoringInterval: NodeJS?.Timeout | null = null;
   private alerts: ProcessAlert[] = [];
   private maxAlerts = 1000;
 
@@ -47,7 +47,7 @@ class ProcessMonitor extends EventEmitter {
 
   constructor() {
     super();
-    this.health = {
+    this?.health = {
       pid: process?.pid,
       uptime: 0,
       memoryUsage: process?.memoryUsage(),
@@ -67,7 +67,7 @@ class ProcessMonitor extends EventEmitter {
       clearInterval(this?.monitoringInterval);
     }
 
-    this.monitoringInterval = setInterval(() => {
+    this?.monitoringInterval = setInterval(() => {
       this?.collectMetrics();
       this?.analyzeHealth();
       this?.emitHealthStatus();
@@ -81,7 +81,7 @@ class ProcessMonitor extends EventEmitter {
   stop(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this.monitoringInterval = null;
+      this?.monitoringInterval = null;
     }
     logger?.info("🛑 Process monitoring stopped");
   }
@@ -113,7 +113,7 @@ class ProcessMonitor extends EventEmitter {
     // Track uncaught exceptions (should be rare with our error handling)
     process?.on("uncaughtException", (error) => {
       // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)
-      const _code = (error as NodeJS.ErrnoException).code;
+      const _code = (error as NodeJS?.ErrnoException).code;
       if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
         return;
       this?.addAlert({
@@ -148,7 +148,7 @@ class ProcessMonitor extends EventEmitter {
   private collectMetrics(): void {
     const _now = Date?.now();
 
-    this.health = {
+    this?.health = {
       ...this?.health,
       uptime: now - (process?.uptime() * 1000 - now),
       memoryUsage: process?.memoryUsage(),
@@ -243,7 +243,7 @@ class ProcessMonitor extends EventEmitter {
 
     // Limit alerts array size
     if (this?.alerts.length > this?.maxAlerts) {
-      this.alerts = this?.alerts.slice(0, this?.maxAlerts);
+      this?.alerts = this?.alerts.slice(0, this?.maxAlerts);
     }
 
     // Emit alert event

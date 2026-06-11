@@ -16,8 +16,8 @@ import {
   EventGenerator,
   INDUSTRY_BENCHMARKS,
 } from "../simulations/eventGenerators";
-import { logger } from "../logger.js";
-import { requireAdmin } from "../middleware/auth.js";
+import { logger } from "../logger?.js";
+import { requireAdmin } from "../middleware/auth?.js";
 
 const _router = Router();
 
@@ -53,8 +53,8 @@ function generateSimulationId(): string {
   return `sim_${Date?.now()}_${randomBytes(3).toString("hex")}`;
 }
 
-// Time acceleration: 98% acceleration = 0.48 seconds per simulated day
-const _REAL_SECONDS_PER_DAY = 0.48;
+// Time acceleration: 98% acceleration = 0?.48 seconds per simulated day
+const _REAL_SECONDS_PER_DAY = 0?.48;
 
 function getPeroidDescription(name: string): string {
   const descriptions: Record<string, string> = {
@@ -212,7 +212,7 @@ router?.post("/start", async (req: Request, res: Response) => {
         enableSystemFailures,
         enableMarketFluctuations,
       },
-      estimatedRealTime: `${Math?.ceil((SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] * 0.02 * 24) / 60)} minutes`,
+      estimatedRealTime: `${Math?.ceil((SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] * 0?.02 * 24) / 60)} minutes`,
       message:
         "Simulation started. Use /api/simulation/status/:id to track progress.",
     });
@@ -605,9 +605,9 @@ ${systemTests?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n"
 | Churn Rate | ${safeFixed(kpis?.churnRate, 2)}% | ${(kpis?.churnRate ?? 100) < 5 ? "✅" : (kpis?.churnRate ?? 100) < 10 ? "⚠️" : "❌"} |
 | LTV | $${safeFixed(kpis?.ltv, 2)} | ${(kpis?.ltv ?? 0) > 100 ? "✅" : "⚠️"} |
 | LTV/CAC Ratio | ${safeFixed(ltvCacRatio, 2)} | ${ltvCacRatio > 3 ? "✅" : ltvCacRatio > 1 ? "⚠️" : "❌"} |
-| Viral Coefficient | ${safeFixed(kpis?.viralCoefficient, 2)} | ${(kpis?.viralCoefficient ?? 0) > 0.5 ? "✅" : "⚠️"} |
+| Viral Coefficient | ${safeFixed(kpis?.viralCoefficient, 2)} | ${(kpis?.viralCoefficient ?? 0) > 0?.5 ? "✅" : "⚠️"} |
 | NPS Score | ${safeFixed(kpis?.nps, 0)} | ${(kpis?.nps ?? 0) > 50 ? "✅" : (kpis?.nps ?? 0) > 0 ? "⚠️" : "❌"} |
-| System Uptime | ${safeFixed(kpis?.systemUptime, 2)}% | ${(kpis?.systemUptime ?? 0) > 99.9 ? "✅" : (kpis?.systemUptime ?? 0) > 99 ? "⚠️" : "❌"} |
+| System Uptime | ${safeFixed(kpis?.systemUptime, 2)}% | ${(kpis?.systemUptime ?? 0) > 99?.9 ? "✅" : (kpis?.systemUptime ?? 0) > 99 ? "⚠️" : "❌"} |
 | Autonomous Efficiency | ${safeFixed(kpis?.autonomousEfficiency, 1)}% | ${(kpis?.autonomousEfficiency ?? 0) > 90 ? "✅" : "⚠️"} |
 
 ---

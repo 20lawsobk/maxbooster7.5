@@ -20,7 +20,7 @@ export function safeAverage(arr: number[]): number {
  */
 export function safeWeightedAverage(
   values: number[],
-  weights: number[],
+  weights: number[]
 ): number {
   if (!values || !weights || values?.length === 0 || weights?.length === 0) {
     return 0;

@@ -185,9 +185,11 @@ router.delete(
         .returning();
 
       if (!deleted) {
-        return res.status(404).json({
-          error: "Template not found or cannot delete default templates",
-        });
+        return res
+          .status(404)
+          .json({
+            error: "Template not found or cannot delete default templates",
+          });
       }
 
       return res.json({ success: true });
@@ -826,9 +828,11 @@ router.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-NEC":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-NEC",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-NEC",
+            });
         }
         form = taxFormService.generate1099NEC(
           req.user!.id,
@@ -840,9 +844,11 @@ router.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-MISC":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-MISC",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-MISC",
+            });
         }
         form = taxFormService.generate1099MISC(
           req.user!.id,
@@ -854,9 +860,11 @@ router.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-K":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-K",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-K",
+            });
         }
         form = taxFormService.generate1099K(
           req.user!.id,
@@ -1115,9 +1123,11 @@ router.post("/split-sheets/create", async (req: Request, res: Response) => {
       !participants ||
       participants.length === 0
     ) {
-      return res.status(400).json({
-        error: "releaseId, contractName, and participants are required",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "releaseId, contractName, and participants are required",
+        });
     }
 
     const totalSplit = participants.reduce(
@@ -1265,9 +1275,12 @@ router.post(
         !role ||
         splitPercentage === undefined
       ) {
-        return res.status(400).json({
-          error: "userId, name, email, role, and splitPercentage are required",
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              "userId, name, email, role, and splitPercentage are required",
+          });
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
@@ -1404,15 +1417,19 @@ router.post("/marketplace-disputes", async (req: Request, res: Response) => {
       req.body;
 
     if (!orderId || !disputeType || !subject || !description) {
-      return res.status(400).json({
-        error: "orderId, disputeType, subject, and description are required",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "orderId, disputeType, subject, and description are required",
+        });
     }
 
     if (!VALID_DISPUTE_TYPES.includes(disputeType)) {
-      return res.status(400).json({
-        error: `Invalid dispute type. Valid types: ${VALID_DISPUTE_TYPES.join(", ")}`,
-      });
+      return res
+        .status(400)
+        .json({
+          error: `Invalid dispute type. Valid types: ${VALID_DISPUTE_TYPES.join(", ")}`,
+        });
     }
 
     if (subject.length > 200) {
@@ -1439,10 +1456,12 @@ router.post("/marketplace-disputes", async (req: Request, res: Response) => {
       .limit(10);
 
     if (existingDisputes.length > 0) {
-      return res.status(400).json({
-        error: "An open dispute already exists for this order",
-        disputeId: existingDisputes[0].id,
-      });
+      return res
+        .status(400)
+        .json({
+          error: "An open dispute already exists for this order",
+          disputeId: existingDisputes[0].id,
+        });
     }
 
     const now = new Date();
@@ -1565,9 +1584,11 @@ router.post(
       }
 
       if (["resolved", "closed"].includes(dispute.status || "")) {
-        return res.status(400).json({
-          error: "Cannot add messages to a resolved or closed dispute",
-        });
+        return res
+          .status(400)
+          .json({
+            error: "Cannot add messages to a resolved or closed dispute",
+          });
       }
 
       const isAdmin = isAdminUser(req.user);
@@ -1662,9 +1683,11 @@ router.post(
       }
 
       if (["resolved", "closed"].includes(dispute.status || "")) {
-        return res.status(400).json({
-          error: "Cannot add evidence to a resolved or closed dispute",
-        });
+        return res
+          .status(400)
+          .json({
+            error: "Cannot add evidence to a resolved or closed dispute",
+          });
       }
 
       const newEvidence = {
@@ -1746,9 +1769,11 @@ router.post(
       if (
         !VALID_STATUS_TRANSITIONS[dispute.status || ""]?.includes("escalated")
       ) {
-        return res.status(400).json({
-          error: `Cannot escalate dispute from status: ${dispute.status}`,
-        });
+        return res
+          .status(400)
+          .json({
+            error: `Cannot escalate dispute from status: ${dispute.status}`,
+          });
       }
 
       const now = new Date();
@@ -1811,9 +1836,11 @@ router.post(
         "mutual_agreement",
       ];
       if (!validOutcomes.includes(outcome)) {
-        return res.status(400).json({
-          error: `Invalid outcome. Valid outcomes: ${validOutcomes.join(", ")}`,
-        });
+        return res
+          .status(400)
+          .json({
+            error: `Invalid outcome. Valid outcomes: ${validOutcomes.join(", ")}`,
+          });
       }
 
       if (
@@ -1850,9 +1877,11 @@ router.post(
       if (
         !VALID_STATUS_TRANSITIONS[dispute.status || ""]?.includes("resolved")
       ) {
-        return res.status(400).json({
-          error: `Cannot resolve dispute from status: ${dispute.status}`,
-        });
+        return res
+          .status(400)
+          .json({
+            error: `Cannot resolve dispute from status: ${dispute.status}`,
+          });
       }
 
       const now = new Date();

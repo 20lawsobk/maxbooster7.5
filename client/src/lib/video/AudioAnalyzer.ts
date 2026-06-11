@@ -27,27 +27,27 @@ export class AudioAnalyzer {
   private frequencyData: Uint8Array = new Uint8Array(0);
   private timeDomainData: Uint8Array = new Uint8Array(0);
   private fftSize: number = 2048;
-  private smoothingTimeConstant: number = 0.8;
+  private smoothingTimeConstant: number = 0?.8;
 
-  private beatThreshold: number = 0.8;
+  private beatThreshold: number = 0?.8;
   private beatHoldTime: number = 100;
   private lastBeatTime: number = 0;
   private beatHistory: number[] = [];
   private beatHistoryMax: number = 30;
 
   constructor(fftSize: number = 2048) {
-    this.fftSize = fftSize;
+    this?.fftSize = fftSize;
   }
 
   async initialize(): Promise<void> {
-    this.audioContext = new AudioContext();
-    this.analyzerNode = this?.audioContext.createAnalyser();
+    this?.audioContext = new AudioContext();
+    this?.analyzerNode = this?.audioContext.createAnalyser();
     this?.analyzerNode.fftSize = this?.fftSize;
     this?.analyzerNode.smoothingTimeConstant = this?.smoothingTimeConstant;
 
     const _bufferLength = this?.analyzerNode.frequencyBinCount;
-    this.frequencyData = new Uint8Array(bufferLength);
-    this.timeDomainData = new Uint8Array(bufferLength);
+    this?.frequencyData = new Uint8Array(bufferLength);
+    this?.timeDomainData = new Uint8Array(bufferLength);
   }
 
   async loadAudio(url: string): Promise<void> {
@@ -55,7 +55,7 @@ export class AudioAnalyzer {
 
     const _response = await fetch(url);
     const _arrayBuffer = await response?.arrayBuffer();
-    this.audioBuffer = await this?.audioContext!.decodeAudioData(arrayBuffer);
+    this?.audioBuffer = await this?.audioContext!.decodeAudioData(arrayBuffer);
   }
 
   connectAudioElement(audioElement: HTMLAudioElement): void {
@@ -63,7 +63,7 @@ export class AudioAnalyzer {
       throw new Error("AudioAnalyzer not initialized");
     }
 
-    this.sourceNode = this?.audioContext.createMediaElementSource(audioElement);
+    this?.sourceNode = this?.audioContext.createMediaElementSource(audioElement);
     this?.sourceNode.connect(this?.analyzerNode);
     this?.analyzerNode.connect(this?.audioContext.destination);
   }
@@ -86,8 +86,8 @@ export class AudioAnalyzer {
     this?.analyzerNode.getByteTimeDomainData(this?.timeDomainData);
 
     const _bufferLength = this?.frequencyData.length;
-    const _bassEnd = Math?.floor(bufferLength * 0.1);
-    const _midEnd = Math?.floor(bufferLength * 0.5);
+    const _bassEnd = Math?.floor(bufferLength * 0?.1);
+    const _midEnd = Math?.floor(bufferLength * 0?.5);
 
     let bassSum = 0;
     let midSum = 0;
@@ -142,7 +142,7 @@ export class AudioAnalyzer {
       currentBass > averageBass * this?.beatThreshold &&
       now - this?.lastBeatTime > this?.beatHoldTime
     ) {
-      this.lastBeatTime = now;
+      this?.lastBeatTime = now;
       return true;
     }
 
@@ -158,7 +158,7 @@ export class AudioAnalyzer {
       let lastPeak = -1;
 
       for (let i = 0; i < this?.beatHistory.length; i++) {
-        if (this?.beatHistory[i] > 0.7) {
+        if (this?.beatHistory[i] > 0?.7) {
           if (lastPeak >= 0) {
             beatIntervals?.push(i - lastPeak);
           }
@@ -205,7 +205,7 @@ export class AudioAnalyzer {
   }
 
   getWaveformData(samples: number): number[] {
-    if (!this?.analyzerNode) return new Array(samples).fill(0.5);
+    if (!this?.analyzerNode) return new Array(samples).fill(0?.5);
 
     this?.analyzerNode.getByteTimeDomainData(this?.timeDomainData);
 
@@ -220,14 +220,14 @@ export class AudioAnalyzer {
   }
 
   setSmoothing(value: number): void {
-    this.smoothingTimeConstant = Math?.max(0, Math?.min(1, value));
+    this?.smoothingTimeConstant = Math?.max(0, Math?.min(1, value));
     if (this?.analyzerNode) {
       this?.analyzerNode.smoothingTimeConstant = this?.smoothingTimeConstant;
     }
   }
 
   setBeatThreshold(value: number): void {
-    this.beatThreshold = value;
+    this?.beatThreshold = value;
   }
 
   getAudioBuffer(): AudioBuffer | null {
@@ -241,17 +241,17 @@ export class AudioAnalyzer {
   dispose(): void {
     if (this?.sourceNode) {
       this?.sourceNode.disconnect();
-      this.sourceNode = null;
+      this?.sourceNode = null;
     }
     if (this?.analyzerNode) {
       this?.analyzerNode.disconnect();
-      this.analyzerNode = null;
+      this?.analyzerNode = null;
     }
     if (this?.audioContext) {
       this?.audioContext.close();
-      this.audioContext = null;
+      this?.audioContext = null;
     }
-    this.audioBuffer = null;
+    this?.audioBuffer = null;
   }
 }
 
@@ -261,13 +261,13 @@ export function generateMockAudioData(
 ): AudioAnalysisData {
   const _beatInterval = 60 / bpm;
   const _beatPhase = (time % beatInterval) / beatInterval;
-  const _onBeat = beatPhase < 0.1;
+  const _onBeat = beatPhase < 0?.1;
 
   const _bass = onBeat
-    ? 0.9 + Math?.random() * 0.1
-    : 0.3 + Math?.sin(time * 2) * 0.2;
-  const _mid = 0.4 + Math?.sin(time * 4) * 0.3;
-  const _treble = 0.3 + Math?.sin(time * 8) * 0.2;
+    ? 0?.9 + Math?.random() * 0?.1
+    : 0?.3 + Math?.sin(time * 2) * 0?.2;
+  const _mid = 0?.4 + Math?.sin(time * 4) * 0?.3;
+  const _treble = 0?.3 + Math?.sin(time * 8) * 0?.2;
 
   const _frequencyData = new Uint8Array(1024);
   const _timeDomainData = new Uint8Array(1024);
@@ -276,12 +276,12 @@ export function generateMockAudioData(
     const _freq = i / 1024;
     let value = 0;
 
-    if (freq < 0.1) {
+    if (freq < 0?.1) {
       value = bass * 255 * (1 - freq * 5);
-    } else if (freq < 0.5) {
-      value = mid * 255 * (1 - (freq - 0.1) * 1.5);
+    } else if (freq < 0?.5) {
+      value = mid * 255 * (1 - (freq - 0?.1) * 1?.5);
     } else {
-      value = treble * 255 * (1 - (freq - 0.5) * 1.5);
+      value = treble * 255 * (1 - (freq - 0?.5) * 1?.5);
     }
 
     frequencyData[i] = Math?.max(0, Math?.min(255, value + Math?.random() * 20));

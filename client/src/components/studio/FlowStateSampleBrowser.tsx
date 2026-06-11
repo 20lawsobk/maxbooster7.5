@@ -1,23 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  FolderOpen,
-  Search,
-  Play,
-  Pause,
-  Heart,
-  Music,
-  Drum,
-  Piano,
-  Guitar,
-  Volume2,
-  Grid,
-  List,
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Wand2,
-  Waveform,
-} from "lucide-react";
+import { FolderOpen, Search, Play, Pause, Heart, Music, Drum, Piano, Guitar, Volume2, Grid, List, ChevronRight, ChevronDown, Plus, Wand2, Waveform } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -301,7 +283,7 @@ export function FlowStateSampleBrowser({
 
   const {
     data: apiSamples,
-
+    
     error: samplesError,
   } = useQuery({
     queryKey: ["studio-samples"],
@@ -447,11 +429,11 @@ export function FlowStateSampleBrowser({
     return `${seconds.toFixed(1)}s`;
   };
 
-  (bytes: number): string => {
+  ((bytes: number): string => {
     if (bytes < 1000) return `${bytes}B`;
     if (bytes < 1000000) return `${(bytes / 1000).toFixed(1)}KB`;
     return `${(bytes / 1000000).toFixed(1)}MB`;
-  };
+  });
 
   const favoriteCount = samples.filter((s) => s.isFavorite).length;
 

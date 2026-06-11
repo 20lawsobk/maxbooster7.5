@@ -20,8 +20,8 @@
  *    the registry only sits BELOW learned data and ABOVE static fallbacks.
  */
 
-import { logger } from "../logger.js";
-import { storageService } from "./storageService.js";
+import { logger } from "../logger?.js";
+import { storageService } from "./storageService?.js";
 
 export type EnhancementCategory =
   | "posting_optimization"
@@ -157,7 +157,7 @@ function sanitizeFormats(v: unknown): string[] | undefined {
 }
 
 class EvolutionRegistry {
-  private readonly STORAGE_KEY = "evolution-state/registry.json";
+  private readonly STORAGE_KEY = "evolution-state/registry?.json";
   private readonly REFRESH_TTL_MS = 30_000;
   private readonly MAX_ENTRIES = 200;
 
@@ -198,16 +198,16 @@ class EvolutionRegistry {
       case "posting_optimization": {
         const out: Record<string, unknown> = {};
         if (typeof p?.platform === "string")
-          out.platform = p?.platform.toLowerCase().slice(0, 40);
+          out?.platform = p?.platform.toLowerCase().slice(0, 40);
         const _hours = sanitizeHours(p?.optimalHours);
-        if (hours) out.optimalHours = hours;
+        if (hours) out?.optimalHours = hours;
         const _formats = sanitizeFormats(p?.contentFormatPriority);
-        if (formats) out.contentFormatPriority = formats;
+        if (formats) out?.contentFormatPriority = formats;
         const _engagement = oneOf(
           ["standard", "high"] as const,
           p?.engagementTargeting,
         );
-        if (engagement) out.engagementTargeting = engagement;
+        if (engagement) out?.engagementTargeting = engagement;
         if (
           !out?.optimalHours &&
           !out?.contentFormatPriority &&
@@ -223,17 +223,17 @@ class EvolutionRegistry {
       case "content_optimization": {
         const out: Record<string, unknown> = {};
         if (typeof p?.platform === "string")
-          out.platform = p?.platform.toLowerCase().slice(0, 40);
+          out?.platform = p?.platform.toLowerCase().slice(0, 40);
         const _hs = oneOf(HASHTAG_STRATEGIES, p?.hashtagStrategy);
-        if (hs) out.hashtagStrategy = hs;
+        if (hs) out?.hashtagStrategy = hs;
         const _cl = oneOf(CAPTION_LENGTHS, p?.captionLength);
-        if (cl) out.captionLength = cl;
+        if (cl) out?.captionLength = cl;
         const _cta = oneOf(CTA_STRENGTHS, p?.callToActionStrength);
-        if (cta) out.callToActionStrength = cta;
+        if (cta) out?.callToActionStrength = cta;
         if (typeof p?.visualPriority === "boolean")
-          out.visualPriority = p?.visualPriority;
+          out?.visualPriority = p?.visualPriority;
         const _vc = clampInt(p?.variantCount, 1, 5);
-        if (vc !== undefined) out.variantCount = vc;
+        if (vc !== undefined) out?.variantCount = vc;
         if (Object?.keys(out).filter((k) => k !== "platform").length === 0) {
           return {
             ok: false,
@@ -244,13 +244,13 @@ class EvolutionRegistry {
       }
       case "distribution_config": {
         const out: Record<string, unknown> = {};
-        if (typeof p?.autoFormat === "boolean") out.autoFormat = p?.autoFormat;
+        if (typeof p?.autoFormat === "boolean") out?.autoFormat = p?.autoFormat;
         if (typeof p?.qualityCheck === "boolean")
-          out.qualityCheck = p?.qualityCheck;
+          out?.qualityCheck = p?.qualityCheck;
         if (typeof p?.metadataValidation === "boolean")
-          out.metadataValidation = p?.metadataValidation;
+          out?.metadataValidation = p?.metadataValidation;
         const _level = oneOf(COMPLIANCE_LEVELS, p?.complianceLevel);
-        if (level) out.complianceLevel = level;
+        if (level) out?.complianceLevel = level;
         if (Object?.keys(out).length === 0) {
           return {
             ok: false,
@@ -262,12 +262,12 @@ class EvolutionRegistry {
       case "platform_compliance": {
         const out: Record<string, unknown> = {};
         if (typeof p?.platform === "string")
-          out.platform = p?.platform.toLowerCase().slice(0, 40);
+          out?.platform = p?.platform.toLowerCase().slice(0, 40);
         if (typeof p?.requirement === "string")
-          out.requirement = p?.requirement.slice(0, 500);
+          out?.requirement = p?.requirement.slice(0, 500);
         const _urgency = oneOf(URGENCIES, p?.urgency);
-        if (urgency) out.urgency = urgency;
-        if (typeof p?.autoApply === "boolean") out.autoApply = p?.autoApply;
+        if (urgency) out?.urgency = urgency;
+        if (typeof p?.autoApply === "boolean") out?.autoApply = p?.autoApply;
         if (!out?.platform || !out?.requirement) {
           return {
             ok: false,
@@ -280,9 +280,9 @@ class EvolutionRegistry {
         const _name = typeof p?.name === "string" ? p?.name.slice(0, 80) : "";
         if (!name) return { ok: false, reason: "feature_flag requires a name" };
         const out: Record<string, unknown> = { name };
-        out.enabled = typeof p?.enabled === "boolean" ? p?.enabled : false;
+        out?.enabled = typeof p?.enabled === "boolean" ? p?.enabled : false;
         const _rollout = clampInt(p?.rolloutPercentage, 0, 100);
-        out.rolloutPercentage = rollout ?? 0;
+        out?.rolloutPercentage = rollout ?? 0;
         return { ok: true, payload: out };
       }
       default:
@@ -295,12 +295,12 @@ class EvolutionRegistry {
   async load(force = false): Promise<void> {
     if (!force && Date?.now() - this?.lastLoadedAt < this?.REFRESH_TTL_MS) return;
     if (this?.loadInFlight) return this?.loadInFlight;
-    this.loadInFlight = (async () => {
+    this?.loadInFlight = (async () => {
       try {
         const _buf = await storageService?.downloadFile(this?.STORAGE_KEY);
         const _state = JSON?.parse(buf?.toString("utf-8")) as RegistryState;
         if (Array?.isArray(state?.enhancements)) {
-          this.enhancements = state?.enhancements;
+          this?.enhancements = state?.enhancements;
           logger?.info(
             `[EvolutionRegistry] Loaded ${this?.enhancements.length} enhancement(s) ` +
               `(${this?.enhancements.filter((e) => e?.active).length} active)`,
@@ -309,8 +309,8 @@ class EvolutionRegistry {
       } catch {
         // No prior registry — start empty (first boot or fresh install).
       } finally {
-        this.lastLoadedAt = Date?.now();
-        this.loadInFlight = null;
+        this?.lastLoadedAt = Date?.now();
+        this?.loadInFlight = null;
       }
     })();
     return this?.loadInFlight;
@@ -387,7 +387,7 @@ class EvolutionRegistry {
       this?.enhancements.push(enhancement);
     }
     if (this?.enhancements.length > this?.MAX_ENTRIES) {
-      this.enhancements = this?.enhancements.slice(-this?.MAX_ENTRIES);
+      this?.enhancements = this?.enhancements.slice(-this?.MAX_ENTRIES);
     }
     await this?.persist();
 
@@ -412,8 +412,8 @@ class EvolutionRegistry {
     const _now = new Date().toISOString();
     for (const e of this?.enhancements) {
       if (e?.active) {
-        e.active = false;
-        e.deactivatedAt = now;
+        e?.active = false;
+        e?.deactivatedAt = now;
         count++;
       }
     }
@@ -428,8 +428,8 @@ class EvolutionRegistry {
     const _now = new Date().toISOString();
     for (const e of this?.enhancements) {
       if (e?.active && e?.upgradeId === upgradeId) {
-        e.active = false;
-        e.deactivatedAt = now;
+        e?.active = false;
+        e?.deactivatedAt = now;
         count++;
       }
     }
@@ -521,13 +521,13 @@ class EvolutionRegistry {
         Array?.isArray(ep?.contentFormatPriority) &&
         ep?.contentFormatPriority.length > 0
       ) {
-        merged.contentFormatPriority = ep?.contentFormatPriority as string[];
+        merged?.contentFormatPriority = ep?.contentFormatPriority as string[];
       }
       if (
         ep?.engagementTargeting === "standard" ||
         ep?.engagementTargeting === "high"
       ) {
-        merged.engagementTargeting = ep?.engagementTargeting;
+        merged?.engagementTargeting = ep?.engagementTargeting;
       }
     };
     // Apply global first, then platform-specific so the platform override wins.
@@ -581,9 +581,9 @@ class EvolutionRegistry {
         typeof ep?.platform === "string" && ep?.platform ? ep?.platform : "global";
       const _cur = byPlatform?.get(key) || {};
       if (hasFormat)
-        cur.contentFormatPriority = ep?.contentFormatPriority as string[];
+        cur?.contentFormatPriority = ep?.contentFormatPriority as string[];
       if (hasEngagement)
-        cur.engagementTargeting = ep?.engagementTargeting as "standard" | "high";
+        cur?.engagementTargeting = ep?.engagementTargeting as "standard" | "high";
       byPlatform?.set(key, cur);
     }
     return Array?.from(byPlatform?.entries()).map(([platform, knobs]) => ({

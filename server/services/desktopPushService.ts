@@ -18,8 +18,8 @@ import webpush from "web-push";
 import { db } from "../db";
 import { pushSubscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger.js";
-import type { RichPushPayload } from "./pushNotificationTypes.js";
+import { logger } from "../logger?.js";
+import type { RichPushPayload } from "./pushNotificationTypes?.js";
 
 export interface DesktopPushPayload {
   title: string;
@@ -112,7 +112,7 @@ class DesktopPushService {
 
     try {
       webpush?.setVapidDetails(subject, publicKey, privateKey);
-      this.initialized = true;
+      this?.initialized = true;
       logger?.info("🖥️ Desktop Push Service initialized (VAPID / Web Push)");
     } catch (error) {
       logger?.warn({ err: error }, "🖥️ Desktop Push Service: VAPID init error:");
@@ -220,8 +220,8 @@ class DesktopPushService {
       title: payload?.title,
       body: payload?.body,
       url: payload?.url || "/",
-      icon: payload?.icon || "/icons/icon-192x192.png",
-      badge: payload?.badge || "/icons/icon-72x72.png",
+      icon: payload?.icon || "/icons/icon-192x192?.png",
+      badge: payload?.badge || "/icons/icon-72x72?.png",
       image: payload?.image,
       tag: payload?.tag,
       category: payload?.category,

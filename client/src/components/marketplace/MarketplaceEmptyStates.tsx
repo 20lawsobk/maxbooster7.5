@@ -2,24 +2,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Music,
-  Search,
-  ShoppingCart,
-  Users,
-  TrendingUp,
-  Upload,
-  Heart,
-  Download,
-  DollarSign,
-  Store,
-  FileAudio,
-  Star,
-  Filter,
-  RefreshCw,
-  Sparkles,
-  Globe,
-} from "lucide-react";
+import { Music, Search, ShoppingCart, Users, TrendingUp, Upload, Heart, Download, DollarSign, Store, FileAudio, Star, Filter, RefreshCw, Sparkles, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {

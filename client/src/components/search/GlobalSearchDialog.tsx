@@ -3,14 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useNavigate } from "wouter";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import {
-  Command,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from "@/components/ui/command";
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -549,33 +542,35 @@ export function GlobalSearchDialog({
                         </span>
                       }
                     >
-                      {trending.slice(0, 6).map(
-                        (
-                          item: {
-                            query: string;
-                            searchCount: number;
-                            trend: string;
-                          },
-                          i: number,
-                        ) => (
-                          <CommandItem
-                            key={i}
-                            onSelect={() => setQuery(item.query)}
-                            className="flex items-center gap-3 cursor-pointer"
-                          >
-                            <Sparkles className="h-4 w-4 text-orange-400" />
-                            <span className="flex-1 text-sm text-slate-300">
-                              {item.query}
-                            </span>
-                            <Badge
-                              variant="secondary"
-                              className="text-[10px] bg-slate-800"
+                      {trending
+                        .slice(0, 6)
+                        .map(
+                          (
+                            item: {
+                              query: string;
+                              searchCount: number;
+                              trend: string;
+                            },
+                            i: number,
+                          ) => (
+                            <CommandItem
+                              key={i}
+                              onSelect={() => setQuery(item.query)}
+                              className="flex items-center gap-3 cursor-pointer"
                             >
-                              {item.searchCount}
-                            </Badge>
-                          </CommandItem>
-                        ),
-                      )}
+                              <Sparkles className="h-4 w-4 text-orange-400" />
+                              <span className="flex-1 text-sm text-slate-300">
+                                {item.query}
+                              </span>
+                              <Badge
+                                variant="secondary"
+                                className="text-[10px] bg-slate-800"
+                              >
+                                {item.searchCount}
+                              </Badge>
+                            </CommandItem>
+                          ),
+                        )}
                     </CommandGroup>
                   </>
                 )}

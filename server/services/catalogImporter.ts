@@ -6,9 +6,9 @@ import {
   distroTracks,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { identifierService } from "./identifierService.js";
-import { LabelCopyLinter } from "./labelCopyLinter.js";
+import { logger } from "../logger?.js";
+import { identifierService } from "./identifierService?.js";
+import { LabelCopyLinter } from "./labelCopyLinter?.js";
 import ExcelJS from "exceljs";
 
 export interface ImportRow {
@@ -98,11 +98,12 @@ const CSV_COLUMN_MAPPINGS: Record<string, string> = {
   primary_language: "language",
 };
 
+
 class CatalogImporter {
   private linter: LabelCopyLinter;
 
   constructor() {
-    this.linter = new LabelCopyLinter();
+    this?.linter = new LabelCopyLinter();
   }
 
   async createImportJob(
@@ -256,7 +257,7 @@ class CatalogImporter {
       };
 
       if (upcMatch) {
-        row.upc = upcMatch[1].trim();
+        row?.upc = upcMatch[1].trim();
       }
 
       xmlContent?.matchAll(/<ISRC[^>]*>(.*?)<\/ISRC>/gs);
@@ -281,7 +282,7 @@ class CatalogImporter {
   }
 
   async parseXLSX(buffer: Buffer): Promise<ImportRow[]> {
-    const _workbook = new ExcelJS.Workbook();
+    const _workbook = new ExcelJS?.Workbook();
     await workbook?.xlsx.load(buffer);
     const _sheet = workbook?.worksheets[0];
 
@@ -551,7 +552,7 @@ class CatalogImporter {
       }
     }
 
-    result.status = result?.failedRows === rows?.length ? "failed" : "completed";
+    result?.status = result?.failedRows === rows?.length ? "failed" : "completed";
 
     await db
       .update(catalogImportJobs)

@@ -1,4 +1,4 @@
-import { db } from "../../../db.js";
+import { db } from "../../../db?.js";
 import { fabricChunks } from "@shared/schema";
 import { eq, inArray } from "drizzle-orm";
 import type {
@@ -6,7 +6,7 @@ import type {
   ChunkId,
   NodeId,
   ObjectId,
-} from "../types.js";
+} from "../types?.js";
 
 export class ChunkIndex {
   async putChunkLocation(

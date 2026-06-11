@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
-import { auditLogger } from "./auditLogger.js";
-import { isRoutesReady } from "../lib/bootState.js";
+import { logger } from "../logger?.js";
+import { auditLogger } from "./auditLogger?.js";
+import { isRoutesReady } from "../lib/bootState?.js";
 
 interface RequestLogData {
   timestamp: string;
@@ -43,7 +43,7 @@ export function requestLogger(
 
   // Override res?.end to capture response details
   const _originalEnd = res?.end.bind(res);
-  res.end = function (
+  res?.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
@@ -51,9 +51,9 @@ export function requestLogger(
     const _responseTime = Date?.now() - startTime;
 
     // Update log data with response information
-    logData.statusCode = res?.statusCode;
-    logData.responseTime = responseTime;
-    logData.bodySize = chunk ? Buffer?.byteLength(chunk) : 0;
+    logData?.statusCode = res?.statusCode;
+    logData?.responseTime = responseTime;
+    logData?.bodySize = chunk ? Buffer?.byteLength(chunk) : 0;
 
     // Determine log level based on status code
     const _isError = res?.statusCode >= 400;
@@ -158,7 +158,7 @@ export function errorContext(
   next = function (error?: unknown) {
     if (error) {
       // Enhance error with request context
-      error.requestContext = {
+      error?.requestContext = {
         requestId: req?.requestId,
         method: req?.method,
         url: req?.originalUrl,

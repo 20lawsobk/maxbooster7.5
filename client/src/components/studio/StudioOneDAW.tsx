@@ -2,53 +2,7 @@ import { logger } from "@/lib/logger";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  Repeat,
-  Volume2,
-  Undo,
-  Redo,
-  Save,
-  Plus,
-  Settings,
-  Sliders,
-  Piano,
-  Layers,
-  Music,
-  FolderOpen,
-  ChevronDown,
-  ChevronRight,
-  Trash2,
-  Copy,
-  ZoomIn,
-  ZoomOut,
-  Wand2,
-  PanelBottomClose,
-  PanelRightClose,
-  Brain,
-  Sparkles,
-  Library,
-  Keyboard,
-  X,
-  Camera,
-  Check,
-  Pencil,
-  Film,
-  Radio,
-  Waves,
-  ArrowUpDown,
-  RotateCcw,
-  Activity,
-  Speaker,
-  FileText,
-  Headphones,
-  Maximize2,
-  Minimize2,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, Repeat, Volume2, Undo, Redo, Save, Plus, Settings, Sliders, Piano, Layers, Music, FolderOpen, ChevronDown, ChevronRight, Trash2, Copy, ZoomIn, ZoomOut, Wand2, PanelBottomClose, PanelRightClose, Brain, Sparkles, Library, Keyboard, X, Camera, Check, Pencil, Film, Radio, Waves, ArrowUpDown, RotateCcw, Activity, Speaker, FileText, Headphones, Maximize2, Minimize2 } from "lucide-react";
 import { getShortcutManager } from "@/lib/shortcuts/ShortcutManager";
 import type { ShortcutDefinition } from "@/lib/shortcuts/types";
 import { cn } from "@/lib/utils";
@@ -121,7 +75,8 @@ const TRACK_COLORS = [
 export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const platform = usePlatform();
   const store = useUnifiedStore();
-  const { tracks, masterTrack, transport, project, canUndo, canRedo } = store;
+  const { tracks, masterTrack, transport,  project, canUndo, canRedo } =
+    store;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -237,7 +192,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   >(null);
   const {
     ref: containerRef,
-
+    
     cssVars,
     trackHeaderWidth,
   } = useStudioScale();
@@ -3467,6 +3422,8 @@ function TransportBar({
     </div>
   );
 }
+
+
 
 interface TimelineRulerProps {
   zoom: number;

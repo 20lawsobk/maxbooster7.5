@@ -14,8 +14,8 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisClient.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisClient?.js";
 
 const _COUNTER_KEY = "api:inflight";
 

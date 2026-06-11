@@ -1,33 +1,9 @@
 import { logger } from "@/lib/logger";
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronUp,
-  Power,
-  Trash2,
-  GripVertical,
-  Plus,
-  Waves,
-  Activity,
-  Volume2,
-  Sparkles,
-  Clock,
-  Music,
-  Zap,
-  Wind,
-  Maximize2,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Power, Trash2, GripVertical, Plus, Waves, Activity, Volume2, Sparkles, Clock, Music, Zap, Wind, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from "@/components/ui/dropdown-menu";
 import { Knob } from "./Knob";
 import { audioEngine } from "@/lib/audioEngine";
 import {

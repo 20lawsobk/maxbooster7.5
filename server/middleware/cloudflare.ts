@@ -3,21 +3,21 @@ import type { Request, Response, NextFunction } from "express";
 // Cloudflare's published IPv4 CIDR ranges (https://www?.cloudflare.com/ips-v4)
 // Last updated: 2024. Cloudflare rarely changes these.
 const _CF_IPV4_RANGES = [
-  "103.21.244.0/22",
-  "103.22.200.0/22",
-  "103.31.4.0/22",
-  "104.16.0.0/13",
-  "104.24.0.0/14",
-  "108.162.192.0/18",
-  "131.0.72.0/22",
-  "141.101.64.0/18",
-  "162.158.0.0/15",
-  "172.64.0.0/13",
-  "173.245.48.0/20",
-  "188.114.96.0/20",
-  "190.93.240.0/20",
-  "197.234.240.0/22",
-  "198.41.128.0/17",
+  "103?.21.244?.0/22",
+  "103?.22.200?.0/22",
+  "103?.31.4?.0/22",
+  "104?.16.0?.0/13",
+  "104?.24.0?.0/14",
+  "108?.162.192?.0/18",
+  "131?.0.72?.0/22",
+  "141?.101.64?.0/18",
+  "162?.158.0?.0/15",
+  "172?.64.0?.0/13",
+  "173?.245.48?.0/20",
+  "188?.114.96?.0/20",
+  "190?.93.240?.0/20",
+  "197?.234.240?.0/22",
+  "198?.41.128?.0/17",
 ];
 
 // Cloudflare's published IPv6 CIDR ranges (https://www?.cloudflare.com/ips-v6)
@@ -103,13 +103,13 @@ export function cloudflareMiddleware(
 
   const _behindCf = !!(cfRay && cfConnectingIp && isCloudflareIP(connectingIp));
 
-  req.isBehindCloudflare = behindCf;
-  req.cfRay = cfRay;
+  req?.isBehindCloudflare = behindCf;
+  req?.cfRay = cfRay;
 
   if (behindCf && cfConnectingIp) {
-    req.realClientIp = cfConnectingIp;
+    req?.realClientIp = cfConnectingIp;
   } else {
-    req.realClientIp = req?.ip || connectingIp;
+    req?.realClientIp = req?.ip || connectingIp;
   }
 
   // Tell Cloudflare what to do with API responses
@@ -133,9 +133,9 @@ export function cloudflareMiddleware(
  */
 export function buildTrustProxyValue(): string[] {
   return [
-    "loopback", // 127.0.0.1, ::1
-    "linklocal", // 169.254.0.0/16 — Replit internal routing
-    "uniquelocal", // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    "loopback", // 127?.0.0?.1, ::1
+    "linklocal", // 169?.254.0?.0/16 — Replit internal routing
+    "uniquelocal", // 10?.0.0?.0/8, 172?.16.0?.0/12, 192?.168.0?.0/16
     ...CF_IPV4_RANGES, // Cloudflare IPv4
     ...CF_IPV6_RANGES, // Cloudflare IPv6
   ];

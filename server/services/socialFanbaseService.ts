@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   socialAutopilotContent,
   fanSegments,
@@ -11,20 +11,20 @@ import {
   SocialPatternAggregate,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, lt } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
-import { aiModelManager } from "./aiModelManager.js";
+import { aiModelManager } from "./aiModelManager?.js";
 import { createHash } from "crypto";
 
 const _MUSIC_IMPACT_WEIGHTS = {
-  saves: 3.0,
-  playlistAdds: 4.0,
-  profileVisits: 1.5,
-  followerGrowth: 2.0,
-  highIntentDms: 5.0,
+  saves: 3?.0,
+  playlistAdds: 4?.0,
+  profileVisits: 1?.5,
+  followerGrowth: 2?.0,
+  highIntentDms: 5?.0,
 };
 
-const _DEFAULT_EXPLORE_RATIO = 0.2;
+const _DEFAULT_EXPLORE_RATIO = 0?.2;
 const _TOP_K_PATTERNS = 5;
 const _TIME_DECAY_HALF_LIFE_DAYS = 30;
 const _LONG_TERM_MEMORY_THRESHOLD_DAYS = 7;
@@ -266,7 +266,7 @@ class SocialFanbaseService {
             totalImpact: impactScore,
             avgImpact: impactScore,
             impactStd: 0,
-            timeDecayFactor: 1.0,
+            timeDecayFactor: 1?.0,
           })
           .returning();
 
@@ -459,7 +459,7 @@ class SocialFanbaseService {
       return "explore";
     }
 
-    if (candidate?.expectedImpact > avgImpact * 0.8) {
+    if (candidate?.expectedImpact > avgImpact * 0?.8) {
       return "exploit";
     }
 
@@ -474,7 +474,7 @@ class SocialFanbaseService {
     try {
       for (const candidate of candidates) {
         if (!candidate?.isExplore) {
-          candidate.expectedImpact = await this?.predictExpectedImpact(
+          candidate?.expectedImpact = await this?.predictExpectedImpact(
             userId,
             candidate,
           );
@@ -702,7 +702,7 @@ class SocialFanbaseService {
           (now?.getTime() - lastUpdated?.getTime()) / (1000 * 60 * 60 * 24);
 
         const _decayFactor = Math?.pow(
-          0.5,
+          0?.5,
           daysSinceUpdate / TIME_DECAY_HALF_LIFE_DAYS,
         );
 

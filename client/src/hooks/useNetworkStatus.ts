@@ -171,7 +171,7 @@ export function useNetworkStatus(
   const _scheduleReconnect = useCallback(
     (attempt: number) => {
       if (attempt >= maxReconnectAttempts) {
-        isReconnectingRef.current = false;
+        isReconnectingRef?.current = false;
         setState((prev) => ({ ...prev, isReconnecting: false }));
 
         if (showToasts) {
@@ -188,7 +188,7 @@ export function useNetworkStatus(
       const _delay = Math?.min(1000 * Math?.pow(2, attempt), 30000);
       const _jitter = Math?.random() * 1000;
 
-      reconnectTimeoutRef.current = setTimeout(async () => {
+      reconnectTimeoutRef?.current = setTimeout(async () => {
         if (!mountedRef?.current) return;
 
         setState((prev) => ({
@@ -205,7 +205,7 @@ export function useNetworkStatus(
         if (!isConnected && mountedRef?.current) {
           scheduleReconnect(attempt + 1);
         } else if (isConnected && mountedRef?.current) {
-          isReconnectingRef.current = false;
+          isReconnectingRef?.current = false;
 
           if (showToasts) {
             toast({
@@ -227,7 +227,7 @@ export function useNetworkStatus(
       clearTimeout(reconnectTimeoutRef?.current);
     }
 
-    isReconnectingRef.current = true;
+    isReconnectingRef?.current = true;
     setState((prev) => ({
       ...prev,
       reconnectAttempts: 0,
@@ -245,14 +245,14 @@ export function useNetworkStatus(
   const _cancelRetry = useCallback(() => {
     if (reconnectTimeoutRef?.current) {
       clearTimeout(reconnectTimeoutRef?.current);
-      reconnectTimeoutRef.current = null;
+      reconnectTimeoutRef?.current = null;
     }
-    isReconnectingRef.current = false;
+    isReconnectingRef?.current = false;
     setState((prev) => ({ ...prev, isReconnecting: false }));
   }, []);
 
   useEffect(() => {
-    mountedRef.current = true;
+    mountedRef?.current = true;
 
     const _handleOnline = () => {
       errorService?.addBreadcrumb("network-online", { timestamp: new Date() });
@@ -304,7 +304,7 @@ export function useNetworkStatus(
       onOffline?.();
 
       if (!isReconnectingRef?.current) {
-        isReconnectingRef.current = true;
+        isReconnectingRef?.current = true;
         scheduleReconnect(0);
       }
     };
@@ -340,7 +340,7 @@ export function useNetworkStatus(
       connection?.addEventListener("change", handleConnectionChange);
     }
 
-    pingIntervalRef.current = setInterval(() => {
+    pingIntervalRef?.current = setInterval(() => {
       if (navigator?.onLine) {
         checkConnection();
       }
@@ -349,7 +349,7 @@ export function useNetworkStatus(
     checkConnection();
 
     return () => {
-      mountedRef.current = false;
+      mountedRef?.current = false;
       window?.removeEventListener("online", handleOnline);
       window?.removeEventListener("offline", handleOffline);
 
@@ -411,7 +411,7 @@ export function useRetryWithBackoff<T>(
   const _timeoutRef = useRef<NodeJS?.Timeout | null>(null);
 
   const _execute = useCallback(async (): Promise<T | null> => {
-    abortRef.current = false;
+    abortRef?.current = false;
     setError(null);
 
     for (let i = 0; i <= maxRetries; i++) {
@@ -427,7 +427,7 @@ export function useRetryWithBackoff<T>(
         const _jitter = Math?.random() * 1000;
 
         await new Promise<void>((resolve) => {
-          timeoutRef.current = setTimeout(resolve, delay + jitter);
+          timeoutRef?.current = setTimeout(resolve, delay + jitter);
         });
 
         if (abortRef?.current) {
@@ -468,7 +468,7 @@ export function useRetryWithBackoff<T>(
   ]);
 
   const _cancel = useCallback(() => {
-    abortRef.current = true;
+    abortRef?.current = true;
     if (timeoutRef?.current) {
       clearTimeout(timeoutRef?.current);
     }
@@ -483,7 +483,7 @@ export function useRetryWithBackoff<T>(
 
   useEffect(() => {
     return () => {
-      abortRef.current = true;
+      abortRef?.current = true;
       if (timeoutRef?.current) {
         clearTimeout(timeoutRef?.current);
       }

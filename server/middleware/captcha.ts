@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
-import { logger } from "../logger.js";
-import { RATE_LIMITS } from "./rateLimiter.js";
+import { getRedisClient } from "../lib/redisConnectionFactory?.js";
+import { logger } from "../logger?.js";
+import { RATE_LIMITS } from "./rateLimiter?.js";
 
 const _CAPTCHA_KEY_PREFIX = "captcha:attempts:";
 const _CAPTCHA_WINDOW_MS = 900000; // 15 minutes
@@ -109,7 +109,7 @@ async function verifyCaptchaToken(
       score?: number;
     };
 
-    if (data?.success && (data?.score === undefined || data?.score >= 0.5)) {
+    if (data?.success && (data?.score === undefined || data?.score >= 0?.5)) {
       return true;
     }
 
@@ -134,7 +134,7 @@ async function verifyHCaptchaToken(
   }
 
   try {
-    const _response = await fetch("https://hcaptcha.com/siteverify", {
+    const _response = await fetch("https://hcaptcha?.com/siteverify", {
       method: "POST",
       signal: AbortSignal?.timeout(8_000), // 8 s — fail open on hCaptcha outage
       headers: {

@@ -20,7 +20,7 @@ import {
 } from "./autonomousUpgradeSimulation";
 import fs from "fs";
 import path from "path";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 async function runAdBoosterSimulation() {
   logger?.info("🚀 Starting Ad System AI Booster Comprehensive Simulation...\n");
@@ -44,7 +44,7 @@ async function runAdBoosterSimulation() {
     logger?.info("📊 QUICK SUMMARY:\n");
     logger?.info(`✓ Scenarios Tested: ${results?.scenarios.length}`);
     logger?.info(
-      `✓ All Scenarios Pass (≥2.0x): ${results?.summary.allScenariosPass ? "✅ YES" : "❌ NO"}`,
+      `✓ All Scenarios Pass (≥2?.0x): ${results?.summary.allScenariosPass ? "✅ YES" : "❌ NO"}`,
     );
     logger?.info(
       `✓ Average Amplification: ${results?.summary.averageAmplification}x`,
@@ -58,7 +58,7 @@ async function runAdBoosterSimulation() {
 
     logger?.info("Scenario Results:");
     results?.scenarios.forEach((scenario, i) => {
-      const _status = scenario?.amplificationFactor >= 2.0 ? "✅" : "❌";
+      const _status = scenario?.amplificationFactor >= 2?.0 ? "✅" : "❌";
       logger?.info(
         `  ${status} Scenario ${i + 1}: ${scenario?.amplificationFactor}x amplification`,
       );
@@ -70,7 +70,7 @@ async function runAdBoosterSimulation() {
     const _report = generateSimulationReport(results);
 
     // Save to SIMULATION_RESULTS?.md
-    const _reportPath = path?.join(process?.cwd(), "SIMULATION_RESULTS.md");
+    const _reportPath = path?.join(process?.cwd(), "SIMULATION_RESULTS?.md");
     fs?.writeFileSync(reportPath, report);
     logger?.info(`✅ Report saved to: ${reportPath}\n`);
 
@@ -96,7 +96,7 @@ async function runAdBoosterSimulation() {
         "outperforms traditional paid advertising while costing $0.\n",
       );
     } else {
-      logger?.info("⚠️  WARNING: Some scenarios did not meet 2.0x threshold\n");
+      logger?.info("⚠️  WARNING: Some scenarios did not meet 2?.0x threshold\n");
     }
     logger?.info("═══════════════════════════════════════════════════════\n");
 
@@ -204,7 +204,7 @@ async function runAutonomousUpgradeSimulation() {
     // Save to AUTONOMOUS_UPGRADE_VERIFICATION?.md
     const _reportPath = path?.join(
       process?.cwd(),
-      "AUTONOMOUS_UPGRADE_VERIFICATION.md",
+      "AUTONOMOUS_UPGRADE_VERIFICATION?.md",
     );
     fs?.writeFileSync(reportPath, report);
     logger?.info(`✅ Report saved to: ${reportPath}\n`);

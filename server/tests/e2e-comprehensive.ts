@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { users, dspProviders } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface TestResult {
   section: string;

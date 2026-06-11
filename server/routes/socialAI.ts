@@ -13,9 +13,9 @@ import {
 import { aiContentService } from "../services/aiContentService";
 import { analyzeUrl } from "../services/mediaAnalyzerService";
 import { logger } from "../logger";
-import { requireAuth } from "../middleware/auth.js";
-import { aiRateLimiter } from "../middleware/rateLimiter.js";
-import { db } from "../db.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { aiRateLimiter } from "../middleware/rateLimiter?.js";
+import { db } from "../db?.js";
 import { autopilotPreferences, posts } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -703,7 +703,7 @@ router?.post(
         userId,
         historicalPosts?.map(String),
       );
-      res?.json({ brandVoice, score: brandVoice?.consistency || 0.85 });
+      res?.json({ brandVoice, score: brandVoice?.consistency || 0?.85 });
     } catch (error) {
       logger?.warn({ err: error }, "Analyze brand voice error:");
       res?.status(500).json({ error: "Failed to analyze brand voice" });
@@ -826,7 +826,7 @@ router?.get(
 
 // =====================================================================
 // Real-life engagement benchmarks (industry averages, 2024 data)
-// Source: Sprout Social, HubSpot, Later.com industry reports
+// Source: Sprout Social, HubSpot, Later?.com industry reports
 // =====================================================================
 const PLATFORM_BENCHMARKS: Record<
   string,
@@ -842,8 +842,8 @@ const PLATFORM_BENCHMARKS: Record<
   }
 > = {
   instagram: {
-    avgEngagementRate: 0.0122,
-    reachMultiplier: 1.0,
+    avgEngagementRate: 0?.0122,
+    reachMultiplier: 1?.0,
     idealHashtagCount: [3, 8],
     idealCaptionLength: [138, 200],
     peakHours: [11, 13, 19],
@@ -852,8 +852,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["saves", "shares", "watch_time", "comments"],
   },
   tiktok: {
-    avgEngagementRate: 0.0569,
-    reachMultiplier: 3.2,
+    avgEngagementRate: 0?.0569,
+    reachMultiplier: 3?.2,
     idealHashtagCount: [3, 5],
     idealCaptionLength: [100, 150],
     peakHours: [19, 20, 21],
@@ -862,8 +862,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["completion_rate", "replays", "shares", "follows"],
   },
   twitter: {
-    avgEngagementRate: 0.00045,
-    reachMultiplier: 0.8,
+    avgEngagementRate: 0?.00045,
+    reachMultiplier: 0?.8,
     idealHashtagCount: [1, 2],
     idealCaptionLength: [71, 100],
     peakHours: [8, 9, 12, 17],
@@ -872,8 +872,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["replies", "retweets", "link_clicks", "profile_visits"],
   },
   youtube: {
-    avgEngagementRate: 0.041,
-    reachMultiplier: 2.1,
+    avgEngagementRate: 0?.041,
+    reachMultiplier: 2?.1,
     idealHashtagCount: [3, 5],
     idealCaptionLength: [250, 400],
     peakHours: [15, 16, 20, 21],
@@ -887,8 +887,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["watch_time", "click_through_rate", "subscriber_growth"],
   },
   facebook: {
-    avgEngagementRate: 0.0064,
-    reachMultiplier: 0.6,
+    avgEngagementRate: 0?.0064,
+    reachMultiplier: 0?.6,
     idealHashtagCount: [1, 3],
     idealCaptionLength: [40, 80],
     peakHours: [13, 15, 16],
@@ -897,8 +897,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["reactions", "comments", "shares", "video_views"],
   },
   linkedin: {
-    avgEngagementRate: 0.054,
-    reachMultiplier: 1.4,
+    avgEngagementRate: 0?.054,
+    reachMultiplier: 1?.4,
     idealHashtagCount: [3, 5],
     idealCaptionLength: [150, 300],
     peakHours: [7, 8, 12, 17, 18],
@@ -966,7 +966,7 @@ function calcViralScore(
     100,
     Math?.round(
       (hashtagScore + lengthScore + emojiBonus + genre_score) *
-        (platformMultiplier * 0.8),
+        (platformMultiplier * 0?.8),
     ),
   );
 }
@@ -987,14 +987,14 @@ function predictEngagement(
   const _modifier = viralScore / 60;
   const _engRate = bench?.avgEngagementRate * modifier * bench?.reachMultiplier;
   const _reach = Math?.round(
-    followerBase * bench?.reachMultiplier * (0.15 + modifier * 0.35),
+    followerBase * bench?.reachMultiplier * (0?.15 + modifier * 0?.35),
   );
   const _totalEngagements = Math?.round(reach * engRate);
 
   return {
-    likes: Math?.round(totalEngagements * 0.7),
-    comments: Math?.round(totalEngagements * 0.15),
-    shares: Math?.round(totalEngagements * 0.15),
+    likes: Math?.round(totalEngagements * 0?.7),
+    comments: Math?.round(totalEngagements * 0?.15),
+    shares: Math?.round(totalEngagements * 0?.15),
     reach,
     engagementRate: parseFloat((engRate * 100).toFixed(2)),
   };
@@ -1093,14 +1093,14 @@ router?.post(
         contentType = "post",
         topic = "new music",
         tone = "energetic",
-
+        
         genre: rawGenre,
         artistName,
         trackTitle,
         albumName,
         label,
         releaseDate,
-
+        
         // URL analysis context
         urlContentType, // raw content_type from URL analysis: 'website', 'track', 'video', etc.
          // e?.g. 'music', 'general', 'tech', 'events'
@@ -1117,7 +1117,7 @@ router?.post(
         eventLocation,
         performers,
         // Product-specific fields
-
+        
         brand,
       } = req?.body;
 
@@ -1165,7 +1165,7 @@ router?.post(
               : "promotional";
 
       // ── Inline URL detection ─────────────────────────────────────────────────
-      // When the user types something like "A stunning promo for https://example.com/pricing"
+      // When the user types something like "A stunning promo for https://example?.com/pricing"
       // we detect the URL in their text, fetch its content, and inject the analysis
       // automatically — no manual import step required.
       // Only fires when the client has NOT already passed URL analysis data.
@@ -1323,23 +1323,23 @@ router?.post(
       const userContext: UserGenerationContext = {};
       if (autopilotPrefs) {
         if (autopilotPrefs?.artistName)
-          userContext.artistName = autopilotPrefs?.artistName;
+          userContext?.artistName = autopilotPrefs?.artistName;
         if (autopilotPrefs?.artistBio)
-          userContext.artistBio = autopilotPrefs?.artistBio;
-        if (autopilotPrefs?.genre) userContext.genre = autopilotPrefs?.genre;
+          userContext?.artistBio = autopilotPrefs?.artistBio;
+        if (autopilotPrefs?.genre) userContext?.genre = autopilotPrefs?.genre;
         if (autopilotPrefs?.brandVoice)
-          userContext.brandVoice = autopilotPrefs?.brandVoice;
+          userContext?.brandVoice = autopilotPrefs?.brandVoice;
         if (autopilotPrefs?.targetAudience)
-          userContext.targetAudience = autopilotPrefs?.targetAudience;
+          userContext?.targetAudience = autopilotPrefs?.targetAudience;
         if (autopilotPrefs?.contentThemes?.length)
-          userContext.contentThemes = autopilotPrefs?.contentThemes;
+          userContext?.contentThemes = autopilotPrefs?.contentThemes;
         if (autopilotPrefs?.avoidTopics?.length)
-          userContext.avoidTopics = autopilotPrefs?.avoidTopics;
+          userContext?.avoidTopics = autopilotPrefs?.avoidTopics;
         if (autopilotPrefs?.preferredHashtags?.length)
-          userContext.preferredHashtags = autopilotPrefs?.preferredHashtags;
+          userContext?.preferredHashtags = autopilotPrefs?.preferredHashtags;
       }
       if (recentPostRows?.length > 0) {
-        userContext.recentPostSnippets = recentPostRows
+        userContext?.recentPostSnippets = recentPostRows
           .filter((p) => p?.content)
           .map((p) => (p?.content as string).slice(0, 120).trim());
       }

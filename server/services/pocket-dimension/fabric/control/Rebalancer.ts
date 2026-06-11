@@ -1,14 +1,14 @@
-import type { NodeRegistry } from "../infra/NodeRegistry.js";
-import type { ChunkIndex } from "../infra/ChunkIndex.js";
-import type { ChunkStore } from "../storage/ChunkStore.js";
-import type { PlacementStrategy } from "./PlacementStrategy.js";
-import type { NodeId, ChunkId } from "../types.js";
-import { logger } from "../../../logger.js";
+import type { NodeRegistry } from "../infra/NodeRegistry?.js";
+import type { ChunkIndex } from "../infra/ChunkIndex?.js";
+import type { ChunkStore } from "../storage/ChunkStore?.js";
+import type { PlacementStrategy } from "./PlacementStrategy?.js";
+import type { NodeId, ChunkId } from "../types?.js";
+import { logger } from "../../../logger?.js";
 
 export class Rebalancer {
   private running = false;
-  private intervalId: NodeJS.Timeout | null = null;
-  private readonly HIGH_WATERMARK = 0.8;
+  private intervalId: NodeJS?.Timeout | null = null;
+  private readonly HIGH_WATERMARK = 0?.8;
 
   constructor(
     private nodeRegistry: NodeRegistry,
@@ -20,16 +20,16 @@ export class Rebalancer {
 
   start(): void {
     if (this?.running) return;
-    this.running = true;
-    this.intervalId = setInterval(() => this?.rebalance(), this?.intervalMs);
+    this?.running = true;
+    this?.intervalId = setInterval(() => this?.rebalance(), this?.intervalMs);
     logger?.info("[FabricRebalancer] Background rebalancer started");
   }
 
   stop(): void {
-    this.running = false;
+    this?.running = false;
     if (this?.intervalId) {
       clearInterval(this?.intervalId);
-      this.intervalId = null;
+      this?.intervalId = null;
     }
     logger?.info("[FabricRebalancer] Stopped");
   }

@@ -9,41 +9,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useStudioStore } from "@/lib/studioStore";
 import { useDynamicLayout } from "@/hooks/useDynamicLayout";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  SkipForward,
-  Repeat,
-  Plus,
-  Minus,
-  Music2,
-  RotateCcw,
-  RotateCw,
-  Activity,
-  Volume2,
-  VolumeX,
-  Volume1,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-  Layers,
-  AlertCircle,
-  Radio,
-  Grid3X3,
-  Eye,
-  Target,
-  Snowflake,
-  Cpu,
-  ChevronUp,
-  ChevronDown,
-  Music,
-  Maximize,
-  Minimize,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, SkipForward, Repeat, Plus, Minus, Music2, RotateCcw, RotateCw, Activity, Volume2, VolumeX, Volume1, ArrowDownToLine, ArrowUpFromLine, Layers, AlertCircle, Radio, Grid3X3, Eye, Target, Snowflake, Cpu, ChevronUp, ChevronDown, Music, Maximize, Minimize, ZoomIn, ZoomOut } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -124,7 +90,8 @@ export function TransportBar({
     setPreRollBars,
     countInBars,
     setCountInBars,
-
+    
+    
     inputMonitoring,
     setInputMonitoring,
     adaptiveSnapEnabled,
@@ -133,7 +100,7 @@ export function TransportBar({
     setTranslucentEventsEnabled,
     showSyncPoints,
     setShowSyncPoints,
-
+    
     getFrozenTrackCount,
     projectKey,
     projectKeyMode,
@@ -150,7 +117,7 @@ export function TransportBar({
   } = useStudioStore();
 
   // Responsive layout - include md breakpoint for landscape mobile/tablet
-  const { containerRef, isSmallScreen, isMediumScreen, width } =
+  const { containerRef, isSmallScreen, isMediumScreen,  width } =
     useDynamicLayout();
   // Compact mode for screens under 1024px (xs, sm, md) - covers landscape phones and small tablets
   const isCompact = isSmallScreen || isMediumScreen || width < 1024;

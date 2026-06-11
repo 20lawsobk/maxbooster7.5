@@ -1,22 +1,5 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from "react";
-import {
-  FileText,
-  Plus,
-  Trash2,
-  Edit2,
-  Upload,
-  Download,
-  Maximize2,
-  Minimize2,
-  Type,
-  Gauge,
-  X,
-  ChevronUp,
-  ChevronDown,
-  Link,
-  Unlink,
-  Play,
-} from "lucide-react";
+import { FileText, Plus, Trash2, Edit2, Upload, Download, Maximize2, Minimize2, Type, Gauge, X, ChevronUp, ChevronDown, Link, Unlink, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -172,7 +155,7 @@ export function LyricsTrack({
     currentTime,
     snapEnabled,
     snapResolution,
-
+    
     setCurrentTime,
   } = useStudioStore();
 

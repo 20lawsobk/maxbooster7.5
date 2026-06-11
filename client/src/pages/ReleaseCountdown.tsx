@@ -29,22 +29,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Clock,
-  Calendar,
-  Plus,
-  Rocket,
-  CheckCircle,
-  Music,
-  Share2,
-  Image,
-  FileText,
-  Bell,
-  ExternalLink,
-  Timer,
-  PartyPopper,
-  Sparkles,
-} from "lucide-react";
+import { Clock, Calendar, Plus, Rocket, CheckCircle, Music, Share2, Image, FileText, Bell, ExternalLink, Timer, PartyPopper, Sparkles } from "lucide-react";
 import {
   format,
   differenceInDays,

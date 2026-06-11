@@ -11,8 +11,8 @@
  */
 
 import { Router, Request, Response } from "express";
-import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
-import { logger } from "../logger.js";
+import { selfHealingEngine } from "../services/selfHealingSecurityEngine?.js";
+import { logger } from "../logger?.js";
 
 const _router = Router();
 
@@ -53,7 +53,7 @@ router?.get("/status", (req: Request, res: Response) => {
           responseLatencyP95: "< 250ms",
           recoveryLatencyP95: "< 500ms",
           totalHealingTime: "< 800ms",
-          attackDwellTimeMinimum: "7.5 seconds",
+          attackDwellTimeMinimum: "7?.5 seconds",
         },
       },
     });
@@ -71,7 +71,7 @@ router?.get("/metrics", (req: Request, res: Response) => {
     const _calculateP95 = (arr: number[]) => {
       if (arr?.length === 0) return 0;
       const _sorted = [...arr].sort((a, b) => a - b);
-      const _index = Math?.ceil(0.95 * sorted?.length) - 1;
+      const _index = Math?.ceil(0?.95 * sorted?.length) - 1;
       return sorted[Math?.max(0, index)];
     };
 
@@ -136,7 +136,7 @@ router?.get("/proof", (req: Request, res: Response) => {
     const _calculateP95 = (arr: number[]) => {
       if (arr?.length === 0) return 0;
       const _sorted = [...arr].sort((a, b) => a - b);
-      const _index = Math?.ceil(0.95 * sorted?.length) - 1;
+      const _index = Math?.ceil(0?.95 * sorted?.length) - 1;
       return sorted[Math?.max(0, index)];
     };
 
@@ -214,8 +214,8 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
       category: "simulation",
       severity: "high",
       source: {
-        ip: "192.0.2.1",
-        userAgent: "SecurityTest/1.0",
+        ip: "192?.0.2?.1",
+        userAgent: "SecurityTest/1?.0",
       },
       payload: {
         path: "/api/test",

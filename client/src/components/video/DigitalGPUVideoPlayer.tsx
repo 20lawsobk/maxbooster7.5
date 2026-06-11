@@ -32,14 +32,7 @@
  *       instead of Date.now() — sub-millisecond frame timing.
  */
 
-import {
-  useRef,
-  useEffect,
-  useCallback,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from "react";
 
 import {
   DigitalGPUInferenceBridge,
@@ -129,7 +122,7 @@ const DigitalGPUVideoPlayer = forwardRef<
   const {
     frames = [],
     sceneName = "default",
-
+    
     serverGpuApplied = false,
     skipClientGpu = false,
     streamMode = false,
@@ -211,6 +204,7 @@ const DigitalGPUVideoPlayer = forwardRef<
     };
     // INTENTIONAL: bridgeRef/frontBufRef/backBufRef are stable useRef objects — they never
     // change identity, so listing them as deps would cause no extra runs but adds noise.
+     
   }, [width, height]);
 
   // ── Sync scene / audio params ────────────────────────────────────────────
@@ -243,6 +237,7 @@ const DigitalGPUVideoPlayer = forwardRef<
     });
     // INTENTIONAL: autoPlay and tick are intentionally excluded — including them would
     // re-trigger frame decoding whenever autoPlay toggles, causing double-playback.
+     
   }, [frames]);
 
   // ── SSE streaming mode ────────────────────────────────────────────────────
@@ -318,6 +313,7 @@ const DigitalGPUVideoPlayer = forwardRef<
       );
     // INTENTIONAL: only reconnect when the stream URL or mode changes; tick/renderBitmap
     // are stable useCallbacks whose identity changes would not warrant a reconnect.
+     
   }, [streamMode, streamUrl]);
 
   // ── Main RAF render loop ─────────────────────────────────────────────────
@@ -353,6 +349,7 @@ const DigitalGPUVideoPlayer = forwardRef<
       rafRef.current = requestAnimationFrame(tick);
       // INTENTIONAL: renderBitmap has stable [] deps and onFrameRendered is a prop whose
       // change should not reset the render loop mid-playback.
+       
     },
     [loop, skipClientGpu, sceneName],
   );

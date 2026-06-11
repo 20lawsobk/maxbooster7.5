@@ -21,8 +21,8 @@
  */
 
 import { EventEmitter } from "events";
-import { addLogTransport, type LogEntry } from "./structuredLogger.js";
-import { logger } from "../logger.js";
+import { addLogTransport, type LogEntry } from "./structuredLogger?.js";
+import { logger } from "../logger?.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -74,8 +74,8 @@ class ChainErrorAutoFixer extends EventEmitter {
   private adaptiveCooldown = new Map<string, AdaptiveCooldownState>();
   private history: FixHistoryEntry[] = [];
   private readonly MAX_HISTORY = 200;
-  private healthCheckTimer: NodeJS.Timeout | null = null;
-  private _unsuppressTimer: NodeJS.Timeout | null = null;
+  private healthCheckTimer: NodeJS?.Timeout | null = null;
+  private _unsuppressTimer: NodeJS?.Timeout | null = null;
   private started = false;
   // Heap warning cooldown — GC still fires every 15 s to keep memory contained,
   // but the WARN log is suppressed to once per 5 min so it doesn't flood.
@@ -122,7 +122,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         // No repair needed — just reset the LuaExecutor semaphore slot to
         // ensure future jobs can acquire locks promptly.
         const { resetLuaExecutorSemaphore } = await import(
-          "../lib/luaExecutor.js"
+          "../lib/luaExecutor?.js"
         );
         resetLuaExecutorSemaphore();
         logger?.info(
@@ -150,7 +150,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 20,
       autoFix: async () => {
         const { resetLuaExecutorSemaphore } = await import(
-          "../lib/luaExecutor.js"
+          "../lib/luaExecutor?.js"
         );
         const _released = resetLuaExecutorSemaphore();
         logger?.info(
@@ -183,7 +183,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         await new Promise((r) => setTimeout(r, 3_000));
         try {
           const { setupRepeatableJobs } = await import(
-            "./autonomousJobScheduler.js"
+            "./autonomousJobScheduler?.js"
           );
           await setupRepeatableJobs();
           logger?.info(
@@ -217,7 +217,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 50,
       autoFix: async () => {
         const { getDatabaseLogTransport } = await import(
-          "./databaseLogTransport.js"
+          "./databaseLogTransport?.js"
         );
         const _transport = getDatabaseLogTransport();
         if (transport) {
@@ -247,7 +247,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         await new Promise((r) => setTimeout(r, 5_000));
         try {
           const { initializeFabric } = await import(
-            "../pocket-dimension/fabric/index.js"
+            "../pocket-dimension/fabric/index?.js"
           );
           await initializeFabric();
           logger?.info("[ChainFixer] PocketFabric re-initialized successfully");
@@ -279,7 +279,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 30,
       autoFix: async () => {
         const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import(
-          "../lib/luaExecutor.js"
+          "../lib/luaExecutor?.js"
         );
         const _before = getLuaExecutorStats();
         const _released = resetLuaExecutorSemaphore();
@@ -315,7 +315,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         // Free the semaphore slot the aborted script was holding so future
         // scripts can acquire it without waiting for the full timeout window.
         const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import(
-          "../lib/luaExecutor.js"
+          "../lib/luaExecutor?.js"
         );
         const _before = getLuaExecutorStats();
         const _released = resetLuaExecutorSemaphore();
@@ -348,11 +348,11 @@ class ChainErrorAutoFixer extends EventEmitter {
         // slam PDIM with full-speed requests and re-open the circuit.
         try {
           const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
-            "../lib/pdimClient.js"
+            "../lib/pdimClient?.js"
           );
           if (typeof setPdimAdaptiveGap === "function") {
             const _current = getPdimAdaptiveGapMs?.() ?? 600;
-            const _target = Math?.max(3000, current * 1.5); // at least 3s between requests
+            const _target = Math?.max(3000, current * 1?.5); // at least 3s between requests
             setPdimAdaptiveGap(target);
             logger?.info(
               `[ChainFixer] PDIM circuit OPEN — adaptive gap set to ${target}ms; PostgreSQL fallback active; circuit will auto-probe for recovery`,
@@ -423,7 +423,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         try {
           const { getLuaExecutorStats, resetLuaExecutorSemaphore } =
-            await import("../lib/luaExecutor.js");
+            await import("../lib/luaExecutor?.js");
           const _stats = getLuaExecutorStats();
           // Only reset if there are genuinely leaked slots (active > max).
           // DO NOT reset on 429 alone — the PDIM circuit breaker already applies
@@ -451,7 +451,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         // if 429s continue, but this ensures we don't hammer it the moment backoff completes.
         try {
           const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
-            "../lib/pdimClient.js"
+            "../lib/pdimClient?.js"
           );
           if (typeof setPdimAdaptiveGap === "function") {
             const _current = getPdimAdaptiveGapMs?.() ?? 600;
@@ -496,7 +496,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         // Free any slot that was held while waiting for the unresponsive fetch
         try {
           const { resetLuaExecutorSemaphore } = await import(
-            "../lib/luaExecutor.js"
+            "../lib/luaExecutor?.js"
           );
           resetLuaExecutorSemaphore();
         } catch {
@@ -505,12 +505,12 @@ class ChainErrorAutoFixer extends EventEmitter {
         // Raise the gap aggressively — PDIM is severely slow
         try {
           const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
-            "../lib/pdimClient.js"
+            "../lib/pdimClient?.js"
           );
           const _current = getPdimAdaptiveGapMs?.() ?? 600;
           const _raised = Math?.min(
             8_000,
-            Math?.max(3_000, Math?.round(current * 1.5)),
+            Math?.max(3_000, Math?.round(current * 1?.5)),
           );
           setPdimAdaptiveGap(raised);
           logger?.info(
@@ -540,7 +540,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 20,
       autoFix: async () => {
         const { resetLuaExecutorSemaphore } = await import(
-          "../lib/luaExecutor.js"
+          "../lib/luaExecutor?.js"
         );
         resetLuaExecutorSemaphore();
         logger?.info(
@@ -567,7 +567,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 20,
       autoFix: async () => {
         const { resetLuaExecutorSemaphore } = await import(
-          "../lib/luaExecutor.js"
+          "../lib/luaExecutor?.js"
         );
         resetLuaExecutorSemaphore();
         logger?.info(
@@ -596,7 +596,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         }
         try {
           const { distributedCache } = await import(
-            "../infrastructure/distributedCache.js"
+            "../infrastructure/distributedCache?.js"
           );
           await distributedCache?.flush();
           logger?.info("[ChainFixer] Cache flushed to relieve memory pressure");
@@ -633,7 +633,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         if (!_isBg) return; // non-background workers: nothing to restart here
         await new Promise((r) => setTimeout(r, 5_000));
         try {
-          const { autonomousService } = await import("./autonomousService.js");
+          const { autonomousService } = await import("./autonomousService?.js");
           const _svcStatus = autonomousService?.getStatus();
           if (!svcStatus?.isRunning) {
             autonomousService?.startAutonomousOperations();
@@ -668,7 +668,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 10,
       autoFix: async () => {
         try {
-          const { pool } = await import("../db.js");
+          const { pool } = await import("../db?.js");
           await pool?.query("SELECT 1");
           logger?.info(
             "[ChainFixer] Session store — DB pool responsive; sessions will auto-recover",
@@ -738,7 +738,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         );
         try {
           const { distributedCache } = await import(
-            "./distributedCacheService.js"
+            "./distributedCacheService?.js"
           );
           await (distributedCache as Record<string, unknown>)?.evictExpired?.();
           logger?.info(
@@ -800,7 +800,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 15,
       autoFix: async () => {
         const { resetLuaExecutorSemaphore } = await import(
-          "../lib/luaExecutor.js"
+          "../lib/luaExecutor?.js"
         );
         resetLuaExecutorSemaphore();
         logger?.info(
@@ -839,7 +839,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         }
         try {
           const { distributedCache } = await import(
-            "./distributedCacheService.js"
+            "./distributedCacheService?.js"
           );
           await (distributedCache as Record<string, unknown>)?.flush?.();
         } catch {
@@ -1014,7 +1014,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         // Open PDIM circuit briefly to let the event loop drain.
         try {
           const { cbIsOpen, cbForceOpen } = await import(
-            "../lib/pdimCircuitBreaker.js"
+            "../lib/pdimCircuitBreaker?.js"
           );
           if (!cbIsOpen()) {
             cbForceOpen?.(10_000);
@@ -1106,7 +1106,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     const _oneDay = 24 * oneHour;
 
     // Prune fires older than 1 hour
-    state.recentFires = state?.recentFires.filter((t) => now - t < oneHour);
+    state?.recentFires = state?.recentFires.filter((t) => now - t < oneHour);
 
     // If fired 5+ times in the last hour, back off (double cooldown, max 4×)
     const _firesInHour = state?.recentFires.length;
@@ -1210,7 +1210,7 @@ class ChainErrorAutoFixer extends EventEmitter {
   // ─── Health Check ──────────────────────────────────────────────────────────
 
   private startHealthCheck(): void {
-    this.healthCheckTimer = setInterval(async () => {
+    this?.healthCheckTimer = setInterval(async () => {
       try {
         await this?.runHealthCheck();
       } catch {
@@ -1237,9 +1237,9 @@ class ChainErrorAutoFixer extends EventEmitter {
         getLuaExecutorStats,
         resetLuaExecutorSemaphore,
         isLuaRegistrationMode,
-      } = await import("../lib/luaExecutor.js");
+      } = await import("../lib/luaExecutor?.js");
       const _stats = getLuaExecutorStats();
-      this._luaStats = stats;
+      this?._luaStats = stats;
       // Skip deadlock detection during the 120s boot-grace window (the PDIM
       // settling burst drives transient LuaExecutor back-pressure that looks
       // like a deadlock but resolves on its own) and during repeatable-job
@@ -1248,7 +1248,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       if (isLuaRegistrationMode() || inBootGrace120) {
         // Known-slow window — reset congestion counter so the clock restarts
         // fresh once the window closes.
-        this._consecutiveCongestedChecks = 0;
+        this?._consecutiveCongestedChecks = 0;
       } else if (stats?.active >= stats?.max && stats?.queued > 3) {
         this?._consecutiveCongestedChecks++;
         if (
@@ -1260,7 +1260,7 @@ class ChainErrorAutoFixer extends EventEmitter {
               `active=${stats?.active}, queued=${stats?.queued}) — resetting semaphore`,
           );
           resetLuaExecutorSemaphore();
-          this._consecutiveCongestedChecks = 0;
+          this?._consecutiveCongestedChecks = 0;
         } else {
           logger?.warn(
             `[ChainFixer] LuaExecutor semaphore congested — check ${this?._consecutiveCongestedChecks}/${ChainErrorAutoFixer?._CONGESTION_DEADLOCK_THRESHOLD} ` +
@@ -1268,7 +1268,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           );
         }
       } else {
-        this._consecutiveCongestedChecks = 0;
+        this?._consecutiveCongestedChecks = 0;
       }
     } catch {
       /* lua executor may not be loaded yet */
@@ -1285,17 +1285,17 @@ class ChainErrorAutoFixer extends EventEmitter {
     const _limitBytes =
       v8stats?.heap_size_limit > 0 ? v8stats?.heap_size_limit : mem?.heapTotal;
     const _heapPct = mem?.heapUsed / limitBytes;
-    if (heapPct > 0.85) {
+    if (heapPct > 0?.85) {
       if (typeof global?.gc === "function") global?.gc();
       const _now = Date?.now();
       if (now - this?._lastHeapWarnMs >= this?._HEAP_WARN_COOLDOWN_MS) {
-        this._lastHeapWarnMs = now;
+        this?._lastHeapWarnMs = now;
         // Re-sample after GC to reflect current state
         const _memAfter = process?.memoryUsage();
         const _pctAfter = memAfter?.heapUsed / limitBytes;
         const _rssMB = Math?.round(memAfter?.rss / 1024 / 1024);
         const _limitMB = Math?.round(limitBytes / 1024 / 1024);
-        if (pctAfter > 0.9) {
+        if (pctAfter > 0?.9) {
           logger?.warn(
             `[ChainFixer] Heap sustained at ${Math?.round(pctAfter * 100)}% of ${limitMB} MB limit after GC ` +
               `(was ${Math?.round(heapPct * 100)}%, RSS ${rssMB} MB) — process under memory pressure`,
@@ -1313,7 +1313,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // (probePDIM handles gap drift; the health check surfaces queue depth independently)
     try {
       const { isPdimConfigured, getPdimQueueDepth, getPdimAdaptiveGapMs } =
-        await import("../lib/pdimClient.js");
+        await import("../lib/pdimClient?.js");
       if (isPdimConfigured()) {
         const _depth = getPdimQueueDepth();
         const _gap = getPdimAdaptiveGapMs();
@@ -1325,7 +1325,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         let inRegistration = false;
         try {
           const { isLuaRegistrationMode } = await import(
-            "../lib/luaExecutor.js"
+            "../lib/luaExecutor?.js"
           );
           inRegistration = isLuaRegistrationMode();
         } catch {
@@ -1338,7 +1338,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           !inBootGrace &&
           !inRegistration
         ) {
-          this._lastPdimCongestionWarnMs = now;
+          this?._lastPdimCongestionWarnMs = now;
           logger?.warn(
             `[ChainFixer] PDIM chain congested — ${depth} callers queued (gap ${gap}ms). ` +
               `If this persists, a 429 cascade or exec timeout may follow.`,
@@ -1366,10 +1366,10 @@ class ChainErrorAutoFixer extends EventEmitter {
     if (now - st?.lastFix < effectiveCooldown) return;
 
     this?._recordFire(pattern?.id);
-    st.lastFix = now;
+    st?.lastFix = now;
     st?.attempts++;
-    st.lastMessage = triggeredBy?.slice(0, 200);
-    st.lastFixResult = "pending";
+    st?.lastMessage = triggeredBy?.slice(0, 200);
+    st?.lastFixResult = "pending";
 
     const entry: FixHistoryEntry = {
       patternId: pattern?.id,
@@ -1381,9 +1381,9 @@ class ChainErrorAutoFixer extends EventEmitter {
     };
 
     if (st?.attempts > pattern?.maxAttempts) {
-      st.suppressed = true;
-      st.lastFixResult = "suppressed";
-      entry.result = "suppressed";
+      st?.suppressed = true;
+      st?.lastFixResult = "suppressed";
+      entry?.result = "suppressed";
       this?.pushHistory({ ...entry, result: "suppressed" });
       if (pattern?.escalate) {
         await pattern?.escalate(st?.attempts).catch(() => {
@@ -1397,13 +1397,13 @@ class ChainErrorAutoFixer extends EventEmitter {
     try {
       await pattern?.autoFix(triggeredBy);
       st?.successCount++;
-      st.lastFixResult = "success";
-      entry.result = "success";
+      st?.lastFixResult = "success";
+      entry?.result = "success";
       this?.emit("fixed", { patternId: pattern?.id, attempt: st?.attempts });
 
       // ── PERMANENT FIX REGISTRY: record success so escalation can accumulate ──
       // Fire-and-forget — non-fatal; escalates to persistent constant change after N fires
-      import("../services/permanentFixRegistry.js")
+      import("../services/permanentFixRegistry?.js")
         .then((m) => m?.permanentFixRegistry.recordFix(pattern?.id))
         .catch(() => {});
 
@@ -1411,8 +1411,8 @@ class ChainErrorAutoFixer extends EventEmitter {
       this?._predictAndPreemptChain(pattern?.id);
     } catch (err) {
       st?.failCount++;
-      st.lastFixResult = "failed";
-      entry.result = "failed";
+      st?.lastFixResult = "failed";
+      entry?.result = "failed";
       this?.emit("fixFailed", { patternId: pattern?.id, error: err?.message });
     }
 
@@ -1430,7 +1430,7 @@ class ChainErrorAutoFixer extends EventEmitter {
 
   start(): void {
     if (this?.started) return;
-    this.started = true;
+    this?.started = true;
 
     addLogTransport((entry) => {
       this?.onLogEntry(entry).catch(() => {
@@ -1444,7 +1444,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // This ensures long-dormant error classes are re-monitored after they reoccur
     // following an extended quiet period — critical for 100+ year deployments.
     const _jitterMs = Math?.floor(Math?.random() * 30_000);
-    this._unsuppressTimer = setInterval(
+    this?._unsuppressTimer = setInterval(
       () => {
         this?._dailyUnsuppress();
       },
@@ -1557,7 +1557,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // Offensive: clear at queued > 5 — before the timeout cascade starts.
     try {
       const { getLuaExecutorStats, resetLuaExecutorSemaphore } = await import(
-        "../lib/luaExecutor.js"
+        "../lib/luaExecutor?.js"
       );
       const _stats = getLuaExecutorStats();
       if (stats?.queued > 5 && stats?.active >= stats?.max) {
@@ -1584,8 +1584,8 @@ class ChainErrorAutoFixer extends EventEmitter {
         v8stats?.heap_size_limit > 0 ? v8stats?.heap_size_limit : mem?.heapTotal;
       const _heapPct = mem?.heapUsed / limitBytes;
       if (
-        heapPct > 0.75 &&
-        heapPct <= 0.85 &&
+        heapPct > 0?.75 &&
+        heapPct <= 0?.85 &&
         typeof global?.gc === "function"
       ) {
         global?.gc();
@@ -1613,14 +1613,14 @@ class ChainErrorAutoFixer extends EventEmitter {
         getPdimGapFloor,
         setPdimAdaptiveGap,
         getPdimQueueDepth,
-      } = await import("../lib/pdimClient.js");
+      } = await import("../lib/pdimClient?.js");
       if (isPdimConfigured()) {
         const _gap = getPdimAdaptiveGapMs();
         const _floor = getPdimGapFloor();
         const _queueDepth = getPdimQueueDepth();
         // Only nudge when: gap well above floor, queue idle (no active 429 backoff), floor is sane
         if (gap > Math?.max(4_000, floor * 4) && queueDepth === 0) {
-          const _target = Math?.max(floor, Math?.round(gap * 0.8));
+          const _target = Math?.max(floor, Math?.round(gap * 0?.8));
           setPdimAdaptiveGap(target);
           logger?.info(
             `[ChainFixer] 🎯 OFFENSIVE: PDIM gap drift corrected — ${gap}ms → ${target}ms ` +
@@ -1643,7 +1643,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     const __isBgForOffensive = _cwid === undefined || _cwid === "0";
     if (_isBgForOffensive) {
       try {
-        const { autonomousService } = await import("./autonomousService.js");
+        const { autonomousService } = await import("./autonomousService?.js");
         const _status = autonomousService?.getStatus();
         const _now = Date?.now();
         const _lastActivity =
@@ -1899,10 +1899,10 @@ class ChainErrorAutoFixer extends EventEmitter {
   resetPattern(id: string): boolean {
     const _st = this?.state.get(id);
     if (!st) return false;
-    st.attempts = 0;
-    st.suppressed = false;
-    st.lastFix = 0;
-    st.lastFixResult = "none";
+    st?.attempts = 0;
+    st?.suppressed = false;
+    st?.lastFix = 0;
+    st?.lastFixResult = "none";
     logger?.info(`[ChainFixer] Pattern '${id}' manually reset`);
     return true;
   }

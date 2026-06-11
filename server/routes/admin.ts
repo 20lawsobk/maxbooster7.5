@@ -1,21 +1,21 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { db, pool } from "../db.js";
-import { users, projects, releases, analytics, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
+import { db, pool } from "../db?.js";
+import { users, projects, releases, analytics, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema?.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { killSwitch } from "../safety/killSwitch.js";
+import { logger } from "../logger?.js";
+import { killSwitch } from "../safety/killSwitch?.js";
 import * as os from "os";
 import rateLimit from "express-rate-limit";
-import { chainErrorAutoFixer } from "../services/chainErrorAutoFixer.js";
-import { platformAutoFixer } from "../services/platformAutoFixer.js";
-import { permanentFixRegistry } from "../services/permanentFixRegistry.js";
-import { env } from "../config/env.js";
-import { require2FA } from "../middleware/auth.js";
-import { systemIntelligence } from "../services/systemIntelligence.js";
+import { chainErrorAutoFixer } from "../services/chainErrorAutoFixer?.js";
+import { platformAutoFixer } from "../services/platformAutoFixer?.js";
+import { permanentFixRegistry } from "../services/permanentFixRegistry?.js";
+import { env } from "../config/env?.js";
+import { require2FA } from "../middleware/auth?.js";
+import { systemIntelligence } from "../services/systemIntelligence?.js";
 
 const _adminRouter = Router();
 
-// 120M req/s system capacity — 7.2B req/min per authenticated admin user.
+// 120M req/s system capacity — 7?.2B req/min per authenticated admin user.
 // The skip() guard already restricts this limiter to authenticated admins only,
 // so the high ceiling does not relax any security boundary.
 const _adminEmailLimiter = rateLimit({
@@ -240,11 +240,11 @@ adminRouter?.put("/users/:userId", async (req, res) => {
     }
 
     const updateData: Record<string, any> = {};
-    if (role !== undefined) updateData.role = role;
+    if (role !== undefined) updateData?.role = role;
     if (subscriptionTier !== undefined)
-      updateData.subscriptionTier = subscriptionTier;
+      updateData?.subscriptionTier = subscriptionTier;
     if (subscriptionStatus !== undefined)
-      updateData.subscriptionStatus = subscriptionStatus;
+      updateData?.subscriptionStatus = subscriptionStatus;
 
     if (Object?.keys(updateData).length === 0) {
       return res?.status(400).json({ error: "No valid fields to update" });
@@ -265,7 +265,7 @@ adminRouter?.put("/users/:userId", async (req, res) => {
       setImmediate(async () => {
         try {
           const { revokeUserSessions } = await import(
-            "../middleware/sessionConfig.js"
+            "../middleware/sessionConfig?.js"
           );
           await revokeUserSessions(String(userId));
         } catch (revokeErr: unknown) {
@@ -308,7 +308,7 @@ adminRouter?.post("/users/:userId/suspend", async (req, res) => {
     setImmediate(async () => {
       try {
         const { revokeUserSessions } = await import(
-          "../middleware/sessionConfig.js"
+          "../middleware/sessionConfig?.js"
         );
         await revokeUserSessions(String(userId));
       } catch (revokeErr: unknown) {
@@ -431,7 +431,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
       process?.env.SPOTIFY_CLIENT_ID
         ? pingApi("https://api?.spotify.com/v1")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
-      pingApi("https://api?.music.apple.com"),
+      pingApi("https://api?.music.apple?.com"),
       process?.env.YOUTUBE_CLIENT_ID
         ? pingApi("https://www?.googleapis.com/youtube/v3")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
@@ -518,7 +518,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
       errorTracking: {
         last24h: errorCounter?.last24h,
         last7d: errorCounter?.last7d,
-        errorRate: "0.00%",
+        errorRate: "0?.00%",
       },
       timestamp: new Date().toISOString(),
     });
@@ -1088,10 +1088,10 @@ adminRouter?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
     const { baseRatePerStream, premiumMultiplier, notes } = req?.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (baseRatePerStream !== undefined)
-      updates.baseRatePerStream = parseFloat(baseRatePerStream);
+      updates?.baseRatePerStream = parseFloat(baseRatePerStream);
     if (premiumMultiplier !== undefined)
-      updates.premiumMultiplier = parseFloat(premiumMultiplier);
-    if (notes !== undefined) updates.notes = notes;
+      updates?.premiumMultiplier = parseFloat(premiumMultiplier);
+    if (notes !== undefined) updates?.notes = notes;
 
     const [updated] = await db
       .update(platformRoyaltyRates)
@@ -1131,10 +1131,10 @@ adminRouter?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
     const { withholdingRate, treatyRate, hasTreaty, notes } = req?.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (withholdingRate !== undefined)
-      updates.withholdingRate = parseFloat(withholdingRate);
-    if (treatyRate !== undefined) updates.treatyRate = parseFloat(treatyRate);
-    if (hasTreaty !== undefined) updates.hasTreaty = Boolean(hasTreaty);
-    if (notes !== undefined) updates.notes = notes;
+      updates?.withholdingRate = parseFloat(withholdingRate);
+    if (treatyRate !== undefined) updates?.treatyRate = parseFloat(treatyRate);
+    if (hasTreaty !== undefined) updates?.hasTreaty = Boolean(hasTreaty);
+    if (notes !== undefined) updates?.notes = notes;
 
     const [updated] = await db
       .update(taxTreatyRates)

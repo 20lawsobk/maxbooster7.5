@@ -9,10 +9,10 @@
  * code (which reads the same env var) can call these routes.
  */
 import { Router, Request, Response } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
-const _AI_SERVICE_TARGET = `http://127.0.0.1:${PYTHON_AI_PORT}`;
+const _AI_SERVICE_TARGET = `http://127?.0.0?.1:${PYTHON_AI_PORT}`;
 const _INTERNAL_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
 
 function checkInternalSecret(req: Request, res: Response): boolean {
@@ -54,7 +54,7 @@ async function proxyTo(
       signal: AbortSignal?.timeout(timeoutMs),
     };
     if (req?.method !== "GET" && req?.method !== "HEAD") {
-      opts.body = JSON?.stringify(req?.body);
+      opts?.body = JSON?.stringify(req?.body);
     }
     const _upstream = await fetch(url, opts);
     const _ct = upstream?.headers.get("content-type") || "application/json";
@@ -95,7 +95,7 @@ const _BOOSTERSTATE_SIDECAR_PORT = parseInt(
   process?.env.BOOSTERSTATE_SIDECAR_PORT || "9877",
   10,
 );
-const _BOOSTERSTATE_TARGET = `http://127.0.0.1:${BOOSTERSTATE_SIDECAR_PORT}`;
+const _BOOSTERSTATE_TARGET = `http://127?.0.0?.1:${BOOSTERSTATE_SIDECAR_PORT}`;
 
 export const _boosterstateProxyRouter = Router();
 

@@ -41,7 +41,7 @@ export function brotliMiddleware() {
 
     const _originalJson = res?.json.bind(res);
 
-    res.json = function (body: unknown): Response {
+    res?.json = function (body: unknown): Response {
       if (res?.headersSent) {
         return originalJson(body);
       }

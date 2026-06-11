@@ -20,35 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  TrendingUp,
-  Minus,
-  Users,
-  Headphones,
-  DollarSign,
-  Globe,
-  Music,
-  ArrowUpRight,
-  ArrowDownRight,
-  Calendar,
-  MapPin,
-  Zap,
-  Sparkles,
-  Star,
-  Activity,
-} from "lucide-react";
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  ResponsiveContainer,
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-} from "recharts";
+import { TrendingUp, Minus, Users, Headphones, DollarSign, Globe, Music, ArrowUpRight, ArrowDownRight, Calendar, MapPin, Zap, Sparkles, Star, Activity } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell } from "recharts";
 
 interface MetricCardProps {
   title: string;
@@ -178,6 +151,10 @@ function MetricCard({
     </motion.div>
   );
 }
+
+
+
+
 
 export function DataDenseAnalytics() {
   const [timeRange, setTimeRange] = useState("7d");

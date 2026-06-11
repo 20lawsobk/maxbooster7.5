@@ -121,8 +121,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         // No repair needed — just reset the LuaExecutor semaphore slot to
         // ensure future jobs can acquire locks promptly.
-        const { resetLuaExecutorSemaphore } =
-          await import("../lib/luaExecutor.js");
+        const { resetLuaExecutorSemaphore } = await import(
+          "../lib/luaExecutor.js"
+        );
         resetLuaExecutorSemaphore();
         logger.info(
           "[ChainFixer] BullMQ lock race acknowledged — LuaExecutor semaphore slot cleared",
@@ -148,8 +149,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 45_000,
       maxAttempts: 20,
       autoFix: async () => {
-        const { resetLuaExecutorSemaphore } =
-          await import("../lib/luaExecutor.js");
+        const { resetLuaExecutorSemaphore } = await import(
+          "../lib/luaExecutor.js"
+        );
         const released = resetLuaExecutorSemaphore();
         logger.info(
           `[ChainFixer] LuaExecutor semaphore reset — released ${released} stuck slot(s)`,
@@ -180,8 +182,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         await new Promise((r) => setTimeout(r, 3_000));
         try {
-          const { setupRepeatableJobs } =
-            await import("./autonomousJobScheduler.js");
+          const { setupRepeatableJobs } = await import(
+            "./autonomousJobScheduler.js"
+          );
           await setupRepeatableJobs();
           logger.info(
             "[ChainFixer] Repeatable jobs re-registered successfully",
@@ -213,8 +216,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 30_000,
       maxAttempts: 50,
       autoFix: async () => {
-        const { getDatabaseLogTransport } =
-          await import("./databaseLogTransport.js");
+        const { getDatabaseLogTransport } = await import(
+          "./databaseLogTransport.js"
+        );
         const transport = getDatabaseLogTransport();
         if (transport) {
           const dropped = transport.clearBuffer();
@@ -242,8 +246,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         await new Promise((r) => setTimeout(r, 5_000));
         try {
-          const { initializeFabric } =
-            await import("../pocket-dimension/fabric/index.js");
+          const { initializeFabric } = await import(
+            "../pocket-dimension/fabric/index.js"
+          );
           await initializeFabric();
           logger.info("[ChainFixer] PocketFabric re-initialized successfully");
         } catch (err) {
@@ -273,8 +278,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 10_000,
       maxAttempts: 30,
       autoFix: async () => {
-        const { resetLuaExecutorSemaphore, getLuaExecutorStats } =
-          await import("../lib/luaExecutor.js");
+        const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import(
+          "../lib/luaExecutor.js"
+        );
         const before = getLuaExecutorStats();
         const released = resetLuaExecutorSemaphore();
         logger.info(
@@ -308,8 +314,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         // Free the semaphore slot the aborted script was holding so future
         // scripts can acquire it without waiting for the full timeout window.
-        const { resetLuaExecutorSemaphore, getLuaExecutorStats } =
-          await import("../lib/luaExecutor.js");
+        const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import(
+          "../lib/luaExecutor.js"
+        );
         const before = getLuaExecutorStats();
         const released = resetLuaExecutorSemaphore();
         logger.info(
@@ -340,8 +347,9 @@ class ChainErrorAutoFixer extends EventEmitter {
         // so that when the circuit half-opens and retries begin, they don't immediately
         // slam PDIM with full-speed requests and re-open the circuit.
         try {
-          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } =
-            await import("../lib/pdimClient.js");
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
+            "../lib/pdimClient.js"
+          );
           if (typeof setPdimAdaptiveGap === "function") {
             const current = getPdimAdaptiveGapMs?.() ?? 600;
             const target = Math.max(3000, current * 1.5); // at least 3s between requests
@@ -442,8 +450,9 @@ class ChainErrorAutoFixer extends EventEmitter {
         // before the next request batch. The AIMD multiplier will handle further increases
         // if 429s continue, but this ensures we don't hammer it the moment backoff completes.
         try {
-          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } =
-            await import("../lib/pdimClient.js");
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
+            "../lib/pdimClient.js"
+          );
           if (typeof setPdimAdaptiveGap === "function") {
             const current = getPdimAdaptiveGapMs?.() ?? 600;
             // Raise gap by at least 500ms above current, up to 2500ms total.
@@ -486,16 +495,18 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         // Free any slot that was held while waiting for the unresponsive fetch
         try {
-          const { resetLuaExecutorSemaphore } =
-            await import("../lib/luaExecutor.js");
+          const { resetLuaExecutorSemaphore } = await import(
+            "../lib/luaExecutor.js"
+          );
           resetLuaExecutorSemaphore();
         } catch {
           /* non-fatal */
         }
         // Raise the gap aggressively — PDIM is severely slow
         try {
-          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } =
-            await import("../lib/pdimClient.js");
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
+            "../lib/pdimClient.js"
+          );
           const current = getPdimAdaptiveGapMs?.() ?? 600;
           const raised = Math.min(
             8_000,
@@ -528,8 +539,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 30_000,
       maxAttempts: 20,
       autoFix: async () => {
-        const { resetLuaExecutorSemaphore } =
-          await import("../lib/luaExecutor.js");
+        const { resetLuaExecutorSemaphore } = await import(
+          "../lib/luaExecutor.js"
+        );
         resetLuaExecutorSemaphore();
         logger.info(
           "[ChainFixer] Worker thread error recovered — LuaExecutor semaphore reset",
@@ -554,8 +566,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 30_000,
       maxAttempts: 20,
       autoFix: async () => {
-        const { resetLuaExecutorSemaphore } =
-          await import("../lib/luaExecutor.js");
+        const { resetLuaExecutorSemaphore } = await import(
+          "../lib/luaExecutor.js"
+        );
         resetLuaExecutorSemaphore();
         logger.info(
           "[ChainFixer] erroredJobIds.includes crash recovered — LuaExecutor semaphore reset",
@@ -582,8 +595,9 @@ class ChainErrorAutoFixer extends EventEmitter {
           );
         }
         try {
-          const { distributedCache } =
-            await import("../infrastructure/distributedCache.js");
+          const { distributedCache } = await import(
+            "../infrastructure/distributedCache.js"
+          );
           await distributedCache.flush();
           logger.info("[ChainFixer] Cache flushed to relieve memory pressure");
         } catch {
@@ -723,8 +737,9 @@ class ChainErrorAutoFixer extends EventEmitter {
           "[ChainFixer] Filesystem error detected — GC triggered to release buffers; check disk space and file descriptor limits",
         );
         try {
-          const { distributedCache } =
-            await import("./distributedCacheService.js");
+          const { distributedCache } = await import(
+            "./distributedCacheService.js"
+          );
           await (distributedCache as Record<string, unknown>)?.evictExpired?.();
           logger.info(
             "[ChainFixer] Cache evicted to reduce storage pressure after filesystem error",
@@ -784,8 +799,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 30_000,
       maxAttempts: 15,
       autoFix: async () => {
-        const { resetLuaExecutorSemaphore } =
-          await import("../lib/luaExecutor.js");
+        const { resetLuaExecutorSemaphore } = await import(
+          "../lib/luaExecutor.js"
+        );
         resetLuaExecutorSemaphore();
         logger.info(
           "[ChainFixer] Worker thread crash — LuaExecutor semaphore reset; BullMQ will respawn the worker",
@@ -822,8 +838,9 @@ class ChainErrorAutoFixer extends EventEmitter {
           }
         }
         try {
-          const { distributedCache } =
-            await import("./distributedCacheService.js");
+          const { distributedCache } = await import(
+            "./distributedCacheService.js"
+          );
           await (distributedCache as Record<string, unknown>)?.flush?.();
         } catch {
           /* non-critical */
@@ -996,8 +1013,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       autoFix: async () => {
         // Open PDIM circuit briefly to let the event loop drain.
         try {
-          const { cbIsOpen, cbForceOpen } =
-            await import("../lib/pdimCircuitBreaker.js");
+          const { cbIsOpen, cbForceOpen } = await import(
+            "../lib/pdimCircuitBreaker.js"
+          );
           if (!cbIsOpen()) {
             cbForceOpen?.(10_000);
             logger.warn(
@@ -1306,8 +1324,9 @@ class ChainErrorAutoFixer extends EventEmitter {
         const inBootGrace = now - this._bootTs < 120_000;
         let inRegistration = false;
         try {
-          const { isLuaRegistrationMode } =
-            await import("../lib/luaExecutor.js");
+          const { isLuaRegistrationMode } = await import(
+            "../lib/luaExecutor.js"
+          );
           inRegistration = isLuaRegistrationMode();
         } catch {
           /* non-fatal */
@@ -1537,8 +1556,9 @@ class ChainErrorAutoFixer extends EventEmitter {
     // Full saturation (queued > 10) is already caught reactively.
     // Offensive: clear at queued > 5 — before the timeout cascade starts.
     try {
-      const { getLuaExecutorStats, resetLuaExecutorSemaphore } =
-        await import("../lib/luaExecutor.js");
+      const { getLuaExecutorStats, resetLuaExecutorSemaphore } = await import(
+        "../lib/luaExecutor.js"
+      );
       const stats = getLuaExecutorStats();
       if (stats.queued > 5 && stats.active >= stats.max) {
         logger.info(

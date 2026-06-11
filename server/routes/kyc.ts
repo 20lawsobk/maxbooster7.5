@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { createHardenedUpload } from "../middleware/uploadHandler.js";
-import { requireAuth } from "../middleware/auth.js";
-import { kycRateLimiter } from "../middleware/rateLimiter.js";
-import { kycService } from "../services/kycService.js";
-import { storageService } from "../services/storageService.js";
+import { createHardenedUpload } from "../middleware/uploadHandler?.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { kycRateLimiter } from "../middleware/rateLimiter?.js";
+import { kycService } from "../services/kycService?.js";
+import { storageService } from "../services/storageService?.js";
 import { z } from "zod";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 const _upload = createHardenedUpload({
   maxFileSize: 10 * 1024 * 1024,

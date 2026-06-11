@@ -1,26 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Users,
-  UserPlus,
-  UserMinus,
-  Cloud,
-  CloudOff,
-  Check,
-  AlertTriangle,
-  Loader2,
-  GitBranch,
-  GitMerge,
-  Save,
-  RefreshCw,
-  Lock,
-  Unlock,
-  Eye,
-  Edit3,
-  Crown,
-  Bell,
-  BellOff,
-} from "lucide-react";
+import { Users, UserPlus, UserMinus, Cloud, CloudOff, Check, AlertTriangle, Loader2, GitBranch, GitMerge, Save, RefreshCw, Lock, Unlock, Eye, Edit3, Crown, Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -89,6 +69,7 @@ interface CollaborationOutcomesProps {
   onRemoveCollaborator?: (userId: string) => Promise<void>;
   className?: string;
 }
+
 
 export function CollaborationOutcomes({
   projectId,

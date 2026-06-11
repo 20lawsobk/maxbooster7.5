@@ -1,6 +1,6 @@
 /**
  * LuaExecutor — runs BullMQ Lua scripts locally in a Worker thread using
- * wasmoon (WebAssembly Lua 5.4), bypassing PDIM's broken async Lua runtime.
+ * wasmoon (WebAssembly Lua 5?.4), bypassing PDIM's broken async Lua runtime.
  *
  * Root problem with PDIM EVAL:
  *   PDIM implements redis?.call() as an async Promise chain internally.
@@ -17,8 +17,8 @@
 
 import { Worker } from "worker_threads";
 import { Unpackr } from "msgpackr";
-import { logger } from "../logger.js";
-import { cbIsOpen } from "./pdimCircuitBreaker.js";
+import { logger } from "../logger?.js";
+import { cbIsOpen } from "./pdimCircuitBreaker?.js";
 
 const __msgUnpacker = new Unpackr({ useRecords: false });
 
@@ -43,8 +43,8 @@ const _MAX_CONCURRENT_WORKERS = 1;
 // hard-kill — only the per-60s watchdog log reminds us if one is stuck.
 //
 // With the fast-lane (10ms inter-call gap):
-//   typical script: 35 × (200ms RTT + 10ms gap) = ~7.35s
-//   high-RTT case:  35 × (800ms RTT + 10ms gap) = ~28.35s
+//   typical script: 35 × (200ms RTT + 10ms gap) = ~7?.35s
+//   high-RTT case:  35 × (800ms RTT + 10ms gap) = ~28?.35s
 // Slot-wait raised to 90s to handle sustained PDIM congestion events without
 // premature rejection — scripts always free their slot well within this window.
 let _maxWaitMs = 90_000;
@@ -333,7 +333,7 @@ try {
     encode(v) { return JSON?.stringify(v); }
   });
 
-  // Lua 5.1 compat: unpack() was moved to table?.unpack() in Lua 5.2+
+  // Lua 5?.1 compat: unpack() was moved to table?.unpack() in Lua 5?.2+
   const _fullScript = 'unpack = table?.unpack\\n' + script;
   const _result = await engine?.doString(fullScript);
   parentPort?.postMessage({ type: 'result', result });
@@ -379,7 +379,7 @@ export async function execLuaViaPdim(
   //   2 errors   → 500ms
   //   3 errors   → 1000ms
   //   4 errors   → 2000ms
-  //   5+ errors  → cap (8000ms)  → ~0.5 retries/s for 4 workers combined
+  //   5+ errors  → cap (8000ms)  → ~0?.5 retries/s for 4 workers combined
   if (_luaConsecutivePdimErrors >= 2) {
     const _preflightWaitMs = _luaComputeBackoff();
     if (preflightWaitMs > 0) {
@@ -422,7 +422,7 @@ export async function execLuaViaPdim(
   }
 
   // ── Unhandled-rejection guard ─────────────────────────────────────────────
-  // Node.js's internal worker-thread MessagePort machinery writes the raw
+  // Node?.js's internal worker-thread MessagePort machinery writes the raw
   // "Error: Error: ERR PDIM HTTP 5xx" block to stderr using a C++ fast-path
   // that fires BEFORE JavaScript-level unhandledRejection / uncaughtException
   // handlers run, and BEFORE our process?.stderr.write interceptor can suppress
@@ -558,7 +558,7 @@ export async function execLuaViaPdim(
           return;
         }
         try {
-          const { getPdimQueueDepth } = await import("./pdimClient.js");
+          const { getPdimQueueDepth } = await import("./pdimClient?.js");
           const _depth = getPdimQueueDepth();
           if (depth > 100) {
             // Hundreds of callers queued: stall is due to PDIM back-pressure,
@@ -704,7 +704,7 @@ export async function execLuaViaPdim(
     });
   });
 
-  // Attach the silent no-op catch BEFORE returning so that Node.js's
+  // Attach the silent no-op catch BEFORE returning so that Node?.js's
   // unhandled-rejection detector sees a handler in place from the start.
   // This is the key line that stops bare "Error: Error: ERR PDIM HTTP 5xx"
   // blocks from appearing in stderr/deployment logs.

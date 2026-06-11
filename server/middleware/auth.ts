@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
-import { jwtAuthService } from "../services/jwtAuthService.js";
-import { storage } from "../storage.js";
-import { logger } from "../logger.js";
+import { jwtAuthService } from "../services/jwtAuthService?.js";
+import { storage } from "../storage?.js";
+import { logger } from "../logger?.js";
 
 async function resolveJwtUser(req: Request): Promise<void> {
   if (req?.isAuthenticated && req?.isAuthenticated()) return;
@@ -15,8 +15,8 @@ async function resolveJwtUser(req: Request): Promise<void> {
     if (decoded) {
       const _user = await storage?.getUser(decoded?.userId);
       if (user) {
-        req.user = user;
-        req.isAuthenticated = () => true;
+        req?.user = user;
+        req?.isAuthenticated = () => true;
       }
     }
   } catch (err) {

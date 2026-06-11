@@ -2,10 +2,10 @@ import { Router } from "express";
 import { db } from "../db";
 import { sampleClearances, insertSampleClearanceSchema } from "@shared/schema";
 import { and, eq, desc, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { queryCache, createCacheKey } from "../lib/queryCache.js";
-import { parsePaginationParams } from "../middleware/pagination.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { queryCache, createCacheKey } from "../lib/queryCache?.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
 
 const _router = Router();
 const _CACHE_TTL = 300;

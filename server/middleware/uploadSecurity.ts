@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import path from "path";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export type UploadCategory = "avatar" | "artwork" | "audio" | "document";
 
@@ -79,6 +79,7 @@ const MAGIC_BYTES: Record<string, number[]> = {
   "audio/x-caf": [0x63, 0x61, 0x66, 0x66],
   "application/pdf": [0x25, 0x50, 0x44, 0x46],
 };
+
 
 const EXTENSION_TO_MIME: Record<string, string[]> = {
   ".jpg": ["image/jpeg"],

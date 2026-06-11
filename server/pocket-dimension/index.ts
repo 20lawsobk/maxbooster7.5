@@ -29,7 +29,7 @@ import { createGzip, createGunzip, constants as zlibConstants } from "zlib";
 import { pipeline, Readable, Writable } from "stream";
 import { promisify } from "util";
 import { EventEmitter } from "events";
-import { getPdimClient } from "../lib/pdimClient.js";
+import { getPdimClient } from "../lib/pdimClient?.js";
 
 promisify(pipeline);
 
@@ -128,25 +128,25 @@ export class PocketDimension extends EventEmitter {
   constructor(config: PocketDimensionConfig) {
     super();
 
-    this.id = config?.id;
-    this.name = config?.name;
-    this.chunkSize = config?.chunkSize || 1024 * 1024; // 1MB default
-    this.maxRecursionDepth = config?.maxRecursionDepth || 10;
-    this.compressionLevel = config?.compressionLevel || 9;
-    this.enableDeduplication = config?.enableDeduplication ?? true;
-    this.enableVersioning = config?.enableVersioning ?? true;
-    this.storagePath = config?.storagePath || "./pocket-dimensions";
+    this?.id = config?.id;
+    this?.name = config?.name;
+    this?.chunkSize = config?.chunkSize || 1024 * 1024; // 1MB default
+    this?.maxRecursionDepth = config?.maxRecursionDepth || 10;
+    this?.compressionLevel = config?.compressionLevel || 9;
+    this?.enableDeduplication = config?.enableDeduplication ?? true;
+    this?.enableVersioning = config?.enableVersioning ?? true;
+    this?.storagePath = config?.storagePath || "./pocket-dimensions";
 
     if (config?.encryptionKey) {
-      this.rawEncryptionKey = config?.encryptionKey;
-      this.encryptionKey = scryptSync(
+      this?.rawEncryptionKey = config?.encryptionKey;
+      this?.encryptionKey = scryptSync(
         config?.encryptionKey,
         "pocket-dimension-salt",
         32,
       );
     }
 
-    this.metadata = {
+    this?.metadata = {
       id: this?.id,
       name: this?.name,
       createdAt: new Date(),
@@ -215,7 +215,7 @@ export class PocketDimension extends EventEmitter {
         `pdim:meta:${this?.id}:metadata`,
       );
       if (metaRaw) {
-        this.metadata = JSON?.parse(metaRaw);
+        this?.metadata = JSON?.parse(metaRaw);
 
         // Load encryption key if the dimension was encrypted
         if (this?.metadata.encrypted && !this?.encryptionKey) {
@@ -228,8 +228,8 @@ export class PocketDimension extends EventEmitter {
             );
           }
           const _keyInfo = JSON?.parse(keyRaw);
-          this.rawEncryptionKey = keyInfo?.key;
-          this.encryptionKey = scryptSync(
+          this?.rawEncryptionKey = keyInfo?.key;
+          this?.encryptionKey = scryptSync(
             keyInfo?.key,
             "pocket-dimension-salt",
             32,
@@ -241,8 +241,8 @@ export class PocketDimension extends EventEmitter {
         );
         if (indexRaw) {
           const _index = JSON?.parse(indexRaw);
-          this.entries = new Map(Object?.entries(index?.entries));
-          this.chunks = new Map(Object?.entries(index?.chunks));
+          this?.entries = new Map(Object?.entries(index?.entries));
+          this?.chunks = new Map(Object?.entries(index?.chunks));
         }
       }
       // If no metadata in PDIM, start fresh (new dimension)
@@ -253,7 +253,7 @@ export class PocketDimension extends EventEmitter {
       // New dimension, start fresh
     }
 
-    this.isOpen = true;
+    this?.isOpen = true;
     this?.emit("opened", { id: this?.id, name: this?.name });
   }
 
@@ -268,7 +268,7 @@ export class PocketDimension extends EventEmitter {
       await nested?.close();
     }
 
-    this.isOpen = false;
+    this?.isOpen = false;
     this?.emit("closed", { id: this?.id });
   }
 
@@ -372,7 +372,7 @@ export class PocketDimension extends EventEmitter {
     if (this?.enableDeduplication && this?.chunks.has(hash)) {
       const _existing = this?.chunks.get(hash)!;
       existing?.accessCount++;
-      existing.lastAccessed = new Date();
+      existing?.lastAccessed = new Date();
       return existing;
     }
 
@@ -458,7 +458,7 @@ export class PocketDimension extends EventEmitter {
     const _chunk = this?.chunks.get(id);
     if (chunk) {
       chunk?.accessCount++;
-      chunk.lastAccessed = new Date();
+      chunk?.lastAccessed = new Date();
     }
 
     return decompressed;
@@ -499,7 +499,7 @@ export class PocketDimension extends EventEmitter {
     });
 
     (nested as Record<string, unknown>).currentDepth = this?.currentDepth + 1;
-    (nested as Record<string, unknown>).metadata.parentDimension = this?.id;
+    (nested as Record<string, unknown>).metadata?.parentDimension = this?.id;
 
     await nested?.open();
     this?.nestedDimensions.set(dimensionPath, nested);
@@ -753,12 +753,12 @@ export class PocketDimensionManager {
   private storagePath: string;
 
   private constructor(storagePath: string = "./pocket-dimensions") {
-    this.storagePath = storagePath;
+    this?.storagePath = storagePath;
   }
 
   static getInstance(storagePath?: string): PocketDimensionManager {
     if (!PocketDimensionManager?.instance) {
-      PocketDimensionManager.instance = new PocketDimensionManager(storagePath);
+      PocketDimensionManager?.instance = new PocketDimensionManager(storagePath);
     }
     return PocketDimensionManager?.instance;
   }

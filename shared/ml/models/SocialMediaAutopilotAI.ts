@@ -14,10 +14,7 @@ import {
   type RuleEvaluationResult,
   PLATFORM_LIMITS,
 } from "../coordination/SocialMediaRuleEngine.js";
-import {
-  autopilotCoordinator,
-  type ExecutionIntent,
-} from "../coordination/AutopilotCoordinator.js";
+import { autopilotCoordinator, type ExecutionIntent } from "../coordination/AutopilotCoordinator.js";
 import { featureStore } from "../coordination/FeatureStore.js";
 
 export interface SocialPost {

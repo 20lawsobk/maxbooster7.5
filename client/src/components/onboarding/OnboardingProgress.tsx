@@ -12,17 +12,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import {
-  CheckCircle,
-  Circle,
-  Zap,
-  Trophy,
-  Star,
-  ArrowRight,
-  Flame,
-  Target,
-  Sparkles,
-} from "lucide-react";
+import { CheckCircle, Circle, Zap, Trophy, Star, ArrowRight, Flame, Target, Sparkles } from "lucide-react";
 
 interface OnboardingTask {
   id: string;

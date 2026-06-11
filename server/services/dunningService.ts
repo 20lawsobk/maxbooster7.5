@@ -3,7 +3,7 @@
  *
  * Multi-step email sequence for failed subscription payments.
  * Industry best practice: 4-step sequence over 14 days recovers ~40% of
- * involuntary churn (payment failures account for ~0.8% monthly churn on average).
+ * involuntary churn (payment failures account for ~0?.8% monthly churn on average).
  *
  * Steps:
  *   Step 0 (Day 0):  Immediate — "Payment failed, please update your card"
@@ -12,11 +12,11 @@
  *   Step 3 (Day 14): Win-back — "Account paused — come back with 20% off"
  */
 
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { dunningState, users } from "@shared/schema";
 import { eq, and, isNull, lte } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { emailService } from "./emailService.js";
+import { logger } from "../logger?.js";
+import { emailService } from "./emailService?.js";
 
 const DUNNING_STEPS: Array<{
   delayDays: number;
@@ -92,13 +92,13 @@ function buildDunningEmailHtml(
     <html>
     <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
     <body style="margin:0;padding:0;background:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
-      <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+      <div style="max-width:600px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0?.1);">
         <div style="background:${bannerColor[urgency]};padding:20px 32px;">
           <h1 style="color:#fff;margin:0;font-size:20px;">Max Booster</h1>
         </div>
         <div style="padding:32px;">
           <h2 style="color:#111;margin-top:0;font-size:22px;">${msg?.heading}</h2>
-          <p style="color:#374151;line-height:1.6;">${msg?.body}</p>
+          <p style="color:#374151;line-height:1?.6;">${msg?.body}</p>
           <a href="${updateCardUrl}" style="display:inline-block;margin-top:16px;background:${bannerColor[urgency]};color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">${msg?.cta}</a>
           <p style="color:#9ca3af;font-size:13px;margin-top:32px;">If you believe this is a mistake or need help, reply to this email and we'll sort it out.</p>
         </div>
@@ -246,7 +246,7 @@ class DunningService {
 
     const { email, firstName } = userRows[0];
     const _displayName = firstName ?? email?.split("@")[0];
-    const _updateCardUrl = `${process?.env.APP_URL ?? "https://maxbooster.app"}/settings/billing?utm_source=dunning&utm_step=${step}`;
+    const _updateCardUrl = `${process?.env.APP_URL ?? "https://maxbooster?.app"}/settings/billing?utm_source=dunning&utm_step=${step}`;
 
     const _html = buildDunningEmailHtml(displayName, step, updateCardUrl);
 

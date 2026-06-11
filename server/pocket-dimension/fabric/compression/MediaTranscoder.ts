@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { randomBytes } from "crypto";
-import type { ContentClass } from "./types.js";
+import type { ContentClass } from "./types?.js";
 
 const _execAsync = promisify(exec);
 
@@ -183,9 +183,9 @@ export class MediaTranscoder {
     if (this?.ffmpegAvailable === null) {
       try {
         await execAsync("ffmpeg -version 2>/dev/null");
-        this.ffmpegAvailable = true;
+        this?.ffmpegAvailable = true;
       } catch {
-        this.ffmpegAvailable = false;
+        this?.ffmpegAvailable = false;
         throw new Error("ffmpeg not available");
       }
     }

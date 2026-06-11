@@ -1,9 +1,9 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { statusPageServices, statusPageIncidents, statusPageIncidentServices, statusPageIncidentUpdates, statusPageUptimeMetrics, statusPageSubscribers, type StatusPageService, type StatusPageIncident, type StatusPageIncidentUpdate, type StatusPageSubscriber, type InsertStatusPageService } from "@shared/schema";
 import { eq, and, desc, gte, isNull, or } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
-import { emailService } from "./emailService.js";
+import { emailService } from "./emailService?.js";
 
 export type ServiceStatus =
   | "operational"
@@ -522,7 +522,7 @@ export class StatusPageService {
         date: today,
         totalChecks: 1,
         successfulChecks: isUp ? 1 : 0,
-        uptimePercentage: isUp ? "100.00" : "0.00",
+        uptimePercentage: isUp ? "100?.00" : "0?.00",
       });
     }
   }

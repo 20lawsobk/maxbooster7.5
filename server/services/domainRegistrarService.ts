@@ -4,15 +4,15 @@
  * All domain registration and management is handled entirely by Max Booster's
  * built-in DNS system.  No external registrar API is required.
  *
- * Platform domain : max-booster.com
- * Nameservers     : ns1?.max-booster.com  /  ns2?.max-booster.com
- * Artist stores   : {name}.max-booster.com  (wildcard A/CNAME at registrar)
+ * Platform domain : max-booster?.com
+ * Nameservers     : ns1?.max-booster?.com  /  ns2?.max-booster?.com
+ * Artist stores   : {name}.max-booster?.com  (wildcard A/CNAME at registrar)
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import dns from "dns";
 
-export const _PLATFORM_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
+export const _PLATFORM_DOMAIN = process?.env.BASE_DOMAIN || "max-booster?.com";
 export const _NS = PLATFORM_DOMAIN;
 export const _NS1 = process?.env.NS1 || `ns1.${PLATFORM_DOMAIN}`;
 export const _NS2 = process?.env.NS2 || `ns2.${PLATFORM_DOMAIN}`;

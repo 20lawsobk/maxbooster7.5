@@ -129,8 +129,9 @@ class StartupProbeManager {
     const startTime = Date.now();
 
     try {
-      const { getRedisClient } =
-        await import("./lib/redisConnectionFactory.js");
+      const { getRedisClient } = await import(
+        "./lib/redisConnectionFactory.js"
+      );
       const client = await getRedisClient();
 
       await client.ping();

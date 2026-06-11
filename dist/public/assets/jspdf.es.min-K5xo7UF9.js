@@ -349,6 +349,7 @@ var Nh = Ia(Li, 9, 0),
                 B = Math.min(32767, R),
                 T = Math.min(258, ot);
               wt <= B && --At && U != rt;
+
             ) {
               if (n[R + nt] == n[R + nt - wt]) {
                 for (var H = 0; H < T && n[R + H] == n[R + H - wt]; ++H);
@@ -1327,6 +1328,7 @@ const Zi = 15,
         for (
           O === 0 && (O = p), dt += _, j = d - O, M = 1 << j;
           j + O < k && ((M -= tt[j + O]), !(M <= 0));
+
         )
           (j++, (M <<= 1));
         if (((S += 1 << j), (n === wo && S > zl) || (n === Vl && S > Hl)))
@@ -1897,6 +1899,7 @@ const Ic = (n) => {
                 (V = (M >>> 16) & 255),
                 (G = M & 65535),
                 !(S <= m);
+
             ) {
               if (l === 0) break t;
               (l--, (d += i[a++] << m), (m += 8));
@@ -2002,6 +2005,7 @@ const Ic = (n) => {
               (V = (M >>> 16) & 255),
               (G = M & 65535),
               !(S <= m);
+
           ) {
             if (l === 0) break t;
             (l--, (d += i[a++] << m), (m += 8));
@@ -2014,6 +2018,7 @@ const Ic = (n) => {
                 (V = (M >>> 16) & 255),
                 (G = M & 65535),
                 !(q + S <= m);
+
             ) {
               if (l === 0) break t;
               (l--, (d += i[a++] << m), (m += 8));
@@ -2053,6 +2058,7 @@ const Ic = (n) => {
               (V = (M >>> 16) & 255),
               (G = M & 65535),
               !(S <= m);
+
           ) {
             if (l === 0) break t;
             (l--, (d += i[a++] << m), (m += 8));
@@ -2065,6 +2071,7 @@ const Ic = (n) => {
                 (V = (M >>> 16) & 255),
                 (G = M & 65535),
                 !(q + S <= m);
+
             ) {
               if (l === 0) break t;
               (l--, (d += i[a++] << m), (m += 8));
@@ -2314,6 +2321,7 @@ Ta.prototype.push = function (n, t) {
       e.next_in = 0,
       e.avail_in = e.input.length;
     ;
+
   ) {
     for (
       e.avail_out === 0 &&
@@ -2324,6 +2332,7 @@ Ta.prototype.push = function (n, t) {
           ((a = Er.inflateSetDictionary(e, o)),
           a === Ma ? (a = Er.inflate(e, c)) : a === vu && (a = So));
       e.avail_in > 0 && a === Lo && e.state.wrap > 0 && n[e.next_in] !== 0;
+
     )
       (Er.inflateReset(e), (a = Er.inflate(e, c)));
     switch (a) {
@@ -3570,8 +3579,8 @@ function kf(n) {
   for (t = 64; t <= n.length; t += 64) Eo(i, P1(n.substring(t - 64, t)));
   n = n.substring(t - 64);
   var o = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-  for (t = 0; t < n.length; t++) o[t >> 2] |= n.charCodeAt(t) << ((t % 4) << 3);
-  if (((o[t >> 2] |= 128 << ((t % 4) << 3)), t > 55))
+  for (t = 0; t < n.length; t++) o[t >> 2] |= n.charCodeAt(t) << (t % 4 << 3);
+  if (((o[t >> 2] |= 128 << (t % 4 << 3)), t > 55))
     for (Eo(i, o), t = 0; t < 16; t++) o[t] = 0;
   return ((o[14] = 8 * e), Eo(i, o), i);
 }
@@ -4092,6 +4101,7 @@ function Mt(n) {
       for (
         var v = u.length, I = new ArrayBuffer(v), D = new Uint8Array(I);
         v--;
+
       )
         D[v] = u.charCodeAt(v);
       return I;
@@ -7923,6 +7933,7 @@ var xi = function () {
       for (
         i = i || !1, e = (e = e || "").toString();
         t.indexOf(e) !== -1 && (t.splice(t.indexOf(e), 1), i !== !1);
+
       );
     }),
     Object.defineProperty(this, "combo", {
@@ -8826,6 +8837,7 @@ function Ef(n) {
           U = this.internal.putStream,
           rt = (0, this.internal.getFilters)();
         rt.indexOf("FlateEncode") !== -1;
+
       )
         rt.splice(rt.indexOf("FlateEncode"), 1);
       E.objectId = this.internal.newObject();
@@ -10614,6 +10626,7 @@ function Wu(n, t, e, i) {
       j = new Int32Array(4096),
       O = null;
     ;
+
   ) {
     for (; m < 16 && p !== 0; )
       ((_ |= n[t++] << m), (m += 8), p === 1 ? (p = n[t++]) : --p);
@@ -10969,6 +10982,7 @@ function Ro(n) {
         yt = 4 * ae,
         Wt = 0;
       Wt < Ht;
+
     ) {
       for (Z = 0; Z < yt; ) {
         for (_t = yt * Wt + Z, St = -1, Dt = 0, P = 0; P < 64; P++)
@@ -11157,6 +11171,7 @@ function Vu(n) {
               for (
                 $ += Ot, pt = 1 << ((xt = F) - L);
                 15 > xt && !(0 >= (pt -= Q[xt]));
+
               )
                 (++xt, (pt <<= 1));
               ((ut += Ot = 1 << (pt = xt - L)),
@@ -11292,6 +11307,7 @@ function Vu(n) {
           g = f,
           b = 0;
         256 <= g;
+
       )
         ((b += 8), (g >>= 8));
       return ((g = 7 ^ (b + Gi[g])), (r.b -= g), (r.Ca = (f << g) - 1), w);
@@ -11831,6 +11847,7 @@ function Vu(n) {
                 re = Ot.K,
                 Ot = Ot.w + (ut >> Ot.b) * Pt;
               ut < Q;
+
             ) {
               var ce = re,
                 Qe = Ot,
@@ -11862,10 +11879,12 @@ function Vu(n) {
                 bt = C.K,
                 C = C.w + (W >> C.b) * ut;
               W < et;
+
             ) {
               for (
                 Rt = bt, Pt = C, re = new zt(), Ot = Q + pt, ce = Q + F;
                 Q < Ot;
+
               )
                 (Bt(Rt[Pt++], re), gi(re, $, Q, Y, L, A), (Q += Y), (A += Y));
               (Q < ce &&
@@ -13996,6 +14015,7 @@ function Vu(n) {
                 bt[0] = null,
                 Rt[0] = 0;
               ;
+
             ) {
               if (((Q[0] = pt), (ht[0] = ce), 8 > ce)) {
                 Q = 7;
@@ -19427,6 +19447,7 @@ endobj\r
               m.push(l.shift()),
               m = [l.pop()];
             l.length;
+
           )
             _.push([l.shift()]);
           j = o.slice(i.length - (m[0] ? m[0].length : 0)).reduce(function (
@@ -22999,6 +23020,7 @@ var er,
               O === "head" && (l = d),
               d += k.length;
             d % 4;
+
           )
             (j.push(0), d++);
         return (
@@ -23790,6 +23812,7 @@ var t2 = (function () {
           this.glyphOffsets.push(c.pos),
           this.glyphIDs.push(c.readUInt16()),
           32 & l;
+
       )
         ((c.pos += 1 & l ? 4 : 2),
           128 & l

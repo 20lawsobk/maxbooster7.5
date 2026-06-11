@@ -5,16 +5,12 @@ import {
 } from "../services/contractTemplateService";
 import { invoiceService } from "../services/invoiceService";
 import { taxFormService, TaxpayerInfo } from "../services/taxFormService";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 import { db } from "../db";
-import {
-  marketplaceDisputes,
-  contractTemplates,
-  splitSheets,
-} from "@shared/schema";
+import { marketplaceDisputes, contractTemplates, splitSheets } from "@shared/schema";
 import { eq, and, or, desc, notInArray, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth?.js";
 
 interface SplitParticipant {
   userId: string;
@@ -183,9 +179,11 @@ router?.delete(
         .returning();
 
       if (!deleted) {
-        return res.status(404).json({
-          error: "Template not found or cannot delete default templates",
-        });
+        return res
+          .status(404)
+          .json({
+            error: "Template not found or cannot delete default templates",
+          });
       }
 
       return res?.json({ success: true });
@@ -823,9 +821,11 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-NEC":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-NEC",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-NEC",
+            });
         }
         form = taxFormService?.generate1099NEC(
           req?.user!.id,
@@ -837,9 +837,11 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-MISC":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-MISC",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-MISC",
+            });
         }
         form = taxFormService?.generate1099MISC(
           req?.user!.id,
@@ -851,9 +853,11 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-K":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-K",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-K",
+            });
         }
         form = taxFormService?.generate1099K(
           req?.user!.id,
@@ -1112,16 +1116,18 @@ router?.post("/split-sheets/create", async (req: Request, res: Response) => {
       !participants ||
       participants?.length === 0
     ) {
-      return res.status(400).json({
-        error: "releaseId, contractName, and participants are required",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "releaseId, contractName, and participants are required",
+        });
     }
 
     const _totalSplit = participants?.reduce(
       (sum: number, p: SplitParticipant) => sum + p?.splitPercentage,
       0,
     );
-    if (Math?.abs(totalSplit - 100) > 0.01) {
+    if (Math?.abs(totalSplit - 100) > 0?.01) {
       return res
         .status(400)
         .json({ error: "Split percentages must total 100%" });
@@ -1262,9 +1268,12 @@ router?.post(
         !role ||
         splitPercentage === undefined
       ) {
-        return res.status(400).json({
-          error: "userId, name, email, role, and splitPercentage are required",
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              "userId, name, email, role, and splitPercentage are required",
+          });
       }
       const _emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex?.test(email)) {
@@ -1330,7 +1339,7 @@ router?.post(
           sum + (p?.splitPercentage || 0),
         0,
       );
-      const _isValid = Math?.abs(totalSplit - 100) <= 0.01;
+      const _isValid = Math?.abs(totalSplit - 100) <= 0?.01;
 
       return res?.json({
         valid: isValid,
@@ -1401,9 +1410,11 @@ router?.post("/marketplace-disputes", async (req: Request, res: Response) => {
       req?.body;
 
     if (!orderId || !disputeType || !subject || !description) {
-      return res.status(400).json({
-        error: "orderId, disputeType, subject, and description are required",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "orderId, disputeType, subject, and description are required",
+        });
     }
 
     if (!VALID_DISPUTE_TYPES?.includes(disputeType)) {

@@ -46,7 +46,7 @@ class SentryService {
 
   static getInstance(): SentryService {
     if (!SentryService?.instance) {
-      SentryService.instance = new SentryService();
+      SentryService?.instance = new SentryService();
     }
     return SentryService?.instance;
   }
@@ -59,18 +59,18 @@ class SentryService {
       sampleRate?: number;
     } = {},
   ) {
-    this.dsn = options?.dsn || import?.meta.env?.VITE_SENTRY_DSN || null;
-    this.environment =
+    this?.dsn = options?.dsn || import?.meta.env?.VITE_SENTRY_DSN || null;
+    this?.environment =
       options?.environment || import?.meta.env?.MODE || "development";
-    this.release = options?.release || import?.meta.env?.VITE_APP_VERSION || null;
+    this?.release = options?.release || import?.meta.env?.VITE_APP_VERSION || null;
 
     if (this?.dsn) {
-      this.isInitialized = true;
+      this?.isInitialized = true;
       this?.setupGlobalErrorHandlers();
       logger?.info("[Sentry] Initialized for environment:", this?.environment);
     } else {
       logger?.info("[Sentry] No DSN provided, running in mock mode");
-      this.isInitialized = true;
+      this?.isInitialized = true;
     }
   }
 
@@ -100,7 +100,7 @@ class SentryService {
   }
 
   setUser(user: SentryContext["user"] | null) {
-    this.userContext = user;
+    this?.userContext = user;
     this?.addBreadcrumb({
       category: "auth",
       message: user ? `User set: ${user?.id}` : "User cleared",
@@ -113,7 +113,7 @@ class SentryService {
   }
 
   setTags(tags: Record<string, string>) {
-    this.tags = { ...this?.tags, ...tags };
+    this?.tags = { ...this?.tags, ...tags };
   }
 
   addBreadcrumb(breadcrumb: SentryBreadcrumb) {
@@ -123,7 +123,7 @@ class SentryService {
     });
 
     if (this?.breadcrumbs.length > this?.maxBreadcrumbs) {
-      this.breadcrumbs = this?.breadcrumbs.slice(-this?.maxBreadcrumbs);
+      this?.breadcrumbs = this?.breadcrumbs.slice(-this?.maxBreadcrumbs);
     }
   }
 
@@ -197,7 +197,7 @@ class SentryService {
       return;
     }
 
-    this.isReporting = true;
+    this?.isReporting = true;
 
     while (this?.errorQueue.length > 0) {
       const _item = this?.errorQueue.shift();
@@ -206,7 +206,7 @@ class SentryService {
       }
     }
 
-    this.isReporting = false;
+    this?.isReporting = false;
   }
 
   private async sendToSentry(data: {
@@ -263,7 +263,9 @@ class SentryService {
     }
   }
 
-  private parseStackTrace(stack: string): Array<{
+  private parseStackTrace(
+    stack: string,
+  ): Array<{
     filename: string;
     lineno?: number;
     colno?: number;

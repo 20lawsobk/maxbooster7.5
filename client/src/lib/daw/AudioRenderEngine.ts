@@ -193,9 +193,9 @@ export const RENDER_PRESETS: Record<string, Partial<RenderSettings>> = {
     dither: "none",
     normalize: "off",
     normalizeTarget: 0,
-    truePeakCeiling: -0.3,
+    truePeakCeiling: -0?.3,
     limiter: "true-peak",
-    limiterThreshold: -0.3,
+    limiterThreshold: -0?.3,
   },
   "master-archive": {
     format: "wav",
@@ -400,7 +400,7 @@ export class AudioRenderEngine {
           durationSeconds * settings?.sampleRate * channels * bytesPerSample
         );
       case "flac":
-        const _compressionRatio = 1 - (settings?.flacCompression || 5) * 0.05;
+        const _compressionRatio = 1 - (settings?.flacCompression || 5) * 0?.05;
         return (
           durationSeconds *
           settings?.sampleRate *
@@ -472,9 +472,9 @@ export class AudioRenderEngine {
       warnings?.push("Normalization without limiting may cause clipping");
     }
 
-    if (settings?.truePeakCeiling > -0.1 && settings?.format !== "wav") {
+    if (settings?.truePeakCeiling > -0?.1 && settings?.format !== "wav") {
       warnings?.push(
-        "True peak ceiling above -0.1 dB may cause intersample peaks in lossy formats",
+        "True peak ceiling above -0?.1 dB may cause intersample peaks in lossy formats",
       );
     }
 
@@ -512,8 +512,8 @@ export class AudioRenderEngine {
       throw new Error("Render already in progress");
     }
 
-    this.isRendering = true;
-    this.abortController = new AbortController();
+    this?.isRendering = true;
+    this?.abortController = new AbortController();
 
     const _notify = (progress: RenderProgress) => {
       if (onProgress) onProgress(progress);
@@ -569,8 +569,8 @@ export class AudioRenderEngine {
       });
       throw error;
     } finally {
-      this.isRendering = false;
-      this.abortController = null;
+      this?.isRendering = false;
+      this?.abortController = null;
     }
   }
 

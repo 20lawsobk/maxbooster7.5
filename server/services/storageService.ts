@@ -7,7 +7,7 @@
  */
 
 import { randomUUID } from "crypto";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import fsPromises from "fs/promises";
 import path from "path";
 
@@ -49,16 +49,16 @@ class PocketDimensionStorageProvider implements StorageProvider {
   private initPromise: Promise<void>;
 
   constructor() {
-    this.initPromise = this?.init();
+    this?.initPromise = this?.init();
   }
 
   private async init(): Promise<void> {
     try {
       const { PocketDimensionManager } = await import(
-        "../pocket-dimension/index.js"
+        "../pocket-dimension/index?.js"
       );
       const _manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this.pocket = await manager?.openPocket("application-storage", {
+      this?.pocket = await manager?.openPocket("application-storage", {
         compressionLevel: 9,
         enableDeduplication: true,
         enableVersioning: false,
@@ -200,7 +200,7 @@ class StorageService {
     logger?.info(
       "📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend",
     );
-    this.provider = new PocketDimensionStorageProvider();
+    this?.provider = new PocketDimensionStorageProvider();
   }
 
   async uploadFile(

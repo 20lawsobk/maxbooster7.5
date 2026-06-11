@@ -17,12 +17,12 @@
  */
 
 import { Queue, Worker, Job } from "bullmq";
-import { newBullMQRedisConnection } from "./redisClient.js";
-import { logger } from "../logger.js";
-import { customerHealthScoreService } from "../services/customerHealthScoreService.js";
-import { dunningService } from "../services/dunningService.js";
-import { reEngagementService } from "../services/reEngagementService.js";
-import { flushFeatureEvents } from "../services/featureEventBuffer.js";
+import { newBullMQRedisConnection } from "./redisClient?.js";
+import { logger } from "../logger?.js";
+import { customerHealthScoreService } from "../services/customerHealthScoreService?.js";
+import { dunningService } from "../services/dunningService?.js";
+import { reEngagementService } from "../services/reEngagementService?.js";
+import { flushFeatureEvents } from "../services/featureEventBuffer?.js";
 
 export const _RETENTION_QUEUE = "retention-jobs";
 
@@ -62,7 +62,7 @@ export function getRetentionQueue(): Queue {
  *
  * Critical fix: this must run BEFORE the worker starts processing so that
  * stale jobs are cleaned in bulk (1-2 Lua calls) rather than one-by-one
- * through the PDIM AIMD chain (100 jobs × 1.1 s = 110 s of PDIM saturation).
+ * through the PDIM AIMD chain (100 jobs × 1?.1 s = 110 s of PDIM saturation).
  *
  * Strategy:
  *   - If there are many (> 10) unnamed stale jobs → drain the entire waiting
@@ -164,7 +164,7 @@ export function startRetentionWorker(): Worker {
   // Run cleanup at t=5 s — enough time for PDIM to connect, but BEFORE the
   // worker has processed more than a handful of stale jobs individually.
   // Previous 60 s delay allowed the worker to process 100+ stale unnamed jobs
-  // one-by-one through the PDIM AIMD chain (each ~1.1 s), saturating PDIM for
+  // one-by-one through the PDIM AIMD chain (each ~1?.1 s), saturating PDIM for
   // 2-3 min and triggering SessionStore timeouts + 100 s dashboard responses.
   // The new bulk drain strategy (queue?.drain for > 10 stale jobs) completes
   // the same cleanup in a single Lua call instead of 100+ sequential calls.
