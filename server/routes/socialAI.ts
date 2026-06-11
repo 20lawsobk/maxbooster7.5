@@ -13,48 +13,48 @@ import {
 import { aiContentService } from "../services/aiContentService";
 import { analyzeUrl } from "../services/mediaAnalyzerService";
 import { logger } from "../logger";
-import { requireAuth } from "../middleware/auth.js";
-import { aiRateLimiter } from "../middleware/rateLimiter.js";
-import { db } from "../db.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { aiRateLimiter } from "../middleware/rateLimiter?.js";
+import { db } from "../db?.js";
 import { autopilotPreferences, posts } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
 // ── Shared Zod schemas ────────────────────────────────────────────────────────
-const chatbotRespondSchema = z.object({
-  platform: z.string().min(1).max(50),
-  senderId: z.string().max(255).optional(),
-  senderName: z.string().max(255).optional(),
-  content: z.string().min(1).max(5000),
-  threadId: z.string().max(255).optional(),
+const _chatbotRespondSchema = z?.object({
+  platform: z?.string().min(1).max(50),
+  senderId: z?.string().max(255).optional(),
+  senderName: z?.string().max(255).optional(),
+  content: z?.string().min(1).max(5000),
+  threadId: z?.string().max(255).optional(),
 });
 
-z.object({
+z?.object({
   messages: z
     .array(
-      z.object({
-        id: z.string().optional(),
-        text: z.string().min(1).max(5000),
-        platform: z.string().max(50).optional(),
+      z?.object({
+        id: z?.string().optional(),
+        text: z?.string().min(1).max(5000),
+        platform: z?.string().max(50).optional(),
       }),
     )
     .min(1)
     .max(100),
 });
 
-z.object({
-  content: z.string().min(1).max(10000).optional(),
-  prompt: z.string().min(1).max(10000).optional(),
-  targetLanguage: z.string().min(2).max(10).optional(),
+z?.object({
+  content: z?.string().min(1).max(10000).optional(),
+  prompt: z?.string().min(1).max(10000).optional(),
+  targetLanguage: z?.string().min(2).max(10).optional(),
 });
 
 /** Extract the first HTTP/HTTPS URL from arbitrary text. */
 function extractFirstUrl(text: string): string | null {
-  const m = text.match(/https?:\/\/[^\s"'<>)]+/i);
+  const _m = text?.match(/https?:\/\/[^\s"'<>)]+/i);
   return m ? m[0].replace(/[.,;:!?]+$/, "") : null; // strip trailing punctuation
 }
 
-const router = Router();
-router.use(aiRateLimiter);
+const _router = Router();
+router?.use(aiRateLimiter);
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -64,56 +64,56 @@ interface AuthenticatedRequest extends Request {
 // CHATBOT ROUTES
 // =========================================
 
-router.post(
+router?.post(
   "/chatbot/respond",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
 
-      const parsed = chatbotRespondSchema.safeParse(req.body);
-      if (!parsed.success) {
+      const _parsed = chatbotRespondSchema?.safeParse(req?.body);
+      if (!parsed?.success) {
         return res
           .status(400)
-          .json({ error: "Invalid request", details: parsed.error.issues });
+          .json({ error: "Invalid request", details: parsed?.error.issues });
       }
-      const { platform, senderId, senderName, content, threadId } = parsed.data;
+      const { platform, senderId, senderName, content, threadId } = parsed?.data;
 
       const message: ChatbotMessage = {
-        id: `msg_${Date.now()}`,
+        id: `msg_${Date?.now()}`,
         platform,
         senderId: senderId || "unknown",
         senderName: senderName || "User",
         content,
         timestamp: new Date(),
         isIncoming: true,
-        threadId: threadId || `thread_${Date.now()}`,
+        threadId: threadId || `thread_${Date?.now()}`,
       };
 
-      const response = await socialChatbotService.generateResponse(
+      const _response = await socialChatbotService?.generateResponse(
         message,
         userId,
       );
 
-      res.json({
+      res?.json({
         success: true,
         response,
         message,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Chatbot respond error:");
-      res.status(500).json({ error: "Failed to generate chatbot response" });
+      logger?.warn({ err: error }, "Chatbot respond error:");
+      res?.status(500).json({ error: "Failed to generate chatbot response" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/chatbot/train",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { question, answer, category, keywords } = req.body;
+      const _userId = req?.user!.id;
+      const { question, answer, category, keywords } = req?.body;
 
       if (!question || !answer) {
         return res
@@ -121,54 +121,54 @@ router.post(
           .json({ error: "Question and answer are required" });
       }
 
-      const entry = await socialChatbotService.addToKnowledgeBase(userId, {
+      const _entry = await socialChatbotService?.addToKnowledgeBase(userId, {
         question,
         answer,
         category: category || "general",
         keywords: keywords || [],
       });
 
-      res.json({
+      res?.json({
         success: true,
         entry,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Chatbot train error:");
-      res.status(500).json({ error: "Failed to add to knowledge base" });
+      logger?.warn({ err: error }, "Chatbot train error:");
+      res?.status(500).json({ error: "Failed to add to knowledge base" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/chatbot/stats",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const stats = await socialChatbotService.getStats(userId);
-      res.json(stats);
+      const _userId = req?.user!.id;
+      const _stats = await socialChatbotService?.getStats(userId);
+      res?.json(stats);
     } catch (error) {
-      logger.warn({ err: error }, "Chatbot stats error:");
-      res.status(500).json({ error: "Failed to get chatbot stats" });
+      logger?.warn({ err: error }, "Chatbot stats error:");
+      res?.status(500).json({ error: "Failed to get chatbot stats" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/chatbot/templates",
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const templates = await socialChatbotService.getTemplates();
-      res.json(templates);
+      const _templates = await socialChatbotService?.getTemplates();
+      res?.json(templates);
     } catch (error) {
-      logger.warn({ err: error }, "Get templates error:");
-      res.status(500).json({ error: "Failed to get templates" });
+      logger?.warn({ err: error }, "Get templates error:");
+      res?.status(500).json({ error: "Failed to get templates" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/chatbot/templates",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -181,7 +181,7 @@ router.post(
         platforms,
         priority,
         enabled,
-      } = req.body;
+      } = req?.body;
 
       if (!name || !response) {
         return res
@@ -189,7 +189,7 @@ router.post(
           .json({ error: "Name and response are required" });
       }
 
-      const template = await socialChatbotService.addTemplate({
+      const _template = await socialChatbotService?.addTemplate({
         name,
         category: category || "general",
         triggers: triggers || [],
@@ -199,40 +199,40 @@ router.post(
         enabled: enabled !== false,
       });
 
-      res.json({
+      res?.json({
         success: true,
         template,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Add template error:");
-      res.status(500).json({ error: "Failed to add template" });
+      logger?.warn({ err: error }, "Add template error:");
+      res?.status(500).json({ error: "Failed to add template" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/chatbot/route",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { messages } = req.body;
+      const _userId = req?.user!.id;
+      const { messages } = req?.body;
 
-      if (!messages || !Array.isArray(messages)) {
-        return res.status(400).json({ error: "Messages array is required" });
+      if (!messages || !Array?.isArray(messages)) {
+        return res?.status(400).json({ error: "Messages array is required" });
       }
 
-      const results = await socialChatbotService.processIncomingMessages(
+      const _results = await socialChatbotService?.processIncomingMessages(
         messages,
         userId,
       );
-      res.json({
+      res?.json({
         success: true,
         results,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Route messages error:");
-      res.status(500).json({ error: "Failed to route messages" });
+      logger?.warn({ err: error }, "Route messages error:");
+      res?.status(500).json({ error: "Failed to route messages" });
     }
   },
 );
@@ -241,12 +241,12 @@ router.post(
 // LISTENING ROUTES
 // =========================================
 
-router.get(
+router?.get(
   "/listening/mentions",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
       const {
         platforms,
         sentiment,
@@ -255,82 +255,82 @@ router.get(
         limit,
         offset,
         influencersOnly,
-      } = req.query;
+      } = req?.query;
 
-      const result = await socialListeningService.getMentions(userId, {
+      const _result = await socialListeningService?.getMentions(userId, {
         platforms: platforms ? String(platforms).split(",") : undefined,
         sentiment: sentiment as "positive" | "neutral" | "negative" | undefined,
         startDate: startDate ? new Date(String(startDate)) : undefined,
         endDate: endDate ? new Date(String(endDate)) : undefined,
         limit: limit
-          ? Math.min(Math.max(parseInt(String(limit)) || 0, 0), 500)
+          ? Math?.min(Math?.max(parseInt(String(limit)) || 0, 0), 500)
           : undefined,
         offset: offset
-          ? Math.min(Math.max(parseInt(String(offset)) || 0, 0), 100_000)
+          ? Math?.min(Math?.max(parseInt(String(offset)) || 0, 0), 100_000)
           : undefined,
         influencersOnly: influencersOnly === "true",
       });
 
-      res.json(result);
+      res?.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Get mentions error:");
-      res.status(500).json({ error: "Failed to get mentions" });
+      logger?.warn({ err: error }, "Get mentions error:");
+      res?.status(500).json({ error: "Failed to get mentions" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/listening/sentiment",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { startDate, endDate, platforms } = req.query;
+      const _userId = req?.user!.id;
+      const { startDate, endDate, platforms } = req?.query;
 
-      const result = await socialListeningService.analyzeSentiment(userId, {
+      const _result = await socialListeningService?.analyzeSentiment(userId, {
         startDate: startDate ? new Date(String(startDate)) : undefined,
         endDate: endDate ? new Date(String(endDate)) : undefined,
         platforms: platforms ? String(platforms).split(",") : undefined,
       });
 
-      res.json(result);
+      res?.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Sentiment analysis error:");
-      res.status(500).json({ error: "Failed to analyze sentiment" });
+      logger?.warn({ err: error }, "Sentiment analysis error:");
+      res?.status(500).json({ error: "Failed to analyze sentiment" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/listening/trends",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { industry, region, platforms, limit } = req.query;
+      const _userId = req?.user!.id;
+      const { industry, region, platforms, limit } = req?.query;
 
-      const result = await socialListeningService.getTrendingTopics(userId, {
+      const _result = await socialListeningService?.getTrendingTopics(userId, {
         industry: industry ? String(industry) : undefined,
         region: region ? String(region) : undefined,
         platforms: platforms ? String(platforms).split(",") : undefined,
         limit: limit ? parseInt(String(limit)) : undefined,
       });
 
-      res.json(result);
+      res?.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Get trends error:");
-      res.status(500).json({ error: "Failed to get trending topics" });
+      logger?.warn({ err: error }, "Get trends error:");
+      res?.status(500).json({ error: "Failed to get trending topics" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/listening/competitors",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { handles } = req.query;
+      const _userId = req?.user!.id;
+      const { handles } = req?.query;
 
       if (!handles) {
         return res
@@ -338,85 +338,85 @@ router.get(
           .json({ error: "Competitor handles are required" });
       }
 
-      const competitorHandles = String(handles).split(",");
-      const result = await socialListeningService.analyzeCompetitors(
+      const _competitorHandles = String(handles).split(",");
+      const _result = await socialListeningService?.analyzeCompetitors(
         userId,
         competitorHandles,
       );
 
-      res.json(result);
+      res?.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Competitor analysis error:");
-      res.status(500).json({ error: "Failed to analyze competitors" });
+      logger?.warn({ err: error }, "Competitor analysis error:");
+      res?.status(500).json({ error: "Failed to analyze competitors" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/listening/brand-health",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const result = await socialListeningService.getBrandHealth(userId);
-      res.json(result);
+      const _userId = req?.user!.id;
+      const _result = await socialListeningService?.getBrandHealth(userId);
+      res?.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Brand health error:");
-      res.status(500).json({ error: "Failed to get brand health" });
+      logger?.warn({ err: error }, "Brand health error:");
+      res?.status(500).json({ error: "Failed to get brand health" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/listening/share-of-voice",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { competitors } = req.query;
+      const _userId = req?.user!.id;
+      const { competitors } = req?.query;
 
-      const competitorNames = competitors ? String(competitors).split(",") : [];
-      const result = await socialListeningService.getShareOfVoice(
+      const _competitorNames = competitors ? String(competitors).split(",") : [];
+      const _result = await socialListeningService?.getShareOfVoice(
         userId,
         competitorNames,
       );
 
-      res.json(result);
+      res?.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Share of voice error:");
-      res.status(500).json({ error: "Failed to get share of voice" });
+      logger?.warn({ err: error }, "Share of voice error:");
+      res?.status(500).json({ error: "Failed to get share of voice" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/listening/queries",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const queries = await socialListeningService.getListeningQueries(userId);
-      res.json(queries);
+      const _userId = req?.user!.id;
+      const _queries = await socialListeningService?.getListeningQueries(userId);
+      res?.json(queries);
     } catch (error) {
-      logger.warn({ err: error }, "Get queries error:");
-      res.status(500).json({ error: "Failed to get listening queries" });
+      logger?.warn({ err: error }, "Get queries error:");
+      res?.status(500).json({ error: "Failed to get listening queries" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/listening/queries",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { name, type, query, platforms, enabled } = req.body;
+      const _userId = req?.user!.id;
+      const { name, type, query, platforms, enabled } = req?.body;
 
       if (!name || !query) {
-        return res.status(400).json({ error: "Name and query are required" });
+        return res?.status(400).json({ error: "Name and query are required" });
       }
 
-      const result = await socialListeningService.addListeningQuery(userId, {
+      const _result = await socialListeningService?.addListeningQuery(userId, {
         name,
         type: type || "keyword",
         query,
@@ -424,34 +424,34 @@ router.post(
         enabled: enabled !== false,
       });
 
-      res.json({
+      res?.json({
         success: true,
         query: result,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Add query error:");
-      res.status(500).json({ error: "Failed to add listening query" });
+      logger?.warn({ err: error }, "Add query error:");
+      res?.status(500).json({ error: "Failed to add listening query" });
     }
   },
 );
 
-router.delete(
+router?.delete(
   "/listening/queries/:id",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { id } = req.params;
+      const _userId = req?.user!.id;
+      const { id } = req?.params;
 
-      const success = await socialListeningService.deleteListeningQuery(
+      const _success = await socialListeningService?.deleteListeningQuery(
         userId,
         id,
       );
 
-      res.json({ success });
+      res?.json({ success });
     } catch (error) {
-      logger.warn({ err: error }, "Delete query error:");
-      res.status(500).json({ error: "Failed to delete listening query" });
+      logger?.warn({ err: error }, "Delete query error:");
+      res?.status(500).json({ error: "Failed to delete listening query" });
     }
   },
 );
@@ -460,182 +460,182 @@ router.delete(
 // STRATEGY ROUTES
 // =========================================
 
-router.post(
+router?.post(
   "/strategy/recommend",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { platforms, count, timeframe } = req.body;
+      const _userId = req?.user!.id;
+      const { platforms, count, timeframe } = req?.body;
 
-      const recommendations =
-        await socialStrategyAIService.getContentRecommendations(userId, {
+      const _recommendations =
+        await socialStrategyAIService?.getContentRecommendations(userId, {
           platforms,
           count,
           timeframe,
         });
 
-      res.json({
+      res?.json({
         success: true,
         recommendations,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Get recommendations error:");
-      res.status(500).json({ error: "Failed to get recommendations" });
+      logger?.warn({ err: error }, "Get recommendations error:");
+      res?.status(500).json({ error: "Failed to get recommendations" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/strategy/campaign",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { objective, budget, duration } = req.body;
+      const _userId = req?.user!.id;
+      const { objective, budget, duration } = req?.body;
 
-      const recommendations =
-        await socialStrategyAIService.getCampaignRecommendations(userId, {
+      const _recommendations =
+        await socialStrategyAIService?.getCampaignRecommendations(userId, {
           objective,
           budget,
           duration,
         });
 
-      res.json({
+      res?.json({
         success: true,
         recommendations,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Get campaign recommendations error:");
-      res.status(500).json({ error: "Failed to get campaign recommendations" });
+      logger?.warn({ err: error }, "Get campaign recommendations error:");
+      res?.status(500).json({ error: "Failed to get campaign recommendations" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/strategy/plan",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { startDate, endDate, platforms, postsPerWeek } = req.body;
+      const _userId = req?.user!.id;
+      const { startDate, endDate, platforms, postsPerWeek } = req?.body;
 
-      const plan = await socialStrategyAIService.generateContentPlan(userId, {
+      const _plan = await socialStrategyAIService?.generateContentPlan(userId, {
         startDate: startDate ? new Date(startDate) : undefined,
         endDate: endDate ? new Date(endDate) : undefined,
         platforms,
         postsPerWeek,
       });
 
-      res.json({
+      res?.json({
         success: true,
         plan,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Generate plan error:");
-      res.status(500).json({ error: "Failed to generate content plan" });
+      logger?.warn({ err: error }, "Generate plan error:");
+      res?.status(500).json({ error: "Failed to generate content plan" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/strategy/content-strategy",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { period } = req.query;
+      const _userId = req?.user!.id;
+      const { period } = req?.query;
 
-      const strategy = await socialStrategyAIService.getContentStrategy(
+      const _strategy = await socialStrategyAIService?.getContentStrategy(
         userId,
         period as "weekly" | "monthly" | "quarterly" | undefined,
       );
 
-      res.json(strategy);
+      res?.json(strategy);
     } catch (error) {
-      logger.warn({ err: error }, "Get content strategy error:");
-      res.status(500).json({ error: "Failed to get content strategy" });
+      logger?.warn({ err: error }, "Get content strategy error:");
+      res?.status(500).json({ error: "Failed to get content strategy" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/strategy/posting-times",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { platforms } = req.query;
+      const _userId = req?.user!.id;
+      const { platforms } = req?.query;
 
-      const platformList = platforms ? String(platforms).split(",") : undefined;
-      const recommendations = await socialStrategyAIService.getBestPostingTimes(
+      const _platformList = platforms ? String(platforms).split(",") : undefined;
+      const _recommendations = await socialStrategyAIService?.getBestPostingTimes(
         userId,
         platformList,
       );
 
-      res.json(recommendations);
+      res?.json(recommendations);
     } catch (error) {
-      logger.warn({ err: error }, "Get posting times error:");
-      res.status(500).json({ error: "Failed to get posting times" });
+      logger?.warn({ err: error }, "Get posting times error:");
+      res?.status(500).json({ error: "Failed to get posting times" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/strategy/growth-predictions",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { platforms } = req.query;
+      const _userId = req?.user!.id;
+      const { platforms } = req?.query;
 
-      const platformList = platforms ? String(platforms).split(",") : undefined;
-      const predictions = await socialStrategyAIService.getGrowthPredictions(
+      const _platformList = platforms ? String(platforms).split(",") : undefined;
+      const _predictions = await socialStrategyAIService?.getGrowthPredictions(
         userId,
         platformList,
       );
 
-      res.json(predictions);
+      res?.json(predictions);
     } catch (error) {
-      logger.warn({ err: error }, "Get growth predictions error:");
-      res.status(500).json({ error: "Failed to get growth predictions" });
+      logger?.warn({ err: error }, "Get growth predictions error:");
+      res?.status(500).json({ error: "Failed to get growth predictions" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/strategy/tips",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { category, platforms, limit } = req.query;
+      const _userId = req?.user!.id;
+      const { category, platforms, limit } = req?.query;
 
-      const tips = await socialStrategyAIService.getEngagementTips(userId, {
+      const _tips = await socialStrategyAIService?.getEngagementTips(userId, {
         category: category ? String(category) : undefined,
         platforms: platforms ? String(platforms).split(",") : undefined,
         limit: limit ? parseInt(String(limit)) : undefined,
       });
 
-      res.json(tips);
+      res?.json(tips);
     } catch (error) {
-      logger.warn({ err: error }, "Get engagement tips error:");
-      res.status(500).json({ error: "Failed to get engagement tips" });
+      logger?.warn({ err: error }, "Get engagement tips error:");
+      res?.status(500).json({ error: "Failed to get engagement tips" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/strategy/insights",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const insights = await socialStrategyAIService.getAIInsights(userId);
-      res.json(insights);
+      const _userId = req?.user!.id;
+      const _insights = await socialStrategyAIService?.getAIInsights(userId);
+      res?.json(insights);
     } catch (error) {
-      logger.warn({ err: error }, "Get AI insights error:");
-      res.status(500).json({ error: "Failed to get AI insights" });
+      logger?.warn({ err: error }, "Get AI insights error:");
+      res?.status(500).json({ error: "Failed to get AI insights" });
     }
   },
 );
@@ -644,19 +644,19 @@ router.get(
 // BENCHMARKS ROUTE
 // =========================================
 
-router.get(
+router?.get(
   "/benchmarks",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { industry } = req.query;
-      const benchmarks = await socialListeningService.getIndustryBenchmarks(
+      const { industry } = req?.query;
+      const _benchmarks = await socialListeningService?.getIndustryBenchmarks(
         industry ? String(industry) : undefined,
       );
-      res.json(benchmarks);
+      res?.json(benchmarks);
     } catch (error) {
-      logger.warn({ err: error }, "Get benchmarks error:");
-      res.status(500).json({ error: "Failed to get industry benchmarks" });
+      logger?.warn({ err: error }, "Get benchmarks error:");
+      res?.status(500).json({ error: "Failed to get industry benchmarks" });
     }
   },
 );
@@ -665,53 +665,53 @@ router.get(
 // AI CONTENT ENDPOINTS
 // ===========================
 
-router.get(
+router?.get(
   "/ai-content/ab-variants",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { content = "", variationType = "tone" } = req.query as Record<
+      const { content = "", variationType = "tone" } = req?.query as Record<
         string,
         string
       >;
-      const validTypes = ["headline", "CTA", "emoji", "length", "tone"];
-      const type = validTypes.includes(variationType)
+      const _validTypes = ["headline", "CTA", "emoji", "length", "tone"];
+      const _type = validTypes?.includes(variationType)
         ? (variationType as string)
         : "tone";
-      const variants = await aiContentService.generateABVariants(content, type);
-      res.json({ variants });
+      const _variants = await aiContentService?.generateABVariants(content, type);
+      res?.json({ variants });
     } catch (error) {
-      logger.warn({ err: error }, "Get AB variants error:");
-      res.status(500).json({ error: "Failed to get AB variants" });
+      logger?.warn({ err: error }, "Get AB variants error:");
+      res?.status(500).json({ error: "Failed to get AB variants" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/ai-content/analyze-brand-voice",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { historicalPosts = [] } = req.body;
-      if (!Array.isArray(historicalPosts)) {
+      const _userId = req?.user!.id;
+      const { historicalPosts = [] } = req?.body;
+      if (!Array?.isArray(historicalPosts)) {
         return res
           .status(400)
           .json({ error: "historicalPosts must be an array of strings" });
       }
-      const brandVoice = await aiContentService.analyzeBrandVoice(
+      const _brandVoice = await aiContentService?.analyzeBrandVoice(
         userId,
-        historicalPosts.map(String),
+        historicalPosts?.map(String),
       );
-      res.json({ brandVoice, score: brandVoice.consistency || 0.85 });
+      res?.json({ brandVoice, score: brandVoice?.consistency || 0?.85 });
     } catch (error) {
-      logger.warn({ err: error }, "Analyze brand voice error:");
-      res.status(500).json({ error: "Failed to analyze brand voice" });
+      logger?.warn({ err: error }, "Analyze brand voice error:");
+      res?.status(500).json({ error: "Failed to analyze brand voice" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/ai-content/multilingual",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -719,41 +719,41 @@ router.post(
       // Accept both field naming conventions:
       // Frontend sends { prompt, language, culturalAdaptation }
       // Spec also accepts { content, targetLanguages, headline, hashtags, platform }
-      const MAX_CONTENT_CHARS = 5_000;
-      const content: string = (req.body.content || req.body.prompt || "")
+      const _MAX_CONTENT_CHARS = 5_000;
+      const content: string = (req?.body.content || req?.body.prompt || "")
         .toString()
         .slice(0, MAX_CONTENT_CHARS);
-      const rawLangs =
-        req.body.targetLanguages ??
-        (req.body.language ? [req.body.language] : null);
-      const targetLanguages: string[] = Array.isArray(rawLangs) ? rawLangs : [];
-      const { headline, hashtags, platform } = req.body;
+      const _rawLangs =
+        req?.body.targetLanguages ??
+        (req?.body.language ? [req?.body.language] : null);
+      const targetLanguages: string[] = Array?.isArray(rawLangs) ? rawLangs : [];
+      const { headline, hashtags, platform } = req?.body;
 
       if (!content) {
         return res
           .status(400)
           .json({ error: "content (or prompt) is required" });
       }
-      if (targetLanguages.length === 0) {
+      if (targetLanguages?.length === 0) {
         return res
           .status(400)
           .json({ error: "targetLanguages (or language) must be provided" });
       }
-      const translations = await aiContentService.generateMultilingualContent(
+      const _translations = await aiContentService?.generateMultilingualContent(
         content,
-        targetLanguages.map(String),
+        targetLanguages?.map(String),
         { headline, hashtags, platform },
       );
       // Return in a shape that satisfies both callers:
       // ContentGenerator expects { content } on the response; the full shape is { translations }
-      const first = translations[0];
-      res.json({
+      const _first = translations[0];
+      res?.json({
         translations,
         content: first?.content ?? "",
         language: first?.language ?? targetLanguages[0],
       });
     } catch (error) {
-      logger.warn({ err: error }, "Multilingual content error:");
+      logger?.warn({ err: error }, "Multilingual content error:");
       res
         .status(500)
         .json({ error: "Failed to generate multilingual content" });
@@ -761,7 +761,7 @@ router.post(
   },
 );
 
-router.post(
+router?.post(
   "/ai-content/optimize-hashtags",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -770,38 +770,38 @@ router.post(
         content = "",
         platform = "instagram",
         goal = "engagement",
-      } = req.body;
-      const validGoals = ["reach", "engagement", "niche"];
-      const validatedGoal = validGoals.includes(goal) ? goal : "engagement";
-      const hashtags = await aiContentService.optimizeHashtags(
+      } = req?.body;
+      const _validGoals = ["reach", "engagement", "niche"];
+      const _validatedGoal = validGoals?.includes(goal) ? goal : "engagement";
+      const _hashtags = await aiContentService?.optimizeHashtags(
         String(content),
         String(platform).toLowerCase(),
         validatedGoal as "reach" | "engagement" | "niche",
       );
-      res.json({ hashtags, optimized: true });
+      res?.json({ hashtags, optimized: true });
     } catch (error) {
-      logger.warn({ err: error }, "Optimize hashtags error:");
-      res.status(500).json({ error: "Failed to optimize hashtags" });
+      logger?.warn({ err: error }, "Optimize hashtags error:");
+      res?.status(500).json({ error: "Failed to optimize hashtags" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/ai-content/posting-times",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const times = await aiContentService.getOptimalPostingTimes(userId);
-      res.json({ times, timezone: "UTC" });
+      const _userId = req?.user!.id;
+      const _times = await aiContentService?.getOptimalPostingTimes(userId);
+      res?.json({ times, timezone: "UTC" });
     } catch (error) {
-      logger.warn({ err: error }, "Get posting times error:");
-      res.status(500).json({ error: "Failed to get posting times" });
+      logger?.warn({ err: error }, "Get posting times error:");
+      res?.status(500).json({ error: "Failed to get posting times" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/ai-content/trending-topics",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -810,23 +810,23 @@ router.get(
         platform = "instagram",
         region,
         genre,
-      } = req.query as Record<string, string>;
-      const topics = await aiContentService.getTrendingTopics(
+      } = req?.query as Record<string, string>;
+      const _topics = await aiContentService?.getTrendingTopics(
         platform,
         region,
         genre,
       );
-      res.json({ topics });
+      res?.json({ topics });
     } catch (error) {
-      logger.warn({ err: error }, "Get trending topics error:");
-      res.status(500).json({ error: "Failed to get trending topics" });
+      logger?.warn({ err: error }, "Get trending topics error:");
+      res?.status(500).json({ error: "Failed to get trending topics" });
     }
   },
 );
 
 // =====================================================================
 // Real-life engagement benchmarks (industry averages, 2024 data)
-// Source: Sprout Social, HubSpot, Later.com industry reports
+// Source: Sprout Social, HubSpot, Later?.com industry reports
 // =====================================================================
 const PLATFORM_BENCHMARKS: Record<
   string,
@@ -842,8 +842,8 @@ const PLATFORM_BENCHMARKS: Record<
   }
 > = {
   instagram: {
-    avgEngagementRate: 0.0122,
-    reachMultiplier: 1.0,
+    avgEngagementRate: 0?.0122,
+    reachMultiplier: 1?.0,
     idealHashtagCount: [3, 8],
     idealCaptionLength: [138, 200],
     peakHours: [11, 13, 19],
@@ -852,8 +852,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["saves", "shares", "watch_time", "comments"],
   },
   tiktok: {
-    avgEngagementRate: 0.0569,
-    reachMultiplier: 3.2,
+    avgEngagementRate: 0?.0569,
+    reachMultiplier: 3?.2,
     idealHashtagCount: [3, 5],
     idealCaptionLength: [100, 150],
     peakHours: [19, 20, 21],
@@ -862,8 +862,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["completion_rate", "replays", "shares", "follows"],
   },
   twitter: {
-    avgEngagementRate: 0.00045,
-    reachMultiplier: 0.8,
+    avgEngagementRate: 0?.00045,
+    reachMultiplier: 0?.8,
     idealHashtagCount: [1, 2],
     idealCaptionLength: [71, 100],
     peakHours: [8, 9, 12, 17],
@@ -872,8 +872,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["replies", "retweets", "link_clicks", "profile_visits"],
   },
   youtube: {
-    avgEngagementRate: 0.041,
-    reachMultiplier: 2.1,
+    avgEngagementRate: 0?.041,
+    reachMultiplier: 2?.1,
     idealHashtagCount: [3, 5],
     idealCaptionLength: [250, 400],
     peakHours: [15, 16, 20, 21],
@@ -887,8 +887,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["watch_time", "click_through_rate", "subscriber_growth"],
   },
   facebook: {
-    avgEngagementRate: 0.0064,
-    reachMultiplier: 0.6,
+    avgEngagementRate: 0?.0064,
+    reachMultiplier: 0?.6,
     idealHashtagCount: [1, 3],
     idealCaptionLength: [40, 80],
     peakHours: [13, 15, 16],
@@ -897,8 +897,8 @@ const PLATFORM_BENCHMARKS: Record<
     algorithmSignals: ["reactions", "comments", "shares", "video_views"],
   },
   linkedin: {
-    avgEngagementRate: 0.054,
-    reachMultiplier: 1.4,
+    avgEngagementRate: 0?.054,
+    reachMultiplier: 1?.4,
     idealHashtagCount: [3, 5],
     idealCaptionLength: [150, 300],
     peakHours: [7, 8, 12, 17, 18],
@@ -910,21 +910,21 @@ const PLATFORM_BENCHMARKS: Record<
 
 // Genre detection from topic text — maps keywords to music genres
 function detectGenre(topic: string): string {
-  const t = topic.toLowerCase();
-  if (/hip.?hop|rap|drill|trap|bars|freestyle|cypher|verse|flow|rhyme/i.test(t))
+  const _t = topic?.toLowerCase();
+  if (/hip.?hop|rap|drill|trap|bars|freestyle|cypher|verse|flow|rhyme/i?.test(t))
     return "hip-hop";
-  if (/r&b|rnb|soul|neo.?soul|smooth|groove/i.test(t)) return "r&b";
-  if (/pop|chart|mainstream|radio|bop|anthem|hit/i.test(t)) return "pop";
-  if (/edm|electronic|house|techno|rave|festival|club|dance|dj/i.test(t))
+  if (/r&b|rnb|soul|neo.?soul|smooth|groove/i?.test(t)) return "r&b";
+  if (/pop|chart|mainstream|radio|bop|anthem|hit/i?.test(t)) return "pop";
+  if (/edm|electronic|house|techno|rave|festival|club|dance|dj/i?.test(t))
     return "electronic";
-  if (/reggae|dancehall|reggaeton|afro.?beats|afrobeats|afropop/i.test(t))
+  if (/reggae|dancehall|reggaeton|afro.?beats|afrobeats|afropop/i?.test(t))
     return "afrobeats";
-  if (/country|folk|bluegrass|americana|nashville|twang/i.test(t))
+  if (/country|folk|bluegrass|americana|nashville|twang/i?.test(t))
     return "country";
-  if (/rock|metal|punk|grunge|alternative|indie|guitar/i.test(t)) return "rock";
-  if (/jazz|blues|funk|soul|gospel|spiritual/i.test(t)) return "jazz";
-  if (/latin|salsa|merengue|cumbia|reggaeton|bachata/i.test(t)) return "latin";
-  if (/classical|orchestral|symphony|opera|chamber/i.test(t))
+  if (/rock|metal|punk|grunge|alternative|indie|guitar/i?.test(t)) return "rock";
+  if (/jazz|blues|funk|soul|gospel|spiritual/i?.test(t)) return "jazz";
+  if (/latin|salsa|merengue|cumbia|reggaeton|bachata/i?.test(t)) return "latin";
+  if (/classical|orchestral|symphony|opera|chamber/i?.test(t))
     return "classical";
   return "pop";
 }
@@ -937,18 +937,18 @@ function calcViralScore(
   hashtagCount: number,
   captionLen: number,
 ): number {
-  const bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS.instagram;
-  const [minH, maxH] = bench.idealHashtagCount;
-  const [minL, maxL] = bench.idealCaptionLength;
+  const _bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS?.instagram;
+  const [minH, maxH] = bench?.idealHashtagCount;
+  const [minL, maxL] = bench?.idealCaptionLength;
 
-  const hashtagScore =
+  const _hashtagScore =
     hashtagCount >= minH && hashtagCount <= maxH
       ? 25
       : hashtagCount < minH
         ? 10
         : 15;
-  const lengthScore = captionLen >= minL && captionLen <= maxL ? 25 : 10;
-  const emojiBonus = hasEmoji ? 10 : 0;
+  const _lengthScore = captionLen >= minL && captionLen <= maxL ? 25 : 10;
+  const _emojiBonus = hasEmoji ? 10 : 0;
   const genreBonus: Record<string, number> = {
     "hip-hop": 15,
     pop: 12,
@@ -959,14 +959,14 @@ function calcViralScore(
     country: 8,
     rock: 9,
   };
-  const genre_score = genreBonus[genre] || 10;
-  const platformMultiplier = bench.reachMultiplier;
+  const _genre_score = genreBonus[genre] || 10;
+  const _platformMultiplier = bench?.reachMultiplier;
 
-  return Math.min(
+  return Math?.min(
     100,
-    Math.round(
+    Math?.round(
       (hashtagScore + lengthScore + emojiBonus + genre_score) *
-        (platformMultiplier * 0.8),
+        (platformMultiplier * 0?.8),
     ),
   );
 }
@@ -983,18 +983,18 @@ function predictEngagement(
   reach: number;
   engagementRate: number;
 } {
-  const bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS.instagram;
-  const modifier = viralScore / 60;
-  const engRate = bench.avgEngagementRate * modifier * bench.reachMultiplier;
-  const reach = Math.round(
-    followerBase * bench.reachMultiplier * (0.15 + modifier * 0.35),
+  const _bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS?.instagram;
+  const _modifier = viralScore / 60;
+  const _engRate = bench?.avgEngagementRate * modifier * bench?.reachMultiplier;
+  const _reach = Math?.round(
+    followerBase * bench?.reachMultiplier * (0?.15 + modifier * 0?.35),
   );
-  const totalEngagements = Math.round(reach * engRate);
+  const _totalEngagements = Math?.round(reach * engRate);
 
   return {
-    likes: Math.round(totalEngagements * 0.7),
-    comments: Math.round(totalEngagements * 0.15),
-    shares: Math.round(totalEngagements * 0.15),
+    likes: Math?.round(totalEngagements * 0?.7),
+    comments: Math?.round(totalEngagements * 0?.15),
+    shares: Math?.round(totalEngagements * 0?.15),
     reach,
     engagementRate: parseFloat((engRate * 100).toFixed(2)),
   };
@@ -1006,9 +1006,9 @@ function getBestPostingTime(platform: string): {
   hour: number;
   label: string;
 } {
-  const bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS.instagram;
-  const now = new Date();
-  const days = [
+  const _bench = PLATFORM_BENCHMARKS[platform] || PLATFORM_BENCHMARKS?.instagram;
+  const _now = new Date();
+  const _days = [
     "Sunday",
     "Monday",
     "Tuesday",
@@ -1017,14 +1017,14 @@ function getBestPostingTime(platform: string): {
     "Friday",
     "Saturday",
   ];
-  const currentDay = days[now.getDay()];
-  const bestDay = bench.peakDays.includes(currentDay)
+  const _currentDay = days[now?.getDay()];
+  const _bestDay = bench?.peakDays.includes(currentDay)
     ? currentDay
-    : bench.peakDays[0];
-  const nextHour =
-    bench.peakHours.find((h) => h > now.getHours()) || bench.peakHours[0];
-  const period = nextHour < 12 ? "AM" : nextHour === 12 ? "PM" : "PM";
-  const label12 = nextHour <= 12 ? nextHour : nextHour - 12;
+    : bench?.peakDays[0];
+  const _nextHour =
+    bench?.peakHours.find((h) => h > now?.getHours()) || bench?.peakHours[0];
+  const _period = nextHour < 12 ? "AM" : nextHour === 12 ? "PM" : "PM";
+  const _label12 = nextHour <= 12 ? nextHour : nextHour - 12;
   return {
     dayOfWeek: bestDay,
     hour: nextHour,
@@ -1035,35 +1035,35 @@ function getBestPostingTime(platform: string): {
 // ── GET /generate/context ────────────────────────────────────────────────────
 // Returns the active generation context for the authenticated user so the
 // frontend can show what artist identity and preferences will be applied.
-router.get(
+router?.get(
   "/generate/context",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const [prefs, recentPostRows] = await Promise.all([
+      const _userId = req?.user!.id;
+      const [prefs, recentPostRows] = await Promise?.all([
         db
           .select()
           .from(autopilotPreferences)
-          .where(eq(autopilotPreferences.userId, userId))
+          .where(eq(autopilotPreferences?.userId, userId))
           .limit(1)
           .then((r) => r[0] ?? null),
         db
-          .select({ platform: posts.platform })
+          .select({ platform: posts?.platform })
           .from(posts)
-          .where(eq(posts.userId, userId))
-          .orderBy(desc(posts.createdAt))
+          .where(eq(posts?.userId, userId))
+          .orderBy(desc(posts?.createdAt))
           .limit(20),
       ]);
 
-      const hasContext = !!prefs;
+      const _hasContext = !!prefs;
       const platformBreakdown: Record<string, number> = {};
       for (const p of recentPostRows) {
-        platformBreakdown[p.platform] =
-          (platformBreakdown[p.platform] || 0) + 1;
+        platformBreakdown[p?.platform] =
+          (platformBreakdown[p?.platform] || 0) + 1;
       }
 
-      res.json({
+      res?.json({
         hasContext,
         artistName: prefs?.artistName ?? null,
         genre: prefs?.genre ?? null,
@@ -1072,21 +1072,21 @@ router.get(
         contentThemes: prefs?.contentThemes ?? [],
         avoidTopics: prefs?.avoidTopics ?? [],
         preferredHashtags: prefs?.preferredHashtags ?? [],
-        recentPostCount: recentPostRows.length,
+        recentPostCount: recentPostRows?.length,
         platformBreakdown,
       });
     } catch (err) {
-      logger.warn({ err: err }, "[socialAI] GET /generate/context error:");
-      res.status(500).json({ error: "Failed to load generation context" });
+      logger?.warn({ err: err }, "[socialAI] GET /generate/context error:");
+      res?.status(500).json({ error: "Failed to load generation context" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/generate",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
-    const generationStart = Date.now();
+    const _generationStart = Date?.now();
     try {
       const {
         platform = "instagram",
@@ -1103,11 +1103,11 @@ router.post(
 
         // URL analysis context
         urlContentType, // raw content_type from URL analysis: 'website', 'track', 'video', etc.
-        // e.g. 'music', 'general', 'tech', 'events'
+         // e?.g. 'music', 'general', 'tech', 'events'
         keywords, // string[] from URL analysis
         tags, // string[] from URL analysis
         urlDescription, // summary/description from URL analysis
-        // e.g. 'youtube', 'spotify'
+         // e?.g. 'youtube', 'spotify'
         // Engagement signals from URL analysis
         viewCount,
         likeCount,
@@ -1119,9 +1119,9 @@ router.post(
         // Product-specific fields
 
         brand,
-      } = req.body;
+      } = req?.body;
 
-      const validPlatforms = [
+      const _validPlatforms = [
         "instagram",
         "twitter",
         "facebook",
@@ -1131,7 +1131,7 @@ router.post(
         "threads",
         "googlebusiness",
       ];
-      const validTones = [
+      const _validTones = [
         "professional",
         "casual",
         "energetic",
@@ -1140,7 +1140,7 @@ router.post(
         "playful",
         "serious",
       ];
-      const validContentTypes = [
+      const _validContentTypes = [
         "release",
         "behind-the-scenes",
         "announcement",
@@ -1148,14 +1148,14 @@ router.post(
         "promotional",
       ];
 
-      const resolvedPlatform = validPlatforms.includes(platform)
+      const _resolvedPlatform = validPlatforms?.includes(platform)
         ? platform
         : "instagram";
-      const resolvedTone: string = validTones.includes(tone)
+      const resolvedTone: string = validTones?.includes(tone)
         ? tone
         : "energetic";
 
-      const mappedContentType =
+      const _mappedContentType =
         contentType === "post"
           ? "engagement"
           : contentType === "announcement"
@@ -1165,24 +1165,24 @@ router.post(
               : "promotional";
 
       // ── Inline URL detection ─────────────────────────────────────────────────
-      // When the user types something like "A stunning promo for https://example.com/pricing"
+      // When the user types something like "A stunning promo for https://example?.com/pricing"
       // we detect the URL in their text, fetch its content, and inject the analysis
       // automatically — no manual import step required.
       // Only fires when the client has NOT already passed URL analysis data.
       let inlineUrlAnalysis: Record<string, any> | null = null;
-      const embeddedUrl = extractFirstUrl(String(topic));
+      const _embeddedUrl = extractFirstUrl(String(topic));
       if (embeddedUrl && !urlContentType && !urlDescription) {
         try {
-          const ua = await analyzeUrl(embeddedUrl);
-          if (ua && !ua.error) {
+          const _ua = await analyzeUrl(embeddedUrl);
+          if (ua && !ua?.error) {
             inlineUrlAnalysis = ua as Record<string, unknown>;
-            logger.info(
-              `[socialAI] Inline URL analyzed: ${embeddedUrl} → ${ua.content_type} / "${ua.title}"`,
+            logger?.info(
+              `[socialAI] Inline URL analyzed: ${embeddedUrl} → ${ua?.content_type} / "${ua?.title}"`,
             );
           }
         } catch (err) {
           // Non-fatal — generation proceeds without page context
-          logger.warn(
+          logger?.warn(
             { err: err },
             "[socialAI] Inline URL analysis failed (non-fatal):",
           );
@@ -1190,129 +1190,129 @@ router.post(
       }
 
       // Merge inline analysis fields with any client-passed values (client wins on conflicts)
-      const effectiveUrlContentType =
+      const _effectiveUrlContentType =
         urlContentType || inlineUrlAnalysis?.content_type;
-      const effectiveUrlDescription =
+      const _effectiveUrlDescription =
         urlDescription ||
         inlineUrlAnalysis?.summary ||
         inlineUrlAnalysis?.description;
-      const effectiveKeywords = (keywords as string[] | undefined)?.length
+      const _effectiveKeywords = (keywords as string[] | undefined)?.length
         ? keywords
         : inlineUrlAnalysis?.keywords;
-      const effectiveTags = (tags as string[] | undefined)?.length
+      const _effectiveTags = (tags as string[] | undefined)?.length
         ? tags
         : inlineUrlAnalysis?.tags;
-      const effectiveArtistName = artistName || inlineUrlAnalysis?.artist;
-      const effectiveTrackTitle = trackTitle || inlineUrlAnalysis?.track;
-      const effectiveAlbumName = albumName || inlineUrlAnalysis?.album;
-      const effectiveLabel = label || inlineUrlAnalysis?.label;
-      const effectiveReleaseDate =
+      const _effectiveArtistName = artistName || inlineUrlAnalysis?.artist;
+      const _effectiveTrackTitle = trackTitle || inlineUrlAnalysis?.track;
+      const _effectiveAlbumName = albumName || inlineUrlAnalysis?.album;
+      const _effectiveLabel = label || inlineUrlAnalysis?.label;
+      const _effectiveReleaseDate =
         releaseDate || inlineUrlAnalysis?.release_date;
-      const inlineTitle = inlineUrlAnalysis?.title;
-      const inlineBodyPreview = inlineUrlAnalysis?.body_preview;
-      const inlineContentCategory =
+      const _inlineTitle = inlineUrlAnalysis?.title;
+      const _inlineBodyPreview = inlineUrlAnalysis?.body_preview;
+      const _inlineContentCategory =
         inlineUrlAnalysis?.content_category ||
         inlineUrlAnalysis?.platform_category;
 
       // Determine if URL source is a website/platform/SaaS (not a music track/artist/video page)
-      const isWebsitePromo = effectiveUrlContentType === "website";
+      const _isWebsitePromo = effectiveUrlContentType === "website";
 
       // Genre detection: skip for website content types; use rawGenre or detect from topic
-      const detectedGenre =
+      const _detectedGenre =
         rawGenre ||
-        (inlineUrlAnalysis?.genre && inlineUrlAnalysis.genre !== "default"
-          ? inlineUrlAnalysis.genre
+        (inlineUrlAnalysis?.genre && inlineUrlAnalysis?.genre !== "default"
+          ? inlineUrlAnalysis?.genre
           : null) ||
         (isWebsitePromo ? "pop" : detectGenre(String(topic)));
 
       // ── User instruction vs. metadata context ────────────────────────────────
       // The user's raw text (topic field) is treated as a CREATIVE INSTRUCTION
-      // to MaxCore — e.g. "Write a hype caption announcing my new single 'Fire'..."
+      // to MaxCore — e?.g. "Write a hype caption announcing my new single 'Fire'..."
       // It must reach MaxCore verbatim, not buried inside a truncated metadata blob.
       //
       // Separate concerns:
       //   userInstruction → goes to MaxCore as extra_context (primary directive)
       //   metadataTopic   → goes to MaxCore as topic (short subject keyword)
-      const cleanTopic = embeddedUrl
+      const _cleanTopic = embeddedUrl
         ? String(topic).replace(embeddedUrl, "").trim().replace(/\s+/g, " ")
         : String(topic);
-      const userInstruction = cleanTopic.trim();
+      const _userInstruction = cleanTopic?.trim();
 
       // Build a metadata-only topic string (artist + track + URL context — NO user instruction).
       // This is the concise subject signal MaxCore uses for genre/platform matching.
       const metaParts: string[] = [];
-      if (effectiveTrackTitle) metaParts.push(`"${effectiveTrackTitle}"`);
-      if (effectiveArtistName) metaParts.push(`by ${effectiveArtistName}`);
+      if (effectiveTrackTitle) metaParts?.push(`"${effectiveTrackTitle}"`);
+      if (effectiveArtistName) metaParts?.push(`by ${effectiveArtistName}`);
       if (effectiveAlbumName && !effectiveTrackTitle)
-        metaParts.push(`album "${effectiveAlbumName}"`);
-      if (effectiveLabel) metaParts.push(effectiveLabel);
+        metaParts?.push(`album "${effectiveAlbumName}"`);
+      if (effectiveLabel) metaParts?.push(effectiveLabel);
       if (effectiveReleaseDate)
-        metaParts.push(`released ${effectiveReleaseDate}`);
+        metaParts?.push(`released ${effectiveReleaseDate}`);
 
       // Inline URL analysis: inject page title + category as metadata
       if (inlineUrlAnalysis) {
         if (inlineTitle && inlineTitle !== userInstruction)
-          metaParts.push(inlineTitle);
-        if (inlineContentCategory) metaParts.push(inlineContentCategory);
+          metaParts?.push(inlineTitle);
+        if (inlineContentCategory) metaParts?.push(inlineContentCategory);
       }
       if (
         effectiveUrlDescription &&
         effectiveUrlDescription !== userInstruction
       )
-        metaParts.push(effectiveUrlDescription.slice(0, 120));
+        metaParts?.push(effectiveUrlDescription?.slice(0, 120));
 
       // Keywords as features
-      const allKeywords = [
+      const _allKeywords = [
         ...(effectiveKeywords ?? []),
         ...(effectiveTags ?? []),
       ].filter(Boolean);
-      const uniqueKeywords = [...new Set(allKeywords)].slice(0, 8);
-      if (uniqueKeywords.length) metaParts.push(uniqueKeywords.join(", "));
+      const _uniqueKeywords = [...new Set(allKeywords)].slice(0, 8);
+      if (uniqueKeywords?.length) metaParts?.push(uniqueKeywords?.join(", "));
 
       // Engagement signals
       const engagementParts: string[] = [];
       if (viewCount && Number(viewCount) > 1000)
-        engagementParts.push(`${Number(viewCount).toLocaleString()} views`);
+        engagementParts?.push(`${Number(viewCount).toLocaleString()} views`);
       if (likeCount && Number(likeCount) > 100)
-        engagementParts.push(`${Number(likeCount).toLocaleString()} likes`);
+        engagementParts?.push(`${Number(likeCount).toLocaleString()} likes`);
       if (playCount && Number(playCount) > 1000)
-        engagementParts.push(`${Number(playCount).toLocaleString()} plays`);
-      if (engagementParts.length) metaParts.push(engagementParts.join(", "));
+        engagementParts?.push(`${Number(playCount).toLocaleString()} plays`);
+      if (engagementParts?.length) metaParts?.push(engagementParts?.join(", "));
 
       // Event / product context
       const eventParts: string[] = [];
-      if (eventDate) eventParts.push(eventDate);
-      if (eventLocation) eventParts.push(`at ${eventLocation}`);
+      if (eventDate) eventParts?.push(eventDate);
+      if (eventLocation) eventParts?.push(`at ${eventLocation}`);
       if (performers?.length)
-        eventParts.push(
+        eventParts?.push(
           `featuring ${(performers as string[]).slice(0, 3).join(", ")}`,
         );
-      if (eventParts.length) metaParts.push(eventParts.join(" "));
-      if (brand && brand !== effectiveArtistName) metaParts.push(brand);
+      if (eventParts?.length) metaParts?.push(eventParts?.join(" "));
+      if (brand && brand !== effectiveArtistName) metaParts?.push(brand);
       if (inlineBodyPreview)
-        metaParts.push(String(inlineBodyPreview).slice(0, 150));
+        metaParts?.push(String(inlineBodyPreview).slice(0, 150));
 
       // If no metadata context exists at all, fall back to the user instruction as the topic
-      const metadataTopic =
-        metaParts.filter(Boolean).join(" — ") || userInstruction || "new music";
+      const _metadataTopic =
+        metaParts?.filter(Boolean).join(" — ") || userInstruction || "new music";
 
       // ── Context awareness ────────────────────────────────────────────────────
       // Fetch the user's autopilot preferences (artist identity, brand voice,
       // content guidelines) and their last 5 published posts (recent topics /
       // variety signal) in parallel. Both are fast indexed DB reads.
-      const userId = req.user!.id;
-      const [autopilotPrefs, recentPostRows] = await Promise.all([
+      const _userId = req?.user!.id;
+      const [autopilotPrefs, recentPostRows] = await Promise?.all([
         db
           .select()
           .from(autopilotPreferences)
-          .where(eq(autopilotPreferences.userId, userId))
+          .where(eq(autopilotPreferences?.userId, userId))
           .limit(1)
           .then((r) => r[0] ?? null),
         db
-          .select({ content: posts.content, platform: posts.platform })
+          .select({ content: posts?.content, platform: posts?.platform })
           .from(posts)
-          .where(eq(posts.userId, userId))
-          .orderBy(desc(posts.createdAt))
+          .where(eq(posts?.userId, userId))
+          .orderBy(desc(posts?.createdAt))
           .limit(5),
       ]).catch(
         () =>
@@ -1322,40 +1322,40 @@ router.post(
       // Build structured user context for AI
       const userContext: UserGenerationContext = {};
       if (autopilotPrefs) {
-        if (autopilotPrefs.artistName)
-          userContext.artistName = autopilotPrefs.artistName;
-        if (autopilotPrefs.artistBio)
-          userContext.artistBio = autopilotPrefs.artistBio;
-        if (autopilotPrefs.genre) userContext.genre = autopilotPrefs.genre;
-        if (autopilotPrefs.brandVoice)
-          userContext.brandVoice = autopilotPrefs.brandVoice;
-        if (autopilotPrefs.targetAudience)
-          userContext.targetAudience = autopilotPrefs.targetAudience;
-        if (autopilotPrefs.contentThemes?.length)
-          userContext.contentThemes = autopilotPrefs.contentThemes;
-        if (autopilotPrefs.avoidTopics?.length)
-          userContext.avoidTopics = autopilotPrefs.avoidTopics;
-        if (autopilotPrefs.preferredHashtags?.length)
-          userContext.preferredHashtags = autopilotPrefs.preferredHashtags;
+        if (autopilotPrefs?.artistName)
+          userContext?.artistName = autopilotPrefs?.artistName;
+        if (autopilotPrefs?.artistBio)
+          userContext?.artistBio = autopilotPrefs?.artistBio;
+        if (autopilotPrefs?.genre) userContext?.genre = autopilotPrefs?.genre;
+        if (autopilotPrefs?.brandVoice)
+          userContext?.brandVoice = autopilotPrefs?.brandVoice;
+        if (autopilotPrefs?.targetAudience)
+          userContext?.targetAudience = autopilotPrefs?.targetAudience;
+        if (autopilotPrefs?.contentThemes?.length)
+          userContext?.contentThemes = autopilotPrefs?.contentThemes;
+        if (autopilotPrefs?.avoidTopics?.length)
+          userContext?.avoidTopics = autopilotPrefs?.avoidTopics;
+        if (autopilotPrefs?.preferredHashtags?.length)
+          userContext?.preferredHashtags = autopilotPrefs?.preferredHashtags;
       }
-      if (recentPostRows.length > 0) {
-        userContext.recentPostSnippets = recentPostRows
-          .filter((p) => p.content)
-          .map((p) => (p.content as string).slice(0, 120).trim());
+      if (recentPostRows?.length > 0) {
+        userContext?.recentPostSnippets = recentPostRows
+          .filter((p) => p?.content)
+          .map((p) => (p?.content as string).slice(0, 120).trim());
       }
 
-      const result = await unifiedAIController.generateContent({
+      const _result = await unifiedAIController?.generateContent({
         tone: resolvedTone,
         platform: resolvedPlatform as Record<string, unknown>,
         topic: metadataTopic,
-        genre: detectedGenre || userContext.genre,
-        artistName: effectiveArtistName || userContext.artistName,
+        genre: detectedGenre || userContext?.genre,
+        artistName: effectiveArtistName || userContext?.artistName,
         trackTitle: effectiveTrackTitle || undefined,
         album: effectiveAlbumName || undefined,
         label: effectiveLabel || undefined,
         releaseDate: effectiveReleaseDate || undefined,
-        keywords: uniqueKeywords.length ? uniqueKeywords : undefined,
-        contentType: validContentTypes.includes(mappedContentType)
+        keywords: uniqueKeywords?.length ? uniqueKeywords : undefined,
+        contentType: validContentTypes?.includes(mappedContentType)
           ? (mappedContentType as string)
           : "engagement",
         includeHashtags: true,
@@ -1366,28 +1366,28 @@ router.post(
         extraContext: userInstruction || undefined,
       });
 
-      if (!result.success) {
-        return res.status(500).json({ error: result.error });
+      if (!result?.success) {
+        return res?.status(500).json({ error: result?.error });
       }
 
-      const data = result.data as Record<string, unknown>;
+      const _data = result?.data as Record<string, unknown>;
       const hook: string = data?.hook || "";
       const body: string = data?.body || "";
       const cta: string = data?.cta || "";
       const aiHashtags: string[] = data?.hashtags || [];
 
       // When URL analysis provides tags/keywords, build context-specific hashtags
-      // and override the AI's generic music hashtags (e.g., for website/platform promos)
+      // and override the AI's generic music hashtags (e?.g., for website/platform promos)
       let hashtags: string[] = aiHashtags;
-      const urlTags: string[] = Array.isArray(effectiveTags)
+      const urlTags: string[] = Array?.isArray(effectiveTags)
         ? effectiveTags
         : [];
-      const urlKeywords: string[] = Array.isArray(effectiveKeywords)
+      const urlKeywords: string[] = Array?.isArray(effectiveKeywords)
         ? effectiveKeywords
         : [];
-      const combined = [...urlTags, ...urlKeywords];
-      if (combined.length >= 3) {
-        const contextHashtags = combined
+      const _combined = [...urlTags, ...urlKeywords];
+      if (combined?.length >= 3) {
+        const _contextHashtags = combined
           .map(
             (t: string) =>
               "#" +
@@ -1396,48 +1396,48 @@ router.post(
                 .replace(/\s+/g, "")
                 .replace(/[^a-z0-9]/g, ""),
           )
-          .filter((t: string) => t.length > 2 && t.length < 32);
-        const unique = [...new Set(contextHashtags)];
-        if (unique.length >= 3) {
-          hashtags = unique.slice(0, 15);
+          .filter((t: string) => t?.length > 2 && t?.length < 32);
+        const _unique = [...new Set(contextHashtags)];
+        if (unique?.length >= 3) {
+          hashtags = unique?.slice(0, 15);
         }
       }
 
       const caption: string = data?.caption || `${hook}\n\n${body}\n\n${cta}`;
 
       // Real-life simulation parameters
-      const genre = detectedGenre;
-      const hasEmoji =
-        /[\u{1F300}-\u{1F9FF}]|[\\u{2600}-\u{26FF}]|[\\u{2700}-\u{27BF}]/u.test(
+      const _genre = detectedGenre;
+      const _hasEmoji =
+        /[\u{1F300}-\u{1F9FF}]|[\\u{2600}-\u{26FF}]|[\\u{2700}-\u{27BF}]/u?.test(
           caption,
         );
-      const viralScore = calcViralScore(
+      const _viralScore = calcViralScore(
         resolvedPlatform,
         genre,
         hasEmoji,
-        hashtags.length,
-        caption.length,
+        hashtags?.length,
+        caption?.length,
       );
-      const engagement = predictEngagement(resolvedPlatform, viralScore);
-      const bestTime = getBestPostingTime(resolvedPlatform);
-      const bench =
-        PLATFORM_BENCHMARKS[resolvedPlatform] || PLATFORM_BENCHMARKS.instagram;
+      const _engagement = predictEngagement(resolvedPlatform, viralScore);
+      const _bestTime = getBestPostingTime(resolvedPlatform);
+      const _bench =
+        PLATFORM_BENCHMARKS[resolvedPlatform] || PLATFORM_BENCHMARKS?.instagram;
 
       // Simulate realistic model processing time (platforms report 400ms–3s for real LLM calls)
-      const elapsed = Date.now() - generationStart;
-      const minRealisticMs = 420;
+      const _elapsed = Date?.now() - generationStart;
+      const _minRealisticMs = 420;
       if (elapsed < minRealisticMs) {
         await new Promise((r) => setTimeout(r, minRealisticMs - elapsed));
       }
 
-      const totalMs = Date.now() - generationStart;
+      const _totalMs = Date?.now() - generationStart;
 
-      res.json({
+      res?.json({
         success: true,
         platform: resolvedPlatform,
         contentType,
         content: data,
-        source: result.source || "MaxCoreAI",
+        source: result?.source || "MaxCoreAI",
         processingTimeMs: totalMs,
         hook,
         body,
@@ -1451,31 +1451,31 @@ router.post(
           engagement: {
             predicted: engagement,
             platform: resolvedPlatform,
-            benchmarkEngagementRate: `${(bench.avgEngagementRate * 100).toFixed(2)}%`,
+            benchmarkEngagementRate: `${(bench?.avgEngagementRate * 100).toFixed(2)}%`,
           },
           optimization: {
-            idealHashtagCount: bench.idealHashtagCount,
-            idealCaptionLength: bench.idealCaptionLength,
-            currentHashtagCount: hashtags.length,
-            currentCaptionLength: caption.length,
+            idealHashtagCount: bench?.idealHashtagCount,
+            idealCaptionLength: bench?.idealCaptionLength,
+            currentHashtagCount: hashtags?.length,
+            currentCaptionLength: caption?.length,
             hashtagsOptimal:
-              hashtags.length >= bench.idealHashtagCount[0] &&
-              hashtags.length <= bench.idealHashtagCount[1],
+              hashtags?.length >= bench?.idealHashtagCount[0] &&
+              hashtags?.length <= bench?.idealHashtagCount[1],
             captionLengthOptimal:
-              caption.length >= bench.idealCaptionLength[0] &&
-              caption.length <= bench.idealCaptionLength[1],
+              caption?.length >= bench?.idealCaptionLength[0] &&
+              caption?.length <= bench?.idealCaptionLength[1],
           },
           scheduling: {
             bestPostingTime: bestTime,
-            peakDays: bench.peakDays,
-            algorithmSignals: bench.algorithmSignals,
-            recommendedFormats: bench.contentTypes,
+            peakDays: bench?.peakDays,
+            algorithmSignals: bench?.algorithmSignals,
+            recommendedFormats: bench?.contentTypes,
           },
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "AI content generate error:");
-      res.status(500).json({ error: "Failed to generate AI content" });
+      logger?.warn({ err: error }, "AI content generate error:");
+      res?.status(500).json({ error: "Failed to generate AI content" });
     }
   },
 );

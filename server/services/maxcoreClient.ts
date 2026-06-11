@@ -2,43 +2,43 @@
  * MaxCore AI HTTP Client — TF-free
  *
  * Standalone module that connects to the MaxCore training server
- * (secure-ai-forge.replit.app).
+ * (secure-ai-forge?.replit.app).
  *
  * Intentionally has ZERO TensorFlow dependencies so it can be imported by any
- * module (e.g. advancedVideoRendererService) without pulling in native bindings.
+ * module (e?.g. advancedVideoRendererService) without pulling in native bindings.
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
-const MC_AI_URL = process.env.AI_SERVER_URL || "";
-const MC_AI_KEY = process.env.AI_SERVER_KEY || "";
+const _MC_AI_URL = process?.env.AI_SERVER_URL || "";
+const _MC_AI_KEY = process?.env.AI_SERVER_KEY || "";
 
 export class MaxCoreAIClient {
   private static _remoteAvailable: boolean | null = null;
   private static _lastCheck = 0;
   private static readonly CHECK_TTL = 30_000;
 
-  // Suppress only stable named endpoints (e.g. /api/generate/content) that
+  // Suppress only stable named endpoints (e?.g. /api/generate/content) that
   // return 404 or non-JSON — never unique per-job poll paths.
   private static _endpointSuppressed = new Map<string, number>();
   private static readonly ENDPOINT_SUPPRESS_MS = 2 * 60_000;
 
   private static isEndpointSuppressed(path: string): boolean {
-    const suppressedUntil = MaxCoreAIClient._endpointSuppressed.get(path) ?? 0;
-    return Date.now() < suppressedUntil;
+    const _suppressedUntil = MaxCoreAIClient?._endpointSuppressed.get(path) ?? 0;
+    return Date?.now() < suppressedUntil;
   }
 
   private static suppressEndpoint(path: string): void {
-    MaxCoreAIClient._endpointSuppressed.set(
+    MaxCoreAIClient?._endpointSuppressed.set(
       path,
-      Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
+      Date?.now() + MaxCoreAIClient?.ENDPOINT_SUPPRESS_MS,
     );
-    logger.debug(`[MaxCoreAI] remote ${path} suppressed for 2 min`);
+    logger?.debug(`[MaxCoreAI] remote ${path} suppressed for 2 min`);
   }
 
   private static isJson(r: Response): boolean {
-    const ct = r.headers.get("content-type") || "";
-    return ct.includes("application/json") || ct.includes("text/json");
+    const _ct = r?.headers.get("content-type") || "";
+    return ct?.includes("application/json") || ct?.includes("text/json");
   }
 
   private static authHeaders(): Record<string, string> {
@@ -51,26 +51,26 @@ export class MaxCoreAIClient {
   /** Always returns true — MaxCore is always running. */
   static async isAvailable(): Promise<boolean> {
     if (MC_AI_URL && MC_AI_KEY) {
-      const now = Date.now();
+      const _now = Date?.now();
       if (
-        MaxCoreAIClient._remoteAvailable === null ||
-        now - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL
+        MaxCoreAIClient?._remoteAvailable === null ||
+        now - MaxCoreAIClient?._lastCheck >= MaxCoreAIClient?.CHECK_TTL
       ) {
         fetch(`${MC_AI_URL}/api/health`, {
-          headers: MaxCoreAIClient.authHeaders(),
-          signal: AbortSignal.timeout(4000),
+          headers: MaxCoreAIClient?.authHeaders(),
+          signal: AbortSignal?.timeout(4000),
           redirect: "manual", // treat 3xx as unavailable — Replit proxy redirects when sleeping
         })
           .then((r) => {
-            MaxCoreAIClient._remoteAvailable =
-              r.ok && MaxCoreAIClient.isJson(r);
-            if (MaxCoreAIClient._remoteAvailable)
-              logger.info("[MaxCoreAI] Remote server is online ✅");
+            MaxCoreAIClient?._remoteAvailable =
+              r?.ok && MaxCoreAIClient?.isJson(r);
+            if (MaxCoreAIClient?._remoteAvailable)
+              logger?.info("[MaxCoreAI] Remote server is online ✅");
           })
           .catch(() => {
-            MaxCoreAIClient._remoteAvailable = false;
+            MaxCoreAIClient?._remoteAvailable = false;
           });
-        MaxCoreAIClient._lastCheck = now;
+        MaxCoreAIClient?._lastCheck = now;
       }
     }
     return true;
@@ -82,28 +82,28 @@ export class MaxCoreAIClient {
    */
   static async get<T = any>(endpoint: string): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
-    const path = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint}`;
-    if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
+    const _path = endpoint?.startsWith("/api/") ? endpoint : `/api${endpoint}`;
+    if (MaxCoreAIClient?.isEndpointSuppressed(path)) return null;
     try {
-      const r = await fetch(`${MC_AI_URL}${path}`, {
+      const _r = await fetch(`${MC_AI_URL}${path}`, {
         method: "GET",
-        headers: MaxCoreAIClient.authHeaders(),
-        signal: AbortSignal.timeout(8000),
+        headers: MaxCoreAIClient?.authHeaders(),
+        signal: AbortSignal?.timeout(8000),
         redirect: "manual",
       });
-      if (!r.ok || !MaxCoreAIClient.isJson(r)) {
+      if (!r?.ok || !MaxCoreAIClient?.isJson(r)) {
         // Only suppress 404/405 — endpoint permanently absent from this MaxCore build.
         // 5xx (busy/training), 3xx (proxy redirect), and non-JSON 200 (warm-up page)
         // are transient; suppressing them for 2 min blocks model-state reads while
         // MaxCore is fully operational.
-        if (r.status === 404 || r.status === 405) {
-          MaxCoreAIClient.suppressEndpoint(path);
+        if (r?.status === 404 || r?.status === 405) {
+          MaxCoreAIClient?.suppressEndpoint(path);
         }
         return null;
       }
-      return (await r.json()) as T;
+      return (await r?.json()) as T;
     } catch (e) {
-      logger.debug(`[MaxCoreAI] GET ${path} failed: ${e.message}`);
+      logger?.debug(`[MaxCoreAI] GET ${path} failed: ${e?.message}`);
       return null;
     }
   }
@@ -115,25 +115,25 @@ export class MaxCoreAIClient {
    */
   static async poll<T = any>(endpoint: string): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
-    const path = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint}`;
+    const _path = endpoint?.startsWith("/api/") ? endpoint : `/api${endpoint}`;
     try {
-      const r = await fetch(`${MC_AI_URL}${path}`, {
+      const _r = await fetch(`${MC_AI_URL}${path}`, {
         method: "GET",
-        headers: MaxCoreAIClient.authHeaders(),
-        signal: AbortSignal.timeout(15_000),
+        headers: MaxCoreAIClient?.authHeaders(),
+        signal: AbortSignal?.timeout(15_000),
         redirect: "manual",
       });
-      if (!r.ok || !MaxCoreAIClient.isJson(r)) {
+      if (!r?.ok || !MaxCoreAIClient?.isJson(r)) {
         // Not suppressed — log at debug and let caller continue polling
-        logger.debug(
-          `[MaxCoreAI] poll ${path} → HTTP ${r.status} (continuing)`,
+        logger?.debug(
+          `[MaxCoreAI] poll ${path} → HTTP ${r?.status} (continuing)`,
         );
         return null;
       }
-      return (await r.json()) as T;
+      return (await r?.json()) as T;
     } catch (e) {
-      logger.debug(
-        `[MaxCoreAI] poll ${path} network error (continuing): ${e.message}`,
+      logger?.debug(
+        `[MaxCoreAI] poll ${path} network error (continuing): ${e?.message}`,
       );
       return null;
     }
@@ -142,7 +142,7 @@ export class MaxCoreAIClient {
   /**
    * Call MaxCore's generation endpoint — single attempt, no retries.
    * MaxCore is always running; if it returns an error it is temporarily busy
-   * (e.g. 504 under diffusion training load).  The caller's local fallback
+   * (e?.g. 504 under diffusion training load).  The caller's local fallback
    * handles the null return, so there is nothing to retry.
    */
   // Measured post-upgrade warm latency: ~11 s.  22 s gives 2× headroom for
@@ -155,41 +155,41 @@ export class MaxCoreAIClient {
   ): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
 
-    const path = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint}`;
+    const _path = endpoint?.startsWith("/api/") ? endpoint : `/api${endpoint}`;
 
     // Short-circuit when this endpoint recently returned an error — prevents
-    // concurrent callers (e.g. score-calibrator + autopilot burst) from all
+    // concurrent callers (e?.g. score-calibrator + autopilot burst) from all
     // hammering MaxCore at the same moment.
-    if (MaxCoreAIClient.isEndpointSuppressed(path)) {
-      logger.debug(
+    if (MaxCoreAIClient?.isEndpointSuppressed(path)) {
+      logger?.debug(
         `[MaxCoreAI] generate ${path} — skipping (endpoint suppressed)`,
       );
       return null;
     }
 
     try {
-      const r = await fetch(`${MC_AI_URL}${path}`, {
+      const _r = await fetch(`${MC_AI_URL}${path}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...MaxCoreAIClient.authHeaders(),
+          ...MaxCoreAIClient?.authHeaders(),
         },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+        body: JSON?.stringify(body),
+        signal: AbortSignal?.timeout(MaxCoreAIClient?.GENERATE_TIMEOUT_MS),
         redirect: "manual",
       });
 
-      if (r.ok && MaxCoreAIClient.isJson(r)) {
-        const data = await r.json();
-        MaxCoreAIClient._remoteAvailable = true;
-        MaxCoreAIClient._lastCheck = Date.now();
-        MaxCoreAIClient._endpointSuppressed.delete(path);
-        logger.debug(`[MaxCoreAI] generate ${path} → success`);
+      if (r?.ok && MaxCoreAIClient?.isJson(r)) {
+        const _data = await r?.json();
+        MaxCoreAIClient?._remoteAvailable = true;
+        MaxCoreAIClient?._lastCheck = Date?.now();
+        MaxCoreAIClient?._endpointSuppressed.delete(path);
+        logger?.debug(`[MaxCoreAI] generate ${path} → success`);
         return data as T;
       }
 
-      const failReason = `HTTP ${r.status} (content-type: ${r.headers.get("content-type") ?? "none"})`;
-      logger.debug(
+      const _failReason = `HTTP ${r?.status} (content-type: ${r?.headers.get("content-type") ?? "none"})`;
+      logger?.debug(
         `[MaxCoreAI] generate ${path} → ${failReason} — local fallback`,
       );
       // Only suppress on 404/405 — those mean the endpoint does not exist on this
@@ -197,15 +197,15 @@ export class MaxCoreAIClient {
       // 3xx (Replit proxy redirect on cold-start), and 200-non-JSON (warm-up splash
       // page) are all transient; suppressing them would block ALL content generation
       // for 2 min even while MaxCore is fully operational.
-      if (r.status === 404 || r.status === 405) {
-        MaxCoreAIClient._endpointSuppressed.set(
+      if (r?.status === 404 || r?.status === 405) {
+        MaxCoreAIClient?._endpointSuppressed.set(
           path,
-          Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
+          Date?.now() + MaxCoreAIClient?.ENDPOINT_SUPPRESS_MS,
         );
       }
       return null;
     } catch (e) {
-      logger.debug(
+      logger?.debug(
         `[MaxCoreAI] generate ${path} failed: ${(e as Error).message} — local fallback`,
       );
       return null;
@@ -215,7 +215,7 @@ export class MaxCoreAIClient {
   /**
    * Infer via MaxCore remote server — single attempt, no retries.
    * MaxCore is always running; if it returns an error it is temporarily busy
-   * (e.g. 504 under diffusion training load).  The caller's local fallback
+   * (e?.g. 504 under diffusion training load).  The caller's local fallback
    * handles the null return immediately — no retry needed.
    * 25 s covers content generation (~11 s observed) and video-job submission
    * (queue insertion only — actual render is async, polled via poll()).
@@ -228,55 +228,55 @@ export class MaxCoreAIClient {
   ): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
 
-    const path = endpoint.startsWith("/api/") ? endpoint : `/api${endpoint}`;
+    const _path = endpoint?.startsWith("/api/") ? endpoint : `/api${endpoint}`;
 
     // Short-circuit within this process when the endpoint recently returned an
     // error — prevents concurrent autopilot requests from all hammering MaxCore
     // at the same moment and gets the Tier-3 local fallback faster.
-    if (MaxCoreAIClient.isEndpointSuppressed(path)) {
-      logger.debug(
+    if (MaxCoreAIClient?.isEndpointSuppressed(path)) {
+      logger?.debug(
         `[MaxCoreAI] infer ${path} — skipping (endpoint suppressed, using fallback)`,
       );
       return null;
     }
 
     try {
-      const r = await fetch(`${MC_AI_URL}${path}`, {
+      const _r = await fetch(`${MC_AI_URL}${path}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...MaxCoreAIClient.authHeaders(),
+          ...MaxCoreAIClient?.authHeaders(),
         },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
+        body: JSON?.stringify(body),
+        signal: AbortSignal?.timeout(MaxCoreAIClient?.INFER_TIMEOUT_MS),
         redirect: "manual",
       });
 
-      if (r.ok && MaxCoreAIClient.isJson(r)) {
-        const data = await r.json();
-        logger.debug(`[MaxCoreAI] infer ${path} → success`);
-        MaxCoreAIClient._remoteAvailable = true;
-        MaxCoreAIClient._endpointSuppressed.delete(path);
+      if (r?.ok && MaxCoreAIClient?.isJson(r)) {
+        const _data = await r?.json();
+        logger?.debug(`[MaxCoreAI] infer ${path} → success`);
+        MaxCoreAIClient?._remoteAvailable = true;
+        MaxCoreAIClient?._endpointSuppressed.delete(path);
         return data as T;
       }
 
-      const failReason = `HTTP ${r.status} (content-type: ${r.headers.get("content-type") ?? "none"})`;
-      logger.debug(
+      const _failReason = `HTTP ${r?.status} (content-type: ${r?.headers.get("content-type") ?? "none"})`;
+      logger?.debug(
         `[MaxCoreAI] infer ${path} → ${failReason} — local fallback`,
       );
       // Only suppress on 404/405 — endpoint permanently absent from this MaxCore build.
       // Never suppress on 5xx (training load / busy), 3xx (proxy redirect on cold-start),
       // or 200-non-JSON (warm-up splash) — all transient; suppressing them for 2 min
       // would block all inference even while MaxCore is fully operational.
-      if (r.status === 404 || r.status === 405) {
-        MaxCoreAIClient._endpointSuppressed.set(
+      if (r?.status === 404 || r?.status === 405) {
+        MaxCoreAIClient?._endpointSuppressed.set(
           path,
-          Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
+          Date?.now() + MaxCoreAIClient?.ENDPOINT_SUPPRESS_MS,
         );
       }
       return null;
     } catch (e) {
-      logger.debug(
+      logger?.debug(
         `[MaxCoreAI] infer ${path} failed: ${(e as Error).message} — local fallback`,
       );
       return null;
@@ -291,29 +291,29 @@ export class MaxCoreAIClient {
 export function startMaxCoreLLMWarmth(): void {
   if (!MC_AI_URL || !MC_AI_KEY) return;
 
-  const WARMTH_INTERVAL_MS = 90_000;
+  const _WARMTH_INTERVAL_MS = 90_000;
 
-  const ping = () => {
+  const _ping = () => {
     fetch(`${MC_AI_URL}/api/generate/content`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...MaxCoreAIClient.authHeaders(),
+        ...MaxCoreAIClient?.authHeaders(),
       },
-      body: JSON.stringify({
+      body: JSON?.stringify({
         topic: "music artist brand new release",
         platform: "instagram",
         tone: "energetic",
       }),
       // Match the generate() timeout so warmth pings actually complete when
       // MaxCore is busy with the diffusion training loop.
-      signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+      signal: AbortSignal?.timeout(MaxCoreAIClient?.GENERATE_TIMEOUT_MS),
       redirect: "manual",
     })
       .then((r) => {
-        if (r.ok && MaxCoreAIClient.isJson(r)) {
-          MaxCoreAIClient._remoteAvailable = true;
-          MaxCoreAIClient._lastCheck = Date.now();
+        if (r?.ok && MaxCoreAIClient?.isJson(r)) {
+          MaxCoreAIClient?._remoteAvailable = true;
+          MaxCoreAIClient?._lastCheck = Date?.now();
         }
       })
       .catch(() => {});
@@ -323,21 +323,21 @@ export function startMaxCoreLLMWarmth(): void {
   // generate calls at t=+15 s (each ~16 s) and finishes around t=+100 s.
   // Delaying keeps the warmth ping from piling onto those in-flight requests
   // and causing cold-start timeouts on the single-threaded MaxCore LLM.
-  const firstPing = setTimeout(ping, 120_000);
-  if (firstPing.unref) firstPing.unref();
-  const t = setInterval(ping, WARMTH_INTERVAL_MS);
-  if (t.unref) t.unref();
-  logger.info(
+  const _firstPing = setTimeout(ping, 120_000);
+  if (firstPing?.unref) firstPing?.unref();
+  const _t = setInterval(ping, WARMTH_INTERVAL_MS);
+  if (t?.unref) t?.unref();
+  logger?.info(
     "[MaxCoreAI] LLM warmth pinger started — pinging every 90s to prevent cold-start latency",
   );
 }
 
 if (MC_AI_URL && MC_AI_KEY) {
-  logger.info(
+  logger?.info(
     `[MaxCoreAI] Configured — remote: ${MC_AI_URL} | MaxCore is the only source (no local fallback)`,
   );
 } else {
-  logger.warn(
+  logger?.warn(
     "[MaxCoreAI] No remote URL/key configured — all generate/infer calls will return null",
   );
 }

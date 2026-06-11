@@ -1,12 +1,12 @@
 /**
  * Genre taxonomy used by the plugin enrichment layer
- * (server/services/plugins/genrePresets.ts).
+ * (server/services/plugins/genrePresets?.ts).
  *
  * 20 genres covering every major family of contemporary and traditional
  * music.  Each plugin type that has a genrePresets entry will, where it
  * makes musical sense, expose a preset for each of these genres.
  *
- * Genre IDs are stable strings — they become PluginPreset.name values
+ * Genre IDs are stable strings — they become PluginPreset?.name values
  * in the DB so renaming them is a breaking change for any saved user
  * recall.  Add new entries at the end; do not reorder or rename.
  */
@@ -70,4 +70,4 @@ export const GENRES: GenreInfo[] = [
   },
 ];
 
-export const GENRE_IDS: Genre[] = GENRES.map((g) => g.id);
+export const GENRE_IDS: Genre[] = GENRES?.map((g) => g?.id);

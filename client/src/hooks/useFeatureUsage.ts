@@ -32,7 +32,7 @@ export interface FeaturePriorityUpdate {
   priority?: number;
 }
 
-const ALL_FEATURES = [
+const _ALL_FEATURES = [
   "studio",
   "distribution",
   "analytics",
@@ -50,9 +50,9 @@ const ALL_FEATURES = [
 ];
 
 export function useFeatureUsage() {
-  const queryClient = useQueryClient();
-  const activeFeature = useRef<string | null>(null);
-  const featureStartTime = useRef<number>(0);
+  const _queryClient = useQueryClient();
+  const _activeFeature = useRef<string | null>(null);
+  const _featureStartTime = useRef<number>(0);
 
   const { data: usageData, isLoading } = useQuery<FeatureUsageStats>({
     queryKey: ["/api/personalization/feature-usage"],
@@ -63,20 +63,20 @@ export function useFeatureUsage() {
     queryKey: ["/api/personalization/preferences"],
     staleTime: 10 * 60 * 1000,
     select: (data: Record<string, unknown>) => {
-      const hiddenFeatures = data?.hiddenFeatures || [];
-      const featurePrefs = data?.featurePreferences || {};
+      const _hiddenFeatures = data?.hiddenFeatures || [];
+      const _featurePrefs = data?.featurePreferences || {};
 
-      return ALL_FEATURES.map((featureId, index) => ({
+      return ALL_FEATURES?.map((featureId, index) => ({
         featureId,
-        isVisible: !hiddenFeatures.includes(featureId),
-        inMoreMenu: hiddenFeatures.includes(featureId),
+        isVisible: !hiddenFeatures?.includes(featureId),
+        inMoreMenu: hiddenFeatures?.includes(featureId),
         priority:
-          featurePrefs[featureId]?.priority || ALL_FEATURES.length - index,
+          featurePrefs[featureId]?.priority || ALL_FEATURES?.length - index,
       }));
     },
   });
 
-  const trackFeatureMutation = useMutation({
+  const _trackFeatureMutation = useMutation({
     mutationFn: async ({
       feature,
       duration,
@@ -84,7 +84,7 @@ export function useFeatureUsage() {
       feature: string;
       duration?: number;
     }) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/personalization/track-feature",
         {
@@ -92,150 +92,150 @@ export function useFeatureUsage() {
           duration,
         },
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/feature-usage"],
       });
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/behavior-analysis"],
       });
     },
   });
 
-  const updatePriorityMutation = useMutation({
+  const _updatePriorityMutation = useMutation({
     mutationFn: async (update: FeaturePriorityUpdate) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "PUT",
         "/api/personalization/feature-priority",
         update,
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/preferences"],
       });
     },
   });
 
-  const resetPrioritiesMutation = useMutation({
+  const _resetPrioritiesMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/personalization/reset-feature-priorities",
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/preferences"],
       });
     },
   });
 
-  const applySuggestedMutation = useMutation({
+  const _applySuggestedMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/personalization/apply-suggested-priorities",
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/preferences"],
       });
     },
   });
 
-  const frequentlyUsed = useMemo(() => {
-    return usageData?.mostUsed?.slice(0, 5).map((f) => f.featureId) || [];
+  const _frequentlyUsed = useMemo(() => {
+    return usageData?.mostUsed?.slice(0, 5).map((f) => f?.featureId) || [];
   }, [usageData]);
 
-  const rarelyUsed = useMemo(() => {
-    return usageData?.leastUsed?.slice(0, 5).map((f) => f.featureId) || [];
+  const _rarelyUsed = useMemo(() => {
+    return usageData?.leastUsed?.slice(0, 5).map((f) => f?.featureId) || [];
   }, [usageData]);
 
-  const suggestedToHide = useMemo(() => {
+  const _suggestedToHide = useMemo(() => {
     return usageData?.suggestedToHide || [];
   }, [usageData]);
 
-  const suggestedToSurface = useMemo(() => {
+  const _suggestedToSurface = useMemo(() => {
     return usageData?.suggestedToSurface || [];
   }, [usageData]);
 
-  const visibleFeatures = useMemo(() => {
+  const _visibleFeatures = useMemo(() => {
     return (visibilitySettings || [])
-      .filter((f) => f.isVisible)
-      .sort((a, b) => b.priority - a.priority)
-      .map((f) => f.featureId);
+      .filter((f) => f?.isVisible)
+      .sort((a, b) => b?.priority - a?.priority)
+      .map((f) => f?.featureId);
   }, [visibilitySettings]);
 
-  const hiddenFeatures = useMemo(() => {
+  const _hiddenFeatures = useMemo(() => {
     return (visibilitySettings || [])
-      .filter((f) => !f.isVisible)
-      .map((f) => f.featureId);
+      .filter((f) => !f?.isVisible)
+      .map((f) => f?.featureId);
   }, [visibilitySettings]);
 
-  const trackFeatureStart = useCallback(
+  const _trackFeatureStart = useCallback(
     (featureId: string) => {
-      if (activeFeature.current && activeFeature.current !== featureId) {
-        const duration = Date.now() - featureStartTime.current;
+      if (activeFeature?.current && activeFeature?.current !== featureId) {
+        const _duration = Date?.now() - featureStartTime?.current;
         if (duration > 1000) {
-          trackFeatureMutation.mutate({
-            feature: activeFeature.current,
+          trackFeatureMutation?.mutate({
+            feature: activeFeature?.current,
             duration,
           });
         }
       }
-      activeFeature.current = featureId;
-      featureStartTime.current = Date.now();
-      trackFeatureMutation.mutate({ feature: featureId });
+      activeFeature?.current = featureId;
+      featureStartTime?.current = Date?.now();
+      trackFeatureMutation?.mutate({ feature: featureId });
     },
     [trackFeatureMutation],
   );
 
-  const trackFeatureEnd = useCallback(
+  const _trackFeatureEnd = useCallback(
     (featureId: string) => {
-      if (activeFeature.current === featureId) {
-        const duration = Date.now() - featureStartTime.current;
+      if (activeFeature?.current === featureId) {
+        const _duration = Date?.now() - featureStartTime?.current;
         if (duration > 1000) {
-          trackFeatureMutation.mutate({ feature: featureId, duration });
+          trackFeatureMutation?.mutate({ feature: featureId, duration });
         }
-        activeFeature.current = null;
-        featureStartTime.current = 0;
+        activeFeature?.current = null;
+        featureStartTime?.current = 0;
       }
     },
     [trackFeatureMutation],
   );
 
-  const isFrequentlyUsed = useCallback(
+  const _isFrequentlyUsed = useCallback(
     (featureId: string): boolean => {
-      return frequentlyUsed.includes(featureId);
+      return frequentlyUsed?.includes(featureId);
     },
     [frequentlyUsed],
   );
 
-  const isRarelyUsed = useCallback(
+  const _isRarelyUsed = useCallback(
     (featureId: string): boolean => {
-      return rarelyUsed.includes(featureId);
+      return rarelyUsed?.includes(featureId);
     },
     [rarelyUsed],
   );
 
-  const getUsageCount = useCallback(
+  const _getUsageCount = useCallback(
     (featureId: string): number => {
-      const entry = usageData?.mostUsed?.find((f) => f.featureId === featureId);
+      const _entry = usageData?.mostUsed?.find((f) => f?.featureId === featureId);
       return entry?.usageCount || 0;
     },
     [usageData],
   );
 
-  const hideFeature = useCallback(
+  const _hideFeature = useCallback(
     async (featureId: string) => {
-      await updatePriorityMutation.mutateAsync({
+      await updatePriorityMutation?.mutateAsync({
         featureId,
         isVisible: false,
       });
@@ -243,9 +243,9 @@ export function useFeatureUsage() {
     [updatePriorityMutation],
   );
 
-  const showFeature = useCallback(
+  const _showFeature = useCallback(
     async (featureId: string) => {
-      await updatePriorityMutation.mutateAsync({
+      await updatePriorityMutation?.mutateAsync({
         featureId,
         isVisible: true,
       });
@@ -253,9 +253,9 @@ export function useFeatureUsage() {
     [updatePriorityMutation],
   );
 
-  const updatePriority = useCallback(
+  const _updatePriority = useCallback(
     async (featureId: string, priority: number) => {
-      await updatePriorityMutation.mutateAsync({
+      await updatePriorityMutation?.mutateAsync({
         featureId,
         priority,
       });
@@ -263,33 +263,33 @@ export function useFeatureUsage() {
     [updatePriorityMutation],
   );
 
-  const resetToDefaults = useCallback(async () => {
-    await resetPrioritiesMutation.mutateAsync();
+  const _resetToDefaults = useCallback(async () => {
+    await resetPrioritiesMutation?.mutateAsync();
   }, [resetPrioritiesMutation]);
 
-  const applySuggestedPriorities = useCallback(async () => {
-    await applySuggestedMutation.mutateAsync();
+  const _applySuggestedPriorities = useCallback(async () => {
+    await applySuggestedMutation?.mutateAsync();
   }, [applySuggestedMutation]);
 
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (activeFeature.current) {
-        const duration = Date.now() - featureStartTime.current;
-        navigator.sendBeacon(
+    const _handleBeforeUnload = () => {
+      if (activeFeature?.current) {
+        const _duration = Date?.now() - featureStartTime?.current;
+        navigator?.sendBeacon(
           "/api/personalization/track-feature",
-          JSON.stringify({
-            feature: activeFeature.current,
+          JSON?.stringify({
+            feature: activeFeature?.current,
             duration,
           }),
         );
       }
     };
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    window?.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      if (activeFeature.current) {
-        trackFeatureEnd(activeFeature.current);
+      window?.removeEventListener("beforeunload", handleBeforeUnload);
+      if (activeFeature?.current) {
+        trackFeatureEnd(activeFeature?.current);
       }
     };
   }, [trackFeatureEnd]);
@@ -314,7 +314,7 @@ export function useFeatureUsage() {
     resetToDefaults,
     applySuggestedPriorities,
     isUpdating:
-      updatePriorityMutation.isPending || resetPrioritiesMutation.isPending,
+      updatePriorityMutation?.isPending || resetPrioritiesMutation?.isPending,
   };
 }
 
@@ -332,8 +332,8 @@ export function useFeatureVisibility(featureId: string) {
     useFeatureUsage();
 
   return {
-    isVisible: visibleFeatures.includes(featureId),
-    isHidden: hiddenFeatures.includes(featureId),
+    isVisible: visibleFeatures?.includes(featureId),
+    isHidden: hiddenFeatures?.includes(featureId),
     isFrequent: isFrequentlyUsed(featureId),
     isRare: isRarelyUsed(featureId),
   };

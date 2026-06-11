@@ -43,45 +43,45 @@ export function usePrecisionTransport(): [
   PrecisionTransportState,
   PrecisionTransportControls,
 ] {
-  const store = useUnifiedStore();
+  const _store = useUnifiedStore();
   const { transport, project } = store;
 
   useRef<number | null>(null);
-  const lastTimeRef = useRef<number>(performance.now());
-  const audioEngineRef = useRef(AudioEngineFactory.getEngine());
+  const _lastTimeRef = useRef<number>(performance?.now());
+  const _audioEngineRef = useRef(AudioEngineFactory?.getEngine());
   const [cpuUsage, setCpuUsage] = useState(0);
   const [latencyMs, setLatencyMs] = useState(0);
 
-  const [localPosition, setLocalPosition] = useState(transport.position);
+  const [localPosition, setLocalPosition] = useState(transport?.position);
   const [countInEnabled, setCountInEnabled] = useState(false);
   const [metronomeEnabled, setMetronomeEnabled] = useState(
-    transport.metronomeEnabled,
+    transport?.metronomeEnabled,
   );
-  const [loopStart, setLoopStart] = useState(transport.loopStart);
-  const [loopEnd, setLoopEnd] = useState(transport.loopEnd);
+  const [loopStart, setLoopStart] = useState(transport?.loopStart);
+  const [loopEnd, setLoopEnd] = useState(transport?.loopEnd);
 
   useEffect(() => {
-    const engine = audioEngineRef.current;
+    const _engine = audioEngineRef?.current;
 
-    engine.setCallbacks({
+    engine?.setCallbacks({
       onPositionChange: (pos: number) => {
         setLocalPosition(pos);
-        store.setPosition(pos);
+        store?.setPosition(pos);
       },
       onMeterUpdate: () => {},
       onStateChange: (state) => {
-        setCpuUsage(state.cpuUsage);
-        setLatencyMs(state.latency);
+        setCpuUsage(state?.cpuUsage);
+        setLatencyMs(state?.latency);
       },
     });
 
-    engine.initialize().then(() => {
-      const state = engine.getState();
-      setLatencyMs(state.latency);
+    engine?.initialize().then(() => {
+      const _state = engine?.getState();
+      setLatencyMs(state?.latency);
     });
 
     return () => {
-      engine.setCallbacks({
+      engine?.setCallbacks({
         onPositionChange: () => {},
         onMeterUpdate: () => {},
         onStateChange: () => {},
@@ -90,130 +90,130 @@ export function usePrecisionTransport(): [
   }, [store]);
 
   useEffect(() => {
-    const engine = audioEngineRef.current;
-    engine.setTempo(transport.tempo);
-  }, [transport.tempo]);
+    const _engine = audioEngineRef?.current;
+    engine?.setTempo(transport?.tempo);
+  }, [transport?.tempo]);
 
   useEffect(() => {
-    if (transport.isPlaying) {
-      audioEngineRef.current.play();
+    if (transport?.isPlaying) {
+      audioEngineRef?.current.play();
     } else {
-      audioEngineRef.current.pause();
+      audioEngineRef?.current.pause();
     }
-  }, [transport.isPlaying]);
+  }, [transport?.isPlaying]);
 
   useEffect(() => {
-    if (!transport.isPlaying) {
-      setLocalPosition(transport.position);
+    if (!transport?.isPlaying) {
+      setLocalPosition(transport?.position);
     }
-  }, [transport.position, transport.isPlaying]);
+  }, [transport?.position, transport?.isPlaying]);
 
-  const beatsPerBar = 4;
-  const positionBeats = localPosition;
-  const positionBars = Math.floor(localPosition / beatsPerBar) + 1;
+  const _beatsPerBar = 4;
+  const _positionBeats = localPosition;
+  const _positionBars = Math?.floor(localPosition / beatsPerBar) + 1;
 
   const state: PrecisionTransportState = {
-    isPlaying: transport.isPlaying,
-    isRecording: transport.isRecording,
-    isPaused: transport.isPaused,
-    isLooping: transport.isLooping,
+    isPlaying: transport?.isPlaying,
+    isRecording: transport?.isRecording,
+    isPaused: transport?.isPaused,
+    isLooping: transport?.isLooping,
     position: localPosition,
     positionBeats,
     positionBars,
-    tempo: transport.tempo,
+    tempo: transport?.tempo,
     timeSignatureNum: 4,
     timeSignatureDen: 4,
     metronomeEnabled,
     countInEnabled,
     prerollBars: 1,
-    sampleRate: project.sampleRate,
+    sampleRate: project?.sampleRate,
     cpuUsage,
     latencyMs,
   };
 
-  const play = useCallback(() => {
-    audioEngineRef.current.play();
-    lastTimeRef.current = performance.now();
-    store.play();
+  const _play = useCallback(() => {
+    audioEngineRef?.current.play();
+    lastTimeRef?.current = performance?.now();
+    store?.play();
   }, [store]);
 
-  const pause = useCallback(() => {
-    audioEngineRef.current.pause();
-    store.pause();
+  const _pause = useCallback(() => {
+    audioEngineRef?.current.pause();
+    store?.pause();
   }, [store]);
 
-  const stop = useCallback(() => {
-    audioEngineRef.current.stopTransport();
-    store.stop();
+  const _stop = useCallback(() => {
+    audioEngineRef?.current.stopTransport();
+    store?.stop();
     setLocalPosition(0);
   }, [store]);
 
-  const record = useCallback(() => {
-    audioEngineRef.current.play();
-    lastTimeRef.current = performance.now();
-    store.record();
+  const _record = useCallback(() => {
+    audioEngineRef?.current.play();
+    lastTimeRef?.current = performance?.now();
+    store?.record();
   }, [store]);
 
-  const toggleLoop = useCallback(() => {
-    store.toggleLoop();
+  const _toggleLoop = useCallback(() => {
+    store?.toggleLoop();
   }, [store]);
 
-  const toggleMetronome = useCallback(() => {
+  const _toggleMetronome = useCallback(() => {
     setMetronomeEnabled((prev) => !prev);
   }, []);
 
-  const seek = useCallback(
+  const _seek = useCallback(
     (position: number) => {
       setLocalPosition(position);
-      store.setPosition(position);
+      store?.setPosition(position);
     },
     [store],
   );
 
-  const seekToBar = useCallback(
+  const _seekToBar = useCallback(
     (bar: number) => {
-      const position = (bar - 1) * beatsPerBar;
+      const _position = (bar - 1) * beatsPerBar;
       seek(position);
     },
     [seek],
   );
 
-  const setTempo = useCallback(
+  const _setTempo = useCallback(
     (bpm: number) => {
-      const clampedBpm = Math.max(20, Math.min(999, bpm));
-      store.setTempo(clampedBpm);
+      const _clampedBpm = Math?.max(20, Math?.min(999, bpm));
+      store?.setTempo(clampedBpm);
     },
     [store],
   );
 
-  const setLoopRegion = useCallback((start: number, end: number) => {
+  const _setLoopRegion = useCallback((start: number, end: number) => {
     setLoopStart(start);
     setLoopEnd(end);
   }, []);
 
-  const nudgeForward = useCallback(
+  const _nudgeForward = useCallback(
     (amount = 1) => {
       seek(localPosition + amount);
     },
     [localPosition, seek],
   );
 
-  const nudgeBackward = useCallback(
+  const _nudgeBackward = useCallback(
     (amount = 1) => {
-      seek(Math.max(0, localPosition - amount));
+      seek(Math?.max(0, localPosition - amount));
     },
     [localPosition, seek],
   );
 
-  const goToStart = useCallback(() => {
+  const _goToStart = useCallback(() => {
     seek(0);
   }, [seek]);
 
-  const goToEnd = useCallback(() => {
+  const _goToEnd = useCallback(() => {
     seek(300);
   }, [seek]);
 
-  const toggleCountIn = useCallback(() => {
+  const _toggleCountIn = useCallback(() => {
     setCountInEnabled((prev) => !prev);
   }, []);
 
@@ -240,50 +240,50 @@ export function usePrecisionTransport(): [
 
 export function useTransportShortcuts(controls: PrecisionTransportControls) {
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const _handleKeyDown = (e: KeyboardEvent) => {
       if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
+        e?.target instanceof HTMLInputElement ||
+        e?.target instanceof HTMLTextAreaElement
       )
         return;
 
-      switch (e.code) {
+      switch (e?.code) {
         case "Space":
-          e.preventDefault();
+          e?.preventDefault();
           break;
         case "Home":
-          e.preventDefault();
-          controls.goToStart();
+          e?.preventDefault();
+          controls?.goToStart();
           break;
         case "End":
-          e.preventDefault();
-          controls.goToEnd();
+          e?.preventDefault();
+          controls?.goToEnd();
           break;
         case "ArrowLeft":
-          if (e.shiftKey) {
-            controls.nudgeBackward(4);
+          if (e?.shiftKey) {
+            controls?.nudgeBackward(4);
           } else {
-            controls.nudgeBackward(0.25);
+            controls?.nudgeBackward(0?.25);
           }
           break;
         case "ArrowRight":
-          if (e.shiftKey) {
-            controls.nudgeForward(4);
+          if (e?.shiftKey) {
+            controls?.nudgeForward(4);
           } else {
-            controls.nudgeForward(0.25);
+            controls?.nudgeForward(0?.25);
           }
           break;
         case "KeyC":
-          if (e.shiftKey) controls.toggleCountIn();
+          if (e?.shiftKey) controls?.toggleCountIn();
           break;
         case "KeyK":
-          controls.toggleMetronome();
+          controls?.toggleMetronome();
           break;
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window?.addEventListener("keydown", handleKeyDown);
+    return () => window?.removeEventListener("keydown", handleKeyDown);
   }, [controls]);
 }
 

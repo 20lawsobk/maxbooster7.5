@@ -3,29 +3,17 @@ import { type Server } from "http";
 import crypto from "crypto";
 import { execSync } from "child_process";
 import fs from "fs";
-import { isProductionEnv } from "./lib/envHelpers.js";
-import { storage } from "./storage.js";
-import { db } from "./db.js";
+import { isProductionEnv } from "./lib/envHelpers?.js";
+import { storage } from "./storage?.js";
+import { db } from "./db?.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import {
-  analytics,
-  userStorage,
-  userStorageFiles,
-  users,
-  notifications,
-  pushSubscriptions,
-  royaltyTransactions,
-  royaltySplits,
-  taxForms,
-  releases,
-  royaltyStatements,
-} from "../shared/schema.js";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements } from "../shared/schema?.js";
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { getCsrfToken } from "./middleware/csrf.js";
+import { getCsrfToken } from "./middleware/csrf?.js";
 import Stripe from "stripe";
-import { getStripePriceIds } from "./services/stripeSetup.js";
-import { getBaseUrl } from "./config/defaults.js";
+import { getStripePriceIds } from "./services/stripeSetup?.js";
+import { getBaseUrl } from "./config/defaults?.js";
 import {
   generateSecret as otpGenerateSecret,
   verifySync,
@@ -35,15 +23,15 @@ import {
   loginRateLimiter,
   registerRateLimiter,
   forgotPasswordRateLimiter,
-} from "./middleware/rateLimiter.js";
-import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.js";
-import { requestIdMiddleware } from "./middleware/requestId.js";
+} from "./middleware/rateLimiter?.js";
+import { criticalEndpointLimiter } from "./middleware/globalRateLimiter?.js";
+import { requestIdMiddleware } from "./middleware/requestId?.js";
 import {
   cacheMiddleware,
   invalidateCacheOnMutation,
-} from "./middleware/apiCache.js";
+} from "./middleware/apiCache?.js";
 
-const authenticator = {
+const _authenticator = {
   generateSecret: () => otpGenerateSecret(),
   keyuri: (account: string, issuer: string, secret: string) =>
     generateURI({ label: account, issuer, secret, strategy: "totp" }),
@@ -51,18 +39,18 @@ const authenticator = {
     verifySync({ token, secret, strategy: "totp", epochTolerance: 1 }),
 };
 import QRCode from "qrcode";
-import { emailService } from "./services/emailService.js";
-import { upload, createHardenedUpload } from "./middleware/uploadHandler.js";
-import { logger } from "./logger.js";
-import { achievementService } from "./services/achievementService.js";
-import { notificationService } from "./services/notificationService.js";
-import { jwtAuthService } from "./services/jwtAuthService.js";
-import { artistProfileService } from "./services/artistProfileService.js";
+import { emailService } from "./services/emailService?.js";
+import { upload, createHardenedUpload } from "./middleware/uploadHandler?.js";
+import { logger } from "./logger?.js";
+import { achievementService } from "./services/achievementService?.js";
+import { notificationService } from "./services/notificationService?.js";
+import { jwtAuthService } from "./services/jwtAuthService?.js";
+import { artistProfileService } from "./services/artistProfileService?.js";
 
-const log = (msg: string) => logger.info(msg);
+const _log = (msg: string) => logger?.info(msg);
 
 // Helper to safely load route modules.
-// `module.default` may be either an Express Router (has a `stack` array) or a
+// `module?.default` may be either an Express Router (has a `stack` array) or a
 // setup function `(app) => void`. We narrow with a structural cast at each branch.
 type LoadedModule = {
   default?: unknown;
@@ -78,11 +66,11 @@ async function safeLoadRoute(
   importFn: () => Promise<LoadedModule>,
 ): Promise<{ type: "router" | "function" | "skip"; value: unknown } | null> {
   try {
-    const mod = await importFn();
+    const _mod = await importFn();
 
     // Check if module has a default export that's a router
-    if (mod.default && typeof mod.default === "function") {
-      const fn = mod.default as SetupFn;
+    if (mod?.default && typeof mod?.default === "function") {
+      const _fn = mod?.default as SetupFn;
       // Express routers carry a `stack` array.
       if ((fn as RouterLike).stack !== undefined) {
         log(`Loaded route: ${name}`);
@@ -94,26 +82,26 @@ async function safeLoadRoute(
     }
 
     // Check for named exports that are setup functions
-    if (typeof mod.setupReliabilityEndpoints === "function") {
+    if (typeof mod?.setupReliabilityEndpoints === "function") {
       log(`Loaded route function: ${name}`);
-      return { type: "function", value: mod.setupReliabilityEndpoints };
+      return { type: "function", value: mod?.setupReliabilityEndpoints };
     }
 
     // Check if the module itself is a router
-    if (mod.stack !== undefined) {
+    if (mod?.stack !== undefined) {
       log(`Loaded route: ${name}`);
       return { type: "router", value: mod };
     }
 
     // Module doesn't export anything usable — this is a programming error, not a runtime condition
-    logger.warn(
+    logger?.warn(
       `[routes] Route module '${name}' loaded successfully but exports no router or setup function — check the module's default export`,
     );
     log(`ERROR: ${name} has no usable export (router or setup function)`);
     return { type: "skip", value: null };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    const criticalRoutes = [
+    const _message = error instanceof Error ? error?.message : String(error);
+    const _criticalRoutes = [
       "auth",
       "billing",
       "stripeWebhook",
@@ -121,16 +109,16 @@ async function safeLoadRoute(
       "security",
       "storage",
     ];
-    if (criticalRoutes.includes(name)) {
+    if (criticalRoutes?.includes(name)) {
       log(`ERROR: Critical route '${name}' failed to load - ${message}`);
-      logger.warn(
+      logger?.warn(
         { err: error },
         `[routes] CRITICAL route loading failure for '${name}'`,
       );
     } else {
       log(`Warning: Could not load ${name} - ${message}`);
     }
-    logger.error({ err: error }, `[routes] LOAD FAILURE '${name}'`);
+    logger?.error({ err: error }, `[routes] LOAD FAILURE '${name}'`);
     return null;
   }
 }
@@ -139,9 +127,9 @@ async function safeLoadRoute(
 declare global {
   namespace Express {
     interface Request {
-      user?: import("../shared/schema.js").User;
+      user?: import("../shared/schema?.js").User;
       isAuthenticated(): this is Request & {
-        user: import("../shared/schema.js").User;
+        user: import("../shared/schema?.js").User;
       };
     }
   }
@@ -153,94 +141,94 @@ declare global {
 // cache expiry within 30 s — acceptable for non-critical reads.
 // The cache is keyed by userId (UUID string) and bounded to 2 000 entries.
 interface _UserCacheEntry {
-  user: import("../shared/schema.js").User;
+  user: import("../shared/schema?.js").User;
   expiresAt: number;
 }
-const _userCache = new Map<string, _UserCacheEntry>();
-const _USER_CACHE_TTL_MS = 30_000; // 30 seconds
-const _USER_CACHE_MAX = 2_000;
+const __userCache = new Map<string, _UserCacheEntry>();
+const __USER_CACHE_TTL_MS = 30_000; // 30 seconds
+const __USER_CACHE_MAX = 2_000;
 
 function _userCacheGet(
   userId: string,
-): import("../shared/schema.js").User | undefined {
-  const e = _userCache.get(userId);
+): import("../shared/schema?.js").User | undefined {
+  const _e = _userCache?.get(userId);
   if (!e) return undefined;
-  if (Date.now() > e.expiresAt) {
-    _userCache.delete(userId);
+  if (Date?.now() > e?.expiresAt) {
+    _userCache?.delete(userId);
     return undefined;
   }
-  return e.user;
+  return e?.user;
 }
-function _userCacheSet(user: import("../shared/schema.js").User): void {
-  if (_userCache.size >= _USER_CACHE_MAX) {
-    const oldest = _userCache.keys().next().value;
-    if (oldest) _userCache.delete(oldest);
+function _userCacheSet(user: import("../shared/schema?.js").User): void {
+  if (_userCache?.size >= _USER_CACHE_MAX) {
+    const _oldest = _userCache?.keys().next().value;
+    if (oldest) _userCache?.delete(oldest);
   }
-  _userCache.set(user.id, { user, expiresAt: Date.now() + _USER_CACHE_TTL_MS });
+  _userCache?.set(user?.id, { user, expiresAt: Date?.now() + _USER_CACHE_TTL_MS });
 }
 export function _userCacheInvalidate(userId: string): void {
-  _userCache.delete(userId);
+  _userCache?.delete(userId);
 }
 
 // Middleware to attach user to request
 async function attachUser(req: Request, _res: Response, next: NextFunction) {
-  const isProduction = isProductionEnv();
-  const isApiRoute = req.path.startsWith("/api/");
+  const _isProduction = isProductionEnv();
+  const _isApiRoute = req?.path.startsWith("/api/");
 
-  if (req.session?.userId) {
+  if (req?.session?.userId) {
     try {
       // L1 process cache: avoids a Neon round-trip on every request for the
       // same user — critical when background tasks hold DB connections.
-      const cached = _userCacheGet(req.session.userId);
+      const _cached = _userCacheGet(req?.session.userId);
       if (cached) {
-        req.user = cached;
+        req?.user = cached;
       } else {
-        const user = await storage.getUser(req.session.userId);
+        const _user = await storage?.getUser(req?.session.userId);
         if (user) {
-          req.user = user;
+          req?.user = user;
           _userCacheSet(user);
         } else if (isProduction && isApiRoute) {
-          logger.info(
-            `[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`,
+          logger?.info(
+            `[Session] User not found for userId: ${req?.session.userId}, path: ${req?.path}`,
           );
         }
       }
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching user for request");
+      logger?.warn({ err: error }, "Error fetching user for request");
     }
   } else if (
     isProduction &&
     isApiRoute &&
-    req.path !== "/api/auth/me" &&
-    req.path !== "/api/csrf-token" &&
-    req.path !== "/api/health" &&
-    req.path !== "/api/version"
+    req?.path !== "/api/auth/me" &&
+    req?.path !== "/api/csrf-token" &&
+    req?.path !== "/api/health" &&
+    req?.path !== "/api/version"
   ) {
-    const sessionCookie =
-      req.cookies?.sessionId || req.headers.cookie?.includes("sessionId");
-    logger.info(
-      `[Session] No userId in session for ${req.path}, cookie present: ${!!sessionCookie}, session exists: ${!!req.session}`,
+    const _sessionCookie =
+      req?.cookies?.sessionId || req?.headers.cookie?.includes("sessionId");
+    logger?.info(
+      `[Session] No userId in session for ${req?.path}, cookie present: ${!!sessionCookie}, session exists: ${!!req?.session}`,
     );
   }
 
   // Add isAuthenticated method
-  req.isAuthenticated = function (): this is Request & {
-    user: import("../shared/schema.js").User;
+  req?.isAuthenticated = function (): this is Request & {
+    user: import("../shared/schema?.js").User;
   } {
-    return !!this.user;
+    return !!this?.user;
   };
 
   next();
 }
 
 // ── Session operation helpers (VM-reserved PDIM) ──────────────────────────────
-// Retry session.regenerate / session.save up to 3× with short delays.
+// Retry session?.regenerate / session?.save up to 3× with short delays.
 // PDIM is a reserved VM — any 503 is transient (< 2 s). Retrying handles it.
 
 function sessionRegenerate(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
-    const attempt = (remaining: number) => {
-      req.session.regenerate((err) => {
+    const _attempt = (remaining: number) => {
+      req?.session.regenerate((err) => {
         if (!err) return resolve();
         if (remaining <= 0) return reject(err);
         setTimeout(() => attempt(remaining - 1), 400);
@@ -252,8 +240,8 @@ function sessionRegenerate(req: Request): Promise<void> {
 
 function sessionSave(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
-    const attempt = (remaining: number) => {
-      req.session.save((err) => {
+    const _attempt = (remaining: number) => {
+      req?.session.save((err) => {
         if (!err) return resolve();
         if (remaining <= 0) return reject(err);
         setTimeout(() => attempt(remaining - 1), 400);
@@ -270,77 +258,77 @@ export async function registerRoutes(
   // Assign a unique request ID to every request for end-to-end tracing.
   // This populates AsyncLocalStorage so every logger.* call automatically
   // includes requestId and duration without any manual threading.
-  app.use(requestIdMiddleware);
+  app?.use(requestIdMiddleware);
 
   // Apply user attachment middleware to all routes
-  app.use(attachUser);
+  app?.use(attachUser);
 
   // Smart per-user API response caching (30 s TTL, ETag, stale-while-revalidate)
   // GET responses are cached per-user+path+query; any mutation clears that user's cache.
-  app.use(
+  app?.use(
     cacheMiddleware({ ttlSeconds: 30, varyByUser: true, varyByQuery: true }),
   );
-  app.use(invalidateCacheOnMutation());
+  app?.use(invalidateCacheOnMutation());
 
   // Critical endpoint rate limiting — tighter per-IP limits for AI, billing, and admin routes
   // which are the most expensive per-request and most attractive DDoS/abuse targets
-  app.use("/api/ai", criticalEndpointLimiter);
-  app.use("/api/career-coach", criticalEndpointLimiter);
-  app.use("/api/billing", criticalEndpointLimiter);
-  app.use("/api/admin", criticalEndpointLimiter);
-  app.use("/api/studio/generation", criticalEndpointLimiter);
+  app?.use("/api/ai", criticalEndpointLimiter);
+  app?.use("/api/career-coach", criticalEndpointLimiter);
+  app?.use("/api/billing", criticalEndpointLimiter);
+  app?.use("/api/admin", criticalEndpointLimiter);
+  app?.use("/api/studio/generation", criticalEndpointLimiter);
 
   // CSRF Token endpoint
-  app.get("/api/csrf-token", getCsrfToken);
+  app?.get("/api/csrf-token", getCsrfToken);
 
   // Auth: Get current user
-  app.get("/api/auth/me", async (req: Request, res: Response) => {
-    const isProduction = isProductionEnv();
+  app?.get("/api/auth/me", async (req: Request, res: Response) => {
+    const _isProduction = isProductionEnv();
 
     // Production debugging for session issues
     if (isProduction) {
-      const hasCookie = req.headers.cookie?.includes("sessionId");
-      const hasSession = !!req.session;
-      const hasUserId = !!req.session?.userId;
-      req.session?.id?.substring(0, 8) || "none";
+      const _hasCookie = req?.headers.cookie?.includes("sessionId");
+      const _hasSession = !!req?.session;
+      const _hasUserId = !!req?.session?.userId;
+      req?.session?.id?.substring(0, 8) || "none";
 
-      logger.info({ hasSession, hasUserId }, "[Auth/me] Auth check");
+      logger?.info({ hasSession, hasUserId }, "[Auth/me] Auth check");
 
-      if (!req.user) {
+      if (!req?.user) {
         if (hasCookie && !hasUserId) {
-          logger.info(
+          logger?.info(
             "[Auth/me] Cookie present but no userId - session may have expired or Redis issue",
           );
         } else if (!hasCookie) {
-          logger.info("[Auth/me] No sessionId cookie present in request");
+          logger?.info("[Auth/me] No sessionId cookie present in request");
         }
       }
     }
 
-    if (req.user) {
+    if (req?.user) {
       const {
         password,
         twoFactorSecret,
         passwordResetToken,
         emailVerificationToken,
         ...safeUser
-      } = req.user!;
-      if (safeUser.email === "demo@maxbooster.ai") {
-        safeUser.isDemo = true;
+      } = req?.user!;
+      if (safeUser?.email === "demo@maxbooster?.ai") {
+        safeUser?.isDemo = true;
       }
-      return res.json(safeUser);
+      return res?.json(safeUser);
     }
-    return res.json(null);
+    return res?.json(null);
   });
 
   // Auth: Register
-  app.post(
+  app?.post(
     "/api/auth/register",
     registerRateLimiter,
     async (req: Request, res: Response) => {
       try {
         const { email, password, username, firstName, lastName, artistName } =
-          req.body;
+          req?.body;
 
         if (!email || !password) {
           return res
@@ -348,47 +336,49 @@ export async function registerRoutes(
             .json({ message: "Email and password are required" });
         }
 
-        const { confirmPassword } = req.body;
+        const { confirmPassword } = req?.body;
         if (confirmPassword !== undefined && confirmPassword !== password) {
-          return res.status(400).json({ message: "Passwords do not match" });
+          return res?.status(400).json({ message: "Passwords do not match" });
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-          return res.status(400).json({ message: "Invalid email format" });
+        const _emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex?.test(email)) {
+          return res?.status(400).json({ message: "Invalid email format" });
         }
 
-        if (password.length < 8) {
+        if (password?.length < 8) {
           return res
             .status(400)
             .json({ message: "Password must be at least 8 characters long" });
         }
 
         // Check if email already exists
-        const existingUser = await storage.getUserByEmail(email);
+        const _existingUser = await storage?.getUserByEmail(email);
         if (existingUser) {
-          return res.status(400).json({ message: "Email already registered" });
+          return res?.status(400).json({ message: "Email already registered" });
         }
 
         // Check if username already exists (if provided)
         if (username) {
-          const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
-          if (!usernameRegex.test(username)) {
-            return res.status(400).json({
-              message: "Username must be 3-30 alphanumeric characters",
-            });
+          const _usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+          if (!usernameRegex?.test(username)) {
+            return res
+              .status(400)
+              .json({
+                message: "Username must be 3-30 alphanumeric characters",
+              });
           }
 
-          const existingUsername = await storage.getUserByUsername(username);
+          const _existingUsername = await storage?.getUserByUsername(username);
           if (existingUsername) {
-            return res.status(400).json({ message: "Username already taken" });
+            return res?.status(400).json({ message: "Username already taken" });
           }
         }
 
-        const hashedPassword = await bcrypt.hash(password, 12);
+        const _hashedPassword = await bcrypt?.hash(password, 12);
         let user;
         try {
-          user = await storage.createUser({
+          user = await storage?.createUser({
             email,
             password: hashedPassword,
             username: username || null,
@@ -398,8 +388,8 @@ export async function registerRoutes(
         } catch (createErr: unknown) {
           if (
             createErr instanceof Error &&
-            (("code" in createErr && createErr.code === "23505") ||
-              createErr.message.toLowerCase().includes("unique"))
+            (("code" in createErr && createErr?.code === "23505") ||
+              createErr?.message.toLowerCase().includes("unique"))
           ) {
             return res
               .status(400)
@@ -418,10 +408,10 @@ export async function registerRoutes(
 
         try {
           await sessionRegenerate(req);
-          req.session.userId = user.id;
+          req?.session.userId = user?.id;
           await sessionSave(req);
         } catch (sessionErr) {
-          logger.warn(
+          logger?.warn(
             { err: sessionErr },
             "[Register] Session operation failed after retries",
           );
@@ -433,7 +423,7 @@ export async function registerRoutes(
         // Pre-warm the per-process user cache so the very next requests (profile,
         // sessions, login-history) don't need a DB round-trip while background
         // tasks from register/login still hold Neon connections.
-        _userCacheSet(user as import("../shared/schema.js").User);
+        _userCacheSet(user as import("../shared/schema?.js").User);
 
         emailService
           .sendWelcomeEmail({
@@ -441,16 +431,16 @@ export async function registerRoutes(
             email,
           })
           .catch((err: unknown) =>
-            logger.info({ err: err }, "Welcome email failed (non-blocking)"),
+            logger?.info({ err: err }, "Welcome email failed (non-blocking)"),
           );
 
-        Promise.race([
-          notificationService.sendAdminNewUserNotification(email, user.id),
+        Promise?.race([
+          notificationService?.sendAdminNewUserNotification(email, user?.id),
           new Promise<never>((_, rej) =>
             setTimeout(() => rej(new Error("bg-timeout")), 3000),
           ),
         ]).catch((err: unknown) =>
-          logger.info(
+          logger?.info(
             { err: err },
             "Admin new-user notification failed (non-blocking)",
           ),
@@ -459,51 +449,51 @@ export async function registerRoutes(
         if (
           artistName &&
           typeof artistName === "string" &&
-          artistName.trim().length > 0
+          artistName?.trim().length > 0
         ) {
-          const trimmedName = artistName.trim();
+          const _trimmedName = artistName?.trim();
           artistProfileService
             .createProfile({
-              userId: user.id,
+              userId: user?.id,
               artistName: trimmedName,
               isNewArtist: true,
             })
             .then((profile) => {
-              logger.info(
-                `[Register] Artist profile created for new user ${user.id}: "${trimmedName}" (id=${profile.id})`,
+              logger?.info(
+                `[Register] Artist profile created for new user ${user?.id}: "${trimmedName}" (id=${profile?.id})`,
               );
-              return artistProfileService.autoDiscover(profile.id, user.id);
+              return artistProfileService?.autoDiscover(profile?.id, user?.id);
             })
             .then((discoverResult) => {
-              logger.info(
-                `[Register] Auto-discover complete for new user ${user.id}: saved=${discoverResult.saved} platforms=[${discoverResult.savedFields.join(",")}]`,
+              logger?.info(
+                `[Register] Auto-discover complete for new user ${user?.id}: saved=${discoverResult?.saved} platforms=[${discoverResult?.savedFields.join(",")}]`,
               );
             })
             .catch((err: unknown) => {
-              logger.info(
+              logger?.info(
                 { err: err },
                 "[Register] Artist profile auto-discover failed (non-blocking)",
               );
             });
         }
 
-        return res.json(safeUser);
+        return res?.json(safeUser);
       } catch (error) {
-        logger.warn({ err: error }, "Registration error");
-        return res.status(500).json({ message: "Registration failed" });
+        logger?.warn({ err: error }, "Registration error");
+        return res?.status(500).json({ message: "Registration failed" });
       }
     },
   );
 
   // Auth: Login (accepts username or email)
   // SECURITY: Session regeneration implemented to prevent session fixation attacks
-  app.post(
+  app?.post(
     "/api/auth/login",
     loginRateLimiter,
     async (req: Request, res: Response) => {
       try {
-        const { email, username, password, twoFactorCode } = req.body;
-        const identifier = email || username;
+        const { email, username, password, twoFactorCode } = req?.body;
+        const _identifier = email || username;
 
         if (!identifier || !password) {
           return res
@@ -512,64 +502,64 @@ export async function registerRoutes(
         }
 
         // Try to find user by email first, then by username
-        let user = await storage.getUserByEmail(identifier);
+        let user = await storage?.getUserByEmail(identifier);
         if (!user) {
-          user = await storage.getUserByUsername(identifier);
+          user = await storage?.getUserByUsername(identifier);
         }
 
-        // Always run bcrypt.compare to prevent timing-based user enumeration.
+        // Always run bcrypt?.compare to prevent timing-based user enumeration.
         // When no user is found we compare against a dummy hash so response time
         // is indistinguishable from a real password mismatch (prevents user existence
         // detection via response time differences).
-        const DUMMY_HASH =
+        const _DUMMY_HASH =
           "$2b$12$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234";
-        const candidateHash = user?.password ?? DUMMY_HASH;
+        const _candidateHash = user?.password ?? DUMMY_HASH;
         let isValid = false;
         try {
-          isValid = await bcrypt.compare(password, candidateHash);
+          isValid = await bcrypt?.compare(password, candidateHash);
         } catch {
           isValid = false;
         }
 
         if (!user || !isValid) {
-          return res.status(401).json({ message: "Invalid email or password" });
+          return res?.status(401).json({ message: "Invalid email or password" });
         }
 
         // Check if 2FA is enabled
-        if (user.twoFactorEnabled && user.twoFactorSecret) {
+        if (user?.twoFactorEnabled && user?.twoFactorSecret) {
           if (!twoFactorCode) {
-            return res.status(200).json({
+            return res?.status(200).json({
               requiresTwoFactor: true,
               message: "Two-factor authentication required",
             });
           }
 
           const { verifySync: otpVerifySync } = await import("otplib");
-          const isCodeValid = otpVerifySync({
+          const _isCodeValid = otpVerifySync({
             token: twoFactorCode,
-            secret: user.twoFactorSecret,
+            secret: user?.twoFactorSecret,
             strategy: "totp",
             epochTolerance: 1,
           });
 
           if (!isCodeValid) {
-            return res.status(401).json({ message: "Invalid 2FA code" });
+            return res?.status(401).json({ message: "Invalid 2FA code" });
           }
         }
 
         try {
           await sessionRegenerate(req);
-          req.session.userId = user.id;
+          req?.session.userId = user?.id;
           // If the user has 2FA enabled and passed the TOTP check above, mark this
           // session as 2FA-verified so require2FA gates on privileged routes pass.
-          if (user.twoFactorEnabled) {
+          if (user?.twoFactorEnabled) {
             (
-              req.session as unknown as Record<string, unknown>
+              req?.session as unknown as Record<string, unknown>
             ).twoFactorVerified = true;
           }
           await sessionSave(req);
 
-          logger.info({ userId: user.id }, "[Login] SUCCESS for userId");
+          logger?.info({ userId: user?.id }, "[Login] SUCCESS for userId");
 
           // Pre-warm the per-process user cache so subsequent requests (profile,
           // sessions, login-history) need zero DB round-trips even while background
@@ -578,22 +568,22 @@ export async function registerRoutes(
 
           // Background tasks — fire-and-forget with 3 s hard timeout so Neon
           // DB connections are released quickly and don't starve foreground requests.
-          const _bgTimeout = (ms: number) =>
+          const __bgTimeout = (ms: number) =>
             new Promise<never>((_, rej) =>
               setTimeout(() => rej(new Error("bg-timeout")), ms),
             );
-          Promise.race([
-            achievementService.updateStreak(user.id, "login"),
+          Promise?.race([
+            achievementService?.updateStreak(user?.id, "login"),
             _bgTimeout(3000),
           ]).catch((e: unknown) =>
-            logger.warn({ err: e }, "[Login] Failed to update login streak:"),
+            logger?.warn({ err: e }, "[Login] Failed to update login streak:"),
           );
 
-          Promise.race([
-            notificationService.sendLoginSecurityNotification(
-              user.id,
-              req.ip || undefined,
-              req.headers["user-agent"] || undefined,
+          Promise?.race([
+            notificationService?.sendLoginSecurityNotification(
+              user?.id,
+              req?.ip || undefined,
+              req?.headers["user-agent"] || undefined,
             ),
             _bgTimeout(3000),
           ]).catch(() => {});
@@ -610,21 +600,21 @@ export async function registerRoutes(
           // Bearer-token fallback when the PDIM session store is unavailable.
           let sessionToken: string | null = null;
           try {
-            const tokenPair = await jwtAuthService.issueTokens(
-              user.id,
+            const _tokenPair = await jwtAuthService?.issueTokens(
+              user?.id,
               ((user as Record<string, unknown>).role as string) || "user",
             );
-            sessionToken = tokenPair.accessToken;
+            sessionToken = tokenPair?.accessToken;
           } catch (tokenErr) {
-            logger.warn(
+            logger?.warn(
               { err: tokenErr },
               "[Login] Failed to issue JWT session token — session-only auth will be used",
             );
           }
 
-          return res.json({ ...safeUser, sessionToken });
+          return res?.json({ ...safeUser, sessionToken });
         } catch (sessionErr) {
-          logger.warn(
+          logger?.warn(
             { err: sessionErr },
             "[Login] Session operation failed after retries",
           );
@@ -633,46 +623,46 @@ export async function registerRoutes(
             .json({ message: "Login failed - session error" });
         }
       } catch (error) {
-        logger.warn({ err: error }, "Login error");
-        return res.status(500).json({ message: "Login failed" });
+        logger?.warn({ err: error }, "Login error");
+        return res?.status(500).json({ message: "Login failed" });
       }
     },
   );
 
   // Auth: Logout
-  app.post("/api/auth/logout", (req: Request, res: Response) => {
-    const userId = req.session?.userId;
-    req.session.destroy((err) => {
+  app?.post("/api/auth/logout", (req: Request, res: Response) => {
+    const _userId = req?.session?.userId;
+    req?.session.destroy((err) => {
       if (err) {
-        return res.status(500).json({ message: "Logout failed" });
+        return res?.status(500).json({ message: "Logout failed" });
       }
       if (userId) {
         jwtAuthService
           .revokeAllUserTokens(userId, "User logout")
           .catch(() => {});
       }
-      res.clearCookie("sessionId", { path: "/" });
-      res.json({ message: "Logged out successfully" });
+      res?.clearCookie("sessionId", { path: "/" });
+      res?.json({ message: "Logged out successfully" });
     });
   });
 
   // Auth: Inactivity heartbeat — called by the frontend whenever the user is active.
   // Rolling session auto-extends the cookie. No DB update needed.
-  app.post("/api/auth/heartbeat", (req: Request, res: Response) => {
-    const userId = req.session?.userId || req.user?.id;
+  app?.post("/api/auth/heartbeat", (req: Request, res: Response) => {
+    const _userId = req?.session?.userId || req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ ok: false });
+      return res?.status(401).json({ ok: false });
     }
-    req.session.touch?.();
-    return res.json({ ok: true });
+    req?.session.touch?.();
+    return res?.json({ ok: true });
   });
 
   // Auth: Session refresh heartbeat (keeps session alive, renews CSRF)
-  app.post("/api/auth/refresh-token", async (req: Request, res: Response) => {
-    const userId = req.session?.userId || req.user?.id;
+  app?.post("/api/auth/refresh-token", async (req: Request, res: Response) => {
+    const _userId = req?.session?.userId || req?.user?.id;
 
     if (!userId) {
-      return res.status(401).json({
+      return res?.status(401).json({
         success: false,
         action: "reauth_required",
         error: "session_expired",
@@ -681,9 +671,9 @@ export async function registerRoutes(
     }
 
     try {
-      const user = await storage.getUser(userId);
+      const _user = await storage?.getUser(userId);
       if (!user) {
-        return res.status(401).json({
+        return res?.status(401).json({
           success: false,
           action: "reauth_required",
           error: "user_not_found",
@@ -691,33 +681,33 @@ export async function registerRoutes(
         });
       }
 
-      const expiresAt = new Date(
-        Date.now() + 24 * 60 * 60 * 1000,
+      const _expiresAt = new Date(
+        Date?.now() + 24 * 60 * 60 * 1000,
       ).toISOString();
 
       // Re-issue a fresh JWT access token for the Bearer-token fallback path.
       let sessionToken: string | null = null;
       try {
-        const tokenPair = await jwtAuthService.issueTokens(
+        const _tokenPair = await jwtAuthService?.issueTokens(
           String(userId),
           ((user as Record<string, unknown>).role as string) || "user",
         );
-        sessionToken = tokenPair.accessToken;
+        sessionToken = tokenPair?.accessToken;
       } catch (tokenErr) {
-        logger.warn(
+        logger?.warn(
           { err: tokenErr },
           "[RefreshToken] Failed to re-issue JWT session token",
         );
       }
 
-      return res.json({
+      return res?.json({
         success: true,
         expiresAt,
         sessionToken,
         message: "Session refreshed",
       });
     } catch (error) {
-      logger.warn({ err: error }, "[Auth] refresh-token error:");
+      logger?.warn({ err: error }, "[Auth] refresh-token error:");
       return res
         .status(500)
         .json({ success: false, message: "Refresh failed" });
@@ -725,58 +715,58 @@ export async function registerRoutes(
   });
 
   // Auth: Onboarding status
-  app.get("/api/auth/onboarding-status", (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/onboarding-status", (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
-    return res.json({
-      hasCompletedOnboarding: req.user.onboardingCompleted || false,
-      currentStep: req.user.onboardingStep || 0,
+    return res?.json({
+      hasCompletedOnboarding: req?.user.onboardingCompleted || false,
+      currentStep: req?.user.onboardingStep || 0,
     });
   });
 
   // Auth: Update onboarding
-  app.post(
+  app?.post(
     "/api/auth/update-onboarding",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
         const { step, completed, hasCompletedOnboarding, onboardingData } =
-          req.body;
+          req?.body;
 
         // Support both legacy format (step/completed) and new format (hasCompletedOnboarding/onboardingData)
         const updateData: Record<string, any> = {};
 
         if (hasCompletedOnboarding !== undefined) {
-          updateData.onboardingCompleted = hasCompletedOnboarding;
+          updateData?.onboardingCompleted = hasCompletedOnboarding;
         } else if (completed !== undefined) {
-          updateData.onboardingCompleted = completed;
+          updateData?.onboardingCompleted = completed;
         }
 
         if (step !== undefined) {
-          updateData.onboardingStep = step;
+          updateData?.onboardingStep = step;
         }
 
         // Store onboarding preferences if provided
         if (onboardingData) {
-          updateData.onboardingData = onboardingData;
+          updateData?.onboardingData = onboardingData;
         }
 
-        await storage.updateUser(req.user.id, updateData);
-        return res.json({ success: true });
+        await storage?.updateUser(req?.user.id, updateData);
+        return res?.json({ success: true });
       } catch (error) {
-        logger.warn({ err: error }, "Update onboarding error");
-        return res.status(500).json({ message: "Failed to update onboarding" });
+        logger?.warn({ err: error }, "Update onboarding error");
+        return res?.status(500).json({ message: "Failed to update onboarding" });
       }
     },
   );
 
   // Auth: Get profile
-  app.get("/api/auth/profile", (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/profile", (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     const {
       password,
@@ -784,14 +774,14 @@ export async function registerRoutes(
       passwordResetToken,
       emailVerificationToken,
       ...profile
-    } = req.user!;
-    return res.json(profile);
+    } = req?.user!;
+    return res?.json(profile);
   });
 
   // Auth: Update profile
-  app.put("/api/auth/profile", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.put("/api/auth/profile", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       const {
@@ -802,10 +792,10 @@ export async function registerRoutes(
         website,
         location,
         socialLinks,
-      } = req.body;
-      const stripHtml = (str: string | undefined) =>
-        str ? str.replace(/[<>&"'`]/g, "").trim() : str;
-      await storage.updateUser(req.user.id, {
+      } = req?.body;
+      const _stripHtml = (str: string | undefined) =>
+        str ? str?.replace(/[<>&"'`]/g, "").trim() : str;
+      await storage?.updateUser(req?.user.id, {
         firstName: stripHtml(firstName),
         lastName: stripHtml(lastName),
         artistName: stripHtml(artistName),
@@ -814,19 +804,19 @@ export async function registerRoutes(
         location: stripHtml(location),
         socialLinks,
       });
-      return res.json({ success: true });
+      return res?.json({ success: true });
     } catch (error) {
-      logger.warn({ err: error }, "Update profile error");
-      return res.status(500).json({ message: "Failed to update profile" });
+      logger?.warn({ err: error }, "Update profile error");
+      return res?.status(500).json({ message: "Failed to update profile" });
     }
   });
 
   // Auth: Get notification settings (persisted to database)
-  app.get("/api/auth/notifications", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/notifications", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
-    const defaultSettings = {
+    const _defaultSettings = {
       emailNotifications: true,
       pushNotifications: true,
       weeklyReports: true,
@@ -837,17 +827,17 @@ export async function registerRoutes(
       paymentAlerts: true,
       securityAlerts: true,
     };
-    const userSettings = req.user.notificationSettings as Record<
+    const _userSettings = req?.user.notificationSettings as Record<
       string,
       any
     > | null;
-    return res.json({ ...defaultSettings, ...userSettings });
+    return res?.json({ ...defaultSettings, ...userSettings });
   });
 
   // Auth: Update notification settings (persisted to database)
-  app.put("/api/auth/notifications", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.put("/api/auth/notifications", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       const {
@@ -860,10 +850,10 @@ export async function registerRoutes(
         releaseAlerts,
         paymentAlerts,
         securityAlerts,
-      } = req.body;
-      const currentSettings =
-        (req.user.notificationSettings as Record<string, any>) || {};
-      const updatedSettings = {
+      } = req?.body;
+      const _currentSettings =
+        (req?.user.notificationSettings as Record<string, any>) || {};
+      const _updatedSettings = {
         ...currentSettings,
         ...(emailNotifications !== undefined && { emailNotifications }),
         ...(pushNotifications !== undefined && { pushNotifications }),
@@ -875,12 +865,12 @@ export async function registerRoutes(
         ...(paymentAlerts !== undefined && { paymentAlerts }),
         ...(securityAlerts !== undefined && { securityAlerts }),
       };
-      await storage.updateUser(req.user.id, {
+      await storage?.updateUser(req?.user.id, {
         notificationSettings: updatedSettings,
       });
-      return res.json({ success: true });
+      return res?.json({ success: true });
     } catch (error) {
-      logger.warn({ err: error }, "Update notification settings error");
+      logger?.warn({ err: error }, "Update notification settings error");
       return res
         .status(500)
         .json({ message: "Failed to update notification settings" });
@@ -888,11 +878,11 @@ export async function registerRoutes(
   });
 
   // Auth: Get preferences (persisted to database)
-  app.get("/api/auth/preferences", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/preferences", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
-    const defaultPreferences = {
+    const _defaultPreferences = {
       theme: "dark",
       language: "en",
       timezone: "America/New_York",
@@ -903,14 +893,14 @@ export async function registerRoutes(
       autoSave: true,
       betaFeatures: false,
     };
-    const userPreferences = req.user.preferences as Record<string, any> | null;
-    return res.json({ ...defaultPreferences, ...userPreferences });
+    const _userPreferences = req?.user.preferences as Record<string, any> | null;
+    return res?.json({ ...defaultPreferences, ...userPreferences });
   });
 
   // Auth: Update preferences (persisted to database)
-  app.put("/api/auth/preferences", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.put("/api/auth/preferences", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       const {
@@ -923,10 +913,10 @@ export async function registerRoutes(
         defaultKey,
         autoSave,
         betaFeatures,
-      } = req.body;
-      const currentPreferences =
-        (req.user.preferences as Record<string, any>) || {};
-      const updatedPreferences = {
+      } = req?.body;
+      const _currentPreferences =
+        (req?.user.preferences as Record<string, any>) || {};
+      const _updatedPreferences = {
         ...currentPreferences,
         ...(theme !== undefined && { theme }),
         ...(language !== undefined && { language }),
@@ -938,42 +928,42 @@ export async function registerRoutes(
         ...(autoSave !== undefined && { autoSave }),
         ...(betaFeatures !== undefined && { betaFeatures }),
       };
-      await storage.updateUser(req.user.id, {
+      await storage?.updateUser(req?.user.id, {
         preferences: updatedPreferences,
       });
-      return res.json({ success: true });
+      return res?.json({ success: true });
     } catch (error) {
-      logger.warn({ err: error }, "Update preferences error");
-      return res.status(500).json({ message: "Failed to update preferences" });
+      logger?.warn({ err: error }, "Update preferences error");
+      return res?.status(500).json({ message: "Failed to update preferences" });
     }
   });
 
   // Auth: Get sessions
-  app.get("/api/auth/sessions", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/sessions", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
 
     try {
       // Get user sessions from database
-      const userSessions = await storage.getSessionsByUserId(req.user.id);
+      const _userSessions = await storage?.getSessionsByUserId(req?.user.id);
 
       // Format sessions for frontend display
-      const formattedSessions = userSessions.map((session) => ({
-        id: session.id,
-        device: session.userAgent || "Unknown Device",
+      const _formattedSessions = userSessions?.map((session) => ({
+        id: session?.id,
+        device: session?.userAgent || "Unknown Device",
         location: "Unknown",
-        time: session.lastActivity
-          ? new Date(session.lastActivity).toLocaleString()
+        time: session?.lastActivity
+          ? new Date(session?.lastActivity).toLocaleString()
           : "Unknown",
-        current: session.id === req.session.id,
+        current: session?.id === req?.session.id,
       }));
 
       // Always include current session if not in list
-      const currentSessionExists = formattedSessions.some((s) => s.current);
+      const _currentSessionExists = formattedSessions?.some((s) => s?.current);
       if (!currentSessionExists) {
-        formattedSessions.unshift({
-          id: req.session.id,
+        formattedSessions?.unshift({
+          id: req?.session.id,
           device: "Current Device",
           location: "Unknown",
           time: new Date().toLocaleString(),
@@ -981,13 +971,13 @@ export async function registerRoutes(
         });
       }
 
-      return res.json(formattedSessions);
+      return res?.json(formattedSessions);
     } catch (error) {
-      logger.warn({ err: error }, "Get sessions error");
+      logger?.warn({ err: error }, "Get sessions error");
       // Fallback to current session only
-      return res.json([
+      return res?.json([
         {
-          id: req.session.id,
+          id: req?.session.id,
           device: "Current Device",
           location: "Unknown",
           time: new Date().toLocaleString(),
@@ -998,29 +988,29 @@ export async function registerRoutes(
   });
 
   // Auth: Terminate session
-  app.post(
+  app?.post(
     "/api/auth/sessions/terminate",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { sessionId } = req.body;
+        const { sessionId } = req?.body;
 
         if (!sessionId) {
-          return res.status(400).json({ message: "Session ID is required" });
+          return res?.status(400).json({ message: "Session ID is required" });
         }
 
         // Direct lookup of session by ID and verify ownership
-        const session = await storage.getSessionById(sessionId);
+        const _session = await storage?.getSessionById(sessionId);
 
         if (!session) {
-          return res.status(404).json({ message: "Session not found" });
+          return res?.status(404).json({ message: "Session not found" });
         }
 
-        if (session.userId !== req.user.id) {
-          logger.info(
-            `[Security] Session termination denied: User ${req.user.id} tried to terminate session ${sessionId} belonging to user ${session.userId}`,
+        if (session?.userId !== req?.user.id) {
+          logger?.info(
+            `[Security] Session termination denied: User ${req?.user.id} tried to terminate session ${sessionId} belonging to user ${session?.userId}`,
           );
           return res
             .status(403)
@@ -1028,59 +1018,61 @@ export async function registerRoutes(
         }
 
         // Delete session from database
-        const deleted = await storage.deleteSession(sessionId);
+        const _deleted = await storage?.deleteSession(sessionId);
 
         if (!deleted) {
-          return res.status(500).json({ message: "Failed to delete session" });
+          return res?.status(500).json({ message: "Failed to delete session" });
         }
 
         // Also try to delete from Redis if available
         try {
-          const { getRedisClient } =
-            await import("./lib/redisConnectionFactory.js");
-          const redisClient = await getRedisClient();
+          const { getRedisClient } = await import(
+            "./lib/redisConnectionFactory?.js"
+          );
+          const _redisClient = await getRedisClient();
           if (redisClient) {
-            await redisClient.del(`maxbooster:sess:${sessionId}`);
+            await redisClient?.del(`maxbooster:sess:${sessionId}`);
           }
         } catch (redisError) {
-          logger.warn({ err: redisError }, "Redis session deletion skipped");
+          logger?.warn({ err: redisError }, "Redis session deletion skipped");
         }
 
-        return res.json({
+        return res?.json({
           success: true,
           message: "Session terminated successfully",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Session termination error");
-        return res.status(500).json({ message: "Failed to terminate session" });
+        logger?.warn({ err: error }, "Session termination error");
+        return res?.status(500).json({ message: "Failed to terminate session" });
       }
     },
   );
 
   // Auth: Terminate all other sessions
-  app.post(
+  app?.post(
     "/api/auth/sessions/terminate-all",
     criticalEndpointLimiter,
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const currentSessionId = req.session.id;
-        const userSessions = await storage.getSessionsByUserId(req.user.id);
+        const _currentSessionId = req?.session.id;
+        const _userSessions = await storage?.getSessionsByUserId(req?.user.id);
         let terminatedCount = 0;
 
         for (const session of userSessions) {
-          if (session.id !== currentSessionId) {
-            const deleted = await storage.deleteSession(session.id);
+          if (session?.id !== currentSessionId) {
+            const _deleted = await storage?.deleteSession(session?.id);
             if (deleted) {
               terminatedCount++;
               try {
-                const { getRedisClient } =
-                  await import("./lib/redisConnectionFactory.js");
-                const redisClient = await getRedisClient();
+                const { getRedisClient } = await import(
+                  "./lib/redisConnectionFactory?.js"
+                );
+                const _redisClient = await getRedisClient();
                 if (redisClient) {
-                  await redisClient.del(`maxbooster:sess:${session.id}`);
+                  await redisClient?.del(`maxbooster:sess:${session?.id}`);
                 }
               } catch (redisError) {
                 // Redis deletion is best-effort
@@ -1089,15 +1081,15 @@ export async function registerRoutes(
           }
         }
 
-        logger.info(
-          `[Security] Terminated ${terminatedCount} sessions for user ${req.user.id}`,
+        logger?.info(
+          `[Security] Terminated ${terminatedCount} sessions for user ${req?.user.id}`,
         );
-        return res.json({
+        return res?.json({
           success: true,
           message: `${terminatedCount} session(s) terminated`,
         });
       } catch (error) {
-        logger.warn({ err: error }, "Terminate all sessions error");
+        logger?.warn({ err: error }, "Terminate all sessions error");
         return res
           .status(500)
           .json({ message: "Failed to terminate sessions" });
@@ -1106,40 +1098,41 @@ export async function registerRoutes(
   );
 
   // Auth: Delete all other sessions (alias for terminate-all)
-  app.delete(
+  app?.delete(
     "/api/auth/sessions/other",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const currentSessionId = req.session.id;
-        const userSessions = await storage.getSessionsByUserId(req.user.id);
+        const _currentSessionId = req?.session.id;
+        const _userSessions = await storage?.getSessionsByUserId(req?.user.id);
         let terminatedCount = 0;
 
         for (const session of userSessions) {
-          if (session.id !== currentSessionId) {
-            const deleted = await storage.deleteSession(session.id);
+          if (session?.id !== currentSessionId) {
+            const _deleted = await storage?.deleteSession(session?.id);
             if (deleted) {
               terminatedCount++;
               try {
-                const { getRedisClient } =
-                  await import("./lib/redisConnectionFactory.js");
-                const redisClient = await getRedisClient();
+                const { getRedisClient } = await import(
+                  "./lib/redisConnectionFactory?.js"
+                );
+                const _redisClient = await getRedisClient();
                 if (redisClient) {
-                  await redisClient.del(`maxbooster:sess:${session.id}`);
+                  await redisClient?.del(`maxbooster:sess:${session?.id}`);
                 }
               } catch (redisError) {}
             }
           }
         }
 
-        return res.json({
+        return res?.json({
           success: true,
           message: `${terminatedCount} session(s) terminated`,
         });
       } catch (error) {
-        logger.warn({ err: error }, "Delete other sessions error");
+        logger?.warn({ err: error }, "Delete other sessions error");
         return res
           .status(500)
           .json({ message: "Failed to terminate other sessions" });
@@ -1148,104 +1141,104 @@ export async function registerRoutes(
   );
 
   // Auth: Get login history
-  app.get("/api/auth/login-history", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/login-history", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       // Get login events from security threats table
-      const { securityThreats } = await import("../shared/schema.js");
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const { securityThreats } = await import("../shared/schema?.js");
+      const _thirtyDaysAgo = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
 
-      const loginEvents = await db
+      const _loginEvents = await db
         .select()
         .from(securityThreats)
         .where(
           and(
-            eq(securityThreats.userId, req.user.id),
-            gte(securityThreats.detectedAt, thirtyDaysAgo),
+            eq(securityThreats?.userId, req?.user.id),
+            gte(securityThreats?.detectedAt, thirtyDaysAgo),
           ),
         )
-        .orderBy(desc(securityThreats.detectedAt))
+        .orderBy(desc(securityThreats?.detectedAt))
         .limit(50);
 
       // Also get successful logins from sessions
-      const userSessions = await storage.getSessionsByUserId(req.user.id);
+      const _userSessions = await storage?.getSessionsByUserId(req?.user.id);
 
       // Format events for frontend
-      const formattedEvents = loginEvents.map((event) => {
-        const metadata = (event.metadata as Record<string, any>) || {};
-        const indicators = (event.indicators as Record<string, any>) || {};
+      const _formattedEvents = loginEvents?.map((event) => {
+        const _metadata = (event?.metadata as Record<string, any>) || {};
+        const _indicators = (event?.indicators as Record<string, any>) || {};
 
         return {
-          id: event.id,
+          id: event?.id,
           timestamp:
-            event.detectedAt?.toISOString() || new Date().toISOString(),
-          ipAddress: metadata.ipAddress || indicators.ipAddress || "Unknown",
-          location: metadata.location || indicators.location || "Unknown",
+            event?.detectedAt?.toISOString() || new Date().toISOString(),
+          ipAddress: metadata?.ipAddress || indicators?.ipAddress || "Unknown",
+          location: metadata?.location || indicators?.location || "Unknown",
           device:
-            metadata.userAgent || indicators.userAgent || "Unknown Device",
-          browser: metadata.browser || "Unknown",
-          success: event.threatType !== "failed_login",
+            metadata?.userAgent || indicators?.userAgent || "Unknown Device",
+          browser: metadata?.browser || "Unknown",
+          success: event?.threatType !== "failed_login",
           suspicious:
-            event.severity === "high" || event.severity === "critical",
+            event?.severity === "high" || event?.severity === "critical",
           reason:
-            event.severity === "high" || event.severity === "critical"
-              ? `${event.threatType}: ${metadata.description || "Unusual activity detected"}`
+            event?.severity === "high" || event?.severity === "critical"
+              ? `${event?.threatType}: ${metadata?.description || "Unusual activity detected"}`
               : undefined,
         };
       });
 
       // Add recent successful logins from sessions
-      const sessionEvents = userSessions
-        .filter((s) => s.createdAt)
+      const _sessionEvents = userSessions
+        .filter((s) => s?.createdAt)
         .map((session) => ({
-          id: `session-${session.id}`,
+          id: `session-${session?.id}`,
           timestamp:
-            session.createdAt?.toISOString() || new Date().toISOString(),
+            session?.createdAt?.toISOString() || new Date().toISOString(),
           ipAddress: "Unknown",
           location: "Unknown",
-          device: session.userAgent || "Unknown Device",
+          device: session?.userAgent || "Unknown Device",
           browser: "Unknown",
           success: true,
           suspicious: false,
         }));
 
       // Combine and sort by timestamp
-      const allEvents = [...formattedEvents, ...sessionEvents]
+      const _allEvents = [...formattedEvents, ...sessionEvents]
         .sort(
           (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+            new Date(b?.timestamp).getTime() - new Date(a?.timestamp).getTime(),
         )
         .slice(0, 20);
 
-      return res.json(allEvents);
+      return res?.json(allEvents);
     } catch (error) {
-      logger.warn({ err: error }, "Get login history error");
-      return res.status(500).json({ message: "Failed to fetch login history" });
+      logger?.warn({ err: error }, "Get login history error");
+      return res?.status(500).json({ message: "Failed to fetch login history" });
     }
   });
 
   // Auth: Get privacy settings
-  app.get("/api/auth/privacy-settings", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/privacy-settings", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       // Return user's privacy settings from their profile
-      const settings = {
-        profileVisibility: req.user.profileVisibility || "public",
-        showEmail: req.user.showEmail ?? false,
-        showLocation: req.user.showLocation ?? true,
-        allowMessages: req.user.allowMessages ?? true,
-        allowSearchIndexing: req.user.allowSearchIndexing ?? true,
+      const _settings = {
+        profileVisibility: req?.user.profileVisibility || "public",
+        showEmail: req?.user.showEmail ?? false,
+        showLocation: req?.user.showLocation ?? true,
+        allowMessages: req?.user.allowMessages ?? true,
+        allowSearchIndexing: req?.user.allowSearchIndexing ?? true,
         gdprDataProcessing: true, // Required for service
-        gdprMarketing: req.user.gdprMarketing ?? false,
-        gdprAnalytics: req.user.gdprAnalytics ?? true,
+        gdprMarketing: req?.user.gdprMarketing ?? false,
+        gdprAnalytics: req?.user.gdprAnalytics ?? true,
       };
-      return res.json(settings);
+      return res?.json(settings);
     } catch (error) {
-      logger.warn({ err: error }, "Get privacy settings error");
+      logger?.warn({ err: error }, "Get privacy settings error");
       return res
         .status(500)
         .json({ message: "Failed to get privacy settings" });
@@ -1253,12 +1246,12 @@ export async function registerRoutes(
   });
 
   // Auth: Update privacy settings
-  app.put("/api/auth/privacy-settings", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.put("/api/auth/privacy-settings", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const allowedFields = [
+      const _allowedFields = [
         "profileVisibility",
         "showEmail",
         "showLocation",
@@ -1270,18 +1263,18 @@ export async function registerRoutes(
 
       const updates: Record<string, any> = {};
       for (const field of allowedFields) {
-        if (req.body[field] !== undefined) {
-          updates[field] = req.body[field];
+        if (req?.body[field] !== undefined) {
+          updates[field] = req?.body[field];
         }
       }
 
-      if (Object.keys(updates).length > 0) {
-        await storage.updateUser(req.user.id, updates);
+      if (Object?.keys(updates).length > 0) {
+        await storage?.updateUser(req?.user.id, updates);
       }
 
-      return res.json({ success: true, message: "Privacy settings updated" });
+      return res?.json({ success: true, message: "Privacy settings updated" });
     } catch (error) {
-      logger.warn({ err: error }, "Update privacy settings error");
+      logger?.warn({ err: error }, "Update privacy settings error");
       return res
         .status(500)
         .json({ message: "Failed to update privacy settings" });
@@ -1289,15 +1282,15 @@ export async function registerRoutes(
   });
 
   // Auth: Request data export
-  app.post(
+  app?.post(
     "/api/auth/request-data-export",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
         // Store export request timestamp
-        await storage.updateUser(req.user.id, {
+        await storage?.updateUser(req?.user.id, {
           dataExportRequestedAt: new Date(),
           dataExportStatus: "pending",
         });
@@ -1306,24 +1299,24 @@ export async function registerRoutes(
         // For now, simulate immediate completion
         setTimeout(async () => {
           try {
-            await storage.updateUser(req.user.id, {
+            await storage?.updateUser(req?.user.id, {
               dataExportStatus: "ready",
               dataExportExpiresAt: new Date(
-                Date.now() + 7 * 24 * 60 * 60 * 1000,
+                Date?.now() + 7 * 24 * 60 * 60 * 1000,
               ),
             });
           } catch (e) {
-            logger.warn({ err: e }, "Failed to update export status");
+            logger?.warn({ err: e }, "Failed to update export status");
           }
         }, 5000);
 
-        return res.json({
+        return res?.json({
           success: true,
           message:
             "Data export requested. You will receive an email when it's ready.",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Request data export error");
+        logger?.warn({ err: error }, "Request data export error");
         return res
           .status(500)
           .json({ message: "Failed to request data export" });
@@ -1332,86 +1325,87 @@ export async function registerRoutes(
   );
 
   // Auth: Get data export status
-  app.get(
+  app?.get(
     "/api/auth/data-export-status",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const status = {
-          status: req.user.dataExportStatus || "none",
-          requestedAt: req.user.dataExportRequestedAt?.toISOString(),
-          expiresAt: req.user.dataExportExpiresAt?.toISOString(),
+        const _status = {
+          status: req?.user.dataExportStatus || "none",
+          requestedAt: req?.user.dataExportRequestedAt?.toISOString(),
+          expiresAt: req?.user.dataExportExpiresAt?.toISOString(),
         };
-        return res.json(status);
+        return res?.json(status);
       } catch (error) {
-        logger.warn({ err: error }, "Get data export status error");
-        return res.status(500).json({ message: "Failed to get export status" });
+        logger?.warn({ err: error }, "Get data export status error");
+        return res?.status(500).json({ message: "Failed to get export status" });
       }
     },
   );
 
   // Auth: Change password
   // SECURITY: Invalidates all other sessions after password change
-  app.post(
+  app?.post(
     "/api/auth/change-password",
     criticalEndpointLimiter,
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { currentPassword, newPassword } = req.body;
+        const { currentPassword, newPassword } = req?.body;
 
         if (!currentPassword) {
           return res
             .status(400)
             .json({ message: "Current password is required" });
         }
-        if (!newPassword || newPassword.length < 8) {
+        if (!newPassword || newPassword?.length < 8) {
           return res
             .status(400)
             .json({ message: "New password must be at least 8 characters" });
         }
 
-        const isValid = await bcrypt.compare(
+        const _isValid = await bcrypt?.compare(
           currentPassword,
-          req.user.password,
+          req?.user.password,
         );
         if (!isValid) {
           return res
             .status(400)
             .json({ message: "Current password is incorrect" });
         }
-        const hashedPassword = await bcrypt.hash(newPassword, 12);
-        await storage.updateUser(req.user.id, { password: hashedPassword });
+        const _hashedPassword = await bcrypt?.hash(newPassword, 12);
+        await storage?.updateUser(req?.user.id, { password: hashedPassword });
 
         // SECURITY FIX: Invalidate all OTHER sessions for this user after password change
-        const currentSessionId = req.session.id;
+        const _currentSessionId = req?.session.id;
         try {
-          const userSessions = await storage.getSessionsByUserId(req.user.id);
+          const _userSessions = await storage?.getSessionsByUserId(req?.user.id);
           for (const session of userSessions) {
-            if (session.id !== currentSessionId) {
-              await storage.deleteSession(session.id);
+            if (session?.id !== currentSessionId) {
+              await storage?.deleteSession(session?.id);
               // Also try to delete from Redis if available
               try {
-                const { getRedisClient } =
-                  await import("./lib/redisConnectionFactory.js");
-                const redisClient = await getRedisClient();
+                const { getRedisClient } = await import(
+                  "./lib/redisConnectionFactory?.js"
+                );
+                const _redisClient = await getRedisClient();
                 if (redisClient) {
-                  await redisClient.del(`maxbooster:sess:${session.id}`);
+                  await redisClient?.del(`maxbooster:sess:${session?.id}`);
                 }
               } catch (redisError) {
                 // Redis deletion is best-effort
               }
             }
           }
-          logger.info(
-            `[Security] Invalidated ${userSessions.length - 1} sessions after password change for user ${req.user.id}`,
+          logger?.info(
+            `[Security] Invalidated ${userSessions?.length - 1} sessions after password change for user ${req?.user.id}`,
           );
         } catch (sessionError) {
-          logger.warn(
+          logger?.warn(
             { err: sessionError },
             "[Security] Could not invalidate other sessions",
           );
@@ -1419,7 +1413,7 @@ export async function registerRoutes(
         }
 
         notificationService
-          .sendPasswordChangedNotification(req.user.id)
+          .sendPasswordChangedNotification(req?.user.id)
           .catch(() => {});
 
         // SECURITY: Write cross-pod session revocation flag to PDIM so all running
@@ -1428,136 +1422,143 @@ export async function registerRoutes(
         // the PDIM store — pods whose L1 session caches still hold the old session
         // will now get a revocation signal on next request.
         try {
-          const { revokeUserSessions } =
-            await import("./middleware/sessionConfig.js");
-          await revokeUserSessions(String(req.user.id));
+          const { revokeUserSessions } = await import(
+            "./middleware/sessionConfig?.js"
+          );
+          await revokeUserSessions(String(req?.user.id));
         } catch (revokeErr: unknown) {
-          logger.warn(
+          logger?.warn(
             { err: revokeErr },
             "[Security] Cross-pod session revocation failed after password change — other pods may still serve old sessions for up to 60 s",
           );
         }
 
-        return res.json({
+        return res?.json({
           success: true,
           message: "Password changed. Other sessions have been logged out.",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Change password error");
-        return res.status(500).json({ message: "Failed to change password" });
+        logger?.warn({ err: error }, "Change password error");
+        return res?.status(500).json({ message: "Failed to change password" });
       }
     },
   );
 
   // Auth: Delete account
-  app.delete("/api/auth/account", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.delete("/api/auth/account", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { password } = req.body;
+      const { password } = req?.body;
       if (!password) {
         return res
           .status(400)
           .json({ message: "Password is required to delete account" });
       }
-      const isValid = await bcrypt.compare(password, req.user.password);
+      const _isValid = await bcrypt?.compare(password, req?.user.password);
       if (!isValid) {
-        return res.status(400).json({ message: "Password is incorrect" });
+        return res?.status(400).json({ message: "Password is incorrect" });
       }
-      await storage.deleteUser(req.user.id);
-      req.session.destroy(() => {});
-      return res.json({ success: true });
+      await storage?.deleteUser(req?.user.id);
+      req?.session.destroy(() => {});
+      return res?.json({ success: true });
     } catch (error) {
-      logger.warn({ err: error }, "Delete account error");
-      return res.status(500).json({ message: "Failed to delete account" });
+      logger?.warn({ err: error }, "Delete account error");
+      return res?.status(500).json({ message: "Failed to delete account" });
     }
   });
 
   // Auth: Upload avatar
-  app.post(
+  app?.post(
     "/api/auth/avatar",
     async (req: Request, res: Response, _next: NextFunction) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
 
       // Dynamically import avatar upload middleware and storage
       try {
-        const { avatarUpload, storeUploadedFile } =
-          await import("./middleware/uploadHandler.js");
+        const { avatarUpload, storeUploadedFile } = await import(
+          "./middleware/uploadHandler?.js"
+        );
 
         // Handle multipart upload
-        avatarUpload.single("avatar")(req, res, async (err: unknown) => {
+        avatarUpload?.single("avatar")(req, res, async (err: unknown) => {
           if (err) {
-            logger.warn({ err: err }, "Avatar upload error");
-            return res.status(400).json({
-              message:
-                (err instanceof Error ? err.message : undefined) ||
-                "Failed to upload avatar",
-            });
+            logger?.warn({ err: err }, "Avatar upload error");
+            return res
+              .status(400)
+              .json({
+                message:
+                  (err instanceof Error ? err?.message : undefined) ||
+                  "Failed to upload avatar",
+              });
           }
 
-          if (!req.file) {
-            return res.status(400).json({ message: "No file uploaded" });
+          if (!req?.file) {
+            return res?.status(400).json({ message: "No file uploaded" });
           }
 
           try {
             let avatarUrl: string;
 
             try {
-              const result = await storeUploadedFile(
-                req.file,
-                req.user!.id,
+              const _result = await storeUploadedFile(
+                req?.file,
+                req?.user!.id,
                 "avatar",
               );
-              avatarUrl = result.url;
+              avatarUrl = result?.url;
             } catch (storeError) {
               // Object Storage unavailable — fall back to storing the processed image
               // as a base64 data URL directly in the database. Avatars are small
               // (512x512 WebP ≈ 30-60 KB) so this is safe for the users table.
-              logger.warn(
+              logger?.warn(
                 { err: storeError },
                 "[Avatar] Object Storage unavailable, falling back to data URL",
               );
-              const { processAvatarImage } =
-                await import("./middleware/uploadHandler.js");
-              const processed = await processAvatarImage(req.file!.buffer);
-              avatarUrl = `data:${processed.mimeType};base64,${processed.buffer.toString("base64")}`;
-              logger.info(
-                `[Avatar] Data URL fallback used for userId=${req.user!.id}, size=${processed.processedSize}B`,
+              const { processAvatarImage } = await import(
+                "./middleware/uploadHandler?.js"
+              );
+              const _processed = await processAvatarImage(req?.file!.buffer);
+              avatarUrl = `data:${processed?.mimeType};base64,${processed?.buffer.toString("base64")}`;
+              logger?.info(
+                `[Avatar] Data URL fallback used for userId=${req?.user!.id}, size=${processed?.processedSize}B`,
               );
             }
 
-            const updatedUser = await storage.updateUser(req.user!.id, {
+            const _updatedUser = await storage?.updateUser(req?.user!.id, {
               avatarUrl,
               profileImageUrl: avatarUrl,
             });
             if (!updatedUser) {
-              logger.warn(
-                `[Avatar] updateUser returned null for userId=${req.user!.id}. DB update may have failed.`,
+              logger?.warn(
+                `[Avatar] updateUser returned null for userId=${req?.user!.id}. DB update may have failed.`,
               );
             } else {
-              logger.info(`[Avatar] DB updated for userId=${req.user!.id}`);
+              logger?.info(`[Avatar] DB updated for userId=${req?.user!.id}`);
             }
 
-            return res.json({
+            return res?.json({
               success: true,
               profileImageUrl: avatarUrl,
               avatarUrl,
             });
           } catch (storeError) {
-            logger.warn({ err: storeError }, "Avatar storage error");
-            return res.status(500).json({
-              message:
-                (storeError instanceof Error
-                  ? storeError.message
-                  : undefined) || "Failed to store avatar",
-            });
+            logger?.warn({ err: storeError }, "Avatar storage error");
+            return res
+              .status(500)
+              .json({
+                message:
+                  (storeError instanceof Error
+                    ? storeError?.message
+                    : undefined) || "Failed to store avatar",
+              });
           }
         });
       } catch (importError) {
-        logger.warn({ err: importError }, "Avatar upload import error");
+        logger?.warn({ err: importError }, "Avatar upload import error");
         return res
           .status(500)
           .json({ message: "Avatar upload service unavailable" });
@@ -1566,32 +1567,32 @@ export async function registerRoutes(
   );
 
   // Auth: Delete avatar
-  app.delete("/api/auth/avatar", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.delete("/api/auth/avatar", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const currentAvatarUrl = req.user.avatarUrl;
+      const _currentAvatarUrl = req?.user.avatarUrl;
 
       // If user has an avatar, try to delete the file
       if (currentAvatarUrl) {
         try {
-          const fs = await import("fs/promises");
-          const path = await import("path");
+          const _fs = await import("fs/promises");
+          const _path = await import("path");
 
           // Extract the file path from the URL (assuming it's stored locally)
-          // Avatar URLs are typically like /uploads/avatars/filename.ext
+          // Avatar URLs are typically like /uploads/avatars/filename?.ext
           if (
-            currentAvatarUrl.startsWith("/uploads/") ||
-            currentAvatarUrl.startsWith("uploads/")
+            currentAvatarUrl?.startsWith("/uploads/") ||
+            currentAvatarUrl?.startsWith("uploads/")
           ) {
-            const filePath = path.join(
-              process.cwd(),
-              currentAvatarUrl.replace(/^\//, ""),
+            const _filePath = path?.join(
+              process?.cwd(),
+              currentAvatarUrl?.replace(/^\//, ""),
             );
-            await fs.unlink(filePath).catch(() => {
+            await fs?.unlink(filePath).catch(() => {
               // File might not exist, that's ok
-              logger.info(
+              logger?.info(
                 { filePath },
                 "Avatar file not found or already deleted",
               );
@@ -1599,46 +1600,47 @@ export async function registerRoutes(
           }
         } catch (fsError) {
           // File deletion is best-effort, continue even if it fails
-          logger.warn({ err: fsError }, "Avatar file deletion skipped");
+          logger?.warn({ err: fsError }, "Avatar file deletion skipped");
         }
       }
 
-      await storage.updateUser(req.user.id, {
+      await storage?.updateUser(req?.user.id, {
         avatarUrl: null,
         profileImageUrl: null,
       });
 
-      return res.json({
+      return res?.json({
         success: true,
         message: "Avatar deleted successfully",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Delete avatar error");
-      return res.status(500).json({ message: "Failed to delete avatar" });
+      logger?.warn({ err: error }, "Delete avatar error");
+      return res?.status(500).json({ message: "Failed to delete avatar" });
     }
   });
 
   // Storage: Serve files from hybrid storage (Replit hot + Pocket Dimension cold)
-  app.get("/api/storage/file/*key", async (req: Request, res: Response) => {
+  app?.get("/api/storage/file/*key", async (req: Request, res: Response) => {
     try {
-      const key = decodeURIComponent(req.params.key);
+      const _key = decodeURIComponent(req?.params.key);
 
       if (!key) {
-        return res.status(400).json({ message: "File key is required" });
+        return res?.status(400).json({ message: "File key is required" });
       }
 
-      const { storageService } = await import("./services/storageService.js");
-      const { hybridStorageService } =
-        await import("./services/hybridStorageService.js");
+      const { storageService } = await import("./services/storageService?.js");
+      const { hybridStorageService } = await import(
+        "./services/hybridStorageService?.js"
+      );
 
       let fileBuffer: Buffer | null = null;
       let storageTier = "unknown";
 
-      const hybridMeta = hybridStorageService.getMetadata(key);
+      const _hybridMeta = hybridStorageService?.getMetadata(key);
       if (hybridMeta) {
-        storageTier = `${hybridMeta.tier}/${hybridMeta.location}`;
+        storageTier = `${hybridMeta?.tier}/${hybridMeta?.location}`;
         try {
-          fileBuffer = await hybridStorageService.read(hybridMeta.userId, key);
+          fileBuffer = await hybridStorageService?.read(hybridMeta?.userId, key);
         } catch {
           fileBuffer = null;
         }
@@ -1646,14 +1648,14 @@ export async function registerRoutes(
 
       if (!fileBuffer) {
         try {
-          fileBuffer = await storageService.downloadFile(key);
+          fileBuffer = await storageService?.downloadFile(key);
           storageTier = "replit-direct";
         } catch {
-          return res.status(404).json({ message: "File not found" });
+          return res?.status(404).json({ message: "File not found" });
         }
       }
 
-      const ext = key.split(".").pop()?.toLowerCase() || "";
+      const _ext = key?.split(".").pop()?.toLowerCase() || "";
       const mimeTypes: Record<string, string> = {
         jpg: "image/jpeg",
         jpeg: "image/jpeg",
@@ -1667,24 +1669,24 @@ export async function registerRoutes(
         pdf: "application/pdf",
       };
 
-      const contentType = mimeTypes[ext] || "application/octet-stream";
+      const _contentType = mimeTypes[ext] || "application/octet-stream";
 
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Content-Length", fileBuffer.length);
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      res.setHeader("X-Storage-Tier", storageTier);
+      res?.setHeader("Content-Type", contentType);
+      res?.setHeader("Content-Length", fileBuffer?.length);
+      res?.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      res?.setHeader("X-Storage-Tier", storageTier);
 
-      return res.send(fileBuffer);
+      return res?.send(fileBuffer);
     } catch (error) {
-      logger.warn({ err: error }, "Storage file serve error");
-      return res.status(500).json({ message: "Failed to serve file" });
+      logger?.warn({ err: error }, "Storage file serve error");
+      return res?.status(500).json({ message: "Failed to serve file" });
     }
   });
 
   // Auth: Export user data
-  app.get("/api/auth/export-data", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/export-data", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       const {
@@ -1693,37 +1695,37 @@ export async function registerRoutes(
         passwordResetToken,
         emailVerificationToken,
         ...userData
-      } = req.user!;
-      return res.json({
+      } = req?.user!;
+      return res?.json({
         user: userData,
         exportedAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Export data error");
-      return res.status(500).json({ message: "Failed to export data" });
+      logger?.warn({ err: error }, "Export data error");
+      return res?.status(500).json({ message: "Failed to export data" });
     }
   });
 
   // Auth: 2FA setup - Generate TOTP secret and QR code
-  app.post(
+  app?.post(
     "/api/auth/2fa/setup",
     criticalEndpointLimiter,
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
 
       try {
-        const secret = authenticator.generateSecret();
-        const appName = "MaxBooster";
-        const accountName = req.user.email;
-        const otpauthUrl = authenticator.keyuri(accountName, appName, secret);
+        const _secret = authenticator?.generateSecret();
+        const _appName = "MaxBooster";
+        const _accountName = req?.user.email;
+        const _otpauthUrl = authenticator?.keyuri(accountName, appName, secret);
 
-        await storage.updateUser(req.user.id, { twoFactorSecret: secret });
+        await storage?.updateUser(req?.user.id, { twoFactorSecret: secret });
         // Invalidate stale user cache so the next request (2fa/verify) sees the new secret
-        _userCacheInvalidate(req.user.id);
+        _userCacheInvalidate(req?.user.id);
 
-        const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
+        const _qrCodeDataUrl = await QRCode?.toDataURL(otpauthUrl, {
           width: 256,
           margin: 2,
           color: {
@@ -1732,31 +1734,31 @@ export async function registerRoutes(
           },
         });
 
-        return res.json({
+        return res?.json({
           secret,
           qrCode: qrCodeDataUrl,
           otpauthUrl,
         });
       } catch (error) {
-        logger.warn({ err: error }, "2FA setup error");
-        return res.status(500).json({ message: "Failed to setup 2FA" });
+        logger?.warn({ err: error }, "2FA setup error");
+        return res?.status(500).json({ message: "Failed to setup 2FA" });
       }
     },
   );
 
   // Auth: 2FA verify - Verify TOTP code and enable 2FA
   // SECURITY: Rate limited to prevent brute-force attacks on 2FA codes
-  const { twoFactorRateLimiter } = await import("./middleware/rateLimiter.js");
-  app.post(
+  const { twoFactorRateLimiter } = await import("./middleware/rateLimiter?.js");
+  app?.post(
     "/api/auth/2fa/verify",
     twoFactorRateLimiter,
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
 
       try {
-        const { code } = req.body;
+        const { code } = req?.body;
 
         if (!code) {
           return res
@@ -1766,142 +1768,142 @@ export async function registerRoutes(
 
         // SECURITY: Validate code format (6 digits)
         if (!/^\d{6}$/.test(code)) {
-          return res.status(400).json({ message: "Invalid code format" });
+          return res?.status(400).json({ message: "Invalid code format" });
         }
 
-        const secret = req.user.twoFactorSecret;
+        const _secret = req?.user.twoFactorSecret;
         if (!secret) {
           return res
             .status(400)
             .json({ message: "2FA not set up. Please run setup first." });
         }
 
-        const isValid = authenticator.verify({ token: code, secret });
+        const _isValid = authenticator?.verify({ token: code, secret });
 
         if (!isValid) {
-          return res.status(400).json({ message: "Invalid verification code" });
+          return res?.status(400).json({ message: "Invalid verification code" });
         }
 
-        await storage.updateUser(req.user.id, { twoFactorEnabled: true });
-        _userCacheInvalidate(req.user.id);
+        await storage?.updateUser(req?.user.id, { twoFactorEnabled: true });
+        _userCacheInvalidate(req?.user.id);
 
-        return res.json({ success: true, message: "2FA enabled successfully" });
+        return res?.json({ success: true, message: "2FA enabled successfully" });
       } catch (error) {
-        logger.warn({ err: error }, "2FA verify error");
-        return res.status(500).json({ message: "Failed to verify 2FA code" });
+        logger?.warn({ err: error }, "2FA verify error");
+        return res?.status(500).json({ message: "Failed to verify 2FA code" });
       }
     },
   );
 
   // Auth: 2FA disable - Disable 2FA on account
   // SECURITY: Rate limited to prevent brute-force attacks
-  app.post(
+  app?.post(
     "/api/auth/2fa/disable",
     twoFactorRateLimiter,
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
 
       try {
-        const { password, code } = req.body;
+        const { password, code } = req?.body;
 
         if (!password) {
-          return res.status(400).json({ message: "Password is required" });
+          return res?.status(400).json({ message: "Password is required" });
         }
 
-        const isPasswordValid = await bcrypt.compare(
+        const _isPasswordValid = await bcrypt?.compare(
           password,
-          req.user.password,
+          req?.user.password,
         );
         if (!isPasswordValid) {
-          return res.status(400).json({ message: "Invalid password" });
+          return res?.status(400).json({ message: "Invalid password" });
         }
 
-        if (req.user.twoFactorEnabled && req.user.twoFactorSecret) {
+        if (req?.user.twoFactorEnabled && req?.user.twoFactorSecret) {
           if (!code) {
-            return res.status(400).json({ message: "2FA code is required" });
+            return res?.status(400).json({ message: "2FA code is required" });
           }
 
           // SECURITY: Validate code format (6 digits)
           if (!/^\d{6}$/.test(code)) {
-            return res.status(400).json({ message: "Invalid code format" });
+            return res?.status(400).json({ message: "Invalid code format" });
           }
 
-          const isCodeValid = authenticator.verify({
+          const _isCodeValid = authenticator?.verify({
             token: code,
-            secret: req.user.twoFactorSecret,
+            secret: req?.user.twoFactorSecret,
           });
           if (!isCodeValid) {
-            return res.status(400).json({ message: "Invalid 2FA code" });
+            return res?.status(400).json({ message: "Invalid 2FA code" });
           }
         }
 
-        await storage.updateUser(req.user.id, {
+        await storage?.updateUser(req?.user.id, {
           twoFactorEnabled: false,
           twoFactorSecret: null,
         });
-        _userCacheInvalidate(req.user.id);
+        _userCacheInvalidate(req?.user.id);
 
-        return res.json({
+        return res?.json({
           success: true,
           message: "2FA disabled successfully",
         });
       } catch (error) {
-        logger.warn({ err: error }, "2FA disable error");
-        return res.status(500).json({ message: "Failed to disable 2FA" });
+        logger?.warn({ err: error }, "2FA disable error");
+        return res?.status(500).json({ message: "Failed to disable 2FA" });
       }
     },
   );
 
   // Auth: 2FA status - Get current 2FA status
-  app.get("/api/auth/2fa/status", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/2fa/status", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
 
-    return res.json({
-      enabled: req.user.twoFactorEnabled || false,
-      hasSecret: !!req.user.twoFactorSecret,
+    return res?.json({
+      enabled: req?.user.twoFactorEnabled || false,
+      hasSecret: !!req?.user.twoFactorSecret,
     });
   });
 
   // Auth: 2FA validate - Check a TOTP code against the authenticated user's secret
   // without modifying any state. Useful for step-up auth and re-authentication flows.
-  app.post(
+  app?.post(
     "/api/auth/2fa/validate",
     twoFactorRateLimiter,
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
-      const { code } = req.body;
+      const { code } = req?.body;
       if (!code) {
-        return res.status(400).json({ message: "code is required" });
+        return res?.status(400).json({ message: "code is required" });
       }
-      if (!req.user.twoFactorEnabled || !req.user.twoFactorSecret) {
+      if (!req?.user.twoFactorEnabled || !req?.user.twoFactorSecret) {
         return res
           .status(400)
           .json({ message: "2FA is not enabled on this account" });
       }
-      const verifyResult = authenticator.verify({
+      const _verifyResult = authenticator?.verify({
         token: String(code),
-        secret: req.user.twoFactorSecret,
+        secret: req?.user.twoFactorSecret,
       });
-      // authenticator.verify() returns the full verifySync result object — extract the boolean
-      const isValid =
+      // authenticator?.verify() returns the full verifySync result object — extract the boolean
+      const _isValid =
         typeof verifyResult === "object" && verifyResult !== null
           ? (verifyResult as { valid: boolean }).valid
           : !!verifyResult;
       // Mark the session as 2FA-verified so privileged routes (require2FA) allow access.
       if (isValid) {
-        (req.session as unknown as Record<string, unknown>).twoFactorVerified =
+        (req?.session as unknown as Record<string, unknown>).twoFactorVerified =
           true;
         await new Promise<void>((resolve, reject) =>
-          req.session.save((err) => (err ? reject(err) : resolve())),
+          req?.session.save((err) => (err ? reject(err) : resolve())),
         );
       }
-      return res.json({ valid: isValid });
+      return res?.json({ valid: isValid });
     },
   );
 
@@ -1909,19 +1911,19 @@ export async function registerRoutes(
   // Requires auth; for google delegates to /api/auth/google (the dedicated Google handler);
   // for all other platforms redirects to /api/social/connect/:platform (POST via 307 not
   // applicable for GET, so those callers should use /api/social/connect directly).
-  app.get("/api/auth/oauth/initiate", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/auth/oauth/initiate", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
-    const platform = ((req.query?.platform as string | undefined) ?? "")
+    const _platform = ((req?.query?.platform as string | undefined) ?? "")
       .toLowerCase()
       .trim();
     if (!platform) {
-      return res.status(400).json({ message: "platform is required" });
+      return res?.status(400).json({ message: "platform is required" });
     }
-    // Google has a dedicated handler that sets session state and redirects to accounts.google.com
+    // Google has a dedicated handler that sets session state and redirects to accounts?.google.com
     if (platform === "google") {
-      return res.redirect(307, "/api/auth/google");
+      return res?.redirect(307, "/api/auth/google");
     }
     // For other platforms the caller should use POST /api/social/connect/:platform
     return res.status(400).json({
@@ -1931,33 +1933,33 @@ export async function registerRoutes(
 
   // Auth: OAuth callback alias — GET /api/auth/oauth/callback?platform=X&[code&state | error]
   // Validates the platform and state presence before forwarding to the social callback handler.
-  app.get("/api/auth/oauth/callback", (req: Request, res: Response) => {
-    const platform = ((req.query?.platform as string | undefined) ?? "")
+  app?.get("/api/auth/oauth/callback", (req: Request, res: Response) => {
+    const _platform = ((req?.query?.platform as string | undefined) ?? "")
       .toLowerCase()
       .trim();
     if (!platform) {
-      return res.redirect("/login?error=platform_required");
+      return res?.redirect("/login?error=platform_required");
     }
-    if (req.query.error) {
+    if (req?.query.error) {
       // Short-circuit OAuth provider errors immediately (same behaviour as social callback)
-      return res.redirect(
+      return res?.redirect(
         `/social-media?error=oauth_denied&platform=${encodeURIComponent(platform)}`,
       );
     }
     // Reject missing state before forwarding — prevents unnecessary round-trips
-    if (!req.query.state) {
-      return res.redirect(
+    if (!req?.query.state) {
+      return res?.redirect(
         `/social-media?error=invalid_state&platform=${encodeURIComponent(platform)}`,
       );
     }
     // Forward all other query params (code, state, …) to the real social callback handler.
-    const qs = new URLSearchParams();
-    for (const [k, v] of Object.entries(req.query)) {
-      if (k !== "platform") qs.set(k, String(v));
+    const _qs = new URLSearchParams();
+    for (const [k, v] of Object?.entries(req?.query)) {
+      if (k !== "platform") qs?.set(k, String(v));
     }
-    return res.redirect(
+    return res?.redirect(
       307,
-      `/api/social/callback/${encodeURIComponent(platform)}?${qs.toString()}`,
+      `/api/social/callback/${encodeURIComponent(platform)}?${qs?.toString()}`,
     );
   });
 
@@ -1965,16 +1967,16 @@ export async function registerRoutes(
   // The secured version with password + 2FA code verification is registered above (line ~1139)
 
   // Auth: Demo login - Read-only showcase of all features
-  app.post("/api/auth/demo", async (req: Request, res: Response) => {
+  app?.post("/api/auth/demo", async (req: Request, res: Response) => {
     try {
-      let demoUser = await storage.getUserByEmail("demo@maxbooster.ai");
+      let demoUser = await storage?.getUserByEmail("demo@maxbooster?.ai");
       if (!demoUser) {
-        const hashedPassword = await bcrypt.hash(
-          crypto.randomBytes(32).toString("hex"),
+        const _hashedPassword = await bcrypt?.hash(
+          crypto?.randomBytes(32).toString("hex"),
           12,
         );
-        demoUser = await storage.createUser({
-          email: "demo@maxbooster.ai",
+        demoUser = await storage?.createUser({
+          email: "demo@maxbooster?.ai",
           password: hashedPassword,
           username: "demo_user",
           firstName: "Demo",
@@ -1984,10 +1986,10 @@ export async function registerRoutes(
 
       // Ensure demo user always has active subscription so they can access all protected routes
       if (
-        demoUser.subscriptionStatus !== "active" ||
-        demoUser.subscriptionTier !== "pro"
+        demoUser?.subscriptionStatus !== "active" ||
+        demoUser?.subscriptionTier !== "pro"
       ) {
-        const updated = await storage.updateUser(demoUser.id, {
+        const _updated = await storage?.updateUser(demoUser?.id, {
           subscriptionStatus: "active",
           subscriptionTier: "pro",
         });
@@ -1996,9 +1998,9 @@ export async function registerRoutes(
 
       try {
         await sessionRegenerate(req);
-        req.session.userId = demoUser.id;
+        req?.session.userId = demoUser?.id;
         await sessionSave(req);
-        logger.info({ demoUserId: demoUser.id }, "[Demo] SUCCESS for demoUser");
+        logger?.info({ demoUserId: demoUser?.id }, "[Demo] SUCCESS for demoUser");
         const {
           password: _,
           twoFactorSecret: _2fa,
@@ -2006,9 +2008,9 @@ export async function registerRoutes(
           emailVerificationToken: _evt,
           ...safeUser
         } = demoUser as Record<string, unknown>;
-        return res.json({ ...safeUser, isDemo: true });
+        return res?.json({ ...safeUser, isDemo: true });
       } catch (sessionErr) {
-        logger.warn(
+        logger?.warn(
           { err: sessionErr },
           "[Demo] Session operation failed after retries",
         );
@@ -2017,58 +2019,58 @@ export async function registerRoutes(
           .json({ message: "Demo login failed - session error" });
       }
     } catch (error) {
-      logger.warn({ err: error }, "Demo login error");
-      return res.status(500).json({ message: "Demo login failed" });
+      logger?.warn({ err: error }, "Demo login error");
+      return res?.status(500).json({ message: "Demo login failed" });
     }
   });
 
   // Auth: Forgot password
-  app.post(
+  app?.post(
     "/api/auth/forgot-password",
     forgotPasswordRateLimiter,
     async (req: Request, res: Response) => {
       try {
-        const { email } = req.body;
+        const { email } = req?.body;
 
         if (!email) {
-          return res.status(400).json({ message: "Email is required" });
+          return res?.status(400).json({ message: "Email is required" });
         }
 
-        const user = await storage.getUserByEmail(email);
+        const _user = await storage?.getUserByEmail(email);
 
         if (user) {
-          const resetToken = crypto.randomBytes(32).toString("hex");
-          const hashedToken = crypto
+          const _resetToken = crypto?.randomBytes(32).toString("hex");
+          const _hashedToken = crypto
             .createHash("sha256")
             .update(resetToken)
             .digest("hex");
-          const expires = new Date(Date.now() + 60 * 60 * 1000);
+          const _expires = new Date(Date?.now() + 60 * 60 * 1000);
 
-          await storage.updateUser(user.id, {
+          await storage?.updateUser(user?.id, {
             passwordResetToken: hashedToken,
             passwordResetExpires: expires,
           });
 
-          const baseUrl = process.env.APP_URL || "https://max-booster.com";
-          const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+          const _baseUrl = process?.env.APP_URL || "https://max-booster?.com";
+          const _resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
 
-          await emailService.sendPasswordResetEmail(
+          await emailService?.sendPasswordResetEmail(
             {
-              firstName: user.firstName || "User",
+              firstName: user?.firstName || "User",
               resetLink,
               expiresIn: "1 hour",
             },
-            user.email,
+            user?.email,
           );
         }
 
-        return res.json({
+        return res?.json({
           success: true,
           message: "If the email exists, a reset link has been sent.",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Forgot password error");
-        return res.json({
+        logger?.warn({ err: error }, "Forgot password error");
+        return res?.json({
           success: true,
           message: "If the email exists, a reset link has been sent.",
         });
@@ -2077,12 +2079,12 @@ export async function registerRoutes(
   );
 
   // Auth: Reset password
-  app.post(
+  app?.post(
     "/api/auth/reset-password",
     forgotPasswordRateLimiter,
     async (req: Request, res: Response) => {
       try {
-        const { token, password } = req.body;
+        const { token, password } = req?.body;
 
         if (!token || !password) {
           return res
@@ -2090,17 +2092,17 @@ export async function registerRoutes(
             .json({ message: "Token and password are required" });
         }
 
-        if (password.length < 8) {
+        if (password?.length < 8) {
           return res
             .status(400)
             .json({ message: "Password must be at least 8 characters" });
         }
 
-        const hashedToken = crypto
+        const _hashedToken = crypto
           .createHash("sha256")
           .update(token)
           .digest("hex");
-        const user = await storage.getUserByPasswordResetToken(hashedToken);
+        const _user = await storage?.getUserByPasswordResetToken(hashedToken);
 
         if (!user) {
           return res
@@ -2109,15 +2111,15 @@ export async function registerRoutes(
         }
 
         if (
-          !user.passwordResetExpires ||
-          new Date(user.passwordResetExpires) < new Date()
+          !user?.passwordResetExpires ||
+          new Date(user?.passwordResetExpires) < new Date()
         ) {
-          return res.status(400).json({ message: "Reset token has expired" });
+          return res?.status(400).json({ message: "Reset token has expired" });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 12);
+        const _hashedPassword = await bcrypt?.hash(password, 12);
 
-        await storage.updateUser(user.id, {
+        await storage?.updateUser(user?.id, {
           password: hashedPassword,
           passwordResetToken: null,
           passwordResetExpires: null,
@@ -2126,71 +2128,72 @@ export async function registerRoutes(
         // SECURITY: Revoke all active sessions after password reset so old sessions
         // are rejected across all pods within ≤5 s (REVOKE_L1_TTL_ACTIVE_MS).
         try {
-          const { revokeUserSessions } =
-            await import("./middleware/sessionConfig.js");
-          await revokeUserSessions(String(user.id));
+          const { revokeUserSessions } = await import(
+            "./middleware/sessionConfig?.js"
+          );
+          await revokeUserSessions(String(user?.id));
         } catch (revokeErr: unknown) {
-          logger.warn(
+          logger?.warn(
             { err: revokeErr },
             "[Security] Session revocation failed after password reset",
           );
         }
 
-        return res.json({
+        return res?.json({
           success: true,
           message: "Password reset successfully",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Reset password error");
-        return res.status(500).json({ message: "Failed to reset password" });
+        logger?.warn({ err: error }, "Reset password error");
+        return res?.status(500).json({ message: "Failed to reset password" });
       }
     },
   );
 
   // Auth: Token management (admin)
-  app.post("/api/auth/token", async (req: Request, res: Response) => {
-    if (!req.user || req.user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
+  app?.post("/api/auth/token", async (req: Request, res: Response) => {
+    if (!req?.user || req?.user.role !== "admin") {
+      return res?.status(403).json({ message: "Admin access required" });
     }
-    return res.json({
-      token: `max_${crypto.randomBytes(24).toString("hex")}`,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    return res?.json({
+      token: `max_${crypto?.randomBytes(24).toString("hex")}`,
+      expiresAt: new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     });
   });
 
   // Auth: Revoke token (admin)
-  app.post("/api/auth/token/revoke", async (req: Request, res: Response) => {
-    if (!req.user || req.user.role !== "admin") {
-      return res.status(403).json({ message: "Admin access required" });
+  app?.post("/api/auth/token/revoke", async (req: Request, res: Response) => {
+    if (!req?.user || req?.user.role !== "admin") {
+      return res?.status(403).json({ message: "Admin access required" });
     }
-    return res.json({ success: true });
+    return res?.json({ success: true });
   });
 
   // Auth: Google OAuth - Start login flow
-  app.get("/api/auth/google", (req: Request, res: Response) => {
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  app?.get("/api/auth/google", (req: Request, res: Response) => {
+    const _clientId = process?.env.GOOGLE_CLIENT_ID;
+    const _clientSecret = process?.env.GOOGLE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      return res.redirect("/login?error=google_not_configured");
+      return res?.redirect("/login?error=google_not_configured");
     }
 
-    const state = crypto.randomBytes(32).toString("hex");
+    const _state = crypto?.randomBytes(32).toString("hex");
 
     // Store state in session
-    if (req.session) {
+    if (req?.session) {
       (
-        req.session as import("express-session").Session & {
+        req?.session as import("express-session").Session & {
           googleOAuthState?: string;
         }
       ).googleOAuthState = state;
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const baseUrl = process.env.APP_URL || "https://max-booster.com";
-    const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const _baseUrl = process?.env.APP_URL || "https://max-booster?.com";
+    const _redirectUri = `${baseUrl}/api/auth/google/callback`;
 
-    const params = new URLSearchParams({
+    const _params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: redirectUri,
       response_type: "code",
@@ -2200,50 +2203,50 @@ export async function registerRoutes(
       prompt: "consent",
     });
 
-    res.redirect(
-      `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
+    res?.redirect(
+      `https://accounts?.google.com/o/oauth2/v2/auth?${params?.toString()}`,
     );
   });
 
   // Auth: Google OAuth callback
-  app.get("/api/auth/google/callback", async (req: Request, res: Response) => {
-    const { code, state, error } = req.query;
+  app?.get("/api/auth/google/callback", async (req: Request, res: Response) => {
+    const { code, state, error } = req?.query;
 
     if (error) {
-      return res.redirect(`/login?error=google_denied`);
+      return res?.redirect(`/login?error=google_denied`);
     }
 
     // Verify state
-    const savedState = (
-      req.session as import("express-session").Session & {
+    const _savedState = (
+      req?.session as import("express-session").Session & {
         googleOAuthState?: string;
       }
     )?.googleOAuthState;
     if (!state || state !== savedState) {
-      return res.redirect("/login?error=invalid_state");
+      return res?.redirect("/login?error=invalid_state");
     }
     delete (
-      req.session as import("express-session").Session & {
+      req?.session as import("express-session").Session & {
         googleOAuthState?: string;
       }
     ).googleOAuthState;
 
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    const _clientId = process?.env.GOOGLE_CLIENT_ID;
+    const _clientSecret = process?.env.GOOGLE_CLIENT_SECRET;
 
     if (!clientId || !clientSecret) {
-      return res.redirect("/login?error=google_not_configured");
+      return res?.redirect("/login?error=google_not_configured");
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const baseUrl = process.env.APP_URL || "https://max-booster.com";
-    const redirectUri = `${baseUrl}/api/auth/google/callback`;
+    const _baseUrl = process?.env.APP_URL || "https://max-booster?.com";
+    const _redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     try {
       // Exchange code for tokens
-      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+      const _tokenResponse = await fetch("https://oauth2?.googleapis.com/token", {
         method: "POST",
-        signal: AbortSignal.timeout(10_000), // 10 s — Google outage must not hang the login flow
+        signal: AbortSignal?.timeout(10_000), // 10 s — Google outage must not hang the login flow
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
           code: code as string,
@@ -2254,73 +2257,73 @@ export async function registerRoutes(
         }),
       });
 
-      const tokens = await tokenResponse.json();
+      const _tokens = await tokenResponse?.json();
 
-      if (!tokenResponse.ok || tokens.error) {
-        logger.warn({ tokens }, "[Google OAuth] Token exchange failed");
-        return res.redirect("/login?error=token_exchange_failed");
+      if (!tokenResponse?.ok || tokens?.error) {
+        logger?.warn({ tokens }, "[Google OAuth] Token exchange failed");
+        return res?.redirect("/login?error=token_exchange_failed");
       }
 
       // Get user info
-      const userInfoResponse = await fetch(
-        "https://www.googleapis.com/oauth2/v2/userinfo",
+      const _userInfoResponse = await fetch(
+        "https://www?.googleapis.com/oauth2/v2/userinfo",
         {
-          signal: AbortSignal.timeout(10_000), // 10 s — userinfo hang must not block session creation
-          headers: { Authorization: `Bearer ${tokens.access_token}` },
+          signal: AbortSignal?.timeout(10_000), // 10 s — userinfo hang must not block session creation
+          headers: { Authorization: `Bearer ${tokens?.access_token}` },
         },
       );
 
-      const googleUser = await userInfoResponse.json();
+      const _googleUser = await userInfoResponse?.json();
 
-      if (!googleUser.email) {
-        return res.redirect("/login?error=no_email");
+      if (!googleUser?.email) {
+        return res?.redirect("/login?error=no_email");
       }
 
       // Check if user exists
-      let user = await storage.getUserByEmail(googleUser.email);
+      let user = await storage?.getUserByEmail(googleUser?.email);
 
       if (!user) {
         // Create new user from Google account
-        user = await storage.createUser({
-          email: googleUser.email,
+        user = await storage?.createUser({
+          email: googleUser?.email,
           password: "", // No password for OAuth users
-          firstName: googleUser.given_name || null,
-          lastName: googleUser.family_name || null,
+          firstName: googleUser?.given_name || null,
+          lastName: googleUser?.family_name || null,
         });
 
-        logger.info(`[Google OAuth] Created new user: ${user.email}`);
+        logger?.info(`[Google OAuth] Created new user: ${user?.email}`);
       }
 
       // Log the user in using session (regenerate prevents session fixation)
       try {
         await sessionRegenerate(req);
-        req.session.userId = user.id;
+        req?.session.userId = user?.id;
         await sessionSave(req);
-        logger.info(`[Google OAuth] User logged in: ${user.email}`);
-        return res.redirect("/dashboard");
+        logger?.info(`[Google OAuth] User logged in: ${user?.email}`);
+        return res?.redirect("/dashboard");
       } catch (sessionErr) {
-        logger.warn(
+        logger?.warn(
           { err: sessionErr },
           "[Google OAuth] Session operation failed after retries",
         );
-        return res.redirect("/login?error=login_failed");
+        return res?.redirect("/login?error=login_failed");
       }
     } catch (err) {
-      logger.warn({ err: err }, "[Google OAuth] Error:");
-      return res.redirect("/login?error=oauth_error");
+      logger?.warn({ err: err }, "[Google OAuth] Error:");
+      return res?.redirect("/login?error=oauth_error");
     }
   });
 
   // Auth: Delete Google connection
-  app.delete(
+  app?.delete(
     "/api/auth/google-connection",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
         // Check if user has a Google connection
-        if (!req.user.googleId) {
+        if (!req?.user.googleId) {
           return res
             .status(400)
             .json({ message: "No Google connection to remove" });
@@ -2328,24 +2331,24 @@ export async function registerRoutes(
 
         // Ensure user has a password set before disconnecting OAuth
         // Users who signed up via Google have empty passwords
-        if (!req.user.password || req.user.password === "") {
-          return res.status(400).json({
+        if (!req?.user.password || req?.user.password === "") {
+          return res?.status(400).json({
             message:
               "Please set a password before disconnecting Google. You won't be able to log in otherwise.",
           });
         }
 
         // Clear Google connection fields from user record
-        await storage.updateUser(req.user.id, {
+        await storage?.updateUser(req?.user.id, {
           googleId: null,
         });
 
-        return res.json({
+        return res?.json({
           success: true,
           message: "Google connection removed successfully",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Delete Google connection error");
+        logger?.warn({ err: error }, "Delete Google connection error");
         return res
           .status(500)
           .json({ message: "Failed to remove Google connection" });
@@ -2354,7 +2357,7 @@ export async function registerRoutes(
   );
 
   // Social Platform Connect - Creates stub social account entries
-  const ALLOWED_CONNECT_PROVIDERS = [
+  const _ALLOWED_CONNECT_PROVIDERS = [
     "spotify",
     "apple_music",
     "youtube",
@@ -2363,17 +2366,17 @@ export async function registerRoutes(
     "soundcloud",
   ];
 
-  app.get(
+  app?.get(
     "/api/auth/connect/:provider",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.redirect(
-          "/auth?redirect=" + encodeURIComponent(req.originalUrl),
+      if (!req?.user) {
+        return res?.redirect(
+          "/auth?redirect=" + encodeURIComponent(req?.originalUrl),
         );
       }
 
-      const { provider } = req.params;
-      if (!ALLOWED_CONNECT_PROVIDERS.includes(provider)) {
+      const { provider } = req?.params;
+      if (!ALLOWED_CONNECT_PROVIDERS?.includes(provider)) {
         return res
           .status(400)
           .json({ error: `Unsupported provider: ${provider}` });
@@ -2389,8 +2392,8 @@ export async function registerRoutes(
           .from(socialAccounts)
           .where(
             and(
-              eq(socialAccounts.userId, req.user.id),
-              eq(socialAccounts.platform, provider),
+              eq(socialAccounts?.userId, req?.user.id),
+              eq(socialAccounts?.platform, provider),
             ),
           )
           .limit(1);
@@ -2399,46 +2402,46 @@ export async function registerRoutes(
           await db
             .update(socialAccounts)
             .set({ isActive: true, createdAt: new Date() })
-            .where(eq(socialAccounts.id, existing.id));
+            .where(eq(socialAccounts?.id, existing?.id));
         } else {
-          await db.insert(socialAccounts).values({
-            userId: req.user.id,
+          await db?.insert(socialAccounts).values({
+            userId: req?.user.id,
             platform: provider,
-            platformUserId: `${provider}_${req.user.id}`,
+            platformUserId: `${provider}_${req?.user.id}`,
             username:
-              req.user.username || req.user.email?.split("@")[0] || provider,
+              req?.user.username || req?.user.email?.split("@")[0] || provider,
             accessToken: `platform_managed_${provider}`,
-            tokenExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+            tokenExpiresAt: new Date(Date?.now() + 365 * 24 * 60 * 60 * 1000),
             isActive: true,
             followerCount: 0,
           });
         }
 
-        return res.redirect(
+        return res?.redirect(
           "/settings?tab=connected-accounts&connected=" + provider,
         );
       } catch (error) {
-        logger.warn({ err: error }, `Error connecting ${provider}:`);
-        return res.status(500).json({ error: `Failed to connect ${provider}` });
+        logger?.warn({ err: error }, `Error connecting ${provider}:`);
+        return res?.status(500).json({ error: `Failed to connect ${provider}` });
       }
     },
   );
 
   // Dashboard: Comprehensive data
-  app.get(
+  app?.get(
     "/api/dashboard/comprehensive",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const userId = req.user!.id;
+        const _userId = req?.user!.id;
         const { studioProjects, releases, socialAccounts, analytics } =
           await import("@shared/schema");
         const { count, sum, gte, eq, and } = await import("drizzle-orm");
 
-        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+        const _thirtyDaysAgo = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+        const _sixtyDaysAgo = new Date(Date?.now() - 60 * 24 * 60 * 60 * 1000);
 
         const { shows } = await import("@shared/schema");
         const { desc: descOrder } = await import("drizzle-orm");
@@ -2457,18 +2460,18 @@ export async function registerRoutes(
           recentProjects,
           recentReleases,
           recentShows,
-        ] = await Promise.all([
+        ] = await Promise?.all([
           db
             .select({ count: count() })
             .from(studioProjects)
-            .where(eq(studioProjects.userId, userId)),
+            .where(eq(studioProjects?.userId, userId)),
           db
             .select({ count: count() })
             .from(studioProjects)
             .where(
               and(
-                eq(studioProjects.userId, userId),
-                sql`${studioProjects.createdAt} < ${thirtyDaysAgo}`,
+                eq(studioProjects?.userId, userId),
+                sql`${studioProjects?.createdAt} < ${thirtyDaysAgo}`,
               ),
             ),
           db
@@ -2476,8 +2479,8 @@ export async function registerRoutes(
             .from(releases)
             .where(
               and(
-                eq(releases.userId, userId),
-                eq(releases.status, "distributed"),
+                eq(releases?.userId, userId),
+                eq(releases?.status, "distributed"),
               ),
             ),
           db
@@ -2485,118 +2488,118 @@ export async function registerRoutes(
             .from(releases)
             .where(
               and(
-                eq(releases.userId, userId),
-                eq(releases.status, "distributed"),
-                sql`${releases.createdAt} < ${thirtyDaysAgo}`,
+                eq(releases?.userId, userId),
+                eq(releases?.status, "distributed"),
+                sql`${releases?.createdAt} < ${thirtyDaysAgo}`,
               ),
             ),
           db
-            .select({ total: sum(socialAccounts.followerCount) })
+            .select({ total: sum(socialAccounts?.followerCount) })
             .from(socialAccounts)
             .where(
               and(
-                eq(socialAccounts.userId, userId),
-                eq(socialAccounts.isActive, true),
+                eq(socialAccounts?.userId, userId),
+                eq(socialAccounts?.isActive, true),
               ),
             ),
           db
-            .select({ total: sum(analytics.revenue) })
+            .select({ total: sum(analytics?.revenue) })
             .from(analytics)
             .where(
               and(
-                eq(analytics.userId, userId),
-                gte(analytics.date, thirtyDaysAgo),
+                eq(analytics?.userId, userId),
+                gte(analytics?.date, thirtyDaysAgo),
               ),
             ),
           db
-            .select({ total: sum(analytics.revenue) })
+            .select({ total: sum(analytics?.revenue) })
             .from(analytics)
             .where(
               and(
-                eq(analytics.userId, userId),
-                gte(analytics.date, sixtyDaysAgo),
-                sql`${analytics.date} < ${thirtyDaysAgo}`,
+                eq(analytics?.userId, userId),
+                gte(analytics?.date, sixtyDaysAgo),
+                sql`${analytics?.date} < ${thirtyDaysAgo}`,
               ),
             ),
           // Previous period social reach from analytics snapshots
           db
             .select({
-              followers: sql<number>`COALESCE(MAX(${analytics.followers}), 0)`,
+              followers: sql<number>`COALESCE(MAX(${analytics?.followers}), 0)`,
             })
             .from(analytics)
             .where(
               and(
-                eq(analytics.userId, userId),
-                gte(analytics.date, sixtyDaysAgo),
-                sql`${analytics.date} < ${thirtyDaysAgo}`,
+                eq(analytics?.userId, userId),
+                gte(analytics?.date, sixtyDaysAgo),
+                sql`${analytics?.date} < ${thirtyDaysAgo}`,
               ),
             ),
-          storage.getNotifications(userId).catch(() => []),
+          storage?.getNotifications(userId).catch(() => []),
           db
             .select()
             .from(releases)
             .where(
               and(
-                eq(releases.userId, userId),
-                sql`${releases.releaseDate} > NOW()`,
+                eq(releases?.userId, userId),
+                sql`${releases?.releaseDate} > NOW()`,
               ),
             )
-            .orderBy(releases.releaseDate)
+            .orderBy(releases?.releaseDate)
             .limit(5),
           // Recent activity queries
           db
             .select({
-              id: studioProjects.id,
-              name: studioProjects.name,
-              createdAt: studioProjects.createdAt,
-              genre: studioProjects.genre,
+              id: studioProjects?.id,
+              name: studioProjects?.name,
+              createdAt: studioProjects?.createdAt,
+              genre: studioProjects?.genre,
             })
             .from(studioProjects)
-            .where(eq(studioProjects.userId, userId))
-            .orderBy(descOrder(studioProjects.createdAt))
+            .where(eq(studioProjects?.userId, userId))
+            .orderBy(descOrder(studioProjects?.createdAt))
             .limit(5),
           db
             .select({
-              id: releases.id,
-              title: releases.title,
-              createdAt: releases.createdAt,
-              status: releases.status,
+              id: releases?.id,
+              title: releases?.title,
+              createdAt: releases?.createdAt,
+              status: releases?.status,
             })
             .from(releases)
-            .where(eq(releases.userId, userId))
-            .orderBy(descOrder(releases.createdAt))
+            .where(eq(releases?.userId, userId))
+            .orderBy(descOrder(releases?.createdAt))
             .limit(5),
           db
             .select({
-              id: shows.id,
-              name: shows.name,
-              date: shows.date,
-              venue: shows.venue,
-              createdAt: shows.createdAt,
+              id: shows?.id,
+              name: shows?.name,
+              date: shows?.date,
+              venue: shows?.venue,
+              createdAt: shows?.createdAt,
             })
             .from(shows)
-            .where(eq(shows.userId, userId))
-            .orderBy(descOrder(shows.createdAt))
+            .where(eq(shows?.userId, userId))
+            .orderBy(descOrder(shows?.createdAt))
             .limit(5),
         ]);
 
-        const totalTracks = trackCountResult[0]?.count ?? 0;
-        const prevTracks = prevTrackCountResult[0]?.count ?? 0;
-        const activeDistributions = releaseCountResult[0]?.count ?? 0;
-        const prevDistributions = prevReleaseCountResult[0]?.count ?? 0;
-        const socialReach = Number(socialReachResult[0]?.total ?? 0);
-        const totalRevenue = Number(revenueResult[0]?.total ?? 0);
-        const prevRevenue = Number(prevRevenueResult[0]?.total ?? 0);
-        const prevSocialReach = Number(
+        const _totalTracks = trackCountResult[0]?.count ?? 0;
+        const _prevTracks = prevTrackCountResult[0]?.count ?? 0;
+        const _activeDistributions = releaseCountResult[0]?.count ?? 0;
+        const _prevDistributions = prevReleaseCountResult[0]?.count ?? 0;
+        const _socialReach = Number(socialReachResult[0]?.total ?? 0);
+        const _totalRevenue = Number(revenueResult[0]?.total ?? 0);
+        const _prevRevenue = Number(prevRevenueResult[0]?.total ?? 0);
+        const _prevSocialReach = Number(
           prevSocialReachResult[0]?.followers ?? 0,
         );
 
-        const growthPct = (curr: number, prev: number) =>
+        const _growthPct = (curr: number, prev: number) =>
           prev === 0
             ? curr > 0
               ? 100
               : 0
-            : Math.round(((curr - prev) / prev) * 100);
+            : Math?.round(((curr - prev) / prev) * 100);
 
         // Build real recent activity feed from DB data
         const activityItems: Array<{
@@ -2607,46 +2610,46 @@ export async function registerRoutes(
           timestamp: Date;
         }> = [];
         for (const p of recentProjects) {
-          activityItems.push({
+          activityItems?.push({
             type: "project",
-            title: `New project: ${p.name}`,
-            description: p.genre
-              ? `Genre: ${p.genre}`
+            title: `New project: ${p?.name}`,
+            description: p?.genre
+              ? `Genre: ${p?.genre}`
               : "Studio project created",
             status: "success",
-            timestamp: p.createdAt ?? new Date(),
+            timestamp: p?.createdAt ?? new Date(),
           });
         }
         for (const r of recentReleases) {
-          activityItems.push({
+          activityItems?.push({
             type: "release",
-            title: `Release: ${r.title}`,
+            title: `Release: ${r?.title}`,
             description:
-              r.status === "distributed"
+              r?.status === "distributed"
                 ? "Live on all platforms"
-                : r.status === "draft"
+                : r?.status === "draft"
                   ? "Draft — ready to submit"
-                  : `Status: ${r.status}`,
-            status: r.status === "distributed" ? "success" : "info",
-            timestamp: r.createdAt ?? new Date(),
+                  : `Status: ${r?.status}`,
+            status: r?.status === "distributed" ? "success" : "info",
+            timestamp: r?.createdAt ?? new Date(),
           });
         }
         for (const s of recentShows) {
-          activityItems.push({
+          activityItems?.push({
             type: "show",
-            title: `Show: ${s.name}`,
-            description: s.venue ? `At ${s.venue}` : "Live performance",
+            title: `Show: ${s?.name}`,
+            description: s?.venue ? `At ${s?.venue}` : "Live performance",
             status: "info",
-            timestamp: s.createdAt ?? s.date ?? new Date(),
+            timestamp: s?.createdAt ?? s?.date ?? new Date(),
           });
         }
-        activityItems.sort(
+        activityItems?.sort(
           (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+            new Date(b?.timestamp).getTime() - new Date(a?.timestamp).getTime(),
         );
-        const recentActivity = activityItems.slice(0, 10);
+        const _recentActivity = activityItems?.slice(0, 10);
 
-        return res.json({
+        return res?.json({
           totalTracks,
           activeDistributions,
           totalRevenue,
@@ -2661,10 +2664,10 @@ export async function registerRoutes(
           upcomingReleases: upcomingReleasesResult,
           notifications: (recentNotifications || [])
             .slice(0, 5)
-            .map((n) => ({ ...n, read: n.isRead, link: n.actionUrl })),
+            .map((n) => ({ ...n, read: n?.isRead, link: n?.actionUrl })),
         });
       } catch (error) {
-        logger.warn({ err: error }, "Dashboard error");
+        logger?.warn({ err: error }, "Dashboard error");
         return res
           .status(500)
           .json({ message: "Failed to fetch dashboard data" });
@@ -2673,12 +2676,12 @@ export async function registerRoutes(
   );
 
   // Dashboard: Next action recommendation
-  app.get("/api/dashboard/next-action", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/dashboard/next-action", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
       const {
         studioProjects,
         releases,
@@ -2688,22 +2691,22 @@ export async function registerRoutes(
       const { count, eq, and } = await import("drizzle-orm");
 
       const [trackCount, releaseCount, socialCount, subResult] =
-        await Promise.all([
+        await Promise?.all([
           db
             .select({ count: count() })
             .from(studioProjects)
-            .where(eq(studioProjects.userId, userId)),
+            .where(eq(studioProjects?.userId, userId)),
           db
             .select({ count: count() })
             .from(releases)
-            .where(eq(releases.userId, userId)),
+            .where(eq(releases?.userId, userId)),
           db
             .select({ count: count() })
             .from(socialAccounts)
             .where(
               and(
-                eq(socialAccounts.userId, userId),
-                eq(socialAccounts.isActive, true),
+                eq(socialAccounts?.userId, userId),
+                eq(socialAccounts?.isActive, true),
               ),
             ),
           db
@@ -2711,20 +2714,20 @@ export async function registerRoutes(
             .from(subscriptionsTable)
             .where(
               and(
-                eq(subscriptionsTable.userId, userId),
-                eq(subscriptionsTable.status, "active"),
+                eq(subscriptionsTable?.userId, userId),
+                eq(subscriptionsTable?.status, "active"),
               ),
             )
             .limit(1),
         ]);
 
-      const tracks = trackCount[0]?.count ?? 0;
-      const releasesCount = releaseCount[0]?.count ?? 0;
-      const socials = socialCount[0]?.count ?? 0;
-      const hasActiveSub = subResult.length > 0;
+      const _tracks = trackCount[0]?.count ?? 0;
+      const _releasesCount = releaseCount[0]?.count ?? 0;
+      const _socials = socialCount[0]?.count ?? 0;
+      const _hasActiveSub = subResult?.length > 0;
 
       if (!hasActiveSub) {
-        return res.json({
+        return res?.json({
           action: "subscribe",
           title: "Start Your Subscription",
           description: "Unlock all features with a Max Booster subscription.",
@@ -2733,7 +2736,7 @@ export async function registerRoutes(
         });
       }
       if (tracks === 0) {
-        return res.json({
+        return res?.json({
           action: "upload_first_track",
           title: "Upload Your First Track",
           description:
@@ -2743,7 +2746,7 @@ export async function registerRoutes(
         });
       }
       if (releasesCount === 0) {
-        return res.json({
+        return res?.json({
           action: "create_release",
           title: "Create Your First Release",
           description: "Distribute your music to 97+ platforms worldwide.",
@@ -2752,7 +2755,7 @@ export async function registerRoutes(
         });
       }
       if (socials === 0) {
-        return res.json({
+        return res?.json({
           action: "connect_social",
           title: "Connect Social Media",
           description:
@@ -2761,7 +2764,7 @@ export async function registerRoutes(
           estimatedTime: "3 minutes",
         });
       }
-      return res.json({
+      return res?.json({
         action: "view_analytics",
         title: "Review Your Analytics",
         description: "Check your streaming performance and audience insights.",
@@ -2769,51 +2772,51 @@ export async function registerRoutes(
         estimatedTime: "5 minutes",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Next action error");
-      return res.status(500).json({ error: "Failed to determine next action" });
+      logger?.warn({ err: error }, "Next action error");
+      return res?.status(500).json({ error: "Failed to determine next action" });
     }
   });
 
   // Notifications: Get all notifications
-  app.get("/api/notifications", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/notifications", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const userNotifications = await storage.getNotifications(req.user.id);
+      const _userNotifications = await storage?.getNotifications(req?.user.id);
       // Map isRead to read for frontend compatibility
-      const mappedNotifications = (userNotifications || []).map((n) => ({
+      const _mappedNotifications = (userNotifications || []).map((n) => ({
         ...n,
-        read: n.isRead,
-        link: n.actionUrl,
+        read: n?.isRead,
+        link: n?.actionUrl,
       }));
-      return res.json(mappedNotifications);
+      return res?.json(mappedNotifications);
     } catch (error) {
-      logger.warn({ err: error }, "Get notifications error");
-      return res.status(500).json({ message: "Failed to fetch notifications" });
+      logger?.warn({ err: error }, "Get notifications error");
+      return res?.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
 
   // Notifications: Mark as read (PUT for frontend compatibility)
-  app.put(
+  app?.put(
     "/api/notifications/:id/read",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { id } = req.params;
-        const notification = await storage.getNotificationById(id);
+        const { id } = req?.params;
+        const _notification = await storage?.getNotificationById(id);
         if (!notification) {
-          return res.status(404).json({ message: "Notification not found" });
+          return res?.status(404).json({ message: "Notification not found" });
         }
-        if (notification.userId !== req.user.id) {
-          return res.status(403).json({ message: "Not authorized" });
+        if (notification?.userId !== req?.user.id) {
+          return res?.status(403).json({ message: "Not authorized" });
         }
-        await storage.markNotificationRead(id);
-        return res.json({ success: true });
+        await storage?.markNotificationRead(id);
+        return res?.json({ success: true });
       } catch (error) {
-        logger.warn({ err: error }, "Mark notification read error");
+        logger?.warn({ err: error }, "Mark notification read error");
         return res
           .status(500)
           .json({ message: "Failed to mark notification as read" });
@@ -2822,34 +2825,34 @@ export async function registerRoutes(
   );
 
   // Notifications: Mark all as read (PUT for frontend compatibility)
-  app.put(
+  app?.put(
     "/api/notifications/mark-all-read",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        await storage.markAllNotificationsRead(req.user.id);
-        return res.json({ success: true });
+        await storage?.markAllNotificationsRead(req?.user.id);
+        return res?.json({ success: true });
       } catch (error) {
-        logger.warn({ err: error }, "Mark all read error");
-        return res.status(500).json({ message: "Failed to mark all as read" });
+        logger?.warn({ err: error }, "Mark all read error");
+        return res?.status(500).json({ message: "Failed to mark all as read" });
       }
     },
   );
 
   // Notifications: Clear all notifications
-  app.delete(
+  app?.delete(
     "/api/notifications/clear-all",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        await storage.deleteAllNotifications(req.user.id);
-        return res.json({ success: true });
+        await storage?.deleteAllNotifications(req?.user.id);
+        return res?.json({ success: true });
       } catch (error) {
-        logger.warn({ err: error }, "Clear all notifications error");
+        logger?.warn({ err: error }, "Clear all notifications error");
         return res
           .status(500)
           .json({ message: "Failed to clear all notifications" });
@@ -2858,21 +2861,22 @@ export async function registerRoutes(
   );
 
   // Mobile Device Tokens: Remove (must be before /:id wildcard)
-  app.delete(
+  app?.delete(
     "/api/notifications/mobile-tokens",
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
       try {
-        const { token } = req.body;
-        const { mobilePushService } =
-          await import("./services/mobilePushService.js");
+        const { token } = req?.body;
+        const { mobilePushService } = await import(
+          "./services/mobilePushService?.js"
+        );
         if (token) {
-          await mobilePushService.deactivateToken(token);
+          await mobilePushService?.deactivateToken(token);
         } else {
-          await mobilePushService.removeUserTokens(req.user.id);
+          await mobilePushService?.removeUserTokens(req?.user.id);
         }
-        return res.json({
+        return res?.json({
           success: true,
           outcome: {
             type: "channel_toggled",
@@ -2883,7 +2887,7 @@ export async function registerRoutes(
           },
         });
       } catch (error) {
-        logger.warn({ err: error }, "Mobile token remove error:");
+        logger?.warn({ err: error }, "Mobile token remove error:");
         return res
           .status(500)
           .json({ error: "Failed to remove mobile device token" });
@@ -2892,57 +2896,57 @@ export async function registerRoutes(
   );
 
   // Notifications: Delete notification
-  app.delete("/api/notifications/:id", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.delete("/api/notifications/:id", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { id } = req.params;
-      const notification = await storage.getNotificationById(id);
+      const { id } = req?.params;
+      const _notification = await storage?.getNotificationById(id);
       if (!notification) {
-        return res.status(404).json({ message: "Notification not found" });
+        return res?.status(404).json({ message: "Notification not found" });
       }
-      if (notification.userId !== req.user.id) {
-        return res.status(403).json({ message: "Not authorized" });
+      if (notification?.userId !== req?.user.id) {
+        return res?.status(403).json({ message: "Not authorized" });
       }
-      await storage.deleteNotification(id);
-      return res.json({ success: true });
+      await storage?.deleteNotification(id);
+      return res?.json({ success: true });
     } catch (error) {
-      logger.warn({ err: error }, "Delete notification error");
-      return res.status(500).json({ message: "Failed to delete notification" });
+      logger?.warn({ err: error }, "Delete notification error");
+      return res?.status(500).json({ message: "Failed to delete notification" });
     }
   });
 
   // Notifications: Mark as read
-  app.post(
+  app?.post(
     "/api/notifications/:id/read",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { id } = req.params;
+        const { id } = req?.params;
 
         // Verify the notification belongs to this user
-        const notification = await storage.getNotificationById(id);
+        const _notification = await storage?.getNotificationById(id);
         if (!notification) {
-          return res.status(404).json({ message: "Notification not found" });
+          return res?.status(404).json({ message: "Notification not found" });
         }
-        if (notification.userId !== req.user.id) {
+        if (notification?.userId !== req?.user.id) {
           return res
             .status(403)
             .json({ message: "Not authorized to mark this notification" });
         }
 
         // Mark as read
-        await storage.markNotificationRead(id);
+        await storage?.markNotificationRead(id);
 
-        return res.json({
+        return res?.json({
           success: true,
           message: "Notification marked as read",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Mark notification read error");
+        logger?.warn({ err: error }, "Mark notification read error");
         return res
           .status(500)
           .json({ message: "Failed to mark notification as read" });
@@ -2951,20 +2955,20 @@ export async function registerRoutes(
   );
 
   // Notifications: Mark all as read
-  app.post(
+  app?.post(
     "/api/notifications/read-all",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        await storage.markAllNotificationsRead(req.user.id);
-        return res.json({
+        await storage?.markAllNotificationsRead(req?.user.id);
+        return res?.json({
           success: true,
           message: "All notifications marked as read",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Mark all notifications read error");
+        logger?.warn({ err: error }, "Mark all notifications read error");
         return res
           .status(500)
           .json({ message: "Failed to mark all notifications as read" });
@@ -2973,20 +2977,20 @@ export async function registerRoutes(
   );
 
   // Notifications: Mark all as read (alias for frontend compatibility)
-  app.post(
+  app?.post(
     "/api/notifications/mark-all-read",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        await storage.markAllNotificationsRead(req.user.id);
-        return res.json({
+        await storage?.markAllNotificationsRead(req?.user.id);
+        return res?.json({
           success: true,
           message: "All notifications marked as read",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Mark all notifications read error");
+        logger?.warn({ err: error }, "Mark all notifications read error");
         return res
           .status(500)
           .json({ message: "Failed to mark all notifications as read" });
@@ -2995,14 +2999,14 @@ export async function registerRoutes(
   );
 
   // Notifications: Test endpoint
-  app.post("/api/notifications/test", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/notifications/test", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       // Create a test notification in the database
-      const notification = await storage.createNotification({
-        userId: req.user.id,
+      const _notification = await storage?.createNotification({
+        userId: req?.user.id,
         type: "system",
         title: "Test Notification",
         message:
@@ -3013,7 +3017,7 @@ export async function registerRoutes(
       // Broadcast via WebSocket if available
       if (
         typeof (
-          global as NodeJS.Global & {
+          global as NodeJS?.Global & {
             broadcastNotification?: (
               userId: string,
               data: Record<string, unknown>,
@@ -3022,26 +3026,26 @@ export async function registerRoutes(
         ).broadcastNotification === "function"
       ) {
         (
-          global as NodeJS.Global & {
+          global as NodeJS?.Global & {
             broadcastNotification?: (
               userId: string,
               data: Record<string, unknown>,
             ) => void;
           }
-        ).broadcastNotification!(req.user.id, {
+        ).broadcastNotification!(req?.user.id, {
           ...notification,
-          read: notification.isRead,
-          link: notification.actionUrl,
+          read: notification?.isRead,
+          link: notification?.actionUrl,
         });
       }
 
-      return res.json({
+      return res?.json({
         success: true,
         message: "Test notification sent",
         notification,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Test notification error");
+      logger?.warn({ err: error }, "Test notification error");
       return res
         .status(500)
         .json({ message: "Failed to send test notification" });
@@ -3049,20 +3053,20 @@ export async function registerRoutes(
   });
 
   // Notifications: Get preferences
-  app.get(
+  app?.get(
     "/api/notifications/preferences",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const user = await storage.getUser(req.user.id);
-        const savedPrefs = user?.notificationSettings as Record<
+        const _user = await storage?.getUser(req?.user.id);
+        const _savedPrefs = user?.notificationSettings as Record<
           string,
           unknown
         > | null;
 
-        const defaultPrefs = {
+        const _defaultPrefs = {
           muteAll: false,
           quietHours: {
             enabled: false,
@@ -3123,52 +3127,52 @@ export async function registerRoutes(
         };
 
         if (!savedPrefs) {
-          return res.json(defaultPrefs);
+          return res?.json(defaultPrefs);
         }
 
-        const merged = {
+        const _merged = {
           ...defaultPrefs,
           ...savedPrefs,
           quietHours: {
-            ...defaultPrefs.quietHours,
-            ...((savedPrefs.quietHours as Record<string, unknown>) || {}),
+            ...defaultPrefs?.quietHours,
+            ...((savedPrefs?.quietHours as Record<string, unknown>) || {}),
           },
           email: {
-            ...defaultPrefs.email,
-            ...((savedPrefs.email as Record<string, unknown>) || {}),
+            ...defaultPrefs?.email,
+            ...((savedPrefs?.email as Record<string, unknown>) || {}),
             categories: {
-              ...defaultPrefs.email.categories,
-              ...(((savedPrefs.email as Record<string, unknown>)
+              ...defaultPrefs?.email.categories,
+              ...(((savedPrefs?.email as Record<string, unknown>)
                 ?.categories as Record<string, unknown>) || {}),
             },
           },
           push: {
-            ...defaultPrefs.push,
-            ...((savedPrefs.push as Record<string, unknown>) || {}),
+            ...defaultPrefs?.push,
+            ...((savedPrefs?.push as Record<string, unknown>) || {}),
             categories: {
-              ...defaultPrefs.push.categories,
-              ...(((savedPrefs.push as Record<string, unknown>)
+              ...defaultPrefs?.push.categories,
+              ...(((savedPrefs?.push as Record<string, unknown>)
                 ?.categories as Record<string, unknown>) || {}),
             },
           },
           sms: {
-            ...defaultPrefs.sms,
-            ...((savedPrefs.sms as Record<string, unknown>) || {}),
+            ...defaultPrefs?.sms,
+            ...((savedPrefs?.sms as Record<string, unknown>) || {}),
             categories: {
-              ...defaultPrefs.sms.categories,
-              ...(((savedPrefs.sms as Record<string, unknown>)
+              ...defaultPrefs?.sms.categories,
+              ...(((savedPrefs?.sms as Record<string, unknown>)
                 ?.categories as Record<string, unknown>) || {}),
             },
           },
           inApp: {
-            ...defaultPrefs.inApp,
-            ...((savedPrefs.inApp as Record<string, unknown>) || {}),
+            ...defaultPrefs?.inApp,
+            ...((savedPrefs?.inApp as Record<string, unknown>) || {}),
           },
         };
 
-        return res.json(merged);
+        return res?.json(merged);
       } catch (error) {
-        logger.warn({ err: error }, "Get notification preferences error");
+        logger?.warn({ err: error }, "Get notification preferences error");
         return res
           .status(500)
           .json({ error: "Failed to get notification preferences" });
@@ -3177,44 +3181,44 @@ export async function registerRoutes(
   );
 
   // Notifications: Update preferences
-  app.put(
+  app?.put(
     "/api/notifications/preferences",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const newPreferences = req.body as Record<string, unknown>;
-        await storage.updateUser(req.user.id, {
+        const _newPreferences = req?.body as Record<string, unknown>;
+        await storage?.updateUser(req?.user.id, {
           notificationSettings: newPreferences,
         });
 
         let outcomeType = "preference_saved";
         let outcomeMessage = "Notification preferences updated";
 
-        if (newPreferences.muteAll !== undefined) {
+        if (newPreferences?.muteAll !== undefined) {
           outcomeType = "mute_toggled";
-          outcomeMessage = newPreferences.muteAll
+          outcomeMessage = newPreferences?.muteAll
             ? "All notifications muted"
             : "Notifications unmuted";
         } else if (
-          (newPreferences.quietHours as Record<string, unknown>)?.enabled !==
+          (newPreferences?.quietHours as Record<string, unknown>)?.enabled !==
           undefined
         ) {
           outcomeType = "quiet_hours_set";
           outcomeMessage = (
-            newPreferences.quietHours as Record<string, unknown>
+            newPreferences?.quietHours as Record<string, unknown>
           ).enabled
             ? "Quiet hours enabled"
             : "Quiet hours disabled";
         } else if (
-          (newPreferences.email as Record<string, unknown>)?.frequency
+          (newPreferences?.email as Record<string, unknown>)?.frequency
         ) {
           outcomeType = "digest_changed";
-          outcomeMessage = `Email digest set to ${(newPreferences.email as Record<string, unknown>).frequency}`;
+          outcomeMessage = `Email digest set to ${(newPreferences?.email as Record<string, unknown>).frequency}`;
         }
 
-        return res.json({
+        return res?.json({
           success: true,
           outcome: {
             type: outcomeType,
@@ -3223,7 +3227,7 @@ export async function registerRoutes(
           },
         });
       } catch (error) {
-        logger.warn({ err: error }, "Update notification preferences error");
+        logger?.warn({ err: error }, "Update notification preferences error");
         return res
           .status(500)
           .json({ message: "Failed to update preferences" });
@@ -3232,69 +3236,69 @@ export async function registerRoutes(
   );
 
   // Push Notifications: Get VAPID public key
-  app.get(
+  app?.get(
     "/api/notifications/push-key",
     async (_req: Request, res: Response) => {
-      const publicKey = process.env.VAPID_PUBLIC_KEY;
+      const _publicKey = process?.env.VAPID_PUBLIC_KEY;
       if (!publicKey) {
         return res
           .status(503)
           .json({ message: "Push notifications not configured" });
       }
-      return res.json({ publicKey });
+      return res?.json({ publicKey });
     },
   );
 
   // Push Notifications: Save subscription
-  app.post(
+  app?.post(
     "/api/notifications/push-subscriptions",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { endpoint, keys } = req.body;
+        const { endpoint, keys } = req?.body;
         if (!endpoint || !keys?.p256dh || !keys?.auth) {
           return res
             .status(400)
             .json({ message: "Invalid push subscription data" });
         }
 
-        const existing = await db
+        const _existing = await db
           .select()
           .from(pushSubscriptions)
-          .where(eq(pushSubscriptions.endpoint, endpoint))
+          .where(eq(pushSubscriptions?.endpoint, endpoint))
           .limit(1);
 
-        if (existing.length > 0) {
+        if (existing?.length > 0) {
           await db
             .update(pushSubscriptions)
             .set({
-              userId: req.user.id,
-              p256dh: keys.p256dh,
-              auth: keys.auth,
-              userAgent: req.headers["user-agent"] || null,
+              userId: req?.user.id,
+              p256dh: keys?.p256dh,
+              auth: keys?.auth,
+              userAgent: req?.headers["user-agent"] || null,
               updatedAt: new Date(),
             })
-            .where(eq(pushSubscriptions.endpoint, endpoint));
+            .where(eq(pushSubscriptions?.endpoint, endpoint));
         } else {
-          await db.insert(pushSubscriptions).values({
-            userId: req.user.id,
+          await db?.insert(pushSubscriptions).values({
+            userId: req?.user.id,
             endpoint,
-            p256dh: keys.p256dh,
-            auth: keys.auth,
-            userAgent: req.headers["user-agent"] || null,
+            p256dh: keys?.p256dh,
+            auth: keys?.auth,
+            userAgent: req?.headers["user-agent"] || null,
           });
         }
 
         // Auto-enable push in notification settings when user subscribes.
         // The user has already granted browser permission — honour that intent.
         try {
-          const currentSettings =
-            (req.user.notificationSettings as Record<string, unknown>) || {};
-          const currentPush =
-            (currentSettings.push as Record<string, unknown>) || {};
-          if (currentPush.enabled !== true) {
+          const _currentSettings =
+            (req?.user.notificationSettings as Record<string, unknown>) || {};
+          const _currentPush =
+            (currentSettings?.push as Record<string, unknown>) || {};
+          if (currentPush?.enabled !== true) {
             await db
               .update(users)
               .set({
@@ -3304,18 +3308,18 @@ export async function registerRoutes(
                 },
                 updatedAt: new Date(),
               })
-              .where(eq(users.id, req.user.id));
+              .where(eq(users?.id, req?.user.id));
           }
         } catch (settingsErr) {
-          logger.warn(
+          logger?.warn(
             { err: settingsErr },
             "Push subscribe: could not auto-enable push setting (non-fatal)",
           );
         }
 
-        return res.json({ success: true, message: "Push subscription saved" });
+        return res?.json({ success: true, message: "Push subscription saved" });
       } catch (error) {
-        logger.warn({ err: error }, "Save push subscription error");
+        logger?.warn({ err: error }, "Save push subscription error");
         return res
           .status(500)
           .json({ message: "Failed to save push subscription" });
@@ -3324,34 +3328,34 @@ export async function registerRoutes(
   );
 
   // Push Notifications: Remove subscription
-  app.delete(
+  app?.delete(
     "/api/notifications/push-subscriptions",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { endpoint } = req.body;
+        const { endpoint } = req?.body;
         if (endpoint) {
           await db
             .delete(pushSubscriptions)
             .where(
               and(
-                eq(pushSubscriptions.endpoint, endpoint),
-                eq(pushSubscriptions.userId, req.user.id),
+                eq(pushSubscriptions?.endpoint, endpoint),
+                eq(pushSubscriptions?.userId, req?.user.id),
               ),
             );
         } else {
           await db
             .delete(pushSubscriptions)
-            .where(eq(pushSubscriptions.userId, req.user.id));
+            .where(eq(pushSubscriptions?.userId, req?.user.id));
         }
-        return res.json({
+        return res?.json({
           success: true,
           message: "Push subscription removed",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Remove push subscription error");
+        logger?.warn({ err: error }, "Remove push subscription error");
         return res
           .status(500)
           .json({ message: "Failed to remove push subscription" });
@@ -3360,28 +3364,28 @@ export async function registerRoutes(
   );
 
   // Push Notifications: Get subscription status
-  app.get(
+  app?.get(
     "/api/notifications/push-subscriptions/status",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const subs = await db
+        const _subs = await db
           .select()
           .from(pushSubscriptions)
-          .where(eq(pushSubscriptions.userId, req.user.id));
-        return res.json({
-          hasSubscriptions: subs.length > 0,
-          count: subs.length,
-          devices: subs.map((s) => ({
-            id: s.id,
-            userAgent: s.userAgent,
-            createdAt: s.createdAt,
+          .where(eq(pushSubscriptions?.userId, req?.user.id));
+        return res?.json({
+          hasSubscriptions: subs?.length > 0,
+          count: subs?.length,
+          devices: subs?.map((s) => ({
+            id: s?.id,
+            userAgent: s?.userAgent,
+            createdAt: s?.createdAt,
           })),
         });
       } catch (error) {
-        logger.warn({ err: error }, "Get push subscription status error");
+        logger?.warn({ err: error }, "Get push subscription status error");
         return res
           .status(500)
           .json({ message: "Failed to get subscription status" });
@@ -3390,26 +3394,27 @@ export async function registerRoutes(
   );
 
   // Push Notifications: Send test push (all channels)
-  app.post(
+  app?.post(
     "/api/notifications/push-test",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { notificationDispatcher } =
-          await import("./services/notificationDispatcher.js");
-        const result = await notificationDispatcher.sendTestToUser(req.user.id);
-        return res.json({
+        const { notificationDispatcher } = await import(
+          "./services/notificationDispatcher?.js"
+        );
+        const _result = await notificationDispatcher?.sendTestToUser(req?.user.id);
+        return res?.json({
           success: true,
           push: result,
           message:
-            result.totalSent > 0
-              ? `Test push sent to ${result.totalSent} device(s) via [${result.channels.join(", ")}]`
+            result?.totalSent > 0
+              ? `Test push sent to ${result?.totalSent} device(s) via [${result?.channels.join(", ")}]`
               : "No push subscriptions registered",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Test push notification error");
+        logger?.warn({ err: error }, "Test push notification error");
         return res
           .status(500)
           .json({ message: "Failed to send test push notification" });
@@ -3418,42 +3423,45 @@ export async function registerRoutes(
   );
 
   // SMS Notifications: Request phone verification code (Twilio Verify API)
-  app.post(
+  app?.post(
     "/api/notifications/sms/verify",
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
       try {
-        const { phoneNumber } = req.body;
+        const { phoneNumber } = req?.body;
         if (!phoneNumber)
-          return res.status(400).json({ message: "Phone number is required" });
+          return res?.status(400).json({ message: "Phone number is required" });
 
-        // Normalize to E.164 using libphonenumber-js
-        const { parsePhoneNumber, isValidPhoneNumber } =
-          await import("libphonenumber-js");
+        // Normalize to E?.164 using libphonenumber-js
+        const { parsePhoneNumber, isValidPhoneNumber } = await import(
+          "libphonenumber-js"
+        );
         let e164Phone: string;
         try {
-          const parsed = parsePhoneNumber(phoneNumber as string, "US");
+          const _parsed = parsePhoneNumber(phoneNumber as string, "US");
           if (!parsed || !isValidPhoneNumber(phoneNumber as string, "US")) {
-            return res.status(400).json({
-              message:
-                "Invalid phone number. Please include country code, e.g. +1 (555) 123-4567",
-            });
+            return res
+              .status(400)
+              .json({
+                message:
+                  "Invalid phone number. Please include country code, e?.g. +1 (555) 123-4567",
+              });
           }
-          e164Phone = parsed.format("E.164");
+          e164Phone = parsed?.format("E?.164");
         } catch {
           return res
             .status(400)
             .json({ message: "Invalid phone number format" });
         }
 
-        const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-        const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-        const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+        const _twilioSid = process?.env.TWILIO_ACCOUNT_SID;
+        const _twilioToken = process?.env.TWILIO_AUTH_TOKEN;
+        const _verifyServiceSid = process?.env.TWILIO_VERIFY_SERVICE_SID;
 
-        const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-        const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
-        const verifyTemplateSid = process.env.TWILIO_VERIFY_TEMPLATE_SID;
+        const _twilioPhone = process?.env.TWILIO_PHONE_NUMBER;
+        const _messagingServiceSid = process?.env.TWILIO_MESSAGING_SERVICE_SID;
+        const _verifyTemplateSid = process?.env.TWILIO_VERIFY_TEMPLATE_SID;
 
         if (twilioSid && twilioToken && verifyServiceSid) {
           // ✅ Production path — Twilio Verify API handles code generation, delivery,
@@ -3461,22 +3469,22 @@ export async function registerRoutes(
           // The Verify Service friendly name ("Max Booster") appears in the default
           // message: "Your Max Booster verification code is: XXXXXX"
           // Set TWILIO_VERIFY_TEMPLATE_SID to use a fully custom branded template.
-          const twilio = (await import("twilio")).default;
-          const client = twilio(twilioSid, twilioToken);
+          const _twilio = (await import("twilio")).default;
+          const _client = twilio(twilioSid, twilioToken);
 
           const verifyParams: Record<string, string> = {
             to: e164Phone,
             channel: "sms",
           };
-          if (verifyTemplateSid) verifyParams.templateSid = verifyTemplateSid;
+          if (verifyTemplateSid) verifyParams?.templateSid = verifyTemplateSid;
 
-          const verification = await client.verify.v2
+          const _verification = await client?.verify.v2
             .services(verifyServiceSid)
-            .verifications.create(verifyParams);
+            .verifications?.create(verifyParams);
 
-          if (verification.status !== "pending") {
-            logger.warn(
-              { status: verification.status },
+          if (verification?.status !== "pending") {
+            logger?.warn(
+              { status: verification?.status },
               "[SMS] Unexpected Verify status",
             );
             return res.status(502).json({
@@ -3486,24 +3494,24 @@ export async function registerRoutes(
           }
 
           // Store the normalized phone number (code is managed by Twilio — no DB storage needed)
-          const user = await storage.getUser(req.user.id);
-          const currentSettings =
+          const _user = await storage?.getUser(req?.user.id);
+          const _currentSettings =
             (user?.notificationSettings as Record<string, unknown>) || {};
-          await storage.updateUser(req.user.id, {
+          await storage?.updateUser(req?.user.id, {
             notificationSettings: {
               ...currentSettings,
               sms: {
-                ...((currentSettings.sms as Record<string, unknown>) || {}),
+                ...((currentSettings?.sms as Record<string, unknown>) || {}),
                 phoneNumber: e164Phone,
                 verified: false,
               },
             },
           });
 
-          logger.info(
-            `[SMS] Max Booster verify code dispatched to ${e164Phone.slice(0, 5)}*** (sid: ${verification.sid})`,
+          logger?.info(
+            `[SMS] Max Booster verify code dispatched to ${e164Phone?.slice(0, 5)}*** (sid: ${verification?.sid})`,
           );
-          return res.json({
+          return res?.json({
             success: true,
             message:
               "A Max Booster verification code has been sent to your phone.",
@@ -3513,39 +3521,39 @@ export async function registerRoutes(
         // ✅ Middle path — Twilio credentials + Messaging Service or phone number but no Verify Service.
         // Sends a branded SMS directly via Twilio Messages API.
         // Messaging Service SID is preferred (matches "Max Booster" service name in console).
-        const verificationCode = crypto.randomInt(100000, 1000000).toString();
+        const _verificationCode = crypto?.randomInt(100000, 1000000).toString();
         if (twilioSid && twilioToken && (messagingServiceSid || twilioPhone)) {
-          const twilio = (await import("twilio")).default;
-          const client = twilio(twilioSid, twilioToken);
-          const smsBody =
+          const _twilio = (await import("twilio")).default;
+          const _client = twilio(twilioSid, twilioToken);
+          const _smsBody =
             `Your Max Booster verification code is: ${verificationCode}\n\n` +
             `This code expires in 10 minutes. If you didn't request this, you can safely ignore this message.\n\n` +
             `— The Max Booster Team`;
-          const msgParams = messagingServiceSid
+          const _msgParams = messagingServiceSid
             ? { to: e164Phone, messagingServiceSid, body: smsBody }
             : { to: e164Phone, from: twilioPhone as string, body: smsBody };
-          await client.messages.create(msgParams);
+          await client?.messages.create(msgParams);
 
-          const user = await storage.getUser(req.user.id);
-          const currentSettings =
+          const _user = await storage?.getUser(req?.user.id);
+          const _currentSettings =
             (user?.notificationSettings as Record<string, unknown>) || {};
-          await storage.updateUser(req.user.id, {
+          await storage?.updateUser(req?.user.id, {
             notificationSettings: {
               ...currentSettings,
               sms: {
-                ...((currentSettings.sms as Record<string, unknown>) || {}),
+                ...((currentSettings?.sms as Record<string, unknown>) || {}),
                 phoneNumber: e164Phone,
                 verified: false,
                 pendingVerification: verificationCode,
-                pendingVerificationExpiry: Date.now() + 10 * 60 * 1000,
+                pendingVerificationExpiry: Date?.now() + 10 * 60 * 1000,
               },
             },
           });
 
-          logger.info(
-            `[SMS] Max Booster branded code sent to ${e164Phone.slice(0, 5)}*** via Messages API`,
+          logger?.info(
+            `[SMS] Max Booster branded code sent to ${e164Phone?.slice(0, 5)}*** via Messages API`,
           );
-          return res.json({
+          return res?.json({
             success: true,
             message:
               "A Max Booster verification code has been sent to your phone.",
@@ -3553,32 +3561,32 @@ export async function registerRoutes(
         }
 
         // 🔧 Dev/demo fallback — no Twilio credentials configured
-        const user = await storage.getUser(req.user.id);
-        const currentSettings =
+        const _user = await storage?.getUser(req?.user.id);
+        const _currentSettings =
           (user?.notificationSettings as Record<string, unknown>) || {};
-        await storage.updateUser(req.user.id, {
+        await storage?.updateUser(req?.user.id, {
           notificationSettings: {
             ...currentSettings,
             sms: {
-              ...((currentSettings.sms as Record<string, unknown>) || {}),
+              ...((currentSettings?.sms as Record<string, unknown>) || {}),
               phoneNumber: e164Phone,
               verified: false,
               pendingVerification: verificationCode,
-              pendingVerificationExpiry: Date.now() + 10 * 60 * 1000,
+              pendingVerificationExpiry: Date?.now() + 10 * 60 * 1000,
             },
           },
         });
-        logger.info(
-          `[SMS DEV] Max Booster verification code for ${e164Phone.slice(0, 5)}***: ${verificationCode}`,
+        logger?.info(
+          `[SMS DEV] Max Booster verification code for ${e164Phone?.slice(0, 5)}***: ${verificationCode}`,
         );
-        return res.json({
+        return res?.json({
           success: true,
           message:
             "Configure TWILIO_VERIFY_SERVICE_SID or TWILIO_PHONE_NUMBER to enable real SMS delivery. Demo code shown below.",
           devCode: verificationCode,
         });
       } catch (error: unknown) {
-        const twilioErr = error as {
+        const _twilioErr = error as {
           status?: number;
           message?: string;
           code?: number;
@@ -3594,7 +3602,7 @@ export async function registerRoutes(
             message: "Invalid phone number. Please check and try again.",
           });
         }
-        logger.warn({ err: error }, "SMS verify error");
+        logger?.warn({ err: error }, "SMS verify error");
         return res
           .status(500)
           .json({ message: "Failed to send verification code" });
@@ -3603,30 +3611,30 @@ export async function registerRoutes(
   );
 
   // SMS Notifications: Confirm verification code (Twilio Verify API check)
-  app.post(
+  app?.post(
     "/api/notifications/sms/confirm",
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
       try {
-        const { code, phoneNumber } = req.body;
+        const { code, phoneNumber } = req?.body;
         if (!code)
           return res
             .status(400)
             .json({ message: "Verification code is required" });
 
-        const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-        const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-        const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+        const _twilioSid = process?.env.TWILIO_ACCOUNT_SID;
+        const _twilioToken = process?.env.TWILIO_AUTH_TOKEN;
+        const _verifyServiceSid = process?.env.TWILIO_VERIFY_SERVICE_SID;
 
         // Resolve phone: prefer what was sent, fall back to what's stored
-        const user = await storage.getUser(req.user.id);
-        const currentSettings =
+        const _user = await storage?.getUser(req?.user.id);
+        const _currentSettings =
           (user?.notificationSettings as Record<string, unknown>) || {};
-        const smsSettings =
-          (currentSettings.sms as Record<string, unknown>) || {};
-        const storedPhone = smsSettings.phoneNumber as string | undefined;
-        const toPhone = (phoneNumber as string | undefined) || storedPhone;
+        const _smsSettings =
+          (currentSettings?.sms as Record<string, unknown>) || {};
+        const _storedPhone = smsSettings?.phoneNumber as string | undefined;
+        const _toPhone = (phoneNumber as string | undefined) || storedPhone;
 
         if (!toPhone) {
           return res.status(400).json({
@@ -3636,35 +3644,39 @@ export async function registerRoutes(
 
         if (twilioSid && twilioToken && verifyServiceSid) {
           // ✅ Production path — Twilio Verify checks the code
-          const twilio = (await import("twilio")).default;
-          const client = twilio(twilioSid, twilioToken);
+          const _twilio = (await import("twilio")).default;
+          const _client = twilio(twilioSid, twilioToken);
 
-          const check = await client.verify.v2
+          const _check = await client?.verify.v2
             .services(verifyServiceSid)
-            .verificationChecks.create({
+            .verificationChecks?.create({
               to: toPhone,
               code: (code as string).trim(),
             });
 
-          if (check.status !== "approved") {
-            return res.status(400).json({
-              message:
-                "Invalid or expired verification code. Please try again.",
-            });
+          if (check?.status !== "approved") {
+            return res
+              .status(400)
+              .json({
+                message:
+                  "Invalid or expired verification code. Please try again.",
+              });
           }
         } else {
           // 🔧 Dev/demo fallback — validate against stored code
-          const pendingCode = smsSettings.pendingVerification as
+          const _pendingCode = smsSettings?.pendingVerification as
             | string
             | undefined;
-          const expiry = smsSettings.pendingVerificationExpiry as
+          const _expiry = smsSettings?.pendingVerificationExpiry as
             | number
             | undefined;
           if (!pendingCode)
-            return res.status(400).json({
-              message: "No pending verification. Please request a new code.",
-            });
-          if (expiry && Date.now() > expiry)
+            return res
+              .status(400)
+              .json({
+                message: "No pending verification. Please request a new code.",
+              });
+          if (expiry && Date?.now() > expiry)
             return res
               .status(400)
               .json({ message: "Code expired. Please request a new one." });
@@ -3675,7 +3687,7 @@ export async function registerRoutes(
         }
 
         // Mark phone as verified in user settings
-        await storage.updateUser(req.user.id, {
+        await storage?.updateUser(req?.user.id, {
           notificationSettings: {
             ...currentSettings,
             sms: {
@@ -3688,19 +3700,19 @@ export async function registerRoutes(
           },
         });
 
-        logger.info(`[SMS] Phone verified for user ${req.user.id}`);
-        return res.json({
+        logger?.info(`[SMS] Phone verified for user ${req?.user.id}`);
+        return res?.json({
           success: true,
           message: "Phone number verified — SMS notifications are now active.",
         });
       } catch (error: unknown) {
-        const twilioErr = error as { status?: number; code?: number };
+        const _twilioErr = error as { status?: number; code?: number };
         if (twilioErr?.code === 60202) {
           return res.status(400).json({
             message: "Max check attempts reached. Please request a new code.",
           });
         }
-        logger.warn({ err: error }, "SMS confirm error");
+        logger?.warn({ err: error }, "SMS confirm error");
         return res
           .status(500)
           .json({ message: "Failed to confirm verification code" });
@@ -3709,59 +3721,63 @@ export async function registerRoutes(
   );
 
   // Push Notifications: Enhanced multi-channel status
-  app.get(
+  app?.get(
     "/api/notifications/push/status",
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
       try {
-        const { notificationDispatcher } =
-          await import("./services/notificationDispatcher.js");
-        const { desktopPushService } =
-          await import("./services/desktopPushService.js");
-        const { mobilePushService } =
-          await import("./services/mobilePushService.js");
-        const [breakdown, mobileStatus, serviceStatus] = await Promise.all([
-          desktopPushService.getSubscriptionBreakdown(req.user.id),
-          mobilePushService.getUserTokenStatus(req.user.id),
-          Promise.resolve(notificationDispatcher.getStatus()),
+        const { notificationDispatcher } = await import(
+          "./services/notificationDispatcher?.js"
+        );
+        const { desktopPushService } = await import(
+          "./services/desktopPushService?.js"
+        );
+        const { mobilePushService } = await import(
+          "./services/mobilePushService?.js"
+        );
+        const [breakdown, mobileStatus, serviceStatus] = await Promise?.all([
+          desktopPushService?.getSubscriptionBreakdown(req?.user.id),
+          mobilePushService?.getUserTokenStatus(req?.user.id),
+          Promise?.resolve(notificationDispatcher?.getStatus()),
         ]);
-        return res.json({
+        return res?.json({
           services: serviceStatus,
           subscriptions: { web: breakdown, mobile: mobileStatus },
         });
       } catch (error) {
-        logger.warn({ err: error }, "Push status error");
-        return res.status(500).json({ error: "Failed to get push status" });
+        logger?.warn({ err: error }, "Push status error");
+        return res?.status(500).json({ error: "Failed to get push status" });
       }
     },
   );
 
   // Mobile Device Tokens: Register FCM/APNs token
-  app.post(
+  app?.post(
     "/api/notifications/mobile-tokens",
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
       try {
-        const { token, platform, deviceName, appVersion } = req.body;
+        const { token, platform, deviceName, appVersion } = req?.body;
         if (!token)
-          return res.status(400).json({ error: "Device token is required" });
+          return res?.status(400).json({ error: "Device token is required" });
         if (!["android", "ios"].includes(platform)) {
           return res
             .status(400)
             .json({ error: "Platform must be android or ios" });
         }
-        const { mobilePushService } =
-          await import("./services/mobilePushService.js");
-        await mobilePushService.registerToken(
-          req.user.id,
+        const { mobilePushService } = await import(
+          "./services/mobilePushService?.js"
+        );
+        await mobilePushService?.registerToken(
+          req?.user.id,
           token,
           platform,
           deviceName,
           appVersion,
         );
-        return res.json({
+        return res?.json({
           success: true,
           outcome: {
             type: "push_permission_granted",
@@ -3770,7 +3786,7 @@ export async function registerRoutes(
           },
         });
       } catch (error) {
-        logger.warn({ err: error }, "Mobile token register error:");
+        logger?.warn({ err: error }, "Mobile token register error:");
         return res
           .status(500)
           .json({ error: "Failed to register mobile device token" });
@@ -3779,18 +3795,19 @@ export async function registerRoutes(
   );
 
   // Mobile Device Tokens: Get list
-  app.get(
+  app?.get(
     "/api/notifications/mobile-tokens",
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
       try {
-        const { mobilePushService } =
-          await import("./services/mobilePushService.js");
-        const status = await mobilePushService.getUserTokenStatus(req.user.id);
-        return res.json(status);
+        const { mobilePushService } = await import(
+          "./services/mobilePushService?.js"
+        );
+        const _status = await mobilePushService?.getUserTokenStatus(req?.user.id);
+        return res?.json(status);
       } catch (error) {
-        logger.warn({ err: error }, "Mobile tokens list error:");
+        logger?.warn({ err: error }, "Mobile tokens list error:");
         return res
           .status(500)
           .json({ error: "Failed to list mobile device tokens" });
@@ -3799,254 +3816,256 @@ export async function registerRoutes(
   );
 
   // Push Notifications: Silent push (background sync)
-  app.post(
+  app?.post(
     "/api/notifications/push/silent",
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
       try {
-        const { reason = "feed_refresh" } = req.body;
-        const { notificationDispatcher } =
-          await import("./services/notificationDispatcher.js");
-        const result = await notificationDispatcher.dispatchSilent(
-          req.user.id,
+        const { reason = "feed_refresh" } = req?.body;
+        const { notificationDispatcher } = await import(
+          "./services/notificationDispatcher?.js"
+        );
+        const _result = await notificationDispatcher?.dispatchSilent(
+          req?.user.id,
           reason,
         );
-        return res.json({ success: true, ...result });
+        return res?.json({ success: true, ...result });
       } catch (error) {
-        logger.warn({ err: error }, "Silent push error:");
-        return res.status(500).json({ error: "Failed to send silent push" });
+        logger?.warn({ err: error }, "Silent push error:");
+        return res?.status(500).json({ error: "Failed to send silent push" });
       }
     },
   );
 
   // Notifications: Get unread count
-  app.get(
+  app?.get(
     "/api/notifications/unread-count",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const result = await db
+        const _result = await db
           .select({ count: sql<number>`count(*)` })
           .from(notifications)
           .where(
             and(
-              eq(notifications.userId, req.user.id),
-              eq(notifications.isRead, false),
+              eq(notifications?.userId, req?.user.id),
+              eq(notifications?.isRead, false),
             ),
           );
-        const count = result[0]?.count || 0;
-        return res.json({ count });
+        const _count = result[0]?.count || 0;
+        return res?.json({ count });
       } catch (error) {
-        logger.warn({ err: error }, "Get unread count error");
-        return res.json({ count: 0 });
+        logger?.warn({ err: error }, "Get unread count error");
+        return res?.json({ count: 0 });
       }
     },
   );
 
   // Projects: Get all projects for user
-  app.get("/api/projects", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/projects", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const projects = await storage.getProjectsByUserId(req.user.id);
-      return res.json({ data: projects || [] });
+      const _projects = await storage?.getProjectsByUserId(req?.user.id);
+      return res?.json({ data: projects || [] });
     } catch (error) {
-      logger.warn({ err: error }, "Projects error");
-      return res.status(500).json({ message: "Failed to fetch projects" });
+      logger?.warn({ err: error }, "Projects error");
+      return res?.status(500).json({ message: "Failed to fetch projects" });
     }
   });
 
   // Projects: Create new project (supports both JSON and FormData)
   // Wrap multer in error handler to prevent server crashes
-  app.post(
+  app?.post(
     "/api/projects",
     (req: Request, res: Response, next) => {
-      upload.single("audio")(req, res, (err: unknown) => {
+      upload?.single("audio")(req, res, (err: unknown) => {
         if (err) {
-          logger.warn({ err }, "Project upload error");
-          const errMsg = err instanceof Error ? err.message : undefined;
-          const errCode =
-            err instanceof Error && "code" in err ? err.code : undefined;
+          logger?.warn({ err }, "Project upload error");
+          const _errMsg = err instanceof Error ? err?.message : undefined;
+          const _errCode =
+            err instanceof Error && "code" in err ? err?.code : undefined;
           if (errCode === "LIMIT_FILE_SIZE") {
             return res
               .status(413)
               .json({ message: "File too large. Maximum size is 500MB." });
           }
           if (errMsg?.includes("Invalid file type")) {
-            return res.status(400).json({ message: errMsg });
+            return res?.status(400).json({ message: errMsg });
           }
-          return res.status(400).json({ message: errMsg || "Upload failed" });
+          return res?.status(400).json({ message: errMsg || "Upload failed" });
         }
         next();
       });
     },
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
         let audioUrl: string | null = null;
         let fileSize: number | null = null;
 
-        if (req.file) {
+        if (req?.file) {
           // Direct file upload (≤ proxy limit)
-          const { storeUploadedFile } =
-            await import("./middleware/uploadHandler.js");
-          const storedFile = await storeUploadedFile(
-            req.file,
-            "audio",
-            req.user.id,
+          const { storeUploadedFile } = await import(
+            "./middleware/uploadHandler?.js"
           );
-          audioUrl = storedFile.url;
-          fileSize = req.file.size;
-        } else if (req.body.audioUrl) {
+          const _storedFile = await storeUploadedFile(
+            req?.file,
+            "audio",
+            req?.user.id,
+          );
+          audioUrl = storedFile?.url;
+          fileSize = req?.file.size;
+        } else if (req?.body.audioUrl) {
           // Pre-assembled chunked upload — audioUrl already in Object Storage
-          audioUrl = req.body.audioUrl;
-          fileSize = req.body.fileSize ? Number(req.body.fileSize) : null;
+          audioUrl = req?.body.audioUrl;
+          fileSize = req?.body.fileSize ? Number(req?.body.fileSize) : null;
         }
 
-        const project = await storage.createProject({
-          userId: req.user.id,
-          title: req.body.title || "Untitled Project",
-          description: req.body.description || "",
-          genre: req.body.genre,
-          bpm: req.body.bpm,
-          key: req.body.key,
+        const _project = await storage?.createProject({
+          userId: req?.user.id,
+          title: req?.body.title || "Untitled Project",
+          description: req?.body.description || "",
+          genre: req?.body.genre,
+          bpm: req?.body.bpm,
+          key: req?.body.key,
           status: "draft",
-          isStudioProject: req.body.isStudioProject || false,
-          metadata: req.body.metadata || {},
+          isStudioProject: req?.body.isStudioProject || false,
+          metadata: req?.body.metadata || {},
           audioUrl,
           fileSize,
         });
-        return res.json(project);
+        return res?.json(project);
       } catch (error) {
-        logger.warn({ err: error }, "Create project error");
-        return res.status(500).json({ message: "Failed to create project" });
+        logger?.warn({ err: error }, "Create project error");
+        return res?.status(500).json({ message: "Failed to create project" });
       }
     },
   );
 
   // Analytics: Dashboard summary with real data (with optional period path parameter)
-  app.get(
+  app?.get(
     "/api/analytics/dashboard{/:period}",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const periodParam = req.params.period;
-        const timeRange =
-          periodParam || (req.query.timeRange as string) || "30d";
-        const days =
-          parseInt(timeRange.replace("d", "").replace("y", "365")) || 30;
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - days);
+        const _periodParam = req?.params.period;
+        const _timeRange =
+          periodParam || (req?.query.timeRange as string) || "30d";
+        const _days =
+          parseInt(timeRange?.replace("d", "").replace("y", "365")) || 30;
+        const _endDate = new Date();
+        const _startDate = new Date();
+        startDate?.setDate(startDate?.getDate() - days);
 
         // Get user's analytics from the database
-        const analyticsData = await db
+        const _analyticsData = await db
           .select({
-            totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-            totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-            totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            totalStreams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
+            totalRevenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
+            totalListeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
           })
           .from(analytics)
           .where(
             and(
-              eq(analytics.userId, req.user.id),
-              gte(analytics.date, startDate),
-              lte(analytics.date, endDate),
+              eq(analytics?.userId, req?.user.id),
+              gte(analytics?.date, startDate),
+              lte(analytics?.date, endDate),
             ),
           );
 
         // Get daily data for charts
-        const dailyData = await db
+        const _dailyData = await db
           .select({
-            date: sql<string>`DATE(${analytics.date})`,
-            streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-            revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+            date: sql<string>`DATE(${analytics?.date})`,
+            streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
+            revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
           })
           .from(analytics)
           .where(
             and(
-              eq(analytics.userId, req.user.id),
-              gte(analytics.date, startDate),
-              lte(analytics.date, endDate),
+              eq(analytics?.userId, req?.user.id),
+              gte(analytics?.date, startDate),
+              lte(analytics?.date, endDate),
             ),
           )
-          .groupBy(sql`DATE(${analytics.date})`)
-          .orderBy(sql`DATE(${analytics.date})`);
+          .groupBy(sql`DATE(${analytics?.date})`)
+          .orderBy(sql`DATE(${analytics?.date})`);
 
         // Get platform breakdown
-        const platformData = await db
+        const _platformData = await db
           .select({
-            platform: analytics.platform,
-            streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-            revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+            platform: analytics?.platform,
+            streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
+            revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
           })
           .from(analytics)
           .where(
             and(
-              eq(analytics.userId, req.user.id),
-              gte(analytics.date, startDate),
-              lte(analytics.date, endDate),
+              eq(analytics?.userId, req?.user.id),
+              gte(analytics?.date, startDate),
+              lte(analytics?.date, endDate),
             ),
           )
-          .groupBy(analytics.platform)
-          .orderBy(desc(sql`COALESCE(SUM(${analytics.streams}), 0)`));
+          .groupBy(analytics?.platform)
+          .orderBy(desc(sql`COALESCE(SUM(${analytics?.streams}), 0)`));
 
         // Get user's projects for additional context
-        const userProjects = await storage.getProjectsByUserId(req.user.id);
-        const projectCount = userProjects?.length || 0;
+        const _userProjects = await storage?.getProjectsByUserId(req?.user.id);
+        const _projectCount = userProjects?.length || 0;
 
         // Additional revenue queries for monthly and yearly breakdowns
-        const thirtyDaysAgo30 = new Date();
-        thirtyDaysAgo30.setDate(thirtyDaysAgo30.getDate() - 30);
-        const oneYearAgo = new Date();
-        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const _thirtyDaysAgo30 = new Date();
+        thirtyDaysAgo30?.setDate(thirtyDaysAgo30?.getDate() - 30);
+        const _oneYearAgo = new Date();
+        oneYearAgo?.setFullYear(oneYearAgo?.getFullYear() - 1);
         const [monthlyRevResult, yearlyRevResult, userReleasesRaw] =
-          await Promise.all([
+          await Promise?.all([
             db
               .select({
-                total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+                total: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
               })
               .from(analytics)
               .where(
                 and(
-                  eq(analytics.userId, req.user.id),
-                  gte(analytics.date, thirtyDaysAgo30),
+                  eq(analytics?.userId, req?.user.id),
+                  gte(analytics?.date, thirtyDaysAgo30),
                 ),
               ),
             db
               .select({
-                total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+                total: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
               })
               .from(analytics)
               .where(
                 and(
-                  eq(analytics.userId, req.user.id),
-                  gte(analytics.date, oneYearAgo),
+                  eq(analytics?.userId, req?.user.id),
+                  gte(analytics?.date, oneYearAgo),
                 ),
               ),
             db
               .select({
-                id: releases.id,
-                title: releases.title,
-                releaseDate: releases.releaseDate,
-                status: releases.status,
-                artworkUrl: releases.artworkUrl,
+                id: releases?.id,
+                title: releases?.title,
+                releaseDate: releases?.releaseDate,
+                status: releases?.status,
+                artworkUrl: releases?.artworkUrl,
               })
               .from(releases)
-              .where(eq(releases.userId, req.user.id))
-              .orderBy(desc(releases.createdAt))
+              .where(eq(releases?.userId, req?.user.id))
+              .orderBy(desc(releases?.createdAt))
               .limit(20),
           ]);
-        const monthlyRev = parseFloat(String(monthlyRevResult[0]?.total)) || 0;
-        const yearlyRev = parseFloat(String(yearlyRevResult[0]?.total)) || 0;
+        const _monthlyRev = parseFloat(String(monthlyRevResult[0]?.total)) || 0;
+        const _yearlyRev = parseFloat(String(yearlyRevResult[0]?.total)) || 0;
 
         // Compute weekly aggregations from daily data
         const weeklyMap: Record<
@@ -4054,16 +4073,16 @@ export async function registerRoutes(
           { date: string; streams: number; revenue: number }
         > = {};
         for (const d of dailyData) {
-          const weekStart = new Date(d.date);
-          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-          const key = weekStart.toISOString().split("T")[0];
+          const _weekStart = new Date(d?.date);
+          weekStart?.setDate(weekStart?.getDate() - weekStart?.getDay());
+          const _key = weekStart?.toISOString().split("T")[0];
           if (!weeklyMap[key])
             weeklyMap[key] = { date: key, streams: 0, revenue: 0 };
-          weeklyMap[key].streams += Number(d.streams);
-          weeklyMap[key].revenue += parseFloat(String(d.revenue)) || 0;
+          weeklyMap[key].streams += Number(d?.streams);
+          weeklyMap[key].revenue += parseFloat(String(d?.revenue)) || 0;
         }
-        const weeklyData = Object.values(weeklyMap).sort((a, b) =>
-          a.date.localeCompare(b.date),
+        const _weeklyData = Object?.values(weeklyMap).sort((a, b) =>
+          a?.date.localeCompare(b?.date),
         );
 
         // Compute monthly aggregations from daily data
@@ -4072,41 +4091,41 @@ export async function registerRoutes(
           { date: string; streams: number; revenue: number }
         > = {};
         for (const d of dailyData) {
-          const key = d.date.substring(0, 7); // YYYY-MM
+          const _key = d?.date.substring(0, 7); // YYYY-MM
           if (!monthlyMap[key])
             monthlyMap[key] = { date: key, streams: 0, revenue: 0 };
-          monthlyMap[key].streams += Number(d.streams);
-          monthlyMap[key].revenue += parseFloat(String(d.revenue)) || 0;
+          monthlyMap[key].streams += Number(d?.streams);
+          monthlyMap[key].revenue += parseFloat(String(d?.revenue)) || 0;
         }
-        const monthlyData = Object.values(monthlyMap).sort((a, b) =>
-          a.date.localeCompare(b.date),
+        const _monthlyData = Object?.values(monthlyMap).sort((a, b) =>
+          a?.date.localeCompare(b?.date),
         );
 
         // Distribute total streams across releases for per-track display
-        const totalStreams = Number(analyticsData[0]?.totalStreams) || 0;
-        const totalRevenue =
+        const _totalStreams = Number(analyticsData[0]?.totalStreams) || 0;
+        const _totalRevenue =
           parseFloat(String(analyticsData[0]?.totalRevenue)) || 0;
-        const byTrack = userReleasesRaw.map((rel, idx) => {
+        const _byTrack = userReleasesRaw?.map((rel, idx) => {
           // Weight streams inversely by release age (newer = more streams assumed)
-          const weight = Math.max(1, userReleasesRaw.length - idx);
-          const totalWeight = userReleasesRaw.reduce(
-            (acc, _, i) => acc + Math.max(1, userReleasesRaw.length - i),
+          const _weight = Math?.max(1, userReleasesRaw?.length - idx);
+          const _totalWeight = userReleasesRaw?.reduce(
+            (acc, _, i) => acc + Math?.max(1, userReleasesRaw?.length - i),
             0,
           );
-          const trackStreams =
+          const _trackStreams =
             totalWeight > 0
-              ? Math.round((weight / totalWeight) * totalStreams)
+              ? Math?.round((weight / totalWeight) * totalStreams)
               : 0;
-          const trackRevenue =
+          const _trackRevenue =
             totalWeight > 0 ? (weight / totalWeight) * totalRevenue : 0;
           return {
-            trackId: rel.id,
-            trackTitle: rel.title,
-            artworkUrl: rel.artworkUrl,
+            trackId: rel?.id,
+            trackTitle: rel?.title,
+            artworkUrl: rel?.artworkUrl,
             streams: trackStreams,
-            revenue: parseFloat(trackRevenue.toFixed(4)),
-            releaseDate: rel.releaseDate,
-            status: rel.status,
+            revenue: parseFloat(trackRevenue?.toFixed(4)),
+            releaseDate: rel?.releaseDate,
+            status: rel?.status,
           };
         });
 
@@ -4115,61 +4134,61 @@ export async function registerRoutes(
         if (projectCount > 0) performanceScore += 15;
         if (projectCount >= 3) performanceScore += 10;
         if (projectCount >= 5) performanceScore += 10;
-        if (req.user.subscriptionTier && req.user.subscriptionTier !== "free")
+        if (req?.user.subscriptionTier && req?.user.subscriptionTier !== "free")
           performanceScore += 15;
-        if (req.user.onboardingCompleted) performanceScore += 10;
-        if (req.user.twoFactorEnabled) performanceScore += 5;
-        if (req.user.firstName || req.user.lastName) performanceScore += 5;
-        if (req.user.bio) performanceScore += 5;
-        performanceScore = Math.min(performanceScore, 100);
+        if (req?.user.onboardingCompleted) performanceScore += 10;
+        if (req?.user.twoFactorEnabled) performanceScore += 5;
+        if (req?.user.firstName || req?.user.lastName) performanceScore += 5;
+        if (req?.user.bio) performanceScore += 5;
+        performanceScore = Math?.min(performanceScore, 100);
 
-        const stats = analyticsData[0] || {
+        const _stats = analyticsData[0] || {
           totalStreams: 0,
           totalRevenue: 0,
           totalListeners: 0,
         };
 
-        return res.json({
+        return res?.json({
           overview: {
-            totalStreams: Number(stats.totalStreams) || 0,
-            totalRevenue: parseFloat(String(stats.totalRevenue)) || 0,
-            totalListeners: Number(stats.totalListeners) || 0,
-            totalPlays: Number(stats.totalStreams) || 0,
+            totalStreams: Number(stats?.totalStreams) || 0,
+            totalRevenue: parseFloat(String(stats?.totalRevenue)) || 0,
+            totalListeners: Number(stats?.totalListeners) || 0,
+            totalPlays: Number(stats?.totalStreams) || 0,
             avgListenTime: 0,
             completionRate: 0,
             skipRate: 0,
             shareRate: 0,
             likeRate: 0,
             growthRate:
-              dailyData.length > 1
-                ? ((Number(dailyData[dailyData.length - 1]?.streams) -
+              dailyData?.length > 1
+                ? ((Number(dailyData[dailyData?.length - 1]?.streams) -
                     Number(dailyData[0]?.streams)) /
                     (Number(dailyData[0]?.streams) || 1)) *
                   100
                 : 0,
           },
           streams: {
-            daily: dailyData.map((d) => ({
-              date: d.date,
-              streams: Number(d.streams),
-              revenue: parseFloat(String(d.revenue)) || 0,
+            daily: dailyData?.map((d) => ({
+              date: d?.date,
+              streams: Number(d?.streams),
+              revenue: parseFloat(String(d?.revenue)) || 0,
             })),
             weekly: weeklyData,
             monthly: monthlyData,
             yearly:
-              monthlyData.length > 0
+              monthlyData?.length > 0
                 ? [
                     {
                       date: new Date().getFullYear().toString(),
-                      streams: Number(stats.totalStreams) || 0,
+                      streams: Number(stats?.totalStreams) || 0,
                       revenue: yearlyRev,
                     },
                   ]
                 : [],
-            byPlatform: platformData.map((p) => ({
-              platform: p.platform || "Unknown",
-              streams: Number(p.streams),
-              revenue: parseFloat(String(p.revenue)) || 0,
+            byPlatform: platformData?.map((p) => ({
+              platform: p?.platform || "Unknown",
+              streams: Number(p?.streams),
+              revenue: parseFloat(String(p?.revenue)) || 0,
               growth: 0,
             })),
             byTrack,
@@ -4197,7 +4216,7 @@ export async function registerRoutes(
             },
           },
           audience: {
-            totalListeners: Number(stats.totalListeners) || 0,
+            totalListeners: Number(stats?.totalListeners) || 0,
             newListeners: 0,
             returningListeners: 0,
             listenerRetention: 0,
@@ -4222,7 +4241,7 @@ export async function registerRoutes(
             },
           },
           revenue: {
-            totalRevenue: parseFloat(String(stats.totalRevenue)) || 0,
+            totalRevenue: parseFloat(String(stats?.totalRevenue)) || 0,
             monthlyRevenue: monthlyRev,
             yearlyRevenue: yearlyRev,
             revenueGrowth:
@@ -4230,18 +4249,18 @@ export async function registerRoutes(
                 ? (monthlyRev / (yearlyRev / 12) - 1) * 100
                 : 0,
             revenuePerStream:
-              Number(stats.totalStreams) > 0
-                ? parseFloat(String(stats.totalRevenue)) /
-                  Number(stats.totalStreams)
+              Number(stats?.totalStreams) > 0
+                ? parseFloat(String(stats?.totalRevenue)) /
+                  Number(stats?.totalStreams)
                 : 0,
             revenuePerListener: 0,
-            revenueByPlatform: platformData.map((p) => ({
-              platform: p.platform || "Unknown",
-              revenue: parseFloat(String(p.revenue)) || 0,
+            revenueByPlatform: platformData?.map((p) => ({
+              platform: p?.platform || "Unknown",
+              revenue: parseFloat(String(p?.revenue)) || 0,
               percentage:
-                Number(stats.totalRevenue) > 0
-                  ? (parseFloat(String(p.revenue)) /
-                      parseFloat(String(stats.totalRevenue))) *
+                Number(stats?.totalRevenue) > 0
+                  ? (parseFloat(String(p?.revenue)) /
+                      parseFloat(String(stats?.totalRevenue))) *
                     100
                   : 0,
             })),
@@ -4320,20 +4339,20 @@ export async function registerRoutes(
               removalsThisMonth: 0,
             },
           },
-          revenueAttribution: platformData.map((p) => ({
-            source: p.platform || "Unknown",
-            revenue: parseFloat(String(p.revenue)) || 0,
+          revenueAttribution: platformData?.map((p) => ({
+            source: p?.platform || "Unknown",
+            revenue: parseFloat(String(p?.revenue)) || 0,
             percentage:
-              Number(stats.totalRevenue) > 0
-                ? (parseFloat(String(p.revenue)) /
-                    parseFloat(String(stats.totalRevenue))) *
+              Number(stats?.totalRevenue) > 0
+                ? (parseFloat(String(p?.revenue)) /
+                    parseFloat(String(stats?.totalRevenue))) *
                   100
                 : 0,
-            streams: Number(p.streams),
+            streams: Number(p?.streams),
             growth: 0,
             avgPerStream:
-              Number(p.streams) > 0
-                ? parseFloat(String(p.revenue)) / Number(p.streams)
+              Number(p?.streams) > 0
+                ? parseFloat(String(p?.revenue)) / Number(p?.streams)
                 : 0,
           })),
           geographic: [],
@@ -4397,85 +4416,85 @@ export async function registerRoutes(
           },
         });
       } catch (error) {
-        logger.warn({ err: error }, "Analytics dashboard error");
-        return res.status(500).json({ message: "Failed to fetch analytics" });
+        logger?.warn({ err: error }, "Analytics dashboard error");
+        return res?.status(500).json({ message: "Failed to fetch analytics" });
       }
     },
   );
 
   // Analytics: Export data
-  app.post("/api/analytics/export", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/analytics/export", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { format = "csv", filters = {} } = req.body;
+      const { format = "csv", filters = {} } = req?.body;
       const { timeRange = "30d" } = filters;
-      const days =
+      const _days =
         parseInt((timeRange as string).replace("d", "").replace("y", "365")) ||
         30;
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+      const _endDate = new Date();
+      const _startDate = new Date();
+      startDate?.setDate(startDate?.getDate() - days);
 
       // Get analytics data
-      const analyticsData = await db
+      const _analyticsData = await db
         .select({
-          date: sql<string>`DATE(${analytics.date})`,
-          platform: analytics.platform,
-          streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-          revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
-          listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+          date: sql<string>`DATE(${analytics?.date})`,
+          platform: analytics?.platform,
+          streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
+          listeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
         })
         .from(analytics)
         .where(
           and(
-            eq(analytics.userId, req.user.id),
-            gte(analytics.date, startDate),
-            lte(analytics.date, endDate),
+            eq(analytics?.userId, req?.user.id),
+            gte(analytics?.date, startDate),
+            lte(analytics?.date, endDate),
           ),
         )
-        .groupBy(sql`DATE(${analytics.date})`, analytics.platform)
-        .orderBy(sql`DATE(${analytics.date})`);
+        .groupBy(sql`DATE(${analytics?.date})`, analytics?.platform)
+        .orderBy(sql`DATE(${analytics?.date})`);
 
       if (format === "csv") {
-        const csvRows = ["Date,Platform,Streams,Revenue,Listeners"];
-        analyticsData.forEach((row) => {
-          csvRows.push(
-            `${row.date},${row.platform || "Unknown"},${row.streams},${row.revenue},${row.listeners}`,
+        const _csvRows = ["Date,Platform,Streams,Revenue,Listeners"];
+        analyticsData?.forEach((row) => {
+          csvRows?.push(
+            `${row?.date},${row?.platform || "Unknown"},${row?.streams},${row?.revenue},${row?.listeners}`,
           );
         });
 
-        const csvContent = csvRows.join("\n");
-        const base64Data = Buffer.from(csvContent).toString("base64");
+        const _csvContent = csvRows?.join("\n");
+        const _base64Data = Buffer?.from(csvContent).toString("base64");
 
-        return res.json({
+        return res?.json({
           format: "csv",
           downloadUrl: `data:text/csv;base64,${base64Data}`,
           fileName: `analytics-${new Date().toISOString().split("T")[0]}.csv`,
         });
       }
 
-      return res.json({
+      return res?.json({
         format,
         data: analyticsData,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Analytics export error");
-      return res.status(500).json({ message: "Failed to export analytics" });
+      logger?.warn({ err: error }, "Analytics export error");
+      return res?.status(500).json({ message: "Failed to export analytics" });
     }
   });
 
   // Analytics: Get anomalies summary
-  app.get(
+  app?.get(
     "/api/analytics/anomalies/summary",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
         // Return summary of anomalies (can be expanded with real detection logic)
-        return res.json({
+        return res?.json({
           total: 0,
           unacknowledged: 0,
           bySeverity: {
@@ -4486,7 +4505,7 @@ export async function registerRoutes(
           byMetric: {},
         });
       } catch (error) {
-        logger.warn({ err: error }, "Anomalies summary error");
+        logger?.warn({ err: error }, "Anomalies summary error");
         return res
           .status(500)
           .json({ message: "Failed to fetch anomalies summary" });
@@ -4495,42 +4514,42 @@ export async function registerRoutes(
   );
 
   // Analytics: Get anomalies list
-  app.get("/api/analytics/anomalies", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/analytics/anomalies", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { metricType, severity } = req.query;
+      const { metricType, severity } = req?.query;
 
       // Get user's analytics for anomaly detection
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const _thirtyDaysAgo = new Date();
+      thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-      const metricsData = await db
+      const _metricsData = await db
         .select({
-          date: sql<string>`DATE(${analytics.date})`,
-          streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-          revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+          date: sql<string>`DATE(${analytics?.date})`,
+          streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
+          revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
         })
         .from(analytics)
         .where(
           and(
-            eq(analytics.userId, req.user.id),
-            gte(analytics.date, thirtyDaysAgo),
+            eq(analytics?.userId, req?.user.id),
+            gte(analytics?.date, thirtyDaysAgo),
           ),
         )
-        .groupBy(sql`DATE(${analytics.date})`)
-        .orderBy(sql`DATE(${analytics.date})`);
+        .groupBy(sql`DATE(${analytics?.date})`)
+        .orderBy(sql`DATE(${analytics?.date})`);
 
       const anomalies: Record<string, unknown>[] = [];
 
       // Simple anomaly detection: look for significant changes
-      for (let i = 1; i < metricsData.length; i++) {
-        const prev = Number(metricsData[i - 1].streams);
-        const curr = Number(metricsData[i].streams);
+      for (let i = 1; i < metricsData?.length; i++) {
+        const _prev = Number(metricsData[i - 1].streams);
+        const _curr = Number(metricsData[i].streams);
 
-        if (prev > 0 && curr < prev * 0.5) {
-          anomalies.push({
+        if (prev > 0 && curr < prev * 0?.5) {
+          anomalies?.push({
             id: `anomaly-streams-${i}`,
             metricType: "streams",
             severity: "warning",
@@ -4542,7 +4561,7 @@ export async function registerRoutes(
         }
 
         if (prev > 0 && curr > prev * 2) {
-          anomalies.push({
+          anomalies?.push({
             id: `anomaly-streams-spike-${i}`,
             metricType: "streams",
             severity: "info",
@@ -4557,39 +4576,39 @@ export async function registerRoutes(
       // Filter by metricType and severity if provided
       let filteredAnomalies = anomalies;
       if (metricType && metricType !== "all") {
-        filteredAnomalies = filteredAnomalies.filter(
-          (a) => a.metricType === metricType,
+        filteredAnomalies = filteredAnomalies?.filter(
+          (a) => a?.metricType === metricType,
         );
       }
       if (severity && severity !== "all") {
-        filteredAnomalies = filteredAnomalies.filter(
-          (a) => a.severity === severity,
+        filteredAnomalies = filteredAnomalies?.filter(
+          (a) => a?.severity === severity,
         );
       }
 
-      return res.json({ data: filteredAnomalies });
+      return res?.json({ data: filteredAnomalies });
     } catch (error) {
-      logger.warn({ err: error }, "Anomalies list error");
-      return res.status(500).json({ message: "Failed to fetch anomalies" });
+      logger?.warn({ err: error }, "Anomalies list error");
+      return res?.status(500).json({ message: "Failed to fetch anomalies" });
     }
   });
 
   // Analytics: Acknowledge anomaly
-  app.post(
+  app?.post(
     "/api/analytics/anomalies/:id/acknowledge",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { id } = req.params;
+        const { id } = req?.params;
         // In production, this would update a database record
-        return res.json({
+        return res?.json({
           success: true,
           message: `Anomaly ${id} acknowledged`,
         });
       } catch (error) {
-        logger.warn({ err: error }, "Acknowledge anomaly error");
+        logger?.warn({ err: error }, "Acknowledge anomaly error");
         return res
           .status(500)
           .json({ message: "Failed to acknowledge anomaly" });
@@ -4598,59 +4617,59 @@ export async function registerRoutes(
   );
 
   // Analytics: Track event (for dashboard widgets)
-  app.post(
+  app?.post(
     "/api/analytics/track-event",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { eventType, eventData } = req.body;
+        const { eventType, eventData } = req?.body;
 
         if (!eventType) {
-          return res.status(400).json({ message: "Event type is required" });
+          return res?.status(400).json({ message: "Event type is required" });
         }
 
         // Log the event for analytics (in production, store to database)
-        logger.info(
+        logger?.info(
           { eventData },
-          `[Analytics] User ${req.user.id}: ${eventType}`,
+          `[Analytics] User ${req?.user.id}: ${eventType}`,
         );
 
-        return res.json({ success: true, message: "Event tracked" });
+        return res?.json({ success: true, message: "Event tracked" });
       } catch (error) {
-        logger.warn({ err: error }, "Track event error");
-        return res.status(500).json({ message: "Failed to track event" });
+        logger?.warn({ err: error }, "Track event error");
+        return res?.status(500).json({ message: "Failed to track event" });
       }
     },
   );
 
   // AI: Insights
-  app.get("/api/ai/insights", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/ai/insights", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       // Calculate a basic performance score based on user activity
-      const projects = await storage.getProjectsByUserId(req.user.id);
-      const projectCount = projects?.length || 0;
+      const _projects = await storage?.getProjectsByUserId(req?.user.id);
+      const _projectCount = projects?.length || 0;
 
       // Calculate performance score (0-100 scale)
       let performanceScore = 25; // Base score for having an account
       if (projectCount > 0) performanceScore += 15; // Has projects
       if (projectCount >= 3) performanceScore += 10; // Multiple projects
       if (projectCount >= 5) performanceScore += 10; // Active user
-      if (req.user.subscriptionTier && req.user.subscriptionTier !== "free")
+      if (req?.user.subscriptionTier && req?.user.subscriptionTier !== "free")
         performanceScore += 15; // Paying customer
-      if (req.user.onboardingCompleted) performanceScore += 10; // Completed onboarding
-      if (req.user.twoFactorEnabled) performanceScore += 5; // Security conscious
-      if (req.user.firstName || req.user.lastName) performanceScore += 5; // Profile filled
-      if (req.user.bio) performanceScore += 5; // Has bio
+      if (req?.user.onboardingCompleted) performanceScore += 10; // Completed onboarding
+      if (req?.user.twoFactorEnabled) performanceScore += 5; // Security conscious
+      if (req?.user.firstName || req?.user.lastName) performanceScore += 5; // Profile filled
+      if (req?.user.bio) performanceScore += 5; // Has bio
 
       // Cap at 100
-      performanceScore = Math.min(performanceScore, 100);
+      performanceScore = Math?.min(performanceScore, 100);
 
-      return res.json({
+      return res?.json({
         performanceScore,
         recommendations: [
           {
@@ -4670,64 +4689,64 @@ export async function registerRoutes(
         opportunities: [],
       });
     } catch (error) {
-      logger.warn({ err: error }, "AI insights error");
-      return res.status(500).json({ message: "Failed to fetch AI insights" });
+      logger?.warn({ err: error }, "AI insights error");
+      return res?.status(500).json({ message: "Failed to fetch AI insights" });
     }
   });
 
   // Accessibility preferences endpoints
   try {
-    const accessibilityRouter = (await import("./routes/accessibility.js"))
+    const _accessibilityRouter = (await import("./routes/accessibility?.js"))
       .default;
-    app.use("/api/user", accessibilityRouter);
+    app?.use("/api/user", accessibilityRouter);
     log("Accessibility routes registered");
   } catch (error) {
     log(
-      `Warning: Could not load accessibility routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load accessibility routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   // User preferences endpoints
-  app.get("/api/user/preferences", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/user/preferences", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json(req.user.preferences || {});
+      return res?.json(req?.user.preferences || {});
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching user preferences");
-      return res.status(500).json({ message: "Failed to fetch preferences" });
+      logger?.warn({ err: error }, "Error fetching user preferences");
+      return res?.status(500).json({ message: "Failed to fetch preferences" });
     }
   });
 
-  app.post("/api/user/preferences", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/user/preferences", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const preferences = { ...(req.user.preferences || {}), ...req.body };
+      const _preferences = { ...(req?.user.preferences || {}), ...req?.body };
       await db
         .update(users)
         .set({ preferences })
-        .where(eq(users.id, req.user.id));
-      return res.json({ success: true, preferences });
+        .where(eq(users?.id, req?.user.id));
+      return res?.json({ success: true, preferences });
     } catch (error) {
-      logger.warn({ err: error }, "Error updating user preferences");
-      return res.status(500).json({ message: "Failed to update preferences" });
+      logger?.warn({ err: error }, "Error updating user preferences");
+      return res?.status(500).json({ message: "Failed to update preferences" });
     }
   });
 
-  app.get(
+  app?.get(
     "/api/user/preferences/studio",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const prefs = req.user.preferences as Record<string, unknown>;
-        return res.json(prefs?.studio || {});
+        const _prefs = req?.user.preferences as Record<string, unknown>;
+        return res?.json(prefs?.studio || {});
       } catch (error) {
-        logger.warn({ err: error }, "Error fetching studio preferences");
+        logger?.warn({ err: error }, "Error fetching studio preferences");
         return res
           .status(500)
           .json({ message: "Failed to fetch studio preferences" });
@@ -4735,23 +4754,23 @@ export async function registerRoutes(
     },
   );
 
-  app.put(
+  app?.put(
     "/api/user/preferences/studio",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const currentPrefs =
-          (req.user.preferences as Record<string, unknown> | null) || {};
-        const preferences = { ...currentPrefs, studio: req.body };
+        const _currentPrefs =
+          (req?.user.preferences as Record<string, unknown> | null) || {};
+        const _preferences = { ...currentPrefs, studio: req?.body };
         await db
           .update(users)
           .set({ preferences })
-          .where(eq(users.id, req.user.id));
-        return res.json({ success: true, studio: req.body });
+          .where(eq(users?.id, req?.user.id));
+        return res?.json({ success: true, studio: req?.body });
       } catch (error) {
-        logger.warn({ err: error }, "Error updating studio preferences");
+        logger?.warn({ err: error }, "Error updating studio preferences");
         return res
           .status(500)
           .json({ message: "Failed to update studio preferences" });
@@ -4760,181 +4779,181 @@ export async function registerRoutes(
   );
 
   // Analysis endpoint
-  app.get("/api/analysis", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/analysis", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
+      return res?.json({
         status: "complete",
         results: [],
         summary: { total: 0, analyzed: 0 },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Analysis error");
-      return res.status(500).json({ message: "Failed to fetch analysis" });
+      logger?.warn({ err: error }, "Analysis error");
+      return res?.status(500).json({ message: "Failed to fetch analysis" });
     }
   });
 
-  app.post("/api/analysis", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/analysis", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { projectId, type } = req.body;
-      return res.json({
-        id: `analysis_${Date.now()}`,
+      const { projectId, type } = req?.body;
+      return res?.json({
+        id: `analysis_${Date?.now()}`,
         projectId,
         type: type || "full",
         status: "pending",
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Analysis error");
-      return res.status(500).json({ message: "Failed to start analysis" });
+      logger?.warn({ err: error }, "Analysis error");
+      return res?.status(500).json({ message: "Failed to start analysis" });
     }
   });
 
   // Assets endpoints
-  app.get("/api/assets", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/assets", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { assetType } = req.query;
-      return res.json({
+      const { assetType } = req?.query;
+      return res?.json({
         assets: [],
         type: assetType || "all",
         total: 0,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Assets fetch error");
-      return res.status(500).json({ message: "Failed to fetch assets" });
+      logger?.warn({ err: error }, "Assets fetch error");
+      return res?.status(500).json({ message: "Failed to fetch assets" });
     }
   });
 
-  app.post(
+  app?.post(
     "/api/assets/upload",
     async (req: Request, res: Response, next: NextFunction) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
         const { audioUpload, storeUploadedFile, handleUploadError } =
-          await import("./middleware/uploadHandler.js");
+          await import("./middleware/uploadHandler?.js");
 
-        audioUpload.single("assetFile")(req, res, async (err: unknown) => {
+        audioUpload?.single("assetFile")(req, res, async (err: unknown) => {
           if (err) {
             return handleUploadError(err, req, res, next);
           }
 
           try {
-            const file = req.file;
+            const _file = req?.file;
             if (!file) {
-              return res.status(400).json({ message: "No file provided" });
+              return res?.status(400).json({ message: "No file provided" });
             }
 
-            const { name, assetType } = req.body;
-            const userId = req.user!.id;
+            const { name, assetType } = req?.body;
+            const _userId = req?.user!.id;
 
-            const storedFile = await storeUploadedFile(file, userId, "audio");
+            const _storedFile = await storeUploadedFile(file, userId, "audio");
 
-            return res.json({
+            return res?.json({
               success: true,
-              assetId: `asset_${Date.now()}`,
-              name: name || file.originalname,
+              assetId: `asset_${Date?.now()}`,
+              name: name || file?.originalname,
               assetType: assetType || "sample",
-              fileUrl: storedFile.url,
-              fileSize: file.size,
-              mimeType: file.mimetype,
+              fileUrl: storedFile?.url,
+              fileSize: file?.size,
+              mimeType: file?.mimetype,
               message: "Asset uploaded successfully",
             });
           } catch (uploadError) {
-            logger.warn({ err: uploadError }, "Asset storage error");
-            return res.status(500).json({ message: "Failed to store asset" });
+            logger?.warn({ err: uploadError }, "Asset storage error");
+            return res?.status(500).json({ message: "Failed to store asset" });
           }
         });
       } catch (error) {
-        logger.warn({ err: error }, "Asset upload error");
-        return res.status(500).json({ message: "Failed to upload asset" });
+        logger?.warn({ err: error }, "Asset upload error");
+        return res?.status(500).json({ message: "Failed to upload asset" });
       }
     },
   );
 
   // Pocket Dimension endpoints
-  app.get("/api/pocket/list", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/pocket/list", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const pockets = await db.query.userStorage.findMany({
-        where: eq(userStorage.userId, req.user.id),
+      const _pockets = await db?.query.userStorage?.findMany({
+        where: eq(userStorage?.userId, req?.user.id),
       });
-      return res.json(pockets);
+      return res?.json(pockets);
     } catch (error) {
-      logger.warn({ err: error }, "Pocket list error");
-      return res.status(500).json({ message: "Failed to fetch pockets" });
+      logger?.warn({ err: error }, "Pocket list error");
+      return res?.status(500).json({ message: "Failed to fetch pockets" });
     }
   });
 
-  app.post("/api/pocket/create", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/pocket/create", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const storagePrefix = `user_${req.user.id}_${Date.now()}`;
+      const _storagePrefix = `user_${req?.user.id}_${Date?.now()}`;
       const [pocket] = await db
         .insert(userStorage)
         .values({
-          userId: req.user.id,
+          userId: req?.user.id,
           storagePrefix,
           totalBytes: 0,
           fileCount: 0,
         })
         .returning();
-      return res.json(pocket);
+      return res?.json(pocket);
     } catch (error) {
-      logger.warn({ err: error }, "Pocket create error");
-      return res.status(500).json({ message: "Failed to create pocket" });
+      logger?.warn({ err: error }, "Pocket create error");
+      return res?.status(500).json({ message: "Failed to create pocket" });
     }
   });
 
-  app.get("/api/pocket/demo", async (_req: Request, res: Response) => {
+  app?.get("/api/pocket/demo", async (_req: Request, res: Response) => {
     try {
-      return res.json({
+      return res?.json({
         name: "Demo Pocket",
         totalSize: 1024 * 1024 * 100,
         fileCount: 25,
         files: [],
       });
     } catch (error) {
-      logger.warn({ err: error }, "Pocket demo error");
-      return res.status(500).json({ message: "Failed to fetch demo pocket" });
+      logger?.warn({ err: error }, "Pocket demo error");
+      return res?.status(500).json({ message: "Failed to fetch demo pocket" });
     }
   });
 
-  app.get(
+  app?.get(
     "/api/pocket/:pocketId/stats",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { pocketId } = req.params;
-        const pocket = await db.query.userStorage.findFirst({
-          where: eq(userStorage.id, pocketId),
+        const { pocketId } = req?.params;
+        const _pocket = await db?.query.userStorage?.findFirst({
+          where: eq(userStorage?.id, pocketId),
         });
-        if (pocket && pocket.userId !== req.user.id) {
-          return res.status(403).json({ message: "Access denied" });
+        if (pocket && pocket?.userId !== req?.user.id) {
+          return res?.status(403).json({ message: "Access denied" });
         }
-        return res.json({
+        return res?.json({
           id: pocketId,
           totalSize: pocket?.totalBytes || 0,
           fileCount: pocket?.fileCount || 0,
           lastUpdated: pocket?.lastAccessedAt || new Date(),
         });
       } catch (error) {
-        logger.warn({ err: error }, "Pocket stats error");
+        logger?.warn({ err: error }, "Pocket stats error");
         return res
           .status(500)
           .json({ message: "Failed to fetch pocket stats" });
@@ -4942,54 +4961,54 @@ export async function registerRoutes(
     },
   );
 
-  app.get("/api/pocket/:pocketId/list", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/pocket/:pocketId/list", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { pocketId } = req.params;
-      const pocket = await db.query.userStorage.findFirst({
-        where: eq(userStorage.id, pocketId),
+      const { pocketId } = req?.params;
+      const _pocket = await db?.query.userStorage?.findFirst({
+        where: eq(userStorage?.id, pocketId),
       });
-      if (pocket && pocket.userId !== req.user.id) {
-        return res.status(403).json({ message: "Access denied" });
+      if (pocket && pocket?.userId !== req?.user.id) {
+        return res?.status(403).json({ message: "Access denied" });
       }
-      const files = await db.query.userStorageFiles.findMany({
-        where: eq(userStorageFiles.storageId, pocketId),
+      const _files = await db?.query.userStorageFiles?.findMany({
+        where: eq(userStorageFiles?.storageId, pocketId),
       });
-      return res.json(files);
+      return res?.json(files);
     } catch (error) {
-      logger.warn({ err: error }, "Pocket files error");
-      return res.status(500).json({ message: "Failed to fetch pocket files" });
+      logger?.warn({ err: error }, "Pocket files error");
+      return res?.status(500).json({ message: "Failed to fetch pocket files" });
     }
   });
 
-  app.post(
+  app?.post(
     "/api/pocket/:pocketId/write",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { pocketId } = req.params;
-        const pocket = await db.query.userStorage.findFirst({
-          where: eq(userStorage.id, pocketId),
+        const { pocketId } = req?.params;
+        const _pocket = await db?.query.userStorage?.findFirst({
+          where: eq(userStorage?.id, pocketId),
         });
-        if (pocket && pocket.userId !== req.user.id) {
-          return res.status(403).json({ message: "Access denied" });
+        if (pocket && pocket?.userId !== req?.user.id) {
+          return res?.status(403).json({ message: "Access denied" });
         }
-        const { filename, content, mimeType, folder } = req.body;
+        const { filename, content, mimeType, folder } = req?.body;
         if (!filename || content === undefined) {
           return res
             .status(400)
             .json({ message: "filename and content are required" });
         }
-        const userId = req.user.id;
-        const fileKey = `pocket/${pocketId}/${Date.now()}_${filename}`;
-        const contentBuffer = Buffer.from(
-          typeof content === "string" ? content : JSON.stringify(content),
+        const _userId = req?.user.id;
+        const _fileKey = `pocket/${pocketId}/${Date?.now()}_${filename}`;
+        const _contentBuffer = Buffer?.from(
+          typeof content === "string" ? content : JSON?.stringify(content),
         );
-        const sizeBytes = contentBuffer.length;
+        const _sizeBytes = contentBuffer?.length;
         const [inserted] = await db
           .insert(userStorageFiles)
           .values({
@@ -5004,9 +5023,9 @@ export async function registerRoutes(
             metadata: { writtenAt: new Date().toISOString() },
           })
           .returning();
-        return res.json({
+        return res?.json({
           success: true,
-          fileId: inserted.id,
+          fileId: inserted?.id,
           fileKey,
           pocketId,
           filename,
@@ -5014,19 +5033,19 @@ export async function registerRoutes(
           message: "File written successfully",
         });
       } catch (error) {
-        logger.warn({ err: error }, "Pocket write error");
-        return res.status(500).json({ message: "Failed to write to pocket" });
+        logger?.warn({ err: error }, "Pocket write error");
+        return res?.status(500).json({ message: "Failed to write to pocket" });
       }
     },
   );
 
   // Audit and testing endpoints
-  app.get("/api/audit/results", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/audit/results", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
+      return res?.json({
         overallScore: 88,
         securityScore: 90,
         functionalityScore: 92,
@@ -5057,17 +5076,17 @@ export async function registerRoutes(
         lastAudit: new Date().toISOString(),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Audit results error");
-      return res.status(500).json({ message: "Failed to fetch audit results" });
+      logger?.warn({ err: error }, "Audit results error");
+      return res?.status(500).json({ message: "Failed to fetch audit results" });
     }
   });
 
-  app.get("/api/testing/results", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/testing/results", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
+      return res?.json({
         overallScore: 80,
         unitTestScore: 85,
         integrationTestScore: 78,
@@ -5083,7 +5102,7 @@ export async function registerRoutes(
         lastRun: new Date().toISOString(),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Testing results error");
+      logger?.warn({ err: error }, "Testing results error");
       return res
         .status(500)
         .json({ message: "Failed to fetch testing results" });
@@ -5091,24 +5110,24 @@ export async function registerRoutes(
   });
 
   // Complete onboarding endpoint
-  app.post(
+  app?.post(
     "/api/users/complete-onboarding",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        await storage.updateUser(req.user.id, {
+        await storage?.updateUser(req?.user.id, {
           onboardingCompleted: true,
           onboardingStep: 100,
           onboardingData: {
-            ...req.user.onboardingData,
+            ...req?.user.onboardingData,
             completedAt: new Date().toISOString(),
           },
         });
-        return res.json({ success: true, message: "Onboarding completed" });
+        return res?.json({ success: true, message: "Onboarding completed" });
       } catch (error) {
-        logger.warn({ err: error }, "Complete onboarding error");
+        logger?.warn({ err: error }, "Complete onboarding error");
         return res
           .status(500)
           .json({ message: "Failed to complete onboarding" });
@@ -5117,45 +5136,45 @@ export async function registerRoutes(
   );
 
   // Get seen features for progressive disclosure
-  app.get("/api/users/seen-features", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/users/seen-features", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const seenFeatures = req.user.onboardingData?.seenFeatures || [];
-      return res.json({ seenFeatures });
+      const _seenFeatures = req?.user.onboardingData?.seenFeatures || [];
+      return res?.json({ seenFeatures });
     } catch (error) {
-      logger.warn({ err: error }, "Get seen features error");
-      return res.status(500).json({ message: "Failed to get seen features" });
+      logger?.warn({ err: error }, "Get seen features error");
+      return res?.status(500).json({ message: "Failed to get seen features" });
     }
   });
 
   // Mark feature as seen for progressive disclosure
-  app.post(
+  app?.post(
     "/api/users/mark-feature-seen",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { featureId } = req.body;
+        const { featureId } = req?.body;
         if (!featureId) {
-          return res.status(400).json({ message: "Feature ID is required" });
+          return res?.status(400).json({ message: "Feature ID is required" });
         }
-        const currentOnboardingData = req.user.onboardingData || {};
-        const seenFeatures = currentOnboardingData.seenFeatures || [];
-        if (!seenFeatures.includes(featureId)) {
-          seenFeatures.push(featureId);
+        const _currentOnboardingData = req?.user.onboardingData || {};
+        const _seenFeatures = currentOnboardingData?.seenFeatures || [];
+        if (!seenFeatures?.includes(featureId)) {
+          seenFeatures?.push(featureId);
         }
-        await storage.updateUser(req.user.id, {
+        await storage?.updateUser(req?.user.id, {
           onboardingData: {
             ...currentOnboardingData,
             seenFeatures,
           },
         });
-        return res.json({ success: true, seenFeatures });
+        return res?.json({ success: true, seenFeatures });
       } catch (error) {
-        logger.warn({ err: error }, "Mark feature seen error");
+        logger?.warn({ err: error }, "Mark feature seen error");
         return res
           .status(500)
           .json({ message: "Failed to mark feature as seen" });
@@ -5164,21 +5183,21 @@ export async function registerRoutes(
   );
 
   // Royalties download statement endpoint
-  app.get(
+  app?.get(
     "/api/royalties/download-statement/:statementId",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { statementId } = req.params;
-        return res.json({
+        const { statementId } = req?.params;
+        return res?.json({
           success: true,
           downloadUrl: `/exports/statement_${statementId}.pdf`,
-          expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          expiresAt: new Date(Date?.now() + 3600000).toISOString(),
         });
       } catch (error) {
-        logger.warn({ err: error }, "Download statement error");
+        logger?.warn({ err: error }, "Download statement error");
         return res
           .status(500)
           .json({ message: "Failed to generate statement download" });
@@ -5187,48 +5206,48 @@ export async function registerRoutes(
   );
 
   // Royalties summary endpoint (used by royalties page header cards)
-  app.get("/api/royalties/summary", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/royalties/summary", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const userId = req.user.id;
-      const [aggregates, [lastPaidRow], platformRows] = await Promise.all([
+      const _userId = req?.user.id;
+      const [aggregates, [lastPaidRow], platformRows] = await Promise?.all([
         db
           .select({
-            totalEarnings: sum(royaltyTransactions.amount),
-            pendingPayouts: sql<number>`coalesce(sum(case when ${royaltyTransactions.status} = 'pending' then ${royaltyTransactions.amount} else 0 end), 0)`,
+            totalEarnings: sum(royaltyTransactions?.amount),
+            pendingPayouts: sql<number>`coalesce(sum(case when ${royaltyTransactions?.status} = 'pending' then ${royaltyTransactions?.amount} else 0 end), 0)`,
           })
           .from(royaltyTransactions)
-          .where(eq(royaltyTransactions.userId, userId)),
+          .where(eq(royaltyTransactions?.userId, userId)),
 
         db
-          .select({ paidAt: royaltyTransactions.paidAt })
+          .select({ paidAt: royaltyTransactions?.paidAt })
           .from(royaltyTransactions)
           .where(
             and(
-              eq(royaltyTransactions.userId, userId),
-              sql`${royaltyTransactions.paidAt} is not null`,
+              eq(royaltyTransactions?.userId, userId),
+              sql`${royaltyTransactions?.paidAt} is not null`,
             ),
           )
-          .orderBy(desc(royaltyTransactions.paidAt))
+          .orderBy(desc(royaltyTransactions?.paidAt))
           .limit(1),
 
         db
-          .selectDistinct({ platform: royaltyTransactions.platform })
+          .selectDistinct({ platform: royaltyTransactions?.platform })
           .from(royaltyTransactions)
-          .where(eq(royaltyTransactions.userId, userId)),
+          .where(eq(royaltyTransactions?.userId, userId)),
       ]);
 
-      const agg = aggregates[0];
-      return res.json({
+      const _agg = aggregates[0];
+      return res?.json({
         totalEarnings: Number(agg?.totalEarnings || 0),
         pendingPayouts: Number(agg?.pendingPayouts || 0),
         lastPayout: lastPaidRow?.paidAt ?? null,
-        platformsCount: platformRows.length,
+        platformsCount: platformRows?.length,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Royalties summary error");
+      logger?.warn({ err: error }, "Royalties summary error");
       return res
         .status(500)
         .json({ message: "Failed to fetch royalties summary" });
@@ -5236,22 +5255,22 @@ export async function registerRoutes(
   });
 
   // Royalties endpoints — backed by real DB data
-  app.get("/api/royalties", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/royalties", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const userId = req.user.id;
-      const { period = "30d", platform } = req.query as {
+      const _userId = req?.user.id;
+      const { period = "30d", platform } = req?.query as {
         period?: string;
         platform?: string;
       };
-      const pageParam = parseInt(String(req.query.page || "1"), 10);
-      const limitParam = Math.min(
-        Math.max(parseInt(String(req.query.limit || "100"), 10), 1),
+      const _pageParam = parseInt(String(req?.query.page || "1"), 10);
+      const _limitParam = Math?.min(
+        Math?.max(parseInt(String(req?.query.limit || "100"), 10), 1),
         500,
       );
-      const offset = (Math.max(pageParam, 1) - 1) * limitParam;
+      const _offset = (Math?.max(pageParam, 1) - 1) * limitParam;
 
       const daysMap: Record<string, number> = {
         "7d": 7,
@@ -5260,63 +5279,63 @@ export async function registerRoutes(
         "1y": 365,
         all: 9999,
       };
-      const days = daysMap[period] ?? 30;
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const _days = daysMap[period] ?? 30;
+      const _since = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
 
       const conditions: import("drizzle-orm").SQL<unknown>[] = [
-        eq(royaltyTransactions.userId, userId),
-        gte(royaltyTransactions.createdAt, since),
+        eq(royaltyTransactions?.userId, userId),
+        gte(royaltyTransactions?.createdAt, since),
       ];
       if (platform && platform !== "all") {
-        conditions.push(eq(royaltyTransactions.platform, platform));
+        conditions?.push(eq(royaltyTransactions?.platform, platform));
       }
-      const where = and(...conditions);
+      const _where = and(...conditions);
 
-      const [aggregates, rows, [lastPaidRow]] = await Promise.all([
+      const [aggregates, rows, [lastPaidRow]] = await Promise?.all([
         db
           .select({
-            totalEarnings: sum(royaltyTransactions.amount),
+            totalEarnings: sum(royaltyTransactions?.amount),
             totalRows: count(),
-            pendingPayouts: sql<number>`coalesce(sum(case when ${royaltyTransactions.status} = 'pending' then ${royaltyTransactions.amount} else 0 end), 0)`,
+            pendingPayouts: sql<number>`coalesce(sum(case when ${royaltyTransactions?.status} = 'pending' then ${royaltyTransactions?.amount} else 0 end), 0)`,
           })
           .from(royaltyTransactions)
           .where(where),
 
         db
           .select({
-            id: royaltyTransactions.id,
-            releaseId: royaltyTransactions.releaseId,
-            platform: royaltyTransactions.platform,
-            amount: royaltyTransactions.amount,
-            currency: royaltyTransactions.currency,
-            streamCount: royaltyTransactions.streamCount,
-            periodStart: royaltyTransactions.periodStart,
-            periodEnd: royaltyTransactions.periodEnd,
-            status: royaltyTransactions.status,
-            transactionType: royaltyTransactions.transactionType,
-            createdAt: royaltyTransactions.createdAt,
+            id: royaltyTransactions?.id,
+            releaseId: royaltyTransactions?.releaseId,
+            platform: royaltyTransactions?.platform,
+            amount: royaltyTransactions?.amount,
+            currency: royaltyTransactions?.currency,
+            streamCount: royaltyTransactions?.streamCount,
+            periodStart: royaltyTransactions?.periodStart,
+            periodEnd: royaltyTransactions?.periodEnd,
+            status: royaltyTransactions?.status,
+            transactionType: royaltyTransactions?.transactionType,
+            createdAt: royaltyTransactions?.createdAt,
           })
           .from(royaltyTransactions)
           .where(where)
-          .orderBy(desc(royaltyTransactions.createdAt))
+          .orderBy(desc(royaltyTransactions?.createdAt))
           .limit(limitParam)
           .offset(offset),
 
         db
-          .select({ paidAt: royaltyTransactions.paidAt })
+          .select({ paidAt: royaltyTransactions?.paidAt })
           .from(royaltyTransactions)
           .where(
             and(
-              eq(royaltyTransactions.userId, userId),
-              sql`${royaltyTransactions.paidAt} is not null`,
+              eq(royaltyTransactions?.userId, userId),
+              sql`${royaltyTransactions?.paidAt} is not null`,
             ),
           )
-          .orderBy(desc(royaltyTransactions.paidAt))
+          .orderBy(desc(royaltyTransactions?.paidAt))
           .limit(1),
       ]);
 
-      const agg = aggregates[0];
-      return res.json({
+      const _agg = aggregates[0];
+      return res?.json({
         data: rows,
         totalEarnings: Number(agg?.totalEarnings || 0),
         pendingPayouts: Number(agg?.pendingPayouts || 0),
@@ -5328,55 +5347,55 @@ export async function registerRoutes(
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Royalties error");
-      return res.status(500).json({ message: "Failed to fetch royalties" });
+      logger?.warn({ err: error }, "Royalties error");
+      return res?.status(500).json({ message: "Failed to fetch royalties" });
     }
   });
 
-  app.get(
+  app?.get(
     "/api/royalties/platform-breakdown",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const userId = req.user.id;
-        const { period = "30d" } = req.query as { period?: string };
+        const _userId = req?.user.id;
+        const { period = "30d" } = req?.query as { period?: string };
         const daysMap: Record<string, number> = {
           "7d": 7,
           "30d": 30,
           "90d": 90,
           "1y": 365,
         };
-        const days = daysMap[period] ?? 30;
-        const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+        const _days = daysMap[period] ?? 30;
+        const _since = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
 
-        const rows = await db
+        const _rows = await db
           .select({
-            platform: royaltyTransactions.platform,
-            totalAmount: sum(royaltyTransactions.amount),
-            totalStreams: sum(royaltyTransactions.streamCount),
-            transactionCount: count(royaltyTransactions.id),
+            platform: royaltyTransactions?.platform,
+            totalAmount: sum(royaltyTransactions?.amount),
+            totalStreams: sum(royaltyTransactions?.streamCount),
+            transactionCount: count(royaltyTransactions?.id),
           })
           .from(royaltyTransactions)
           .where(
             and(
-              eq(royaltyTransactions.userId, userId),
-              gte(royaltyTransactions.createdAt, since),
+              eq(royaltyTransactions?.userId, userId),
+              gte(royaltyTransactions?.createdAt, since),
             ),
           )
-          .groupBy(royaltyTransactions.platform);
+          .groupBy(royaltyTransactions?.platform);
 
-        return res.json(
-          rows.map((r) => ({
-            platform: r.platform || "unknown",
-            earnings: Number(r.totalAmount) || 0,
-            streams: Number(r.totalStreams) || 0,
-            transactions: Number(r.transactionCount) || 0,
+        return res?.json(
+          rows?.map((r) => ({
+            platform: r?.platform || "unknown",
+            earnings: Number(r?.totalAmount) || 0,
+            streams: Number(r?.totalStreams) || 0,
+            transactions: Number(r?.transactionCount) || 0,
           })),
         );
       } catch (error) {
-        logger.warn({ err: error }, "Platform breakdown error");
+        logger?.warn({ err: error }, "Platform breakdown error");
         return res
           .status(500)
           .json({ message: "Failed to fetch platform breakdown" });
@@ -5384,100 +5403,100 @@ export async function registerRoutes(
     },
   );
 
-  app.get("/api/royalties/top-tracks", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/royalties/top-tracks", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const userId = req.user.id;
-      const { period = "30d" } = req.query as { period?: string };
+      const _userId = req?.user.id;
+      const { period = "30d" } = req?.query as { period?: string };
       const daysMap: Record<string, number> = {
         "7d": 7,
         "30d": 30,
         "90d": 90,
         "1y": 365,
       };
-      const days = daysMap[period] ?? 30;
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const _days = daysMap[period] ?? 30;
+      const _since = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
 
-      const rows = await db
+      const _rows = await db
         .select({
-          releaseId: royaltyTransactions.releaseId,
-          totalAmount: sum(royaltyTransactions.amount),
-          totalStreams: sum(royaltyTransactions.streamCount),
+          releaseId: royaltyTransactions?.releaseId,
+          totalAmount: sum(royaltyTransactions?.amount),
+          totalStreams: sum(royaltyTransactions?.streamCount),
         })
         .from(royaltyTransactions)
         .where(
           and(
-            eq(royaltyTransactions.userId, userId),
-            gte(royaltyTransactions.createdAt, since),
+            eq(royaltyTransactions?.userId, userId),
+            gte(royaltyTransactions?.createdAt, since),
           ),
         )
-        .groupBy(royaltyTransactions.releaseId)
-        .orderBy(desc(sum(royaltyTransactions.amount)))
+        .groupBy(royaltyTransactions?.releaseId)
+        .orderBy(desc(sum(royaltyTransactions?.amount)))
         .limit(10);
 
-      const releaseIds = rows.map((r) => r.releaseId).filter(Boolean);
-      const releaseRows =
-        releaseIds.length > 0
+      const _releaseIds = rows?.map((r) => r?.releaseId).filter(Boolean);
+      const _releaseRows =
+        releaseIds?.length > 0
           ? await db
-              .select({ id: releases.id, title: releases.title })
+              .select({ id: releases?.id, title: releases?.title })
               .from(releases)
-              .where(inArray(releases.id, releaseIds))
+              .where(inArray(releases?.id, releaseIds))
           : [];
-      const releaseMap = new Map(releaseRows.map((r) => [r.id, r.title]));
+      const _releaseMap = new Map(releaseRows?.map((r) => [r?.id, r?.title]));
 
-      return res.json(
-        rows.map((r) => ({
-          releaseId: r.releaseId,
-          title: releaseMap.get(r.releaseId) || r.releaseId,
-          earnings: Number(r.totalAmount) || 0,
-          streams: Number(r.totalStreams) || 0,
+      return res?.json(
+        rows?.map((r) => ({
+          releaseId: r?.releaseId,
+          title: releaseMap?.get(r?.releaseId) || r?.releaseId,
+          earnings: Number(r?.totalAmount) || 0,
+          streams: Number(r?.totalStreams) || 0,
         })),
       );
     } catch (error) {
-      logger.warn({ err: error }, "Top tracks error");
-      return res.status(500).json({ message: "Failed to fetch top tracks" });
+      logger?.warn({ err: error }, "Top tracks error");
+      return res?.status(500).json({ message: "Failed to fetch top tracks" });
     }
   });
 
-  app.get(
+  app?.get(
     "/api/royalties/payment-methods",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const user = req.user!;
-        const prefs = user.preferences?.payout || {};
-        const methods = [];
-        if (user.stripeConnectedAccountId) {
-          methods.push({
+        const _user = req?.user!;
+        const _prefs = user?.preferences?.payout || {};
+        const _methods = [];
+        if (user?.stripeConnectedAccountId) {
+          methods?.push({
             id: "stripe",
             type: "stripe",
             label: "Bank Account (Stripe)",
-            isDefault: !prefs.paypalEmail && !prefs.bankDetails,
+            isDefault: !prefs?.paypalEmail && !prefs?.bankDetails,
           });
         }
-        if (prefs.paypalEmail) {
-          methods.push({
+        if (prefs?.paypalEmail) {
+          methods?.push({
             id: "paypal",
             type: "paypal",
-            label: `PayPal (${prefs.paypalEmail})`,
-            isDefault: !!prefs.paypalEmail && !prefs.bankDetails,
+            label: `PayPal (${prefs?.paypalEmail})`,
+            isDefault: !!prefs?.paypalEmail && !prefs?.bankDetails,
           });
         }
-        if (prefs.bankDetails) {
-          methods.push({
+        if (prefs?.bankDetails) {
+          methods?.push({
             id: "bank",
             type: "bank_transfer",
             label: "Bank Transfer",
             isDefault: true,
           });
         }
-        return res.json(methods);
+        return res?.json(methods);
       } catch (error) {
-        logger.warn({ err: error }, "Payment methods error");
+        logger?.warn({ err: error }, "Payment methods error");
         return res
           .status(500)
           .json({ message: "Failed to fetch payment methods" });
@@ -5485,37 +5504,37 @@ export async function registerRoutes(
     },
   );
 
-  app.post(
+  app?.post(
     "/api/royalties/payment-methods",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { type, paypalEmail, bankDetails } = req.body;
+        const { type, paypalEmail, bankDetails } = req?.body;
         if (!type)
           return res
             .status(400)
             .json({ message: "Payment method type required" });
 
-        const user = req.user!;
-        const currentPrefs = user.preferences || {};
-        const updated = {
+        const _user = req?.user!;
+        const _currentPrefs = user?.preferences || {};
+        const _updated = {
           ...currentPrefs,
-          payout: { ...(currentPrefs.payout || {}) },
+          payout: { ...(currentPrefs?.payout || {}) },
         };
         if (type === "paypal" && paypalEmail)
-          updated.payout.paypalEmail = paypalEmail;
+          updated?.payout.paypalEmail = paypalEmail;
         if (type === "bank_transfer" && bankDetails)
-          updated.payout.bankDetails = bankDetails;
+          updated?.payout.bankDetails = bankDetails;
 
         await db
           .update(users)
           .set({ preferences: updated } as Record<string, unknown>)
-          .where(eq(users.id, req.user.id));
-        return res.json({ success: true, message: "Payment method added" });
+          .where(eq(users?.id, req?.user.id));
+        return res?.json({ success: true, message: "Payment method added" });
       } catch (error) {
-        logger.warn({ err: error }, "Add payment method error");
+        logger?.warn({ err: error }, "Add payment method error");
         return res
           .status(500)
           .json({ message: "Failed to add payment method" });
@@ -5523,48 +5542,48 @@ export async function registerRoutes(
     },
   );
 
-  app.get(
+  app?.get(
     "/api/royalties/payout-settings",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const user = req.user!;
-        const prefs = user.preferences?.payoutSettings || {};
+        const _user = req?.user!;
+        const _prefs = user?.preferences?.payoutSettings || {};
 
         // Pull the latest submitted tax form to surface taxCountry / taxId
         const [latestTaxForm] = await db
           .select({
-            formData: taxForms.formData,
-            formType: taxForms.formType,
-            status: taxForms.status,
+            formData: taxForms?.formData,
+            formType: taxForms?.formType,
+            status: taxForms?.status,
           })
           .from(taxForms)
-          .where(eq(taxForms.userId, req.user.id))
-          .orderBy(desc(taxForms.submittedAt))
+          .where(eq(taxForms?.userId, req?.user.id))
+          .orderBy(desc(taxForms?.submittedAt))
           .limit(1);
 
-        const taxFormData = latestTaxForm?.formData as Record<string, unknown>;
-        const taxCountry =
+        const _taxFormData = latestTaxForm?.formData as Record<string, unknown>;
+        const _taxCountry =
           taxFormData?.taxCountry ?? taxFormData?.address?.country ?? null;
-        const taxId = taxFormData?.taxId
-          ? "***-**-" + String(taxFormData.taxId).slice(-4)
+        const _taxId = taxFormData?.taxId
+          ? "***-**-" + String(taxFormData?.taxId).slice(-4)
           : null;
 
-        return res.json({
-          minimumPayout: prefs.minimumPayout ?? 50,
-          payoutSchedule: prefs.payoutSchedule ?? "monthly",
-          preferredMethod: prefs.preferredMethod ?? null,
-          stripeConnected: !!user.stripeConnectedAccountId,
-          paypalEmail: user.preferences?.payout?.paypalEmail ?? null,
+        return res?.json({
+          minimumPayout: prefs?.minimumPayout ?? 50,
+          payoutSchedule: prefs?.payoutSchedule ?? "monthly",
+          preferredMethod: prefs?.preferredMethod ?? null,
+          stripeConnected: !!user?.stripeConnectedAccountId,
+          paypalEmail: user?.preferences?.payout?.paypalEmail ?? null,
           taxCountry,
           taxId,
           taxFormType: latestTaxForm?.formType ?? null,
           taxFormStatus: latestTaxForm?.status ?? null,
         });
       } catch (error) {
-        logger.warn({ err: error }, "Payout settings error");
+        logger?.warn({ err: error }, "Payout settings error");
         return res
           .status(500)
           .json({ message: "Failed to fetch payout settings" });
@@ -5572,20 +5591,20 @@ export async function registerRoutes(
     },
   );
 
-  app.put(
+  app?.put(
     "/api/royalties/payout-settings",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { minimumPayout, payoutSchedule, preferredMethod } = req.body;
-        const user = req.user!;
-        const currentPrefs = user.preferences || {};
-        const updated = {
+        const { minimumPayout, payoutSchedule, preferredMethod } = req?.body;
+        const _user = req?.user!;
+        const _currentPrefs = user?.preferences || {};
+        const _updated = {
           ...currentPrefs,
           payoutSettings: {
-            ...(currentPrefs.payoutSettings || {}),
+            ...(currentPrefs?.payoutSettings || {}),
             ...(minimumPayout != null && { minimumPayout }),
             ...(payoutSchedule && { payoutSchedule }),
             ...(preferredMethod && { preferredMethod }),
@@ -5594,10 +5613,10 @@ export async function registerRoutes(
         await db
           .update(users)
           .set({ preferences: updated } as Record<string, unknown>)
-          .where(eq(users.id, req.user.id));
-        return res.json({ success: true, message: "Payout settings updated" });
+          .where(eq(users?.id, req?.user.id));
+        return res?.json({ success: true, message: "Payout settings updated" });
       } catch (error) {
-        logger.warn({ err: error }, "Update payout settings error");
+        logger?.warn({ err: error }, "Update payout settings error");
         return res
           .status(500)
           .json({ message: "Failed to update payout settings" });
@@ -5605,9 +5624,9 @@ export async function registerRoutes(
     },
   );
 
-  app.put("/api/royalties/tax-info", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.put("/api/royalties/tax-info", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       const {
@@ -5616,21 +5635,21 @@ export async function registerRoutes(
         formData,
         taxCountry,
         taxId,
-      } = req.body;
+      } = req?.body;
       // Accept either a full nested formData object OR the simple flat {taxCountry, taxId} shape
-      const resolvedFormData =
+      const _resolvedFormData =
         formData ?? (taxCountry || taxId ? { taxCountry, taxId } : null);
       if (!resolvedFormData)
-        return res.status(400).json({ message: "Form data required" });
+        return res?.status(400).json({ message: "Form data required" });
 
       const [existing] = await db
-        .select({ id: taxForms.id })
+        .select({ id: taxForms?.id })
         .from(taxForms)
         .where(
           and(
-            eq(taxForms.userId, req.user.id),
-            eq(taxForms.taxYear, taxYear),
-            eq(taxForms.formType, formType),
+            eq(taxForms?.userId, req?.user.id),
+            eq(taxForms?.taxYear, taxYear),
+            eq(taxForms?.formType, formType),
           ),
         )
         .limit(1);
@@ -5643,10 +5662,10 @@ export async function registerRoutes(
             status: "submitted",
             submittedAt: new Date(),
           })
-          .where(eq(taxForms.id, existing.id));
+          .where(eq(taxForms?.id, existing?.id));
       } else {
-        await db.insert(taxForms).values({
-          userId: req.user.id,
+        await db?.insert(taxForms).values({
+          userId: req?.user.id,
           formType,
           taxYear,
           formData: resolvedFormData,
@@ -5654,36 +5673,36 @@ export async function registerRoutes(
           submittedAt: new Date(),
         });
       }
-      return res.json({ success: true, message: "Tax info updated" });
+      return res?.json({ success: true, message: "Tax info updated" });
     } catch (error) {
-      logger.warn({ err: error }, "Update tax info error");
-      return res.status(500).json({ message: "Failed to update tax info" });
+      logger?.warn({ err: error }, "Update tax info error");
+      return res?.status(500).json({ message: "Failed to update tax info" });
     }
   });
 
-  app.get("/api/royalties/splits", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/royalties/splits", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const rows = await db
+      const _rows = await db
         .select()
         .from(royaltySplits)
-        .where(eq(royaltySplits.userId, req.user.id))
-        .orderBy(desc(royaltySplits.createdAt))
+        .where(eq(royaltySplits?.userId, req?.user.id))
+        .orderBy(desc(royaltySplits?.createdAt))
         .limit(500);
-      return res.json(rows);
+      return res?.json(rows);
     } catch (error) {
-      logger.warn({ err: error }, "Royalty splits error");
+      logger?.warn({ err: error }, "Royalty splits error");
       return res
         .status(500)
         .json({ message: "Failed to fetch royalty splits" });
     }
   });
 
-  app.post("/api/royalties/splits", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/royalties/splits", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       const {
@@ -5692,7 +5711,7 @@ export async function registerRoutes(
         percentage,
         projectId,
         role = "collaborator",
-      } = req.body;
+      } = req?.body;
       if (!collaboratorEmail || !percentage) {
         return res
           .status(400)
@@ -5708,47 +5727,47 @@ export async function registerRoutes(
         .insert(royaltySplits)
         .values({
           releaseId: projectId || "general",
-          userId: req.user.id,
+          userId: req?.user.id,
           collaboratorEmail,
-          collaboratorName: collaboratorName || collaboratorEmail.split("@")[0],
+          collaboratorName: collaboratorName || collaboratorEmail?.split("@")[0],
           role,
           percentage,
           status: "pending",
         })
         .returning();
 
-      return res.json(split);
+      return res?.json(split);
     } catch (error) {
-      logger.warn({ err: error }, "Create split error");
+      logger?.warn({ err: error }, "Create split error");
       return res
         .status(500)
         .json({ message: "Failed to create royalty split" });
     }
   });
 
-  app.delete(
+  app?.delete(
     "/api/royalties/splits/:splitId",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { splitId } = req.params;
+        const { splitId } = req?.params;
         const [existing] = await db
-          .select({ id: royaltySplits.id, userId: royaltySplits.userId })
+          .select({ id: royaltySplits?.id, userId: royaltySplits?.userId })
           .from(royaltySplits)
-          .where(eq(royaltySplits.id, splitId))
+          .where(eq(royaltySplits?.id, splitId))
           .limit(1);
 
         if (!existing)
-          return res.status(404).json({ message: "Royalty split not found" });
-        if (existing.userId !== req.user.id)
-          return res.status(403).json({ message: "Not authorized" });
+          return res?.status(404).json({ message: "Royalty split not found" });
+        if (existing?.userId !== req?.user.id)
+          return res?.status(403).json({ message: "Not authorized" });
 
-        await db.delete(royaltySplits).where(eq(royaltySplits.id, splitId));
-        return res.json({ success: true, message: "Royalty split deleted" });
+        await db?.delete(royaltySplits).where(eq(royaltySplits?.id, splitId));
+        return res?.json({ success: true, message: "Royalty split deleted" });
       } catch (error) {
-        logger.warn({ err: error }, "Delete split error");
+        logger?.warn({ err: error }, "Delete split error");
         return res
           .status(500)
           .json({ message: "Failed to delete royalty split" });
@@ -5756,145 +5775,148 @@ export async function registerRoutes(
     },
   );
 
-  app.post("/api/royalties/export", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/royalties/export", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { period = "30d", format = "csv" } = req.body;
+      const { period = "30d", format = "csv" } = req?.body;
       const daysMap: Record<string, number> = {
         "7d": 7,
         "30d": 30,
         "90d": 90,
         "1y": 365,
       };
-      const days = daysMap[period] ?? 30;
-      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      const _days = daysMap[period] ?? 30;
+      const _since = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
 
       // Hard cap: 50 000 rows prevents a multi-year user from generating a
       // 500 MB CSV that exhausts server memory and stalls the event loop.
       // The X-Truncated header lets the client show a "results capped" notice.
-      const EXPORT_ROW_LIMIT = 50_000;
+      const _EXPORT_ROW_LIMIT = 50_000;
 
-      const rows = await db
+      const _rows = await db
         .select()
         .from(royaltyTransactions)
         .where(
           and(
-            eq(royaltyTransactions.userId, req.user.id),
-            gte(royaltyTransactions.createdAt, since),
+            eq(royaltyTransactions?.userId, req?.user.id),
+            gte(royaltyTransactions?.createdAt, since),
           ),
         )
-        .orderBy(desc(royaltyTransactions.createdAt))
+        .orderBy(desc(royaltyTransactions?.createdAt))
         .limit(EXPORT_ROW_LIMIT + 1); // fetch one extra to detect truncation
 
-      const truncated = rows.length > EXPORT_ROW_LIMIT;
-      const safeRows = truncated ? rows.slice(0, EXPORT_ROW_LIMIT) : rows;
+      const _truncated = rows?.length > EXPORT_ROW_LIMIT;
+      const _safeRows = truncated ? rows?.slice(0, EXPORT_ROW_LIMIT) : rows;
 
       if (format === "csv") {
-        const csvHeader =
+        const _csvHeader =
           "Date,Platform,Release,Amount,Currency,Streams,Status\n";
-        const csvBody = safeRows
+        const _csvBody = safeRows
           .map(
             (r) =>
-              `${r.createdAt?.toISOString()},${r.platform || ""},${r.releaseId},${r.amount},${r.currency || "usd"},${r.streamCount || 0},${r.status}`,
+              `${r?.createdAt?.toISOString()},${r?.platform || ""},${r?.releaseId},${r?.amount},${r?.currency || "usd"},${r?.streamCount || 0},${r?.status}`,
           )
           .join("\n");
-        const csv = csvHeader + csvBody;
-        res.setHeader("Content-Type", "text/csv");
-        res.setHeader(
+        const _csv = csvHeader + csvBody;
+        res?.setHeader("Content-Type", "text/csv");
+        res?.setHeader(
           "Content-Disposition",
-          `attachment; filename="royalties_${period}_${Date.now()}.csv"`,
+          `attachment; filename="royalties_${period}_${Date?.now()}.csv"`,
         );
-        if (truncated) res.setHeader("X-Truncated", "true");
-        return res.send(csv);
+        if (truncated) res?.setHeader("X-Truncated", "true");
+        return res?.send(csv);
       }
 
-      if (truncated) res.setHeader("X-Truncated", "true");
-      return res.json({ success: true, data: safeRows, truncated });
+      if (truncated) res?.setHeader("X-Truncated", "true");
+      return res?.json({ success: true, data: safeRows, truncated });
     } catch (error) {
-      logger.warn({ err: error }, "Export royalties error");
-      return res.status(500).json({ message: "Failed to export royalties" });
+      logger?.warn({ err: error }, "Export royalties error");
+      return res?.status(500).json({ message: "Failed to export royalties" });
     }
   });
 
-  app.post(
+  app?.post(
     "/api/royalties/request-payout",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { instantPayoutService } =
-          await import("./services/instantPayoutService");
-        const balance = await instantPayoutService.calculateAvailableBalance(
-          req.user.id,
+        const { instantPayoutService } = await import(
+          "./services/instantPayoutService"
+        );
+        const _balance = await instantPayoutService?.calculateAvailableBalance(
+          req?.user.id,
         );
         if (balance <= 0) {
           return res
             .status(400)
             .json({ message: "No available balance for payout" });
         }
-        const result = await instantPayoutService.requestInstantPayout(
-          req.user.id,
+        const _result = await instantPayoutService?.requestInstantPayout(
+          req?.user.id,
           { amount: balance },
         );
-        return res.json({
+        return res?.json({
           success: true,
-          payoutId: result?.id || `payout_${Date.now()}`,
+          payoutId: result?.id || `payout_${Date?.now()}`,
           message: "Payout request submitted",
           amount: balance,
         });
       } catch (error) {
-        logger.warn({ err: error }, "Request payout error");
-        return res.status(500).json({
-          message:
-            "Failed to request payout. Please ensure your payment method is configured.",
-        });
+        logger?.warn({ err: error }, "Request payout error");
+        return res
+          .status(500)
+          .json({
+            message:
+              "Failed to request payout. Please ensure your payment method is configured.",
+          });
       }
     },
   );
 
   // GET /api/royalties/statements — Royalty period statements (for Tax Intelligence tab)
-  app.get("/api/royalties/statements", async (req: Request, res: Response) => {
-    if (!req.user)
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/royalties/statements", async (req: Request, res: Response) => {
+    if (!req?.user)
+      return res?.status(401).json({ message: "Not authenticated" });
     try {
-      const statements = await db
+      const _statements = await db
         .select()
         .from(royaltyStatements)
-        .where(eq(royaltyStatements.userId, req.user.id))
-        .orderBy(desc(royaltyStatements.periodEnd))
+        .where(eq(royaltyStatements?.userId, req?.user.id))
+        .orderBy(desc(royaltyStatements?.periodEnd))
         .limit(24);
-      return res.json({ statements, total: statements.length });
+      return res?.json({ statements, total: statements?.length });
     } catch (error) {
-      logger.warn({ err: error }, "Get royalty statements error");
-      return res.json({ statements: [], total: 0 });
+      logger?.warn({ err: error }, "Get royalty statements error");
+      return res?.json({ statements: [], total: 0 });
     }
   });
 
   // GET /api/royalties/forecast — Project future royalty income from recent trends
-  app.get("/api/royalties/forecast", async (req: Request, res: Response) => {
-    if (!req.user)
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.get("/api/royalties/forecast", async (req: Request, res: Response) => {
+    if (!req?.user)
+      return res?.status(401).json({ message: "Not authenticated" });
     try {
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-      const transactions = await db
+      const _threeMonthsAgo = new Date();
+      threeMonthsAgo?.setMonth(threeMonthsAgo?.getMonth() - 3);
+      const _transactions = await db
         .select({
-          amount: royaltyTransactions.amount,
-          platform: royaltyTransactions.platform,
+          amount: royaltyTransactions?.amount,
+          platform: royaltyTransactions?.platform,
         })
         .from(royaltyTransactions)
         .where(
           and(
-            eq(royaltyTransactions.userId, req.user.id as string),
-            gte(royaltyTransactions.createdAt, threeMonthsAgo),
+            eq(royaltyTransactions?.userId, req?.user.id as string),
+            gte(royaltyTransactions?.createdAt, threeMonthsAgo),
           ),
         );
-      const total = transactions.reduce((s, t) => s + (t.amount || 0), 0);
-      const monthlyAvg = total / 3;
-      const forecast = [1, 2, 3, 6, 12].map((months) => ({
+      const _total = transactions?.reduce((s, t) => s + (t?.amount || 0), 0);
+      const _monthlyAvg = total / 3;
+      const _forecast = [1, 2, 3, 6, 12].map((months) => ({
         months,
         label:
           months === 1
@@ -5903,25 +5925,25 @@ export async function registerRoutes(
               ? "1 Year"
               : `${months} Months`,
         projected: parseFloat((monthlyAvg * months).toFixed(2)),
-        growthRate: 0.05,
+        growthRate: 0?.05,
         confidence: months <= 3 ? "high" : months <= 6 ? "medium" : "low",
       }));
       const byPlatform: Record<string, number> = {};
       for (const t of transactions) {
-        const p = t.platform || "Unknown";
-        byPlatform[p] = (byPlatform[p] || 0) + (t.amount || 0);
+        const _p = t?.platform || "Unknown";
+        byPlatform[p] = (byPlatform[p] || 0) + (t?.amount || 0);
       }
-      return res.json({
-        monthlyAverage: parseFloat(monthlyAvg.toFixed(2)),
+      return res?.json({
+        monthlyAverage: parseFloat(monthlyAvg?.toFixed(2)),
         annualProjected: parseFloat((monthlyAvg * 12).toFixed(2)),
         forecast,
         byPlatform,
         basedOnMonths: 3,
-        dataPoints: transactions.length,
+        dataPoints: transactions?.length,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Get royalty forecast error");
-      return res.json({
+      logger?.warn({ err: error }, "Get royalty forecast error");
+      return res?.json({
         monthlyAverage: 0,
         annualProjected: 0,
         forecast: [],
@@ -5932,33 +5954,34 @@ export async function registerRoutes(
     }
   });
 
-  app.post(
+  app?.post(
     "/api/royalties/connect-stripe",
     async (req: Request, res: Response) => {
-      if (!req.user) {
-        return res.status(401).json({ message: "Not authenticated" });
+      if (!req?.user) {
+        return res?.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { instantPayoutService } =
-          await import("./services/instantPayoutService");
-        const baseUrl = getBaseUrl();
-        const refreshUrl = `${baseUrl}/royalties?setup=refresh`;
-        const returnUrl = `${baseUrl}/royalties?setup=complete`;
-        const url = await instantPayoutService.createAccountLink(
-          req.user.id,
+        const { instantPayoutService } = await import(
+          "./services/instantPayoutService"
+        );
+        const _baseUrl = getBaseUrl();
+        const _refreshUrl = `${baseUrl}/royalties?setup=refresh`;
+        const _returnUrl = `${baseUrl}/royalties?setup=complete`;
+        const _url = await instantPayoutService?.createAccountLink(
+          req?.user.id,
           refreshUrl,
           returnUrl,
         );
-        return res.json({ success: true, url });
+        return res?.json({ success: true, url });
       } catch (error: unknown) {
-        logger.warn({ err: error }, "Connect Stripe error");
+        logger?.warn({ err: error }, "Connect Stripe error");
         if (
           error instanceof Error &&
-          (("type" in error && error.type === "StripeInvalidRequestError") ||
-            ("rawType" in error && error.rawType === "invalid_request_error") ||
-            error.message.toLowerCase().includes("connect"))
+          (("type" in error && error?.type === "StripeInvalidRequestError") ||
+            ("rawType" in error && error?.rawType === "invalid_request_error") ||
+            error?.message.toLowerCase().includes("connect"))
         ) {
-          return res.status(400).json({
+          return res?.status(400).json({
             message:
               "Stripe Connect payouts are not yet enabled on this account. Please contact support to enable direct payouts.",
             code: "STRIPE_CONNECT_NOT_ENABLED",
@@ -5973,10 +5996,10 @@ export async function registerRoutes(
 
   // Create subscription endpoint — accepts planName (monthly/yearly/lifetime)
   // and returns a Stripe clientSecret for use with Stripe Elements.
-  app.post("/api/create-subscription", async (req: Request, res: Response) => {
+  app?.post("/api/create-subscription", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !req.user) {
-        return res.status(401).json({ message: "Authentication required" });
+      if (!req?.isAuthenticated() || !req?.user) {
+        return res?.status(401).json({ message: "Authentication required" });
       }
 
       if (!stripe) {
@@ -5987,16 +6010,16 @@ export async function registerRoutes(
       }
 
       // Accept either planName (preferred) or a raw priceId (legacy)
-      const { planName, priceId: rawPriceId } = req.body;
-      const validPlans = ["monthly", "yearly", "lifetime"] as const;
+      const { planName, priceId: rawPriceId } = req?.body;
+      const _validPlans = ["monthly", "yearly", "lifetime"] as const;
 
       let resolvedPriceId: string;
 
-      if (planName && validPlans.includes(planName)) {
+      if (planName && validPlans?.includes(planName)) {
         // Look up the real Stripe price ID from server-side cache
-        const priceIds = getStripePriceIds();
+        const _priceIds = getStripePriceIds();
         resolvedPriceId = priceIds[planName as keyof typeof priceIds];
-      } else if (rawPriceId && rawPriceId.startsWith("price_")) {
+      } else if (rawPriceId && rawPriceId?.startsWith("price_")) {
         resolvedPriceId = rawPriceId;
       } else {
         return res
@@ -6004,22 +6027,22 @@ export async function registerRoutes(
           .json({ message: "planName (monthly/yearly/lifetime) is required" });
       }
 
-      const user = req.user!;
+      const _user = req?.user!;
 
       // Find or create Stripe customer linked to this user
-      let customerId: string | undefined = user.stripeCustomerId;
+      let customerId: string | undefined = user?.stripeCustomerId;
       if (!customerId) {
-        const customer = await stripe.customers.create({
-          email: user.email,
-          name: user.username || user.firstName || user.email,
-          metadata: { userId: user.id },
+        const _customer = await stripe?.customers.create({
+          email: user?.email,
+          name: user?.username || user?.firstName || user?.email,
+          metadata: { userId: user?.id },
         });
-        customerId = customer.id;
-        // Persist customer ID (best-effort — billing.ts retry logic handles failures)
+        customerId = customer?.id;
+        // Persist customer ID (best-effort — billing?.ts retry logic handles failures)
         try {
-          await storage.updateUser(user.id, { stripeCustomerId: customerId });
+          await storage?.updateUser(user?.id, { stripeCustomerId: customerId });
         } catch (e) {
-          logger.warn(
+          logger?.warn(
             { err: e },
             "[create-subscription] Could not persist stripeCustomerId",
           );
@@ -6031,35 +6054,35 @@ export async function registerRoutes(
         planName === "lifetime" ||
         resolvedPriceId === getStripePriceIds().lifetime
       ) {
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: 69900, // $699.00 in cents
+        const _paymentIntent = await stripe?.paymentIntents.create({
+          amount: 69900, // $699?.00 in cents
           currency: "usd",
           customer: customerId,
           automatic_payment_methods: { enabled: true },
-          metadata: { userId: user.id, planName: "lifetime" },
+          metadata: { userId: user?.id, planName: "lifetime" },
         });
-        return res.json({
-          clientSecret: paymentIntent.client_secret,
+        return res?.json({
+          clientSecret: paymentIntent?.client_secret,
           type: "payment_intent",
         });
       }
 
       // Monthly/yearly — create a subscription (incomplete until payment confirmed)
-      const subscription = await stripe.subscriptions.create({
+      const _subscription = await stripe?.subscriptions.create({
         customer: customerId,
         items: [{ price: resolvedPriceId }],
         payment_behavior: "default_incomplete",
         payment_settings: { save_default_payment_method: "on_subscription" },
-        expand: ["latest_invoice.payment_intent"],
-        metadata: { userId: user.id, planName: planName || "unknown" },
+        expand: ["latest_invoice?.payment_intent"],
+        metadata: { userId: user?.id, planName: planName || "unknown" },
       });
 
-      const invoice = subscription.latest_invoice as Stripe.Invoice;
-      const pi = invoice?.payment_intent as Stripe.PaymentIntent | null;
+      const _invoice = subscription?.latest_invoice as Stripe?.Invoice;
+      const _pi = invoice?.payment_intent as Stripe?.PaymentIntent | null;
 
       if (!pi?.client_secret) {
-        logger.warn(
-          { subscriptionId: subscription.id },
+        logger?.warn(
+          { subscriptionId: subscription?.id },
           "[create-subscription] No client_secret in subscription invoice PI",
         );
         return res
@@ -6067,14 +6090,14 @@ export async function registerRoutes(
           .json({ message: "Failed to initialize payment — please try again" });
       }
 
-      return res.json({
-        clientSecret: pi.client_secret,
-        subscriptionId: subscription.id,
+      return res?.json({
+        clientSecret: pi?.client_secret,
+        subscriptionId: subscription?.id,
         type: "subscription",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Create subscription error");
-      return res.status(500).json({ message: "Failed to create subscription" });
+      logger?.warn({ err: error }, "Create subscription error");
+      return res?.status(500).json({ message: "Failed to create subscription" });
     }
   });
 
@@ -6084,7 +6107,7 @@ export async function registerRoutes(
   // chunks and upload each one independently, then reassemble here.
   // Chunks are stored in /tmp during assembly then moved to Object Storage.
 
-  const chunkUpload = createHardenedUpload({
+  const _chunkUpload = createHardenedUpload({
     maxFileSize: 6 * 1024 * 1024, // 6 MB safety ceiling per chunk
     maxFiles: 1,
     label: "upload chunk",
@@ -6092,16 +6115,16 @@ export async function registerRoutes(
 
   // POST /api/uploads/chunk
   // Accepts one chunk.  All chunks for a given upload share the same uploadId.
-  app.post(
+  app?.post(
     "/api/uploads/chunk",
-    chunkUpload.single("chunk"),
+    chunkUpload?.single("chunk"),
     async (req: Request, res: Response) => {
-      if (!req.user)
-        return res.status(401).json({ message: "Not authenticated" });
-      if (!req.file)
-        return res.status(400).json({ message: "No chunk received" });
+      if (!req?.user)
+        return res?.status(401).json({ message: "Not authenticated" });
+      if (!req?.file)
+        return res?.status(400).json({ message: "No chunk received" });
 
-      const { uploadId, chunkIndex, totalChunks } = req.body;
+      const { uploadId, chunkIndex, totalChunks } = req?.body;
       if (!uploadId || chunkIndex === undefined || !totalChunks) {
         return res.status(400).json({
           message: "uploadId, chunkIndex and totalChunks are required",
@@ -6110,63 +6133,63 @@ export async function registerRoutes(
 
       // Sanitise uploadId — only allow alphanumeric + hyphens
       if (!/^[a-zA-Z0-9-]{8,64}$/.test(uploadId)) {
-        return res.status(400).json({ message: "Invalid uploadId" });
+        return res?.status(400).json({ message: "Invalid uploadId" });
       }
 
       try {
-        const fsPromises = await import("fs/promises");
-        const pathMod = await import("path");
-        const osMod = await import("os");
-        const dir = pathMod.join(osMod.tmpdir(), "uploads", uploadId);
-        await fsPromises.mkdir(dir, { recursive: true });
-        const chunkPath = pathMod.join(
+        const _fsPromises = await import("fs/promises");
+        const _pathMod = await import("path");
+        const _osMod = await import("os");
+        const _dir = pathMod?.join(osMod?.tmpdir(), "uploads", uploadId);
+        await fsPromises?.mkdir(dir, { recursive: true });
+        const _chunkPath = pathMod?.join(
           dir,
           String(chunkIndex).padStart(6, "0") + ".bin",
         );
-        await fsPromises.writeFile(chunkPath, req.file.buffer);
-        return res.json({ received: Number(chunkIndex), uploadId });
+        await fsPromises?.writeFile(chunkPath, req?.file.buffer);
+        return res?.json({ received: Number(chunkIndex), uploadId });
       } catch (err) {
-        logger.warn({ err: err }, "[ChunkUpload] Failed to store chunk");
-        return res.status(500).json({ message: "Failed to store chunk" });
+        logger?.warn({ err: err }, "[ChunkUpload] Failed to store chunk");
+        return res?.status(500).json({ message: "Failed to store chunk" });
       }
     },
   );
 
   // POST /api/uploads/assemble
   // Concatenates all stored chunks, uploads final file to Object Storage.
-  app.post("/api/uploads/assemble", async (req: Request, res: Response) => {
-    if (!req.user)
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/uploads/assemble", async (req: Request, res: Response) => {
+    if (!req?.user)
+      return res?.status(401).json({ message: "Not authenticated" });
 
-    const { uploadId, totalChunks, filename, category } = req.body;
+    const { uploadId, totalChunks, filename, category } = req?.body;
     if (!uploadId || !totalChunks || !filename) {
       return res
         .status(400)
         .json({ message: "uploadId, totalChunks and filename are required" });
     }
     if (!/^[a-zA-Z0-9-]{8,64}$/.test(uploadId)) {
-      return res.status(400).json({ message: "Invalid uploadId" });
+      return res?.status(400).json({ message: "Invalid uploadId" });
     }
 
     try {
-      const fsPromises = await import("fs/promises");
-      const pathMod = await import("path");
-      const osMod = await import("os");
-      const dir = pathMod.join(osMod.tmpdir(), "uploads", uploadId);
-      const count = Number(totalChunks);
+      const _fsPromises = await import("fs/promises");
+      const _pathMod = await import("path");
+      const _osMod = await import("os");
+      const _dir = pathMod?.join(osMod?.tmpdir(), "uploads", uploadId);
+      const _count = Number(totalChunks);
 
       const chunkBuffers: Buffer[] = [];
       for (let i = 0; i < count; i++) {
-        const chunkPath = pathMod.join(
+        const _chunkPath = pathMod?.join(
           dir,
           String(i).padStart(6, "0") + ".bin",
         );
-        const buf = await fsPromises.readFile(chunkPath);
-        chunkBuffers.push(buf);
+        const _buf = await fsPromises?.readFile(chunkPath);
+        chunkBuffers?.push(buf);
       }
 
-      const assembled = Buffer.concat(chunkBuffers);
-      const ext = filename.split(".").pop()?.toLowerCase() || "bin";
+      const _assembled = Buffer?.concat(chunkBuffers);
+      const _ext = filename?.split(".").pop()?.toLowerCase() || "bin";
       const mimeMap: Record<string, string> = {
         wav: "audio/wav",
         mp3: "audio/mpeg",
@@ -6175,48 +6198,49 @@ export async function registerRoutes(
         aif: "audio/aiff",
         ogg: "audio/ogg",
       };
-      const contentType = mimeMap[ext] || "audio/octet-stream";
-      const destCategory = category || "audio";
-      const userId = req.user!.id;
+      const _contentType = mimeMap[ext] || "audio/octet-stream";
+      const _destCategory = category || "audio";
+      const _userId = req?.user!.id;
 
-      const { storageService } = await import("./services/storageService.js");
-      const finalKey = await storageService.uploadFile(
+      const { storageService } = await import("./services/storageService?.js");
+      const _finalKey = await storageService?.uploadFile(
         assembled,
         `${destCategory}/${userId}`,
         filename,
         contentType,
       );
-      const url = await storageService.getDownloadUrl(finalKey);
+      const _url = await storageService?.getDownloadUrl(finalKey);
 
       // Clean up temp chunks (best-effort, non-blocking)
-      fsPromises.rm(dir, { recursive: true, force: true }).catch(() => {});
+      fsPromises?.rm(dir, { recursive: true, force: true }).catch(() => {});
 
-      return res.json({ url, key: finalKey, size: assembled.length });
+      return res?.json({ url, key: finalKey, size: assembled?.length });
     } catch (err) {
-      logger.warn({ err: err }, "[ChunkUpload] Assembly failed");
-      return res.status(500).json({ message: "Failed to assemble upload" });
+      logger?.warn({ err: err }, "[ChunkUpload] Assembly failed");
+      return res?.status(500).json({ message: "Failed to assemble upload" });
     }
   });
   // ── End chunked upload ─────────────────────────────────────────────────────
 
   // Audio file upload endpoint — stores to hybrid storage (Replit Object Storage + Pocket Dimension)
-  app.post("/api/audio/upload", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/audio/upload", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { audioData, format, duration, trackId } = req.body;
-      const userId = req.user!.id;
+      const { audioData, format, duration, trackId } = req?.body;
+      const _userId = req?.user!.id;
 
       if (!audioData) {
-        return res.status(400).json({ message: "audioData is required" });
+        return res?.status(400).json({ message: "audioData is required" });
       }
 
-      const { hybridStorageService } =
-        await import("./services/hybridStorageService.js");
+      const { hybridStorageService } = await import(
+        "./services/hybridStorageService?.js"
+      );
 
-      const ext = format || "wav";
-      const mimeType =
+      const _ext = format || "wav";
+      const _mimeType =
         ext === "mp3"
           ? "audio/mpeg"
           : ext === "ogg"
@@ -6225,10 +6249,10 @@ export async function registerRoutes(
               ? "audio/webm"
               : "audio/wav";
 
-      const fileName = `recording_${Date.now()}.${ext}`;
-      const fileBuffer = Buffer.from(audioData, "base64");
+      const _fileName = `recording_${Date?.now()}.${ext}`;
+      const _fileBuffer = Buffer?.from(audioData, "base64");
 
-      const result = await hybridStorageService.upload(
+      const _result = await hybridStorageService?.upload(
         userId,
         fileName,
         fileBuffer,
@@ -6239,17 +6263,17 @@ export async function registerRoutes(
         },
       );
 
-      return res.json({
+      return res?.json({
         success: true,
-        fileId: result.key,
-        url: `/api/files/${encodeURIComponent(result.key)}`,
+        fileId: result?.key,
+        url: `/api/files/${encodeURIComponent(result?.key)}`,
         duration: duration || 0,
-        sizeBytes: result.sizeBytes,
+        sizeBytes: result?.sizeBytes,
         message: "Audio file uploaded successfully",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Audio upload error");
-      return res.status(500).json({ message: "Failed to upload audio" });
+      logger?.warn({ err: error }, "Audio upload error");
+      return res?.status(500).json({ message: "Failed to upload audio" });
     }
   });
 
@@ -6266,54 +6290,55 @@ export async function registerRoutes(
     { default: undoRouter },
     { default: batchRouter },
     { default: distributionRouter },
-  ] = await Promise.all([
-    import("./routes/admin.js"),
-    import("./routes/paid.js"),
-    import("./routes/artistProgress.js"),
-    import("./routes/artistProfiles.js"),
-    import("./routes/revenueForecast.js"),
-    import("./routes/files.js"),
-    import("./routes/preferences.js"),
-    import("./routes/shortcuts.js"),
-    import("./routes/undo.js"),
-    import("./routes/batch.js"),
-    import("./routes/distribution.js"),
+  ] = await Promise?.all([
+    import("./routes/admin?.js"),
+    import("./routes/paid?.js"),
+    import("./routes/artistProgress?.js"),
+    import("./routes/artistProfiles?.js"),
+    import("./routes/revenueForecast?.js"),
+    import("./routes/files?.js"),
+    import("./routes/preferences?.js"),
+    import("./routes/shortcuts?.js"),
+    import("./routes/undo?.js"),
+    import("./routes/batch?.js"),
+    import("./routes/distribution?.js"),
   ]);
-  const { aiServiceProxyRouter, boosterstateProxyRouter } =
-    await import("./routes/internalProxy.js");
-  app.use("/api/ai-service", aiServiceProxyRouter);
-  app.use("/api/boosterstate", boosterstateProxyRouter);
+  const { aiServiceProxyRouter, boosterstateProxyRouter } = await import(
+    "./routes/internalProxy?.js"
+  );
+  app?.use("/api/ai-service", aiServiceProxyRouter);
+  app?.use("/api/boosterstate", boosterstateProxyRouter);
 
-  app.use("/api/admin", adminRouter);
-  app.use("/api/distribution", distributionRouter);
-  const { default: trainingRouter } = await import("./routes/training.js");
-  app.use("/api/training", trainingRouter);
+  app?.use("/api/admin", adminRouter);
+  app?.use("/api/distribution", distributionRouter);
+  const { default: trainingRouter } = await import("./routes/training?.js");
+  app?.use("/api/training", trainingRouter);
 
-  const { default: maxcoreRouter } = await import("./routes/maxcore.js");
-  app.use("/api/maxcore", maxcoreRouter);
-  app.use("/api/paid", paidRouter);
-  app.use("/api/artist-progress", artistProgressRouter);
-  app.use("/api/artist-profiles", artistProfilesRouter);
-  app.use("/api/revenue-forecast", revenueForecastRouter);
-  app.use("/api/files", filesRouter);
-  app.use("/api/preferences", preferencesRouter);
-  app.use("/api/shortcuts", shortcutsRouter);
-  app.use("/api/undo", undoRouter);
-  app.use("/api/batch", batchRouter);
+  const { default: maxcoreRouter } = await import("./routes/maxcore?.js");
+  app?.use("/api/maxcore", maxcoreRouter);
+  app?.use("/api/paid", paidRouter);
+  app?.use("/api/artist-progress", artistProgressRouter);
+  app?.use("/api/artist-profiles", artistProfilesRouter);
+  app?.use("/api/revenue-forecast", revenueForecastRouter);
+  app?.use("/api/files", filesRouter);
+  app?.use("/api/preferences", preferencesRouter);
+  app?.use("/api/shortcuts", shortcutsRouter);
+  app?.use("/api/undo", undoRouter);
+  app?.use("/api/batch", batchRouter);
 
   // AI: Optimize content
-  app.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Not authenticated" });
+  app?.post("/api/ai/optimize-content", async (req: Request, res: Response) => {
+    if (!req?.user) {
+      return res?.status(401).json({ message: "Not authenticated" });
     }
     try {
       // Check if user has paid subscription
       if (
-        !req.user.subscriptionTier ||
-        req.user.subscriptionTier === "free" ||
-        req.user.subscriptionTier === "trial"
+        !req?.user.subscriptionTier ||
+        req?.user.subscriptionTier === "free" ||
+        req?.user.subscriptionTier === "trial"
       ) {
-        return res.status(403).json({
+        return res?.status(403).json({
           message:
             "AI content optimization requires an active paid subscription",
           requiresUpgrade: true,
@@ -6321,7 +6346,7 @@ export async function registerRoutes(
       }
 
       // Simulate AI optimization response
-      return res.json({
+      return res?.json({
         success: true,
         optimizations: [
           {
@@ -6349,8 +6374,8 @@ export async function registerRoutes(
           "Your content has been optimized for maximum reach and engagement.",
       });
     } catch (error) {
-      logger.warn({ err: error }, "AI optimize content error");
-      return res.status(500).json({ message: "Failed to optimize content" });
+      logger?.warn({ err: error }, "AI optimize content error");
+      return res?.status(500).json({ message: "Failed to optimize content" });
     }
   });
 
@@ -6360,31 +6385,32 @@ export async function registerRoutes(
   // making the catch-block throw silently and leaving the routes unregistered.
   // Eagerly importing + mounting here guarantees the router is always present.
   try {
-    const { default: socialMediaRouter } =
-      await import("./routes/socialMedia.js");
+    const { default: socialMediaRouter } = await import(
+      "./routes/socialMedia?.js"
+    );
     if (
       socialMediaRouter &&
       typeof socialMediaRouter === "function" &&
-      socialMediaRouter.stack !== undefined
+      socialMediaRouter?.stack !== undefined
     ) {
-      app.use("/api/social", socialMediaRouter);
+      app?.use("/api/social", socialMediaRouter);
       log("Loaded route: socialMedia (direct)");
-      logger.info(
+      logger?.info(
         "[routes] socialMedia router registered directly at /api/social",
       );
     } else {
-      logger.error(
+      logger?.error(
         "[routes] socialMedia direct load: no usable router export (type=" +
           typeof socialMediaRouter +
           ")",
       );
     }
   } catch (e) {
-    logger.error({ err: e }, "[routes] socialMedia direct load FAILED");
+    logger?.error({ err: e }, "[routes] socialMedia direct load FAILED");
   }
 
   // Dynamically load and mount route modules (with error handling)
-  const routeModules = [
+  const _routeModules = [
     // Bootstrap — single parallel query for all initial dashboard data
     {
       path: "/api/bootstrap",
@@ -6778,7 +6804,7 @@ export async function registerRoutes(
       loader: () => import("./routes/paymentBypass"),
     },
 
-    // SEO (sitemap.xml + robots.txt — mounted at root)
+    // SEO (sitemap?.xml + robots?.txt — mounted at root)
     { path: "", name: "seo", loader: () => import("./routes/seo") },
 
     // Self-Healing Security System
@@ -6922,24 +6948,24 @@ export async function registerRoutes(
   ];
 
   // Load all route modules concurrently, then register in order to preserve middleware precedence
-  const loadedModules = await Promise.all(
-    routeModules.map(({ name, loader }) => safeLoadRoute(name, loader)),
+  const _loadedModules = await Promise?.all(
+    routeModules?.map(({ name, loader }) => safeLoadRoute(name, loader)),
   );
-  for (let i = 0; i < routeModules.length; i++) {
+  for (let i = 0; i < routeModules?.length; i++) {
     const { path, name } = routeModules[i];
-    const result = loadedModules[i];
-    if (result && result.type !== "skip") {
-      if (result.type === "router" && result.value) {
+    const _result = loadedModules[i];
+    if (result && result?.type !== "skip") {
+      if (result?.type === "router" && result?.value) {
         try {
-          app.use(path, result.value);
+          app?.use(path, result?.value);
         } catch (e) {
-          log(`Warning: Failed to mount ${name} - ${e.message}`);
+          log(`Warning: Failed to mount ${name} - ${e?.message}`);
         }
-      } else if (result.type === "function" && result.value) {
+      } else if (result?.type === "function" && result?.value) {
         try {
-          result.value(app);
+          result?.value(app);
         } catch (e) {
-          log(`Warning: Failed to setup ${name} - ${e.message}`);
+          log(`Warning: Failed to setup ${name} - ${e?.message}`);
         }
       }
     }
@@ -6947,7 +6973,7 @@ export async function registerRoutes(
 
   // OAuth callback routes - maps new URL structure to existing handlers
   // These routes redirect to the socialOAuth callback handler
-  const oauthCallbackPaths = [
+  const _oauthCallbackPaths = [
     { path: "/auth/meta/callback", platform: "meta" },
     { path: "/auth/facebook/callback", platform: "meta" },
     { path: "/auth/instagram/callback", platform: "meta" },
@@ -6965,38 +6991,38 @@ export async function registerRoutes(
   ];
 
   for (const { path, platform } of oauthCallbackPaths) {
-    app.get(path, (req: Request, res: Response) => {
+    app?.get(path, (req: Request, res: Response) => {
       // Preserve the raw query string exactly as received — re-serialising via
       // URLSearchParams can corrupt OAuth codes/state that contain '+' or other
-      // characters that round-trip differently through qs.parse → URLSearchParams.
-      const rawQuery = req.url.split("?").slice(1).join("?");
-      const redirectUrl = `/api/social/callback/${platform}${rawQuery ? "?" + rawQuery : ""}`;
-      res.redirect(302, redirectUrl);
+      // characters that round-trip differently through qs?.parse → URLSearchParams.
+      const _rawQuery = req?.url.split("?").slice(1).join("?");
+      const _redirectUrl = `/api/social/callback/${platform}${rawQuery ? "?" + rawQuery : ""}`;
+      res?.redirect(302, redirectUrl);
     });
   }
   log("OAuth callback redirect routes registered");
 
-  app.post(
+  app?.post(
     "/api/errors",
     criticalEndpointLimiter,
     (req: Request, res: Response) => {
       try {
-        const errorData = req.body;
+        const _errorData = req?.body;
         if (typeof errorData === "object" && errorData !== null) {
-          const safeError = {
-            message: String(errorData.message || "").substring(0, 500),
-            stack: String(errorData.stack || "").substring(0, 1000),
-            url: String(errorData.url || "").substring(0, 200),
+          const _safeError = {
+            message: String(errorData?.message || "").substring(0, 500),
+            stack: String(errorData?.stack || "").substring(0, 1000),
+            url: String(errorData?.url || "").substring(0, 200),
             timestamp: new Date().toISOString(),
           };
-          logger.info(
-            `[Client Error] ${safeError.message} | stack: ${safeError.stack?.split("\n")[0] || ""} | url: ${safeError.url}`,
+          logger?.info(
+            `[Client Error] ${safeError?.message} | stack: ${safeError?.stack?.split("\n")[0] || ""} | url: ${safeError?.url}`,
           );
         }
       } catch {
         /* intentional: client error handler must always respond even if logging fails */
       }
-      res.json({ received: true });
+      res?.json({ received: true });
     },
   );
 
@@ -7010,10 +7036,10 @@ export async function registerRoutes(
         .trim();
     } catch {
       try {
-        const pkg = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+        const _pkg = JSON?.parse(fs?.readFileSync("./package?.json", "utf8"));
         return crypto
           .createHash("sha1")
-          .update(pkg.version || "1.0.0")
+          .update(pkg?.version || "1?.0.0")
           .digest("hex")
           .slice(0, 8);
       } catch {
@@ -7021,59 +7047,59 @@ export async function registerRoutes(
       }
     }
   }
-  const BUILD_ID = process.env.BUILD_ID || getStableBuildId();
-  const BUILD_TIMESTAMP = new Date().toISOString();
+  const _BUILD_ID = process?.env.BUILD_ID || getStableBuildId();
+  const _BUILD_TIMESTAMP = new Date().toISOString();
 
-  app.get("/api/version", (_req: Request, res: Response) => {
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json({ buildId: BUILD_ID, buildTimestamp: BUILD_TIMESTAMP });
+  app?.get("/api/version", (_req: Request, res: Response) => {
+    res?.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res?.json({ buildId: BUILD_ID, buildTimestamp: BUILD_TIMESTAMP });
   });
 
   // Liveness — cheap probe used by deployment infra. Always 200 if the
   // process can serve requests, regardless of subsystem state.
   // Registered under both /api/health and /api/health/live (k8s convention).
-  const livenessHandler = (_req: Request, res: Response) => {
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json({
+  const _livenessHandler = (_req: Request, res: Response) => {
+    res?.set("Cache-Control", "no-cache, no-store, must-revalidate");
+    res?.json({
       status: "ok",
       timestamp: new Date().toISOString(),
       buildId: BUILD_ID,
     });
   };
-  app.get("/api/health", livenessHandler);
-  app.get("/api/health/live", livenessHandler);
+  app?.get("/api/health", livenessHandler);
+  app?.get("/api/health/live", livenessHandler);
 
   // Readiness — checks downstream subsystems (DB, Redis, audit, automation).
   // Returns 503 if any subsystem is `down`, 200 otherwise (degraded is still
   // considered ready, since the platform self-heals around degraded deps).
   // Registered under both /api/ready and /api/health/ready (k8s convention).
-  const readinessHandler = async (_req: Request, res: Response) => {
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+  const _readinessHandler = async (_req: Request, res: Response) => {
+    res?.set("Cache-Control", "no-cache, no-store, must-revalidate");
     try {
-      const { healthRegistry } = await import("./lib/healthRegistry.js");
-      const result = await healthRegistry.checkAll();
-      const code = result.status === "down" ? 503 : 200;
-      res.status(code).json({
-        status: result.status,
+      const { healthRegistry } = await import("./lib/healthRegistry?.js");
+      const _result = await healthRegistry?.checkAll();
+      const _code = result?.status === "down" ? 503 : 200;
+      res?.status(code).json({
+        status: result?.status,
         timestamp: new Date().toISOString(),
         buildId: BUILD_ID,
-        subsystems: result.subsystems,
+        subsystems: result?.subsystems,
       });
     } catch (err) {
-      res.status(503).json({
+      res?.status(503).json({
         status: "down",
         timestamp: new Date().toISOString(),
         error: err?.message ?? "health check failed",
       });
     }
   };
-  app.get("/api/ready", readinessHandler);
-  app.get("/api/health/ready", readinessHandler);
+  app?.get("/api/ready", readinessHandler);
+  app?.get("/api/health/ready", readinessHandler);
 
   // Stripe checkout session creation for subscription plans
-  const stripe = process.env.STRIPE_SECRET_KEY
-    ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-12-15.clover",
+  const _stripe = process?.env.STRIPE_SECRET_KEY
+    ? new Stripe(process?.env.STRIPE_SECRET_KEY, {
+        apiVersion: "2025-12-15?.clover",
       })
     : null;
 
@@ -7110,7 +7136,7 @@ export async function registerRoutes(
   // Security measures: Rate limiting (global), email/username validation,
   // duplicate checking, idempotency keys, and Stripe webhook verification
   // on payment completion before account creation.
-  app.post(
+  app?.post(
     "/api/create-checkout-session",
     async (req: Request, res: Response) => {
       try {
@@ -7120,75 +7146,77 @@ export async function registerRoutes(
             .json({ error: "Payment system not configured" });
         }
 
-        const { tier, userEmail, username, birthdate } = req.body;
+        const { tier, userEmail, username, birthdate } = req?.body;
 
         // Validate required fields
         if (!tier || !userEmail || !username) {
-          return res.status(400).json({ error: "Missing required fields" });
+          return res?.status(400).json({ error: "Missing required fields" });
         }
 
         // Validate tier is one of allowed values (prevent injection)
-        const allowedTiers = ["monthly", "yearly", "lifetime"];
-        if (!allowedTiers.includes(tier)) {
-          return res.status(400).json({ error: "Invalid subscription tier" });
+        const _allowedTiers = ["monthly", "yearly", "lifetime"];
+        if (!allowedTiers?.includes(tier)) {
+          return res?.status(400).json({ error: "Invalid subscription tier" });
         }
 
         // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(userEmail)) {
-          return res.status(400).json({ error: "Invalid email format" });
+        const _emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex?.test(userEmail)) {
+          return res?.status(400).json({ error: "Invalid email format" });
         }
 
         // Validate username (alphanumeric, 3-30 chars)
-        const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
-        if (!usernameRegex.test(username)) {
+        const _usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
+        if (!usernameRegex?.test(username)) {
           return res
             .status(400)
             .json({ error: "Username must be 3-30 alphanumeric characters" });
         }
 
         // Check if email or username already exists
-        const existingUser = await storage.getUserByEmail(userEmail);
+        const _existingUser = await storage?.getUserByEmail(userEmail);
         if (existingUser) {
           return res
             .status(409)
             .json({ error: "Email already registered. Please login instead." });
         }
 
-        const existingUsername = await storage.getUserByUsername(username);
+        const _existingUsername = await storage?.getUserByUsername(username);
         if (existingUsername) {
           return res
             .status(409)
             .json({ error: "Username already taken. Please choose another." });
         }
 
-        const plan = SUBSCRIPTION_PLANS[tier];
+        const _plan = SUBSCRIPTION_PLANS[tier];
         if (!plan) {
-          return res.status(400).json({ error: "Invalid subscription tier" });
+          return res?.status(400).json({ error: "Invalid subscription tier" });
         }
 
         // Get pre-created Stripe Price IDs
-        const priceIds = getStripePriceIds();
-        const priceId = priceIds[tier as keyof typeof priceIds];
+        const _priceIds = getStripePriceIds();
+        const _priceId = priceIds[tier as keyof typeof priceIds];
 
-        if (!priceId || priceId.includes("placeholder")) {
-          return res.status(500).json({
-            error: "Stripe prices not configured. Please try again later.",
-          });
+        if (!priceId || priceId?.includes("placeholder")) {
+          return res
+            .status(500)
+            .json({
+              error: "Stripe prices not configured. Please try again later.",
+            });
         }
 
-        const baseUrl = getBaseUrl();
+        const _baseUrl = getBaseUrl();
 
         // Generate idempotency key based on email + username + tier
-        const crypto = await import("crypto");
-        const idempotencyKey = crypto
+        const _crypto = await import("crypto");
+        const _idempotencyKey = crypto
           .createHash("sha256")
           .update(
-            `${userEmail}:${username}:${tier}:${Date.now().toString().slice(0, -4)}`,
+            `${userEmail}:${username}:${tier}:${Date?.now().toString().slice(0, -4)}`,
           )
           .digest("hex");
 
-        const sessionConfig: Stripe.Checkout.SessionCreateParams = {
+        const sessionConfig: Stripe?.Checkout.SessionCreateParams = {
           payment_method_types: ["card"],
           customer_email: userEmail,
           line_items: [
@@ -7197,35 +7225,37 @@ export async function registerRoutes(
               quantity: 1,
             },
           ],
-          mode: plan.mode,
+          mode: plan?.mode,
           success_url: `${baseUrl}/register-success?session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: `${baseUrl}/register/${tier}`,
           metadata: {
             tier,
             username,
             birthdate: birthdate || "",
-            firstName: req.body.firstName || "",
-            lastName: req.body.lastName || "",
+            firstName: req?.body.firstName || "",
+            lastName: req?.body.lastName || "",
           },
         };
 
-        const session = await stripe.checkout.sessions.create(sessionConfig, {
+        const _session = await stripe?.checkout.sessions?.create(sessionConfig, {
           idempotencyKey,
         });
 
-        res.json({ url: session.url, sessionId: session.id });
+        res?.json({ url: session?.url, sessionId: session?.id });
       } catch (error) {
-        logger.warn({ err: error }, "Error creating checkout session:");
-        res.status(500).json({
-          error: "Failed to create checkout session. Please try again.",
-        });
+        logger?.warn({ err: error }, "Error creating checkout session:");
+        res
+          .status(500)
+          .json({
+            error: "Failed to create checkout session. Please try again.",
+          });
       }
     },
   );
 
   // REGISTER AFTER PAYMENT - Complete account creation after Stripe checkout
   // This endpoint verifies the Stripe session and creates the user account
-  app.post(
+  app?.post(
     "/api/register-after-payment",
     registerRateLimiter,
     async (req: Request, res: Response) => {
@@ -7236,10 +7266,15 @@ export async function registerRoutes(
             .json({ error: "Payment system not configured" });
         }
 
-        const { sessionId, password, tosAccepted, privacyAccepted } = req.body;
+        const {
+          sessionId,
+          password,
+          tosAccepted,
+          privacyAccepted,
+        } = req?.body;
 
         if (!sessionId || !password) {
-          return res.status(400).json({ error: "Missing required fields" });
+          return res?.status(400).json({ error: "Missing required fields" });
         }
 
         if (!tosAccepted || !privacyAccepted) {
@@ -7248,28 +7283,28 @@ export async function registerRoutes(
           });
         }
 
-        if (password.length < 8) {
+        if (password?.length < 8) {
           return res
             .status(400)
             .json({ error: "Password must be at least 8 characters long" });
         }
 
         // Retrieve and verify the Stripe checkout session
-        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        const _session = await stripe?.checkout.sessions?.retrieve(sessionId);
 
         if (!session) {
-          return res.status(400).json({ error: "Invalid checkout session" });
+          return res?.status(400).json({ error: "Invalid checkout session" });
         }
 
-        if (session.payment_status !== "paid") {
+        if (session?.payment_status !== "paid") {
           return res
             .status(400)
             .json({ error: "Payment not completed. Please try again." });
         }
 
-        const email = session.customer_email;
-        const username = session.metadata?.username;
-        const tier = session.metadata?.tier || "monthly";
+        const _email = session?.customer_email;
+        const _username = session?.metadata?.username;
+        const _tier = session?.metadata?.tier || "monthly";
 
         if (!email || !username) {
           return res.status(400).json({
@@ -7278,20 +7313,20 @@ export async function registerRoutes(
         }
 
         // Check if user already exists (prevent duplicate registration)
-        const existingUser = await storage.getUserByEmail(email);
+        const _existingUser = await storage?.getUserByEmail(email);
         if (existingUser) {
           // User already exists - log them in (regenerate prevents session fixation)
           try {
             await sessionRegenerate(req);
-            req.session.userId = existingUser.id;
+            req?.session.userId = existingUser?.id;
             await sessionSave(req);
             const { password: _, ...userWithoutPassword } = existingUser;
-            return res.json({
+            return res?.json({
               user: userWithoutPassword,
               message: "Account already exists. Logged in.",
             });
           } catch (sessionErr) {
-            logger.warn(
+            logger?.warn(
               { err: sessionErr },
               "[PostPayment] Session operation failed after retries",
             );
@@ -7301,7 +7336,7 @@ export async function registerRoutes(
           }
         }
 
-        const existingUsername = await storage.getUserByUsername(username);
+        const _existingUsername = await storage?.getUserByUsername(username);
         if (existingUsername) {
           return res
             .status(409)
@@ -7309,38 +7344,38 @@ export async function registerRoutes(
         }
 
         // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 12);
+        const _hashedPassword = await bcrypt?.hash(password, 12);
 
         // Determine subscription end date based on tier
         let subscriptionEndsAt: Date | null = null;
         if (tier === "monthly") {
-          subscriptionEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          subscriptionEndsAt = new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000);
         } else if (tier === "yearly") {
-          subscriptionEndsAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          subscriptionEndsAt = new Date(Date?.now() + 365 * 24 * 60 * 60 * 1000);
         } else if (tier === "lifetime") {
           subscriptionEndsAt = new Date("2099-12-31");
         }
 
         // Create the user account
-        const user = await storage.createUser({
+        const _user = await storage?.createUser({
           email,
           password: hashedPassword,
-          firstName: session.metadata?.firstName || "",
-          lastName: session.metadata?.lastName || "",
+          firstName: session?.metadata?.firstName || "",
+          lastName: session?.metadata?.lastName || "",
         });
 
         // Log the user in (regenerate prevents session fixation)
         const { password: _, ...userWithoutPassword } = user;
         try {
           await sessionRegenerate(req);
-          req.session.userId = user.id;
+          req?.session.userId = user?.id;
           await sessionSave(req);
-          return res.json({
+          return res?.json({
             user: userWithoutPassword,
             message: "Account created successfully",
           });
         } catch (sessionErr) {
-          logger.warn(
+          logger?.warn(
             { err: sessionErr },
             "[PostPayment] Session operation failed after retries",
           );
@@ -7349,12 +7384,12 @@ export async function registerRoutes(
           });
         }
       } catch (error) {
-        logger.warn(
+        logger?.warn(
           { err: error },
           "Error completing registration after payment:",
         );
 
-        if (error.type === "StripeInvalidRequestError") {
+        if (error?.type === "StripeInvalidRequestError") {
           return res
             .status(400)
             .json({ error: "Invalid payment session. Please try again." });
@@ -7368,20 +7403,21 @@ export async function registerRoutes(
   );
 
   // Admin-only payment-bypass status endpoint
-  app.get("/api/payment-bypass/status", async (req: Request, res: Response) => {
+  app?.get("/api/payment-bypass/status", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated || !req.isAuthenticated()) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.isAuthenticated || !req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
-      if (req.user?.role !== "admin") {
-        return res.status(403).json({ error: "Admin access required" });
+      if (req?.user?.role !== "admin") {
+        return res?.status(403).json({ error: "Admin access required" });
       }
-      const { paymentBypassService } =
-        await import("./services/paymentBypassService");
-      const status = await paymentBypassService.getStatus();
-      return res.json({
-        bypassed: status.bypassed,
-        reason: status.config?.reason || null,
+      const { paymentBypassService } = await import(
+        "./services/paymentBypassService"
+      );
+      const _status = await paymentBypassService?.getStatus();
+      return res?.json({
+        bypassed: status?.bypassed,
+        reason: status?.config?.reason || null,
       });
     } catch (error) {
       return res
@@ -7392,16 +7428,17 @@ export async function registerRoutes(
 
   // Infrastructure scaling routes
   try {
-    const { scalingMetricsRouter, getInfrastructureStatus } =
-      await import("./infrastructure/index.js");
-    app.use("/api/infrastructure", scalingMetricsRouter);
-    app.get("/api/infrastructure/status", (req, res) => {
-      if (!req.user || req.user.role !== "admin") {
-        return res.status(403).json({ message: "Admin access required" });
+    const { scalingMetricsRouter, getInfrastructureStatus } = await import(
+      "./infrastructure/index?.js"
+    );
+    app?.use("/api/infrastructure", scalingMetricsRouter);
+    app?.get("/api/infrastructure/status", (req, res) => {
+      if (!req?.user || req?.user.role !== "admin") {
+        return res?.status(403).json({ message: "Admin access required" });
       }
       try {
-        const status = getInfrastructureStatus();
-        res.json({ success: true, ...status });
+        const _status = getInfrastructureStatus();
+        res?.json({ success: true, ...status });
       } catch (error) {
         res.status(500).json({
           success: false,
@@ -7412,198 +7449,200 @@ export async function registerRoutes(
     log("Infrastructure scaling routes registered");
   } catch (error) {
     log(
-      `Warning: Could not load infrastructure routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load infrastructure routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   // Unified Content Generation Pipeline — social + ad content for artist AND Max Booster
   try {
-    const unifiedContentRouter = (await import("./routes/unifiedContent.js"))
+    const _unifiedContentRouter = (await import("./routes/unifiedContent?.js"))
       .default;
-    app.use("/api/content/generate-unified", unifiedContentRouter);
+    app?.use("/api/content/generate-unified", unifiedContentRouter);
     log("Loaded route: unifiedContent");
   } catch (error) {
     log(
-      `Warning: Could not load unifiedContent routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load unifiedContent routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   // AdvancedCreativeModel pipeline — music-synced short-form video creative generation
   try {
-    const creativeModelRouter = (await import("./routes/creativeModel.js"))
+    const _creativeModelRouter = (await import("./routes/creativeModel?.js"))
       .default;
-    app.use("/api/content/creative-model", creativeModelRouter);
+    app?.use("/api/content/creative-model", creativeModelRouter);
     log("Loaded route: creativeModel");
   } catch (error) {
     log(
-      `Warning: Could not load creativeModel routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load creativeModel routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   // Collaboration routes
   try {
-    const collaborationRouter = (await import("./routes/collaboration.js"))
+    const _collaborationRouter = (await import("./routes/collaboration?.js"))
       .default;
-    app.use("/api/collaboration", collaborationRouter);
+    app?.use("/api/collaboration", collaborationRouter);
     log("Collaboration routes registered");
   } catch (error) {
     log(
-      `Warning: Could not load collaboration routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load collaboration routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   // Music Workflow Automations routes
   try {
-    const musicWorkflowRouter = (
-      await import("./routes/musicWorkflowAutomations.js")
+    const _musicWorkflowRouter = (
+      await import("./routes/musicWorkflowAutomations?.js")
     ).default;
-    app.use("/api/music-workflow-automations", musicWorkflowRouter);
+    app?.use("/api/music-workflow-automations", musicWorkflowRouter);
     log("Loaded route: musicWorkflowAutomations");
   } catch (error) {
     log(
-      `Warning: Could not load musicWorkflowAutomations routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load musicWorkflowAutomations routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const fabricRouter = (await import("./routes/fabric.js")).default;
-    app.use("/api/fabric", fabricRouter);
+    const _fabricRouter = (await import("./routes/fabric?.js")).default;
+    app?.use("/api/fabric", fabricRouter);
     log("Loaded route: fabric");
   } catch (error) {
     log(
-      `Warning: Could not load fabric routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load fabric routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const labelSubmissionsRouter = (
-      await import("./routes/labelSubmissions.js")
+    const _labelSubmissionsRouter = (
+      await import("./routes/labelSubmissions?.js")
     ).default;
-    app.use("/api/label-submissions", labelSubmissionsRouter);
+    app?.use("/api/label-submissions", labelSubmissionsRouter);
     log("Loaded route: labelSubmissions");
   } catch (error) {
     log(
-      `Warning: Could not load labelSubmissions routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load labelSubmissions routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const radioPitchesRouter = (await import("./routes/radioPitches.js"))
+    const _radioPitchesRouter = (await import("./routes/radioPitches?.js"))
       .default;
-    app.use("/api/radio-pitches", radioPitchesRouter);
+    app?.use("/api/radio-pitches", radioPitchesRouter);
     log("Loaded route: radioPitches");
   } catch (error) {
     log(
-      `Warning: Could not load radioPitches routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load radioPitches routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const venuesRouter = (await import("./routes/venues.js")).default;
-    app.use("/api/venues", venuesRouter);
+    const _venuesRouter = (await import("./routes/venues?.js")).default;
+    app?.use("/api/venues", venuesRouter);
     log("Loaded route: venues");
   } catch (error) {
     log(
-      `Warning: Could not load venues routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load venues routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const projectBudgetsRouter = (await import("./routes/projectBudgets.js"))
+    const _projectBudgetsRouter = (await import("./routes/projectBudgets?.js"))
       .default;
-    app.use("/api/project-budgets", projectBudgetsRouter);
+    app?.use("/api/project-budgets", projectBudgetsRouter);
     log("Loaded route: projectBudgets");
   } catch (error) {
     log(
-      `Warning: Could not load projectBudgets routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load projectBudgets routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const sampleClearancesRouter = (
-      await import("./routes/sampleClearances.js")
+    const _sampleClearancesRouter = (
+      await import("./routes/sampleClearances?.js")
     ).default;
-    app.use("/api/sample-clearances", sampleClearancesRouter);
+    app?.use("/api/sample-clearances", sampleClearancesRouter);
     log("Loaded route: sampleClearances");
   } catch (error) {
     log(
-      `Warning: Could not load sampleClearances routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load sampleClearances routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const musicVideosRouter = (await import("./routes/musicVideos.js")).default;
-    app.use("/api/music-videos", musicVideosRouter);
+    const _musicVideosRouter = (await import("./routes/musicVideos?.js")).default;
+    app?.use("/api/music-videos", musicVideosRouter);
     log("Loaded route: musicVideos");
   } catch (error) {
     log(
-      `Warning: Could not load musicVideos routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load musicVideos routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const songwritingRouter = (await import("./routes/songwriting.js")).default;
-    app.use("/api/songwriting", songwritingRouter);
+    const _songwritingRouter = (await import("./routes/songwriting?.js")).default;
+    app?.use("/api/songwriting", songwritingRouter);
     log("Loaded route: songwriting");
   } catch (error) {
     log(
-      `Warning: Could not load songwriting routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load songwriting routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const fanCampaignsRouter = (await import("./routes/fanCampaigns.js"))
+    const _fanCampaignsRouter = (await import("./routes/fanCampaigns?.js"))
       .default;
-    app.use("/api/fan-campaigns", fanCampaignsRouter);
+    app?.use("/api/fan-campaigns", fanCampaignsRouter);
     log("Loaded route: fanCampaigns");
   } catch (error) {
     log(
-      `Warning: Could not load fanCampaigns routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load fanCampaigns routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const customWorkflowsRouter = (await import("./routes/customWorkflows.js"))
+    const _customWorkflowsRouter = (await import("./routes/customWorkflows?.js"))
       .default;
-    app.use("/api/custom-workflows", customWorkflowsRouter);
+    app?.use("/api/custom-workflows", customWorkflowsRouter);
     log("Loaded route: customWorkflows");
   } catch (error) {
     log(
-      `Warning: Could not load customWorkflows routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load customWorkflows routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const assistantRouter = (await import("./routes/assistant.js")).default;
-    app.use("/api/assistant", assistantRouter);
+    const _assistantRouter = (await import("./routes/assistant?.js")).default;
+    app?.use("/api/assistant", assistantRouter);
     log("Loaded route: assistant");
   } catch (error) {
     log(
-      `Warning: Could not load assistant routes - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load assistant routes - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
     // Warm the Self-Evolution registry from persisted state so the autopilot
     // timing/content consumers see active enhancements immediately on boot.
-    const { evolutionRegistry } =
-      await import("./services/evolutionRegistry.js");
-    await evolutionRegistry.load(true);
-    const stats = evolutionRegistry.getStats();
+    const { evolutionRegistry } = await import(
+      "./services/evolutionRegistry?.js"
+    );
+    await evolutionRegistry?.load(true);
+    const _stats = evolutionRegistry?.getStats();
     log(
-      `Evolution registry loaded: ${stats.active} active enhancement(s), ${stats.consumedActive} live`,
+      `Evolution registry loaded: ${stats?.active} active enhancement(s), ${stats?.consumedActive} live`,
     );
   } catch (error) {
     log(
-      `Warning: Could not load evolution registry - ${error instanceof Error ? error.message : String(error)}`,
+      `Warning: Could not load evolution registry - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 
   try {
-    const { silentDeployment } =
-      await import("./services/silentDeploymentService.js");
-    if (process.env.ENABLE_SELF_EVOLUTION === "true") {
-      silentDeployment.enable();
+    const { silentDeployment } = await import(
+      "./services/silentDeploymentService?.js"
+    );
+    if (process?.env.ENABLE_SELF_EVOLUTION === "true") {
+      silentDeployment?.enable();
       log("Silent deployment system ENABLED (ENABLE_SELF_EVOLUTION=true)");
     } else {
       log(
@@ -7611,17 +7650,17 @@ export async function registerRoutes(
       );
     }
   } catch (error) {
-    logger.warn(
+    logger?.warn(
       { err: error },
-      `[routes] FATAL: Silent deployment service failed to initialize - ${error instanceof Error ? error.message : String(error)}`,
+      `[routes] FATAL: Silent deployment service failed to initialize - ${error instanceof Error ? error?.message : String(error)}`,
     );
-    if (process.env.ENABLE_SELF_EVOLUTION === "true") {
+    if (process?.env.ENABLE_SELF_EVOLUTION === "true") {
       throw new Error(
-        `Silent deployment init failed (ENABLE_SELF_EVOLUTION=true): ${error instanceof Error ? error.message : String(error)}`,
+        `Silent deployment init failed (ENABLE_SELF_EVOLUTION=true): ${error instanceof Error ? error?.message : String(error)}`,
       );
     }
     log(
-      `ERROR: Could not initialize silent deployment service - ${error instanceof Error ? error.message : String(error)}`,
+      `ERROR: Could not initialize silent deployment service - ${error instanceof Error ? error?.message : String(error)}`,
     );
   }
 

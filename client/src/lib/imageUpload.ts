@@ -5,7 +5,7 @@ import { apiRequest } from "./queryClient";
  * Returns the stored URL on success.
  *
  * @param file       - The File object to upload
- * @param endpoint   - Server route, e.g. '/api/auth/avatar' or '/api/storage/upload'
+ * @param endpoint   - Server route, e?.g. '/api/auth/avatar' or '/api/storage/upload'
  * @param fieldName  - FormData field name expected by the server (default: 'file')
  */
 export async function uploadImageFile(
@@ -13,25 +13,25 @@ export async function uploadImageFile(
   endpoint: string,
   fieldName = "file",
 ): Promise<string> {
-  const formData = new FormData();
-  formData.append(fieldName, file);
+  const _formData = new FormData();
+  formData?.append(fieldName, file);
 
-  const response = await apiRequest("POST", endpoint, formData);
-  if (!response.ok) {
-    let message = `Upload failed (${response.status})`;
+  const _response = await apiRequest("POST", endpoint, formData);
+  if (!response?.ok) {
+    let message = `Upload failed (${response?.status})`;
     try {
-      const body = (await response.json()) as {
+      const _body = (await response?.json()) as {
         error?: string;
         message?: string;
       };
-      message = body.error || body.message || message;
+      message = body?.error || body?.message || message;
     } catch {
       // ignore parse errors
     }
     throw new Error(message);
   }
 
-  const data = (await response.json()) as {
+  const _data = (await response?.json()) as {
     url?: string;
     avatarUrl?: string;
     imageUrl?: string;
@@ -47,16 +47,16 @@ export async function uploadImageFile(
     };
   };
 
-  const url =
-    data.url ??
-    data.avatarUrl ??
-    data.imageUrl ??
-    data.fileUrl ??
-    data.file?.url ??
-    data.data?.url ??
-    data.data?.avatarUrl ??
-    data.data?.imageUrl ??
-    data.data?.fileUrl;
+  const _url =
+    data?.url ??
+    data?.avatarUrl ??
+    data?.imageUrl ??
+    data?.fileUrl ??
+    data?.file?.url ??
+    data?.data?.url ??
+    data?.data?.avatarUrl ??
+    data?.data?.imageUrl ??
+    data?.data?.fileUrl;
 
   if (!url) {
     throw new Error("Server did not return a URL after upload");
@@ -70,14 +70,14 @@ export async function uploadImageFile(
  * to avoid memory leaks.
  */
 export function createLocalPreview(file: File): string {
-  return URL.createObjectURL(file);
+  return URL?.createObjectURL(file);
 }
 
 /**
  * Release a local preview URL created with createLocalPreview().
  */
 export function revokeLocalPreview(url: string): void {
-  if (url.startsWith("blob:")) {
-    URL.revokeObjectURL(url);
+  if (url?.startsWith("blob:")) {
+    URL?.revokeObjectURL(url);
   }
 }

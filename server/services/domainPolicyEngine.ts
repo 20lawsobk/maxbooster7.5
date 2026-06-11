@@ -12,18 +12,18 @@
  */
 
 import { eq, sql, and, inArray } from "drizzle-orm";
-import { db, pool } from "../db.js";
+import { db, pool } from "../db?.js";
 import { claimedDomains, users } from "@shared/schema";
-import { logger } from "../logger.js";
-import { getRegistrarProvider } from "./registrar/index.js";
-import type { ContactProfile, DomainEventType } from "./registrar/types.js";
+import { logger } from "../logger?.js";
+import { getRegistrarProvider } from "./registrar/index?.js";
+import type { ContactProfile, DomainEventType } from "./registrar/types?.js";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-export const DOMAIN_LIMIT = 2;
+export const _DOMAIN_LIMIT = 2;
 
 /** States that consume a quota slot */
-const ACTIVE_STATES = [
+const _ACTIVE_STATES = [
   "active",
   "pending_create",
   "platform_managed",
@@ -66,29 +66,29 @@ export interface QuotaInfo {
 
 export async function getDomainQuota(userId: string): Promise<QuotaInfo> {
   const [subscriptionRow] = await db
-    .select({ status: users.subscriptionStatus, role: users.role })
+    .select({ status: users?.subscriptionStatus, role: users?.role })
     .from(users)
-    .where(eq(users.id, userId))
+    .where(eq(users?.id, userId))
     .limit(1);
 
-  const hasSubscription = !subscriptionRow
+  const _hasSubscription = !subscriptionRow
     ? false
-    : subscriptionRow.role === "admin" ||
-      ["active", "trialing"].includes(subscriptionRow.status ?? "");
+    : subscriptionRow?.role === "admin" ||
+      ["active", "trialing"].includes(subscriptionRow?.status ?? "");
 
   const [{ count }] = await db
     .select({ count: sql<number>`COUNT(*)` })
     .from(claimedDomains)
     .where(
       and(
-        eq(claimedDomains.userId, userId),
-        inArray(claimedDomains.status, ACTIVE_STATES),
+        eq(claimedDomains?.userId, userId),
+        inArray(claimedDomains?.status, ACTIVE_STATES),
       ),
     );
 
-  const used = Number(count);
-  const limit = DOMAIN_LIMIT;
-  const remaining = Math.max(0, limit - used);
+  const _used = Number(count);
+  const _limit = DOMAIN_LIMIT;
+  const _remaining = Math?.max(0, limit - used);
 
   return {
     used,
@@ -105,11 +105,11 @@ export async function getDomainQuota(userId: string): Promise<QuotaInfo> {
  * is not allowed to claim another domain.
  */
 export async function enforceQuota(userId: string): Promise<void> {
-  const quota = await getDomainQuota(userId);
+  const _quota = await getDomainQuota(userId);
 
-  if (!quota.hasSubscription) throw new SubscriptionRequiredError();
-  if (quota.atLimit)
-    throw new DomainQuotaExceededError(quota.used, quota.limit);
+  if (!quota?.hasSubscription) throw new SubscriptionRequiredError();
+  if (quota?.atLimit)
+    throw new DomainQuotaExceededError(quota?.used, quota?.limit);
 }
 
 // ── Soft release ──────────────────────────────────────────────────────────────
@@ -128,38 +128,38 @@ export async function softReleaseDomain(
 ): Promise<void> {
   const [row] = await db
     .select({
-      userId: claimedDomains.userId,
-      domain: claimedDomains.domain,
-      status: claimedDomains.status,
+      userId: claimedDomains?.userId,
+      domain: claimedDomains?.domain,
+      status: claimedDomains?.status,
     })
     .from(claimedDomains)
-    .where(eq(claimedDomains.id, domainId))
+    .where(eq(claimedDomains?.id, domainId))
     .limit(1);
 
   if (!row) throw new Error(`Domain not found: ${domainId}`);
-  if (row.userId !== userId)
+  if (row?.userId !== userId)
     throw new Error("Forbidden: domain does not belong to this user");
-  if (row.status === "released") throw new Error("Domain is already released");
+  if (row?.status === "released") throw new Error("Domain is already released");
 
   // Tell the registrar to stop auto-renewing (best-effort — internal provider just sets DB)
   try {
-    await getRegistrarProvider().releaseDomain(row.domain);
+    await getRegistrarProvider().releaseDomain(row?.domain);
   } catch (e) {
-    logger.warn(
-      { domainId, err: e.message },
-      "[PolicyEngine] registrar.releaseDomain failed — updating DB only",
+    logger?.warn(
+      { domainId, err: e?.message },
+      "[PolicyEngine] registrar?.releaseDomain failed — updating DB only",
     );
     await db
       .update(claimedDomains)
       .set({ status: "released", autoRenew: false, updatedAt: new Date() })
-      .where(eq(claimedDomains.id, domainId));
+      .where(eq(claimedDomains?.id, domainId));
   }
 
-  await emitDomainEvent("DomainReleased", domainId, userId, row.domain, {
-    previousStatus: row.status,
+  await emitDomainEvent("DomainReleased", domainId, userId, row?.domain, {
+    previousStatus: row?.status,
   });
-  logger.info(
-    { domainId, domain: row.domain, userId },
+  logger?.info(
+    { domainId, domain: row?.domain, userId },
     "[PolicyEngine] domain soft-released",
   );
 }
@@ -176,8 +176,8 @@ export async function onSubscriptionCanceled(userId: string): Promise<void> {
     .set({ status: "non_renewing", autoRenew: false, updatedAt: new Date() })
     .where(
       and(
-        eq(claimedDomains.userId, userId),
-        inArray(claimedDomains.status, ["active", "expiring_soon", "grace"]),
+        eq(claimedDomains?.userId, userId),
+        inArray(claimedDomains?.status, ["active", "expiring_soon", "grace"]),
       ),
     );
 
@@ -188,7 +188,7 @@ export async function onSubscriptionCanceled(userId: string): Promise<void> {
     "_all",
     { action: "subscription_canceled", newStatus: "non_renewing" },
   );
-  logger.info(
+  logger?.info(
     { userId },
     "[PolicyEngine] subscription canceled → domains marked non_renewing",
   );
@@ -199,10 +199,10 @@ export async function onSubscriptionCanceled(userId: string): Promise<void> {
  * Restores non_renewing domains back to active (if not yet expired).
  */
 export async function onSubscriptionReactivated(userId: string): Promise<void> {
-  const now = new Date();
+  const _now = new Date();
 
   // Restore non_renewing domains that haven't expired yet
-  await pool.query(
+  await pool?.query(
     `UPDATE claimed_domains
      SET status = 'active', auto_renew = true, updated_at = NOW()
      WHERE user_id = $1
@@ -218,7 +218,7 @@ export async function onSubscriptionReactivated(userId: string): Promise<void> {
     "_all",
     { action: "subscription_reactivated", newStatus: "active" },
   );
-  logger.info(
+  logger?.info(
     { userId },
     "[PolicyEngine] subscription reactivated → non_renewing domains restored",
   );
@@ -235,34 +235,34 @@ export async function buildContactProfile(
 ): Promise<ContactProfile> {
   const [user] = await db
     .select({
-      firstName: users.firstName,
-      lastName: users.lastName,
-      email: users.email,
-      location: users.location,
+      firstName: users?.firstName,
+      lastName: users?.lastName,
+      email: users?.email,
+      location: users?.location,
     })
     .from(users)
-    .where(eq(users.id, userId))
+    .where(eq(users?.id, userId))
     .limit(1);
 
   if (!user) throw new Error(`User not found: ${userId}`);
 
-  const name =
-    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+  const _name =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     "Max Booster Artist";
 
   // Parse city from location string (may be "City, State" or "City, Country" format)
   let city = "Los Angeles";
-  if (user.location) {
-    const parts = user.location.split(",");
+  if (user?.location) {
+    const _parts = user?.location.split(",");
     city = parts[0].trim() || "Los Angeles";
   }
 
   return {
     name,
-    email: user.email,
+    email: user?.email,
     // Phone is not collected at signup — users should add it in Profile Settings.
     // A generic registrar-compliant placeholder is used until then.
-    phone: "+1.5555550100",
+    phone: "+1?.5555550100",
     address: {
       street: "100 Music Ave",
       city,
@@ -287,15 +287,15 @@ export async function emitDomainEvent(
   metadata?: Record<string, unknown>,
 ): Promise<void> {
   try {
-    await pool.query(
+    await pool?.query(
       `INSERT INTO domain_events (domain_id, user_id, event_type, fqdn, metadata)
        VALUES ($1, $2, $3, $4, $5)`,
-      [domainId, userId, eventType, fqdn, JSON.stringify(metadata ?? {})],
+      [domainId, userId, eventType, fqdn, JSON?.stringify(metadata ?? {})],
     );
   } catch (e) {
     // Event ledger failures must never block the main operation
-    logger.warn(
-      { eventType, domainId, err: e.message },
+    logger?.warn(
+      { eventType, domainId, err: e?.message },
       "[PolicyEngine] emitDomainEvent failed (non-fatal)",
     );
   }
@@ -308,7 +308,7 @@ export async function getDomainEvents(
   domainId: string,
   _userId: string,
 ): Promise<unknown[]> {
-  const { rows } = await pool.query(
+  const { rows } = await pool?.query(
     `SELECT event_type, fqdn, metadata, created_at
      FROM domain_events
      WHERE domain_id = $1

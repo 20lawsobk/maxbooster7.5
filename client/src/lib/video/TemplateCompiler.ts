@@ -71,7 +71,7 @@ export interface CompilationMetadata {
 }
 
 function generateId(prefix: string = "layer"): string {
-  return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return `${prefix}_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
 }
 
 function getDefaultTransform(): TransformConfig {
@@ -82,14 +82,14 @@ export function compileTemplate(
   options: PromoTemplateOptions,
   compilerOptions: CompilerOptions = {},
 ): CompilationResult {
-  const compiled = compileTemplateToCompiledTemplate(options);
+  const _compiled = compileTemplateToCompiledTemplate(options);
   return convertCompiledTemplateToResult(compiled, options, compilerOptions);
 }
 
 function compileTemplateToCompiledTemplate(
   options: PromoTemplateOptions,
 ): CompiledTemplate {
-  switch (options.type) {
+  switch (options?.type) {
     case "release":
       return compileReleaseAnnouncement(options as ReleaseAnnouncementOptions);
     case "tour":
@@ -116,45 +116,45 @@ function convertCompiledTemplateToResult(
   options: PromoTemplateOptions,
   compilerOptions: CompilerOptions,
 ): CompilationResult {
-  const layers = convertTemplateLayers(
-    compiled.layers,
-    compiled.width,
-    compiled.height,
+  const _layers = convertTemplateLayers(
+    compiled?.layers,
+    compiled?.width,
+    compiled?.height,
   );
-  const keyframes = extractKeyframes(compiled.layers);
-  const audioReactiveBindings = extractAudioReactiveBindings(
-    compiled.layers,
+  const _keyframes = extractKeyframes(compiled?.layers);
+  const _audioReactiveBindings = extractAudioReactiveBindings(
+    compiled?.layers,
     options,
   );
 
   const project: VideoProject = {
-    id: compiled.id,
-    name: compiled.name,
-    width: compiled.width,
-    height: compiled.height,
-    fps: compilerOptions.targetFps ?? compiled.fps,
-    duration: compiled.duration,
-    backgroundColor: options.palette.background,
+    id: compiled?.id,
+    name: compiled?.name,
+    width: compiled?.width,
+    height: compiled?.height,
+    fps: compilerOptions?.targetFps ?? compiled?.fps,
+    duration: compiled?.duration,
+    backgroundColor: options?.palette.background,
     layers,
-    audioUrl: compiled.audioUrl,
+    audioUrl: compiled?.audioUrl,
     keyframes,
   };
 
-  const hasVisualizers = layers.some((l) => l.type === "visualizer");
-  const hasParticles = layers.some((l) => l.type === "particle");
+  const _hasVisualizers = layers?.some((l) => l?.type === "visualizer");
+  const _hasParticles = layers?.some((l) => l?.type === "particle");
 
   const metadata: CompilationMetadata = {
-    templateType: compiled.type,
+    templateType: compiled?.type,
     compiledAt: new Date().toISOString(),
-    aspectRatio: options.aspectRatio,
+    aspectRatio: options?.aspectRatio,
     estimatedRenderTime: estimateRenderTime(
-      compiled.duration,
-      compiled.fps,
-      layers.length,
+      compiled?.duration,
+      compiled?.fps,
+      layers?.length,
     ),
-    layerCount: layers.length,
-    keyframeCount: keyframes.length,
-    hasAudioReactive: audioReactiveBindings.length > 0,
+    layerCount: layers?.length,
+    keyframeCount: keyframes?.length,
+    hasAudioReactive: audioReactiveBindings?.length > 0,
     hasVisualizers,
     hasParticles,
   };
@@ -173,7 +173,7 @@ function convertTemplateLayers(
   width: number,
   height: number,
 ): LayerConfig[] {
-  return templateLayers.map((tl) => convertTemplateLayer(tl, width, height));
+  return templateLayers?.map((tl) => convertTemplateLayer(tl, width, height));
 }
 
 function convertTemplateLayer(
@@ -182,16 +182,16 @@ function convertTemplateLayer(
   height: number,
 ): LayerConfig {
   const baseConfig: LayerConfig = {
-    id: templateLayer.id,
-    type: mapLayerType(templateLayer.type),
-    zIndex: templateLayer.zIndex,
-    opacity: templateLayer.opacity,
-    transform: templateLayer.transform,
+    id: templateLayer?.id,
+    type: mapLayerType(templateLayer?.type),
+    zIndex: templateLayer?.zIndex,
+    opacity: templateLayer?.opacity,
+    transform: templateLayer?.transform,
     config: convertLayerConfig(templateLayer, width, height),
   };
 
-  if (templateLayer.animations.length > 0) {
-    baseConfig.animation = templateLayer.animations[0];
+  if (templateLayer?.animations.length > 0) {
+    baseConfig?.animation = templateLayer?.animations[0];
   }
 
   return baseConfig;
@@ -222,9 +222,9 @@ function convertLayerConfig(
   width: number,
   height: number,
 ): LayerConfig["config"] {
-  const config = layer.config as Record<string, unknown>;
+  const _config = layer?.config as Record<string, unknown>;
 
-  switch (layer.type) {
+  switch (layer?.type) {
     case "background":
       return convertBackgroundConfig(config);
     case "text":
@@ -247,50 +247,50 @@ function convertBackgroundConfig(
   config: Record<string, unknown>,
 ): BaseBackgroundConfig {
   return {
-    type: (config.type as BaseBackgroundConfig["type"]) || "solid",
-    color: config.color as string,
-    colors: config.gradientColors as string[],
-    angle: config.gradientAngle as number,
-    imageUrl: config.imageUrl as string,
+    type: (config?.type as BaseBackgroundConfig["type"]) || "solid",
+    color: config?.color as string,
+    colors: config?.gradientColors as string[],
+    angle: config?.gradientAngle as number,
+    imageUrl: config?.imageUrl as string,
   };
 }
 
 function convertTextConfig(config: Record<string, unknown>): TextConfig {
   return {
-    text: (config.text as string) || "",
-    font: (config.font as string) || "Inter",
-    fontSize: (config.fontSize as number) || 24,
-    color: (config.color as string) || "#ffffff",
-    strokeColor: config.strokeColor as string,
-    strokeWidth: config.strokeWidth as number,
-    align: (config.align as TextConfig["align"]) || "center",
-    baseline: (config.baseline as TextConfig["baseline"]) || "middle",
-    shadow: config.shadow as TextConfig["shadow"],
-    wordWrap: config.wordWrap as boolean,
-    maxWidth: config.maxWidth as number,
+    text: (config?.text as string) || "",
+    font: (config?.font as string) || "Inter",
+    fontSize: (config?.fontSize as number) || 24,
+    color: (config?.color as string) || "#ffffff",
+    strokeColor: config?.strokeColor as string,
+    strokeWidth: config?.strokeWidth as number,
+    align: (config?.align as TextConfig["align"]) || "center",
+    baseline: (config?.baseline as TextConfig["baseline"]) || "middle",
+    shadow: config?.shadow as TextConfig["shadow"],
+    wordWrap: config?.wordWrap as boolean,
+    maxWidth: config?.maxWidth as number,
   };
 }
 
 function convertImageConfig(config: Record<string, unknown>): ImageConfig {
   return {
-    src: (config.src as string) || (config.imageUrl as string) || "",
-    width: config.width as number,
-    height: config.height as number,
-    fit: (config.fit as ImageConfig["fit"]) || "contain",
-    borderRadius: config.borderRadius as number,
+    src: (config?.src as string) || (config?.imageUrl as string) || "",
+    width: config?.width as number,
+    height: config?.height as number,
+    fit: (config?.fit as ImageConfig["fit"]) || "contain",
+    borderRadius: config?.borderRadius as number,
   };
 }
 
 function convertShapeConfig(config: Record<string, unknown>): ShapeConfig {
   return {
-    type: (config.shapeType as ShapeConfig["type"]) || "rectangle",
-    fill: config.fill as string,
-    stroke: config.stroke as string,
-    strokeWidth: config.strokeWidth as number,
-    width: config.width as number,
-    height: config.height as number,
-    radius: config.radius as number,
-    cornerRadius: config.cornerRadius as number,
+    type: (config?.shapeType as ShapeConfig["type"]) || "rectangle",
+    fill: config?.fill as string,
+    stroke: config?.stroke as string,
+    strokeWidth: config?.strokeWidth as number,
+    width: config?.width as number,
+    height: config?.height as number,
+    radius: config?.radius as number,
+    cornerRadius: config?.cornerRadius as number,
   };
 }
 
@@ -300,20 +300,20 @@ function convertParticleConfig(
   height: number,
 ): ParticleConfig {
   return {
-    count: (config.count as number) || 100,
-    color: (config.color as string | string[]) || "#ffffff",
-    size: (config.size as ParticleConfig["size"]) || { min: 2, max: 8 },
-    speed: (config.speed as ParticleConfig["speed"]) || { min: 1, max: 3 },
-    lifetime: (config.lifetime as number) || 3,
-    shape: (config.shape as ParticleConfig["shape"]) || "circle",
-    emissionArea: (config.emissionArea as ParticleConfig["emissionArea"]) || {
+    count: (config?.count as number) || 100,
+    color: (config?.color as string | string[]) || "#ffffff",
+    size: (config?.size as ParticleConfig["size"]) || { min: 2, max: 8 },
+    speed: (config?.speed as ParticleConfig["speed"]) || { min: 1, max: 3 },
+    lifetime: (config?.lifetime as number) || 3,
+    shape: (config?.shape as ParticleConfig["shape"]) || "circle",
+    emissionArea: (config?.emissionArea as ParticleConfig["emissionArea"]) || {
       x: 0,
       y: 0,
       width,
       height,
     },
-    reactToAudio: config.reactToAudio as boolean,
-    audioSensitivity: config.audioSensitivity as number,
+    reactToAudio: config?.reactToAudio as boolean,
+    audioSensitivity: config?.audioSensitivity as number,
   };
 }
 
@@ -321,19 +321,19 @@ function convertVisualizerConfig(
   config: Record<string, unknown>,
 ): VisualizerConfig {
   return {
-    type: (config.visualizerType as VisualizerConfig["type"]) || "spectrum",
-    color: (config.color as string) || "#00ff88",
-    secondaryColor: config.secondaryColor as string,
-    barCount: config.barCount as number,
-    barWidth: config.barWidth as number,
-    barGap: config.barGap as number,
-    smoothing: config.smoothing as number,
-    sensitivity: config.sensitivity as number,
-    mirror: config.mirror as boolean,
-    radius: config.radius as number,
-    lineWidth: config.lineWidth as number,
-    glow: config.glow as boolean,
-    glowIntensity: config.glowIntensity as number,
+    type: (config?.visualizerType as VisualizerConfig["type"]) || "spectrum",
+    color: (config?.color as string) || "#00ff88",
+    secondaryColor: config?.secondaryColor as string,
+    barCount: config?.barCount as number,
+    barWidth: config?.barWidth as number,
+    barGap: config?.barGap as number,
+    smoothing: config?.smoothing as number,
+    sensitivity: config?.sensitivity as number,
+    mirror: config?.mirror as boolean,
+    radius: config?.radius as number,
+    lineWidth: config?.lineWidth as number,
+    glow: config?.glow as boolean,
+    glowIntensity: config?.glowIntensity as number,
   };
 }
 
@@ -341,26 +341,26 @@ function extractKeyframes(layers: TemplateLayer[]): Keyframe[] {
   const keyframes: Keyframe[] = [];
 
   for (const layer of layers) {
-    for (const animation of layer.animations) {
-      keyframes.push({
-        layerId: layer.id,
-        time: animation.startTime,
-        property: animation.property,
-        value: animation.from,
-        easing: animation.easing,
+    for (const animation of layer?.animations) {
+      keyframes?.push({
+        layerId: layer?.id,
+        time: animation?.startTime,
+        property: animation?.property,
+        value: animation?.from,
+        easing: animation?.easing,
       });
 
-      keyframes.push({
-        layerId: layer.id,
-        time: animation.endTime,
-        property: animation.property,
-        value: animation.to,
-        easing: animation.easing,
+      keyframes?.push({
+        layerId: layer?.id,
+        time: animation?.endTime,
+        property: animation?.property,
+        value: animation?.to,
+        easing: animation?.easing,
       });
     }
   }
 
-  return keyframes.sort((a, b) => a.time - b.time);
+  return keyframes?.sort((a, b) => a?.time - b?.time);
 }
 
 function extractAudioReactiveBindings(
@@ -370,30 +370,30 @@ function extractAudioReactiveBindings(
   const bindings: AudioReactiveBinding[] = [];
 
   for (const layer of layers) {
-    if (layer.audioReactive?.enabled) {
-      bindings.push({
-        layerId: layer.id,
-        property: layer.audioReactive.property,
+    if (layer?.audioReactive?.enabled) {
+      bindings?.push({
+        layerId: layer?.id,
+        property: layer?.audioReactive.property,
         frequencyRange: "bass",
-        intensity: layer.audioReactive.intensity,
-        smoothing: 0.8,
+        intensity: layer?.audioReactive.intensity,
+        smoothing: 0?.8,
       });
     }
   }
 
-  if (options.audioReactive?.enabled) {
-    for (const target of options.audioReactive.targets) {
+  if (options?.audioReactive?.enabled) {
+    for (const target of options?.audioReactive.targets) {
       if (
-        !bindings.find(
-          (b) => b.layerId === target.layerId && b.property === target.property,
+        !bindings?.find(
+          (b) => b?.layerId === target?.layerId && b?.property === target?.property,
         )
       ) {
-        bindings.push({
-          layerId: target.layerId,
-          property: target.property,
-          frequencyRange: options.audioReactive.frequencyRange,
-          intensity: target.intensity,
-          smoothing: options.audioReactive.smoothing,
+        bindings?.push({
+          layerId: target?.layerId,
+          property: target?.property,
+          frequencyRange: options?.audioReactive.frequencyRange,
+          intensity: target?.intensity,
+          smoothing: options?.audioReactive.smoothing,
         });
       }
     }
@@ -407,9 +407,9 @@ function estimateRenderTime(
   fps: number,
   layerCount: number,
 ): number {
-  const baseTimePerFrame = 16;
-  const layerMultiplier = 1 + layerCount * 0.1;
-  const totalFrames = duration * fps;
+  const _baseTimePerFrame = 16;
+  const _layerMultiplier = 1 + layerCount * 0?.1;
+  const _totalFrames = duration * fps;
   return (totalFrames * baseTimePerFrame * layerMultiplier) / 1000;
 }
 
@@ -418,9 +418,9 @@ export function createVideoProjectFromTemplate(
   baseOptions: Partial<PromoTemplateOptions>,
   compilerOptions: CompilerOptions = {},
 ): VideoProject {
-  const fullOptions = buildFullOptions(templateType, baseOptions);
-  const result = compileTemplate(fullOptions, compilerOptions);
-  return result.project;
+  const _fullOptions = buildFullOptions(templateType, baseOptions);
+  const _result = compileTemplate(fullOptions, compilerOptions);
+  return result?.project;
 }
 
 function buildFullOptions(
@@ -434,27 +434,27 @@ function buildFullOptions(
     background: "#0f172a",
     text: "#ffffff",
     textSecondary: "#94a3b8",
-    overlay: "rgba(15, 23, 42, 0.8)",
+    overlay: "rgba(15, 23, 42, 0?.8)",
   };
 
   const defaultBackground: BackgroundConfig = {
     type: "gradient",
-    gradientColors: [defaultPalette.primary, defaultPalette.secondary],
+    gradientColors: [defaultPalette?.primary, defaultPalette?.secondary],
     gradientAngle: 135,
   };
 
-  const base = {
-    id: partial.id || generateId("project"),
-    name: partial.name || "Untitled Project",
-    aspectRatio: partial.aspectRatio || ("16:9" as AspectRatio),
-    duration: partial.duration || 10,
-    fps: partial.fps || 30,
-    palette: partial.palette || defaultPalette,
-    background: partial.background || defaultBackground,
-    logo: partial.logo,
-    callToAction: partial.callToAction,
-    audioReactive: partial.audioReactive,
-    watermark: partial.watermark,
+  const _base = {
+    id: partial?.id || generateId("project"),
+    name: partial?.name || "Untitled Project",
+    aspectRatio: partial?.aspectRatio || ("16:9" as AspectRatio),
+    duration: partial?.duration || 10,
+    fps: partial?.fps || 30,
+    palette: partial?.palette || defaultPalette,
+    background: partial?.background || defaultBackground,
+    logo: partial?.logo,
+    callToAction: partial?.callToAction,
+    audioReactive: partial?.audioReactive,
+    watermark: partial?.watermark,
   };
 
   switch (type) {
@@ -523,7 +523,7 @@ function buildFullOptions(
           (partial as Partial<CountdownTimerOptions>).title || "Coming Soon",
         targetDate:
           (partial as Partial<CountdownTimerOptions>).targetDate ||
-          new Date(Date.now() + 86400000).toISOString(),
+          new Date(Date?.now() + 86400000).toISOString(),
         eventName:
           (partial as Partial<CountdownTimerOptions>).eventName || "Event",
         artistName:
@@ -579,42 +579,42 @@ export function scaleProjectToAspectRatio(
   project: VideoProject,
   targetAspectRatio: AspectRatio,
 ): VideoProject {
-  const target = ASPECT_RATIOS[targetAspectRatio];
-  const scaleX = target.width / project.width;
-  const scaleY = target.height / project.height;
-  const scale = Math.min(scaleX, scaleY);
+  const _target = ASPECT_RATIOS[targetAspectRatio];
+  const _scaleX = target?.width / project?.width;
+  const _scaleY = target?.height / project?.height;
+  const _scale = Math?.min(scaleX, scaleY);
 
-  const scaledLayers = project.layers.map((layer) => ({
+  const _scaledLayers = project?.layers.map((layer) => ({
     ...layer,
-    transform: layer.transform
+    transform: layer?.transform
       ? {
-          ...layer.transform,
-          x: layer.transform.x * scaleX,
-          y: layer.transform.y * scaleY,
-          scaleX: layer.transform.scaleX * scale,
-          scaleY: layer.transform.scaleY * scale,
+          ...layer?.transform,
+          x: layer?.transform.x * scaleX,
+          y: layer?.transform.y * scaleY,
+          scaleX: layer?.transform.scaleX * scale,
+          scaleY: layer?.transform.scaleY * scale,
         }
       : undefined,
-    config: scaleLayerConfig(layer.config, scaleX, scaleY),
+    config: scaleLayerConfig(layer?.config, scaleX, scaleY),
   }));
 
-  const scaledKeyframes = project.keyframes.map((kf) => {
-    if (kf.property === "x") {
-      return { ...kf, value: (kf.value as number) * scaleX };
+  const _scaledKeyframes = project?.keyframes.map((kf) => {
+    if (kf?.property === "x") {
+      return { ...kf, value: (kf?.value as number) * scaleX };
     }
-    if (kf.property === "y") {
-      return { ...kf, value: (kf.value as number) * scaleY };
+    if (kf?.property === "y") {
+      return { ...kf, value: (kf?.value as number) * scaleY };
     }
-    if (kf.property === "scaleX" || kf.property === "scaleY") {
-      return { ...kf, value: (kf.value as number) * scale };
+    if (kf?.property === "scaleX" || kf?.property === "scaleY") {
+      return { ...kf, value: (kf?.value as number) * scale };
     }
     return kf;
   });
 
   return {
     ...project,
-    width: target.width,
-    height: target.height,
+    width: target?.width,
+    height: target?.height,
     layers: scaledLayers,
     keyframes: scaledKeyframes,
   };
@@ -625,28 +625,28 @@ function scaleLayerConfig(
   scaleX: number,
   scaleY: number,
 ): LayerConfig["config"] {
-  const cfg = config as Record<string, unknown>;
+  const _cfg = config as Record<string, unknown>;
 
-  if ("fontSize" in cfg && typeof cfg.fontSize === "number") {
+  if ("fontSize" in cfg && typeof cfg?.fontSize === "number") {
     (cfg as Record<string, unknown>).fontSize =
-      cfg.fontSize * Math.min(scaleX, scaleY);
+      cfg?.fontSize * Math?.min(scaleX, scaleY);
   }
-  if ("width" in cfg && typeof cfg.width === "number") {
-    (cfg as Record<string, unknown>).width = cfg.width * scaleX;
+  if ("width" in cfg && typeof cfg?.width === "number") {
+    (cfg as Record<string, unknown>).width = cfg?.width * scaleX;
   }
-  if ("height" in cfg && typeof cfg.height === "number") {
-    (cfg as Record<string, unknown>).height = cfg.height * scaleY;
+  if ("height" in cfg && typeof cfg?.height === "number") {
+    (cfg as Record<string, unknown>).height = cfg?.height * scaleY;
   }
-  if ("radius" in cfg && typeof cfg.radius === "number") {
+  if ("radius" in cfg && typeof cfg?.radius === "number") {
     (cfg as Record<string, unknown>).radius =
-      cfg.radius * Math.min(scaleX, scaleY);
+      cfg?.radius * Math?.min(scaleX, scaleY);
   }
-  if ("barWidth" in cfg && typeof cfg.barWidth === "number") {
-    (cfg as Record<string, unknown>).barWidth = cfg.barWidth * scaleX;
+  if ("barWidth" in cfg && typeof cfg?.barWidth === "number") {
+    (cfg as Record<string, unknown>).barWidth = cfg?.barWidth * scaleX;
   }
-  if ("lineWidth" in cfg && typeof cfg.lineWidth === "number") {
+  if ("lineWidth" in cfg && typeof cfg?.lineWidth === "number") {
     (cfg as Record<string, unknown>).lineWidth =
-      cfg.lineWidth * Math.min(scaleX, scaleY);
+      cfg?.lineWidth * Math?.min(scaleX, scaleY);
   }
 
   return config;
@@ -664,12 +664,12 @@ export function addVisualizerToProject(
   const visualizerLayer: LayerConfig = {
     id: generateId("visualizer"),
     type: "visualizer",
-    zIndex: options.zIndex ?? 5,
-    opacity: options.opacity ?? 1,
+    zIndex: options?.zIndex ?? 5,
+    opacity: options?.opacity ?? 1,
     transform: {
       ...getDefaultTransform(),
-      x: options.position?.x ?? project.width / 2,
-      y: options.position?.y ?? project.height / 2,
+      x: options?.position?.x ?? project?.width / 2,
+      y: options?.position?.y ?? project?.height / 2,
     },
     config: {
       type: "spectrum",
@@ -677,16 +677,16 @@ export function addVisualizerToProject(
       barCount: 64,
       barWidth: 8,
       barGap: 2,
-      sensitivity: 1.5,
+      sensitivity: 1?.5,
       glow: true,
-      glowIntensity: 0.8,
+      glowIntensity: 0?.8,
       ...visualizerConfig,
     } as VisualizerConfig,
   };
 
   return {
     ...project,
-    layers: [...project.layers, visualizerLayer],
+    layers: [...project?.layers, visualizerLayer],
   };
 }
 
@@ -702,31 +702,31 @@ export function addParticlesToProject(
   const particleLayer: LayerConfig = {
     id: generateId("particles"),
     type: "particle",
-    zIndex: options.zIndex ?? 15,
-    opacity: options.opacity ?? 1,
+    zIndex: options?.zIndex ?? 15,
+    opacity: options?.opacity ?? 1,
     transform: getDefaultTransform(),
     config: {
       count: 100,
       color: ["#ffffff", "#00ff88", "#ff00ff"],
       size: { min: 2, max: 6 },
-      speed: { min: 0.5, max: 2 },
+      speed: { min: 0?.5, max: 2 },
       lifetime: 5,
       shape: "circle",
       emissionArea: {
         x: 0,
         y: 0,
-        width: project.width,
-        height: project.height,
+        width: project?.width,
+        height: project?.height,
       },
-      reactToAudio: options.audioReactive ?? false,
-      audioSensitivity: 1.5,
+      reactToAudio: options?.audioReactive ?? false,
+      audioSensitivity: 1?.5,
       ...particleConfig,
     } as ParticleConfig,
   };
 
   return {
     ...project,
-    layers: [...project.layers, particleLayer],
+    layers: [...project?.layers, particleLayer],
   };
 }
 

@@ -1,4 +1,4 @@
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import {
   emailMessages,
   emailEvents,
@@ -7,7 +7,7 @@ import {
 } from "@shared/schema";
 import { eq, desc, sql, gte } from "drizzle-orm";
 import nacl from "tweetnacl";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export class EmailTrackingService {
   /**
@@ -15,9 +15,9 @@ export class EmailTrackingService {
    */
   async recordSentEmail(data: InsertEmailMessage): Promise<void> {
     try {
-      await db.insert(emailMessages).values(data).onConflictDoNothing();
+      await db?.insert(emailMessages).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to record sent email:");
+      logger?.warn({ err: error }, "Failed to record sent email:");
     }
   }
 
@@ -26,9 +26,9 @@ export class EmailTrackingService {
    */
   async recordEmailEvent(data: InsertEmailEvent): Promise<void> {
     try {
-      await db.insert(emailEvents).values(data).onConflictDoNothing();
+      await db?.insert(emailEvents).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to record email event:");
+      logger?.warn({ err: error }, "Failed to record email event:");
     }
   }
 
@@ -45,8 +45,8 @@ export class EmailTrackingService {
     clicked: number;
   }> {
     try {
-      const dateFilter = startDate
-        ? gte(emailMessages.sentAt, startDate)
+      const _dateFilter = startDate
+        ? gte(emailMessages?.sentAt, startDate)
         : undefined;
 
       const [sentCount] = await db
@@ -55,20 +55,20 @@ export class EmailTrackingService {
         .where(dateFilter)
         .limit(1);
 
-      const eventCounts = await db
+      const _eventCounts = await db
         .select({
-          eventType: emailEvents.eventType,
+          eventType: emailEvents?.eventType,
           count: sql<number>`count(*)::int`,
         })
         .from(emailEvents)
         .innerJoin(
           emailMessages,
-          eq(emailEvents.messageId, emailMessages.messageId),
+          eq(emailEvents?.messageId, emailMessages?.messageId),
         )
-        .where(dateFilter ? gte(emailMessages.sentAt, startDate) : undefined)
-        .groupBy(emailEvents.eventType);
+        .where(dateFilter ? gte(emailMessages?.sentAt, startDate) : undefined)
+        .groupBy(emailEvents?.eventType);
 
-      const stats = {
+      const _stats = {
         sent: sentCount?.count || 0,
         delivered: 0,
         bounced: 0,
@@ -78,18 +78,18 @@ export class EmailTrackingService {
         clicked: 0,
       };
 
-      eventCounts.forEach((row) => {
-        if (row.eventType === "delivered") stats.delivered = row.count;
-        if (row.eventType === "bounce") stats.bounced = row.count;
-        if (row.eventType === "spam") stats.spam = row.count;
-        if (row.eventType === "unsubscribe") stats.unsubscribed = row.count;
-        if (row.eventType === "open") stats.opened = row.count;
-        if (row.eventType === "click") stats.clicked = row.count;
+      eventCounts?.forEach((row) => {
+        if (row?.eventType === "delivered") stats?.delivered = row?.count;
+        if (row?.eventType === "bounce") stats?.bounced = row?.count;
+        if (row?.eventType === "spam") stats?.spam = row?.count;
+        if (row?.eventType === "unsubscribe") stats?.unsubscribed = row?.count;
+        if (row?.eventType === "open") stats?.opened = row?.count;
+        if (row?.eventType === "click") stats?.clicked = row?.count;
       });
 
       return stats;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to get email stats:");
+      logger?.warn({ err: error }, "Failed to get email stats:");
       return {
         sent: 0,
         delivered: 0,
@@ -107,28 +107,28 @@ export class EmailTrackingService {
    */
   async getRecentBounces(limit: number = 50): Promise<any[]> {
     try {
-      const bounces = await db
+      const _bounces = await db
         .select({
-          messageId: emailMessages.messageId,
-          toEmail: emailMessages.toEmail,
-          subject: emailMessages.subject,
-          sentAt: emailMessages.sentAt,
-          reason: emailEvents.reason,
-          smtpResponse: emailEvents.smtpResponse,
-          eventAt: emailEvents.eventAt,
+          messageId: emailMessages?.messageId,
+          toEmail: emailMessages?.toEmail,
+          subject: emailMessages?.subject,
+          sentAt: emailMessages?.sentAt,
+          reason: emailEvents?.reason,
+          smtpResponse: emailEvents?.smtpResponse,
+          eventAt: emailEvents?.eventAt,
         })
         .from(emailEvents)
         .innerJoin(
           emailMessages,
-          eq(emailEvents.messageId, emailMessages.messageId),
+          eq(emailEvents?.messageId, emailMessages?.messageId),
         )
-        .where(eq(emailEvents.eventType, "bounce"))
-        .orderBy(desc(emailEvents.eventAt))
+        .where(eq(emailEvents?.eventType, "bounce"))
+        .orderBy(desc(emailEvents?.eventAt))
         .limit(limit);
 
       return bounces;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to get recent bounces:");
+      logger?.warn({ err: error }, "Failed to get recent bounces:");
       return [];
     }
   }
@@ -142,22 +142,22 @@ export class EmailTrackingService {
     signature: string,
     timestamp: string,
   ): boolean {
-    const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
+    const _publicKey = process?.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
     if (!publicKey) {
-      logger.warn("SendGrid webhook public key not configured");
+      logger?.warn("SendGrid webhook public key not configured");
       return false;
     }
 
     try {
-      const signedPayload = timestamp + payload;
+      const _signedPayload = timestamp + payload;
 
-      const publicKeyBytes = Buffer.from(publicKey, "base64");
+      const _publicKeyBytes = Buffer?.from(publicKey, "base64");
 
-      const signatureBytes = Buffer.from(signature, "base64");
+      const _signatureBytes = Buffer?.from(signature, "base64");
 
-      const messageBytes = Buffer.from(signedPayload, "utf-8");
+      const _messageBytes = Buffer?.from(signedPayload, "utf-8");
 
-      const isValid = nacl.sign.detached.verify(
+      const _isValid = nacl?.sign.detached?.verify(
         messageBytes,
         signatureBytes,
         publicKeyBytes,
@@ -165,10 +165,10 @@ export class EmailTrackingService {
 
       return isValid;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Ed25519 signature verification failed:");
+      logger?.warn({ err: error }, "Ed25519 signature verification failed:");
       return false;
     }
   }
 }
 
-export const emailTrackingService = new EmailTrackingService();
+export const _emailTrackingService = new EmailTrackingService();

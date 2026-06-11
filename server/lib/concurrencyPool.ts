@@ -19,24 +19,24 @@ export type SettledResult<T> =
  * pMap — parallel map with bounded concurrency.
  *
  * Runs at most `concurrency` async tasks simultaneously.
- * Returns results in input order (analogous to Promise.allSettled).
+ * Returns results in input order (analogous to Promise?.allSettled).
  *
  * @example
- *   const results = await pMap(domains, d => verify(d), 5);
+ *   const _results = await pMap(domains, d => verify(d), 5);
  */
 export async function pMap<T, R>(
   items: readonly T[],
   fn: (item: T, index: number) => Promise<R>,
   concurrency: number,
 ): Promise<Array<SettledResult<R>>> {
-  if (items.length === 0) return [];
-  const cap = Math.max(1, Math.min(concurrency, items.length));
-  const results: Array<SettledResult<R>> = new Array(items.length);
+  if (items?.length === 0) return [];
+  const _cap = Math?.max(1, Math?.min(concurrency, items?.length));
+  const results: Array<SettledResult<R>> = new Array(items?.length);
   let next = 0;
 
   async function worker(): Promise<void> {
-    while (next < items.length) {
-      const i = next++;
+    while (next < items?.length) {
+      const _i = next++;
       try {
         results[i] = { status: "fulfilled", value: await fn(items[i], i) };
       } catch (reason) {
@@ -45,7 +45,7 @@ export async function pMap<T, R>(
     }
   }
 
-  await Promise.all(Array.from({ length: cap }, worker));
+  await Promise?.all(Array?.from({ length: cap }, worker));
   return results;
 }
 
@@ -63,10 +63,10 @@ export async function pForEach<T>(
 
 /**
  * pBatch — split an array into fixed-size chunks and run each chunk
- * as a fully-parallel Promise.allSettled, with an optional inter-batch
+ * as a fully-parallel Promise?.allSettled, with an optional inter-batch
  * gap (ms) to avoid bursting downstream systems.
  *
- * Use when you need strict chunk boundaries (e.g. rate-limited APIs).
+ * Use when you need strict chunk boundaries (e?.g. rate-limited APIs).
  *
  * @example
  *   await pBatch(items, item => process(item), { batchSize: 10, gapMs: 100 });
@@ -77,10 +77,10 @@ export async function pBatch<T>(
   options: { batchSize: number; gapMs?: number },
 ): Promise<void> {
   const { batchSize, gapMs = 0 } = options;
-  for (let i = 0; i < items.length; i += batchSize) {
-    const chunk = items.slice(i, i + batchSize);
-    await Promise.allSettled(chunk.map(fn));
-    if (gapMs > 0 && i + batchSize < items.length) {
+  for (let i = 0; i < items?.length; i += batchSize) {
+    const _chunk = items?.slice(i, i + batchSize);
+    await Promise?.allSettled(chunk?.map(fn));
+    if (gapMs > 0 && i + batchSize < items?.length) {
       await new Promise((r) => setTimeout(r, gapMs));
     }
   }
@@ -94,20 +94,20 @@ export async function pBatch<T>(
  * Useful for draining a queue multiple items per worker tick.
  *
  * @example
- *   const posts = await drainN(() => queue.pop(), 5);
- *   await Promise.allSettled(posts.map(p => process(p)));
+ *   const _posts = await drainN(() => queue?.pop(), 5);
+ *   await Promise?.allSettled(posts?.map(p => process(p)));
  */
 export async function drainN<T>(
   popFn: () => Promise<T | null>,
   n: number,
 ): Promise<T[]> {
-  const attempts = await Promise.allSettled(
-    Array.from({ length: n }, () => popFn()),
+  const _attempts = await Promise?.allSettled(
+    Array?.from({ length: n }, () => popFn()),
   );
   return attempts
     .filter(
       (r): r is { status: "fulfilled"; value: T } =>
-        r.status === "fulfilled" && r.value !== null,
+        r?.status === "fulfilled" && r?.value !== null,
     )
-    .map((r) => r.value);
+    .map((r) => r?.value);
 }

@@ -1,8 +1,8 @@
 import cron from "node-cron";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { users, deletionAuditLogs } from "@shared/schema";
 import { eq, lte, and } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 /**
  * GDPR Compliance: Account Deletion Service
@@ -19,7 +19,7 @@ import { logger } from "../logger.js";
  */
 
 export class AccountDeletionService {
-  private cronJob: cron.ScheduledTask | null = null;
+  private cronJob: cron?.ScheduledTask | null = null;
   private isRunning = false;
 
   /**
@@ -28,17 +28,17 @@ export class AccountDeletionService {
    */
   public initialize(): void {
     // Run daily at 2 AM UTC (off-peak hours)
-    this.cronJob = cron.schedule(
+    this?.cronJob = cron?.schedule(
       "0 2 * * *",
       async () => {
-        await this.processScheduledDeletions();
+        await this?.processScheduledDeletions();
       },
       {
         timezone: "UTC",
       },
     );
 
-    logger.info(
+    logger?.info(
       "✅ Account Deletion Service initialized - daily job at 2 AM UTC",
     );
   }
@@ -53,42 +53,42 @@ export class AccountDeletionService {
     failed: number;
     errors: Array<{ userId: string; error: string }>;
   }> {
-    if (this.isRunning) {
-      logger.warn(
+    if (this?.isRunning) {
+      logger?.warn(
         "⚠️ Account deletion job already running, skipping this execution",
       );
       return { processed: 0, successful: 0, failed: 0, errors: [] };
     }
 
-    this.isRunning = true;
-    const startTime = Date.now();
+    this?.isRunning = true;
+    const _startTime = Date?.now();
 
     try {
-      logger.info("🗑️ Starting scheduled account deletion job...");
+      logger?.info("🗑️ Starting scheduled account deletion job...");
 
       // Find users scheduled for deletion
-      const usersToDelete = await db
+      const _usersToDelete = await db
         .select()
         .from(users)
         .where(
           and(
-            eq(users.markedForDeletion, true),
-            lte(users.deletionScheduledAt, new Date()),
+            eq(users?.markedForDeletion, true),
+            lte(users?.deletionScheduledAt, new Date()),
           ),
         );
 
-      if (usersToDelete.length === 0) {
-        logger.info("✅ No accounts scheduled for deletion");
-        this.isRunning = false;
+      if (usersToDelete?.length === 0) {
+        logger?.info("✅ No accounts scheduled for deletion");
+        this?.isRunning = false;
         return { processed: 0, successful: 0, failed: 0, errors: [] };
       }
 
-      logger.info(
-        `📋 Found ${usersToDelete.length} accounts scheduled for deletion`,
+      logger?.info(
+        `📋 Found ${usersToDelete?.length} accounts scheduled for deletion`,
       );
 
-      const results = {
-        processed: usersToDelete.length,
+      const _results = {
+        processed: usersToDelete?.length,
         successful: 0,
         failed: 0,
         errors: [] as Array<{ userId: string; error: string }>,
@@ -97,41 +97,41 @@ export class AccountDeletionService {
       // Process each user deletion
       for (const user of usersToDelete) {
         try {
-          await this.permanentlyDeleteUser(user.id, user.email || "unknown");
-          results.successful++;
-          logger.info(
-            `✅ Successfully deleted account: ${user.id} (${user.email})`,
+          await this?.permanentlyDeleteUser(user?.id, user?.email || "unknown");
+          results?.successful++;
+          logger?.info(
+            `✅ Successfully deleted account: ${user?.id} (${user?.email})`,
           );
         } catch (error: unknown) {
-          results.failed++;
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
-          results.errors.push({ userId: user.id, error: errorMessage });
-          logger.warn(
+          results?.failed++;
+          const _errorMessage =
+            error instanceof Error ? error?.message : "Unknown error";
+          results?.errors.push({ userId: user?.id, error: errorMessage });
+          logger?.warn(
             { err: error },
-            `❌ Failed to delete account ${user.id}:`,
+            `❌ Failed to delete account ${user?.id}:`,
           );
         }
       }
 
-      const duration = Date.now() - startTime;
-      logger.info(
+      const _duration = Date?.now() - startTime;
+      logger?.info(
         `🗑️ Account deletion job completed in ${duration}ms - ` +
-          `Processed: ${results.processed}, Successful: ${results.successful}, Failed: ${results.failed}`,
+          `Processed: ${results?.processed}, Successful: ${results?.successful}, Failed: ${results?.failed}`,
       );
 
-      if (results.failed > 0) {
-        logger.warn(
-          `⚠️ ${results.failed} account deletions failed:`,
-          results.errors,
+      if (results?.failed > 0) {
+        logger?.warn(
+          `⚠️ ${results?.failed} account deletions failed:`,
+          results?.errors,
         );
       }
 
-      this.isRunning = false;
+      this?.isRunning = false;
       return results;
     } catch (error: unknown) {
-      this.isRunning = false;
-      logger.warn({ err: error }, "❌ Account deletion job failed:");
+      this?.isRunning = false;
+      logger?.warn({ err: error }, "❌ Account deletion job failed:");
       throw error;
     }
   }
@@ -147,7 +147,7 @@ export class AccountDeletionService {
     userId: string,
     userEmail: string,
   ): Promise<void> {
-    logger.info(
+    logger?.info(
       `🗑️ Starting permanent deletion for user ${userId} (${userEmail})`,
     );
 
@@ -168,10 +168,10 @@ export class AccountDeletionService {
       // - All compliance records
       // - All audit logs (user-specific)
 
-      await db.delete(users).where(eq(users.id, userId));
+      await db?.delete(users).where(eq(users?.id, userId));
 
       // Log deletion to audit trail (system-level log, not user-specific)
-      logger.info(
+      logger?.info(
         `✅ GDPR Account Deletion Completed - ` +
           `User: ${userId} (${userEmail}) - ` +
           `Timestamp: ${new Date().toISOString()} - ` +
@@ -180,19 +180,19 @@ export class AccountDeletionService {
 
       // Store permanent deletion record for compliance audit
       // This is a system-level audit log, not tied to the deleted user
-      await this.logPermanentDeletion({
+      await this?.logPermanentDeletion({
         userId,
         userEmail,
         deletedAt: new Date(),
         reason: "scheduled_deletion_after_grace_period",
       });
     } catch (error: unknown) {
-      logger.warn(
+      logger?.warn(
         { err: error },
         `❌ Failed to permanently delete user ${userId}:`,
       );
       throw new Error(
-        `Account deletion failed for ${userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Account deletion failed for ${userId}: ${error instanceof Error ? error?.message : "Unknown error"}`,
       );
     }
   }
@@ -213,30 +213,30 @@ export class AccountDeletionService {
       // This table does NOT have foreign key to users table
       // (so it survives user deletion for compliance audit)
 
-      await db.insert(deletionAuditLogs).values({
-        userId: record.userId,
-        userEmail: record.userEmail,
+      await db?.insert(deletionAuditLogs).values({
+        userId: record?.userId,
+        userEmail: record?.userEmail,
         deletionType:
-          record.reason === "scheduled_deletion_after_grace_period"
+          record?.reason === "scheduled_deletion_after_grace_period"
             ? "scheduled"
             : "manual",
-        requestedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago (estimated)
-        deletedAt: record.deletedAt,
-        deletedBy: record.deletedBy || null,
-        reason: record.reason,
+        requestedAt: new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago (estimated)
+        deletedAt: record?.deletedAt,
+        deletedBy: record?.deletedBy || null,
+        reason: record?.reason,
         cascadedRecords: null, // Could be expanded to count deleted records
         metadata: null,
       });
 
-      logger.info(
+      logger?.info(
         `📝 GDPR Deletion Audit Record Persisted - ` +
-          `UserId: ${record.userId}, ` +
-          `Email: ${record.userEmail}, ` +
-          `DeletedAt: ${record.deletedAt.toISOString()}, ` +
-          `Reason: ${record.reason}`,
+          `UserId: ${record?.userId}, ` +
+          `Email: ${record?.userEmail}, ` +
+          `DeletedAt: ${record?.deletedAt.toISOString()}, ` +
+          `Reason: ${record?.reason}`,
       );
     } catch (error: unknown) {
-      logger.warn({ err: error }, "❌ Failed to persist deletion audit log:");
+      logger?.warn({ err: error }, "❌ Failed to persist deletion audit log:");
       // Don't throw - deletion already happened, just log the error
     }
   }
@@ -254,7 +254,7 @@ export class AccountDeletionService {
     adminId: string,
     reason: string,
   ): Promise<void> {
-    logger.warn(
+    logger?.warn(
       `⚠️ Manual account deletion initiated by admin ${adminId} for user ${userId} - Reason: ${reason}`,
     );
 
@@ -262,7 +262,7 @@ export class AccountDeletionService {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
     if (!user) {
@@ -270,18 +270,18 @@ export class AccountDeletionService {
     }
 
     // Delete user and log to audit table
-    await db.delete(users).where(eq(users.id, userId));
+    await db?.delete(users).where(eq(users?.id, userId));
 
     // Store permanent deletion record for compliance audit (with admin ID)
-    await this.logPermanentDeletion({
+    await this?.logPermanentDeletion({
       userId,
-      userEmail: user.email || "unknown",
+      userEmail: user?.email || "unknown",
       deletedAt: new Date(),
       reason: `manual_deletion_by_admin: ${reason}`,
       deletedBy: adminId,
     });
 
-    logger.info(
+    logger?.info(
       `✅ Manual account deletion completed by admin ${adminId} for user ${userId}`,
     );
   }
@@ -290,9 +290,9 @@ export class AccountDeletionService {
    * Stop the cron job (for graceful shutdown)
    */
   public stop(): void {
-    if (this.cronJob) {
-      this.cronJob.stop();
-      logger.info("🛑 Account Deletion Service stopped");
+    if (this?.cronJob) {
+      this?.cronJob.stop();
+      logger?.info("🛑 Account Deletion Service stopped");
     }
   }
 
@@ -301,11 +301,11 @@ export class AccountDeletionService {
    */
   public getStatus(): { isRunning: boolean; cronActive: boolean } {
     return {
-      isRunning: this.isRunning,
-      cronActive: !!this.cronJob,
+      isRunning: this?.isRunning,
+      cronActive: !!this?.cronJob,
     };
   }
 }
 
 // Singleton instance
-export const accountDeletionService = new AccountDeletionService();
+export const _accountDeletionService = new AccountDeletionService();

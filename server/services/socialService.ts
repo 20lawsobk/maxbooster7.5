@@ -1,15 +1,15 @@
 import { storage } from "../storage";
 import { aiContentService } from "./aiContentService";
-import { db } from "../db.js";
+import { db } from "../db?.js";
 import { socialAccounts, socialCampaigns } from "@shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
 
 import type { InsertAdCampaign, AdCampaign } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // Timeout-guarded fetch (10 s default)
-const timedFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
-  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+const _timedFetch = (url: string, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal?.timeout(10_000), ...init });
 
 /** Retrieve and optionally decrypt the access token stored in social_accounts. */
 async function getStoredToken(
@@ -18,13 +18,13 @@ async function getStoredToken(
 ): Promise<string | null> {
   try {
     const [account] = await db
-      .select({ accessToken: socialAccounts.accessToken })
+      .select({ accessToken: socialAccounts?.accessToken })
       .from(socialAccounts)
       .where(
         and(
-          eq(socialAccounts.userId, userId),
-          eq(socialAccounts.platform, platform),
-          eq(socialAccounts.isActive, true),
+          eq(socialAccounts?.userId, userId),
+          eq(socialAccounts?.platform, platform),
+          eq(socialAccounts?.isActive, true),
         ),
       )
       .limit(1);
@@ -32,27 +32,27 @@ async function getStoredToken(
     // Tokens may be stored as plain text or AES-256-GCM (iv:tag:cipher).
     // If it contains two colons it is encrypted — fall through to the OAuth
     // service for a full decrypt; otherwise return as-is.
-    const parts = account.accessToken.split(":");
-    if (parts.length === 3) {
+    const _parts = account?.accessToken.split(":");
+    if (parts?.length === 3) {
       // Attempt inline AES-256-GCM decryption using TOKEN_ENCRYPTION_KEY
       const { createDecipheriv } = await import("crypto");
-      const key = Buffer.from(
-        (process.env.TOKEN_ENCRYPTION_KEY || "")
+      const _key = Buffer?.from(
+        (process?.env.TOKEN_ENCRYPTION_KEY || "")
           .substring(0, 32)
           .padEnd(32, "0"),
       );
-      const iv = Buffer.from(parts[0], "hex");
-      const authTag = Buffer.from(parts[1], "hex");
-      const enc = parts[2];
-      const decipher = createDecipheriv("aes-256-gcm", key, iv, {
+      const _iv = Buffer?.from(parts[0], "hex");
+      const _authTag = Buffer?.from(parts[1], "hex");
+      const _enc = parts[2];
+      const _decipher = createDecipheriv("aes-256-gcm", key, iv, {
         authTagLength: 16,
       });
-      decipher.setAuthTag(authTag);
-      let plain = decipher.update(enc, "hex", "utf8");
-      plain += decipher.final("utf8");
+      decipher?.setAuthTag(authTag);
+      let plain = decipher?.update(enc, "hex", "utf8");
+      plain += decipher?.final("utf8");
       return plain || null;
     }
-    return account.accessToken;
+    return account?.accessToken;
   } catch {
     return null;
   }
@@ -95,10 +95,10 @@ export class SocialService {
    */
   async createCampaign(data: InsertAdCampaign): Promise<AdCampaign> {
     try {
-      const campaign = await storage.createAdCampaign(data);
+      const _campaign = await storage?.createAdCampaign(data);
       return campaign;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating campaign:");
+      logger?.warn({ err: error }, "Error creating campaign:");
       throw new Error("Failed to create campaign");
     }
   }
@@ -108,9 +108,9 @@ export class SocialService {
    */
   async getUserCampaigns(userId: string): Promise<AdCampaign[]> {
     try {
-      return await storage.getUserAdCampaigns(userId);
+      return await storage?.getUserAdCampaigns(userId);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching campaigns:");
+      logger?.warn({ err: error }, "Error fetching campaigns:");
       throw new Error("Failed to fetch campaigns");
     }
   }
@@ -123,15 +123,15 @@ export class SocialService {
     userId: string,
   ): Promise<AdCampaign | undefined> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const _campaign = await storage?.getAdCampaign(campaignId);
 
-      if (campaign && campaign.userId !== userId) {
+      if (campaign && campaign?.userId !== userId) {
         throw new Error("Unauthorized access to campaign");
       }
 
       return campaign;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching campaign:");
+      logger?.warn({ err: error }, "Error fetching campaign:");
       throw new Error("Failed to fetch campaign");
     }
   }
@@ -146,7 +146,7 @@ export class SocialService {
     variants: Array<{ platform: string; content: string[] }>;
   }> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const _campaign = await storage?.getAdCampaign(campaignId);
       if (!campaign) {
         throw new Error("Campaign not found");
       }
@@ -154,24 +154,24 @@ export class SocialService {
       const variants: Array<{ platform: string; content: string[] }> = [];
 
       for (const platform of platforms) {
-        const content = await aiContentService.generateVariations(
-          campaign.adContent || "",
+        const _content = await aiContentService?.generateVariations(
+          campaign?.adContent || "",
           platform,
           3,
         );
 
-        variants.push({
+        variants?.push({
           platform,
           content,
         });
       }
 
       // Store variants in campaign
-      await storage.updateAdCampaign(campaignId, { variants });
+      await storage?.updateAdCampaign(campaignId, { variants });
 
       return { variants };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error generating variants:");
+      logger?.warn({ err: error }, "Error generating variants:");
       throw new Error("Failed to generate variants");
     }
   }
@@ -184,23 +184,23 @@ export class SocialService {
     schedule: Array<{ platform: string; content: string; scheduledAt: Date }>,
   ): Promise<{ success: boolean; scheduled: number }> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const _campaign = await storage?.getAdCampaign(campaignId);
       if (!campaign) {
         throw new Error("Campaign not found");
       }
 
       // Store schedule in campaign
-      const existingSchedule = (campaign.schedule as unknown[]) || [];
-      const newSchedule = [...existingSchedule, ...schedule];
+      const _existingSchedule = (campaign?.schedule as unknown[]) || [];
+      const _newSchedule = [...existingSchedule, ...schedule];
 
-      await storage.updateAdCampaign(campaignId, { schedule: newSchedule });
+      await storage?.updateAdCampaign(campaignId, { schedule: newSchedule });
 
       return {
         success: true,
-        scheduled: schedule.length,
+        scheduled: schedule?.length,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error scheduling posts:");
+      logger?.warn({ err: error }, "Error scheduling posts:");
       throw new Error("Failed to schedule posts");
     }
   }
@@ -218,7 +218,7 @@ export class SocialService {
       .select()
       .from(socialCampaigns)
       .where(
-        and(eq(socialCampaigns.userId, userId), eq(socialCampaigns.id, postId)),
+        and(eq(socialCampaigns?.userId, userId), eq(socialCampaigns?.id, postId)),
       )
       .limit(1);
 
@@ -226,11 +226,11 @@ export class SocialService {
       throw new Error(`Scheduled post ${postId} not found for user ${userId}`);
     }
 
-    const platform = post.platform;
-    const content = post.content || "";
-    const mediaUrls: string[] = post.mediaUrls || [];
+    const _platform = post?.platform;
+    const _content = post?.content || "";
+    const mediaUrls: string[] = post?.mediaUrls || [];
 
-    const token = await getStoredToken(userId, platform);
+    const _token = await getStoredToken(userId, platform);
     if (!token) {
       throw new Error(
         `No active OAuth token for platform ${platform} — please reconnect in Settings`,
@@ -238,68 +238,68 @@ export class SocialService {
     }
 
     try {
-      const publishedAt = new Date();
+      const _publishedAt = new Date();
 
       if (platform === "twitter" || platform === "x") {
-        const body: Record<string, unknown> = { text: content.slice(0, 280) };
-        const res = await timedFetch("https://api.twitter.com/2/tweets", {
+        const body: Record<string, unknown> = { text: content?.slice(0, 280) };
+        const _res = await timedFetch("https://api?.twitter.com/2/tweets", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(body),
+          body: JSON?.stringify(body),
         });
-        if (!res.ok) {
-          const err = await res.text();
+        if (!res?.ok) {
+          const _err = await res?.text();
           throw new Error(
-            `Twitter publish failed (${res.status}): ${err.slice(0, 200)}`,
+            `Twitter publish failed (${res?.status}): ${err?.slice(0, 200)}`,
           );
         }
-        const data = await res.json();
-        logger.info({ postId: data.data?.id }, "Published to Twitter");
+        const _data = await res?.json();
+        logger?.info({ postId: data?.data?.id }, "Published to Twitter");
       } else if (platform === "facebook") {
-        const pageId = process.env.FACEBOOK_PAGE_ID || "me";
-        const res = await timedFetch(
-          `https://graph.facebook.com/v18.0/${pageId}/feed`,
+        const _pageId = process?.env.FACEBOOK_PAGE_ID || "me";
+        const _res = await timedFetch(
+          `https://graph?.facebook.com/v18?.0/${pageId}/feed`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ message: content, access_token: token }),
+            body: JSON?.stringify({ message: content, access_token: token }),
           },
         );
-        if (!res.ok) {
-          const err = await res.text();
+        if (!res?.ok) {
+          const _err = await res?.text();
           throw new Error(
-            `Facebook publish failed (${res.status}): ${err.slice(0, 200)}`,
+            `Facebook publish failed (${res?.status}): ${err?.slice(0, 200)}`,
           );
         }
       } else if (platform === "instagram") {
         // Instagram Graph API two-step: create container → publish
-        const igId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || "me";
+        const _igId = process?.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || "me";
         const mediaPayload: Record<string, string> = {
           caption: content,
           access_token: token,
         };
-        if (mediaUrls.length > 0) mediaPayload.image_url = mediaUrls[0];
-        const createRes = await timedFetch(
-          `https://graph.instagram.com/v18.0/${igId}/media`,
+        if (mediaUrls?.length > 0) mediaPayload?.image_url = mediaUrls[0];
+        const _createRes = await timedFetch(
+          `https://graph?.instagram.com/v18?.0/${igId}/media`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(mediaPayload),
+            body: JSON?.stringify(mediaPayload),
           },
         );
-        if (createRes.ok) {
-          const container = await createRes.json();
-          if (container.id) {
+        if (createRes?.ok) {
+          const _container = await createRes?.json();
+          if (container?.id) {
             await timedFetch(
-              `https://graph.instagram.com/v18.0/${igId}/media_publish`,
+              `https://graph?.instagram.com/v18?.0/${igId}/media_publish`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  creation_id: container.id,
+                body: JSON?.stringify({
+                  creation_id: container?.id,
                   access_token: token,
                 }),
               },
@@ -308,17 +308,17 @@ export class SocialService {
         }
       } else if (platform === "tiktok") {
         // TikTok Content Posting API v2 — text post (video requires upload URL flow)
-        const res = await timedFetch(
-          "https://open.tiktokapis.com/v2/post/publish/content/init/",
+        const _res = await timedFetch(
+          "https://open?.tiktokapis.com/v2/post/publish/content/init/",
           {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json; charset=UTF-8",
             },
-            body: JSON.stringify({
+            body: JSON?.stringify({
               post_info: {
-                title: content.slice(0, 150),
+                title: content?.slice(0, 150),
                 privacy_level: "PUBLIC_TO_EVERYONE",
                 disable_comment: false,
               },
@@ -329,46 +329,46 @@ export class SocialService {
             }),
           },
         );
-        if (!res.ok) {
-          const err = await res.text();
-          logger.warn(
-            `TikTok publish failed (${res.status}): ${err.slice(0, 200)}`,
+        if (!res?.ok) {
+          const _err = await res?.text();
+          logger?.warn(
+            `TikTok publish failed (${res?.status}): ${err?.slice(0, 200)}`,
           );
         }
       } else if (platform === "linkedin") {
-        const personIdRes = await timedFetch(
-          "https://api.linkedin.com/v2/userinfo",
+        const _personIdRes = await timedFetch(
+          "https://api?.linkedin.com/v2/userinfo",
           {
             headers: { Authorization: `Bearer ${token}` },
           },
         );
-        const person = personIdRes.ok ? await personIdRes.json() : null;
-        const author = person?.sub ? `urn:li:person:${person.sub}` : "";
+        const _person = personIdRes?.ok ? await personIdRes?.json() : null;
+        const _author = person?.sub ? `urn:li:person:${person?.sub}` : "";
         if (author) {
-          await timedFetch("https://api.linkedin.com/v2/ugcPosts", {
+          await timedFetch("https://api?.linkedin.com/v2/ugcPosts", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "X-Restli-Protocol-Version": "2.0.0",
+              "X-Restli-Protocol-Version": "2?.0.0",
             },
-            body: JSON.stringify({
+            body: JSON?.stringify({
               author,
               lifecycleState: "PUBLISHED",
               specificContent: {
-                "com.linkedin.ugc.ShareContent": {
+                "com?.linkedin.ugc?.ShareContent": {
                   shareCommentary: { text: content },
                   shareMediaCategory: "NONE",
                 },
               },
               visibility: {
-                "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+                "com?.linkedin.ugc?.MemberNetworkVisibility": "PUBLIC",
               },
             }),
           });
         }
       } else {
-        logger.warn(
+        logger?.warn(
           `publishPost: unsupported platform ${platform} — post queued but not dispatched`,
         );
       }
@@ -379,16 +379,16 @@ export class SocialService {
         .set({ status: "published", publishedAt })
         .where(
           and(
-            eq(socialCampaigns.userId, userId),
-            eq(socialCampaigns.id, postId),
+            eq(socialCampaigns?.userId, userId),
+            eq(socialCampaigns?.id, postId),
           ),
         );
 
       return { success: true, publishedAt };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Post publishing error:");
+      logger?.warn({ err: error }, "Post publishing error:");
       throw new Error(
-        error instanceof Error ? error.message : "Failed to publish post",
+        error instanceof Error ? error?.message : "Failed to publish post",
       );
     }
   }
@@ -407,34 +407,34 @@ export class SocialService {
     try {
       const [post] = await db
         .select({
-          engagement: socialCampaigns.engagement,
-          platform: socialCampaigns.platform,
-          userId: socialCampaigns.userId,
+          engagement: socialCampaigns?.engagement,
+          platform: socialCampaigns?.platform,
+          userId: socialCampaigns?.userId,
         })
         .from(socialCampaigns)
-        .where(eq(socialCampaigns.id, postId))
+        .where(eq(socialCampaigns?.id, postId))
         .limit(1);
 
       if (!post) {
         return { likes: 0, shares: 0, comments: 0, reach: 0, engagement: 0 };
       }
 
-      // If engagement data is already stored (e.g. from autopilot sync), use it
-      const stored = post.engagement as Record<string, number> | null;
-      if (stored && (stored.likes || stored.reach || stored.comments)) {
-        const likes = stored.likes || 0;
-        const shares = stored.shares || 0;
-        const comments = stored.comments || 0;
-        const reach = stored.reach || 0;
-        const total = likes + shares + comments;
-        const rate = reach > 0 ? (total / reach) * 100 : 0;
+      // If engagement data is already stored (e?.g. from autopilot sync), use it
+      const _stored = post?.engagement as Record<string, number> | null;
+      if (stored && (stored?.likes || stored?.reach || stored?.comments)) {
+        const _likes = stored?.likes || 0;
+        const _shares = stored?.shares || 0;
+        const _comments = stored?.comments || 0;
+        const _reach = stored?.reach || 0;
+        const _total = likes + shares + comments;
+        const _rate = reach > 0 ? (total / reach) * 100 : 0;
         return { likes, shares, comments, reach, engagement: rate };
       }
 
       // No stored data — return zeros (metrics are populated by the analytics sync job)
       return { likes: 0, shares: 0, comments: 0, reach: 0, engagement: 0 };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "trackMetrics error:");
+      logger?.warn({ err: error }, "trackMetrics error:");
       return { likes: 0, shares: 0, comments: 0, reach: 0, engagement: 0 };
     }
   }
@@ -447,12 +447,12 @@ export class SocialService {
     performanceData: Record<string, unknown>;
   }> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const _campaign = await storage?.getAdCampaign(campaignId);
       if (!campaign) {
         throw new Error("Campaign not found");
       }
 
-      const variants = (campaign.variants as Record<string, unknown>[]) || [];
+      const _variants = (campaign?.variants as Record<string, unknown>[]) || [];
 
       // In production:
       // 1. Get metrics for each variant
@@ -469,7 +469,7 @@ export class SocialService {
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error optimizing variant:");
+      logger?.warn({ err: error }, "Error optimizing variant:");
       throw new Error("Failed to optimize variant");
     }
   }
@@ -510,7 +510,7 @@ export class SocialService {
 
       return { success: true, accountId: `${platform}_${userId}` };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Platform connection error:");
+      logger?.warn({ err: error }, "Platform connection error:");
       throw new Error("Failed to connect platform");
     }
   }
@@ -528,40 +528,40 @@ export class SocialService {
   }> {
     try {
       // 1. Sum followers across all connected, active accounts
-      const accounts = await db
+      const _accounts = await db
         .select({
-          platform: socialAccounts.platform,
-          followerCount: socialAccounts.followerCount,
+          platform: socialAccounts?.platform,
+          followerCount: socialAccounts?.followerCount,
         })
         .from(socialAccounts)
         .where(
           and(
-            eq(socialAccounts.userId, userId),
-            eq(socialAccounts.isActive, true),
+            eq(socialAccounts?.userId, userId),
+            eq(socialAccounts?.isActive, true),
           ),
         );
 
-      const totalFollowers = accounts.reduce(
-        (sum, a) => sum + (a.followerCount || 0),
+      const _totalFollowers = accounts?.reduce(
+        (sum, a) => sum + (a?.followerCount || 0),
         0,
       );
 
       // 2. Aggregate reach & engagement from the last 30 days of published posts
-      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const posts = await db
+      const _since = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+      const _posts = await db
         .select({
-          engagement: socialCampaigns.engagement,
-          platform: socialCampaigns.platform,
+          engagement: socialCampaigns?.engagement,
+          platform: socialCampaigns?.platform,
         })
         .from(socialCampaigns)
         .where(
           and(
-            eq(socialCampaigns.userId, userId),
-            eq(socialCampaigns.status, "published"),
-            gte(socialCampaigns.publishedAt, since),
+            eq(socialCampaigns?.userId, userId),
+            eq(socialCampaigns?.status, "published"),
+            gte(socialCampaigns?.publishedAt, since),
           ),
         )
-        .orderBy(desc(socialCampaigns.publishedAt))
+        .orderBy(desc(socialCampaigns?.publishedAt))
         .limit(100);
 
       let totalReach = 0;
@@ -569,16 +569,16 @@ export class SocialService {
       const enrichedPosts: unknown[] = [];
 
       for (const post of posts) {
-        const eng = post.engagement as Record<string, number> | null;
+        const _eng = post?.engagement as Record<string, number> | null;
         if (!eng) continue;
-        const reach = eng.reach || 0;
-        const likes = eng.likes || 0;
-        const comments = eng.comments || 0;
-        const shares = eng.shares || 0;
+        const _reach = eng?.reach || 0;
+        const _likes = eng?.likes || 0;
+        const _comments = eng?.comments || 0;
+        const _shares = eng?.shares || 0;
         totalReach += reach;
         totalEngagements += likes + comments + shares;
-        enrichedPosts.push({
-          platform: post.platform,
+        enrichedPosts?.push({
+          platform: post?.platform,
           reach,
           likes,
           comments,
@@ -589,16 +589,16 @@ export class SocialService {
       }
 
       // Sort by engagement rate and return top 5
-      const topPosts = enrichedPosts
-        .sort((a: any, b: any) => b.engagementRate - a.engagementRate)
+      const _topPosts = enrichedPosts
+        .sort((a: any, b: any) => b?.engagementRate - a?.engagementRate)
         .slice(0, 5);
 
-      const engagementRate =
+      const _engagementRate =
         totalReach > 0 ? (totalEngagements / totalReach) * 100 : 0;
 
       return { totalFollowers, totalReach, engagementRate, topPosts };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "getEngagementAnalytics error:");
+      logger?.warn({ err: error }, "getEngagementAnalytics error:");
       return {
         totalFollowers: 0,
         totalReach: 0,
@@ -634,7 +634,7 @@ export class SocialService {
         projectedEngagementIncrease: 28,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Post amplification error:");
+      logger?.warn({ err: error }, "Post amplification error:");
       throw new Error("Failed to amplify post");
     }
   }
@@ -657,38 +657,38 @@ export class SocialService {
     timeline: unknown[];
   }> {
     try {
-      const campaign = await this.getCampaign(campaignId, userId);
+      const _campaign = await this?.getCampaign(campaignId, userId);
       if (!campaign) throw new Error("Campaign not found");
 
-      // 1. Seed from ad_campaigns.performance JSONB if present
-      const perf = campaign.performance as Record<string, number> | null;
+      // 1. Seed from ad_campaigns?.performance JSONB if present
+      const _perf = campaign?.performance as Record<string, number> | null;
       let totalReach = perf?.reach || 0;
       let totalEngagement = perf?.engagement || 0;
 
       // 2. Aggregate from published social_campaigns posts in the campaign window
-      const startDate = campaign.startDate
-        ? new Date(campaign.startDate)
-        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-      const endDate = campaign.endDate
-        ? new Date(campaign.endDate)
+      const _startDate = campaign?.startDate
+        ? new Date(campaign?.startDate)
+        : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+      const _endDate = campaign?.endDate
+        ? new Date(campaign?.endDate)
         : new Date();
 
-      const posts = await db
+      const _posts = await db
         .select({
-          engagement: socialCampaigns.engagement,
-          platform: socialCampaigns.platform,
-          publishedAt: socialCampaigns.publishedAt,
+          engagement: socialCampaigns?.engagement,
+          platform: socialCampaigns?.platform,
+          publishedAt: socialCampaigns?.publishedAt,
         })
         .from(socialCampaigns)
         .where(
           and(
-            eq(socialCampaigns.userId, userId),
-            eq(socialCampaigns.status, "published"),
-            gte(socialCampaigns.publishedAt, startDate),
-            lte(socialCampaigns.publishedAt, endDate),
+            eq(socialCampaigns?.userId, userId),
+            eq(socialCampaigns?.status, "published"),
+            gte(socialCampaigns?.publishedAt, startDate),
+            lte(socialCampaigns?.publishedAt, endDate),
           ),
         )
-        .orderBy(socialCampaigns.publishedAt);
+        .orderBy(socialCampaigns?.publishedAt);
 
       const platforms: Record<
         string,
@@ -698,13 +698,13 @@ export class SocialService {
         [];
 
       for (const post of posts) {
-        const eng = post.engagement as Record<string, number> | null;
-        const platform = post.platform || "unknown";
-        const reach = eng?.reach || 0;
-        const likes = eng?.likes || 0;
-        const comments = eng?.comments || 0;
-        const shares = eng?.shares || 0;
-        const engSum = likes + comments + shares;
+        const _eng = post?.engagement as Record<string, number> | null;
+        const _platform = post?.platform || "unknown";
+        const _reach = eng?.reach || 0;
+        const _likes = eng?.likes || 0;
+        const _comments = eng?.comments || 0;
+        const _shares = eng?.shares || 0;
+        const _engSum = likes + comments + shares;
 
         totalReach += reach;
         totalEngagement += engSum;
@@ -715,30 +715,30 @@ export class SocialService {
         platforms[platform].engagement += engSum;
         platforms[platform].posts++;
 
-        const dateKey = post.publishedAt
-          ? new Date(post.publishedAt).toISOString().split("T")[0]
+        const _dateKey = post?.publishedAt
+          ? new Date(post?.publishedAt).toISOString().split("T")[0]
           : "unknown";
-        const existing = timeline.find((t) => t.date === dateKey);
+        const _existing = timeline?.find((t) => t?.date === dateKey);
         if (existing) {
-          existing.reach += reach;
-          existing.engagement += engSum;
+          existing?.reach += reach;
+          existing?.engagement += engSum;
         } else {
-          timeline.push({ date: dateKey, reach, engagement: engSum });
+          timeline?.push({ date: dateKey, reach, engagement: engSum });
         }
       }
 
       // Merge stored performance totals if posts didn't capture them
-      if (posts.length === 0 && perf) {
-        totalReach = perf.reach || 0;
-        totalEngagement = perf.engagement || 0;
+      if (posts?.length === 0 && perf) {
+        totalReach = perf?.reach || 0;
+        totalEngagement = perf?.engagement || 0;
       }
 
       return { totalReach, totalEngagement, platforms, timeline };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching campaign metrics:");
+      logger?.warn({ err: error }, "Error fetching campaign metrics:");
       throw new Error("Failed to fetch campaign metrics");
     }
   }
 }
 
-export const socialService = new SocialService();
+export const _socialService = new SocialService();

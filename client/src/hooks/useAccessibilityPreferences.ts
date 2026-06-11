@@ -20,7 +20,7 @@ export interface AccessibilityPreferences {
 }
 
 export function useAccessibilityPreferences() {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const {
     reducedMotion,
     highContrast,
@@ -42,36 +42,36 @@ export function useAccessibilityPreferences() {
     retry: 1,
   });
 
-  const updateMutation = useMutation({
+  const _updateMutation = useMutation({
     mutationFn: async (updates: Partial<AccessibilityPreferences>) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "PUT",
         "/api/user/accessibility-preferences",
         updates,
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/user/accessibility-preferences"],
       });
     },
   });
 
-  const syncFromServer = useCallback(() => {
+  const _syncFromServer = useCallback(() => {
     if (!serverPreferences) return;
 
-    if (serverPreferences.reducedMotion !== null) {
-      reducedMotion.setReducedMotion(serverPreferences.reducedMotion);
+    if (serverPreferences?.reducedMotion !== null) {
+      reducedMotion?.setReducedMotion(serverPreferences?.reducedMotion);
     }
-    if (serverPreferences.contrastMode !== null) {
-      highContrast.setContrastMode(serverPreferences.contrastMode);
+    if (serverPreferences?.contrastMode !== null) {
+      highContrast?.setContrastMode(serverPreferences?.contrastMode);
     }
-    if (serverPreferences.fontSize) {
-      setFontSize(serverPreferences.fontSize);
+    if (serverPreferences?.fontSize) {
+      setFontSize(serverPreferences?.fontSize);
     }
-    if (serverPreferences.colorBlindMode) {
-      setColorBlindMode(serverPreferences.colorBlindMode);
+    if (serverPreferences?.colorBlindMode) {
+      setColorBlindMode(serverPreferences?.colorBlindMode);
     }
   }, [
     serverPreferences,
@@ -81,20 +81,20 @@ export function useAccessibilityPreferences() {
     setColorBlindMode,
   ]);
 
-  const saveToServer = useCallback(async () => {
+  const _saveToServer = useCallback(async () => {
     const preferences: Partial<AccessibilityPreferences> = {
-      reducedMotion: reducedMotion.prefersReducedMotion,
-      contrastMode: highContrast.contrastMode,
+      reducedMotion: reducedMotion?.prefersReducedMotion,
+      contrastMode: highContrast?.contrastMode,
       fontSize,
       colorBlindMode,
-      focusIndicatorWidth: highContrast.getFocusIndicatorWidth(),
+      focusIndicatorWidth: highContrast?.getFocusIndicatorWidth(),
     };
 
     try {
-      await updateMutation.mutateAsync(preferences);
+      await updateMutation?.mutateAsync(preferences);
       announce("Accessibility preferences saved to your profile");
     } catch (error) {
-      logger.error("Failed to save accessibility preferences:", error);
+      logger?.error("Failed to save accessibility preferences:", error);
     }
   }, [
     reducedMotion,
@@ -105,17 +105,17 @@ export function useAccessibilityPreferences() {
     announce,
   ]);
 
-  const updatePreference = useCallback(
+  const _updatePreference = useCallback(
     async <K extends keyof AccessibilityPreferences>(
       key: K,
       value: AccessibilityPreferences[K],
     ) => {
       switch (key) {
         case "reducedMotion":
-          reducedMotion.setReducedMotion(value as boolean | null);
+          reducedMotion?.setReducedMotion(value as boolean | null);
           break;
         case "contrastMode":
-          highContrast.setContrastMode(value as ContrastMode | null);
+          highContrast?.setContrastMode(value as ContrastMode | null);
           break;
         case "fontSize":
           setFontSize(value as FontSize);
@@ -126,9 +126,9 @@ export function useAccessibilityPreferences() {
       }
 
       try {
-        await updateMutation.mutateAsync({ [key]: value });
+        await updateMutation?.mutateAsync({ [key]: value });
       } catch (error) {
-        logger.error(`Failed to update ${key}:`, error);
+        logger?.error(`Failed to update ${key}:`, error);
       }
     },
     [
@@ -140,25 +140,25 @@ export function useAccessibilityPreferences() {
     ],
   );
 
-  const resetPreferences = useCallback(async () => {
+  const _resetPreferences = useCallback(async () => {
     resetAllPreferences();
     try {
       await apiRequest("DELETE", "/api/user/accessibility-preferences");
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/user/accessibility-preferences"],
       });
       announce("Accessibility preferences reset to defaults");
     } catch (error) {
-      logger.error("Failed to reset accessibility preferences:", error);
+      logger?.error("Failed to reset accessibility preferences:", error);
     }
   }, [resetAllPreferences, queryClient, announce]);
 
   const currentPreferences: AccessibilityPreferences = {
-    reducedMotion: reducedMotion.prefersReducedMotion,
-    contrastMode: highContrast.contrastMode,
+    reducedMotion: reducedMotion?.prefersReducedMotion,
+    contrastMode: highContrast?.contrastMode,
     fontSize,
     colorBlindMode,
-    focusIndicatorWidth: highContrast.getFocusIndicatorWidth(),
+    focusIndicatorWidth: highContrast?.getFocusIndicatorWidth(),
     screenReaderOptimized: serverPreferences?.screenReaderOptimized || false,
     keyboardNavigationEnabled:
       serverPreferences?.keyboardNavigationEnabled ?? true,
@@ -169,21 +169,21 @@ export function useAccessibilityPreferences() {
     serverPreferences,
     isLoading,
     error,
-    isSaving: updateMutation.isPending,
+    isSaving: updateMutation?.isPending,
     saveToServer,
     syncFromServer,
     updatePreference,
     resetPreferences,
     reducedMotion: {
-      enabled: reducedMotion.prefersReducedMotion,
-      isSystemPreference: reducedMotion.isSystemPreference,
+      enabled: reducedMotion?.prefersReducedMotion,
+      isSystemPreference: reducedMotion?.isSystemPreference,
       setEnabled: (value: boolean | null) =>
         updatePreference("reducedMotion", value),
     },
     highContrast: {
-      mode: highContrast.contrastMode,
-      isHighContrast: highContrast.isHighContrast,
-      isSystemPreference: highContrast.isSystemPreference,
+      mode: highContrast?.contrastMode,
+      isHighContrast: highContrast?.isHighContrast,
+      isSystemPreference: highContrast?.isSystemPreference,
       setMode: (value: ContrastMode | null) =>
         updatePreference("contrastMode", value),
     },

@@ -1,54 +1,46 @@
 import Stripe from "stripe";
 import crypto from "crypto";
 import { storage } from "../storage";
-import { getStripePriceIds } from "./stripeSetup.js";
-import { logger } from "../logger.js";
-import { executeStripeOperation } from "./externalServices.js";
-import { db } from "../db.js";
-import {
-  users,
-  orders,
-  listingStems,
-  refunds,
-  ledgerEntries,
-  notifications,
-  taxForms,
-} from "@shared/schema";
+import { getStripePriceIds } from "./stripeSetup?.js";
+import { logger } from "../logger?.js";
+import { executeStripeOperation } from "./externalServices?.js";
+import { db } from "../db?.js";
+import { users, orders, listingStems, refunds, ledgerEntries, notifications, taxForms } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
-import { env } from "../config/env.js";
-import { isProductionEnv } from "../lib/envHelpers.js";
+import { env } from "../config/env?.js";
+import { isProductionEnv } from "../lib/envHelpers?.js";
 
-// Support both production and testing Stripe keys (same logic as routes.ts)
+// Support both production and testing Stripe keys (same logic as routes?.ts)
 let actualStripeKey: string | undefined;
 if (isProductionEnv()) {
   // Production: Only use STRIPE_SECRET_KEY
-  if (env.STRIPE_SECRET_KEY?.startsWith("sk_")) {
-    actualStripeKey = env.STRIPE_SECRET_KEY;
+  if (env?.STRIPE_SECRET_KEY?.startsWith("sk_")) {
+    actualStripeKey = env?.STRIPE_SECRET_KEY;
   }
 } else {
   // Development: Try TESTING_STRIPE_SECRET_KEY first, then STRIPE_SECRET_KEY
-  if (env.TESTING_STRIPE_SECRET_KEY?.startsWith("sk_")) {
-    actualStripeKey = env.TESTING_STRIPE_SECRET_KEY;
-  } else if (env.STRIPE_SECRET_KEY?.startsWith("sk_")) {
-    actualStripeKey = env.STRIPE_SECRET_KEY;
+  if (env?.TESTING_STRIPE_SECRET_KEY?.startsWith("sk_")) {
+    actualStripeKey = env?.TESTING_STRIPE_SECRET_KEY;
+  } else if (env?.STRIPE_SECRET_KEY?.startsWith("sk_")) {
+    actualStripeKey = env?.STRIPE_SECRET_KEY;
   }
 }
 
 if (!actualStripeKey) {
-  logger.warn("❌ STRIPE CONFIGURATION ERROR in stripeService.ts:");
-  logger.warn("   Missing or invalid Stripe secret key.");
-  logger.warn(
+  logger?.warn("❌ STRIPE CONFIGURATION ERROR in stripeService?.ts:");
+  logger?.warn("   Missing or invalid Stripe secret key.");
+  logger?.warn(
     "   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)",
   );
-  logger.warn("   Format: sk_test_... or sk_live_...");
+  logger?.warn("   Format: sk_test_... or sk_live_...");
   throw new Error(
     "Invalid Stripe configuration - cannot initialize payment service",
   );
 }
 
-const stripe = new Stripe(actualStripeKey, {
-  apiVersion: "2026-01-28.clover",
+const _stripe = new Stripe(actualStripeKey, {
+  apiVersion: "2026-01-28?.clover",
 });
 
 export class StripeService {
@@ -57,56 +49,56 @@ export class StripeService {
     tier: "monthly" | "yearly" | "lifetime",
   ) {
     try {
-      let user = await storage.getUser(userId);
+      let user = await storage?.getUser(userId);
       if (!user) {
         throw new Error("User not found");
       }
 
-      if (user.stripeSubscriptionId && tier !== "lifetime") {
-        const result = await executeStripeOperation(
+      if (user?.stripeSubscriptionId && tier !== "lifetime") {
+        const _result = await executeStripeOperation(
           () =>
-            stripe.subscriptions.retrieve(user.stripeSubscriptionId!, {
-              expand: ["latest_invoice.payment_intent"],
+            stripe?.subscriptions.retrieve(user?.stripeSubscriptionId!, {
+              expand: ["latest_invoice?.payment_intent"],
             }),
-          { cacheKey: `subscription:${user.stripeSubscriptionId}` },
+          { cacheKey: `subscription:${user?.stripeSubscriptionId}` },
         );
-        const subscription = result.data;
-        const latestInvoice =
-          subscription.latest_invoice as Stripe.Invoice | null;
-        const paymentIntent = latestInvoice
+        const _subscription = result?.data;
+        const _latestInvoice =
+          subscription?.latest_invoice as Stripe?.Invoice | null;
+        const _paymentIntent = latestInvoice
           ? ((latestInvoice as Record<string, unknown>)
-              .payment_intent as Stripe.PaymentIntent | null)
+              .payment_intent as Stripe?.PaymentIntent | null)
           : null;
         return {
-          subscriptionId: subscription.id,
+          subscriptionId: subscription?.id,
           clientSecret: paymentIntent?.client_secret,
         };
       }
 
-      if (!user.email) {
+      if (!user?.email) {
         throw new Error("No user email on file");
       }
 
-      let customerId = user.stripeCustomerId;
+      let customerId = user?.stripeCustomerId;
       if (!customerId) {
-        const result = await executeStripeOperation(() =>
-          stripe.customers.create({
-            email: user.email!,
-            name: user.firstName
-              ? `${user.firstName} ${user.lastName || ""}`.trim()
+        const _result = await executeStripeOperation(() =>
+          stripe?.customers.create({
+            email: user?.email!,
+            name: user?.firstName
+              ? `${user?.firstName} ${user?.lastName || ""}`.trim()
               : undefined,
           }),
         );
-        customerId = result.data.id;
-        await storage.updateUserStripeInfo(userId, customerId, null);
+        customerId = result?.data.id;
+        await storage?.updateUserStripeInfo(userId, customerId, null);
       }
 
       // Get price ID based on tier
-      const priceId = this.getPriceId(tier);
+      const _priceId = this?.getPriceId(tier);
 
       if (tier === "lifetime") {
-        const result = await executeStripeOperation(() =>
-          stripe.paymentIntents.create({
+        const _result = await executeStripeOperation(() =>
+          stripe?.paymentIntents.create({
             amount: 69900,
             currency: "usd",
             customer: customerId,
@@ -118,35 +110,35 @@ export class StripeService {
         );
 
         return {
-          clientSecret: result.data.client_secret,
+          clientSecret: result?.data.client_secret,
           tier: "lifetime",
         };
       } else {
-        const result = await executeStripeOperation(() =>
-          stripe.subscriptions.create({
+        const _result = await executeStripeOperation(() =>
+          stripe?.subscriptions.create({
             customer: customerId,
             items: [{ price: priceId }],
             payment_behavior: "default_incomplete",
-            expand: ["latest_invoice.payment_intent"],
+            expand: ["latest_invoice?.payment_intent"],
           }),
         );
-        const subscription = result.data;
+        const _subscription = result?.data;
 
-        await storage.updateUserStripeInfo(userId, customerId, subscription.id);
+        await storage?.updateUserStripeInfo(userId, customerId, subscription?.id);
 
-        const latestInvoice =
-          subscription.latest_invoice as Stripe.Invoice | null;
-        const paymentIntent = latestInvoice
+        const _latestInvoice =
+          subscription?.latest_invoice as Stripe?.Invoice | null;
+        const _paymentIntent = latestInvoice
           ? ((latestInvoice as Record<string, unknown>)
-              .payment_intent as Stripe.PaymentIntent | null)
+              .payment_intent as Stripe?.PaymentIntent | null)
           : null;
         return {
-          subscriptionId: subscription.id,
+          subscriptionId: subscription?.id,
           clientSecret: paymentIntent?.client_secret,
         };
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Subscription error:");
+      logger?.warn({ err: error }, "Subscription error:");
       throw error;
     }
   }
@@ -158,9 +150,9 @@ export class StripeService {
     price: number,
   ) {
     try {
-      const result = await executeStripeOperation(() =>
-        stripe.paymentIntents.create({
-          amount: Math.round(price * 100),
+      const _result = await executeStripeOperation(() =>
+        stripe?.paymentIntents.create({
+          amount: Math?.round(price * 100),
           currency: "usd",
           metadata: {
             beatId,
@@ -170,67 +162,67 @@ export class StripeService {
         }),
       );
 
-      return result.data;
+      return result?.data;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Beat purchase intent error:");
+      logger?.warn({ err: error }, "Beat purchase intent error:");
       throw error;
     }
   }
 
   private getPriceId(tier: "monthly" | "yearly" | "lifetime"): string {
     // Get actual Stripe price IDs created during server initialization
-    const priceIds = getStripePriceIds();
+    const _priceIds = getStripePriceIds();
     return priceIds[tier];
   }
 
-  async handleWebhook(event: Stripe.Event) {
+  async handleWebhook(event: Stripe?.Event) {
     try {
-      switch (event.type) {
+      switch (event?.type) {
         // Subscription & payment events
-        case "payment_intent.succeeded":
-          const paymentIntent = event.data.object as Stripe.PaymentIntent;
-          await this.handlePaymentSuccess(paymentIntent);
+        case "payment_intent?.succeeded":
+          const _paymentIntent = event?.data.object as Stripe?.PaymentIntent;
+          await this?.handlePaymentSuccess(paymentIntent);
           break;
-        case "invoice.payment_succeeded":
-          const invoice = event.data.object as Stripe.Invoice;
-          await this.handleSubscriptionPayment(invoice);
+        case "invoice?.payment_succeeded":
+          const _invoice = event?.data.object as Stripe?.Invoice;
+          await this?.handleSubscriptionPayment(invoice);
           break;
-        case "customer.subscription.deleted":
-          const subscription = event.data.object as Stripe.Subscription;
-          await this.handleSubscriptionCanceled(subscription);
+        case "customer?.subscription.deleted":
+          const _subscription = event?.data.object as Stripe?.Subscription;
+          await this?.handleSubscriptionCanceled(subscription);
           break;
 
         // Marketplace payout events (Transfers)
-        case "transfer.created":
-        case "transfer.paid":
-        case "transfer.failed":
-        case "transfer.reversed":
-          await instantPayoutService.handleTransferWebhook(event);
+        case "transfer?.created":
+        case "transfer?.paid":
+        case "transfer?.failed":
+        case "transfer?.reversed":
+          await instantPayoutService?.handleTransferWebhook(event);
           break;
 
         // Stripe Connect account events
-        case "account.updated":
-        case "account.application.deauthorized":
-          await instantPayoutService.handleAccountWebhook(event);
+        case "account?.updated":
+        case "account?.application.deauthorized":
+          await instantPayoutService?.handleAccountWebhook(event);
           break;
 
         // Manual payout events (for withdrawals)
-        case "payout.paid":
-        case "payout.failed":
-        case "payout.canceled":
-          await instantPayoutService.handlePayoutWebhook(event);
+        case "payout?.paid":
+        case "payout?.failed":
+        case "payout?.canceled":
+          await instantPayoutService?.handlePayoutWebhook(event);
           break;
 
         default:
-          logger.info(`Unhandled webhook event type: ${event.type}`);
+          logger?.info(`Unhandled webhook event type: ${event?.type}`);
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Webhook error:");
+      logger?.warn({ err: error }, "Webhook error:");
       throw error;
     }
   }
 
-  private async handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
+  private async handlePaymentSuccess(paymentIntent: Stripe?.PaymentIntent) {
     const {
       userId,
       tier,
@@ -242,11 +234,11 @@ export class StripeService {
       sellerId,
       listingId,
       stemFileUrl,
-    } = paymentIntent.metadata;
+    } = paymentIntent?.metadata;
 
     if (tier === "lifetime" && userId) {
       // Update user subscription status
-      await storage.updateUser(userId, {
+      await storage?.updateUser(userId, {
         subscriptionTier: "lifetime",
         subscriptionStatus: "active",
       });
@@ -258,18 +250,18 @@ export class StripeService {
       listingId
     ) {
       // Handle stem purchase completion
-      await this.handleStemPurchase({
+      await this?.handleStemPurchase({
         stemId,
         buyerId,
         sellerId,
         listingId,
         stemFileUrl: stemFileUrl || "",
-        amountCents: paymentIntent.amount,
+        amountCents: paymentIntent?.amount,
       });
     } else if (beatId && buyerId && licenseType) {
       // Beat purchase webhook handler reserved for future beat-specific purchases
       // Currently marketplace uses stem purchase flow above
-      logger.info({ beatId, buyerId, licenseType }, "Beat purchase completed");
+      logger?.info({ beatId, buyerId, licenseType }, "Beat purchase completed");
     }
   }
 
@@ -285,79 +277,79 @@ export class StripeService {
     const [order] = await db
       .insert(orders)
       .values({
-        buyerId: data.buyerId,
-        sellerId: data.sellerId,
-        listingId: parseInt(data.listingId),
+        buyerId: data?.buyerId,
+        sellerId: data?.sellerId,
+        listingId: parseInt(data?.listingId),
         licenseType: "stem_purchase",
-        amountCents: data.amountCents,
+        amountCents: data?.amountCents,
         currency: "usd",
         status: "completed",
-        downloadUrl: data.stemFileUrl,
+        downloadUrl: data?.stemFileUrl,
       })
       .returning();
 
     // Generate download token
-    const downloadToken = crypto.randomBytes(32).toString("hex");
+    const _downloadToken = crypto?.randomBytes(32).toString("hex");
 
     // stemOrders table not yet in schema — download token stored in order downloadUrl
-    logger.debug(
-      `Stem order token generated for order ${order.id}: ${downloadToken}`,
+    logger?.debug(
+      `Stem order token generated for order ${order?.id}: ${downloadToken}`,
     );
 
     // Update stem download count
     await db
       .update(listingStems)
-      .set({ downloadCount: sql`${listingStems.downloadCount} + 1` })
-      .where(eq(listingStems.id, data.stemId));
+      .set({ downloadCount: sql`${listingStems?.downloadCount} + 1` })
+      .where(eq(listingStems?.id, data?.stemId));
 
-    logger.info(
-      `✅ Stem purchase completed: ${data.stemId} by ${data.buyerId}`,
+    logger?.info(
+      `✅ Stem purchase completed: ${data?.stemId} by ${data?.buyerId}`,
     );
   }
 
-  private async handleSubscriptionPayment(invoice: Stripe.Invoice) {
-    const invoiceSubscription = (invoice as Record<string, unknown>)
+  private async handleSubscriptionPayment(invoice: Stripe?.Invoice) {
+    const _invoiceSubscription = (invoice as Record<string, unknown>)
       .subscription;
-    if (invoice.customer && invoiceSubscription) {
-      const customerId = invoice.customer as string;
-      const subscriptionId =
+    if (invoice?.customer && invoiceSubscription) {
+      const _customerId = invoice?.customer as string;
+      const _subscriptionId =
         typeof invoiceSubscription === "string"
           ? invoiceSubscription
-          : invoiceSubscription.id;
+          : invoiceSubscription?.id;
 
       // Find user by Stripe customer ID — direct indexed lookup (avoids getAllUsers)
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.stripeCustomerId, customerId))
+        .where(eq(users?.stripeCustomerId, customerId))
         .limit(1);
 
       if (user && subscriptionId) {
         // Update subscription status
-        const subscription =
-          await stripe.subscriptions.retrieve(subscriptionId);
-        const tier =
-          subscription.items.data[0].price.recurring?.interval === "year"
+        const _subscription =
+          await stripe?.subscriptions.retrieve(subscriptionId);
+        const _tier =
+          subscription?.items.data[0].price?.recurring?.interval === "year"
             ? "yearly"
             : "monthly";
-        await storage.updateUser(user.id, {
+        await storage?.updateUser(user?.id, {
           subscriptionTier: tier,
-          subscriptionStatus: subscription.status,
+          subscriptionStatus: subscription?.status,
         });
       }
     }
   }
 
-  private async handleSubscriptionCanceled(subscription: Stripe.Subscription) {
-    const customerId = subscription.customer as string;
+  private async handleSubscriptionCanceled(subscription: Stripe?.Subscription) {
+    const _customerId = subscription?.customer as string;
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.stripeCustomerId, customerId))
+      .where(eq(users?.stripeCustomerId, customerId))
       .limit(1);
 
     if (user) {
-      await storage.updateUser(user.id, {
+      await storage?.updateUser(user?.id, {
         subscriptionStatus: "canceled",
       });
     }
@@ -383,21 +375,21 @@ export class StripeService {
       const [order] = await db
         .select()
         .from(orders)
-        .where(eq(orders.id, params.orderId))
+        .where(eq(orders?.id, params?.orderId))
         .limit(1);
 
       if (!order) {
         return { success: false, error: "Order not found" };
       }
 
-      if (!order.stripePaymentIntentId) {
+      if (!order?.stripePaymentIntentId) {
         return { success: false, error: "No payment found for order" };
       }
 
-      const amountCents = params.amountCents || Math.round(order.amount * 100);
-      const refundType =
-        params.amountCents &&
-        params.amountCents < Math.round(order.amount * 100)
+      const _amountCents = params?.amountCents || Math?.round(order?.amount * 100);
+      const _refundType =
+        params?.amountCents &&
+        params?.amountCents < Math?.round(order?.amount * 100)
           ? "partial"
           : "full";
 
@@ -406,14 +398,14 @@ export class StripeService {
       const [refundRecord] = await db
         .insert(refunds)
         .values({
-          orderId: params.orderId,
-          userId: params.userId,
-          sellerId: params.sellerId || order.sellerId,
+          orderId: params?.orderId,
+          userId: params?.userId,
+          sellerId: params?.sellerId || order?.sellerId,
           amountCents,
-          currency: order.currency || "usd",
-          reason: params.reason,
+          currency: order?.currency || "usd",
+          reason: params?.reason,
           status: "pending",
-          initiatedBy: params.initiatedBy || "customer",
+          initiatedBy: params?.initiatedBy || "customer",
           refundType,
         })
         .returning();
@@ -421,38 +413,38 @@ export class StripeService {
       // Step 2: call Stripe BEFORE the local ledger transaction. If Stripe
       // fails, mark the row failed and bail out — no ledger / notification
       // writes happen, so the books stay consistent.
-      let stripeRefund: Stripe.Refund;
+      let stripeRefund: Stripe?.Refund;
       let chargeId: string;
       try {
-        const paymentIntent = await stripe.paymentIntents.retrieve(
-          order.stripePaymentIntentId,
+        const _paymentIntent = await stripe?.paymentIntents.retrieve(
+          order?.stripePaymentIntentId,
         );
-        chargeId = paymentIntent.latest_charge as string;
+        chargeId = paymentIntent?.latest_charge as string;
 
-        stripeRefund = await stripe.refunds.create(
+        stripeRefund = await stripe?.refunds.create(
           {
             charge: chargeId,
             amount: amountCents,
-            reason: this.mapRefundReason(params.reason),
+            reason: this?.mapRefundReason(params?.reason),
             metadata: {
-              orderId: params.orderId,
-              refundId: refundRecord.id,
-              initiatedBy: params.initiatedBy || "customer",
+              orderId: params?.orderId,
+              refundId: refundRecord?.id,
+              initiatedBy: params?.initiatedBy || "customer",
             },
           },
           // Idempotency: Stripe will dedupe on this key for 24h, so a retry
           // that also creates a duplicate refundRecord is still safe.
-          { idempotencyKey: `refund:${refundRecord.id}` },
+          { idempotencyKey: `refund:${refundRecord?.id}` },
         );
       } catch (stripeError: unknown) {
-        const _stripeErrMsg =
+        const __stripeErrMsg =
           stripeError instanceof Error
-            ? stripeError.message
+            ? stripeError?.message
             : String(stripeError);
         await db
           .update(refunds)
           .set({ status: "failed", failureReason: _stripeErrMsg })
-          .where(eq(refunds.id, refundRecord.id));
+          .where(eq(refunds?.id, refundRecord?.id));
         return { success: false, error: _stripeErrMsg };
       }
 
@@ -460,44 +452,44 @@ export class StripeService {
       // if any fails, Postgres rolls back the whole tx so the local state
       // matches Stripe's view (which has the successful refund).
       try {
-        await db.transaction(async (tx) => {
+        await db?.transaction(async (tx) => {
           await tx
             .update(refunds)
             .set({
-              status: stripeRefund.status as string,
-              stripeRefundId: stripeRefund.id,
+              status: stripeRefund?.status as string,
+              stripeRefundId: stripeRefund?.id,
               stripeChargeId: chargeId,
               processedAt: new Date(),
             })
-            .where(eq(refunds.id, refundRecord.id));
+            .where(eq(refunds?.id, refundRecord?.id));
 
-          await tx.insert(ledgerEntries).values({
-            userId: params.userId,
+          await tx?.insert(ledgerEntries).values({
+            userId: params?.userId,
             entryType: "refund",
             amountCents,
-            currency: order.currency || "usd",
+            currency: order?.currency || "usd",
             referenceType: "refund",
-            referenceId: refundRecord.id,
-            description: `Refund for order ${params.orderId}`,
+            referenceId: refundRecord?.id,
+            description: `Refund for order ${params?.orderId}`,
           });
 
-          await tx.insert(notifications).values({
-            userId: params.userId,
+          await tx?.insert(notifications).values({
+            userId: params?.userId,
             type: "refund",
             title: "Refund Processed",
             message: `Your refund of $${(amountCents / 100).toFixed(2)} has been processed and will appear in 5-10 business days.`,
-            metadata: { refundId: refundRecord.id, orderId: params.orderId },
+            metadata: { refundId: refundRecord?.id, orderId: params?.orderId },
           });
         });
       } catch (ledgerError: unknown) {
         // Stripe accepted the refund but the ledger tx failed. Surface a loud
         // alert — manual reconciliation is required (the refund webhook will
         // also retry the status update independently).
-        logger.warn(
+        logger?.warn(
           {
             err: ledgerError,
-            refundId: refundRecord.id,
-            stripeRefundId: stripeRefund.id,
+            refundId: refundRecord?.id,
+            stripeRefundId: stripeRefund?.id,
           },
           "🚨 Stripe refund succeeded but ledger transaction failed — manual reconcile required",
         );
@@ -507,39 +499,39 @@ export class StripeService {
             status: "reconcile_required",
             failureReason:
               ledgerError instanceof Error
-                ? ledgerError.message
+                ? ledgerError?.message
                 : String(ledgerError),
           })
-          .where(eq(refunds.id, refundRecord.id))
+          .where(eq(refunds?.id, refundRecord?.id))
           .catch(() => undefined);
         return {
           success: false,
-          refundId: refundRecord.id,
-          stripeRefundId: stripeRefund.id,
+          refundId: refundRecord?.id,
+          stripeRefundId: stripeRefund?.id,
           error:
             "Refund processed by Stripe but ledger update failed; flagged for reconciliation",
         };
       }
 
-      logger.info(
+      logger?.info(
         {
-          refundId: refundRecord.id,
-          stripeRefundId: stripeRefund.id,
+          refundId: refundRecord?.id,
+          stripeRefundId: stripeRefund?.id,
         },
         "Refund created successfully",
       );
 
       return {
         success: true,
-        refundId: refundRecord.id,
-        stripeRefundId: stripeRefund.id,
+        refundId: refundRecord?.id,
+        stripeRefundId: stripeRefund?.id,
       };
     } catch (error) {
-      logger.warn({ err: error }, "Error creating refund:");
+      logger?.warn({ err: error }, "Error creating refund:");
       return {
         success: false,
         error:
-          (error instanceof Error ? error.message : undefined) ||
+          (error instanceof Error ? error?.message : undefined) ||
           "Failed to create refund",
       };
     }
@@ -549,21 +541,21 @@ export class StripeService {
     reason?: string,
   ): "duplicate" | "fraudulent" | "requested_by_customer" | undefined {
     if (!reason) return "requested_by_customer";
-    const lower = reason.toLowerCase();
-    if (lower.includes("duplicate")) return "duplicate";
-    if (lower.includes("fraud")) return "fraudulent";
+    const _lower = reason?.toLowerCase();
+    if (lower?.includes("duplicate")) return "duplicate";
+    if (lower?.includes("fraud")) return "fraudulent";
     return "requested_by_customer";
   }
 
   /**
    * Handle refund webhook events
    */
-  async handleRefundWebhook(refund: Stripe.Refund) {
+  async handleRefundWebhook(refund: Stripe?.Refund) {
     try {
-      const refundId = refund.metadata?.refundId;
+      const _refundId = refund?.metadata?.refundId;
       if (!refundId) {
-        logger.warn(
-          { stripeRefundId: refund.id },
+        logger?.warn(
+          { stripeRefundId: refund?.id },
           "Refund webhook without refundId metadata",
         );
         return;
@@ -572,18 +564,18 @@ export class StripeService {
       await db
         .update(refunds)
         .set({
-          status: refund.status as string,
-          processedAt: refund.status === "succeeded" ? new Date() : undefined,
-          failureReason: refund.failure_reason || undefined,
+          status: refund?.status as string,
+          processedAt: refund?.status === "succeeded" ? new Date() : undefined,
+          failureReason: refund?.failure_reason || undefined,
         })
-        .where(eq(refunds.id, refundId));
+        .where(eq(refunds?.id, refundId));
 
-      logger.info(
-        { refundId, status: refund.status },
+      logger?.info(
+        { refundId, status: refund?.status },
         "Refund status updated from webhook",
       );
     } catch (error) {
-      logger.warn({ err: error }, "Error handling refund webhook:");
+      logger?.warn({ err: error }, "Error handling refund webhook:");
     }
   }
 
@@ -595,7 +587,7 @@ export class StripeService {
       const [refund] = await db
         .select()
         .from(refunds)
-        .where(eq(refunds.id, refundId))
+        .where(eq(refunds?.id, refundId))
         .limit(1);
 
       if (!refund) {
@@ -604,7 +596,7 @@ export class StripeService {
 
       return refund;
     } catch (error) {
-      logger.warn({ err: error }, "Error getting refund status:");
+      logger?.warn({ err: error }, "Error getting refund status:");
       throw error;
     }
   }
@@ -614,15 +606,15 @@ export class StripeService {
    */
   async getOrderRefunds(orderId: string) {
     try {
-      const orderRefunds = await db
+      const _orderRefunds = await db
         .select()
         .from(refunds)
-        .where(eq(refunds.orderId, orderId))
-        .orderBy(desc(refunds.createdAt));
+        .where(eq(refunds?.orderId, orderId))
+        .orderBy(desc(refunds?.createdAt));
 
       return orderRefunds;
     } catch (error) {
-      logger.warn({ err: error }, "Error getting order refunds:");
+      logger?.warn({ err: error }, "Error getting order refunds:");
       throw error;
     }
   }
@@ -632,48 +624,48 @@ export class StripeService {
    */
   async generateTaxFormData(userId: string, taxYear: number) {
     try {
-      const startOfYear = new Date(`${taxYear}-01-01T00:00:00Z`);
-      const endOfYear = new Date(`${taxYear}-12-31T23:59:59Z`);
+      const _startOfYear = new Date(`${taxYear}-01-01T00:00:00Z`);
+      const _endOfYear = new Date(`${taxYear}-12-31T23:59:59Z`);
 
-      const earningsResult = await db.execute(
+      const _earningsResult = await db?.execute(
         sql`SELECT 
               COALESCE(SUM(amount), 0) as total_gross,
               COUNT(*) as transaction_count
             FROM orders 
             WHERE seller_id = ${userId} 
             AND status = 'completed'
-            AND created_at >= ${startOfYear.toISOString()}
-            AND created_at <= ${endOfYear.toISOString()}`,
+            AND created_at >= ${startOfYear?.toISOString()}
+            AND created_at <= ${endOfYear?.toISOString()}`,
       );
 
-      const payoutsResult = await db.execute(
+      const _payoutsResult = await db?.execute(
         sql`SELECT COALESCE(SUM(amount_cents), 0) as total_payouts
             FROM instant_payouts 
             WHERE user_id = ${userId} 
             AND status = 'completed'
-            AND created_at >= ${startOfYear.toISOString()}
-            AND created_at <= ${endOfYear.toISOString()}`,
+            AND created_at >= ${startOfYear?.toISOString()}
+            AND created_at <= ${endOfYear?.toISOString()}`,
       );
 
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
 
-      const totalGross = Number(earningsResult.rows?.[0]?.total_gross || 0);
-      const transactionCount = Number(
-        earningsResult.rows?.[0]?.transaction_count || 0,
+      const _totalGross = Number(earningsResult?.rows?.[0]?.total_gross || 0);
+      const _transactionCount = Number(
+        earningsResult?.rows?.[0]?.transaction_count || 0,
       );
-      const totalPayouts =
-        Number(payoutsResult.rows?.[0]?.total_payouts || 0) / 100;
+      const _totalPayouts =
+        Number(payoutsResult?.rows?.[0]?.total_payouts || 0) / 100;
 
-      const requires1099 = totalGross >= 600 || transactionCount >= 200;
+      const _requires1099 = totalGross >= 600 || transactionCount >= 200;
 
-      const formData = {
+      const _formData = {
         payerName: "Max Booster Platform",
         payeeName: user
-          ? `${user.firstName || ""} ${user.lastName || ""}`.trim()
+          ? `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
           : "Unknown",
         payeeEmail: user?.email || "",
         taxYear,
@@ -692,9 +684,9 @@ export class StripeService {
           .from(taxForms)
           .where(
             and(
-              eq(taxForms.userId, userId),
-              eq(taxForms.taxYear, taxYear),
-              eq(taxForms.formType, "1099-K"),
+              eq(taxForms?.userId, userId),
+              eq(taxForms?.taxYear, taxYear),
+              eq(taxForms?.formType, "1099-K"),
             ),
           )
           .limit(1);
@@ -703,18 +695,18 @@ export class StripeService {
           await db
             .update(taxForms)
             .set({
-              totalEarningsCents: Math.round(totalGross * 100),
+              totalEarningsCents: Math?.round(totalGross * 100),
               formData,
               status: "generated",
               generatedAt: new Date(),
             })
-            .where(eq(taxForms.id, existingForm.id));
+            .where(eq(taxForms?.id, existingForm?.id));
         } else {
-          await db.insert(taxForms).values({
+          await db?.insert(taxForms).values({
             userId,
             formType: "1099-K",
             taxYear,
-            totalEarningsCents: Math.round(totalGross * 100),
+            totalEarningsCents: Math?.round(totalGross * 100),
             formData,
             status: "generated",
             generatedAt: new Date(),
@@ -724,10 +716,10 @@ export class StripeService {
 
       return formData;
     } catch (error) {
-      logger.warn({ err: error }, "Error generating tax form data:");
+      logger?.warn({ err: error }, "Error generating tax form data:");
       throw error;
     }
   }
 }
 
-export const stripeService = new StripeService();
+export const _stripeService = new StripeService();

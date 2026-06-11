@@ -1,6 +1,6 @@
 import { storage } from "../storage";
 import type { InsertLogEvent, LogEvent } from "@shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 type LogLevel = "debug" | "info" | "warn" | "error" | "critical";
 
@@ -32,7 +32,7 @@ export class LoggingService {
       stackTrace: stackTrace || null,
     };
 
-    return storage.createLogEvent(logData);
+    return storage?.createLogEvent(logData);
   }
 
   async logDebug(
@@ -41,7 +41,7 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    return this.log("debug", service, message, context, userId);
+    return this?.log("debug", service, message, context, userId);
   }
 
   async logInfo(
@@ -50,7 +50,7 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    return this.log("info", service, message, context, userId);
+    return this?.log("info", service, message, context, userId);
   }
 
   async logWarn(
@@ -59,7 +59,7 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    return this.log("warn", service, message, context, userId);
+    return this?.log("warn", service, message, context, userId);
   }
 
   async logError(
@@ -69,15 +69,15 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    const stackTrace =
-      error?.stack || (error instanceof Error ? error.stack : undefined);
-    const errorContext = {
+    const _stackTrace =
+      error?.stack || (error instanceof Error ? error?.stack : undefined);
+    const _errorContext = {
       ...context,
       errorMessage: error?.message,
       errorName: error?.name,
     };
 
-    return this.log(
+    return this?.log(
       "error",
       service,
       message,
@@ -94,15 +94,15 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    const stackTrace =
-      error?.stack || (error instanceof Error ? error.stack : undefined);
-    const errorContext = {
+    const _stackTrace =
+      error?.stack || (error instanceof Error ? error?.stack : undefined);
+    const _errorContext = {
       ...context,
       errorMessage: error?.message,
       errorName: error?.name,
     };
 
-    return this.log(
+    return this?.log(
       "critical",
       service,
       message,
@@ -116,16 +116,16 @@ export class LoggingService {
     filters: LogFilters,
     limit: number = 100,
   ): Promise<LogEvent[]> {
-    return storage.queryLogs(filters, limit);
+    return storage?.queryLogs(filters, limit);
   }
 
   async cleanupOldLogs(): Promise<void> {
-    const retentionDate = new Date();
-    retentionDate.setDate(
-      retentionDate.getDate() - LoggingService.LOG_RETENTION_DAYS,
+    const _retentionDate = new Date();
+    retentionDate?.setDate(
+      retentionDate?.getDate() - LoggingService?.LOG_RETENTION_DAYS,
     );
 
-    await storage.queryLogs(
+    await storage?.queryLogs(
       {
         endTime: retentionDate,
       },
@@ -139,24 +139,24 @@ export class LoggingService {
   ): () => void {
     let isActive = true;
 
-    const pollInterval = setInterval(async () => {
+    const _pollInterval = setInterval(async () => {
       if (!isActive) {
         clearInterval(pollInterval);
         return;
       }
 
       try {
-        const logs = await this.queryLogs(
+        const _logs = await this?.queryLogs(
           {
             ...filters,
-            startTime: new Date(Date.now() - 5000),
+            startTime: new Date(Date?.now() - 5000),
           },
           50,
         );
 
-        logs.forEach((log) => callback(log));
+        logs?.forEach((log) => callback(log));
       } catch (error: unknown) {
-        logger.warn({ err: error }, "Error streaming logs:");
+        logger?.warn({ err: error }, "Error streaming logs:");
       }
     }, 2000);
 
@@ -167,10 +167,10 @@ export class LoggingService {
   }
 }
 
-export const loggingService = new LoggingService();
+export const _loggingService = new LoggingService();
 
-export const logDebug = loggingService.logDebug.bind(loggingService);
-export const logInfo = loggingService.logInfo.bind(loggingService);
-export const logWarn = loggingService.logWarn.bind(loggingService);
-export const logError = loggingService.logError.bind(loggingService);
-export const logCritical = loggingService.logCritical.bind(loggingService);
+export const _logDebug = loggingService?.logDebug.bind(loggingService);
+export const _logInfo = loggingService?.logInfo.bind(loggingService);
+export const _logWarn = loggingService?.logWarn.bind(loggingService);
+export const _logError = loggingService?.logError.bind(loggingService);
+export const _logCritical = loggingService?.logCritical.bind(loggingService);

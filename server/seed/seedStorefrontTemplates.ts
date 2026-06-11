@@ -1,9 +1,9 @@
 import { db } from "../db";
 import { storefrontTemplates } from "../../shared/schema";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import { count } from "drizzle-orm";
 
-const TEMPLATES = [
+const _TEMPLATES = [
   {
     name: "Beat Producer Pro",
     slug: "beat-producer-pro",
@@ -139,26 +139,26 @@ export async function seedStorefrontTemplates() {
       .from(storefrontTemplates);
 
     if (existing > 0) {
-      logger.info(
+      logger?.info(
         `Storefront templates already seeded (${existing} found) — skipping.`,
       );
       return;
     }
 
-    await db.insert(storefrontTemplates).values(
-      TEMPLATES.map((t) => ({
-        name: t.name,
-        slug: t.slug,
-        description: t.description,
-        isPremium: t.isPremium,
+    await db?.insert(storefrontTemplates).values(
+      TEMPLATES?.map((t) => ({
+        name: t?.name,
+        slug: t?.slug,
+        description: t?.description,
+        isPremium: t?.isPremium,
         isActive: true,
-        configuration: t.configuration,
+        configuration: t?.configuration,
       })),
     );
 
-    logger.info(`Seeded ${TEMPLATES.length} storefront templates.`);
+    logger?.info(`Seeded ${TEMPLATES?.length} storefront templates.`);
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Failed to seed storefront templates:");
+    logger?.warn({ err: error }, "Failed to seed storefront templates:");
     throw error;
   }
 }

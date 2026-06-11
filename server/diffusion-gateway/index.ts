@@ -6,11 +6,11 @@
  *
  * Responsibilities:
  *   1. Training Time Simulator  — continuous session loop, 1 real min = 1 simulated year
- *   2. Long-Term Memory Sync    — reads/writes memory.json + syncs to PDIM
+ *   2. Long-Term Memory Sync    — reads/writes memory?.json + syncs to PDIM
  *   3. Relay endpoints          — proxies generate/render calls to MaxCore
  *   4. Status endpoints         — /status /ready /health /train/simulator/status
  *
- * Endpoint contract (mirrors api_server_v4.py):
+ * Endpoint contract (mirrors api_server_v4?.py):
  *   GET  /health
  *   GET  /ready
  *   GET  /status
@@ -29,40 +29,40 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const ___filename = fileURLToPath(import?.meta.url);
+const ___dirname = path?.dirname(__filename);
 
-const PORT = parseInt(process.env.VIDEO_DIFFUSION_PORT ?? "8008", 10);
-const MC_URL = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-const MC_KEY = process.env.AI_SERVER_KEY || "";
-const PDIM_URL =
-  process.env.PDIM_BASE_URL || "https://pocketdimensionstorage.replit.app";
-const PDIM_TOKEN =
-  process.env.PDIM_AUTH_TOKEN ||
-  process.env.PDIM_BEARER_TOKEN ||
-  process.env.POCKET_DIMENSION_KEY ||
+const _PORT = parseInt(process?.env.VIDEO_DIFFUSION_PORT ?? "8008", 10);
+const _MC_URL = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
+const _MC_KEY = process?.env.AI_SERVER_KEY || "";
+const _PDIM_URL =
+  process?.env.PDIM_BASE_URL || "https://pocketdimensionstorage?.replit.app";
+const _PDIM_TOKEN =
+  process?.env.PDIM_AUTH_TOKEN ||
+  process?.env.PDIM_BEARER_TOKEN ||
+  process?.env.POCKET_DIMENSION_KEY ||
   "";
-const PDIM_INST =
-  process.env.PDIM_INSTANCE_ID || process.env.REPLIT_BUCKET_ID || "";
+const _PDIM_INST =
+  process?.env.PDIM_INSTANCE_ID || process?.env.REPLIT_BUCKET_ID || "";
 // Max Booster internal URL — used to trigger an immediate weight sync after each session
-const APP_PORT = parseInt(process.env.PORT ?? "5000", 10);
-const APP_URL = `http://127.0.0.1:${APP_PORT}`;
-const APP_SECRET = process.env.BOOSTERSTATE_SECRET || "";
+const _APP_PORT = parseInt(process?.env.PORT ?? "5000", 10);
+const _APP_URL = `http://127?.0.0?.1:${APP_PORT}`;
+const _APP_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
 
-const DIFFUSION_DIR = path.join(__dirname, "..", "services", "diffusion");
-const TRAINING_STATE = path.join(DIFFUSION_DIR, "training_state.json");
-const MEMORY_PATH = path.join(DIFFUSION_DIR, "memory.json");
+const _DIFFUSION_DIR = path?.join(__dirname, "..", "services", "diffusion");
+const _TRAINING_STATE = path?.join(DIFFUSION_DIR, "training_state?.json");
+const _MEMORY_PATH = path?.join(DIFFUSION_DIR, "memory?.json");
 
-// ── Constants (from time_simulator.py) ────────────────────────────────────────
+// ── Constants (from time_simulator?.py) ────────────────────────────────────────
 
-const SIMULATED_YEARS_PER_WALL_MINUTE = 1.0;
-const CPU_STEPS_PER_SEC = 4.5;
-const YEAR_EQUIV_STEPS_PER_MINUTE = Math.floor(
-  CPU_STEPS_PER_SEC * 365.25 * 24 * 3600,
+const _SIMULATED_YEARS_PER_WALL_MINUTE = 1?.0;
+const _CPU_STEPS_PER_SEC = 4?.5;
+const _YEAR_EQUIV_STEPS_PER_MINUTE = Math?.floor(
+  CPU_STEPS_PER_SEC * 365?.25 * 24 * 3600,
 );
-const SESSION_SIMULATED_YRS = 10;
-const SESSION_DURATION_MS = 10 * 60 * 1000; // 10 min per session
-const SESSION_PAUSE_MS = 1_000;
+const _SESSION_SIMULATED_YRS = 10;
+const _SESSION_DURATION_MS = 10 * 60 * 1000; // 10 min per session
+const _SESSION_PAUSE_MS = 1_000;
 
 // ── State types ────────────────────────────────────────────────────────────────
 
@@ -133,17 +133,17 @@ interface SimulatorStatus {
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function fmtYears(years: number): string {
-  if (years < 1.0 / 365.25) {
-    return `${(years * 365.25 * 24).toFixed(1)} hours`;
+  if (years < 1?.0 / 365?.25) {
+    return `${(years * 365?.25 * 24).toFixed(1)} hours`;
   }
-  if (years < 1.0 / 12) {
-    return `${(years * 365.25).toFixed(1)} days`;
+  if (years < 1?.0 / 12) {
+    return `${(years * 365?.25).toFixed(1)} days`;
   }
-  if (years < 1.0) {
+  if (years < 1?.0) {
     return `${(years * 12).toFixed(1)} months`;
   }
-  const whole = Math.floor(years);
-  const days = Math.round((years - whole) * 365.25);
+  const _whole = Math?.floor(years);
+  const _days = Math?.round((years - whole) * 365?.25);
   return days === 0
     ? `${whole} year${whole !== 1 ? "s" : ""}`
     : `${whole} yr${whole !== 1 ? "s" : ""}, ${days} days`;
@@ -151,8 +151,8 @@ function fmtYears(years: number): string {
 
 function loadJson<T>(filePath: string, fallback: T): T {
   try {
-    if (fs.existsSync(filePath)) {
-      return JSON.parse(fs.readFileSync(filePath, "utf-8")) as T;
+    if (fs?.existsSync(filePath)) {
+      return JSON?.parse(fs?.readFileSync(filePath, "utf-8")) as T;
     }
   } catch {
     /* ignore */
@@ -162,31 +162,31 @@ function loadJson<T>(filePath: string, fallback: T): T {
 
 function saveJson(filePath: string, data: unknown): void {
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data), "utf-8");
+    fs?.writeFileSync(filePath, JSON?.stringify(data), "utf-8");
   } catch (e) {
-    console.error(`[DiffGateway] Failed to write ${filePath}:`, e);
+    console?.error(`[DiffGateway] Failed to write ${filePath}:`, e);
   }
 }
 
 // ── Simulator state ────────────────────────────────────────────────────────────
 
-const SERVER_START = Date.now();
+const _SERVER_START = Date?.now();
 
 const defaultTrainingState: TrainingState = {
   schema_version: 2,
-  total_simulated_years: 24.7343,
+  total_simulated_years: 24?.7343,
   total_simulated_experience: "24 yrs, 268 days",
   trained: false,
   training_phase: "warmup",
   model_architecture: "DiT-24 + VideoVAE3D + SR-UNet",
-  simulated_years_per_minute: 1.0,
+  simulated_years_per_minute: 1?.0,
   total_sessions: 15,
   total_frames_seen: 10_284_320,
   total_burst_steps: 61_705_920,
   total_replay_steps: 128_456_800,
   total_interp_steps: 20_568_640,
   avg_loss_final: null,
-  best_loss: 0.0387,
+  best_loss: 0?.0387,
   scenes_mastered: [
     "neon_tunnel",
     "galaxy_spiral",
@@ -206,9 +206,9 @@ const defaultTrainingState: TrainingState = {
   ],
   year_equiv_engine: {
     ye_steps_accumulated: 59_772_438_000,
-    burst_year_weight: 6.0,
-    replay_year_weight: 12.0,
-    interp_year_weight: 3.0,
+    burst_year_weight: 6?.0,
+    replay_year_weight: 12?.0,
+    interp_year_weight: 3?.0,
     description: "1 real minute = 1 simulated year of training experience",
   },
   last_updated: "2026-05-03T20:02:30Z",
@@ -221,20 +221,20 @@ let mState = loadJson<MemoryState>(MEMORY_PATH, {
     version: 3,
     total_sessions: 15,
     total_steps: 0,
-    global_best_loss: 0.0387,
+    global_best_loss: 0?.0387,
     scene_stats: {},
     session_log: [],
   },
   replay_buffer: [],
-  saved_at: Math.floor(Date.now() / 1000),
+  saved_at: Math?.floor(Date?.now() / 1000),
 });
 
 // Live session tracker
-const sim = {
+const _sim = {
   running: false,
-  sessionNum: tState.total_sessions,
-  sessionLabel: `continuous_${String(tState.total_sessions).padStart(5, "0")}_p1`,
-  sessionStartTs: Date.now(),
+  sessionNum: tState?.total_sessions,
+  sessionLabel: `continuous_${String(tState?.total_sessions).padStart(5, "0")}_p1`,
+  sessionStartTs: Date?.now(),
   progress: 0,
   realSteps: 0,
   effectiveSteps: 0,
@@ -250,22 +250,22 @@ const sim = {
 // ── Year-equiv engine ──────────────────────────────────────────────────────────
 
 function yeTarget(elapsedRealS: number): number {
-  return Math.floor(YEAR_EQUIV_STEPS_PER_MINUTE * (elapsedRealS / 60));
+  return Math?.floor(YEAR_EQUIV_STEPS_PER_MINUTE * (elapsedRealS / 60));
 }
 
 function yeProgress(elapsedRealS: number) {
-  const target = yeTarget(elapsedRealS);
-  const done = sim.yeStepsDone;
-  const deficit = Math.max(0, target - done);
-  const pct = target > 0 ? (done / target) * 100 : 0;
+  const _target = yeTarget(elapsedRealS);
+  const _done = sim?.yeStepsDone;
+  const _deficit = Math?.max(0, target - done);
+  const _pct = target > 0 ? (done / target) * 100 : 0;
   return {
     ye_steps_done: done,
     ye_steps_target: target,
     ye_deficit: deficit,
-    ye_progress_pct: Math.round(pct * 10000) / 10000,
-    ye_replay_cycles_needed: Math.min(500, Math.ceil(deficit / (16 * 12))),
+    ye_progress_pct: Math?.round(pct * 10000) / 10000,
+    ye_replay_cycles_needed: Math?.min(500, Math?.ceil(deficit / (16 * 12))),
     ye_steps_per_minute: YEAR_EQUIV_STEPS_PER_MINUTE,
-    elapsed_min: Math.round((elapsedRealS / 60) * 1000) / 1000,
+    elapsed_min: Math?.round((elapsedRealS / 60) * 1000) / 1000,
   };
 }
 
@@ -277,49 +277,49 @@ async function sleep(ms: number) {
 
 function tickSession(elapsedMs: number) {
   // Simulate realistic training ticks — burst + interp + replay steps
-  const dt = elapsedMs / 1000; // seconds
-  const burstStepsPerSec = CPU_STEPS_PER_SEC;
+  const _dt = elapsedMs / 1000; // seconds
+  const _burstStepsPerSec = CPU_STEPS_PER_SEC;
 
   // Accumulate simulated steps
-  const newRealSteps = Math.floor(dt * burstStepsPerSec);
-  const burstVariants = 6;
-  const newYeSteps = newRealSteps * burstVariants * 6; // burst weight
+  const _newRealSteps = Math?.floor(dt * burstStepsPerSec);
+  const _burstVariants = 6;
+  const _newYeSteps = newRealSteps * burstVariants * 6; // burst weight
 
-  sim.realSteps += newRealSteps;
-  sim.effectiveSteps += newRealSteps * burstVariants;
-  sim.burstCalls += newRealSteps;
-  sim.yeStepsDone += newYeSteps;
+  sim?.realSteps += newRealSteps;
+  sim?.effectiveSteps += newRealSteps * burstVariants;
+  sim?.burstCalls += newRealSteps;
+  sim?.yeStepsDone += newYeSteps;
 
   // Interp step credits every ~4 real steps
-  const interpNew = Math.floor(sim.realSteps / 4) - sim.interpGenerated;
+  const _interpNew = Math?.floor(sim?.realSteps / 4) - sim?.interpGenerated;
   if (interpNew > 0) {
-    sim.interpGenerated += interpNew;
-    sim.yeStepsDone += interpNew * 3; // interp weight
+    sim?.interpGenerated += interpNew;
+    sim?.yeStepsDone += interpNew * 3; // interp weight
   }
 }
 
 async function runSession(sessionNum: number, nSamples: number) {
-  const phase = Math.min(3, Math.floor((sessionNum - 1) / 10) + 1);
-  const label = `continuous_${String(sessionNum).padStart(5, "0")}_p${phase}`;
+  const _phase = Math?.min(3, Math?.floor((sessionNum - 1) / 10) + 1);
+  const _label = `continuous_${String(sessionNum).padStart(5, "0")}_p${phase}`;
 
-  sim.running = true;
-  sim.sessionNum = sessionNum;
-  sim.sessionLabel = label;
-  sim.sessionStartTs = Date.now();
-  sim.progress = 0;
-  sim.realSteps = 0;
-  sim.effectiveSteps = 0;
-  sim.burstCalls = 0;
-  sim.interpGenerated = 0;
-  sim.yeStepsDone = 0;
-  sim.lastLoss = null;
-  sim.mode = "continuous";
+  sim?.running = true;
+  sim?.sessionNum = sessionNum;
+  sim?.sessionLabel = label;
+  sim?.sessionStartTs = Date?.now();
+  sim?.progress = 0;
+  sim?.realSteps = 0;
+  sim?.effectiveSteps = 0;
+  sim?.burstCalls = 0;
+  sim?.interpGenerated = 0;
+  sim?.yeStepsDone = 0;
+  sim?.lastLoss = null;
+  sim?.mode = "continuous";
 
-  console.log(
+  console?.log(
     `[DiffGateway] Session ${sessionNum} (phase ${phase}) started — target ${nSamples} samples ≈10 min = ${SESSION_SIMULATED_YRS} simulated years`,
   );
 
-  const TICK_MS = 1_000;
+  const _TICK_MS = 1_000;
   let elapsed = 0;
 
   while (elapsed < SESSION_DURATION_MS) {
@@ -328,55 +328,55 @@ async function runSession(sessionNum: number, nSamples: number) {
 
     tickSession(TICK_MS);
 
-    sim.progress = Math.min(elapsed / SESSION_DURATION_MS, 1.0);
+    sim?.progress = Math?.min(elapsed / SESSION_DURATION_MS, 1?.0);
 
-    // Simulate gradually improving loss: starts ~0.4 → converges ~0.05
-    const lossNoise = (Math.random() - 0.5) * 0.02;
-    const lossBase = 0.05 + 0.35 * Math.exp(-4 * sim.progress);
-    sim.lastLoss = Math.max(0.02, lossBase + lossNoise);
+    // Simulate gradually improving loss: starts ~0?.4 → converges ~0?.05
+    const _lossNoise = (Math?.random() - 0?.5) * 0?.02;
+    const _lossBase = 0?.05 + 0?.35 * Math?.exp(-4 * sim?.progress);
+    sim?.lastLoss = Math?.max(0?.02, lossBase + lossNoise);
 
-    if (sim.lrBoosts < 3 && elapsed % 60_000 < TICK_MS) {
-      sim.lrBoosts++;
+    if (sim?.lrBoosts < 3 && elapsed % 60_000 < TICK_MS) {
+      sim?.lrBoosts++;
     }
   }
 
   // Session complete — update persistent state
-  const simYears =
+  const _simYears =
     SIMULATED_YEARS_PER_WALL_MINUTE * (SESSION_DURATION_MS / 1000 / 60);
-  tState.total_simulated_years =
-    Math.round((tState.total_simulated_years + simYears) * 10000) / 10000;
-  tState.total_simulated_experience = fmtYears(tState.total_simulated_years);
-  tState.total_sessions = sessionNum;
-  tState.total_frames_seen += nSamples;
-  tState.total_burst_steps += sim.burstCalls * 6;
-  tState.total_replay_steps += Math.floor(sim.realSteps * 0.35);
-  tState.total_interp_steps += sim.interpGenerated;
-  tState.last_updated = new Date().toISOString();
-  if (sim.lastLoss !== null && sim.lastLoss < tState.best_loss) {
-    tState.best_loss = Math.round(sim.lastLoss * 10000) / 10000;
-    tState.trained = true;
+  tState?.total_simulated_years =
+    Math?.round((tState?.total_simulated_years + simYears) * 10000) / 10000;
+  tState?.total_simulated_experience = fmtYears(tState?.total_simulated_years);
+  tState?.total_sessions = sessionNum;
+  tState?.total_frames_seen += nSamples;
+  tState?.total_burst_steps += sim?.burstCalls * 6;
+  tState?.total_replay_steps += Math?.floor(sim?.realSteps * 0?.35);
+  tState?.total_interp_steps += sim?.interpGenerated;
+  tState?.last_updated = new Date().toISOString();
+  if (sim?.lastLoss !== null && sim?.lastLoss < tState?.best_loss) {
+    tState?.best_loss = Math?.round(sim?.lastLoss * 10000) / 10000;
+    tState?.trained = true;
   }
-  tState.year_equiv_engine = {
-    ...tState.year_equiv_engine,
+  tState?.year_equiv_engine = {
+    ...tState?.year_equiv_engine,
     ye_steps_accumulated:
-      (tState.year_equiv_engine.ye_steps_accumulated as number) +
-      sim.yeStepsDone,
+      (tState?.year_equiv_engine.ye_steps_accumulated as number) +
+      sim?.yeStepsDone,
   };
 
   // Update memory session log
-  mState.state.total_sessions = sessionNum;
-  mState.state.session_log.push({
+  mState?.state.total_sessions = sessionNum;
+  mState?.state.session_log?.push({
     id: sessionNum,
-    ts: Math.floor(Date.now() / 1000),
+    ts: Math?.floor(Date?.now() / 1000),
     epochs: 1,
     samples: nSamples,
-    final_loss: sim.lastLoss ?? 0,
-    duration_min: Math.round((SESSION_DURATION_MS / 60_000) * 10) / 10,
+    final_loss: sim?.lastLoss ?? 0,
+    duration_min: Math?.round((SESSION_DURATION_MS / 60_000) * 10) / 10,
     simulated_years: simYears,
     version: 4,
   });
-  mState.state.session_log = mState.state.session_log.slice(-50);
-  mState.saved_at = Math.floor(Date.now() / 1000);
+  mState?.state.session_log = mState?.state.session_log?.slice(-50);
+  mState?.saved_at = Math?.floor(Date?.now() / 1000);
 
   // Persist to disk
   saveJson(TRAINING_STATE, tState);
@@ -388,31 +388,31 @@ async function runSession(sessionNum: number, nSamples: number) {
   // Notify Max Booster directly — triggers an immediate weight sync + calibration
   // so the scoring system uses the freshest weights without waiting for the
   // 10-minute periodic sync timer to fire.
-  notifyMaxBooster(label, simYears, tState.total_sessions);
+  notifyMaxBooster(label, simYears, tState?.total_sessions);
 
   // Sync memory snapshot to PDIM (fire-and-forget)
   syncMemoryToPdim();
 
-  sim.running = false;
-  sim.mode = "idle";
-  sim.progress = 1.0;
+  sim?.running = false;
+  sim?.mode = "idle";
+  sim?.progress = 1?.0;
 
-  console.log(
-    `[DiffGateway] Session ${sessionNum} complete — loss=${sim.lastLoss?.toFixed(4)} simulated_years+=${simYears} total=${tState.total_simulated_years}`,
+  console?.log(
+    `[DiffGateway] Session ${sessionNum} complete — loss=${sim?.lastLoss?.toFixed(4)} simulated_years+=${simYears} total=${tState?.total_simulated_years}`,
   );
 }
 
 async function continuousLoop() {
   // Brief warmup so the main app starts fast
   await sleep(5_000);
-  console.log("[DiffGateway] Continuous training loop starting");
+  console?.log("[DiffGateway] Continuous training loop starting");
 
-  let sessionNum = tState.total_sessions;
+  let sessionNum = tState?.total_sessions;
   let backoff = 10_000;
 
   while (true) {
     // Yield if a manual session is pending
-    if (sim.manualPending) {
+    if (sim?.manualPending) {
       await sleep(1_000);
       continue;
     }
@@ -423,11 +423,11 @@ async function continuousLoop() {
       backoff = 10_000;
       await sleep(SESSION_PAUSE_MS);
     } catch (err) {
-      console.error(`[DiffGateway] Session ${sessionNum} error:`, err);
-      sim.running = false;
-      sim.mode = "idle";
+      console?.error(`[DiffGateway] Session ${sessionNum} error:`, err);
+      sim?.running = false;
+      sim?.mode = "idle";
       await sleep(backoff);
-      backoff = Math.min(backoff * 2, 120_000);
+      backoff = Math?.min(backoff * 2, 120_000);
     }
   }
 }
@@ -436,7 +436,7 @@ async function continuousLoop() {
 
 function notifyMaxCore(label: string, simYears: number) {
   if (!MC_URL || !MC_KEY) return;
-  const payload = JSON.stringify({
+  const _payload = JSON?.stringify({
     source: "maxcore_gateway",
     session_label: label,
     simulated_years: simYears,
@@ -450,7 +450,7 @@ function notifyMaxCore(label: string, simYears: number) {
       "X-API-Key": MC_KEY,
     },
     body: payload,
-    signal: AbortSignal.timeout(8_000),
+    signal: AbortSignal?.timeout(8_000),
   }).catch(() => {
     /* fire-and-forget */
   });
@@ -464,7 +464,7 @@ function notifyMaxBooster(
   totalSessions: number,
 ) {
   if (!APP_SECRET) return;
-  const payload = JSON.stringify({
+  const _payload = JSON?.stringify({
     session_label: label,
     simulated_years: simYears,
     total_sessions: totalSessions,
@@ -476,7 +476,7 @@ function notifyMaxBooster(
       Authorization: `Bearer ${APP_SECRET}`,
     },
     body: payload,
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal?.timeout(10_000),
   }).catch(() => {
     /* fire-and-forget — periodic sync is the fallback */
   });
@@ -488,18 +488,18 @@ let lastPdimSync = 0;
 
 async function syncMemoryToPdim() {
   if (!PDIM_URL || !PDIM_TOKEN || !PDIM_INST) return;
-  const now = Date.now();
+  const _now = Date?.now();
   if (now - lastPdimSync < 60_000) return; // rate limit: once per minute
   lastPdimSync = now;
 
-  const snapshot = {
-    total_sessions: tState.total_sessions,
-    total_simulated_years: tState.total_simulated_years,
-    total_simulated_experience: tState.total_simulated_experience,
-    best_loss: tState.best_loss,
-    trained: tState.trained,
-    memory_sessions: mState.state.total_sessions,
-    replay_buffer_size: mState.replay_buffer.length,
+  const _snapshot = {
+    total_sessions: tState?.total_sessions,
+    total_simulated_years: tState?.total_simulated_years,
+    total_simulated_experience: tState?.total_simulated_experience,
+    best_loss: tState?.best_loss,
+    trained: tState?.trained,
+    memory_sessions: mState?.state.total_sessions,
+    replay_buffer_size: mState?.replay_buffer.length,
     synced_at: new Date().toISOString(),
   };
 
@@ -510,95 +510,95 @@ async function syncMemoryToPdim() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${PDIM_TOKEN}`,
       },
-      body: JSON.stringify({
+      body: JSON?.stringify({
         command: "SET",
-        args: ["maxcore:gateway:memory_snapshot", JSON.stringify(snapshot)],
+        args: ["maxcore:gateway:memory_snapshot", JSON?.stringify(snapshot)],
       }),
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal?.timeout(8_000),
     });
-    console.log("[DiffGateway] Memory snapshot synced to PDIM");
+    console?.log("[DiffGateway] Memory snapshot synced to PDIM");
   } catch {
-    console.warn("[DiffGateway] PDIM memory sync skipped (PDIM unreachable)");
+    console?.warn("[DiffGateway] PDIM memory sync skipped (PDIM unreachable)");
   }
 }
 
 // ── Express server ─────────────────────────────────────────────────────────────
 
-const app = express();
-app.use(express.json({ limit: "50mb" }));
-app.use((req, _res, next) => {
-  if (req.path !== "/health" && req.path !== "/ready") {
-    console.log(`[DiffGateway] ${req.method} ${req.path}`);
+const _app = express();
+app?.use(express?.json({ limit: "50mb" }));
+app?.use((req, _res, next) => {
+  if (req?.path !== "/health" && req?.path !== "/ready") {
+    console?.log(`[DiffGateway] ${req?.method} ${req?.path}`);
   }
   next();
 });
 
 // GET /health
-app.get("/health", (_req: Request, res: Response) => {
-  res.json({
+app?.get("/health", (_req: Request, res: Response) => {
+  res?.json({
     status: "healthy",
     model_loaded: true,
-    uptime_seconds: Math.floor((Date.now() - SERVER_START) / 1000),
-    version: "4.0.0",
+    uptime_seconds: Math?.floor((Date?.now() - SERVER_START) / 1000),
+    version: "4?.0.0",
     gateway: "maxcore-diffusion-gateway",
     port: PORT,
   });
 });
 
 // GET /ready
-app.get("/ready", (_req: Request, res: Response) => {
-  res.json({
+app?.get("/ready", (_req: Request, res: Response) => {
+  res?.json({
     ready: true,
-    model_trained: tState.trained,
-    total_sessions: tState.total_sessions,
-    training_phase: tState.training_phase,
+    model_trained: tState?.trained,
+    total_sessions: tState?.total_sessions,
+    training_phase: tState?.training_phase,
   });
 });
 
 // GET /status
-app.get("/status", (_req: Request, res: Response) => {
-  const elapsedS = sim.running ? (Date.now() - sim.sessionStartTs) / 1000 : 0;
-  const yeProg = yeProgress(elapsedS);
+app?.get("/status", (_req: Request, res: Response) => {
+  const _elapsedS = sim?.running ? (Date?.now() - sim?.sessionStartTs) / 1000 : 0;
+  const _yeProg = yeProgress(elapsedS);
 
-  res.json({
+  res?.json({
     gateway: "maxcore-diffusion-v4",
-    version: "4.0.0",
-    uptime_seconds: Math.floor((Date.now() - SERVER_START) / 1000),
+    version: "4?.0.0",
+    uptime_seconds: Math?.floor((Date?.now() - SERVER_START) / 1000),
     model_ready: true,
-    model_trained: tState.trained,
-    training_phase: tState.training_phase,
-    model_architecture: tState.model_architecture,
-    total_simulated_years: tState.total_simulated_years,
-    total_simulated_experience: tState.total_simulated_experience,
-    total_sessions: tState.total_sessions,
-    total_frames_seen: tState.total_frames_seen,
-    total_burst_steps: tState.total_burst_steps,
-    total_replay_steps: tState.total_replay_steps,
-    total_interp_steps: tState.total_interp_steps,
-    best_loss: tState.best_loss,
-    last_updated: tState.last_updated,
-    scenes_mastered: tState.scenes_mastered,
-    year_equiv_engine: tState.year_equiv_engine,
+    model_trained: tState?.trained,
+    training_phase: tState?.training_phase,
+    model_architecture: tState?.model_architecture,
+    total_simulated_years: tState?.total_simulated_years,
+    total_simulated_experience: tState?.total_simulated_experience,
+    total_sessions: tState?.total_sessions,
+    total_frames_seen: tState?.total_frames_seen,
+    total_burst_steps: tState?.total_burst_steps,
+    total_replay_steps: tState?.total_replay_steps,
+    total_interp_steps: tState?.total_interp_steps,
+    best_loss: tState?.best_loss,
+    last_updated: tState?.last_updated,
+    scenes_mastered: tState?.scenes_mastered,
+    year_equiv_engine: tState?.year_equiv_engine,
     session: {
-      running: sim.running,
-      mode: sim.mode,
-      session_num: sim.sessionNum,
-      session_label: sim.sessionLabel,
-      progress: Math.round(sim.progress * 1000) / 1000,
-      last_loss: sim.lastLoss,
+      running: sim?.running,
+      mode: sim?.mode,
+      session_num: sim?.sessionNum,
+      session_label: sim?.sessionLabel,
+      progress: Math?.round(sim?.progress * 1000) / 1000,
+      last_loss: sim?.lastLoss,
       ...yeProg,
     },
     memory: {
-      total_sessions: mState.state.total_sessions,
-      total_steps: mState.state.total_steps,
-      global_best_loss: mState.state.global_best_loss,
-      scenes_tracked: Object.keys(mState.state.scene_stats).length,
-      replay_buffer: mState.replay_buffer.length,
+      total_sessions: mState?.state.total_sessions,
+      total_steps: mState?.state.total_steps,
+      global_best_loss: mState?.state.global_best_loss,
+      scenes_tracked: Object?.keys(mState?.state.scene_stats).length,
+      replay_buffer: mState?.replay_buffer.length,
       last_session_loss:
-        mState.state.session_log.length > 0
+        mState?.state.session_log?.length > 0
           ? (
-              mState.state.session_log[
-                mState.state.session_log.length - 1
+              mState?.state.session_log[
+                mState?.state.session_log?.length - 1
               ] as any
             ).final_loss
           : null,
@@ -612,8 +612,8 @@ app.get("/status", (_req: Request, res: Response) => {
 });
 
 // GET /gpu/status
-app.get("/gpu/status", (_req: Request, res: Response) => {
-  res.json({
+app?.get("/gpu/status", (_req: Request, res: Response) => {
+  res?.json({
     backend: "node-relay",
     device: "cpu",
     cuda_available: false,
@@ -626,65 +626,65 @@ app.get("/gpu/status", (_req: Request, res: Response) => {
 });
 
 // GET /train/status
-app.get("/train/status", (_req: Request, res: Response) => {
-  const elapsedS = sim.running ? (Date.now() - sim.sessionStartTs) / 1000 : 0;
-  res.json({
-    running: sim.running,
-    progress: Math.round(sim.progress * 1000) / 1000,
-    last_loss: sim.lastLoss,
+app?.get("/train/status", (_req: Request, res: Response) => {
+  const _elapsedS = sim?.running ? (Date?.now() - sim?.sessionStartTs) / 1000 : 0;
+  res?.json({
+    running: sim?.running,
+    progress: Math?.round(sim?.progress * 1000) / 1000,
+    last_loss: sim?.lastLoss,
     last_session:
-      mState.state.session_log.length > 0
-        ? mState.state.session_log[mState.state.session_log.length - 1]
+      mState?.state.session_log?.length > 0
+        ? mState?.state.session_log[mState?.state.session_log?.length - 1]
         : null,
-    total_sessions: tState.total_sessions,
-    mode: sim.mode,
-    session_label: sim.sessionLabel,
-    elapsed_s: Math.floor(elapsedS),
+    total_sessions: tState?.total_sessions,
+    mode: sim?.mode,
+    session_label: sim?.sessionLabel,
+    elapsed_s: Math?.floor(elapsedS),
   });
 });
 
 // GET /train/simulator/status
-app.get("/train/simulator/status", (_req: Request, res: Response) => {
-  const elapsedS = sim.running ? (Date.now() - sim.sessionStartTs) / 1000 : 0;
-  const elapsedMin = elapsedS / 60;
-  const simYearsThis = SIMULATED_YEARS_PER_WALL_MINUTE * elapsedMin;
-  const yeProg = yeProgress(elapsedS);
+app?.get("/train/simulator/status", (_req: Request, res: Response) => {
+  const _elapsedS = sim?.running ? (Date?.now() - sim?.sessionStartTs) / 1000 : 0;
+  const _elapsedMin = elapsedS / 60;
+  const _simYearsThis = SIMULATED_YEARS_PER_WALL_MINUTE * elapsedMin;
+  const _yeProg = yeProgress(elapsedS);
 
   const status: SimulatorStatus = {
-    running: sim.running,
-    session_num: sim.sessionNum,
-    mode: sim.mode,
-    session_label: sim.sessionLabel,
-    progress: Math.round(sim.progress * 1000) / 1000,
-    elapsed_real_s: Math.floor(elapsedS),
-    elapsed_min: Math.round(elapsedMin * 100) / 100,
-    simulated_years_this_session: Math.round(simYearsThis * 10000) / 10000,
-    total_simulated_years: tState.total_simulated_years,
-    total_simulated_experience: tState.total_simulated_experience,
-    ye_steps_done: yeProg.ye_steps_done,
-    ye_steps_target: yeProg.ye_steps_target,
-    ye_deficit: yeProg.ye_deficit,
-    ye_progress_pct: yeProg.ye_progress_pct,
-    real_steps: sim.realSteps,
-    effective_steps: sim.effectiveSteps,
-    burst_calls: sim.burstCalls,
-    interp_generated: sim.interpGenerated,
-    lr_boosts: sim.lrBoosts,
-    last_loss: sim.lastLoss,
-    best_loss: tState.best_loss,
-    total_sessions: tState.total_sessions,
-    replay_buffer_size: mState.replay_buffer.length,
-    scenes_mastered: tState.scenes_mastered,
-    phase: Math.min(3, Math.floor((sim.sessionNum - 1) / 10) + 1),
-    session_start_ts: sim.sessionStartTs,
-    uptime_s: Math.floor((Date.now() - SERVER_START) / 1000),
+    running: sim?.running,
+    session_num: sim?.sessionNum,
+    mode: sim?.mode,
+    session_label: sim?.sessionLabel,
+    progress: Math?.round(sim?.progress * 1000) / 1000,
+    elapsed_real_s: Math?.floor(elapsedS),
+    elapsed_min: Math?.round(elapsedMin * 100) / 100,
+    simulated_years_this_session: Math?.round(simYearsThis * 10000) / 10000,
+    total_simulated_years: tState?.total_simulated_years,
+    total_simulated_experience: tState?.total_simulated_experience,
+    ye_steps_done: yeProg?.ye_steps_done,
+    ye_steps_target: yeProg?.ye_steps_target,
+    ye_deficit: yeProg?.ye_deficit,
+    ye_progress_pct: yeProg?.ye_progress_pct,
+    real_steps: sim?.realSteps,
+    effective_steps: sim?.effectiveSteps,
+    burst_calls: sim?.burstCalls,
+    interp_generated: sim?.interpGenerated,
+    lr_boosts: sim?.lrBoosts,
+    last_loss: sim?.lastLoss,
+    best_loss: tState?.best_loss,
+    total_sessions: tState?.total_sessions,
+    replay_buffer_size: mState?.replay_buffer.length,
+    scenes_mastered: tState?.scenes_mastered,
+    phase: Math?.min(3, Math?.floor((sim?.sessionNum - 1) / 10) + 1),
+    session_start_ts: sim?.sessionStartTs,
+    uptime_s: Math?.floor((Date?.now() - SERVER_START) / 1000),
   };
-  res.json(status);
+  res?.json(status);
 });
 
 // POST /train — trigger a manual training session
-app.post("/train", async (req: Request, res: Response) => {
-  if (sim.running && sim.mode === "manual") {
+app?.post("/train", async (req: Request, res: Response) => {
+  if (sim?.running && sim?.mode === "manual") {
     return res
       .status(409)
       .json({ error: "Manual training session already running" });
@@ -693,11 +693,11 @@ app.post("/train", async (req: Request, res: Response) => {
     n_epochs = 1,
     n_samples = 200,
     session_label = "api_triggered",
-  } = req.body ?? {};
-  sim.manualPending = true;
-  sim.mode = "manual";
+  } = req?.body ?? {};
+  sim?.manualPending = true;
+  sim?.mode = "manual";
 
-  res.json({
+  res?.json({
     ok: true,
     message: "Manual training session queued",
     session_label,
@@ -709,38 +709,38 @@ app.post("/train", async (req: Request, res: Response) => {
   // Run async — yields back to continuous loop after
   (async () => {
     try {
-      await runSession(sim.sessionNum + 1, n_samples);
+      await runSession(sim?.sessionNum + 1, n_samples);
     } finally {
-      sim.manualPending = false;
+      sim?.manualPending = false;
     }
   })();
 });
 
 // POST /generate — relay to MaxCore
-app.post("/generate", async (req: Request, res: Response) => {
+app?.post("/generate", async (req: Request, res: Response) => {
   if (!MC_URL || !MC_KEY) {
     return res
       .status(503)
       .json({ error: "MaxCore remote not configured", relay: false });
   }
   try {
-    const upstream = await fetch(`${MC_URL}/api/generate/video`, {
+    const _upstream = await fetch(`${MC_URL}/api/generate/video`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${MC_KEY}`,
         "X-API-Key": MC_KEY,
       },
-      body: JSON.stringify(req.body),
-      signal: AbortSignal.timeout(60_000),
+      body: JSON?.stringify(req?.body),
+      signal: AbortSignal?.timeout(60_000),
     });
-    if (!upstream.ok) {
+    if (!upstream?.ok) {
       return res
-        .status(upstream.status)
-        .json({ error: "MaxCore upstream error", status: upstream.status });
+        .status(upstream?.status)
+        .json({ error: "MaxCore upstream error", status: upstream?.status });
     }
-    const data = await upstream.json();
-    res.json({
+    const _data = await upstream?.json();
+    res?.json({
       ...data,
       relayed_by: "maxcore-gateway-8008",
       model_version: "v4",
@@ -753,25 +753,25 @@ app.post("/generate", async (req: Request, res: Response) => {
 });
 
 // POST /generate/keyframe — relay single frame to MaxCore
-app.post("/generate/keyframe", async (req: Request, res: Response) => {
+app?.post("/generate/keyframe", async (req: Request, res: Response) => {
   if (!MC_URL || !MC_KEY) {
-    return res.status(503).json({ error: "MaxCore remote not configured" });
+    return res?.status(503).json({ error: "MaxCore remote not configured" });
   }
   try {
-    const upstream = await fetch(`${MC_URL}/api/generate/keyframe`, {
+    const _upstream = await fetch(`${MC_URL}/api/generate/keyframe`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${MC_KEY}`,
         "X-API-Key": MC_KEY,
       },
-      body: JSON.stringify(req.body),
-      signal: AbortSignal.timeout(30_000),
+      body: JSON?.stringify(req?.body),
+      signal: AbortSignal?.timeout(30_000),
     });
-    const data = upstream.ok
-      ? await upstream.json()
-      : { error: "upstream error", status: upstream.status };
-    res.status(upstream.ok ? 200 : upstream.status).json(data);
+    const _data = upstream?.ok
+      ? await upstream?.json()
+      : { error: "upstream error", status: upstream?.status };
+    res?.status(upstream?.ok ? 200 : upstream?.status).json(data);
   } catch (err) {
     res
       .status(502)
@@ -780,43 +780,43 @@ app.post("/generate/keyframe", async (req: Request, res: Response) => {
 });
 
 // POST /memory/sync — force-flush memory state to PDIM
-app.post("/memory/sync", async (_req: Request, res: Response) => {
+app?.post("/memory/sync", async (_req: Request, res: Response) => {
   lastPdimSync = 0; // reset rate limit
   await syncMemoryToPdim();
-  res.json({
+  res?.json({
     ok: true,
     synced_at: new Date().toISOString(),
-    sessions: tState.total_sessions,
+    sessions: tState?.total_sessions,
   });
 });
 
-// POST /memory/flush — persist memory.json to disk immediately
-app.post("/memory/flush", (_req: Request, res: Response) => {
+// POST /memory/flush — persist memory?.json to disk immediately
+app?.post("/memory/flush", (_req: Request, res: Response) => {
   saveJson(MEMORY_PATH, mState);
   saveJson(TRAINING_STATE, tState);
-  res.json({ ok: true, flushed_at: new Date().toISOString() });
+  res?.json({ ok: true, flushed_at: new Date().toISOString() });
 });
 
 // ── Start ──────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(
+app?.listen(PORT, "0?.0.0?.0", () => {
+  console?.log(
     `[DiffGateway] MaxCore Diffusion Gateway listening on port ${PORT}`,
   );
-  console.log(
-    `[DiffGateway] Loaded state: ${tState.total_sessions} sessions, ${tState.total_simulated_years} simulated years`,
+  console?.log(
+    `[DiffGateway] Loaded state: ${tState?.total_sessions} sessions, ${tState?.total_simulated_years} simulated years`,
   );
-  console.log(
-    `[DiffGateway] Memory: ${mState.state.session_log.length} session logs, replay_buffer=${mState.replay_buffer.length}`,
+  console?.log(
+    `[DiffGateway] Memory: ${mState?.state.session_log?.length} session logs, replay_buffer=${mState?.replay_buffer.length}`,
   );
-  console.log(`[DiffGateway] MaxCore remote: ${MC_URL || "(not configured)"}`);
-  console.log(
+  console?.log(`[DiffGateway] MaxCore remote: ${MC_URL || "(not configured)"}`);
+  console?.log(
     `[DiffGateway] PDIM: ${PDIM_INST ? "configured" : "(not configured)"}`,
   );
 
   // Kick off continuous training loop
   continuousLoop().catch((err) =>
-    console.error("[DiffGateway] Loop fatal error:", err),
+    console?.error("[DiffGateway] Loop fatal error:", err),
   );
 
   // Initial PDIM sync after 10s

@@ -20,8 +20,8 @@
  *    the registry only sits BELOW learned data and ABOVE static fallbacks.
  */
 
-import { logger } from "../logger.js";
-import { storageService } from "./storageService.js";
+import { logger } from "../logger?.js";
+import { storageService } from "./storageService?.js";
 
 export type EnhancementCategory =
   | "posting_optimization"
@@ -56,7 +56,7 @@ export const CONSUMED_CATEGORIES: ReadonlySet<EnhancementCategory> =
  *  - content_optimization → `variantCount` / `visualPriority` /
  *    `hashtagStrategy` / `captionLength` / `callToActionStrength` (read by
  *    getContentOptimization, consumed by autopilot content generation and
- *    passed through to advancedSocialAIService.generateAdvancedContent).
+ *    passed through to advancedSocialAIService?.generateAdvancedContent).
  */
 const EFFECTIVE_FIELDS: Partial<
   Record<EnhancementCategory, readonly string[]>
@@ -100,17 +100,17 @@ export interface ApplyResult {
   enhancement?: EvolutionEnhancement;
 }
 
-const HASHTAG_STRATEGIES = [
+const _HASHTAG_STRATEGIES = [
   "trending",
   "niche",
   "branded",
   "balanced",
 ] as const;
-const CAPTION_LENGTHS = ["short", "optimal", "long"] as const;
-const CTA_STRENGTHS = ["low", "medium", "high"] as const;
-const COMPLIANCE_LEVELS = ["standard", "strict"] as const;
-const URGENCIES = ["low", "medium", "high", "critical"] as const;
-const CONTENT_FORMATS = [
+const _CAPTION_LENGTHS = ["short", "optimal", "long"] as const;
+const _CTA_STRENGTHS = ["low", "medium", "high"] as const;
+const _COMPLIANCE_LEVELS = ["standard", "strict"] as const;
+const _URGENCIES = ["low", "medium", "high", "critical"] as const;
+const _CONTENT_FORMATS = [
   "video",
   "carousel",
   "image",
@@ -129,35 +129,35 @@ function oneOf<T extends readonly string[]>(
 }
 
 function clampInt(v: unknown, min: number, max: number): number | undefined {
-  const n = typeof v === "number" ? v : Number(v);
-  if (!Number.isFinite(n)) return undefined;
-  return Math.min(max, Math.max(min, Math.round(n)));
+  const _n = typeof v === "number" ? v : Number(v);
+  if (!Number?.isFinite(n)) return undefined;
+  return Math?.min(max, Math?.max(min, Math?.round(n)));
 }
 
 function sanitizeHours(v: unknown): number[] | undefined {
-  if (!Array.isArray(v)) return undefined;
-  const hours = Array.from(
+  if (!Array?.isArray(v)) return undefined;
+  const _hours = Array?.from(
     new Set(
       v
         .map((h) => clampInt(h, 0, 23))
         .filter((h): h is number => typeof h === "number"),
     ),
   ).slice(0, 6);
-  return hours.length > 0 ? hours : undefined;
+  return hours?.length > 0 ? hours : undefined;
 }
 
 function sanitizeFormats(v: unknown): string[] | undefined {
-  if (!Array.isArray(v)) return undefined;
-  const formats = Array.from(
+  if (!Array?.isArray(v)) return undefined;
+  const _formats = Array?.from(
     new Set(
-      v.map((f) => oneOf(CONTENT_FORMATS, f)).filter((f): f is string => !!f),
+      v?.map((f) => oneOf(CONTENT_FORMATS, f)).filter((f): f is string => !!f),
     ),
-  ).slice(0, CONTENT_FORMATS.length);
-  return formats.length > 0 ? formats : undefined;
+  ).slice(0, CONTENT_FORMATS?.length);
+  return formats?.length > 0 ? formats : undefined;
 }
 
 class EvolutionRegistry {
-  private readonly STORAGE_KEY = "evolution-state/registry.json";
+  private readonly STORAGE_KEY = "evolution-state/registry?.json";
   private readonly REFRESH_TTL_MS = 30_000;
   private readonly MAX_ENTRIES = 200;
 
@@ -166,7 +166,7 @@ class EvolutionRegistry {
   private loadInFlight: Promise<void> | null = null;
 
   isCategoryConsumed(category: EnhancementCategory): boolean {
-    return CONSUMED_CATEGORIES.has(category);
+    return CONSUMED_CATEGORIES?.has(category);
   }
 
   /**
@@ -178,9 +178,9 @@ class EvolutionRegistry {
     category: EnhancementCategory,
     payload: Record<string, unknown>,
   ): boolean {
-    const fields = EFFECTIVE_FIELDS[category];
+    const _fields = EFFECTIVE_FIELDS[category];
     if (!fields) return false;
-    return fields.some((f) => payload[f] !== undefined);
+    return fields?.some((f) => payload[f] !== undefined);
   }
 
   /**
@@ -193,25 +193,25 @@ class EvolutionRegistry {
   ):
     | { ok: true; payload: Record<string, unknown> }
     | { ok: false; reason: string } {
-    const p = raw || {};
+    const _p = raw || {};
     switch (category) {
       case "posting_optimization": {
         const out: Record<string, unknown> = {};
-        if (typeof p.platform === "string")
-          out.platform = p.platform.toLowerCase().slice(0, 40);
-        const hours = sanitizeHours(p.optimalHours);
-        if (hours) out.optimalHours = hours;
-        const formats = sanitizeFormats(p.contentFormatPriority);
-        if (formats) out.contentFormatPriority = formats;
-        const engagement = oneOf(
+        if (typeof p?.platform === "string")
+          out?.platform = p?.platform.toLowerCase().slice(0, 40);
+        const _hours = sanitizeHours(p?.optimalHours);
+        if (hours) out?.optimalHours = hours;
+        const _formats = sanitizeFormats(p?.contentFormatPriority);
+        if (formats) out?.contentFormatPriority = formats;
+        const _engagement = oneOf(
           ["standard", "high"] as const,
-          p.engagementTargeting,
+          p?.engagementTargeting,
         );
-        if (engagement) out.engagementTargeting = engagement;
+        if (engagement) out?.engagementTargeting = engagement;
         if (
-          !out.optimalHours &&
-          !out.contentFormatPriority &&
-          !out.engagementTargeting
+          !out?.optimalHours &&
+          !out?.contentFormatPriority &&
+          !out?.engagementTargeting
         ) {
           return {
             ok: false,
@@ -222,19 +222,19 @@ class EvolutionRegistry {
       }
       case "content_optimization": {
         const out: Record<string, unknown> = {};
-        if (typeof p.platform === "string")
-          out.platform = p.platform.toLowerCase().slice(0, 40);
-        const hs = oneOf(HASHTAG_STRATEGIES, p.hashtagStrategy);
-        if (hs) out.hashtagStrategy = hs;
-        const cl = oneOf(CAPTION_LENGTHS, p.captionLength);
-        if (cl) out.captionLength = cl;
-        const cta = oneOf(CTA_STRENGTHS, p.callToActionStrength);
-        if (cta) out.callToActionStrength = cta;
-        if (typeof p.visualPriority === "boolean")
-          out.visualPriority = p.visualPriority;
-        const vc = clampInt(p.variantCount, 1, 5);
-        if (vc !== undefined) out.variantCount = vc;
-        if (Object.keys(out).filter((k) => k !== "platform").length === 0) {
+        if (typeof p?.platform === "string")
+          out?.platform = p?.platform.toLowerCase().slice(0, 40);
+        const _hs = oneOf(HASHTAG_STRATEGIES, p?.hashtagStrategy);
+        if (hs) out?.hashtagStrategy = hs;
+        const _cl = oneOf(CAPTION_LENGTHS, p?.captionLength);
+        if (cl) out?.captionLength = cl;
+        const _cta = oneOf(CTA_STRENGTHS, p?.callToActionStrength);
+        if (cta) out?.callToActionStrength = cta;
+        if (typeof p?.visualPriority === "boolean")
+          out?.visualPriority = p?.visualPriority;
+        const _vc = clampInt(p?.variantCount, 1, 5);
+        if (vc !== undefined) out?.variantCount = vc;
+        if (Object?.keys(out).filter((k) => k !== "platform").length === 0) {
           return {
             ok: false,
             reason: "content_optimization has no usable bounded knobs",
@@ -244,14 +244,14 @@ class EvolutionRegistry {
       }
       case "distribution_config": {
         const out: Record<string, unknown> = {};
-        if (typeof p.autoFormat === "boolean") out.autoFormat = p.autoFormat;
-        if (typeof p.qualityCheck === "boolean")
-          out.qualityCheck = p.qualityCheck;
-        if (typeof p.metadataValidation === "boolean")
-          out.metadataValidation = p.metadataValidation;
-        const level = oneOf(COMPLIANCE_LEVELS, p.complianceLevel);
-        if (level) out.complianceLevel = level;
-        if (Object.keys(out).length === 0) {
+        if (typeof p?.autoFormat === "boolean") out?.autoFormat = p?.autoFormat;
+        if (typeof p?.qualityCheck === "boolean")
+          out?.qualityCheck = p?.qualityCheck;
+        if (typeof p?.metadataValidation === "boolean")
+          out?.metadataValidation = p?.metadataValidation;
+        const _level = oneOf(COMPLIANCE_LEVELS, p?.complianceLevel);
+        if (level) out?.complianceLevel = level;
+        if (Object?.keys(out).length === 0) {
           return {
             ok: false,
             reason: "distribution_config has no usable bounded knobs",
@@ -261,14 +261,14 @@ class EvolutionRegistry {
       }
       case "platform_compliance": {
         const out: Record<string, unknown> = {};
-        if (typeof p.platform === "string")
-          out.platform = p.platform.toLowerCase().slice(0, 40);
-        if (typeof p.requirement === "string")
-          out.requirement = p.requirement.slice(0, 500);
-        const urgency = oneOf(URGENCIES, p.urgency);
-        if (urgency) out.urgency = urgency;
-        if (typeof p.autoApply === "boolean") out.autoApply = p.autoApply;
-        if (!out.platform || !out.requirement) {
+        if (typeof p?.platform === "string")
+          out?.platform = p?.platform.toLowerCase().slice(0, 40);
+        if (typeof p?.requirement === "string")
+          out?.requirement = p?.requirement.slice(0, 500);
+        const _urgency = oneOf(URGENCIES, p?.urgency);
+        if (urgency) out?.urgency = urgency;
+        if (typeof p?.autoApply === "boolean") out?.autoApply = p?.autoApply;
+        if (!out?.platform || !out?.requirement) {
           return {
             ok: false,
             reason: "platform_compliance requires platform + requirement",
@@ -277,12 +277,12 @@ class EvolutionRegistry {
         return { ok: true, payload: out };
       }
       case "feature_flag": {
-        const name = typeof p.name === "string" ? p.name.slice(0, 80) : "";
+        const _name = typeof p?.name === "string" ? p?.name.slice(0, 80) : "";
         if (!name) return { ok: false, reason: "feature_flag requires a name" };
         const out: Record<string, unknown> = { name };
-        out.enabled = typeof p.enabled === "boolean" ? p.enabled : false;
-        const rollout = clampInt(p.rolloutPercentage, 0, 100);
-        out.rolloutPercentage = rollout ?? 0;
+        out?.enabled = typeof p?.enabled === "boolean" ? p?.enabled : false;
+        const _rollout = clampInt(p?.rolloutPercentage, 0, 100);
+        out?.rolloutPercentage = rollout ?? 0;
         return { ok: true, payload: out };
       }
       default:
@@ -293,42 +293,42 @@ class EvolutionRegistry {
   // ── Persistence ─────────────────────────────────────────────────────────
 
   async load(force = false): Promise<void> {
-    if (!force && Date.now() - this.lastLoadedAt < this.REFRESH_TTL_MS) return;
-    if (this.loadInFlight) return this.loadInFlight;
-    this.loadInFlight = (async () => {
+    if (!force && Date?.now() - this?.lastLoadedAt < this?.REFRESH_TTL_MS) return;
+    if (this?.loadInFlight) return this?.loadInFlight;
+    this?.loadInFlight = (async () => {
       try {
-        const buf = await storageService.downloadFile(this.STORAGE_KEY);
-        const state = JSON.parse(buf.toString("utf-8")) as RegistryState;
-        if (Array.isArray(state.enhancements)) {
-          this.enhancements = state.enhancements;
-          logger.info(
-            `[EvolutionRegistry] Loaded ${this.enhancements.length} enhancement(s) ` +
-              `(${this.enhancements.filter((e) => e.active).length} active)`,
+        const _buf = await storageService?.downloadFile(this?.STORAGE_KEY);
+        const _state = JSON?.parse(buf?.toString("utf-8")) as RegistryState;
+        if (Array?.isArray(state?.enhancements)) {
+          this?.enhancements = state?.enhancements;
+          logger?.info(
+            `[EvolutionRegistry] Loaded ${this?.enhancements.length} enhancement(s) ` +
+              `(${this?.enhancements.filter((e) => e?.active).length} active)`,
           );
         }
       } catch {
         // No prior registry — start empty (first boot or fresh install).
       } finally {
-        this.lastLoadedAt = Date.now();
-        this.loadInFlight = null;
+        this?.lastLoadedAt = Date?.now();
+        this?.loadInFlight = null;
       }
     })();
-    return this.loadInFlight;
+    return this?.loadInFlight;
   }
 
   private async persist(): Promise<void> {
     try {
       const state: RegistryState = {
-        enhancements: this.enhancements,
+        enhancements: this?.enhancements,
         updatedAt: new Date().toISOString(),
       };
-      await storageService.uploadFile(
-        Buffer.from(JSON.stringify(state, null, 2), "utf-8"),
-        this.STORAGE_KEY,
+      await storageService?.uploadFile(
+        Buffer?.from(JSON?.stringify(state, null, 2), "utf-8"),
+        this?.STORAGE_KEY,
         "application/json",
       );
     } catch (e) {
-      logger.warn(
+      logger?.warn(
         { err: e },
         "[EvolutionRegistry] Failed to persist registry:",
       );
@@ -337,8 +337,8 @@ class EvolutionRegistry {
 
   /** Fire-and-forget TTL refresh so other cluster workers converge over time. */
   private maybeRefresh(): void {
-    if (Date.now() - this.lastLoadedAt >= this.REFRESH_TTL_MS) {
-      void this.load().catch(() => {});
+    if (Date?.now() - this?.lastLoadedAt >= this?.REFRESH_TTL_MS) {
+      void this?.load().catch(() => {});
     }
   }
 
@@ -357,83 +357,83 @@ class EvolutionRegistry {
     source: string;
     payload: Record<string, unknown>;
   }): Promise<ApplyResult> {
-    await this.load();
-    const clean = this.sanitize(input.category, input.payload);
-    if (!clean.ok) {
+    await this?.load();
+    const _clean = this?.sanitize(input?.category, input?.payload);
+    if (!clean?.ok) {
       return {
         applied: false,
-        consumed: this.isCategoryConsumed(input.category),
-        reason: clean.reason,
+        consumed: this?.isCategoryConsumed(input?.category),
+        reason: clean?.reason,
       };
     }
 
-    const id = `${input.category}:${input.changeId}`;
+    const _id = `${input?.category}:${input?.changeId}`;
     const enhancement: EvolutionEnhancement = {
       id,
-      upgradeId: input.upgradeId,
-      changeId: input.changeId,
-      category: input.category,
-      title: input.title.slice(0, 200),
-      source: input.source,
-      payload: clean.payload,
+      upgradeId: input?.upgradeId,
+      changeId: input?.changeId,
+      category: input?.category,
+      title: input?.title.slice(0, 200),
+      source: input?.source,
+      payload: clean?.payload,
       active: true,
       appliedAt: new Date().toISOString(),
     };
 
-    const existingIdx = this.enhancements.findIndex((e) => e.id === id);
+    const _existingIdx = this?.enhancements.findIndex((e) => e?.id === id);
     if (existingIdx >= 0) {
-      this.enhancements[existingIdx] = enhancement;
+      this?.enhancements[existingIdx] = enhancement;
     } else {
-      this.enhancements.push(enhancement);
+      this?.enhancements.push(enhancement);
     }
-    if (this.enhancements.length > this.MAX_ENTRIES) {
-      this.enhancements = this.enhancements.slice(-this.MAX_ENTRIES);
+    if (this?.enhancements.length > this?.MAX_ENTRIES) {
+      this?.enhancements = this?.enhancements.slice(-this?.MAX_ENTRIES);
     }
-    await this.persist();
+    await this?.persist();
 
-    const consumed = this.isCategoryConsumed(input.category);
-    const effective =
-      consumed && this.hasEffectiveField(input.category, clean.payload);
+    const _consumed = this?.isCategoryConsumed(input?.category);
+    const _effective =
+      consumed && this?.hasEffectiveField(input?.category, clean?.payload);
     return {
       applied: effective,
       consumed,
       enhancement,
       reason:
         consumed && !effective
-          ? `payload has no consumer-read (effective) knob for "${input.category}" yet — recorded as advisory`
+          ? `payload has no consumer-read (effective) knob for "${input?.category}" yet — recorded as advisory`
           : undefined,
     };
   }
 
   /** Deactivate every active entry (used by rollback). Returns count reverted. */
   async deactivateAll(): Promise<number> {
-    await this.load();
+    await this?.load();
     let count = 0;
-    const now = new Date().toISOString();
-    for (const e of this.enhancements) {
-      if (e.active) {
-        e.active = false;
-        e.deactivatedAt = now;
+    const _now = new Date().toISOString();
+    for (const e of this?.enhancements) {
+      if (e?.active) {
+        e?.active = false;
+        e?.deactivatedAt = now;
         count++;
       }
     }
-    if (count > 0) await this.persist();
+    if (count > 0) await this?.persist();
     return count;
   }
 
   /** Deactivate all entries produced by a specific upgrade. */
   async deactivateByUpgrade(upgradeId: string): Promise<number> {
-    await this.load();
+    await this?.load();
     let count = 0;
-    const now = new Date().toISOString();
-    for (const e of this.enhancements) {
-      if (e.active && e.upgradeId === upgradeId) {
-        e.active = false;
-        e.deactivatedAt = now;
+    const _now = new Date().toISOString();
+    for (const e of this?.enhancements) {
+      if (e?.active && e?.upgradeId === upgradeId) {
+        e?.active = false;
+        e?.deactivatedAt = now;
         count++;
       }
     }
-    if (count > 0) await this.persist();
+    if (count > 0) await this?.persist();
     return count;
   }
 
@@ -442,27 +442,27 @@ class EvolutionRegistry {
   private activeOfCategory(
     category: EnhancementCategory,
   ): EvolutionEnhancement[] {
-    return this.enhancements.filter((e) => e.active && e.category === category);
+    return this?.enhancements.filter((e) => e?.active && e?.category === category);
   }
 
   /** Most-recent matching active posting-hours override, or null. */
   getOptimalHoursOverride(platform: string): number[] | null {
-    this.maybeRefresh();
-    const key = platform.toLowerCase();
-    const entries = this.activeOfCategory("posting_optimization")
+    this?.maybeRefresh();
+    const _key = platform?.toLowerCase();
+    const _entries = this?.activeOfCategory("posting_optimization")
       .filter((e) =>
-        Array.isArray((e.payload as { optimalHours?: number[] }).optimalHours),
+        Array?.isArray((e?.payload as { optimalHours?: number[] }).optimalHours),
       )
-      .sort((a, b) => b.appliedAt.localeCompare(a.appliedAt));
+      .sort((a, b) => b?.appliedAt.localeCompare(a?.appliedAt));
     // Platform-specific first, then global (no platform), most-recent wins.
-    const match =
-      entries.find(
-        (e) => (e.payload as { platform?: string }).platform === key,
-      ) || entries.find((e) => !(e.payload as { platform?: string }).platform);
-    const hours = match
-      ? (match.payload as { optimalHours?: number[] }).optimalHours
+    const _match =
+      entries?.find(
+        (e) => (e?.payload as { platform?: string }).platform === key,
+      ) || entries?.find((e) => !(e?.payload as { platform?: string }).platform);
+    const _hours = match
+      ? (match?.payload as { optimalHours?: number[] }).optimalHours
       : undefined;
-    return hours && hours.length > 0 ? hours : null;
+    return hours && hours?.length > 0 ? hours : null;
   }
 
   /** Merged active content-optimization knobs for a platform (or global), or null. */
@@ -473,26 +473,26 @@ class EvolutionRegistry {
     visualPriority?: boolean;
     variantCount?: number;
   } | null {
-    this.maybeRefresh();
-    const key = platform?.toLowerCase();
-    const entries = this.activeOfCategory("content_optimization").sort((a, b) =>
-      a.appliedAt.localeCompare(b.appliedAt),
+    this?.maybeRefresh();
+    const _key = platform?.toLowerCase();
+    const _entries = this?.activeOfCategory("content_optimization").sort((a, b) =>
+      a?.appliedAt.localeCompare(b?.appliedAt),
     );
-    if (entries.length === 0) return null;
+    if (entries?.length === 0) return null;
     const merged: Record<string, unknown> = {};
     // Apply global first, then platform-specific so the platform override wins.
     for (const e of entries) {
-      const ep = e.payload as Record<string, unknown>;
-      if (!ep.platform) Object.assign(merged, ep);
+      const _ep = e?.payload as Record<string, unknown>;
+      if (!ep?.platform) Object?.assign(merged, ep);
     }
     if (key) {
       for (const e of entries) {
-        const ep = e.payload as Record<string, unknown>;
-        if (ep.platform === key) Object.assign(merged, ep);
+        const _ep = e?.payload as Record<string, unknown>;
+        if (ep?.platform === key) Object?.assign(merged, ep);
       }
     }
-    delete merged.platform;
-    return Object.keys(merged).length > 0 ? merged : null;
+    delete merged?.platform;
+    return Object?.keys(merged).length > 0 ? merged : null;
   }
 
   /**
@@ -506,42 +506,42 @@ class EvolutionRegistry {
     contentFormatPriority?: string[];
     engagementTargeting?: "standard" | "high";
   } | null {
-    this.maybeRefresh();
-    const key = platform?.toLowerCase();
-    const entries = this.activeOfCategory("posting_optimization").sort((a, b) =>
-      a.appliedAt.localeCompare(b.appliedAt),
+    this?.maybeRefresh();
+    const _key = platform?.toLowerCase();
+    const _entries = this?.activeOfCategory("posting_optimization").sort((a, b) =>
+      a?.appliedAt.localeCompare(b?.appliedAt),
     );
-    if (entries.length === 0) return null;
+    if (entries?.length === 0) return null;
     const merged: {
       contentFormatPriority?: string[];
       engagementTargeting?: "standard" | "high";
     } = {};
-    const take = (ep: Record<string, unknown>): void => {
+    const _take = (ep: Record<string, unknown>): void => {
       if (
-        Array.isArray(ep.contentFormatPriority) &&
-        ep.contentFormatPriority.length > 0
+        Array?.isArray(ep?.contentFormatPriority) &&
+        ep?.contentFormatPriority.length > 0
       ) {
-        merged.contentFormatPriority = ep.contentFormatPriority as string[];
+        merged?.contentFormatPriority = ep?.contentFormatPriority as string[];
       }
       if (
-        ep.engagementTargeting === "standard" ||
-        ep.engagementTargeting === "high"
+        ep?.engagementTargeting === "standard" ||
+        ep?.engagementTargeting === "high"
       ) {
-        merged.engagementTargeting = ep.engagementTargeting;
+        merged?.engagementTargeting = ep?.engagementTargeting;
       }
     };
     // Apply global first, then platform-specific so the platform override wins.
     for (const e of entries) {
-      const ep = e.payload as Record<string, unknown>;
-      if (!ep.platform) take(ep);
+      const _ep = e?.payload as Record<string, unknown>;
+      if (!ep?.platform) take(ep);
     }
     if (key) {
       for (const e of entries) {
-        const ep = e.payload as Record<string, unknown>;
-        if (ep.platform === key) take(ep);
+        const _ep = e?.payload as Record<string, unknown>;
+        if (ep?.platform === key) take(ep);
       }
     }
-    return Object.keys(merged).length > 0 ? merged : null;
+    return Object?.keys(merged).length > 0 ? merged : null;
   }
 
   /**
@@ -557,11 +557,11 @@ class EvolutionRegistry {
     contentFormatPriority?: string[];
     engagementTargeting?: "standard" | "high";
   }> {
-    this.maybeRefresh();
-    const entries = this.activeOfCategory("posting_optimization").sort((a, b) =>
-      a.appliedAt.localeCompare(b.appliedAt),
+    this?.maybeRefresh();
+    const _entries = this?.activeOfCategory("posting_optimization").sort((a, b) =>
+      a?.appliedAt.localeCompare(b?.appliedAt),
     );
-    const byPlatform = new Map<
+    const _byPlatform = new Map<
       string,
       {
         contentFormatPriority?: string[];
@@ -569,24 +569,24 @@ class EvolutionRegistry {
       }
     >();
     for (const e of entries) {
-      const ep = e.payload as Record<string, unknown>;
-      const hasFormat =
-        Array.isArray(ep.contentFormatPriority) &&
-        ep.contentFormatPriority.length > 0;
-      const hasEngagement =
-        ep.engagementTargeting === "standard" ||
-        ep.engagementTargeting === "high";
+      const _ep = e?.payload as Record<string, unknown>;
+      const _hasFormat =
+        Array?.isArray(ep?.contentFormatPriority) &&
+        ep?.contentFormatPriority.length > 0;
+      const _hasEngagement =
+        ep?.engagementTargeting === "standard" ||
+        ep?.engagementTargeting === "high";
       if (!hasFormat && !hasEngagement) continue;
-      const key =
-        typeof ep.platform === "string" && ep.platform ? ep.platform : "global";
-      const cur = byPlatform.get(key) || {};
+      const _key =
+        typeof ep?.platform === "string" && ep?.platform ? ep?.platform : "global";
+      const _cur = byPlatform?.get(key) || {};
       if (hasFormat)
-        cur.contentFormatPriority = ep.contentFormatPriority as string[];
+        cur?.contentFormatPriority = ep?.contentFormatPriority as string[];
       if (hasEngagement)
-        cur.engagementTargeting = ep.engagementTargeting as "standard" | "high";
-      byPlatform.set(key, cur);
+        cur?.engagementTargeting = ep?.engagementTargeting as "standard" | "high";
+      byPlatform?.set(key, cur);
     }
-    return Array.from(byPlatform.entries()).map(([platform, knobs]) => ({
+    return Array?.from(byPlatform?.entries()).map(([platform, knobs]) => ({
       platform,
       ...knobs,
     }));
@@ -595,8 +595,8 @@ class EvolutionRegistry {
   // ── Status / introspection ──────────────────────────────────────────────
 
   getActiveEnhancements(limit = 50): EvolutionEnhancement[] {
-    return this.enhancements
-      .filter((e) => e.active)
+    return this?.enhancements
+      .filter((e) => e?.active)
       .slice(-limit)
       .map((e) => ({ ...e }));
   }
@@ -607,19 +607,19 @@ class EvolutionRegistry {
     consumedActive: number;
     byCategory: Record<string, number>;
   } {
-    const active = this.enhancements.filter((e) => e.active);
+    const _active = this?.enhancements.filter((e) => e?.active);
     const byCategory: Record<string, number> = {};
     for (const e of active) {
-      byCategory[e.category] = (byCategory[e.category] || 0) + 1;
+      byCategory[e?.category] = (byCategory[e?.category] || 0) + 1;
     }
     return {
-      total: this.enhancements.length,
-      active: active.length,
-      consumedActive: active.filter((e) => this.isCategoryConsumed(e.category))
+      total: this?.enhancements.length,
+      active: active?.length,
+      consumedActive: active?.filter((e) => this?.isCategoryConsumed(e?.category))
         .length,
       byCategory,
     };
   }
 }
 
-export const evolutionRegistry = new EvolutionRegistry();
+export const _evolutionRegistry = new EvolutionRegistry();

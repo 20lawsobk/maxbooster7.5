@@ -20,14 +20,14 @@ export interface AccessibilityPreferences {
 }
 
 export function useAccessibilityPreferences(): AccessibilityPreferences {
-  const context = useA11yContext();
+  const _context = useA11yContext();
 
   return {
-    reducedMotion: context.reducedMotion.prefersReducedMotion,
-    highContrast: context.highContrast.isHighContrast,
-    keyboardNavigating: context.isKeyboardNavigating,
-    fontSize: context.fontSize || "medium",
-    colorBlindMode: context.colorBlindMode || null,
+    reducedMotion: context?.reducedMotion.prefersReducedMotion,
+    highContrast: context?.highContrast.isHighContrast,
+    keyboardNavigating: context?.isKeyboardNavigating,
+    fontSize: context?.fontSize || "medium",
+    colorBlindMode: context?.colorBlindMode || null,
   };
 }
 

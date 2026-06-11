@@ -6,51 +6,51 @@ import {
   fanSubscribers,
 } from "@shared/schema";
 import { and, eq, desc, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth.js";
-import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
 import { z } from "zod";
-import { queryCache, createCacheKey } from "../lib/queryCache.js";
-import { parsePaginationParams } from "../middleware/pagination.js";
-import { requireUUIDParam } from "../middleware/requestValidation.js";
+import { queryCache, createCacheKey } from "../lib/queryCache?.js";
+import { parsePaginationParams } from "../middleware/pagination?.js";
+import { requireUUIDParam } from "../middleware/requestValidation?.js";
 
-const router = Router();
-const CACHE_TTL = 60;
+const _router = Router();
+const _CACHE_TTL = 60;
 
-const updateCampaignSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
-  subject: z.string().min(1).max(500).optional(),
-  body: z.string().min(1).max(100_000).optional(),
+const _updateCampaignSchema = z?.object({
+  name: z?.string().min(1).max(200).optional(),
+  subject: z?.string().min(1).max(500).optional(),
+  body: z?.string().min(1).max(100_000).optional(),
   campaignType: z
     .enum(["newsletter", "announcement", "promotion", "event"])
     .optional(),
-  status: z.enum(["draft", "scheduled", "sent", "cancelled"]).optional(),
-  segmentFilter: z.record(z.string(), z.unknown()).optional(),
-  scheduledAt: z.string().datetime().nullable().optional(),
+  status: z?.enum(["draft", "scheduled", "sent", "cancelled"]).optional(),
+  segmentFilter: z?.record(z?.string(), z?.unknown()).optional(),
+  scheduledAt: z?.string().datetime().nullable().optional(),
 });
 
-router.get("/", requireAuth, async (req, res) => {
+router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const campaigns = await db
+    const _campaigns = await db
       .select()
       .from(fanCampaigns)
-      .where(eq(fanCampaigns.userId, req.user!.id))
-      .orderBy(desc(fanCampaigns.createdAt))
+      .where(eq(fanCampaigns?.userId, req?.user!.id))
+      .orderBy(desc(fanCampaigns?.createdAt))
       .limit(limit)
       .offset(offset);
-    res.json(campaigns);
+    res?.json(campaigns);
   } catch (error) {
-    logger.warn({ err: error }, "[FanCampaigns] Failed to list campaigns:");
-    res.status(500).json({ error: "Failed to fetch campaigns" });
+    logger?.warn({ err: error }, "[FanCampaigns] Failed to list campaigns:");
+    res?.status(500).json({ error: "Failed to fetch campaigns" });
   }
 });
 
-router.get("/stats", requireAuth, async (req, res) => {
+router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const cacheKey = createCacheKey("stats:fanCampaigns", userId);
+    const _userId = req?.user!.id;
+    const _cacheKey = createCacheKey("stats:fanCampaigns", userId);
 
-    const stats = await queryCache.getOrCompute(
+    const _stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [campaignTotals] = await db
@@ -61,22 +61,22 @@ router.get("/stats", requireAuth, async (req, res) => {
             totalOpens: sql<number>`coalesce(sum(open_count), 0)`,
           })
           .from(fanCampaigns)
-          .where(eq(fanCampaigns.userId, userId));
+          .where(eq(fanCampaigns?.userId, userId));
 
         const [subscriberCount] = await db
           .select({ total: count() })
           .from(fanSubscribers)
-          .where(eq(fanSubscribers.userId, userId))
+          .where(eq(fanSubscribers?.userId, userId))
           .limit(1);
 
-        const totalCampaigns = Number(campaignTotals.totalCampaigns);
-        const sentCount = Number(campaignTotals.sent);
-        const totalRecipients = Number(campaignTotals.totalRecipients);
-        const totalOpens = Number(campaignTotals.totalOpens);
-        const totalSubscribers = Number(subscriberCount.total);
-        const avgOpenRate =
+        const _totalCampaigns = Number(campaignTotals?.totalCampaigns);
+        const _sentCount = Number(campaignTotals?.sent);
+        const _totalRecipients = Number(campaignTotals?.totalRecipients);
+        const _totalOpens = Number(campaignTotals?.totalOpens);
+        const _totalSubscribers = Number(subscriberCount?.total);
+        const _avgOpenRate =
           totalRecipients > 0
-            ? Math.round((totalOpens / totalRecipients) * 100)
+            ? Math?.round((totalOpens / totalRecipients) * 100)
             : 0;
 
         return {
@@ -89,121 +89,123 @@ router.get("/stats", requireAuth, async (req, res) => {
       CACHE_TTL,
     );
 
-    res.json(stats);
+    res?.json(stats);
   } catch (error) {
-    logger.warn({ err: error }, "[FanCampaigns] Failed to fetch stats:");
-    res.status(500).json({ error: "Failed to fetch campaign stats" });
+    logger?.warn({ err: error }, "[FanCampaigns] Failed to fetch stats:");
+    res?.status(500).json({ error: "Failed to fetch campaign stats" });
   }
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router?.post("/", requireAuth, async (req, res) => {
   try {
-    const data = insertFanCampaignSchema.parse({
-      ...req.body,
-      userId: req.user!.id,
+    const _data = insertFanCampaignSchema?.parse({
+      ...req?.body,
+      userId: req?.user!.id,
     });
-    const [campaign] = await db.insert(fanCampaigns).values(data).returning();
-    await queryCache.invalidate(
-      createCacheKey("stats:fanCampaigns", req.user!.id),
+    const [campaign] = await db?.insert(fanCampaigns).values(data).returning();
+    await queryCache?.invalidate(
+      createCacheKey("stats:fanCampaigns", req?.user!.id),
     );
-    res.status(201).json(campaign);
+    res?.status(201).json(campaign);
   } catch (error: unknown) {
-    logger.warn({ err: error }, "[FanCampaigns] Failed to create campaign:");
-    if (error instanceof Error && error.name === "ZodError") {
-      return res.status(400).json({
-        error: "Validation error",
-        details: (error as Record<string, unknown>).flatten(),
-      });
+    logger?.warn({ err: error }, "[FanCampaigns] Failed to create campaign:");
+    if (error instanceof Error && error?.name === "ZodError") {
+      return res
+        .status(400)
+        .json({
+          error: "Validation error",
+          details: (error as Record<string, unknown>).flatten(),
+        });
     }
-    res.status(500).json({ error: "Failed to create campaign" });
+    res?.status(500).json({ error: "Failed to create campaign" });
   }
 });
 
-router.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
+router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
     const [item] = await db
       .select()
       .from(fanCampaigns)
       .where(
         and(
-          eq(fanCampaigns.id, req.params.id),
-          eq(fanCampaigns.userId, req.user!.id),
+          eq(fanCampaigns?.id, req?.params.id),
+          eq(fanCampaigns?.userId, req?.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res.status(404).json({ error: "Campaign not found" });
-    res.json(item);
+    if (!item) return res?.status(404).json({ error: "Campaign not found" });
+    res?.json(item);
   } catch (error) {
-    logger.warn({ err: error }, "[FanCampaigns] Failed to fetch campaign:");
-    res.status(500).json({ error: "Failed to fetch campaign" });
+    logger?.warn({ err: error }, "[FanCampaigns] Failed to fetch campaign:");
+    res?.status(500).json({ error: "Failed to fetch campaign" });
   }
 });
 
-router.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
+router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { id } = req.params;
+    const _userId = req?.user!.id;
+    const { id } = req?.params;
 
-    const existing = await db
+    const _existing = await db
       .select()
       .from(fanCampaigns)
-      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)))
+      .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))
       .limit(1);
 
-    if (existing.length === 0) {
-      return res.status(404).json({ error: "Campaign not found" });
+    if (existing?.length === 0) {
+      return res?.status(404).json({ error: "Campaign not found" });
     }
 
     if (existing[0].status === "sent") {
-      return res.status(400).json({ error: "Cannot modify a sent campaign" });
+      return res?.status(400).json({ error: "Cannot modify a sent campaign" });
     }
 
-    const parsed = updateCampaignSchema.safeParse(req.body);
-    if (!parsed.success) {
+    const _parsed = updateCampaignSchema?.safeParse(req?.body);
+    if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed.error.flatten() });
+        .json({ error: "Validation error", details: parsed?.error.flatten() });
     }
 
     const [campaign] = await db
       .update(fanCampaigns)
-      .set({ ...parsed.data, updatedAt: new Date() })
-      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)))
+      .set({ ...parsed?.data, updatedAt: new Date() })
+      .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))
       .returning();
 
-    await queryCache.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res.json(campaign);
+    await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
+    res?.json(campaign);
   } catch (error) {
-    logger.warn({ err: error }, "[FanCampaigns] Failed to update campaign:");
-    res.status(500).json({ error: "Failed to update campaign" });
+    logger?.warn({ err: error }, "[FanCampaigns] Failed to update campaign:");
+    res?.status(500).json({ error: "Failed to update campaign" });
   }
 });
 
-router.post("/:id/send", requireAuth, async (req, res) => {
+router?.post("/:id/send", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { id } = req.params;
+    const _userId = req?.user!.id;
+    const { id } = req?.params;
 
-    const existing = await db
+    const _existing = await db
       .select()
       .from(fanCampaigns)
-      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)))
+      .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))
       .limit(1);
 
-    if (existing.length === 0) {
-      return res.status(404).json({ error: "Campaign not found" });
+    if (existing?.length === 0) {
+      return res?.status(404).json({ error: "Campaign not found" });
     }
 
     if (existing[0].status === "sent") {
-      return res.status(400).json({ error: "Campaign already sent" });
+      return res?.status(400).json({ error: "Campaign already sent" });
     }
 
     const [recipientCountRow] = await db
       .select({ total: count() })
       .from(fanSubscribers)
-      .where(eq(fanSubscribers.userId, userId))
+      .where(eq(fanSubscribers?.userId, userId))
       .limit(1);
-    const recipientCount = Number(recipientCountRow.total);
+    const _recipientCount = Number(recipientCountRow?.total);
 
     const [campaign] = await db
       .update(fanCampaigns)
@@ -213,41 +215,41 @@ router.post("/:id/send", requireAuth, async (req, res) => {
         recipientCount,
         updatedAt: new Date(),
       })
-      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)))
+      .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))
       .returning();
 
-    await queryCache.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res.json({ success: true, recipientCount, campaign });
+    await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
+    res?.json({ success: true, recipientCount, campaign });
   } catch (error) {
-    logger.warn({ err: error }, "[FanCampaigns] Failed to send campaign:");
-    res.status(500).json({ error: "Failed to send campaign" });
+    logger?.warn({ err: error }, "[FanCampaigns] Failed to send campaign:");
+    res?.status(500).json({ error: "Failed to send campaign" });
   }
 });
 
-router.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
+router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { id } = req.params;
+    const _userId = req?.user!.id;
+    const { id } = req?.params;
 
-    const existing = await db
+    const _existing = await db
       .select()
       .from(fanCampaigns)
-      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)))
+      .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)))
       .limit(1);
 
-    if (existing.length === 0) {
-      return res.status(404).json({ error: "Campaign not found" });
+    if (existing?.length === 0) {
+      return res?.status(404).json({ error: "Campaign not found" });
     }
 
     await db
       .delete(fanCampaigns)
-      .where(and(eq(fanCampaigns.id, id), eq(fanCampaigns.userId, userId)));
+      .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)));
 
-    await queryCache.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res.json({ success: true });
+    await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
+    res?.json({ success: true });
   } catch (error) {
-    logger.warn({ err: error }, "[FanCampaigns] Failed to delete campaign:");
-    res.status(500).json({ error: "Failed to delete campaign" });
+    logger?.warn({ err: error }, "[FanCampaigns] Failed to delete campaign:");
+    res?.status(500).json({ error: "Failed to delete campaign" });
   }
 });
 

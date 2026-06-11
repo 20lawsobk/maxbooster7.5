@@ -146,11 +146,11 @@ export interface ActionHistoryEntry {
 }
 
 export function createActionId(): string {
-  return `action_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  return `action_${Date?.now()}_${Math?.random().toString(36).substring(2, 9)}`;
 }
 
 export function createGroupId(): string {
-  return `group_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  return `group_${Date?.now()}_${Math?.random().toString(36).substring(2, 9)}`;
 }
 
 export function isDestructiveAction(type: ActionType): boolean {
@@ -165,7 +165,7 @@ export function isDestructiveAction(type: ActionType): boolean {
 
 export function getActionLabel(action: UndoableAction): string {
   const { type, metadata } = action;
-  if (metadata.description) return metadata.description;
+  if (metadata?.description) return metadata?.description;
 
   const typeLabels: Record<ActionType, string> = {
     create: "Created",
@@ -190,6 +190,6 @@ export function getActionLabel(action: UndoableAction): string {
     custom: "Action",
   };
 
-  const entityLabel = metadata.entityType ? ` ${metadata.entityType}` : "";
+  const _entityLabel = metadata?.entityType ? ` ${metadata?.entityType}` : "";
   return `${typeLabels[type]}${entityLabel}`;
 }

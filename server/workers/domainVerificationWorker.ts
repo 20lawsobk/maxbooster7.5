@@ -18,26 +18,26 @@
  *   stopDomainVerificationWorker()   — clears the interval (used in tests / graceful shutdown)
  */
 
-import { pool } from "../db.js";
+import { pool } from "../db?.js";
 import {
   verifyStorefrontDomain,
   runDomainHealthSweep,
-} from "../services/storefrontDnsService.js";
-import { logger } from "../logger.js";
-import { pMap } from "../lib/concurrencyPool.js";
+} from "../services/storefrontDnsService?.js";
+import { logger } from "../logger?.js";
+import { pMap } from "../lib/concurrencyPool?.js";
 
-const POLL_INTERVAL_MS = parseInt(
-  process.env.DOMAIN_VERIFY_INTERVAL_MS ?? "60000",
+const _POLL_INTERVAL_MS = parseInt(
+  process?.env.DOMAIN_VERIFY_INTERVAL_MS ?? "60000",
   10,
 );
-const BATCH_SIZE = 20; // max domains fetched per tick
-const VERIFY_CONCURRENCY = parseInt(
-  process.env.DOMAIN_VERIFY_CONCURRENCY ?? "5",
+const _BATCH_SIZE = 20; // max domains fetched per tick
+const _VERIFY_CONCURRENCY = parseInt(
+  process?.env.DOMAIN_VERIFY_CONCURRENCY ?? "5",
   10,
 ); // parallel DoH checks
-const MAX_FAILURE_BACKOFF = 60; // after N failures, back off to hourly retry
-const BACKOFF_MODULO = 60; // tick count modulo for backed-off domains (1/hr at 1/min poll)
-const HEALTH_SWEEP_TICKS = 12 * 60; // 12-hour cadence in ticks
+const _MAX_FAILURE_BACKOFF = 60; // after N failures, back off to hourly retry
+const _BACKOFF_MODULO = 60; // tick count modulo for backed-off domains (1/hr at 1/min poll)
+const _HEALTH_SWEEP_TICKS = 12 * 60; // 12-hour cadence in ticks
 
 let intervalHandle: ReturnType<typeof setInterval> | null = null;
 let tickCount = 0;
@@ -61,7 +61,7 @@ async function runVerificationTick(): Promise<void> {
     verification_failures: number;
   }> = [];
   try {
-    const result = await pool.query<{
+    const _result = await pool?.query<{
       id: string;
       domain: string;
       verification_failures: number;
@@ -74,21 +74,21 @@ async function runVerificationTick(): Promise<void> {
        LIMIT $1`,
       [BATCH_SIZE],
     );
-    rows = result.rows;
+    rows = result?.rows;
   } catch (err) {
-    logger.warn({ err }, "[domainVerify] failed to query pending domains");
+    logger?.warn({ err }, "[domainVerify] failed to query pending domains");
     return;
   }
 
-  const eligible = rows.filter((r) =>
-    shouldCheckDomain(r.verification_failures),
+  const _eligible = rows?.filter((r) =>
+    shouldCheckDomain(r?.verification_failures),
   );
 
-  if (eligible.length > 0) {
-    logger.debug(
+  if (eligible?.length > 0) {
+    logger?.debug(
       {
-        total: rows.length,
-        eligible: eligible.length,
+        total: rows?.length,
+        eligible: eligible?.length,
         concurrency: VERIFY_CONCURRENCY,
         tick: tickCount,
       },
@@ -103,14 +103,14 @@ async function runVerificationTick(): Promise<void> {
   await pMap(
     eligible,
     async ({ id, domain }) => {
-      const result = await verifyStorefrontDomain(id);
+      const _result = await verifyStorefrontDomain(id);
       if (result === "verified") {
-        logger.info(
+        logger?.info(
           { domain },
           "[domainVerify] ✅ domain verified and activated",
         );
       } else if (result === "failed") {
-        logger.warn(
+        logger?.warn(
           { domain },
           "[domainVerify] domain verification permanently failed",
         );
@@ -122,10 +122,10 @@ async function runVerificationTick(): Promise<void> {
   // ── Domain health sweep every 12 hours ───────────────────────────────────
   if (tickCount % HEALTH_SWEEP_TICKS === 0) {
     try {
-      const result = await runDomainHealthSweep();
-      logger.info(result, "[domainVerify] health sweep complete");
+      const _result = await runDomainHealthSweep();
+      logger?.info(result, "[domainVerify] health sweep complete");
     } catch (err) {
-      logger.warn({ err }, "[domainVerify] health sweep error (non-fatal)");
+      logger?.warn({ err }, "[domainVerify] health sweep error (non-fatal)");
     }
   }
 }
@@ -135,12 +135,12 @@ export function startDomainVerificationWorker(): void {
 
   // Run once immediately so freshly-added domains don't wait a full minute
   runVerificationTick().catch((err) =>
-    logger.warn({ err }, "[domainVerify] initial tick error"),
+    logger?.warn({ err }, "[domainVerify] initial tick error"),
   );
 
   intervalHandle = setInterval(() => {
     runVerificationTick().catch((err) =>
-      logger.warn({ err }, "[domainVerify] tick error"),
+      logger?.warn({ err }, "[domainVerify] tick error"),
     );
   }, POLL_INTERVAL_MS);
 
@@ -148,7 +148,7 @@ export function startDomainVerificationWorker(): void {
   if ((intervalHandle as Record<string, unknown>).unref)
     (intervalHandle as Record<string, unknown>).unref();
 
-  logger.info(
+  logger?.info(
     { intervalMs: POLL_INTERVAL_MS, batchSize: BATCH_SIZE },
     "[domainVerify] worker started (multi-method DoH verification)",
   );
@@ -158,7 +158,7 @@ export function stopDomainVerificationWorker(): void {
   if (intervalHandle) {
     clearInterval(intervalHandle);
     intervalHandle = null;
-    logger.info("[domainVerify] worker stopped");
+    logger?.info("[domainVerify] worker stopped");
   }
 }
 

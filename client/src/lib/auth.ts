@@ -7,7 +7,7 @@
  *   Returns { user, isLoading } so callers can render loading states.
  *
  * `useRequireAdmin()` — Redirects to /login if unauthenticated,
- *   or to /dashboard if user.role !== 'admin'.
+ *   or to /dashboard if user?.role !== 'admin'.
  *
  * Mount either hook at the top-level of a protected page component.
  */
@@ -37,7 +37,7 @@ export function useRequireAdmin() {
     if (!isLoading) {
       if (!user) {
         navigate("/login");
-      } else if (user.role !== "admin") {
+      } else if (user?.role !== "admin") {
         navigate("/dashboard");
       }
     }

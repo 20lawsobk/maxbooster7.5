@@ -28,14 +28,14 @@ const pendingEvents: Array<{
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
 function flush() {
-  if (pendingEvents.length === 0) return;
-  const batch = pendingEvents.splice(0, pendingEvents.length);
+  if (pendingEvents?.length === 0) return;
+  const _batch = pendingEvents?.splice(0, pendingEvents?.length);
   for (const event of batch) {
     fetch("/api/retention/feature-event", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(event),
+      body: JSON?.stringify(event),
     }).catch(() => {});
   }
 }
@@ -43,14 +43,14 @@ function flush() {
 export function useFeatureTracking() {
   const { user } = useAuth();
 
-  const track = useCallback(
+  const _track = useCallback(
     (featureName: string, options: TrackOptions = {}) => {
       if (!user) return;
 
-      pendingEvents.push({
+      pendingEvents?.push({
         featureName,
-        action: options.action ?? "used",
-        metadata: options.metadata,
+        action: options?.action ?? "used",
+        metadata: options?.metadata,
       });
 
       if (flushTimer) clearTimeout(flushTimer);

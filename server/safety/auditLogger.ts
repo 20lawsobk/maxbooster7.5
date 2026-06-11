@@ -7,7 +7,7 @@
 
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -49,9 +49,9 @@ export interface AuditEntry {
 }
 
 // Write-ahead log for critical events
-const WAL_PATH = path.join(process.cwd(), ".audit-wal");
+const _WAL_PATH = path?.join(process?.cwd(), ".audit-wal");
 const walBuffer: AuditEntry[] = [];
-let walFlushTimer: NodeJS.Timeout | null = null;
+let walFlushTimer: NodeJS?.Timeout | null = null;
 
 /**
  * Initialize audit logger
@@ -59,11 +59,11 @@ let walFlushTimer: NodeJS.Timeout | null = null;
 export async function initAuditLogger(): Promise<void> {
   // Ensure WAL directory exists
   try {
-    if (!fs.existsSync(WAL_PATH)) {
-      fs.mkdirSync(WAL_PATH, { recursive: true });
+    if (!fs?.existsSync(WAL_PATH)) {
+      fs?.mkdirSync(WAL_PATH, { recursive: true });
     }
   } catch (error) {
-    logger.warn({ err: error }, "[Audit] Could not create WAL directory:");
+    logger?.warn({ err: error }, "[Audit] Could not create WAL directory:");
   }
 
   // Recover any pending WAL entries
@@ -72,7 +72,7 @@ export async function initAuditLogger(): Promise<void> {
   // Start periodic WAL flush
   walFlushTimer = setInterval(() => flushWAL(), 5000);
 
-  logger.info("[Audit] Audit logger initialized");
+  logger?.info("[Audit] Audit logger initialized");
 }
 
 /**
@@ -82,42 +82,42 @@ export async function audit(
   entry: Omit<AuditEntry, "id" | "timestamp">,
 ): Promise<string> {
   const fullEntry: AuditEntry = {
-    id: crypto.randomUUID(),
+    id: crypto?.randomUUID(),
     timestamp: new Date(),
     ...entry,
   };
 
   // Critical events are written synchronously to WAL first
-  if (entry.severity === "critical") {
+  if (entry?.severity === "critical") {
     await writeToWAL(fullEntry);
   }
 
   // Add to buffer for batch processing
-  walBuffer.push(fullEntry);
+  walBuffer?.push(fullEntry);
 
   // Log to console for immediate visibility
-  const logLevel =
-    entry.severity === "critical"
+  const _logLevel =
+    entry?.severity === "critical"
       ? "error"
-      : entry.severity === "warning"
+      : entry?.severity === "warning"
         ? "warn"
         : "info";
 
   logger[logLevel](
-    `[AUDIT] [${entry.category}] ${entry.action} - ${entry.success ? "SUCCESS" : "FAILED"}`,
+    `[AUDIT] [${entry?.category}] ${entry?.action} - ${entry?.success ? "SUCCESS" : "FAILED"}`,
     {
-      userId: entry.userId,
-      targetId: entry.targetId,
-      details: entry.details,
+      userId: entry?.userId,
+      targetId: entry?.targetId,
+      details: entry?.details,
     },
   );
 
   // Flush immediately if buffer is large or event is critical
-  if (walBuffer.length >= 10 || entry.severity === "critical") {
+  if (walBuffer?.length >= 10 || entry?.severity === "critical") {
     await flushWAL();
   }
 
-  return fullEntry.id;
+  return fullEntry?.id;
 }
 
 /**
@@ -125,10 +125,10 @@ export async function audit(
  */
 async function writeToWAL(entry: AuditEntry): Promise<void> {
   try {
-    const walFile = path.join(WAL_PATH, `${entry.id}.json`);
-    await fs.promises.writeFile(walFile, JSON.stringify(entry), "utf8");
+    const _walFile = path?.join(WAL_PATH, `${entry?.id}.json`);
+    await fs?.promises.writeFile(walFile, JSON?.stringify(entry), "utf8");
   } catch (error) {
-    logger.warn({ err: error }, "[Audit] Failed to write to WAL:");
+    logger?.warn({ err: error }, "[Audit] Failed to write to WAL:");
   }
 }
 
@@ -136,40 +136,40 @@ async function writeToWAL(entry: AuditEntry): Promise<void> {
  * Flush WAL buffer to database
  */
 async function flushWAL(): Promise<void> {
-  if (walBuffer.length === 0) return;
+  if (walBuffer?.length === 0) return;
 
-  const entries = [...walBuffer];
-  walBuffer.length = 0;
+  const _entries = [...walBuffer];
+  walBuffer?.length = 0;
 
   try {
     // Batch insert to database
     for (const entry of entries) {
       try {
-        await db.execute(sql`
+        await db?.execute(sql`
           INSERT INTO audit_log (
             id, timestamp, category, severity, action, 
             user_id, target_id, target_type, ip_address, user_agent,
             details, success, error_message
           ) VALUES (
-            ${entry.id}, ${entry.timestamp}, ${entry.category}, ${entry.severity}, ${entry.action},
-            ${entry.userId}, ${entry.targetId}, ${entry.targetType}, ${entry.ipAddress}, ${entry.userAgent},
-            ${JSON.stringify(entry.details)}, ${entry.success}, ${entry.errorMessage}
+            ${entry?.id}, ${entry?.timestamp}, ${entry?.category}, ${entry?.severity}, ${entry?.action},
+            ${entry?.userId}, ${entry?.targetId}, ${entry?.targetType}, ${entry?.ipAddress}, ${entry?.userAgent},
+            ${JSON?.stringify(entry?.details)}, ${entry?.success}, ${entry?.errorMessage}
           )
           ON CONFLICT (id) DO NOTHING
         `);
 
         // Remove from WAL if successfully persisted
-        removeFromWAL(entry.id);
+        removeFromWAL(entry?.id);
       } catch (dbError) {
         // Put back in buffer for retry
-        walBuffer.push(entry);
-        logger.warn("[Audit] Failed to persist audit entry:", dbError);
+        walBuffer?.push(entry);
+        logger?.warn("[Audit] Failed to persist audit entry:", dbError);
       }
     }
   } catch (error) {
     // Put all entries back in buffer
-    walBuffer.push(...entries);
-    logger.warn({ err: error }, "[Audit] Failed to flush WAL:");
+    walBuffer?.push(...entries);
+    logger?.warn({ err: error }, "[Audit] Failed to flush WAL:");
   }
 }
 
@@ -178,13 +178,13 @@ async function flushWAL(): Promise<void> {
  */
 function removeFromWAL(entryId: string): void {
   try {
-    const walFile = path.join(WAL_PATH, `${entryId}.json`);
-    if (fs.existsSync(walFile)) {
-      fs.unlinkSync(walFile);
+    const _walFile = path?.join(WAL_PATH, `${entryId}.json`);
+    if (fs?.existsSync(walFile)) {
+      fs?.unlinkSync(walFile);
     }
   } catch (error) {
     // Non-critical, just log
-    logger.debug("[Audit] Could not remove WAL file:", error);
+    logger?.debug("[Audit] Could not remove WAL file:", error);
   }
 }
 
@@ -194,31 +194,31 @@ function removeFromWAL(entryId: string): void {
 async function recoverWAL(): Promise<void> {
   try {
     try {
-      await fs.promises.access(WAL_PATH);
+      await fs?.promises.access(WAL_PATH);
     } catch {
       return;
     }
 
-    const files = (await fs.promises.readdir(WAL_PATH)).filter((f) =>
-      f.endsWith(".json"),
+    const _files = (await fs?.promises.readdir(WAL_PATH)).filter((f) =>
+      f?.endsWith(".json"),
     );
 
-    if (files.length > 0) {
-      logger.info(
-        `[Audit] Recovering ${files.length} pending audit entries from WAL`,
+    if (files?.length > 0) {
+      logger?.info(
+        `[Audit] Recovering ${files?.length} pending audit entries from WAL`,
       );
     }
 
     for (const file of files) {
       try {
-        const content = await fs.promises.readFile(
-          path.join(WAL_PATH, file),
+        const _content = await fs?.promises.readFile(
+          path?.join(WAL_PATH, file),
           "utf8",
         );
-        const entry = JSON.parse(content) as AuditEntry;
-        walBuffer.push(entry);
+        const _entry = JSON?.parse(content) as AuditEntry;
+        walBuffer?.push(entry);
       } catch (error) {
-        logger.warn(
+        logger?.warn(
           { err: error },
           `[Audit] Failed to recover WAL entry ${file}:`,
         );
@@ -226,18 +226,18 @@ async function recoverWAL(): Promise<void> {
     }
 
     // Flush recovered entries
-    if (walBuffer.length > 0) {
+    if (walBuffer?.length > 0) {
       await flushWAL();
     }
   } catch (error) {
-    logger.warn({ err: error }, "[Audit] WAL recovery failed:");
+    logger?.warn({ err: error }, "[Audit] WAL recovery failed:");
   }
 }
 
 /**
  * Convenience methods for common audit events
  */
-export const auditAuth = {
+export const _auditAuth = {
   login: (userId: string, ip: string, success: boolean, error?: string) =>
     audit({
       category: "auth",
@@ -283,7 +283,7 @@ export const auditAuth = {
     }),
 };
 
-export const auditPayment = {
+export const _auditPayment = {
   charge: (
     userId: string,
     amount: number,
@@ -351,7 +351,7 @@ export const auditPayment = {
     }),
 };
 
-export const auditSecurity = {
+export const _auditSecurity = {
   suspiciousActivity: (
     userId: string | undefined,
     ip: string,
@@ -393,7 +393,7 @@ export const auditSecurity = {
     }),
 };
 
-export const auditAutonomous = {
+export const _auditAutonomous = {
   actionBlocked: (systemName: string, action: string, reason: string) =>
     audit({
       category: "autonomous",
@@ -429,25 +429,25 @@ export async function getAuditLog(params: {
   offset?: number;
 }): Promise<AuditEntry[]> {
   try {
-    const limit = Math.min(params.limit || 100, 1000);
-    const offset = params.offset || 0;
+    const _limit = Math?.min(params?.limit || 100, 1000);
+    const _offset = params?.offset || 0;
 
-    const result = await db.execute(sql`
+    const _result = await db?.execute(sql`
       SELECT * FROM audit_log
       WHERE 1=1
-        ${params.userId ? sql`AND user_id = ${params.userId}` : sql``}
-        ${params.category ? sql`AND category = ${params.category}` : sql``}
-        ${params.severity ? sql`AND severity = ${params.severity}` : sql``}
-        ${params.startDate ? sql`AND timestamp >= ${params.startDate}` : sql``}
-        ${params.endDate ? sql`AND timestamp <= ${params.endDate}` : sql``}
+        ${params?.userId ? sql`AND user_id = ${params?.userId}` : sql``}
+        ${params?.category ? sql`AND category = ${params?.category}` : sql``}
+        ${params?.severity ? sql`AND severity = ${params?.severity}` : sql``}
+        ${params?.startDate ? sql`AND timestamp >= ${params?.startDate}` : sql``}
+        ${params?.endDate ? sql`AND timestamp <= ${params?.endDate}` : sql``}
       ORDER BY timestamp DESC
       LIMIT ${limit}
       OFFSET ${offset}
     `);
 
-    return result.rows as unknown as AuditEntry[];
+    return result?.rows as unknown as AuditEntry[];
   } catch (error) {
-    logger.warn({ err: error }, "[Audit] Failed to query audit log:");
+    logger?.warn({ err: error }, "[Audit] Failed to query audit log:");
     return [];
   }
 }
@@ -459,26 +459,26 @@ export async function cleanupAuditLog(
   retentionDays: number = 90,
 ): Promise<number> {
   try {
-    const cutoffDate = new Date(
-      Date.now() - retentionDays * 24 * 60 * 60 * 1000,
+    const _cutoffDate = new Date(
+      Date?.now() - retentionDays * 24 * 60 * 60 * 1000,
     );
 
     // Keep critical entries for longer
-    const result = await db.execute(sql`
+    const _result = await db?.execute(sql`
       DELETE FROM audit_log
       WHERE timestamp < ${cutoffDate}
         AND severity != 'critical'
       RETURNING id
     `);
 
-    const deleted = result.rows.length;
+    const _deleted = result?.rows.length;
     if (deleted > 0) {
-      logger.info(`[Audit] Cleaned up ${deleted} old audit entries`);
+      logger?.info(`[Audit] Cleaned up ${deleted} old audit entries`);
     }
 
     return deleted;
   } catch (error) {
-    logger.warn({ err: error }, "[Audit] Failed to cleanup audit log:");
+    logger?.warn({ err: error }, "[Audit] Failed to cleanup audit log:");
     return 0;
   }
 }
@@ -491,5 +491,5 @@ export async function shutdownAuditLogger(): Promise<void> {
     clearInterval(walFlushTimer);
   }
   await flushWAL();
-  logger.info("[Audit] Audit logger shut down");
+  logger?.info("[Audit] Audit logger shut down");
 }

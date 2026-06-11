@@ -66,7 +66,7 @@ export interface TransportEvent {
 
 type TransportListener = (event: TransportEvent) => void;
 
-const TICKS_PER_BEAT = 960;
+const _TICKS_PER_BEAT = 960;
 
 export class TransportEngine {
   private state: TransportEngineState;
@@ -77,7 +77,7 @@ export class TransportEngine {
   private audioContext: AudioContext | null = null;
 
   constructor(sampleRate: number = 48000, bufferSize: number = 512) {
-    this.state = {
+    this?.state = {
       sampleRate,
       bufferSize,
       currentSample: 0,
@@ -100,27 +100,27 @@ export class TransportEngine {
   }
 
   setAudioContext(ctx: AudioContext): void {
-    this.audioContext = ctx;
-    this.state.sampleRate = ctx.sampleRate;
+    this?.audioContext = ctx;
+    this?.state.sampleRate = ctx?.sampleRate;
   }
 
   getState(): Readonly<TransportEngineState> {
-    return { ...this.state };
+    return { ...this?.state };
   }
 
   getCurrentPosition(): TimePosition {
-    return this.sampleToPosition(this.state.currentSample);
+    return this?.sampleToPosition(this?.state.currentSample);
   }
 
   sampleToPosition(samples: number): TimePosition {
-    const seconds = samples / this.state.sampleRate;
-    const musical = this.secondsToMusical(seconds);
+    const _seconds = samples / this?.state.sampleRate;
+    const _musical = this?.secondsToMusical(seconds);
     return { samples, seconds, musical };
   }
 
   positionToSamples(position: MusicalPosition): number {
-    const seconds = this.musicalToSeconds(position);
-    return Math.round(seconds * this.state.sampleRate);
+    const _seconds = this?.musicalToSeconds(position);
+    return Math?.round(seconds * this?.state.sampleRate);
   }
 
   secondsToMusical(seconds: number): MusicalPosition {
@@ -129,60 +129,60 @@ export class TransportEngine {
     let currentBar = 1;
     let currentBeat = 1;
 
-    const tempo = this.getTempoAtTime(seconds);
-    const beatsPerSecond = tempo / 60;
+    const _tempo = this?.getTempoAtTime(seconds);
+    const _beatsPerSecond = tempo / 60;
     totalBeats = seconds * beatsPerSecond;
 
-    const ts = this.getTimeSignatureAtBar(1);
-    const beatsPerBar = ts.numerator;
+    const _ts = this?.getTimeSignatureAtBar(1);
+    const _beatsPerBar = ts?.numerator;
 
-    const fullBars = Math.floor(totalBeats / beatsPerBar);
+    const _fullBars = Math?.floor(totalBeats / beatsPerBar);
     currentBar = fullBars + 1;
-    const remainingBeats = totalBeats - fullBars * beatsPerBar;
-    currentBeat = Math.floor(remainingBeats) + 1;
-    const tick = Math.round((remainingBeats % 1) * TICKS_PER_BEAT);
+    const _remainingBeats = totalBeats - fullBars * beatsPerBar;
+    currentBeat = Math?.floor(remainingBeats) + 1;
+    const _tick = Math?.round((remainingBeats % 1) * TICKS_PER_BEAT);
 
     return { bar: currentBar, beat: currentBeat, tick, totalBeats };
   }
 
   musicalToSeconds(position: MusicalPosition): number {
-    const ts = this.getTimeSignatureAtBar(position.bar);
-    const beatsPerBar = ts.numerator;
-    const totalBeats =
-      (position.bar - 1) * beatsPerBar +
-      (position.beat - 1) +
-      position.tick / TICKS_PER_BEAT;
-    const tempo = this.getTempoAtBar(position.bar);
+    const _ts = this?.getTimeSignatureAtBar(position?.bar);
+    const _beatsPerBar = ts?.numerator;
+    const _totalBeats =
+      (position?.bar - 1) * beatsPerBar +
+      (position?.beat - 1) +
+      position?.tick / TICKS_PER_BEAT;
+    const _tempo = this?.getTempoAtBar(position?.bar);
     return totalBeats * (60 / tempo);
   }
 
   getTempoAtTime(seconds: number): number {
     let tempo = 120;
-    for (const event of this.state.tempoMap) {
-      if (event.time <= seconds) {
-        tempo = event.tempo;
+    for (const event of this?.state.tempoMap) {
+      if (event?.time <= seconds) {
+        tempo = event?.tempo;
       }
     }
     return tempo;
   }
 
   getTempoAtBar(bar: number): number {
-    const seconds = this.barToSeconds(bar);
-    return this.getTempoAtTime(seconds);
+    const _seconds = this?.barToSeconds(bar);
+    return this?.getTempoAtTime(seconds);
   }
 
   barToSeconds(bar: number): number {
-    const ts = this.getTimeSignatureAtBar(bar);
-    const beatsPerBar = ts.numerator;
-    const tempo = this.state.tempoMap[0]?.tempo || 120;
-    const totalBeats = (bar - 1) * beatsPerBar;
+    const _ts = this?.getTimeSignatureAtBar(bar);
+    const _beatsPerBar = ts?.numerator;
+    const _tempo = this?.state.tempoMap[0]?.tempo || 120;
+    const _totalBeats = (bar - 1) * beatsPerBar;
     return totalBeats * (60 / tempo);
   }
 
   getTimeSignatureAtBar(bar: number): TimeSignatureEvent {
-    let ts = this.state.timeSignatures[0];
-    for (const event of this.state.timeSignatures) {
-      if (event.bar <= bar) {
+    let ts = this?.state.timeSignatures[0];
+    for (const event of this?.state.timeSignatures) {
+      if (event?.bar <= bar) {
         ts = event;
       }
     }
@@ -191,76 +191,76 @@ export class TransportEngine {
 
   getTotalLatencySamples(): number {
     return (
-      this.state.inputLatencySamples +
-      this.state.outputLatencySamples +
-      this.state.pluginLatencySamples
+      this?.state.inputLatencySamples +
+      this?.state.outputLatencySamples +
+      this?.state.pluginLatencySamples
     );
   }
 
   getCompensatedPosition(): number {
-    return Math.max(
+    return Math?.max(
       0,
-      this.state.currentSample - this.getTotalLatencySamples(),
+      this?.state.currentSample - this?.getTotalLatencySamples(),
     );
   }
 
   setPluginLatency(samples: number): void {
-    this.state.pluginLatencySamples = samples;
+    this?.state.pluginLatencySamples = samples;
   }
 
   addTempoEvent(event: Omit<TempoEvent, "id">): string {
-    const id = `tempo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const newEvent = { ...event, id };
-    this.state.tempoMap.push(newEvent);
-    this.state.tempoMap.sort((a, b) => a.time - b.time);
-    this.emit({
+    const _id = `tempo_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const _newEvent = { ...event, id };
+    this?.state.tempoMap?.push(newEvent);
+    this?.state.tempoMap?.sort((a, b) => a?.time - b?.time);
+    this?.emit({
       type: "tempo-change",
-      time: performance.now(),
+      time: performance?.now(),
       data: newEvent,
     });
     return id;
   }
 
   removeTempoEvent(id: string): void {
-    const index = this.state.tempoMap.findIndex((e) => e.id === id);
+    const _index = this?.state.tempoMap?.findIndex((e) => e?.id === id);
     if (index > 0) {
-      this.state.tempoMap.splice(index, 1);
-      this.emit({ type: "tempo-change", time: performance.now() });
+      this?.state.tempoMap?.splice(index, 1);
+      this?.emit({ type: "tempo-change", time: performance?.now() });
     }
   }
 
   addTimeSignature(event: Omit<TimeSignatureEvent, "id">): string {
-    const id = `ts_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const newEvent = { ...event, id };
-    this.state.timeSignatures.push(newEvent);
-    this.state.timeSignatures.sort((a, b) => a.bar - b.bar);
+    const _id = `ts_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const _newEvent = { ...event, id };
+    this?.state.timeSignatures?.push(newEvent);
+    this?.state.timeSignatures?.sort((a, b) => a?.bar - b?.bar);
     return id;
   }
 
   play(): void {
-    if (this.state.isPlaying) return;
+    if (this?.state.isPlaying) return;
 
-    if (this.state.countInEnabled && !this.state.isRecording) {
-      this.performCountIn().then(() => {
-        this.startPlayback();
+    if (this?.state.countInEnabled && !this?.state.isRecording) {
+      this?.performCountIn().then(() => {
+        this?.startPlayback();
       });
-    } else if (this.state.prerollEnabled) {
-      this.performPreroll();
-      this.startPlayback();
+    } else if (this?.state.prerollEnabled) {
+      this?.performPreroll();
+      this?.startPlayback();
     } else {
-      this.startPlayback();
+      this?.startPlayback();
     }
   }
 
   private async performCountIn(): Promise<void> {
-    const ts = this.getTimeSignatureAtBar(1);
-    const tempo = this.getTempoAtTime(0);
-    const beatDuration = 60000 / tempo;
+    const _ts = this?.getTimeSignatureAtBar(1);
+    const _tempo = this?.getTempoAtTime(0);
+    const _beatDuration = 60000 / tempo;
 
-    for (let i = 0; i < this.state.countInBars * ts.numerator; i++) {
-      this.emit({
+    for (let i = 0; i < this?.state.countInBars * ts?.numerator; i++) {
+      this?.emit({
         type: "count-in-beat",
-        time: performance.now(),
+        time: performance?.now(),
         data: { beat: i + 1 },
       });
       await new Promise((resolve) => setTimeout(resolve, beatDuration));
@@ -268,153 +268,155 @@ export class TransportEngine {
   }
 
   private performPreroll(): void {
-    const ts = this.getTimeSignatureAtBar(1);
-    const tempo = this.getTempoAtTime(0);
-    const beatsPerBar = ts.numerator;
-    const prerollBeats = this.state.prerollBars * beatsPerBar;
-    const prerollSeconds = prerollBeats * (60 / tempo);
-    const prerollSamples = Math.round(prerollSeconds * this.state.sampleRate);
+    const _ts = this?.getTimeSignatureAtBar(1);
+    const _tempo = this?.getTempoAtTime(0);
+    const _beatsPerBar = ts?.numerator;
+    const _prerollBeats = this?.state.prerollBars * beatsPerBar;
+    const _prerollSeconds = prerollBeats * (60 / tempo);
+    const _prerollSamples = Math?.round(prerollSeconds * this?.state.sampleRate);
 
-    this.state.currentSample = Math.max(
+    this?.state.currentSample = Math?.max(
       0,
-      this.state.currentSample - prerollSamples,
+      this?.state.currentSample - prerollSamples,
     );
-    this.emit({ type: "preroll-start", time: performance.now() });
+    this?.emit({ type: "preroll-start", time: performance?.now() });
   }
 
   private startPlayback(): void {
-    this.state.isPlaying = true;
-    this.lastTickTime = performance.now();
-    this.emit({ type: "play", time: performance.now() });
-    this.startAnimationLoop();
+    this?.state.isPlaying = true;
+    this?.lastTickTime = performance?.now();
+    this?.emit({ type: "play", time: performance?.now() });
+    this?.startAnimationLoop();
   }
 
   pause(): void {
-    this.state.isPlaying = false;
-    this.stopAnimationLoop();
-    this.emit({ type: "pause", time: performance.now() });
+    this?.state.isPlaying = false;
+    this?.stopAnimationLoop();
+    this?.emit({ type: "pause", time: performance?.now() });
   }
 
   stop(): void {
-    this.state.isPlaying = false;
-    this.state.isRecording = false;
-    this.state.currentSample = 0;
-    this.stopAnimationLoop();
-    this.emit({ type: "stop", time: performance.now() });
-    this.emit({
+    this?.state.isPlaying = false;
+    this?.state.isRecording = false;
+    this?.state.currentSample = 0;
+    this?.stopAnimationLoop();
+    this?.emit({ type: "stop", time: performance?.now() });
+    this?.emit({
       type: "position-change",
-      time: performance.now(),
-      data: this.getCurrentPosition(),
+      time: performance?.now(),
+      data: this?.getCurrentPosition(),
     });
   }
 
   record(): void {
-    this.state.isRecording = true;
-    this.emit({ type: "record", time: performance.now() });
-    this.play();
+    this?.state.isRecording = true;
+    this?.emit({ type: "record", time: performance?.now() });
+    this?.play();
   }
 
   setPosition(samples: number): void {
-    this.state.currentSample = Math.max(0, samples);
-    this.emit({
+    this?.state.currentSample = Math?.max(0, samples);
+    this?.emit({
       type: "position-change",
-      time: performance.now(),
-      data: this.getCurrentPosition(),
+      time: performance?.now(),
+      data: this?.getCurrentPosition(),
     });
   }
 
   setPositionBars(bar: number, beat: number = 1, tick: number = 0): void {
-    const samples = this.positionToSamples({ bar, beat, tick, totalBeats: 0 });
-    this.setPosition(samples);
+    const _samples = this?.positionToSamples({ bar, beat, tick, totalBeats: 0 });
+    this?.setPosition(samples);
   }
 
   setLoop(enabled: boolean, startSamples?: number, endSamples?: number): void {
-    this.state.isLooping = enabled;
-    if (startSamples !== undefined) this.state.loopStartSample = startSamples;
-    if (endSamples !== undefined) this.state.loopEndSample = endSamples;
-    this.emit({
+    this?.state.isLooping = enabled;
+    if (startSamples !== undefined) this?.state.loopStartSample = startSamples;
+    if (endSamples !== undefined) this?.state.loopEndSample = endSamples;
+    this?.emit({
       type: "loop-change",
-      time: performance.now(),
+      time: performance?.now(),
       data: {
-        enabled: this.state.isLooping,
-        start: this.state.loopStartSample,
-        end: this.state.loopEndSample,
+        enabled: this?.state.isLooping,
+        start: this?.state.loopStartSample,
+        end: this?.state.loopEndSample,
       },
     });
   }
 
   setTempo(tempo: number): void {
     if (tempo < 20 || tempo > 999) return;
-    if (this.state.tempoMap.length > 0) {
-      this.state.tempoMap[0].tempo = tempo;
+    if (this?.state.tempoMap?.length > 0) {
+      this?.state.tempoMap[0].tempo = tempo;
     }
-    this.emit({
+    this?.emit({
       type: "tempo-change",
-      time: performance.now(),
+      time: performance?.now(),
       data: { tempo },
     });
   }
 
   private startAnimationLoop(): void {
-    const tick = () => {
-      if (!this.state.isPlaying) return;
+    const _tick = () => {
+      if (!this?.state.isPlaying) return;
 
-      const now = performance.now();
-      const deltaMs = now - this.lastTickTime;
-      this.lastTickTime = now;
+      const _now = performance?.now();
+      const _deltaMs = now - this?.lastTickTime;
+      this?.lastTickTime = now;
 
-      this.getTempoAtTime(this.state.currentSample / this.state.sampleRate);
-      const samplesPerMs = this.state.sampleRate / 1000;
-      const deltaSamples = Math.round(deltaMs * samplesPerMs);
+      this?.getTempoAtTime(
+        this?.state.currentSample / this?.state.sampleRate,
+      );
+      const _samplesPerMs = this?.state.sampleRate / 1000;
+      const _deltaSamples = Math?.round(deltaMs * samplesPerMs);
 
-      this.state.currentSample += deltaSamples;
+      this?.state.currentSample += deltaSamples;
 
       if (
-        this.state.isLooping &&
-        this.state.currentSample >= this.state.loopEndSample
+        this?.state.isLooping &&
+        this?.state.currentSample >= this?.state.loopEndSample
       ) {
-        this.state.currentSample = this.state.loopStartSample;
+        this?.state.currentSample = this?.state.loopStartSample;
       }
 
-      this.emit({
+      this?.emit({
         type: "position-change",
         time: now,
-        data: this.getCurrentPosition(),
+        data: this?.getCurrentPosition(),
       });
-      this.animationFrameId = requestAnimationFrame(tick);
+      this?.animationFrameId = requestAnimationFrame(tick);
     };
 
-    this.animationFrameId = requestAnimationFrame(tick);
+    this?.animationFrameId = requestAnimationFrame(tick);
   }
 
   private stopAnimationLoop(): void {
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
+    if (this?.animationFrameId !== null) {
+      cancelAnimationFrame(this?.animationFrameId);
+      this?.animationFrameId = null;
     }
   }
 
   on(type: TransportEventType | "*", listener: TransportListener): () => void {
-    if (!this.listeners.has(type)) {
-      this.listeners.set(type, new Set());
+    if (!this?.listeners.has(type)) {
+      this?.listeners.set(type, new Set());
     }
-    this.listeners.get(type)!.add(listener);
-    return () => this.off(type, listener);
+    this?.listeners.get(type)!.add(listener);
+    return () => this?.off(type, listener);
   }
 
   off(type: TransportEventType | "*", listener: TransportListener): void {
-    this.listeners.get(type)?.delete(listener);
+    this?.listeners.get(type)?.delete(listener);
   }
 
   private emit(event: TransportEvent): void {
-    this.listeners.get(event.type)?.forEach((l) => l(event));
-    this.listeners.get("*")?.forEach((l) => l(event));
+    this?.listeners.get(event?.type)?.forEach((l) => l(event));
+    this?.listeners.get("*")?.forEach((l) => l(event));
   }
 
   dispose(): void {
-    this.stopAnimationLoop();
-    this.listeners.clear();
+    this?.stopAnimationLoop();
+    this?.listeners.clear();
   }
 }
 
-export const transportEngine = new TransportEngine();
+export const _transportEngine = new TransportEngine();

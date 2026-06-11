@@ -1,5 +1,5 @@
 import type { AdCreative } from "@shared/schema";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { getRedisClient } from "../lib/redisConnectionFactory?.js";
 
 /**
  * Advertisement Content Normalization Service
@@ -14,23 +14,23 @@ export class AdvertisingNormalizationService {
     peaks: unknown[];
     globalPeaks: unknown[];
   }> {
-    const redis = await getRedisClient();
+    const _redis = await getRedisClient();
     if (!redis) {
       throw new Error(
         "[AdvertisingNorm] PDIM/Redis client unavailable — cannot load trained ad patterns",
       );
     }
 
-    const [patternRaw, peaksRaw, globalRaw] = await Promise.all([
-      redis.get(`mb:ads:${artistId}:patterns`),
-      redis.lrange(`mb:ads:${artistId}:peaks`, 0, -1),
-      redis.lrange("mb:ads:global:peaks", 0, -1),
+    const [patternRaw, peaksRaw, globalRaw] = await Promise?.all([
+      redis?.get(`mb:ads:${artistId}:patterns`),
+      redis?.lrange(`mb:ads:${artistId}:peaks`, 0, -1),
+      redis?.lrange("mb:ads:global:peaks", 0, -1),
     ]);
 
     return {
-      patterns: patternRaw ? JSON.parse(patternRaw) : {},
-      peaks: (peaksRaw || []).map((r: string) => JSON.parse(r)),
-      globalPeaks: (globalRaw || []).map((r: string) => JSON.parse(r)),
+      patterns: patternRaw ? JSON?.parse(patternRaw) : {},
+      peaks: (peaksRaw || []).map((r: string) => JSON?.parse(r)),
+      globalPeaks: (globalRaw || []).map((r: string) => JSON?.parse(r)),
     };
   }
   // Platform content requirements for optimal organic performance
@@ -38,13 +38,13 @@ export class AdvertisingNormalizationService {
     facebook: {
       textMax: 125, // Short text performs best organically
       hashtagMax: 30,
-      imageRatio: [1.91, 1, 4 / 5],
+      imageRatio: [1?.91, 1, 4 / 5],
       optimalLength: 80, // Engagement sweet spot
     },
     instagram: {
       textMax: 2200,
       hashtagMax: 30,
-      imageRatio: [1.91, 1, 4 / 5],
+      imageRatio: [1?.91, 1, 4 / 5],
       optimalLength: 138, // Research-backed engagement length
     },
     twitter: {
@@ -56,7 +56,7 @@ export class AdvertisingNormalizationService {
     linkedin: {
       textMax: 3000,
       hashtagMax: 5,
-      imageRatio: [1.91, 1],
+      imageRatio: [1?.91, 1],
       optimalLength: 150, // Professional engagement length
     },
     tiktok: {
@@ -84,37 +84,37 @@ export class AdvertisingNormalizationService {
     artistId = "artist-001",
   ): Promise<Record<string, any>> {
     const variants: Record<string, any> = {};
-    const pdim = await this.getPdimAdData(artistId);
+    const _pdim = await this?.getPdimAdData(artistId);
 
     for (const platform of platforms) {
-      const limits =
-        this.platformLimits[platform as keyof typeof this.platformLimits];
+      const _limits =
+        this?.platformLimits[platform as keyof typeof this?.platformLimits];
       if (!limits) continue;
 
       variants[platform] = {
-        text: this.optimizeText(
-          creative.normalizedContent || creative.rawContent || "",
+        text: this?.optimizeText(
+          creative?.normalizedContent || creative?.rawContent || "",
           platform,
           limits,
         ),
-        hashtags: this.extractAndOptimizeHashtags(
-          creative.rawContent || "",
-          limits.hashtagMax,
+        hashtags: this?.extractAndOptimizeHashtags(
+          creative?.rawContent || "",
+          limits?.hashtagMax,
           platform,
         ),
-        mediaUrls: creative.assetUrls || [],
+        mediaUrls: creative?.assetUrls || [],
         aspectRatio:
-          limits.imageRatio || (limits as Record<string, unknown>).videoRatio,
-        callToAction: this.generateCTA(platform, pdim.patterns),
-        optimalPostTime: this.calculateOptimalPostTime(
+          limits?.imageRatio || (limits as Record<string, unknown>).videoRatio,
+        callToAction: this?.generateCTA(platform, pdim?.patterns),
+        optimalPostTime: this?.calculateOptimalPostTime(
           platform,
-          pdim.peaks,
-          pdim.globalPeaks,
+          pdim?.peaks,
+          pdim?.globalPeaks,
         ),
-        engagementHooks: this.generateEngagementHooks(
-          creative.rawContent || "",
+        engagementHooks: this?.generateEngagementHooks(
+          creative?.rawContent || "",
           platform,
-          pdim.patterns,
+          pdim?.patterns,
         ),
       };
     }
@@ -129,19 +129,19 @@ export class AdvertisingNormalizationService {
     content: string,
     _assets: string[],
   ): Promise<{ status: string; issues: Record<string, unknown> }> {
-    const issues = {
-      offensive: this.detectOffensiveContent(content),
-      spam: this.detectSpamPatterns(content),
+    const _issues = {
+      offensive: this?.detectOffensiveContent(content),
+      spam: this?.detectSpamPatterns(content),
       copyright: false, // Placeholder - users upload own content
-      brandSafety: this.checkBrandSafety(content),
-      engagement: this.validateEngagementQuality(content),
+      brandSafety: this?.checkBrandSafety(content),
+      engagement: this?.validateEngagementQuality(content),
     };
 
-    const hasIssues = Object.entries(issues).some(
+    const _hasIssues = Object?.entries(issues).some(
       ([key, value]) => key !== "engagement" && value === true,
     );
 
-    const status = hasIssues ? "rejected" : "approved";
+    const _status = hasIssues ? "rejected" : "approved";
     return { status, issues };
   }
 
@@ -155,23 +155,23 @@ export class AdvertisingNormalizationService {
   ): string {
     // Truncate to optimal length for engagement
     let optimized =
-      text.length > limits.optimalLength
-        ? text.substring(0, limits.optimalLength - 3) + "..."
+      text?.length > limits?.optimalLength
+        ? text?.substring(0, limits?.optimalLength - 3) + "..."
         : text;
 
     // Add platform-specific formatting
     switch (platform) {
       case "twitter":
         // Keep it punchy for Twitter
-        optimized = this.addTwitterFormatting(optimized);
+        optimized = this?.addTwitterFormatting(optimized);
         break;
       case "linkedin":
         // Professional tone for LinkedIn
-        optimized = this.addLinkedInFormatting(optimized);
+        optimized = this?.addLinkedInFormatting(optimized);
         break;
       case "tiktok":
         // Casual, energetic for TikTok
-        optimized = this.addTikTokFormatting(optimized);
+        optimized = this?.addTikTokFormatting(optimized);
         break;
     }
 
@@ -187,25 +187,25 @@ export class AdvertisingNormalizationService {
     platform: string,
   ): string[] {
     // Extract existing hashtags
-    const existingHashtags = text.match(/#\w+/g) || [];
+    const _existingHashtags = text?.match(/#\w+/g) || [];
 
     // Add platform-optimized discovery hashtags
-    const platformHashtags = this.getPlatformOptimizedHashtags(platform);
+    const _platformHashtags = this?.getPlatformOptimizedHashtags(platform);
 
     // Combine and deduplicate
-    const allHashtags = [
+    const _allHashtags = [
       ...new Set([...existingHashtags, ...platformHashtags]),
     ];
 
     // Return top performing hashtags up to limit
-    return allHashtags.slice(0, maxCount);
+    return allHashtags?.slice(0, maxCount);
   }
 
   /**
    * Get platform-specific hashtags for maximum organic reach
    */
   private getPlatformOptimizedHashtags(platform: string): string[] {
-    const musicDiscoveryHashtags = {
+    const _musicDiscoveryHashtags = {
       instagram: [
         "#NewMusic",
         "#MusicPromotion",
@@ -245,8 +245,8 @@ export class AdvertisingNormalizationService {
     platform: string,
     patterns: Record<string, any> = {},
   ): string {
-    const platformKey = Object.keys(patterns).find((k) =>
-      k.startsWith(platform),
+    const _platformKey = Object?.keys(patterns).find((k) =>
+      k?.startsWith(platform),
     );
     if (platformKey && patterns[platformKey]?.top_ctas?.length) {
       return patterns[platformKey].top_ctas[0];
@@ -272,15 +272,15 @@ export class AdvertisingNormalizationService {
     peaks: unknown[] = [],
     globalPeaks: unknown[] = [],
   ): string {
-    const artistPeak = peaks.find(
+    const _artistPeak = peaks?.find(
       (p) => p?.platform === platform || p?.platforms?.includes(platform),
     );
-    if (artistPeak?.window) return artistPeak.window;
+    if (artistPeak?.window) return artistPeak?.window;
 
-    const globalPeak = globalPeaks.find(
+    const _globalPeak = globalPeaks?.find(
       (p) => p?.platform === platform || p?.platforms?.includes(platform),
     );
-    if (globalPeak?.window) return globalPeak.window;
+    if (globalPeak?.window) return globalPeak?.window;
 
     const optimalTimes: Record<string, string> = {
       instagram: "11:00 AM - 1:00 PM weekdays",
@@ -304,40 +304,40 @@ export class AdvertisingNormalizationService {
   ): string[] {
     const hooks: string[] = [];
 
-    const platformKey = Object.keys(patterns).find((k) =>
-      k.startsWith(platform),
+    const _platformKey = Object?.keys(patterns).find((k) =>
+      k?.startsWith(platform),
     );
     if (platformKey && patterns[platformKey]?.top_hooks?.length) {
-      hooks.push(...patterns[platformKey].top_hooks.slice(0, 2));
+      hooks?.push(...patterns[platformKey].top_hooks?.slice(0, 2));
     }
 
-    if (!content.includes("?")) {
-      hooks.push("What do you think of this track? 💭");
+    if (!content?.includes("?")) {
+      hooks?.push("What do you think of this track? 💭");
     }
     if (!new RegExp("[\\u{1F300}-\\u{1F9FF}]", "u").test(content)) {
-      hooks.push("React with 🔥 if you love this!");
+      hooks?.push("React with 🔥 if you love this!");
     }
-    hooks.push("Tag someone who needs to hear this!");
-    if (platform === "tiktok") hooks.push("Duet this! 🎤");
-    else if (platform === "instagram") hooks.push("Save this for later! 📌");
+    hooks?.push("Tag someone who needs to hear this!");
+    if (platform === "tiktok") hooks?.push("Duet this! 🎤");
+    else if (platform === "instagram") hooks?.push("Save this for later! 📌");
 
     return [...new Set(hooks)];
   }
 
   // Content safety checks
   private detectOffensiveContent(text: string): boolean {
-    const offensivePatterns = /\b(spam|scam|explicit|offensive)\b/i;
-    return offensivePatterns.test(text);
+    const _offensivePatterns = /\b(spam|scam|explicit|offensive)\b/i;
+    return offensivePatterns?.test(text);
   }
 
   private detectSpamPatterns(text: string): boolean {
     // Check for excessive caps
-    const capsRatio =
-      (text.match(/[A-Z]/g) || []).length / Math.max(text.length, 1);
-    if (capsRatio > 0.5) return true;
+    const _capsRatio =
+      (text?.match(/[A-Z]/g) || []).length / Math?.max(text?.length, 1);
+    if (capsRatio > 0?.5) return true;
 
     // Check for excessive exclamation marks
-    const exclamationCount = (text.match(/!/g) || []).length;
+    const _exclamationCount = (text?.match(/!/g) || []).length;
     if (exclamationCount > 5) return true;
 
     // Check for repetitive text
@@ -347,13 +347,13 @@ export class AdvertisingNormalizationService {
   }
 
   private checkBrandSafety(text: string): boolean {
-    const unsafePatterns = /\b(violence|hate|illegal)\b/i;
-    return unsafePatterns.test(text);
+    const _unsafePatterns = /\b(violence|hate|illegal)\b/i;
+    return unsafePatterns?.test(text);
   }
 
   private validateEngagementQuality(text: string): boolean {
     // Text should be substantial
-    if (text.length < 20) return false;
+    if (text?.length < 20) return false;
 
     // Should have some variation
     if (!/[.!?]/.test(text)) return false;
@@ -364,16 +364,16 @@ export class AdvertisingNormalizationService {
   // Platform-specific formatting helpers
   private addTwitterFormatting(text: string): string {
     // Twitter loves line breaks for readability
-    return text.trim();
+    return text?.trim();
   }
 
   private addLinkedInFormatting(text: string): string {
     // LinkedIn prefers paragraph structure
-    return text.trim();
+    return text?.trim();
   }
 
   private addTikTokFormatting(text: string): string {
     // TikTok loves casual, energetic tone
-    return text.trim();
+    return text?.trim();
   }
 }

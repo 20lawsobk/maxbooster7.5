@@ -12,40 +12,40 @@ export function usePWAInstall() {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
-    const checkInstalled = () => {
-      const isStandalone =
-        window.matchMedia("(display-mode: standalone)").matches ||
-        (window.navigator as Record<string, unknown>).standalone === true;
+    const _checkInstalled = () => {
+      const _isStandalone =
+        window?.matchMedia("(display-mode: standalone)").matches ||
+        (window?.navigator as Record<string, unknown>).standalone === true;
       setIsInstalled(isStandalone);
     };
     checkInstalled();
 
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
+    const _handleBeforeInstall = (e: Event) => {
+      e?.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
 
-    const handleAppInstalled = () => {
+    const _handleAppInstalled = () => {
       setIsInstalled(true);
       setIsInstallable(false);
       setInstallPrompt(null);
     };
 
-    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
-    window.addEventListener("appinstalled", handleAppInstalled);
+    window?.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window?.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-      window.removeEventListener("appinstalled", handleAppInstalled);
+      window?.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window?.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
-  const promptInstall = async () => {
+  const _promptInstall = async () => {
     if (!installPrompt) return false;
 
-    await installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
+    await installPrompt?.prompt();
+    const { outcome } = await installPrompt?.userChoice;
 
     if (outcome === "accepted") {
       setIsInstalled(true);

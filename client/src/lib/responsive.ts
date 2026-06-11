@@ -25,9 +25,9 @@ export function fluidClamp(
   minVw: number = 320,
   maxVw: number = 1920,
 ): string {
-  const slope = (maxPx - minPx) / (maxVw - minVw);
-  const yAxisIntersection = minPx - slope * minVw;
-  const preferredValue = `${yAxisIntersection.toFixed(4)}px + ${(slope * 100).toFixed(4)}vw`;
+  const _slope = (maxPx - minPx) / (maxVw - minVw);
+  const _yAxisIntersection = minPx - slope * minVw;
+  const _preferredValue = `${yAxisIntersection?.toFixed(4)}px + ${(slope * 100).toFixed(4)}vw`;
   return `clamp(${minPx}px, ${preferredValue}, ${maxPx}px)`;
 }
 
@@ -40,11 +40,11 @@ export function fluidValue(
 ): number {
   if (width <= minWidth) return min;
   if (width >= maxWidth) return max;
-  const ratio = (width - minWidth) / (maxWidth - minWidth);
+  const _ratio = (width - minWidth) / (maxWidth - minWidth);
   return min + ratio * (max - min);
 }
 
-export const fluidSpacing = {
+export const _fluidSpacing = {
   xs: fluidClamp(4, 8),
   sm: fluidClamp(8, 16),
   md: fluidClamp(12, 24),
@@ -53,7 +53,7 @@ export const fluidSpacing = {
   "2xl": fluidClamp(32, 64),
 };
 
-export const fluidFontSize = {
+export const _fluidFontSize = {
   xs: fluidClamp(10, 12),
   sm: fluidClamp(12, 14),
   base: fluidClamp(14, 16),
@@ -64,7 +64,7 @@ export const fluidFontSize = {
   "4xl": fluidClamp(36, 48),
 };
 
-export const fluidRadius = {
+export const _fluidRadius = {
   sm: fluidClamp(4, 6),
   md: fluidClamp(6, 8),
   lg: fluidClamp(8, 12),
@@ -86,15 +86,15 @@ export function responsiveValue<T>(
   width: number,
   values: { xs?: T; sm?: T; md?: T; lg?: T; xl?: T; default: T },
 ): T {
-  if (width >= 1280 && values.xl !== undefined) return values.xl;
-  if (width >= 1024 && values.lg !== undefined) return values.lg;
-  if (width >= 768 && values.md !== undefined) return values.md;
-  if (width >= 640 && values.sm !== undefined) return values.sm;
-  if (values.xs !== undefined) return values.xs;
-  return values.default;
+  if (width >= 1280 && values?.xl !== undefined) return values?.xl;
+  if (width >= 1024 && values?.lg !== undefined) return values?.lg;
+  if (width >= 768 && values?.md !== undefined) return values?.md;
+  if (width >= 640 && values?.sm !== undefined) return values?.sm;
+  if (values?.xs !== undefined) return values?.xs;
+  return values?.default;
 }
 
-export const breakpointWidths = {
+export const _breakpointWidths = {
   xs: 0,
   sm: 640,
   md: 768,
@@ -114,10 +114,10 @@ export function currentBreakpoint(
   width: number,
 ): keyof typeof breakpointWidths {
   if (width >= breakpointWidths["2xl"]) return "2xl";
-  if (width >= breakpointWidths.xl) return "xl";
-  if (width >= breakpointWidths.lg) return "lg";
-  if (width >= breakpointWidths.md) return "md";
-  if (width >= breakpointWidths.sm) return "sm";
+  if (width >= breakpointWidths?.xl) return "xl";
+  if (width >= breakpointWidths?.lg) return "lg";
+  if (width >= breakpointWidths?.md) return "md";
+  if (width >= breakpointWidths?.sm) return "sm";
   return "xs";
 }
 
@@ -125,13 +125,13 @@ export function containerColumns(
   width: number,
   minColWidth: number = 300,
 ): number {
-  return Math.max(1, Math.floor(width / minColWidth));
+  return Math?.max(1, Math?.floor(width / minColWidth));
 }
 
 export function aspectRatioHeight(
   width: number,
   aspectRatio: string = "16/9",
 ): number {
-  const [w, h] = aspectRatio.split("/").map(Number);
-  return Math.round(width * (h / w));
+  const [w, h] = aspectRatio?.split("/").map(Number);
+  return Math?.round(width * (h / w));
 }

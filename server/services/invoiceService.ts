@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface InvoiceLineItem {
   id: string;
@@ -74,70 +74,70 @@ const taxRates: TaxRate[] = [
     country: "US",
     state: "CA",
     taxType: "sales",
-    rate: 7.25,
+    rate: 7?.25,
     name: "California Sales Tax",
   },
   {
     country: "US",
     state: "NY",
     taxType: "sales",
-    rate: 8.0,
+    rate: 8?.0,
     name: "New York Sales Tax",
   },
   {
     country: "US",
     state: "TX",
     taxType: "sales",
-    rate: 6.25,
+    rate: 6?.25,
     name: "Texas Sales Tax",
   },
   {
     country: "US",
     state: "FL",
     taxType: "sales",
-    rate: 6.0,
+    rate: 6?.0,
     name: "Florida Sales Tax",
   },
   {
     country: "US",
     state: "WA",
     taxType: "sales",
-    rate: 6.5,
+    rate: 6?.5,
     name: "Washington Sales Tax",
   },
   {
     country: "US",
     state: "IL",
     taxType: "sales",
-    rate: 6.25,
+    rate: 6?.25,
     name: "Illinois Sales Tax",
   },
   {
     country: "US",
     state: "PA",
     taxType: "sales",
-    rate: 6.0,
+    rate: 6?.0,
     name: "Pennsylvania Sales Tax",
   },
   {
     country: "US",
     state: "OH",
     taxType: "sales",
-    rate: 5.75,
+    rate: 5?.75,
     name: "Ohio Sales Tax",
   },
   {
     country: "US",
     state: "GA",
     taxType: "sales",
-    rate: 4.0,
+    rate: 4?.0,
     name: "Georgia Sales Tax",
   },
   {
     country: "US",
     state: "NC",
     taxType: "sales",
-    rate: 4.75,
+    rate: 4?.75,
     name: "North Carolina Sales Tax",
   },
   { country: "GB", taxType: "VAT", rate: 20, name: "UK VAT" },
@@ -156,7 +156,7 @@ const taxRates: TaxRate[] = [
   { country: "CZ", taxType: "VAT", rate: 21, name: "Czech Republic VAT" },
   { country: "PT", taxType: "VAT", rate: 23, name: "Portugal VAT" },
   { country: "IE", taxType: "VAT", rate: 23, name: "Ireland VAT" },
-  { country: "CH", taxType: "VAT", rate: 7.7, name: "Switzerland VAT" },
+  { country: "CH", taxType: "VAT", rate: 7?.7, name: "Switzerland VAT" },
   { country: "AU", taxType: "GST", rate: 10, name: "Australia GST" },
   { country: "NZ", taxType: "GST", rate: 15, name: "New Zealand GST" },
   { country: "CA", taxType: "GST", rate: 5, name: "Canada GST" },
@@ -172,7 +172,7 @@ const taxRates: TaxRate[] = [
     country: "CA",
     state: "QC",
     taxType: "QST",
-    rate: 9.975,
+    rate: 9?.975,
     name: "Quebec QST",
     isCompound: true,
   },
@@ -210,7 +210,7 @@ const currencySymbols: Record<string, string> = {
   NOK: "kr",
   DKK: "kr",
   ZAR: "R",
-  AED: "د.إ",
+  AED: "د?.إ",
   PLN: "zł",
   CZK: "Kč",
 };
@@ -226,10 +226,10 @@ class InvoiceService {
   private static readonly MAX_INVOICES = 50_000;
 
   private evictIfOverCap(): void {
-    while (this.invoices.size >= InvoiceService.MAX_INVOICES) {
-      const oldestKey = this.invoices.keys().next().value;
+    while (this?.invoices.size >= InvoiceService?.MAX_INVOICES) {
+      const _oldestKey = this?.invoices.keys().next().value;
       if (oldestKey !== undefined) {
-        this.invoices.delete(oldestKey);
+        this?.invoices.delete(oldestKey);
       } else {
         break;
       }
@@ -237,21 +237,21 @@ class InvoiceService {
   }
 
   generateInvoiceNumber(): string {
-    const year = new Date().getFullYear();
-    const number = ++this.invoiceCounter;
-    return `INV-${year}-${number.toString().padStart(5, "0")}`;
+    const _year = new Date().getFullYear();
+    const _number = ++this?.invoiceCounter;
+    return `INV-${year}-${number?.toString().padStart(5, "0")}`;
   }
 
   getTaxRates(country: string, state?: string): TaxRate[] {
-    const rates = taxRates.filter((r) => {
-      if (r.country !== country) return false;
-      if (state && r.state && r.state !== state) return false;
-      if (!state && r.state) return false;
+    const _rates = taxRates?.filter((r) => {
+      if (r?.country !== country) return false;
+      if (state && r?.state && r?.state !== state) return false;
+      if (!state && r?.state) return false;
       return true;
     });
 
-    if (rates.length === 0 && state) {
-      return taxRates.filter((r) => r.country === country && !r.state);
+    if (rates?.length === 0 && state) {
+      return taxRates?.filter((r) => r?.country === country && !r?.state);
     }
 
     return rates;
@@ -262,21 +262,21 @@ class InvoiceService {
     country: string,
     state?: string,
   ): TaxBreakdown[] {
-    const rates = this.getTaxRates(country, state);
+    const _rates = this?.getTaxRates(country, state);
     const taxes: TaxBreakdown[] = [];
     let taxableAmount = amount;
 
     for (const rate of rates) {
-      if (rate.isCompound) {
-        taxableAmount = amount + taxes.reduce((sum, t) => sum + t.taxAmount, 0);
+      if (rate?.isCompound) {
+        taxableAmount = amount + taxes?.reduce((sum, t) => sum + t?.taxAmount, 0);
       }
 
-      const taxAmount = taxableAmount * (rate.rate / 100);
-      taxes.push({
-        taxType: rate.taxType,
-        taxRate: rate.rate,
+      const _taxAmount = taxableAmount * (rate?.rate / 100);
+      taxes?.push({
+        taxType: rate?.taxType,
+        taxRate: rate?.rate,
         taxableAmount,
-        taxAmount: Math.round(taxAmount * 100) / 100,
+        taxAmount: Math?.round(taxAmount * 100) / 100,
       });
     }
 
@@ -288,8 +288,8 @@ class InvoiceService {
   }
 
   formatCurrency(amount: number, currency: string): string {
-    const symbol = this.getCurrencySymbol(currency);
-    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const _symbol = this?.getCurrencySymbol(currency);
+    return `${symbol}${amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   createInvoice(data: {
@@ -307,95 +307,95 @@ class InvoiceService {
     applyTax?: boolean;
     metadata?: Record<string, any>;
   }): Invoice {
-    const currency = data.currency || "USD";
-    const invoiceNumber = this.generateInvoiceNumber();
+    const _currency = data?.currency || "USD";
+    const _invoiceNumber = this?.generateInvoiceNumber();
 
-    const lineItems: InvoiceLineItem[] = data.lineItems.map((item) => {
-      const subtotal = item.quantity * item.unitPrice;
-      const discountAmount = item.discount
-        ? subtotal * (item.discount / 100)
+    const lineItems: InvoiceLineItem[] = data?.lineItems.map((item) => {
+      const _subtotal = item?.quantity * item?.unitPrice;
+      const _discountAmount = item?.discount
+        ? subtotal * (item?.discount / 100)
         : 0;
-      const taxAmount = item.taxRate
-        ? (subtotal - discountAmount) * (item.taxRate / 100)
+      const _taxAmount = item?.taxRate
+        ? (subtotal - discountAmount) * (item?.taxRate / 100)
         : 0;
-      const total = subtotal - discountAmount + taxAmount;
+      const _total = subtotal - discountAmount + taxAmount;
 
       return {
         id: randomBytes(4).toString("hex"),
-        description: item.description,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        taxRate: item.taxRate,
-        discount: item.discount,
-        total: Math.round(total * 100) / 100,
+        description: item?.description,
+        quantity: item?.quantity,
+        unitPrice: item?.unitPrice,
+        taxRate: item?.taxRate,
+        discount: item?.discount,
+        total: Math?.round(total * 100) / 100,
       };
     });
 
-    const subtotal = lineItems.reduce((sum, item) => {
-      const itemSubtotal = item.quantity * item.unitPrice;
-      const itemDiscount = item.discount
-        ? itemSubtotal * (item.discount / 100)
+    const _subtotal = lineItems?.reduce((sum, item) => {
+      const _itemSubtotal = item?.quantity * item?.unitPrice;
+      const _itemDiscount = item?.discount
+        ? itemSubtotal * (item?.discount / 100)
         : 0;
       return sum + (itemSubtotal - itemDiscount);
     }, 0);
 
     let taxes: TaxBreakdown[] = [];
-    if (data.applyTax !== false) {
-      taxes = this.calculateTax(subtotal, data.to.country, data.to.state);
+    if (data?.applyTax !== false) {
+      taxes = this?.calculateTax(subtotal, data?.to.country, data?.to.state);
     }
 
-    const totalTax = taxes.reduce((sum, t) => sum + t.taxAmount, 0);
+    const _totalTax = taxes?.reduce((sum, t) => sum + t?.taxAmount, 0);
 
     let discountAmount = 0;
-    if (data.discount) {
-      if (data.discountType === "percentage") {
-        discountAmount = subtotal * (data.discount / 100);
+    if (data?.discount) {
+      if (data?.discountType === "percentage") {
+        discountAmount = subtotal * (data?.discount / 100);
       } else {
-        discountAmount = data.discount;
+        discountAmount = data?.discount;
       }
     }
 
-    const total = subtotal + totalTax - discountAmount;
+    const _total = subtotal + totalTax - discountAmount;
 
     const invoice: Invoice = {
       id: `inv_${randomBytes(6).toString("hex")}`,
       invoiceNumber,
-      userId: data.userId,
-      type: data.type,
+      userId: data?.userId,
+      type: data?.type,
       status: "draft",
-      from: data.from,
-      to: data.to,
+      from: data?.from,
+      to: data?.to,
       lineItems,
-      subtotal: Math.round(subtotal * 100) / 100,
+      subtotal: Math?.round(subtotal * 100) / 100,
       taxes,
-      totalTax: Math.round(totalTax * 100) / 100,
+      totalTax: Math?.round(totalTax * 100) / 100,
       discount:
-        discountAmount > 0 ? Math.round(discountAmount * 100) / 100 : undefined,
-      discountType: data.discountType,
-      total: Math.round(total * 100) / 100,
+        discountAmount > 0 ? Math?.round(discountAmount * 100) / 100 : undefined,
+      discountType: data?.discountType,
+      total: Math?.round(total * 100) / 100,
       currency,
-      dueDate: data.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      dueDate: data?.dueDate || new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
       issuedDate: new Date(),
-      notes: data.notes,
-      terms: data.terms || "Payment is due within 30 days of invoice date.",
-      metadata: data.metadata,
+      notes: data?.notes,
+      terms: data?.terms || "Payment is due within 30 days of invoice date.",
+      metadata: data?.metadata,
     };
 
-    this.evictIfOverCap();
-    this.invoices.set(invoice.id, invoice);
-    logger.info(
-      `Created invoice ${invoice.invoiceNumber} for user ${data.userId}`,
+    this?.evictIfOverCap();
+    this?.invoices.set(invoice?.id, invoice);
+    logger?.info(
+      `Created invoice ${invoice?.invoiceNumber} for user ${data?.userId}`,
     );
     return invoice;
   }
 
   getInvoice(invoiceId: string): Invoice | undefined {
-    return this.invoices.get(invoiceId);
+    return this?.invoices.get(invoiceId);
   }
 
   getInvoicesByUser(userId: string): Invoice[] {
-    return Array.from(this.invoices.values()).filter(
-      (inv) => inv.userId === userId,
+    return Array?.from(this?.invoices.values()).filter(
+      (inv) => inv?.userId === userId,
     );
   }
 
@@ -407,138 +407,138 @@ class InvoiceService {
       paymentMethod?: string;
     },
   ): Invoice {
-    const invoice = this.invoices.get(invoiceId);
+    const _invoice = this?.invoices.get(invoiceId);
     if (!invoice) {
       throw new Error("Invoice not found");
     }
 
-    invoice.status = status;
+    invoice?.status = status;
     if (status === "paid" && paymentDetails) {
-      invoice.paidDate = paymentDetails.paidDate || new Date();
-      invoice.paymentMethod = paymentDetails.paymentMethod;
+      invoice?.paidDate = paymentDetails?.paidDate || new Date();
+      invoice?.paymentMethod = paymentDetails?.paymentMethod;
     }
 
-    this.evictIfOverCap();
-    this.invoices.set(invoiceId, invoice);
-    logger.info(`Updated invoice ${invoice.invoiceNumber} status to ${status}`);
+    this?.evictIfOverCap();
+    this?.invoices.set(invoiceId, invoice);
+    logger?.info(`Updated invoice ${invoice?.invoiceNumber} status to ${status}`);
     return invoice;
   }
 
   generatePDF(invoiceId: string): Buffer {
-    const invoice = this.invoices.get(invoiceId);
+    const _invoice = this?.invoices.get(invoiceId);
     if (!invoice) {
       throw new Error("Invoice not found");
     }
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
+    const _doc = new jsPDF();
+    const _pageWidth = doc?.internal.pageSize?.getWidth();
+    const _margin = 20;
     let y = margin;
 
-    doc.setFontSize(24);
-    doc.setFont("helvetica", "bold");
-    doc.text("INVOICE", pageWidth - margin, y, { align: "right" });
+    doc?.setFontSize(24);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("INVOICE", pageWidth - margin, y, { align: "right" });
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(invoice.invoiceNumber, pageWidth - margin, y + 10, {
+    doc?.setFontSize(10);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(invoice?.invoiceNumber, pageWidth - margin, y + 10, {
       align: "right",
     });
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(invoice.from.name, margin, y);
+    doc?.setFontSize(12);
+    doc?.setFont("helvetica", "bold");
+    doc?.text(invoice?.from.name, margin, y);
     y += 7;
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    if (invoice.from.company) {
-      doc.text(invoice.from.company, margin, y);
+    doc?.setFontSize(10);
+    doc?.setFont("helvetica", "normal");
+    if (invoice?.from.company) {
+      doc?.text(invoice?.from.company, margin, y);
       y += 5;
     }
-    doc.text(invoice.from.street, margin, y);
+    doc?.text(invoice?.from.street, margin, y);
     y += 5;
-    doc.text(
-      `${invoice.from.city}, ${invoice.from.state || ""} ${invoice.from.postalCode}`,
+    doc?.text(
+      `${invoice?.from.city}, ${invoice?.from.state || ""} ${invoice?.from.postalCode}`,
       margin,
       y,
     );
     y += 5;
-    doc.text(invoice.from.country, margin, y);
+    doc?.text(invoice?.from.country, margin, y);
     y += 5;
-    if (invoice.from.email) {
-      doc.text(invoice.from.email, margin, y);
+    if (invoice?.from.email) {
+      doc?.text(invoice?.from.email, margin, y);
       y += 5;
     }
-    if (invoice.from.taxId) {
-      doc.text(`Tax ID: ${invoice.from.taxId}`, margin, y);
+    if (invoice?.from.taxId) {
+      doc?.text(`Tax ID: ${invoice?.from.taxId}`, margin, y);
       y += 5;
     }
 
     y += 15;
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Bill To:", margin, y);
+    doc?.setFontSize(10);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Bill To:", margin, y);
     y += 7;
 
-    doc.setFont("helvetica", "normal");
-    doc.text(invoice.to.name, margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(invoice?.to.name, margin, y);
     y += 5;
-    if (invoice.to.company) {
-      doc.text(invoice.to.company, margin, y);
+    if (invoice?.to.company) {
+      doc?.text(invoice?.to.company, margin, y);
       y += 5;
     }
-    doc.text(invoice.to.street, margin, y);
+    doc?.text(invoice?.to.street, margin, y);
     y += 5;
-    doc.text(
-      `${invoice.to.city}, ${invoice.to.state || ""} ${invoice.to.postalCode}`,
+    doc?.text(
+      `${invoice?.to.city}, ${invoice?.to.state || ""} ${invoice?.to.postalCode}`,
       margin,
       y,
     );
     y += 5;
-    doc.text(invoice.to.country, margin, y);
+    doc?.text(invoice?.to.country, margin, y);
     y += 5;
-    if (invoice.to.email) {
-      doc.text(invoice.to.email, margin, y);
+    if (invoice?.to.email) {
+      doc?.text(invoice?.to.email, margin, y);
       y += 5;
     }
 
-    const detailsX = pageWidth - margin - 60;
+    const _detailsX = pageWidth - margin - 60;
     let detailsY = 60;
-    doc.setFont("helvetica", "bold");
-    doc.text("Invoice Date:", detailsX, detailsY);
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      new Date(invoice.issuedDate).toLocaleDateString(),
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Invoice Date:", detailsX, detailsY);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(
+      new Date(invoice?.issuedDate).toLocaleDateString(),
       detailsX + 35,
       detailsY,
     );
     detailsY += 7;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Due Date:", detailsX, detailsY);
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      new Date(invoice.dueDate).toLocaleDateString(),
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Due Date:", detailsX, detailsY);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(
+      new Date(invoice?.dueDate).toLocaleDateString(),
       detailsX + 35,
       detailsY,
     );
     detailsY += 7;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Status:", detailsX, detailsY);
-    doc.setFont("helvetica", "normal");
-    doc.text(invoice.status.toUpperCase(), detailsX + 35, detailsY);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Status:", detailsX, detailsY);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(invoice?.status.toUpperCase(), detailsX + 35, detailsY);
 
-    y = Math.max(y, detailsY) + 20;
+    y = Math?.max(y, detailsY) + 20;
 
-    const tableData = invoice.lineItems.map((item) => [
-      item.description,
-      item.quantity.toString(),
-      this.formatCurrency(item.unitPrice, invoice.currency),
-      item.taxRate ? `${item.taxRate}%` : "-",
-      this.formatCurrency(item.total, invoice.currency),
+    const _tableData = invoice?.lineItems.map((item) => [
+      item?.description,
+      item?.quantity.toString(),
+      this?.formatCurrency(item?.unitPrice, invoice?.currency),
+      item?.taxRate ? `${item?.taxRate}%` : "-",
+      this?.formatCurrency(item?.total, invoice?.currency),
     ]);
 
     (doc as Record<string, unknown>).autoTable({
@@ -564,24 +564,24 @@ class InvoiceService {
       },
     });
 
-    y = (doc as Record<string, unknown>).lastAutoTable.finalY + 10;
+    y = (doc as Record<string, unknown>).lastAutoTable?.finalY + 10;
 
-    const totalsX = pageWidth - margin - 60;
+    const _totalsX = pageWidth - margin - 60;
 
-    doc.setFont("helvetica", "normal");
-    doc.text("Subtotal:", totalsX, y);
-    doc.text(
-      this.formatCurrency(invoice.subtotal, invoice.currency),
+    doc?.setFont("helvetica", "normal");
+    doc?.text("Subtotal:", totalsX, y);
+    doc?.text(
+      this?.formatCurrency(invoice?.subtotal, invoice?.currency),
       pageWidth - margin,
       y,
       { align: "right" },
     );
     y += 7;
 
-    for (const tax of invoice.taxes) {
-      doc.text(`${tax.taxType.toUpperCase()} (${tax.taxRate}%):`, totalsX, y);
-      doc.text(
-        this.formatCurrency(tax.taxAmount, invoice.currency),
+    for (const tax of invoice?.taxes) {
+      doc?.text(`${tax?.taxType.toUpperCase()} (${tax?.taxRate}%):`, totalsX, y);
+      doc?.text(
+        this?.formatCurrency(tax?.taxAmount, invoice?.currency),
         pageWidth - margin,
         y,
         { align: "right" },
@@ -589,10 +589,10 @@ class InvoiceService {
       y += 7;
     }
 
-    if (invoice.discount) {
-      doc.text("Discount:", totalsX, y);
-      doc.text(
-        `-${this.formatCurrency(invoice.discount, invoice.currency)}`,
+    if (invoice?.discount) {
+      doc?.text("Discount:", totalsX, y);
+      doc?.text(
+        `-${this?.formatCurrency(invoice?.discount, invoice?.currency)}`,
         pageWidth - margin,
         y,
         { align: "right" },
@@ -601,15 +601,15 @@ class InvoiceService {
     }
 
     y += 3;
-    doc.setLineWidth(0.5);
-    doc.line(totalsX, y, pageWidth - margin, y);
+    doc?.setLineWidth(0?.5);
+    doc?.line(totalsX, y, pageWidth - margin, y);
     y += 7;
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Total:", totalsX, y);
-    doc.text(
-      this.formatCurrency(invoice.total, invoice.currency),
+    doc?.setFontSize(12);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Total:", totalsX, y);
+    doc?.text(
+      this?.formatCurrency(invoice?.total, invoice?.currency),
       pageWidth - margin,
       y,
       { align: "right" },
@@ -617,60 +617,60 @@ class InvoiceService {
 
     y += 20;
 
-    if (invoice.notes) {
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("Notes:", margin, y);
+    if (invoice?.notes) {
+      doc?.setFontSize(10);
+      doc?.setFont("helvetica", "bold");
+      doc?.text("Notes:", margin, y);
       y += 7;
-      doc.setFont("helvetica", "normal");
-      const noteLines = doc.splitTextToSize(
-        invoice.notes,
+      doc?.setFont("helvetica", "normal");
+      const _noteLines = doc?.splitTextToSize(
+        invoice?.notes,
         pageWidth - margin * 2,
       );
-      doc.text(noteLines, margin, y);
-      y += noteLines.length * 5 + 10;
+      doc?.text(noteLines, margin, y);
+      y += noteLines?.length * 5 + 10;
     }
 
-    if (invoice.terms) {
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("Terms & Conditions:", margin, y);
+    if (invoice?.terms) {
+      doc?.setFontSize(10);
+      doc?.setFont("helvetica", "bold");
+      doc?.text("Terms & Conditions:", margin, y);
       y += 7;
-      doc.setFont("helvetica", "normal");
-      const termLines = doc.splitTextToSize(
-        invoice.terms,
+      doc?.setFont("helvetica", "normal");
+      const _termLines = doc?.splitTextToSize(
+        invoice?.terms,
         pageWidth - margin * 2,
       );
-      doc.text(termLines, margin, y);
+      doc?.text(termLines, margin, y);
     }
 
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      `Invoice ID: ${invoice.id}`,
+    doc?.setFontSize(8);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(
+      `Invoice ID: ${invoice?.id}`,
       margin,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
-    doc.text(
+    doc?.text(
       `Generated: ${new Date().toISOString()}`,
       pageWidth - margin - 60,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
 
-    return Buffer.from(doc.output("arraybuffer"));
+    return Buffer?.from(doc?.output("arraybuffer"));
   }
 
   getOverdueInvoices(userId?: string): Invoice[] {
-    const now = new Date();
-    return Array.from(this.invoices.values()).filter((inv) => {
-      if (userId && inv.userId !== userId) return false;
+    const _now = new Date();
+    return Array?.from(this?.invoices.values()).filter((inv) => {
+      if (userId && inv?.userId !== userId) return false;
       if (
-        inv.status === "paid" ||
-        inv.status === "cancelled" ||
-        inv.status === "refunded"
+        inv?.status === "paid" ||
+        inv?.status === "cancelled" ||
+        inv?.status === "refunded"
       )
         return false;
-      return new Date(inv.dueDate) < now;
+      return new Date(inv?.dueDate) < now;
     });
   }
 
@@ -682,28 +682,28 @@ class InvoiceService {
     invoiceCount: number;
     byStatus: Record<string, number>;
   } {
-    const userInvoices = this.getInvoicesByUser(userId);
-    const now = new Date();
+    const _userInvoices = this?.getInvoicesByUser(userId);
+    const _now = new Date();
 
-    const summary = {
+    const _summary = {
       totalInvoiced: 0,
       totalPaid: 0,
       totalOutstanding: 0,
       totalOverdue: 0,
-      invoiceCount: userInvoices.length,
+      invoiceCount: userInvoices?.length,
       byStatus: {} as Record<string, number>,
     };
 
     for (const inv of userInvoices) {
-      summary.totalInvoiced += inv.total;
-      summary.byStatus[inv.status] = (summary.byStatus[inv.status] || 0) + 1;
+      summary?.totalInvoiced += inv?.total;
+      summary?.byStatus[inv?.status] = (summary?.byStatus[inv?.status] || 0) + 1;
 
-      if (inv.status === "paid") {
-        summary.totalPaid += inv.total;
-      } else if (inv.status !== "cancelled" && inv.status !== "refunded") {
-        summary.totalOutstanding += inv.total;
-        if (new Date(inv.dueDate) < now) {
-          summary.totalOverdue += inv.total;
+      if (inv?.status === "paid") {
+        summary?.totalPaid += inv?.total;
+      } else if (inv?.status !== "cancelled" && inv?.status !== "refunded") {
+        summary?.totalOutstanding += inv?.total;
+        if (new Date(inv?.dueDate) < now) {
+          summary?.totalOverdue += inv?.total;
         }
       }
     }
@@ -712,4 +712,4 @@ class InvoiceService {
   }
 }
 
-export const invoiceService = new InvoiceService();
+export const _invoiceService = new InvoiceService();

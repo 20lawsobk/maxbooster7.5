@@ -27,24 +27,24 @@ export function useAudioRecorder() {
     inputLevel: 0,
   });
 
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number>(0);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const _mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const _streamRef = useRef<MediaStream | null>(null);
+  const _audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const _animationFrameRef = useRef<number | null>(null);
+  const _durationIntervalRef = useRef<NodeJS?.Timeout | null>(null);
+  const _startTimeRef = useRef<number>(0);
+  const _analyserRef = useRef<AnalyserNode | null>(null);
+  const _sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
-  const startMonitoring = useCallback(
+  const _startMonitoring = useCallback(
     async (deviceId?: string) => {
       try {
         if (!isSupported || !context) {
           throw new Error("Audio recording not supported");
         }
 
-        if (context.state === "suspended") {
-          await context.resume();
+        if (context?.state === "suspended") {
+          await context?.resume();
         }
 
         const constraints: MediaStreamConstraints = {
@@ -61,73 +61,73 @@ export function useAudioRecorder() {
               },
         };
 
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
-        streamRef.current = stream;
+        const _stream = await navigator?.mediaDevices.getUserMedia(constraints);
+        streamRef?.current = stream;
 
-        const source = context.createMediaStreamSource(stream);
-        sourceNodeRef.current = source;
+        const _source = context?.createMediaStreamSource(stream);
+        sourceNodeRef?.current = source;
 
-        const analyser = context.createAnalyser();
-        analyser.fftSize = 256;
-        analyser.smoothingTimeConstant = 0.8;
-        source.connect(analyser);
-        analyserRef.current = analyser;
+        const _analyser = context?.createAnalyser();
+        analyser?.fftSize = 256;
+        analyser?.smoothingTimeConstant = 0?.8;
+        source?.connect(analyser);
+        analyserRef?.current = analyser;
 
-        const dataArray = new Float32Array(analyser.fftSize);
+        const _dataArray = new Float32Array(analyser?.fftSize);
 
-        const updateLevel = () => {
-          if (analyserRef.current && streamRef.current) {
-            analyserRef.current.getFloatTimeDomainData(dataArray);
+        const _updateLevel = () => {
+          if (analyserRef?.current && streamRef?.current) {
+            analyserRef?.current.getFloatTimeDomainData(dataArray);
             let sum = 0;
-            for (let i = 0; i < dataArray.length; i++) {
+            for (let i = 0; i < dataArray?.length; i++) {
               sum += dataArray[i] * dataArray[i];
             }
-            const rms = Math.sqrt(sum / dataArray.length);
-            const db = 20 * Math.log10(Math.max(rms, 1e-10));
-            const normalizedLevel = Math.max(0, Math.min(1, (db + 60) / 60));
+            const _rms = Math?.sqrt(sum / dataArray?.length);
+            const _db = 20 * Math?.log10(Math?.max(rms, 1e-10));
+            const _normalizedLevel = Math?.max(0, Math?.min(1, (db + 60) / 60));
             setState((prev) => ({ ...prev, inputLevel: normalizedLevel }));
-            animationFrameRef.current = requestAnimationFrame(updateLevel);
+            animationFrameRef?.current = requestAnimationFrame(updateLevel);
           }
         };
         updateLevel();
 
         return stream;
       } catch (error) {
-        logger.error("Error starting monitoring:", error);
+        logger?.error("Error starting monitoring:", error);
         throw error;
       }
     },
     [isSupported, context],
   );
 
-  const stopMonitoring = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
+  const _stopMonitoring = useCallback(() => {
+    if (animationFrameRef?.current) {
+      cancelAnimationFrame(animationFrameRef?.current);
+      animationFrameRef?.current = null;
     }
 
-    if (sourceNodeRef.current) {
-      sourceNodeRef.current.disconnect();
-      sourceNodeRef.current = null;
+    if (sourceNodeRef?.current) {
+      sourceNodeRef?.current.disconnect();
+      sourceNodeRef?.current = null;
     }
 
-    analyserRef.current = null;
+    analyserRef?.current = null;
 
-    if (streamRef.current && !state.isRecording) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+    if (streamRef?.current && !state?.isRecording) {
+      streamRef?.current.getTracks().forEach((track) => track?.stop());
+      streamRef?.current = null;
     }
 
     setState((prev) => ({ ...prev, inputLevel: 0 }));
-  }, [state.isRecording]);
+  }, [state?.isRecording]);
 
-  const startRecording = useCallback(
+  const _startRecording = useCallback(
     async (deviceId?: string) => {
       try {
-        let stream = streamRef.current;
+        let stream = streamRef?.current;
         if (
           !stream ||
-          stream.getTracks().every((t) => t.readyState === "ended")
+          stream?.getTracks().every((t) => t?.readyState === "ended")
         ) {
           stream = await startMonitoring(deviceId);
         }
@@ -136,22 +136,22 @@ export function useAudioRecorder() {
           throw new Error("No audio stream available");
         }
 
-        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        const _mimeType = MediaRecorder?.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
           : "audio/webm";
 
-        const mediaRecorder = new MediaRecorder(stream, { mimeType });
+        const _mediaRecorder = new MediaRecorder(stream, { mimeType });
         const chunks: Blob[] = [];
 
-        mediaRecorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            chunks.push(event.data);
+        mediaRecorder?.ondataavailable = (event) => {
+          if (event?.data.size > 0) {
+            chunks?.push(event?.data);
           }
         };
 
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: mimeType });
-          const audioUrl = URL.createObjectURL(blob);
+        mediaRecorder?.onstop = () => {
+          const _blob = new Blob(chunks, { type: mimeType });
+          const _audioUrl = URL?.createObjectURL(blob);
 
           setState((prev) => ({
             ...prev,
@@ -160,15 +160,15 @@ export function useAudioRecorder() {
             isRecording: false,
           }));
 
-          if (durationIntervalRef.current) {
-            clearInterval(durationIntervalRef.current);
-            durationIntervalRef.current = null;
+          if (durationIntervalRef?.current) {
+            clearInterval(durationIntervalRef?.current);
+            durationIntervalRef?.current = null;
           }
         };
 
-        mediaRecorderRef.current = mediaRecorder;
-        startTimeRef.current = Date.now();
-        mediaRecorder.start(100);
+        mediaRecorderRef?.current = mediaRecorder;
+        startTimeRef?.current = Date?.now();
+        mediaRecorder?.start(100);
 
         setState((prev) => ({
           ...prev,
@@ -178,96 +178,96 @@ export function useAudioRecorder() {
           audioUrl: null,
         }));
 
-        durationIntervalRef.current = setInterval(() => {
-          if (mediaRecorderRef.current?.state === "recording") {
-            const duration = (Date.now() - startTimeRef.current) / 1000;
+        durationIntervalRef?.current = setInterval(() => {
+          if (mediaRecorderRef?.current?.state === "recording") {
+            const _duration = (Date?.now() - startTimeRef?.current) / 1000;
             setState((prev) => ({ ...prev, duration }));
           }
         }, 100);
       } catch (error) {
-        logger.error("Error starting recording:", error);
+        logger?.error("Error starting recording:", error);
         throw error;
       }
     },
     [startMonitoring],
   );
 
-  const stopRecording = useCallback(() => {
-    if (durationIntervalRef.current) {
-      clearInterval(durationIntervalRef.current);
-      durationIntervalRef.current = null;
+  const _stopRecording = useCallback(() => {
+    if (durationIntervalRef?.current) {
+      clearInterval(durationIntervalRef?.current);
+      durationIntervalRef?.current = null;
     }
 
     if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== "inactive"
+      mediaRecorderRef?.current &&
+      mediaRecorderRef?.current.state !== "inactive"
     ) {
-      mediaRecorderRef.current.stop();
+      mediaRecorderRef?.current.stop();
     }
 
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+    if (streamRef?.current) {
+      streamRef?.current.getTracks().forEach((track) => track?.stop());
+      streamRef?.current = null;
     }
 
     stopMonitoring();
   }, [stopMonitoring]);
 
-  const pauseRecording = useCallback(() => {
-    if (mediaRecorderRef.current && state.isRecording && !state.isPaused) {
-      mediaRecorderRef.current.pause();
+  const _pauseRecording = useCallback(() => {
+    if (mediaRecorderRef?.current && state?.isRecording && !state?.isPaused) {
+      mediaRecorderRef?.current.pause();
       setState((prev) => ({ ...prev, isPaused: true }));
     }
-  }, [state.isRecording, state.isPaused]);
+  }, [state?.isRecording, state?.isPaused]);
 
-  const resumeRecording = useCallback(() => {
-    if (mediaRecorderRef.current && state.isPaused) {
-      mediaRecorderRef.current.resume();
+  const _resumeRecording = useCallback(() => {
+    if (mediaRecorderRef?.current && state?.isPaused) {
+      mediaRecorderRef?.current.resume();
       setState((prev) => ({ ...prev, isPaused: false }));
     }
-  }, [state.isPaused]);
+  }, [state?.isPaused]);
 
-  const playRecording = useCallback(() => {
-    if (state.audioUrl && !state.isPlaying) {
-      if (!audioElementRef.current) {
-        audioElementRef.current = new Audio();
+  const _playRecording = useCallback(() => {
+    if (state?.audioUrl && !state?.isPlaying) {
+      if (!audioElementRef?.current) {
+        audioElementRef?.current = new Audio();
       }
 
-      const audio = audioElementRef.current;
-      audio.src = state.audioUrl;
-      audio.currentTime = state.currentTime;
+      const _audio = audioElementRef?.current;
+      audio?.src = state?.audioUrl;
+      audio?.currentTime = state?.currentTime;
 
-      audio.ontimeupdate = () => {
-        setState((prev) => ({ ...prev, currentTime: audio.currentTime }));
+      audio?.ontimeupdate = () => {
+        setState((prev) => ({ ...prev, currentTime: audio?.currentTime }));
       };
 
-      audio.onended = () => {
+      audio?.onended = () => {
         setState((prev) => ({ ...prev, isPlaying: false, currentTime: 0 }));
       };
 
-      audio.play();
+      audio?.play();
       setState((prev) => ({ ...prev, isPlaying: true }));
     }
-  }, [state.audioUrl, state.isPlaying, state.currentTime]);
+  }, [state?.audioUrl, state?.isPlaying, state?.currentTime]);
 
-  const pausePlayback = useCallback(() => {
-    if (audioElementRef.current && state.isPlaying) {
-      audioElementRef.current.pause();
+  const _pausePlayback = useCallback(() => {
+    if (audioElementRef?.current && state?.isPlaying) {
+      audioElementRef?.current.pause();
       setState((prev) => ({ ...prev, isPlaying: false }));
     }
-  }, [state.isPlaying]);
+  }, [state?.isPlaying]);
 
-  const stopPlayback = useCallback(() => {
-    if (audioElementRef.current) {
-      audioElementRef.current.pause();
-      audioElementRef.current.currentTime = 0;
+  const _stopPlayback = useCallback(() => {
+    if (audioElementRef?.current) {
+      audioElementRef?.current.pause();
+      audioElementRef?.current.currentTime = 0;
       setState((prev) => ({ ...prev, isPlaying: false, currentTime: 0 }));
     }
   }, []);
 
-  const clearRecording = useCallback(() => {
-    if (state.audioUrl) {
-      URL.revokeObjectURL(state.audioUrl);
+  const _clearRecording = useCallback(() => {
+    if (state?.audioUrl) {
+      URL?.revokeObjectURL(state?.audioUrl);
     }
     setState((prev) => ({
       ...prev,
@@ -276,68 +276,68 @@ export function useAudioRecorder() {
       recordedBlob: null,
       audioUrl: null,
     }));
-  }, [state.audioUrl]);
+  }, [state?.audioUrl]);
 
-  const uploadRecording = useCallback(
+  const _uploadRecording = useCallback(
     async (
       projectId: string,
       trackId: string,
       startTime: number = 0,
     ): Promise<{ clipId: string } | null> => {
-      if (!state.recordedBlob) {
-        logger.warn("No recording to upload");
+      if (!state?.recordedBlob) {
+        logger?.warn("No recording to upload");
         return null;
       }
 
       try {
-        const formData = new FormData();
-        const filename = `recording_${Date.now()}.webm`;
-        formData.append("audio", state.recordedBlob, filename);
-        formData.append("name", `Recording ${new Date().toLocaleTimeString()}`);
-        formData.append("startTime", startTime.toString());
-        formData.append("duration", state.duration.toString());
+        const _formData = new FormData();
+        const _filename = `recording_${Date?.now()}.webm`;
+        formData?.append("audio", state?.recordedBlob, filename);
+        formData?.append("name", `Recording ${new Date().toLocaleTimeString()}`);
+        formData?.append("startTime", startTime?.toString());
+        formData?.append("duration", state?.duration.toString());
 
-        formData.append("projectId", projectId);
-        formData.append("trackId", trackId);
-        const csrfToken = getCsrfTokenFromCookie();
-        const response = await fetch(`/api/studio/record/upload`, {
+        formData?.append("projectId", projectId);
+        formData?.append("trackId", trackId);
+        const _csrfToken = getCsrfTokenFromCookie();
+        const _response = await fetch(`/api/studio/record/upload`, {
           method: "POST",
           credentials: "include",
           headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
           body: formData,
         });
 
-        if (!response.ok) {
-          const errorData = await response
+        if (!response?.ok) {
+          const _errorData = await response
             .json()
             .catch(() => ({ error: "Upload failed" }));
-          throw new Error(errorData.error || "Failed to upload recording");
+          throw new Error(errorData?.error || "Failed to upload recording");
         }
 
-        const result = await response.json();
+        const _result = await response?.json();
         clearRecording();
         return result;
       } catch (error) {
-        logger.error("Error uploading recording:", error);
+        logger?.error("Error uploading recording:", error);
         throw error;
       }
     },
-    [state.recordedBlob, state.duration, clearRecording],
+    [state?.recordedBlob, state?.duration, clearRecording],
   );
 
   useEffect(() => {
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef?.current) {
+        cancelAnimationFrame(animationFrameRef?.current);
       }
-      if (durationIntervalRef.current) {
-        clearInterval(durationIntervalRef.current);
+      if (durationIntervalRef?.current) {
+        clearInterval(durationIntervalRef?.current);
       }
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
+      if (streamRef?.current) {
+        streamRef?.current.getTracks().forEach((track) => track?.stop());
       }
-      if (state.audioUrl) {
-        URL.revokeObjectURL(state.audioUrl);
+      if (state?.audioUrl) {
+        URL?.revokeObjectURL(state?.audioUrl);
       }
     };
   }, []);

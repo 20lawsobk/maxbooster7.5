@@ -13,7 +13,7 @@ import {
   inferenceRuns,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface DashboardStats {
   totalStreams: number;
@@ -197,28 +197,28 @@ export class CustomAIEngine {
   async getAIModel(
     modelName: string,
   ): Promise<{ modelId: string; versionId: string }> {
-    if (this.modelCache.has(modelName)) {
-      return this.modelCache.get(modelName)!;
+    if (this?.modelCache.has(modelName)) {
+      return this?.modelCache.get(modelName)!;
     }
 
-    const model = await db
+    const _model = await db
       .select()
       .from(aiModels)
-      .where(eq(aiModels.modelName, modelName))
+      .where(eq(aiModels?.modelName, modelName))
       .limit(1);
 
-    if (model.length === 0) {
+    if (model?.length === 0) {
       throw new Error(
         `AI Model ${modelName} not found. Please run seed initialization.`,
       );
     }
 
-    const result = {
+    const _result = {
       modelId: model[0].id,
       versionId: model[0].currentVersionId!,
     };
 
-    this.modelCache.set(modelName, result);
+    this?.modelCache.set(modelName, result);
     return result;
   }
 
@@ -232,7 +232,7 @@ export class CustomAIEngine {
     userId?: string,
   ): Promise<void> {
     try {
-      await db.insert(inferenceRuns).values({
+      await db?.insert(inferenceRuns).values({
         modelId,
         versionId,
         userId,
@@ -246,7 +246,7 @@ export class CustomAIEngine {
         success: true,
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to log AI inference:");
+      logger?.warn({ err: error }, "Failed to log AI inference:");
     }
   }
 
@@ -259,48 +259,48 @@ export class CustomAIEngine {
       | "churn_rate"
       | "conversion_rate",
     horizon: "7d" | "30d" | "90d" | "365d" = "30d",
-    confidenceLevel: number = 0.95,
+    confidenceLevel: number = 0?.95,
   ): Promise<MetricPrediction[]> {
-    const startTime = Date.now();
-    const { modelId, versionId } = await this.getAIModel(
+    const _startTime = Date?.now();
+    const { modelId, versionId } = await this?.getAIModel(
       "time_series_predictor_v1",
     );
 
-    const historicalData = await this.getHistoricalMetricData(
+    const _historicalData = await this?.getHistoricalMetricData(
       userId,
       metricName,
       horizon,
     );
 
-    if (historicalData.length < 2) {
+    if (historicalData?.length < 2) {
       throw new Error(`Insufficient historical data for metric ${metricName}`);
     }
 
-    const horizonDays = parseInt(horizon);
+    const _horizonDays = parseInt(horizon);
     const predictions: MetricPrediction[] = [];
 
     const { seasonality, trend } =
-      this.detectSeasonalityAndTrend(historicalData);
-    const algorithm = seasonality
+      this?.detectSeasonalityAndTrend(historicalData);
+    const _algorithm = seasonality
       ? "seasonal_decomposition"
       : "exponential_smoothing";
 
     for (
       let i = 1;
-      i <= Math.min(horizonDays, 365);
-      i += Math.max(1, Math.floor(horizonDays / 10))
+      i <= Math?.min(horizonDays, 365);
+      i += Math?.max(1, Math?.floor(horizonDays / 10))
     ) {
-      const forecastDate = new Date();
-      forecastDate.setDate(forecastDate.getDate() + i);
+      const _forecastDate = new Date();
+      forecastDate?.setDate(forecastDate?.getDate() + i);
 
-      const prediction = this.forecastValue(
+      const _prediction = this?.forecastValue(
         historicalData,
         i,
         algorithm,
         seasonality,
         trend,
       );
-      const { lowerBound, upperBound } = this.calculateConfidenceInterval(
+      const { lowerBound, upperBound } = this?.calculateConfidenceInterval(
         prediction,
         historicalData,
         confidenceLevel,
@@ -310,49 +310,49 @@ export class CustomAIEngine {
         metricName,
         horizon,
         forecastDate,
-        predictedValue: Math.max(0, prediction),
+        predictedValue: Math?.max(0, prediction),
         confidenceLevel,
-        lowerBound: Math.max(0, lowerBound),
-        upperBound: Math.max(0, upperBound),
+        lowerBound: Math?.max(0, lowerBound),
+        upperBound: Math?.max(0, upperBound),
         algorithm,
         seasonalityDetected: seasonality !== null,
         trendDirection:
-          trend > 0.05 ? "upward" : trend < -0.05 ? "downward" : "stable",
+          trend > 0?.05 ? "upward" : trend < -0?.05 ? "downward" : "stable",
         metadata: {
           seasonalPeriod: seasonality?.period || null,
           trendSlope: trend,
-          historicalDataPoints: historicalData.length,
+          historicalDataPoints: historicalData?.length,
         },
       };
 
-      predictions.push(predictionResult);
+      predictions?.push(predictionResult);
 
-      await db.insert(aiMetricPredictions).values({
+      await db?.insert(aiMetricPredictions).values({
         userId,
         modelId,
         versionId,
         metricName,
-        metricType: this.getMetricType(metricName),
+        metricType: this?.getMetricType(metricName),
         horizon,
         forecastDate,
-        predictedValue: predictionResult.predictedValue.toString(),
-        confidenceLevel: predictionResult.confidenceLevel,
-        lowerBound: predictionResult.lowerBound.toString(),
-        upperBound: predictionResult.upperBound.toString(),
+        predictedValue: predictionResult?.predictedValue.toString(),
+        confidenceLevel: predictionResult?.confidenceLevel,
+        lowerBound: predictionResult?.lowerBound.toString(),
+        upperBound: predictionResult?.upperBound.toString(),
         algorithm,
-        seasonalityDetected: predictionResult.seasonalityDetected,
-        trendDirection: predictionResult.trendDirection,
-        metadata: predictionResult.metadata,
+        seasonalityDetected: predictionResult?.seasonalityDetected,
+        trendDirection: predictionResult?.trendDirection,
+        metadata: predictionResult?.metadata,
       });
     }
 
-    await this.logInference(
+    await this?.logInference(
       modelId,
       versionId,
       "time_series_forecast",
       { userId, metricName, horizon, confidenceLevel },
       { predictions, algorithm, seasonality: seasonality !== null },
-      Date.now() - startTime,
+      Date?.now() - startTime,
       userId,
     );
 
@@ -364,33 +364,33 @@ export class CustomAIEngine {
     cohortDefinition: CohortDefinition,
     metrics: string[] = ["retention", "ltv", "engagement"],
   ): Promise<CohortAnalysisResult> {
-    const startTime = Date.now();
-    const { modelId, versionId } = await this.getAIModel("cohort_analyzer_v1");
+    const _startTime = Date?.now();
+    const { modelId, versionId } = await this?.getAIModel("cohort_analyzer_v1");
 
-    const cohortUsers = await this.getCohortUsers(cohortDefinition);
-    const cohortSize = cohortUsers.length;
+    const _cohortUsers = await this?.getCohortUsers(cohortDefinition);
+    const _cohortSize = cohortUsers?.length;
 
-    const timePoints = [1, 7, 30, 90, 365];
+    const _timePoints = [1, 7, 30, 90, 365];
     const cohortMetrics: Record<string, CohortMetricPoint> = {};
 
     for (const days of timePoints) {
-      const dayKey = `day${days}`;
-      cohortMetrics[dayKey] = await this.calculateCohortMetrics(
+      const _dayKey = `day${days}`;
+      cohortMetrics[dayKey] = await this?.calculateCohortMetrics(
         cohortUsers,
-        cohortDefinition.startDate,
+        cohortDefinition?.startDate,
         days,
         metrics,
       );
 
-      await db.insert(aiCohortAnalysis).values({
+      await db?.insert(aiCohortAnalysis).values({
         userId,
         modelId,
         versionId,
-        cohortType: cohortDefinition.cohortType,
-        cohortIdentifier: cohortDefinition.cohortIdentifier,
-        cohortStartDate: cohortDefinition.startDate,
+        cohortType: cohortDefinition?.cohortType,
+        cohortIdentifier: cohortDefinition?.cohortIdentifier,
+        cohortStartDate: cohortDefinition?.startDate,
         cohortSize,
-        metricType: metrics.join(","),
+        metricType: metrics?.join(","),
         daysSinceCohortStart: days,
         metricValue: cohortMetrics[dayKey].engagement?.toString() || "0",
         retentionRate: cohortMetrics[dayKey].retention || 0,
@@ -399,49 +399,49 @@ export class CustomAIEngine {
         churnRate: cohortMetrics[dayKey].churn || 0,
         conversionRate: cohortMetrics[dayKey].conversion || 0,
         comparisonToAverage: 0,
-        visualizationData: this.generateCohortVisualizationData(
+        visualizationData: this?.generateCohortVisualizationData(
           cohortMetrics[dayKey],
         ),
         metadata: { cohortSize, metrics },
       });
     }
 
-    const comparisonToAverage = await this.compareCohortToAverage(
+    const _comparisonToAverage = await this?.compareCohortToAverage(
       cohortMetrics,
-      cohortDefinition.cohortType,
+      cohortDefinition?.cohortType,
     );
 
-    await this.logInference(
+    await this?.logInference(
       modelId,
       versionId,
       "cohort_analysis",
       { userId, cohortDefinition, metrics },
       { cohortSize, metrics: cohortMetrics, comparisonToAverage },
-      Date.now() - startTime,
+      Date?.now() - startTime,
       userId,
     );
 
     return {
-      cohortType: cohortDefinition.cohortType,
-      cohortIdentifier: cohortDefinition.cohortIdentifier,
-      cohortStartDate: cohortDefinition.startDate,
+      cohortType: cohortDefinition?.cohortType,
+      cohortIdentifier: cohortDefinition?.cohortIdentifier,
+      cohortStartDate: cohortDefinition?.startDate,
       cohortSize,
       metrics: cohortMetrics,
       comparisonToAverage,
-      visualizationData: this.generateCohortVisualizationData(cohortMetrics),
+      visualizationData: this?.generateCohortVisualizationData(cohortMetrics),
     };
   }
 
   async predictChurn(userId: string): Promise<ChurnPrediction> {
-    const startTime = Date.now();
-    const { modelId, versionId } = await this.getAIModel("churn_predictor_v1");
+    const _startTime = Date?.now();
+    const { modelId, versionId } = await this?.getAIModel("churn_predictor_v1");
 
-    const features = await this.extractChurnFeatures(userId);
-    const churnProbability = this.calculateChurnProbability(features);
-    const riskLevel = this.determineRiskLevel(churnProbability);
-    const timeWindow = this.estimateChurnTimeWindow(features);
-    const topRiskFactors = this.identifyTopRiskFactors(features);
-    const retentionRecommendations = this.generateRetentionRecommendations(
+    const _features = await this?.extractChurnFeatures(userId);
+    const _churnProbability = this?.calculateChurnProbability(features);
+    const _riskLevel = this?.determineRiskLevel(churnProbability);
+    const _timeWindow = this?.estimateChurnTimeWindow(features);
+    const _topRiskFactors = this?.identifyTopRiskFactors(features);
+    const _retentionRecommendations = this?.generateRetentionRecommendations(
       topRiskFactors,
       features,
     );
@@ -453,13 +453,13 @@ export class CustomAIEngine {
       timeWindow,
       topRiskFactors,
       retentionRecommendations,
-      confidenceScore: 0.85,
+      confidenceScore: 0?.85,
     };
 
-    const validUntil = new Date();
-    validUntil.setDate(validUntil.getDate() + 7);
+    const _validUntil = new Date();
+    validUntil?.setDate(validUntil?.getDate() + 7);
 
-    await db.insert(aiChurnPredictions).values({
+    await db?.insert(aiChurnPredictions).values({
       userId,
       modelId,
       versionId,
@@ -467,24 +467,24 @@ export class CustomAIEngine {
       riskLevel,
       timeWindow,
       topRiskFactors: topRiskFactors,
-      engagementScore: features.engagementScore,
-      engagementTrend: features.engagementTrend,
-      paymentFailures: features.paymentFailures || 0,
-      supportTickets: features.supportTickets || 0,
-      lastActivityDays: features.lastActivityDays || 0,
-      featureUsageScore: features.featureUsageScore || 0,
+      engagementScore: features?.engagementScore,
+      engagementTrend: features?.engagementTrend,
+      paymentFailures: features?.paymentFailures || 0,
+      supportTickets: features?.supportTickets || 0,
+      lastActivityDays: features?.lastActivityDays || 0,
+      featureUsageScore: features?.featureUsageScore || 0,
       retentionRecommendations: retentionRecommendations,
-      confidenceScore: prediction.confidenceScore,
+      confidenceScore: prediction?.confidenceScore,
       validUntil,
     });
 
-    await this.logInference(
+    await this?.logInference(
       modelId,
       versionId,
       "churn_prediction",
       { userId, features },
       { churnProbability, riskLevel, topRiskFactors },
-      Date.now() - startTime,
+      Date?.now() - startTime,
       userId,
     );
 
@@ -496,25 +496,25 @@ export class CustomAIEngine {
     period: "daily" | "weekly" | "monthly" | "quarterly" | "yearly",
     breakdown?: boolean,
   ): Promise<RevenueForecast[]> {
-    const startTime = Date.now();
-    const { modelId, versionId } = await this.getAIModel(
+    const _startTime = Date?.now();
+    const { modelId, versionId } = await this?.getAIModel(
       "revenue_forecaster_v1",
     );
 
-    const historicalRevenue = await this.getHistoricalRevenueData(
+    const _historicalRevenue = await this?.getHistoricalRevenueData(
       userId,
       period,
     );
-    const periods = this.getPeriodCount(period);
+    const _periods = this?.getPeriodCount(period);
     const forecasts: RevenueForecast[] = [];
 
     for (let i = 1; i <= periods; i++) {
-      const forecastDate = this.calculateForecastDate(period, i);
+      const _forecastDate = this?.calculateForecastDate(period, i);
       const { baseCaseForecast, bestCaseForecast, worstCaseForecast } =
-        this.calculateScenarioForecasts(historicalRevenue, i);
+        this?.calculateScenarioForecasts(historicalRevenue, i);
 
-      const seasonality = this.detectSeasonality(historicalRevenue);
-      const growthRates = this.calculateGrowthRates(historicalRevenue);
+      const _seasonality = this?.detectSeasonality(historicalRevenue);
+      const _growthRates = this?.calculateGrowthRates(historicalRevenue);
 
       const forecast: RevenueForecast = {
         period,
@@ -524,46 +524,46 @@ export class CustomAIEngine {
         bestCaseForecast,
         worstCaseForecast,
         breakdown: breakdown
-          ? await this.calculateRevenueBreakdown(userId, forecastDate)
+          ? await this?.calculateRevenueBreakdown(userId, forecastDate)
           : undefined,
-        seasonalityAdjustment: seasonality || 1.0,
-        monthOverMonthGrowth: growthRates.mom,
-        yearOverYearGrowth: growthRates.yoy,
-        growthTrend: this.determineGrowthTrend(growthRates),
+        seasonalityAdjustment: seasonality || 1?.0,
+        monthOverMonthGrowth: growthRates?.mom,
+        yearOverYearGrowth: growthRates?.yoy,
+        growthTrend: this?.determineGrowthTrend(growthRates),
       };
 
-      forecasts.push(forecast);
+      forecasts?.push(forecast);
 
-      await db.insert(aiRevenueForecasts).values({
+      await db?.insert(aiRevenueForecasts).values({
         userId,
         modelId,
         versionId,
         forecastPeriod: period,
         forecastDate,
-        revenueType: forecast.revenueType,
-        baseCaseForecast: baseCaseForecast.toString(),
-        bestCaseForecast: bestCaseForecast.toString(),
-        worstCaseForecast: worstCaseForecast.toString(),
-        confidenceLevel: 0.9,
-        breakdownByPlan: forecast.breakdown?.byPlan || null,
-        breakdownByChannel: forecast.breakdown?.byChannel || null,
-        breakdownByRegion: forecast.breakdown?.byRegion || null,
-        breakdownBySegment: forecast.breakdown?.bySegment || null,
-        seasonalityAdjustment: forecast.seasonalityAdjustment,
-        monthOverMonthGrowth: forecast.monthOverMonthGrowth,
-        yearOverYearGrowth: forecast.yearOverYearGrowth,
-        growthTrend: forecast.growthTrend,
-        metadata: { historicalDataPoints: historicalRevenue.length },
+        revenueType: forecast?.revenueType,
+        baseCaseForecast: baseCaseForecast?.toString(),
+        bestCaseForecast: bestCaseForecast?.toString(),
+        worstCaseForecast: worstCaseForecast?.toString(),
+        confidenceLevel: 0?.9,
+        breakdownByPlan: forecast?.breakdown?.byPlan || null,
+        breakdownByChannel: forecast?.breakdown?.byChannel || null,
+        breakdownByRegion: forecast?.breakdown?.byRegion || null,
+        breakdownBySegment: forecast?.breakdown?.bySegment || null,
+        seasonalityAdjustment: forecast?.seasonalityAdjustment,
+        monthOverMonthGrowth: forecast?.monthOverMonthGrowth,
+        yearOverYearGrowth: forecast?.yearOverYearGrowth,
+        growthTrend: forecast?.growthTrend,
+        metadata: { historicalDataPoints: historicalRevenue?.length },
       });
     }
 
-    await this.logInference(
+    await this?.logInference(
       modelId,
       versionId,
       "revenue_forecast",
       { userId, period, breakdown },
-      { forecasts: forecasts.length, growthTrend: forecasts[0]?.growthTrend },
-      Date.now() - startTime,
+      { forecasts: forecasts?.length, growthTrend: forecasts[0]?.growthTrend },
+      Date?.now() - startTime,
       userId,
     );
 
@@ -576,40 +576,40 @@ export class CustomAIEngine {
     value: number,
     context?: unknown,
   ): Promise<AnomalyDetectionResult | null> {
-    const startTime = Date.now();
-    const { modelId, versionId } = await this.getAIModel("anomaly_detector_v1");
+    const _startTime = Date?.now();
+    const { modelId, versionId } = await this?.getAIModel("anomaly_detector_v1");
 
-    const historicalData = await this.getHistoricalMetricData(
+    const _historicalData = await this?.getHistoricalMetricData(
       userId,
       metricName,
       "30d",
     );
-    const baseline = this.calculateBaseline(historicalData);
-    const stdDev = this.calculateStdDev(historicalData, baseline);
+    const _baseline = this?.calculateBaseline(historicalData);
+    const _stdDev = this?.calculateStdDev(historicalData, baseline);
 
-    const deviationScore = Math.abs(value - baseline) / (stdDev || 1);
+    const _deviationScore = Math?.abs(value - baseline) / (stdDev || 1);
 
-    if (deviationScore < 2.0) {
+    if (deviationScore < 2?.0) {
       return null;
     }
 
-    const anomalyType =
-      value > baseline * 1.2
+    const _anomalyType =
+      value > baseline * 1?.2
         ? "spike"
-        : value < baseline * 0.8
+        : value < baseline * 0?.8
           ? "drop"
           : "trend_break";
-    const severity = this.calculateAnomalySeverity(deviationScore);
-    const deviationPercentage = ((value - baseline) / baseline) * 100;
+    const _severity = this?.calculateAnomalySeverity(deviationScore);
+    const _deviationPercentage = ((value - baseline) / baseline) * 100;
 
-    const rootCauseAnalysis = await this.performRootCauseAnalysis(
+    const _rootCauseAnalysis = await this?.performRootCauseAnalysis(
       userId,
       metricName,
       value,
       baseline,
       context,
     );
-    const correlatedEvents = await this.findCorrelatedEvents(userId, context);
+    const _correlatedEvents = await this?.findCorrelatedEvents(userId, context);
 
     const result: AnomalyDetectionResult = {
       metricName,
@@ -621,43 +621,43 @@ export class CustomAIEngine {
       deviationScore,
       rootCauseAnalysis,
       correlatedEvents,
-      revenueImpact: await this.estimateRevenueImpact(
+      revenueImpact: await this?.estimateRevenueImpact(
         metricName,
         value,
         baseline,
       ),
-      userImpact: await this.estimateUserImpact(metricName, value, baseline),
+      userImpact: await this?.estimateUserImpact(metricName, value, baseline),
     };
 
-    await db.insert(aiAnomalyDetections).values({
+    await db?.insert(aiAnomalyDetections).values({
       userId,
       modelId,
       versionId,
       metricName,
       anomalyType,
       severity,
-      expectedValue: baseline.toString(),
-      actualValue: value.toString(),
+      expectedValue: baseline?.toString(),
+      actualValue: value?.toString(),
       deviationPercentage,
       deviationScore,
       rootCauseAnalysis,
       correlatedEvents,
       correlatedCampaigns: null,
       seasonalityFactor: null,
-      revenueImpact: result.revenueImpact?.toString() || null,
-      userImpact: result.userImpact || null,
+      revenueImpact: result?.revenueImpact?.toString() || null,
+      userImpact: result?.userImpact || null,
       alertSent: severity === "critical" || severity === "high",
       alertSentAt:
         severity === "critical" || severity === "high" ? new Date() : null,
     });
 
-    await this.logInference(
+    await this?.logInference(
       modelId,
       versionId,
       "anomaly_detection",
       { userId, metricName, value, baseline },
       { anomalyType, severity, deviationScore },
-      Date.now() - startTime,
+      Date?.now() - startTime,
       userId,
     );
 
@@ -668,43 +668,43 @@ export class CustomAIEngine {
     userId: string,
     timeframe: "7d" | "30d" | "90d" = "30d",
   ): Promise<InsightNarrative[]> {
-    Date.now();
+    Date?.now();
     const insights: InsightNarrative[] = [];
 
-    const stats = await this.getUserStats(userId, timeframe);
-    const trends = await this.analyzeTrends(userId, timeframe);
-    const benchmarks = await this.compareToBenchmarks(userId, stats);
+    const _stats = await this?.getUserStats(userId, timeframe);
+    const _trends = await this?.analyzeTrends(userId, timeframe);
+    const _benchmarks = await this?.compareToBenchmarks(userId, stats);
 
-    if (stats.revenueGrowth > 10) {
-      insights.push({
+    if (stats?.revenueGrowth > 10) {
+      insights?.push({
         title: "Strong Revenue Growth",
-        narrative: `Your MRR grew ${stats.revenueGrowth.toFixed(1)}% this period driven by ${stats.primaryGrowthDriver}. This puts you in the top ${benchmarks.revenuePercentile}% of artists on the platform.`,
+        narrative: `Your MRR grew ${stats?.revenueGrowth.toFixed(1)}% this period driven by ${stats?.primaryGrowthDriver}. This puts you in the top ${benchmarks?.revenuePercentile}% of artists on the platform.`,
         category: "revenue",
         priority: "high",
-        confidence: 0.92,
+        confidence: 0?.92,
         actionableRecommendations: [
           {
             title: "Scale Successful Channels",
-            description: `Double down on ${stats.topChannel} which contributed ${stats.topChannelContribution}% of growth.`,
+            description: `Double down on ${stats?.topChannel} which contributed ${stats?.topChannelContribution}% of growth.`,
             priority: "high",
             category: "marketing",
             expectedImpact: "+15-20% additional growth",
           },
         ],
         supportingData: {
-          growthRate: stats.revenueGrowth,
-          topChannel: stats.topChannel,
+          growthRate: stats?.revenueGrowth,
+          topChannel: stats?.topChannel,
         },
       });
     }
 
-    if (trends.streamDecline && trends.streamDecline < -5) {
-      insights.push({
+    if (trends?.streamDecline && trends?.streamDecline < -5) {
+      insights?.push({
         title: "Stream Count Declining",
-        narrative: `Your streams have decreased by ${Math.abs(trends.streamDecline).toFixed(1)}% over the past ${timeframe}. This correlates with reduced social media activity and longer gaps between releases.`,
+        narrative: `Your streams have decreased by ${Math?.abs(trends?.streamDecline).toFixed(1)}% over the past ${timeframe}. This correlates with reduced social media activity and longer gaps between releases.`,
         category: "engagement",
         priority: "high",
-        confidence: 0.88,
+        confidence: 0?.88,
         actionableRecommendations: [
           {
             title: "Increase Release Frequency",
@@ -724,19 +724,19 @@ export class CustomAIEngine {
           },
         ],
         supportingData: {
-          streamDecline: trends.streamDecline,
-          lastReleaseDate: trends.lastReleaseDate,
+          streamDecline: trends?.streamDecline,
+          lastReleaseDate: trends?.lastReleaseDate,
         },
       });
     }
 
-    if (stats.conversionRate < benchmarks.averageConversionRate * 0.7) {
-      insights.push({
+    if (stats?.conversionRate < benchmarks?.averageConversionRate * 0?.7) {
+      insights?.push({
         title: "Conversion Rate Below Average",
-        narrative: `Your fan-to-paying-listener conversion rate (${stats.conversionRate.toFixed(2)}%) is ${Math.round((1 - stats.conversionRate / benchmarks.averageConversionRate) * 100)}% below the platform average. This represents significant untapped revenue potential.`,
+        narrative: `Your fan-to-paying-listener conversion rate (${stats?.conversionRate.toFixed(2)}%) is ${Math?.round((1 - stats?.conversionRate / benchmarks?.averageConversionRate) * 100)}% below the platform average. This represents significant untapped revenue potential.`,
         category: "monetization",
         priority: "medium",
-        confidence: 0.85,
+        confidence: 0?.85,
         actionableRecommendations: [
           {
             title: "Optimize Call-to-Actions",
@@ -756,19 +756,19 @@ export class CustomAIEngine {
           },
         ],
         supportingData: {
-          currentRate: stats.conversionRate,
-          averageRate: benchmarks.averageConversionRate,
+          currentRate: stats?.conversionRate,
+          averageRate: benchmarks?.averageConversionRate,
         },
       });
     }
 
-    if (stats.platformDiversity < 3) {
-      insights.push({
+    if (stats?.platformDiversity < 3) {
+      insights?.push({
         title: "Limited Platform Presence",
-        narrative: `You're currently active on only ${stats.platformDiversity} platforms. Artists with 5+ platforms see an average of 40% higher revenue and 3x better audience growth.`,
+        narrative: `You're currently active on only ${stats?.platformDiversity} platforms. Artists with 5+ platforms see an average of 40% higher revenue and 3x better audience growth.`,
         category: "distribution",
         priority: "medium",
-        confidence: 0.9,
+        confidence: 0?.9,
         actionableRecommendations: [
           {
             title: "Expand to TikTok & YouTube Shorts",
@@ -780,13 +780,13 @@ export class CustomAIEngine {
           },
         ],
         supportingData: {
-          currentPlatforms: stats.platformDiversity,
+          currentPlatforms: stats?.platformDiversity,
           recommended: 5,
         },
       });
     }
 
-    return insights.slice(0, 5);
+    return insights?.slice(0, 5);
   }
 
   generateOptimizations(
@@ -796,8 +796,8 @@ export class CustomAIEngine {
   ): AIOptimizations {
     const recommendations: AIRecommendation[] = [];
 
-    if (stats.totalStreams < 10000) {
-      recommendations.push({
+    if (stats?.totalStreams < 10000) {
+      recommendations?.push({
         title: "Increase Platform Distribution",
         description:
           "Your music is currently reaching a limited audience. Consider distributing to additional streaming platforms like TikTok and Instagram Reels to maximize discovery.",
@@ -806,8 +806,8 @@ export class CustomAIEngine {
       });
     }
 
-    if (stats.monthlyGrowth.streams < 0) {
-      recommendations.push({
+    if (stats?.monthlyGrowth.streams < 0) {
+      recommendations?.push({
         title: "Reverse Declining Streams",
         description:
           "Your streams have decreased this month. Focus on social media engagement, collaborate with other artists, and consider releasing new content or remixes.",
@@ -816,8 +816,8 @@ export class CustomAIEngine {
       });
     }
 
-    if (stats.monthlyGrowth.streams > 20) {
-      recommendations.push({
+    if (stats?.monthlyGrowth.streams > 20) {
+      recommendations?.push({
         title: "Capitalize on Growth Momentum",
         description:
           "You're experiencing strong growth! Now is the perfect time to increase posting frequency, launch a marketing campaign, and engage with your growing fanbase.",
@@ -826,8 +826,8 @@ export class CustomAIEngine {
       });
     }
 
-    if (stats.topPlatforms.length < 3) {
-      recommendations.push({
+    if (stats?.topPlatforms.length < 3) {
+      recommendations?.push({
         title: "Diversify Platform Presence",
         description:
           "You're focused on only a few platforms. Expand to additional platforms to reduce dependency and reach new audiences.",
@@ -836,8 +836,8 @@ export class CustomAIEngine {
       });
     }
 
-    if (projects.length < 5) {
-      recommendations.push({
+    if (projects?.length < 5) {
+      recommendations?.push({
         title: "Increase Content Output",
         description:
           "Artists with more releases tend to grow faster. Aim to release new music consistently - at least one track per month to maintain audience engagement.",
@@ -846,8 +846,8 @@ export class CustomAIEngine {
       });
     }
 
-    if (stats.totalRevenue < 100 && stats.totalStreams > 5000) {
-      recommendations.push({
+    if (stats?.totalRevenue < 100 && stats?.totalStreams > 5000) {
+      recommendations?.push({
         title: "Optimize Revenue Streams",
         description:
           "Your streams aren't translating to revenue. Explore direct fan support through platforms like Patreon, sell merchandise, or offer exclusive content.",
@@ -856,8 +856,8 @@ export class CustomAIEngine {
       });
     }
 
-    const topRecommendations = recommendations.slice(0, 5);
-    const summary = `Based on your current performance (${stats.totalStreams.toLocaleString()} streams, $${stats.totalRevenue.toLocaleString()} revenue), we've identified ${topRecommendations.length} optimization opportunities to accelerate your music career growth.`;
+    const _topRecommendations = recommendations?.slice(0, 5);
+    const _summary = `Based on your current performance (${stats?.totalStreams.toLocaleString()} streams, $${stats?.totalRevenue.toLocaleString()} revenue), we've identified ${topRecommendations?.length} optimization opportunities to accelerate your music career growth.`;
 
     return {
       recommendations: topRecommendations,
@@ -866,37 +866,37 @@ export class CustomAIEngine {
   }
 
   forecastNextMonth(historicalData: number[]): number {
-    if (historicalData.length === 0) return 0;
-    if (historicalData.length === 1) return historicalData[0] * 1.1;
+    if (historicalData?.length === 0) return 0;
+    if (historicalData?.length === 1) return historicalData[0] * 1?.1;
 
-    const alpha = 0.3;
+    const _alpha = 0?.3;
     let forecast = historicalData[0];
 
-    for (let i = 1; i < historicalData.length; i++) {
+    for (let i = 1; i < historicalData?.length; i++) {
       forecast = alpha * historicalData[i] + (1 - alpha) * forecast;
     }
 
-    const recentTrend =
-      historicalData[historicalData.length - 1] -
-      historicalData[historicalData.length - 2];
-    forecast = forecast + recentTrend * 0.5;
+    const _recentTrend =
+      historicalData[historicalData?.length - 1] -
+      historicalData[historicalData?.length - 2];
+    forecast = forecast + recentTrend * 0?.5;
 
-    return Math.max(0, Math.round(forecast));
+    return Math?.max(0, Math?.round(forecast));
   }
 
   calculateViralPotential(stats: DashboardStats): number {
-    const growthScore = Math.min(stats.monthlyGrowth.streams / 100, 1) * 0.4;
-    const revenueScore = Math.min(stats.totalRevenue / 1000, 1) * 0.3;
-    const platformScore = Math.min(stats.topPlatforms.length / 5, 1) * 0.3;
+    const _growthScore = Math?.min(stats?.monthlyGrowth.streams / 100, 1) * 0?.4;
+    const _revenueScore = Math?.min(stats?.totalRevenue / 1000, 1) * 0?.3;
+    const _platformScore = Math?.min(stats?.topPlatforms.length / 5, 1) * 0?.3;
 
-    return Math.min(growthScore + revenueScore + platformScore, 1);
+    return Math?.min(growthScore + revenueScore + platformScore, 1);
   }
 
   getGrowthTrend(monthlyGrowth: {
     streams: number;
     revenue: number;
   }): "up" | "down" | "stable" {
-    const avgGrowth = (monthlyGrowth.streams + monthlyGrowth.revenue) / 2;
+    const _avgGrowth = (monthlyGrowth?.streams + monthlyGrowth?.revenue) / 2;
     if (avgGrowth > 5) return "up";
     if (avgGrowth < -5) return "down";
     return "stable";
@@ -907,15 +907,15 @@ export class CustomAIEngine {
     metricName: string,
     horizon: string,
   ): Promise<number[]> {
-    const days = parseInt(horizon) * 2;
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    const _days = parseInt(horizon) * 2;
+    const _startDate = new Date();
+    startDate?.setDate(startDate?.getDate() - days);
 
-    const data = await db
+    const _data = await db
       .select()
       .from(analytics)
-      .where(and(eq(analytics.userId, userId), gte(analytics.date, startDate)))
-      .orderBy(asc(analytics.date));
+      .where(and(eq(analytics?.userId, userId), gte(analytics?.date, startDate)))
+      .orderBy(asc(analytics?.date));
 
     const metricMapping: Record<string, string> = {
       user_growth: "totalListeners",
@@ -925,8 +925,8 @@ export class CustomAIEngine {
       conversion_rate: "streams",
     };
 
-    const field = metricMapping[metricName] || "streams";
-    return data.map((d) =>
+    const _field = metricMapping[metricName] || "streams";
+    return data?.map((d) =>
       parseFloat((d as Record<string, unknown>)[field]?.toString() || "0"),
     );
   }
@@ -935,20 +935,20 @@ export class CustomAIEngine {
     seasonality: SeasonalityInfo | null;
     trend: number;
   } {
-    if (data.length < 14) {
+    if (data?.length < 14) {
       return { seasonality: null, trend: 0 };
     }
 
-    const trend = (data[data.length - 1] - data[0]) / data.length;
+    const _trend = (data[data?.length - 1] - data[0]) / data?.length;
 
-    const periods = [7, 14, 30];
+    const _periods = [7, 14, 30];
     let bestPeriod = null;
     let maxCorrelation = 0;
 
     for (const period of periods) {
-      if (data.length < period * 2) continue;
-      const correlation = this.calculateAutocorrelation(data, period);
-      if (correlation > maxCorrelation && correlation > 0.5) {
+      if (data?.length < period * 2) continue;
+      const _correlation = this?.calculateAutocorrelation(data, period);
+      if (correlation > maxCorrelation && correlation > 0?.5) {
         maxCorrelation = correlation;
         bestPeriod = period;
       }
@@ -963,18 +963,18 @@ export class CustomAIEngine {
   }
 
   private calculateAutocorrelation(data: number[], lag: number): number {
-    if (data.length <= lag) return 0;
+    if (data?.length <= lag) return 0;
 
-    const mean = data.reduce((a, b) => a + b, 0) / data.length;
+    const _mean = data?.reduce((a, b) => a + b, 0) / data?.length;
     let numerator = 0;
     let denominator = 0;
 
-    for (let i = 0; i < data.length - lag; i++) {
+    for (let i = 0; i < data?.length - lag; i++) {
       numerator += (data[i] - mean) * (data[i + lag] - mean);
     }
 
-    for (let i = 0; i < data.length; i++) {
-      denominator += Math.pow(data[i] - mean, 2);
+    for (let i = 0; i < data?.length; i++) {
+      denominator += Math?.pow(data[i] - mean, 2);
     }
 
     return denominator === 0 ? 0 : numerator / denominator;
@@ -988,18 +988,18 @@ export class CustomAIEngine {
     trend: number,
   ): number {
     if (algorithm === "seasonal_decomposition" && seasonality) {
-      const baseValue = historicalData[historicalData.length - 1];
-      const trendAdjustment = trend * daysAhead;
-      const seasonalIndex = daysAhead % seasonality.period;
-      const seasonalAdjustment =
-        seasonality.amplitude *
-        Math.sin((2 * Math.PI * seasonalIndex) / seasonality.period);
-      return baseValue + trendAdjustment + seasonalAdjustment * baseValue * 0.1;
+      const _baseValue = historicalData[historicalData?.length - 1];
+      const _trendAdjustment = trend * daysAhead;
+      const _seasonalIndex = daysAhead % seasonality?.period;
+      const _seasonalAdjustment =
+        seasonality?.amplitude *
+        Math?.sin((2 * Math?.PI * seasonalIndex) / seasonality?.period);
+      return baseValue + trendAdjustment + seasonalAdjustment * baseValue * 0?.1;
     }
 
-    const alpha = 0.3;
+    const _alpha = 0?.3;
     let forecast = historicalData[0];
-    for (let i = 1; i < historicalData.length; i++) {
+    for (let i = 1; i < historicalData?.length; i++) {
       forecast = alpha * historicalData[i] + (1 - alpha) * forecast;
     }
     forecast += trend * daysAhead;
@@ -1011,9 +1011,9 @@ export class CustomAIEngine {
     historicalData: number[],
     confidenceLevel: number,
   ): { lowerBound: number; upperBound: number } {
-    const stdDev = this.calculateStdDev(historicalData, prediction);
-    const zScore = confidenceLevel === 0.99 ? 2.576 : 1.96;
-    const margin = zScore * stdDev;
+    const _stdDev = this?.calculateStdDev(historicalData, prediction);
+    const _zScore = confidenceLevel === 0?.99 ? 2?.576 : 1?.96;
+    const _margin = zScore * stdDev;
 
     return {
       lowerBound: prediction - margin,
@@ -1022,10 +1022,10 @@ export class CustomAIEngine {
   }
 
   private calculateStdDev(data: number[], mean?: number): number {
-    const avg = mean ?? data.reduce((a, b) => a + b, 0) / data.length;
-    const squareDiffs = data.map((value) => Math.pow(value - avg, 2));
-    const avgSquareDiff = squareDiffs.reduce((a, b) => a + b, 0) / data.length;
-    return Math.sqrt(avgSquareDiff);
+    const _avg = mean ?? data?.reduce((a, b) => a + b, 0) / data?.length;
+    const _squareDiffs = data?.map((value) => Math?.pow(value - avg, 2));
+    const _avgSquareDiff = squareDiffs?.reduce((a, b) => a + b, 0) / data?.length;
+    return Math?.sqrt(avgSquareDiff);
   }
 
   private getMetricType(metricName: string): string {
@@ -1051,42 +1051,42 @@ export class CustomAIEngine {
     days: number,
     _metrics: string[],
   ): Promise<CohortMetricPoint> {
-    if (users.length === 0) {
+    if (users?.length === 0) {
       return { retention: 0, ltv: 0, engagement: 0, churn: 0, conversion: 0 };
     }
-    const userIds = users
-      .map((u: Record<string, unknown>) => u.id)
+    const _userIds = users
+      .map((u: Record<string, unknown>) => u?.id)
       .filter(Boolean);
-    if (userIds.length === 0) {
+    if (userIds?.length === 0) {
       return { retention: 0, ltv: 0, engagement: 0, churn: 0, conversion: 0 };
     }
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + days);
-    const analyticsRows = await db
+    const _endDate = new Date(startDate);
+    endDate?.setDate(endDate?.getDate() + days);
+    const _analyticsRows = await db
       .select()
       .from(analytics)
-      .where(and(gte(analytics.date, startDate), lte(analytics.date, endDate)));
-    const activeUsers = new Set(analyticsRows.map((r) => r.userId)).size;
-    const totalRevenue = analyticsRows.reduce(
-      (s, d) => s + parseFloat(d.revenue?.toString() || "0"),
+      .where(and(gte(analytics?.date, startDate), lte(analytics?.date, endDate)));
+    const _activeUsers = new Set(analyticsRows?.map((r) => r?.userId)).size;
+    const _totalRevenue = analyticsRows?.reduce(
+      (s, d) => s + parseFloat(d?.revenue?.toString() || "0"),
       0,
     );
-    const totalStreams = analyticsRows.reduce(
-      (s, d) => s + (d.streams || 0),
+    const _totalStreams = analyticsRows?.reduce(
+      (s, d) => s + (d?.streams || 0),
       0,
     );
-    const retention = users.length > 0 ? activeUsers / users.length : 0;
-    const ltv = activeUsers > 0 ? totalRevenue / activeUsers : 0;
-    const engagement =
+    const _retention = users?.length > 0 ? activeUsers / users?.length : 0;
+    const _ltv = activeUsers > 0 ? totalRevenue / activeUsers : 0;
+    const _engagement =
       totalStreams > 0 && activeUsers > 0
-        ? Math.min(1, totalStreams / (activeUsers * 30))
+        ? Math?.min(1, totalStreams / (activeUsers * 30))
         : 0;
     return {
-      retention: parseFloat(retention.toFixed(3)),
-      ltv: parseFloat(ltv.toFixed(2)),
-      engagement: parseFloat(engagement.toFixed(3)),
+      retention: parseFloat(retention?.toFixed(3)),
+      ltv: parseFloat(ltv?.toFixed(2)),
+      engagement: parseFloat(engagement?.toFixed(3)),
       churn: parseFloat((1 - retention).toFixed(3)),
-      conversion: ltv > 0 ? parseFloat((retention * 0.15).toFixed(3)) : 0,
+      conversion: ltv > 0 ? parseFloat((retention * 0?.15).toFixed(3)) : 0,
     };
   }
 
@@ -1103,59 +1103,64 @@ export class CustomAIEngine {
     cohortMetrics: Record<string, unknown>,
     _cohortType: string,
   ): Promise<number> {
-    const industryRetentionBenchmark = 0.35;
-    const retentionVal = cohortMetrics?.retention;
-    const cohortRetention = typeof retentionVal === "number" ? retentionVal : 0;
+    const _industryRetentionBenchmark = 0?.35;
+    const _retentionVal = cohortMetrics?.retention;
+    const _cohortRetention =
+      typeof retentionVal === "number" ? retentionVal : 0;
     return parseFloat(
       ((cohortRetention - industryRetentionBenchmark) * 100).toFixed(2),
     );
   }
 
   private async extractChurnFeatures(userId: string): Promise<ChurnFeatures> {
-    await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    const userProjects = await db
+    await db
+      .select()
+      .from(users)
+      .where(eq(users?.id, userId))
+      .limit(1);
+    const _userProjects = await db
       .select()
       .from(studioProjects)
-      .where(eq(studioProjects.userId, userId))
+      .where(eq(studioProjects?.userId, userId))
       .limit(100);
 
     return {
-      engagementScore: userProjects.length > 0 ? 0.7 : 0.3,
+      engagementScore: userProjects?.length > 0 ? 0?.7 : 0?.3,
       engagementTrend: "stable",
       paymentFailures: 0,
       supportTickets: 0,
       lastActivityDays: 3,
-      featureUsageScore: 0.6,
-      totalProjects: userProjects.length,
+      featureUsageScore: 0?.6,
+      totalProjects: userProjects?.length,
       avgStreams: 0,
     };
   }
 
   private calculateChurnProbability(features: ChurnFeatures): number {
-    let probability = 0.1;
+    let probability = 0?.1;
 
-    if (features.engagementScore < 0.3) probability += 0.3;
-    if (features.lastActivityDays > 30) probability += 0.25;
-    if (features.featureUsageScore < 0.2) probability += 0.2;
-    if (features.paymentFailures > 0) probability += 0.15;
-    if (features.supportTickets > 3) probability += 0.1;
+    if (features?.engagementScore < 0?.3) probability += 0?.3;
+    if (features?.lastActivityDays > 30) probability += 0?.25;
+    if (features?.featureUsageScore < 0?.2) probability += 0?.2;
+    if (features?.paymentFailures > 0) probability += 0?.15;
+    if (features?.supportTickets > 3) probability += 0?.1;
 
-    return Math.min(probability, 0.95);
+    return Math?.min(probability, 0?.95);
   }
 
   private determineRiskLevel(
     probability: number,
   ): "low" | "medium" | "high" | "critical" {
-    if (probability > 0.7) return "critical";
-    if (probability > 0.5) return "high";
-    if (probability > 0.3) return "medium";
+    if (probability > 0?.7) return "critical";
+    if (probability > 0?.5) return "high";
+    if (probability > 0?.3) return "medium";
     return "low";
   }
 
   private estimateChurnTimeWindow(features: ChurnFeatures): number {
-    if (features.engagementScore < 0.2) return 7;
-    if (features.engagementScore < 0.4) return 14;
-    if (features.engagementScore < 0.6) return 30;
+    if (features?.engagementScore < 0?.2) return 7;
+    if (features?.engagementScore < 0?.4) return 14;
+    if (features?.engagementScore < 0?.6) return 30;
     return 60;
   }
 
@@ -1168,36 +1173,36 @@ export class CustomAIEngine {
       value: unknown;
     }> = [];
 
-    if (features.engagementScore < 0.5) {
-      factors.push({
+    if (features?.engagementScore < 0?.5) {
+      factors?.push({
         factor: "Low Engagement Score",
-        importance: 0.9,
-        value: features.engagementScore,
+        importance: 0?.9,
+        value: features?.engagementScore,
       });
     }
-    if (features.lastActivityDays > 14) {
-      factors.push({
+    if (features?.lastActivityDays > 14) {
+      factors?.push({
         factor: "Inactive User",
-        importance: 0.8,
-        value: `${features.lastActivityDays} days`,
+        importance: 0?.8,
+        value: `${features?.lastActivityDays} days`,
       });
     }
-    if (features.featureUsageScore < 0.3) {
-      factors.push({
+    if (features?.featureUsageScore < 0?.3) {
+      factors?.push({
         factor: "Limited Feature Adoption",
-        importance: 0.7,
-        value: features.featureUsageScore,
+        importance: 0?.7,
+        value: features?.featureUsageScore,
       });
     }
-    if (features.paymentFailures > 0) {
-      factors.push({
+    if (features?.paymentFailures > 0) {
+      factors?.push({
         factor: "Payment Issues",
-        importance: 0.85,
-        value: features.paymentFailures,
+        importance: 0?.85,
+        value: features?.paymentFailures,
       });
     }
 
-    return factors.sort((a, b) => b.importance - a.importance).slice(0, 5);
+    return factors?.sort((a, b) => b?.importance - a?.importance).slice(0, 5);
   }
 
   private generateRetentionRecommendations(
@@ -1206,8 +1211,8 @@ export class CustomAIEngine {
   ): AIRecommendation[] {
     const recommendations: AIRecommendation[] = [];
 
-    if (riskFactors.some((f) => f.factor === "Low Engagement Score")) {
-      recommendations.push({
+    if (riskFactors?.some((f) => f?.factor === "Low Engagement Score")) {
+      recommendations?.push({
         title: "Re-engagement Campaign",
         description:
           "Send personalized email highlighting new features and success stories from similar artists.",
@@ -1217,19 +1222,19 @@ export class CustomAIEngine {
       });
     }
 
-    if (riskFactors.some((f) => f.factor === "Inactive User")) {
-      recommendations.push({
+    if (riskFactors?.some((f) => f?.factor === "Inactive User")) {
+      recommendations?.push({
         title: "Activity Incentive",
         description:
-          "Offer limited-time bonus (e.g., free distribution credits) to encourage re-engagement.",
+          "Offer limited-time bonus (e?.g., free distribution credits) to encourage re-engagement.",
         priority: "high",
         category: "marketing",
         expectedImpact: "-20% churn risk",
       });
     }
 
-    if (riskFactors.some((f) => f.factor === "Limited Feature Adoption")) {
-      recommendations.push({
+    if (riskFactors?.some((f) => f?.factor === "Limited Feature Adoption")) {
+      recommendations?.push({
         title: "Onboarding Refresh",
         description:
           "Provide guided tutorial for underutilized features with high value.",
@@ -1239,23 +1244,23 @@ export class CustomAIEngine {
       });
     }
 
-    return recommendations.slice(0, 3);
+    return recommendations?.slice(0, 3);
   }
 
   private async getHistoricalRevenueData(
     userId: string,
     period: string,
   ): Promise<number[]> {
-    const periods = this.getPeriodCount(period) * 2;
+    const _periods = this?.getPeriodCount(period) * 2;
 
-    const revenueData = await db
+    const _revenueData = await db
       .select()
       .from(analytics)
-      .where(eq(analytics.userId, userId))
-      .orderBy(desc(analytics.date))
+      .where(eq(analytics?.userId, userId))
+      .orderBy(desc(analytics?.date))
       .limit(periods);
 
-    return revenueData.map((d) => parseFloat(d.revenue?.toString() || "0"));
+    return revenueData?.map((d) => parseFloat(d?.revenue?.toString() || "0"));
   }
 
   private getPeriodCount(period: string): number {
@@ -1270,7 +1275,7 @@ export class CustomAIEngine {
   }
 
   private calculateForecastDate(period: string, periodsAhead: number): Date {
-    const date = new Date();
+    const _date = new Date();
     const daysMap: Record<string, number> = {
       daily: 1,
       weekly: 7,
@@ -1278,7 +1283,7 @@ export class CustomAIEngine {
       quarterly: 90,
       yearly: 365,
     };
-    date.setDate(date.getDate() + (daysMap[period] || 30) * periodsAhead);
+    date?.setDate(date?.getDate() + (daysMap[period] || 30) * periodsAhead);
     return date;
   }
 
@@ -1290,7 +1295,7 @@ export class CustomAIEngine {
     bestCaseForecast: number;
     worstCaseForecast: number;
   } {
-    const baseCase = this.forecastValue(
+    const _baseCase = this?.forecastValue(
       historicalRevenue,
       periodsAhead,
       "exponential_smoothing",
@@ -1299,27 +1304,27 @@ export class CustomAIEngine {
     );
     return {
       baseCaseForecast: baseCase,
-      bestCaseForecast: baseCase * 1.2,
-      worstCaseForecast: baseCase * 0.8,
+      bestCaseForecast: baseCase * 1?.2,
+      worstCaseForecast: baseCase * 0?.8,
     };
   }
 
   private detectSeasonality(_data: number[]): number {
-    return 1.0;
+    return 1?.0;
   }
 
   private calculateGrowthRates(historicalRevenue: number[]): {
     mom: number;
     yoy: number;
   } {
-    if (historicalRevenue.length < 2) return { mom: 0, yoy: 0 };
+    if (historicalRevenue?.length < 2) return { mom: 0, yoy: 0 };
 
-    const mom =
+    const _mom =
       ((historicalRevenue[0] - historicalRevenue[1]) /
         (historicalRevenue[1] || 1)) *
       100;
-    const yoy =
-      historicalRevenue.length >= 12
+    const _yoy =
+      historicalRevenue?.length >= 12
         ? ((historicalRevenue[0] - historicalRevenue[11]) /
             (historicalRevenue[11] || 1)) *
           100
@@ -1332,8 +1337,8 @@ export class CustomAIEngine {
     mom: number;
     yoy: number;
   }): "accelerating" | "steady" | "decelerating" {
-    if (growthRates.mom > growthRates.yoy * 1.1) return "accelerating";
-    if (growthRates.mom < growthRates.yoy * 0.9) return "decelerating";
+    if (growthRates?.mom > growthRates?.yoy * 1?.1) return "accelerating";
+    if (growthRates?.mom < growthRates?.yoy * 0?.9) return "decelerating";
     return "steady";
   }
 
@@ -1348,7 +1353,7 @@ export class CustomAIEngine {
   }
 
   private calculateBaseline(data: number[]): number {
-    return data.reduce((a, b) => a + b, 0) / data.length;
+    return data?.reduce((a, b) => a + b, 0) / data?.length;
   }
 
   private calculateAnomalySeverity(
@@ -1373,18 +1378,18 @@ export class CustomAIEngine {
       evidence: string[];
     }> = [];
 
-    if (value < baseline * 0.5) {
-      causes.push({
+    if (value < baseline * 0?.5) {
+      causes?.push({
         cause: "Platform outage or technical issue",
-        likelihood: 0.7,
+        likelihood: 0?.7,
         evidence: ["Sudden drop", "No gradual decline pattern"],
       });
     }
 
     if ((context as { campaignActive?: boolean } | undefined)?.campaignActive) {
-      causes.push({
+      causes?.push({
         cause: "Marketing campaign impact",
-        likelihood: 0.8,
+        likelihood: 0?.8,
         evidence: [
           "Correlation with campaign timing",
           "Similar pattern in past campaigns",
@@ -1392,13 +1397,13 @@ export class CustomAIEngine {
       });
     }
 
-    causes.push({
+    causes?.push({
       cause: "Seasonal variation",
-      likelihood: 0.5,
+      likelihood: 0?.5,
       evidence: ["Historical seasonal patterns exist"],
     });
 
-    return causes.sort((a, b) => b.likelihood - a.likelihood).slice(0, 3);
+    return causes?.sort((a, b) => b?.likelihood - a?.likelihood).slice(0, 3);
   }
 
   private async findCorrelatedEvents(
@@ -1413,10 +1418,10 @@ export class CustomAIEngine {
     value: number,
     baseline: number,
   ): Promise<number> {
-    if (metricName.includes("revenue")) {
+    if (metricName?.includes("revenue")) {
       return value - baseline;
     }
-    return (value - baseline) * 0.05;
+    return (value - baseline) * 0?.05;
   }
 
   private async estimateUserImpact(
@@ -1424,94 +1429,94 @@ export class CustomAIEngine {
     value: number,
     baseline: number,
   ): Promise<number> {
-    return Math.round(Math.abs(value - baseline) * 0.1);
+    return Math?.round(Math?.abs(value - baseline) * 0?.1);
   }
 
   private async getUserStats(
     userId: string,
     timeframe: string,
   ): Promise<UserStats> {
-    const days = parseInt(timeframe);
-    const now = new Date();
-    const startDate = new Date(now);
-    startDate.setDate(startDate.getDate() - days);
-    const prevStart = new Date(startDate);
-    prevStart.setDate(prevStart.getDate() - days);
+    const _days = parseInt(timeframe);
+    const _now = new Date();
+    const _startDate = new Date(now);
+    startDate?.setDate(startDate?.getDate() - days);
+    const _prevStart = new Date(startDate);
+    prevStart?.setDate(prevStart?.getDate() - days);
 
-    const [currentData, previousData] = await Promise.all([
+    const [currentData, previousData] = await Promise?.all([
       db
         .select()
         .from(analytics)
         .where(
-          and(eq(analytics.userId, userId), gte(analytics.date, startDate)),
+          and(eq(analytics?.userId, userId), gte(analytics?.date, startDate)),
         ),
       db
         .select()
         .from(analytics)
         .where(
           and(
-            eq(analytics.userId, userId),
-            gte(analytics.date, prevStart),
-            lte(analytics.date, startDate),
+            eq(analytics?.userId, userId),
+            gte(analytics?.date, prevStart),
+            lte(analytics?.date, startDate),
           ),
         ),
     ]);
 
-    const totalRevenue = currentData.reduce(
-      (acc, d) => acc + parseFloat(d.revenue?.toString() || "0"),
+    const _totalRevenue = currentData?.reduce(
+      (acc, d) => acc + parseFloat(d?.revenue?.toString() || "0"),
       0,
     );
-    const totalStreams = currentData.reduce(
-      (acc, d) => acc + (d.streams || 0),
+    const _totalStreams = currentData?.reduce(
+      (acc, d) => acc + (d?.streams || 0),
       0,
     );
-    const prevRevenue = previousData.reduce(
-      (acc, d) => acc + parseFloat(d.revenue?.toString() || "0"),
+    const _prevRevenue = previousData?.reduce(
+      (acc, d) => acc + parseFloat(d?.revenue?.toString() || "0"),
       0,
     );
-    const prevStreams = previousData.reduce(
-      (acc, d) => acc + (d.streams || 0),
+    const _prevStreams = previousData?.reduce(
+      (acc, d) => acc + (d?.streams || 0),
       0,
     );
 
-    const revenueGrowth =
+    const _revenueGrowth =
       prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
 
-    const platforms = new Set(
-      currentData.map((d) => d.platform).filter(Boolean),
+    const _platforms = new Set(
+      currentData?.map((d) => d?.platform).filter(Boolean),
     );
-    const platformDiversity = platforms.size || 1;
-    const topPlatformData = [...platforms]
+    const _platformDiversity = platforms?.size || 1;
+    const _topPlatformData = [...platforms]
       .map((p) => ({
         platform: p,
         streams: currentData
-          .filter((d) => d.platform === p)
-          .reduce((s, d) => s + (d.streams || 0), 0),
+          .filter((d) => d?.platform === p)
+          .reduce((s, d) => s + (d?.streams || 0), 0),
       }))
-      .sort((a, b) => b.streams - a.streams);
-    const topChannel = topPlatformData[0]?.platform || "Spotify";
-    const topChannelStreams = topPlatformData[0]?.streams || 0;
-    const topChannelContribution =
+      .sort((a, b) => b?.streams - a?.streams);
+    const _topChannel = topPlatformData[0]?.platform || "Spotify";
+    const _topChannelStreams = topPlatformData[0]?.streams || 0;
+    const _topChannelContribution =
       totalStreams > 0
-        ? Math.round((topChannelStreams / totalStreams) * 100)
+        ? Math?.round((topChannelStreams / totalStreams) * 100)
         : 0;
 
-    const primaryGrowthDriver =
+    const _primaryGrowthDriver =
       revenueGrowth > 0
         ? "increased platform distribution"
         : prevStreams > 0 && totalStreams < prevStreams
           ? "declining stream volume — consider new release"
           : "stable performance";
 
-    const conversionRate =
+    const _conversionRate =
       prevStreams > 0
         ? parseFloat(
-            ((totalRevenue / Math.max(totalStreams, 1)) * 1000).toFixed(2),
+            ((totalRevenue / Math?.max(totalStreams, 1)) * 1000).toFixed(2),
           )
         : 0;
 
     return {
-      revenueGrowth: parseFloat(revenueGrowth.toFixed(2)),
+      revenueGrowth: parseFloat(revenueGrowth?.toFixed(2)),
       primaryGrowthDriver,
       topChannel,
       topChannelContribution,
@@ -1526,47 +1531,47 @@ export class CustomAIEngine {
     userId: string,
     timeframe: string,
   ): Promise<TrendAnalysis> {
-    const days = parseInt(timeframe) || 30;
-    const now = new Date();
-    const periodStart = new Date(now);
-    periodStart.setDate(periodStart.getDate() - days);
-    const prevPeriodStart = new Date(periodStart);
-    prevPeriodStart.setDate(prevPeriodStart.getDate() - days);
+    const _days = parseInt(timeframe) || 30;
+    const _now = new Date();
+    const _periodStart = new Date(now);
+    periodStart?.setDate(periodStart?.getDate() - days);
+    const _prevPeriodStart = new Date(periodStart);
+    prevPeriodStart?.setDate(prevPeriodStart?.getDate() - days);
 
-    const [current, previous] = await Promise.all([
+    const [current, previous] = await Promise?.all([
       db
         .select()
         .from(analytics)
         .where(
-          and(eq(analytics.userId, userId), gte(analytics.date, periodStart)),
+          and(eq(analytics?.userId, userId), gte(analytics?.date, periodStart)),
         ),
       db
         .select()
         .from(analytics)
         .where(
           and(
-            eq(analytics.userId, userId),
-            gte(analytics.date, prevPeriodStart),
-            lte(analytics.date, periodStart),
+            eq(analytics?.userId, userId),
+            gte(analytics?.date, prevPeriodStart),
+            lte(analytics?.date, periodStart),
           ),
         ),
     ]);
 
-    const currentStreams = current.reduce((s, d) => s + (d.streams || 0), 0);
-    const prevStreams = previous.reduce((s, d) => s + (d.streams || 0), 0);
-    const streamDecline =
+    const _currentStreams = current?.reduce((s, d) => s + (d?.streams || 0), 0);
+    const _prevStreams = previous?.reduce((s, d) => s + (d?.streams || 0), 0);
+    const _streamDecline =
       prevStreams > 0
         ? parseFloat(
             (((currentStreams - prevStreams) / prevStreams) * 100).toFixed(2),
           )
         : 0;
 
-    const lastRelease = current.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    const _lastRelease = current?.sort(
+      (a, b) => new Date(b?.date).getTime() - new Date(a?.date).getTime(),
     )[0];
-    const lastReleaseDate = lastRelease
-      ? new Date(lastRelease.date)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const _lastReleaseDate = lastRelease
+      ? new Date(lastRelease?.date)
+      : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
 
     return { streamDecline, lastReleaseDate };
   }
@@ -1577,9 +1582,9 @@ export class CustomAIEngine {
   ): Promise<Benchmarks> {
     return {
       revenuePercentile: 75,
-      averageConversionRate: 3.5,
+      averageConversionRate: 3?.5,
     };
   }
 }
 
-export const customAIEngine = new CustomAIEngine();
+export const _customAIEngine = new CustomAIEngine();

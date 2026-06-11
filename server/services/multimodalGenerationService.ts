@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
-import { logger } from "../logger.js";
-import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
-import { sharpImageService } from "./sharpImageService.js";
-import { db } from "../db.js";
+import { logger } from "../logger?.js";
+import { generateAudio as generateLocalAudio } from "./audioGeneratorService?.js";
+import { sharpImageService } from "./sharpImageService?.js";
+import { db } from "../db?.js";
 import { eq } from "drizzle-orm";
 import { autopilotPreferences, userBrandVoices } from "@shared/schema";
 import {
@@ -14,54 +14,49 @@ import {
   type Platform,
   type OutputModality,
   PACK_DEFINITIONS,
-} from "@shared/types/multimodalGeneration.js";
-import {
-  PLATFORM_RULES,
-  getRules,
-  enforceTextLength,
-  type PlatformRules,
-} from "@shared/config/platformRules.js";
+} from "@shared/types/multimodalGeneration?.js";
+import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules?.js";
 
 // Strip any trailing /api so the base is always the root, then append /api.
 // This means AI_SERVER_URL can be set to either the root or the /api form and both work.
-const _MAXCORE_BASE = (
-  process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
+const __MAXCORE_BASE = (
+  process?.env.AI_SERVER_URL || "https://secure-ai-forge?.replit.app"
 ).replace(/\/api\/?$/, "");
-const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
-const MAXCORE_KEY = process.env.AI_SERVER_KEY || "";
+const _MAXCORE_URL = `${_MAXCORE_BASE}/api`;
+const _MAXCORE_KEY = process?.env.AI_SERVER_KEY || "";
 
 // ── Port 8008 gateway (MaxCore Diffusion + training time simulator) ──────────
 // This is the primary gateway for ALL content generation on the platform.
 // Proxies to MaxCore when local model is untrained; gradually switches to
 // local inference as the model accumulates simulated training years.
-const DIT24_GATEWAY = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
-const DIT24_PROXY_TIMEOUT_MS = 8_000; // fast timeout — fall through to direct MaxCore if 8008 is down
+const _DIT24_GATEWAY = `http://localhost:${process?.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+const _DIT24_PROXY_TIMEOUT_MS = 8_000; // fast timeout — fall through to direct MaxCore if 8008 is down
 
 async function dit24GatewayPost(
   proxyPath: string,
   body: unknown,
 ): Promise<unknown> {
-  const res = await fetch(`${DIT24_GATEWAY}${proxyPath}`, {
+  const _res = await fetch(`${DIT24_GATEWAY}${proxyPath}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(DIT24_PROXY_TIMEOUT_MS),
+    body: JSON?.stringify(body),
+    signal: AbortSignal?.timeout(DIT24_PROXY_TIMEOUT_MS),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
+  if (!res?.ok) {
+    const _text = await res?.text().catch(() => "");
     throw new Error(
-      `Port-8008 gateway ${proxyPath} → HTTP ${res.status}: ${text.slice(0, 200)}`,
+      `Port-8008 gateway ${proxyPath} → HTTP ${res?.status}: ${text?.slice(0, 200)}`,
     );
   }
-  const ct = res.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) {
+  const _ct = res?.headers.get("content-type") ?? "";
+  if (!ct?.includes("application/json")) {
     throw new Error(`Port-8008 gateway ${proxyPath} returned non-JSON`);
   }
-  return res.json();
+  return res?.json();
 }
 
 // Paths proxied through port 8008 → /proxy<path> on the gateway
-const DIT24_PROXY_PATHS = new Set([
+const _DIT24_PROXY_PATHS = new Set([
   "/generate/text",
   "/generate/image",
   "/generate/content",
@@ -78,7 +73,7 @@ async function maxcorePost(
   // The gateway server proxies to MaxCore internally (and will eventually
   // serve locally once the local model is trained). This makes port 8008
   // the single source of truth for all content generation.
-  if (DIT24_PROXY_PATHS.has(path)) {
+  if (DIT24_PROXY_PATHS?.has(path)) {
     try {
       return await dit24GatewayPost(`/proxy${path}`, body);
     } catch {
@@ -86,7 +81,7 @@ async function maxcorePost(
     }
   }
 
-  const res = await fetch(`${MAXCORE_URL}${path}`, {
+  const _res = await fetch(`${MAXCORE_URL}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -97,23 +92,23 @@ async function maxcorePost(
           }
         : {}),
     },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(timeoutMs),
+    body: JSON?.stringify(body),
+    signal: AbortSignal?.timeout(timeoutMs),
   });
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
+  if (!res?.ok) {
+    const _text = await res?.text().catch(() => "");
     throw new Error(
-      `MaxCore ${path} → HTTP ${res.status}: ${text.slice(0, 200)}`,
+      `MaxCore ${path} → HTTP ${res?.status}: ${text?.slice(0, 200)}`,
     );
   }
-  const ct = res.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) {
-    const text = await res.text().catch(() => "");
+  const _ct = res?.headers.get("content-type") ?? "";
+  if (!ct?.includes("application/json")) {
+    const _text = await res?.text().catch(() => "");
     throw new Error(
-      `MaxCore ${path} returned non-JSON (${ct || "no content-type"}): ${text.slice(0, 200)}`,
+      `MaxCore ${path} returned non-JSON (${ct || "no content-type"}): ${text?.slice(0, 200)}`,
     );
   }
-  return res.json();
+  return res?.json();
 }
 
 // ---------------------------------------------------------------------------
@@ -141,42 +136,42 @@ interface UserContext {
   }> | null;
 }
 
-const _userContextCache = new Map<
+const __userContextCache = new Map<
   string,
   { data: UserContext; expiresAt: number }
 >();
-const USER_CTX_TTL_MS = 60_000;
+const _USER_CTX_TTL_MS = 60_000;
 
 async function fetchUserContext(userId: string): Promise<UserContext> {
   if (!userId) return {} as UserContext;
-  const cached = _userContextCache.get(userId);
-  if (cached && cached.expiresAt > Date.now()) return cached.data;
+  const _cached = _userContextCache?.get(userId);
+  if (cached && cached?.expiresAt > Date?.now()) return cached?.data;
 
   try {
-    const [[prefs], [voice]] = await Promise.all([
+    const [[prefs], [voice]] = await Promise?.all([
       db
         .select()
         .from(autopilotPreferences)
-        .where(eq(autopilotPreferences.userId, userId))
+        .where(eq(autopilotPreferences?.userId, userId))
         .limit(1),
       db
         .select({
-          tone: userBrandVoices.tone,
-          writingStyle: userBrandVoices.writingStyle,
-          targetAudience: userBrandVoices.targetAudience,
-          personality: userBrandVoices.personality,
-          brandValues: userBrandVoices.brandValues,
-          avoidWords: userBrandVoices.avoidWords,
+          tone: userBrandVoices?.tone,
+          writingStyle: userBrandVoices?.writingStyle,
+          targetAudience: userBrandVoices?.targetAudience,
+          personality: userBrandVoices?.personality,
+          brandValues: userBrandVoices?.brandValues,
+          avoidWords: userBrandVoices?.avoidWords,
         })
         .from(userBrandVoices)
-        .where(eq(userBrandVoices.userId, userId))
+        .where(eq(userBrandVoices?.userId, userId))
         .limit(1),
     ]);
 
     // Derive a brand-voice label: prefer autopilot setting, fall back to voice table tone
-    const resolvedBrandVoice = prefs?.brandVoice ?? voice?.tone ?? null;
+    const _resolvedBrandVoice = prefs?.brandVoice ?? voice?.tone ?? null;
     // Derive target audience: prefer autopilot, fall back to brand-voice table
-    const resolvedTargetAudience =
+    const _resolvedTargetAudience =
       prefs?.targetAudience ?? voice?.targetAudience ?? null;
 
     const data: UserContext = {
@@ -196,13 +191,13 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
         (prefs?.currentReleases as Record<string, unknown>[] | null) ?? null,
     };
 
-    _userContextCache.set(userId, {
+    _userContextCache?.set(userId, {
       data,
-      expiresAt: Date.now() + USER_CTX_TTL_MS,
+      expiresAt: Date?.now() + USER_CTX_TTL_MS,
     });
     return data;
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[MultimodalGen] fetchUserContext DB error (non-fatal):",
       (err as Error)?.message ?? String(err),
     );
@@ -220,11 +215,11 @@ function matchReleaseByUrl(
 ): { title: string; type: string; releaseDate: string } | undefined {
   if (!url || !releases?.length) return undefined;
   try {
-    const needle = new URL(url).href.replace(/\/$/, "").toLowerCase();
+    const _needle = new URL(url).href?.replace(/\/$/, "").toLowerCase();
     for (const rel of releases) {
-      for (const link of Object.values(rel.streamingLinks ?? {})) {
+      for (const link of Object?.values(rel?.streamingLinks ?? {})) {
         try {
-          if (new URL(link).href.replace(/\/$/, "").toLowerCase() === needle)
+          if (new URL(link).href?.replace(/\/$/, "").toLowerCase() === needle)
             return rel;
         } catch {
           /* skip malformed links */
@@ -259,30 +254,30 @@ interface UrlContext {
   id?: string;
 }
 
-const BROWSER_UA =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+const _BROWSER_UA =
+  "Mozilla/5?.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537?.36 (KHTML, like Gecko) Chrome/124?.0.0?.0 Safari/537?.36";
 
 function classifyUrl(url: string): UrlContext {
   try {
-    const u = new URL(url);
-    const host = u.hostname.replace(/^www\./, "").toLowerCase();
-    const parts = u.pathname.split("/").filter(Boolean);
+    const _u = new URL(url);
+    const _host = u?.hostname.replace(/^www\./, "").toLowerCase();
+    const _parts = u?.pathname.split("/").filter(Boolean);
 
     // ── Max Booster own-app URLs ─────────────────────────────────
     // Detect any maxbooster domain and route to 'article' category so copy
     // templates produce promotional content suited to feature/info pages
     // ("Worth reading", "check this out") rather than generic "link in bio".
     if (
-      host === "max-booster.com" ||
-      host.endsWith(".max-booster.com") ||
-      host === "maxbooster.replit.app" ||
-      host.endsWith(".maxbooster.replit.app") ||
-      host === "maxbooster.app" ||
-      host.endsWith(".maxbooster.app") ||
+      host === "max-booster?.com" ||
+      host?.endsWith(".max-booster?.com") ||
+      host === "maxbooster?.replit.app" ||
+      host?.endsWith(".maxbooster?.replit.app") ||
+      host === "maxbooster?.app" ||
+      host?.endsWith(".maxbooster?.app") ||
       host === "localhost" ||
-      host === "127.0.0.1"
+      host === "127?.0.0?.1"
     ) {
-      const firstPath = parts[0] ?? "";
+      const _firstPath = parts[0] ?? "";
       return {
         category: "article",
         platform: "Max Booster",
@@ -291,111 +286,111 @@ function classifyUrl(url: string): UrlContext {
     }
 
     // ── Music streaming ─────────────────────────────────────────
-    if (host.includes("spotify.com"))
+    if (host?.includes("spotify?.com"))
       return {
         category: "music_stream",
         platform: "Spotify",
         contentType: parts[0] ?? "track",
         id: parts[1],
       };
-    if (host.includes("music.apple.com"))
+    if (host?.includes("music?.apple.com"))
       return {
         category: "music_stream",
         platform: "Apple Music",
         contentType: "album",
       };
-    if (host.includes("tidal.com"))
+    if (host?.includes("tidal?.com"))
       return {
         category: "music_stream",
         platform: "Tidal",
         contentType: "track",
       };
-    if (host.includes("deezer.com"))
+    if (host?.includes("deezer?.com"))
       return {
         category: "music_stream",
         platform: "Deezer",
         contentType: "track",
       };
-    if (host.includes("audiomack.com"))
+    if (host?.includes("audiomack?.com"))
       return {
         category: "music_stream",
         platform: "Audiomack",
         contentType: "song",
       };
-    if (host.includes("bandcamp.com"))
+    if (host?.includes("bandcamp?.com"))
       return {
         category: "music_stream",
         platform: "Bandcamp",
         contentType: "track",
       };
-    if (host.includes("soundcloud.com"))
+    if (host?.includes("soundcloud?.com"))
       return {
         category: "music_stream",
         platform: "SoundCloud",
         contentType: "track",
-        id: parts.join("/"),
+        id: parts?.join("/"),
       };
-    if (host.includes("boomplay.com"))
+    if (host?.includes("boomplay?.com"))
       return {
         category: "music_stream",
         platform: "Boomplay",
         contentType: "track",
       };
-    if (host.includes("pandora.com"))
+    if (host?.includes("pandora?.com"))
       return {
         category: "music_stream",
         platform: "Pandora",
         contentType: "station",
       };
-    if (host.includes("music.amazon"))
+    if (host?.includes("music?.amazon"))
       return {
         category: "music_stream",
         platform: "Amazon Music",
         contentType: "track",
       };
-    if (host.includes("napster.com"))
+    if (host?.includes("napster?.com"))
       return {
         category: "music_stream",
         platform: "Napster",
         contentType: "track",
       };
-    if (host.includes("anghami.com"))
+    if (host?.includes("anghami?.com"))
       return {
         category: "music_stream",
         platform: "Anghami",
         contentType: "track",
       };
-    if (host.includes("kkbox.com"))
+    if (host?.includes("kkbox?.com"))
       return {
         category: "music_stream",
         platform: "KKBOX",
         contentType: "track",
       };
-    if (host.includes("joox.com"))
+    if (host?.includes("joox?.com"))
       return {
         category: "music_stream",
         platform: "JOOX",
         contentType: "track",
       };
-    if (host.includes("gaana.com"))
+    if (host?.includes("gaana?.com"))
       return {
         category: "music_stream",
         platform: "Gaana",
         contentType: "song",
       };
-    if (host.includes("jiosaavn.com"))
+    if (host?.includes("jiosaavn?.com"))
       return {
         category: "music_stream",
         platform: "JioSaavn",
         contentType: "song",
       };
-    if (host.includes("music.youtube.com"))
+    if (host?.includes("music?.youtube.com"))
       return {
         category: "music_stream",
         platform: "YouTube Music",
         contentType: "track",
       };
-    if (host.includes("vevo.com"))
+    if (host?.includes("vevo?.com"))
       return {
         category: "music_video",
         platform: "Vevo",
@@ -403,73 +398,73 @@ function classifyUrl(url: string): UrlContext {
       };
 
     // ── Video ────────────────────────────────────────────────────
-    if (host.includes("youtube.com") || host.includes("youtu.be"))
+    if (host?.includes("youtube?.com") || host?.includes("youtu?.be"))
       return {
         category: "video",
         platform: "YouTube",
         contentType: "video",
-        id: u.searchParams.get("v") ?? parts[0],
+        id: u?.searchParams.get("v") ?? parts[0],
       };
-    if (host.includes("vimeo.com"))
+    if (host?.includes("vimeo?.com"))
       return { category: "video", platform: "Vimeo", contentType: "video" };
-    if (host.includes("dailymotion.com"))
+    if (host?.includes("dailymotion?.com"))
       return {
         category: "video",
         platform: "Dailymotion",
         contentType: "video",
       };
-    if (host.includes("twitch.tv"))
+    if (host?.includes("twitch?.tv"))
       return { category: "video", platform: "Twitch", contentType: "stream" };
-    if (host.includes("kick.com"))
+    if (host?.includes("kick?.com"))
       return { category: "video", platform: "Kick", contentType: "stream" };
-    if (host.includes("rumble.com"))
+    if (host?.includes("rumble?.com"))
       return { category: "video", platform: "Rumble", contentType: "video" };
 
     // ── Social posts ─────────────────────────────────────────────
-    if (host.includes("instagram.com"))
+    if (host?.includes("instagram?.com"))
       return {
         category: "social_post",
         platform: "Instagram",
         contentType:
           parts[0] === "p" || parts[0] === "reel" ? parts[0] : "post",
       };
-    if (host.includes("tiktok.com"))
+    if (host?.includes("tiktok?.com"))
       return {
         category: "social_post",
         platform: "TikTok",
         contentType: "video",
       };
-    if (host.includes("twitter.com") || host.includes("x.com"))
+    if (host?.includes("twitter?.com") || host?.includes("x?.com"))
       return {
         category: "social_post",
         platform: "X (Twitter)",
         contentType: "tweet",
       };
-    if (host.includes("facebook.com"))
+    if (host?.includes("facebook?.com"))
       return {
         category: "social_post",
         platform: "Facebook",
         contentType: "post",
       };
-    if (host.includes("threads.net"))
+    if (host?.includes("threads?.net"))
       return {
         category: "social_post",
         platform: "Threads",
         contentType: "post",
       };
-    if (host.includes("linkedin.com"))
+    if (host?.includes("linkedin?.com"))
       return {
         category: "social_post",
         platform: "LinkedIn",
         contentType: "post",
       };
-    if (host.includes("pinterest.com"))
+    if (host?.includes("pinterest?.com"))
       return {
         category: "social_post",
         platform: "Pinterest",
         contentType: "pin",
       };
-    if (host.includes("reddit.com"))
+    if (host?.includes("reddit?.com"))
       return {
         category: "social_post",
         platform: "Reddit",
@@ -477,31 +472,31 @@ function classifyUrl(url: string): UrlContext {
       };
 
     // ── Podcast ──────────────────────────────────────────────────
-    if (host.includes("podcasts.apple.com"))
+    if (host?.includes("podcasts?.apple.com"))
       return {
         category: "podcast",
         platform: "Apple Podcasts",
         contentType: "episode",
       };
-    if (host.includes("open.spotify.com") && parts[0] === "episode")
+    if (host?.includes("open?.spotify.com") && parts[0] === "episode")
       return {
         category: "podcast",
         platform: "Spotify Podcasts",
         contentType: "episode",
       };
-    if (host.includes("anchor.fm") || host.includes("podcasters.spotify.com"))
+    if (host?.includes("anchor?.fm") || host?.includes("podcasters?.spotify.com"))
       return {
         category: "podcast",
         platform: "Spotify Podcasts",
         contentType: "episode",
       };
-    if (host.includes("buzzsprout.com"))
+    if (host?.includes("buzzsprout?.com"))
       return {
         category: "podcast",
         platform: "Buzzsprout",
         contentType: "episode",
       };
-    if (host.includes("podbean.com"))
+    if (host?.includes("podbean?.com"))
       return {
         category: "podcast",
         platform: "Podbean",
@@ -509,80 +504,80 @@ function classifyUrl(url: string): UrlContext {
       };
 
     // ── Events / ticketing ───────────────────────────────────────
-    if (host.includes("eventbrite.com"))
+    if (host?.includes("eventbrite?.com"))
       return {
         category: "event",
         platform: "Eventbrite",
         contentType: "event",
       };
-    if (host.includes("dice.fm"))
+    if (host?.includes("dice?.fm"))
       return { category: "event", platform: "Dice", contentType: "event" };
-    if (host.includes("ticketmaster.com"))
+    if (host?.includes("ticketmaster?.com"))
       return {
         category: "event",
         platform: "Ticketmaster",
         contentType: "event",
       };
-    if (host.includes("axs.com"))
+    if (host?.includes("axs?.com"))
       return { category: "event", platform: "AXS", contentType: "event" };
-    if (host.includes("songkick.com"))
+    if (host?.includes("songkick?.com"))
       return { category: "event", platform: "Songkick", contentType: "event" };
-    if (host.includes("bandsintown.com"))
+    if (host?.includes("bandsintown?.com"))
       return {
         category: "event",
         platform: "Bandsintown",
         contentType: "event",
       };
-    if (host.includes("seetickets.com"))
+    if (host?.includes("seetickets?.com"))
       return {
         category: "event",
         platform: "See Tickets",
         contentType: "event",
       };
-    if (host.includes("skiddle.com"))
+    if (host?.includes("skiddle?.com"))
       return { category: "event", platform: "Skiddle", contentType: "event" };
 
     // ── Music press ──────────────────────────────────────────────
     if (
       [
-        "pitchfork.com",
-        "rollingstone.com",
-        "nme.com",
-        "billboard.com",
-        "stereogum.com",
-        "theneedledrop.com",
-        "xxlmag.com",
-        "hotnewhiphop.com",
-        "complex.com",
-        "consequence.net",
-        "allmusic.com",
-        "discogs.com",
-      ].some((d) => host.includes(d))
+        "pitchfork?.com",
+        "rollingstone?.com",
+        "nme?.com",
+        "billboard?.com",
+        "stereogum?.com",
+        "theneedledrop?.com",
+        "xxlmag?.com",
+        "hotnewhiphop?.com",
+        "complex?.com",
+        "consequence?.net",
+        "allmusic?.com",
+        "discogs?.com",
+      ].some((d) => host?.includes(d))
     )
       return {
         category: "press",
-        platform: host.replace(/\.com$/, ""),
+        platform: host?.replace(/\.com$/, ""),
         contentType: "review",
       };
 
     // ── E-commerce / merch ───────────────────────────────────────
     if (
-      host.includes("merch") ||
-      host.includes("shop") ||
-      host.includes("store") ||
-      host.includes("bigcartel.com") ||
-      host.includes("shopify.com") ||
-      host.includes("etsy.com")
+      host?.includes("merch") ||
+      host?.includes("shop") ||
+      host?.includes("store") ||
+      host?.includes("bigcartel?.com") ||
+      host?.includes("shopify?.com") ||
+      host?.includes("etsy?.com")
     )
       return { category: "ecommerce", platform: host, contentType: "product" };
 
     // ── Article / blog ───────────────────────────────────────────
     if (
-      host.includes("medium.com") ||
-      host.includes("substack.com") ||
-      host.includes("wordpress.com") ||
-      host.includes("ghost.io") ||
-      host.includes("blogspot.com")
+      host?.includes("medium?.com") ||
+      host?.includes("substack?.com") ||
+      host?.includes("wordpress?.com") ||
+      host?.includes("ghost?.io") ||
+      host?.includes("blogspot?.com")
     )
       return { category: "article", platform: host, contentType: "article" };
 
@@ -601,7 +596,7 @@ function decodeHtmlEntities(str: string): string {
     .replace(/&#039;/g, "'")
     .replace(/&#x27;/g, "'")
     .replace(/&nbsp;/g, " ")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#(\d+);/g, (_, n) => String?.fromCharCode(Number(n)))
     .trim();
 }
 
@@ -611,22 +606,22 @@ interface PageMeta {
   siteName?: string;
   image?: string;
   author?: string;
-  type?: string; // og:type (article, music.song, video.other, etc.)
+  type?: string; // og:type (article, music?.song, video?.other, etc.)
   publishDate?: string;
 }
 
 async function tryOEmbed(oembedUrl: string): Promise<PageMeta | null> {
   try {
-    const res = await fetch(oembedUrl, {
+    const _res = await fetch(oembedUrl, {
       headers: { "User-Agent": BROWSER_UA },
-      signal: AbortSignal.timeout(8_000),
+      signal: AbortSignal?.timeout(8_000),
     });
-    if (!res.ok) return null;
-    const d = await res.json();
+    if (!res?.ok) return null;
+    const _d = await res?.json();
     return {
-      title: d.title,
-      author: d.author_name,
-      siteName: d.provider_name,
+      title: d?.title,
+      author: d?.author_name,
+      siteName: d?.provider_name,
     };
   } catch {
     return null;
@@ -635,12 +630,12 @@ async function tryOEmbed(oembedUrl: string): Promise<PageMeta | null> {
 
 function inferSiteNameFromUrl(url: string): string | undefined {
   try {
-    const host = new URL(url).hostname.replace(/^www\./, "");
-    // "en.wikipedia.org" → "Wikipedia"
-    const parts = host.split(".");
-    if (parts.length >= 2) {
-      const domain = parts[parts.length - 2];
-      return domain.charAt(0).toUpperCase() + domain.slice(1);
+    const _host = new URL(url).hostname?.replace(/^www\./, "");
+    // "en?.wikipedia.org" → "Wikipedia"
+    const _parts = host?.split(".");
+    if (parts?.length >= 2) {
+      const _domain = parts[parts?.length - 2];
+      return domain?.charAt(0).toUpperCase() + domain?.slice(1);
     }
     return undefined;
   } catch {
@@ -649,33 +644,33 @@ function inferSiteNameFromUrl(url: string): string | undefined {
 }
 
 async function scrapeHtml(url: string): Promise<PageMeta> {
-  const res = await fetch(url, {
+  const _res = await fetch(url, {
     headers: {
       "User-Agent": BROWSER_UA,
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0?.9,*/*;q=0?.8",
+      "Accept-Language": "en-US,en;q=0?.9",
       "Accept-Encoding": "gzip, deflate, br",
       "Cache-Control": "no-cache",
     },
-    signal: AbortSignal.timeout(14_000),
+    signal: AbortSignal?.timeout(14_000),
     redirect: "follow",
   });
-  if (!res.ok) return {};
+  if (!res?.ok) return {};
 
-  const html = await res.text();
+  const _html = await res?.text();
 
   // ── 1. Meta tag extractor (handles both attribute orderings) ──
-  const getMeta = (...props: string[]): string | undefined => {
+  const _getMeta = (...props: string[]): string | undefined => {
     for (const prop of props) {
-      const escaped = prop.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const m =
-        html.match(
+      const _escaped = prop?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const _m =
+        html?.match(
           new RegExp(
             `<meta[^>]+(?:property|name)=["']${escaped}["'][^>]+content=["']([^"']{1,600})["']`,
             "i",
           ),
         ) ??
-        html.match(
+        html?.match(
           new RegExp(
             `<meta[^>]+content=["']([^"']{1,600})["'][^>]+(?:property|name)=["']${escaped}["']`,
             "i",
@@ -692,28 +687,28 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
   let jsonLdAuthor: string | undefined;
   let jsonLdDate: string | undefined;
   try {
-    const ldMatches = [
-      ...html.matchAll(
+    const _ldMatches = [
+      ...html?.matchAll(
         /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
       ),
     ];
     for (const m of ldMatches) {
       try {
-        const ld = JSON.parse(m[1].trim());
-        const items = Array.isArray(ld) ? ld : [ld];
+        const _ld = JSON?.parse(m[1].trim());
+        const _items = Array?.isArray(ld) ? ld : [ld];
         for (const item of items) {
-          if (!jsonLdTitle && item.name) jsonLdTitle = String(item.name);
-          if (!jsonLdTitle && item.headline)
-            jsonLdTitle = String(item.headline);
-          if (!jsonLdDescription && item.description)
-            jsonLdDescription = String(item.description).slice(0, 400);
-          if (!jsonLdAuthor && item.author)
+          if (!jsonLdTitle && item?.name) jsonLdTitle = String(item?.name);
+          if (!jsonLdTitle && item?.headline)
+            jsonLdTitle = String(item?.headline);
+          if (!jsonLdDescription && item?.description)
+            jsonLdDescription = String(item?.description).slice(0, 400);
+          if (!jsonLdAuthor && item?.author)
             jsonLdAuthor =
-              typeof item.author === "string"
-                ? item.author
-                : (item.author?.name ?? "");
-          if (!jsonLdDate && item.datePublished)
-            jsonLdDate = String(item.datePublished);
+              typeof item?.author === "string"
+                ? item?.author
+                : (item?.author?.name ?? "");
+          if (!jsonLdDate && item?.datePublished)
+            jsonLdDate = String(item?.datePublished);
         }
       } catch {
         /* malformed JSON-LD */
@@ -726,11 +721,11 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
   // ── 3. oEmbed discovery from HTML link tag ─────────────────────
   let oembedResult: PageMeta | null = null;
   try {
-    const oembedLink =
-      html.match(
+    const _oembedLink =
+      html?.match(
         /<link[^>]+type=["']application\/json\+oembed["'][^>]+href=["']([^"']+)["']/i,
       ) ??
-      html.match(
+      html?.match(
         /<link[^>]+href=["']([^"']+)["'][^>]+type=["']application\/json\+oembed["']/i,
       );
     if (oembedLink?.[1]) {
@@ -741,55 +736,55 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
   }
 
   // ── 4. Fallback: h1 + first paragraph ─────────────────────────
-  const h1 = html.match(/<h1[^>]*>([^<]{3,200})<\/h1>/i)?.[1];
-  const firstPara = html.match(/<p[^>]*>([^<]{30,400})<\/p>/i)?.[1];
+  const _h1 = html?.match(/<h1[^>]*>([^<]{3,200})<\/h1>/i)?.[1];
+  const _firstPara = html?.match(/<p[^>]*>([^<]{30,400})<\/p>/i)?.[1];
 
   // ── 5. Assemble with priority ──────────────────────────────────
   // OG/twitter titles are already clean — only strip site-suffix from <title> tags
-  const ogTitle =
+  const _ogTitle =
     oembedResult?.title ??
-    getMeta("og:title", "twitter:title", "dc.title") ??
+    getMeta("og:title", "twitter:title", "dc?.title") ??
     jsonLdTitle;
-  const rawPageTitle = html.match(/<title[^>]*>([^<]{1,250})<\/title>/i)?.[1];
-  const h1Title = h1 ? decodeHtmlEntities(h1) : undefined;
+  const _rawPageTitle = html?.match(/<title[^>]*>([^<]{1,250})<\/title>/i)?.[1];
+  const _h1Title = h1 ? decodeHtmlEntities(h1) : undefined;
 
   // Strip "Page Title | Site Name" or "Page Title - Site Name" only from <title> tag
-  const cleanPageTitle = rawPageTitle
+  const _cleanPageTitle = rawPageTitle
     ? decodeHtmlEntities(rawPageTitle)
         .replace(/\s+[|\u2013\u2014]\s+[^|\u2013\u2014]{2,60}$/, "")
         .trim()
     : undefined;
 
-  const siteNameFromMeta = oembedResult?.siteName ?? getMeta("og:site_name");
-  const inferredSiteName = inferSiteNameFromUrl(url);
-  const effectiveSiteName = siteNameFromMeta ?? inferredSiteName;
+  const _siteNameFromMeta = oembedResult?.siteName ?? getMeta("og:site_name");
+  const _inferredSiteName = inferSiteNameFromUrl(url);
+  const _effectiveSiteName = siteNameFromMeta ?? inferredSiteName;
 
   let finalTitle = ogTitle
     ? decodeHtmlEntities(ogTitle).trim()
     : (cleanPageTitle ?? h1Title);
-  // Strip site-name suffix from title (e.g. "Miles Davis - Wikipedia" → "Miles Davis")
+  // Strip site-name suffix from title (e?.g. "Miles Davis - Wikipedia" → "Miles Davis")
   if (finalTitle && effectiveSiteName) {
-    const esc = effectiveSiteName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const _esc = effectiveSiteName?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     finalTitle =
       finalTitle
         .replace(new RegExp(`\\s*[-–—|]\\s*${esc}\\s*$`, "i"), "")
         .trim() || finalTitle;
   }
 
-  const rawDesc =
+  const _rawDesc =
     getMeta(
       "og:description",
       "twitter:description",
       "description",
-      "dc.description",
+      "dc?.description",
     ) ??
     jsonLdDescription ??
     (firstPara
-      ? decodeHtmlEntities(firstPara.replace(/<[^>]+>/g, ""))
+      ? decodeHtmlEntities(firstPara?.replace(/<[^>]+>/g, ""))
       : undefined);
 
-  const cleanDesc = rawDesc?.replace(/<[^>]+>/g, "").trim();
-  const BOT_WALL_DESC = [
+  const _cleanDesc = rawDesc?.replace(/<[^>]+>/g, "").trim();
+  const _BOT_WALL_DESC = [
     /confirm.*you.*re a human/i,
     /not a (robot|bot|spambot)/i,
     /verify.*you.*re a human/i,
@@ -798,8 +793,8 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
     /enable.*javascript.*cookies/i,
     /please enable cookies/i,
   ];
-  const safeDesc =
-    cleanDesc && BOT_WALL_DESC.some((re) => re.test(cleanDesc))
+  const _safeDesc =
+    cleanDesc && BOT_WALL_DESC?.some((re) => re?.test(cleanDesc))
       ? undefined
       : cleanDesc;
 
@@ -811,7 +806,7 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
     author:
       oembedResult?.author ??
       jsonLdAuthor ??
-      getMeta("author", "dc.creator") ??
+      getMeta("author", "dc?.creator") ??
       undefined,
     type: getMeta("og:type") ?? undefined,
     publishDate: jsonLdDate ?? getMeta("article:published_time") ?? undefined,
@@ -895,31 +890,31 @@ const MAXBOOSTER_ROUTE_META: Record<string, PageMeta> = {
   },
 };
 
-const MAXBOOSTER_HOSTS = new Set([
-  "max-booster.com",
-  "maxbooster.replit.app", // legacy
-  "maxbooster.app",
+const _MAXBOOSTER_HOSTS = new Set([
+  "max-booster?.com",
+  "maxbooster?.replit.app", // legacy
+  "maxbooster?.app",
   "localhost",
-  "127.0.0.1",
+  "127?.0.0?.1",
 ]);
 
 function getMaxBoosterRouteMeta(url: string): PageMeta | null {
   try {
-    const u = new URL(url);
-    const host = u.hostname.split(":")[0].toLowerCase();
+    const _u = new URL(url);
+    const _host = u?.hostname.split(":")[0].toLowerCase();
     if (
-      !MAXBOOSTER_HOSTS.has(host) &&
-      !host.endsWith(".max-booster.com") &&
-      !host.endsWith(".maxbooster.replit.app") &&
-      !host.endsWith(".maxbooster.app")
+      !MAXBOOSTER_HOSTS?.has(host) &&
+      !host?.endsWith(".max-booster?.com") &&
+      !host?.endsWith(".maxbooster?.replit.app") &&
+      !host?.endsWith(".maxbooster?.app")
     ) {
       return null;
     }
-    const cleanPath = u.pathname.replace(/\/$/, "") || "/";
-    // Exact match first, then first path segment (e.g. /pricing?plan=pro → /pricing)
+    const _cleanPath = u?.pathname.replace(/\/$/, "") || "/";
+    // Exact match first, then first path segment (e?.g. /pricing?plan=pro → /pricing)
     return (
       MAXBOOSTER_ROUTE_META[cleanPath] ??
-      MAXBOOSTER_ROUTE_META[`/${cleanPath.split("/")[1]}`] ??
+      MAXBOOSTER_ROUTE_META[`/${cleanPath?.split("/")[1]}`] ??
       null
     );
   } catch {
@@ -932,81 +927,81 @@ async function fetchUrlMetadata(
   _ctx: UrlContext,
 ): Promise<PageMeta> {
   // ── Max Booster own-app routes — no HTTP round-trip needed ─────
-  const ownMeta = getMaxBoosterRouteMeta(url);
+  const _ownMeta = getMaxBoosterRouteMeta(url);
   if (ownMeta) return ownMeta;
 
   // ── Known oEmbed endpoints (no need to scrape HTML first) ──────
-  if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    const r = await tryOEmbed(
-      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+  if (url?.includes("youtube?.com") || url?.includes("youtu?.be")) {
+    const _r = await tryOEmbed(
+      `https://www?.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
     if (r?.title)
       return {
         ...r,
         siteName: "YouTube",
-        description: `Video by ${r.author ?? "creator"}`,
+        description: `Video by ${r?.author ?? "creator"}`,
       };
   }
-  if (url.includes("spotify.com")) {
-    const r = await tryOEmbed(
-      `https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`,
+  if (url?.includes("spotify?.com")) {
+    const _r = await tryOEmbed(
+      `https://open?.spotify.com/oembed?url=${encodeURIComponent(url)}`,
     );
     if (r?.title)
       return {
         ...r,
         siteName: "Spotify",
-        description: r.author
-          ? `by ${r.author} on Spotify`
+        description: r?.author
+          ? `by ${r?.author} on Spotify`
           : "Streaming on Spotify",
       };
   }
-  if (url.includes("soundcloud.com")) {
-    const r = await tryOEmbed(
-      `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+  if (url?.includes("soundcloud?.com")) {
+    const _r = await tryOEmbed(
+      `https://soundcloud?.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
     if (r?.title)
       return {
         ...r,
         siteName: "SoundCloud",
-        description: r.author
-          ? `Track by ${r.author} on SoundCloud`
+        description: r?.author
+          ? `Track by ${r?.author} on SoundCloud`
           : undefined,
       };
   }
-  if (url.includes("vimeo.com")) {
-    const r = await tryOEmbed(
-      `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
+  if (url?.includes("vimeo?.com")) {
+    const _r = await tryOEmbed(
+      `https://vimeo?.com/api/oembed?.json?url=${encodeURIComponent(url)}`,
     );
     if (r?.title)
       return {
         ...r,
         siteName: "Vimeo",
-        description: r.author ? `Video by ${r.author}` : undefined,
+        description: r?.author ? `Video by ${r?.author}` : undefined,
       };
   }
-  if (url.includes("twitter.com") || url.includes("x.com")) {
-    const r = await tryOEmbed(
-      `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`,
+  if (url?.includes("twitter?.com") || url?.includes("x?.com")) {
+    const _r = await tryOEmbed(
+      `https://publish?.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`,
     );
     if (r?.title) return { ...r, siteName: "X (Twitter)" };
   }
-  if (url.includes("bandcamp.com")) {
-    const r = await tryOEmbed(
-      `https://bandcamp.com/api/oembed?url=${encodeURIComponent(url)}&format=json`,
+  if (url?.includes("bandcamp?.com")) {
+    const _r = await tryOEmbed(
+      `https://bandcamp?.com/api/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
     if (r?.title)
       return {
         ...r,
         siteName: "Bandcamp",
-        description: r.author ? `by ${r.author} on Bandcamp` : undefined,
+        description: r?.author ? `by ${r?.author} on Bandcamp` : undefined,
       };
   }
 
   // ── HTML scrape with full extraction pipeline ──────────────────
   try {
-    const meta = await scrapeHtml(url);
+    const _meta = await scrapeHtml(url);
     // Strip generic "shell" titles returned by JS-rendered apps
-    const GENERIC_TITLES = [
+    const _GENERIC_TITLES = [
       /^spotify\s*[-–—|]/i,
       /^spotify$/i,
       /^soundcloud\s*[-–—|]/i,
@@ -1038,21 +1033,21 @@ async function fetchUrlMetadata(
       /^one more step/i,
       /^checking your browser/i,
     ];
-    if (meta.title) {
-      const isGeneric = GENERIC_TITLES.some((re) => re.test(meta.title!));
-      if (isGeneric) meta.title = undefined;
+    if (meta?.title) {
+      const _isGeneric = GENERIC_TITLES?.some((re) => re?.test(meta?.title!));
+      if (isGeneric) meta?.title = undefined;
     }
     // Also strip if title exactly matches site name
     if (
-      meta.title &&
-      meta.siteName &&
-      meta.title.toLowerCase() === meta.siteName.toLowerCase()
+      meta?.title &&
+      meta?.siteName &&
+      meta?.title.toLowerCase() === meta?.siteName.toLowerCase()
     ) {
-      meta.title = undefined;
+      meta?.title = undefined;
     }
     // Wipe description if it looks like a bot-wall / captcha page
-    if (meta.description) {
-      const BOT_WALL = [
+    if (meta?.description) {
+      const _BOT_WALL = [
         /confirm.*you.*re a human/i,
         /not a (robot|bot|spambot)/i,
         /verify.*you.*re a human/i,
@@ -1060,8 +1055,8 @@ async function fetchUrlMetadata(
         /cloudflare.*ray id/i,
         /enable.*javascript.*cookies/i,
       ];
-      if (BOT_WALL.some((re) => re.test(meta.description!))) {
-        meta.description = undefined;
+      if (BOT_WALL?.some((re) => re?.test(meta?.description!))) {
+        meta?.description = undefined;
       }
     }
     return meta;
@@ -1246,17 +1241,17 @@ function getHashtagsForPlatform(
   artistName?: string,
 ): string {
   if (max === 0) return "";
-  const pool =
+  const _pool =
     HASHTAG_LIBRARY[category]?.[platform] ??
     HASHTAG_LIBRARY["social_post"]?.[platform] ??
     [];
-  const tags = pool.slice(0, max - (artistName ? 1 : 0));
+  const _tags = pool?.slice(0, max - (artistName ? 1 : 0));
   if (artistName) {
-    const artistTag =
-      "#" + artistName.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-    if (artistTag.length > 1 && !tags.includes(artistTag)) tags.push(artistTag);
+    const _artistTag =
+      "#" + artistName?.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+    if (artistTag?.length > 1 && !tags?.includes(artistTag)) tags?.push(artistTag);
   }
-  return tags.length > 0 ? "\n\n" + tags.join(" ") : "";
+  return tags?.length > 0 ? "\n\n" + tags?.join(" ") : "";
 }
 
 // ─── Per-Platform Copy Builder ────────────────────────────────────────────────
@@ -1268,21 +1263,21 @@ function buildCopyFromContext(
   _intent: string,
   targetPlatform?: string,
 ): { hook: string; body: string; cta: string } {
-  const title = meta.title ?? "";
-  const desc = meta.description ?? "";
-  const platform = meta.siteName ?? ctx.platform;
-  const author = meta.author ?? "";
-  const tp = targetPlatform ?? "";
+  const _title = meta?.title ?? "";
+  const _desc = meta?.description ?? "";
+  const _platform = meta?.siteName ?? ctx?.platform;
+  const _author = meta?.author ?? "";
+  const _tp = targetPlatform ?? "";
 
   // Per-platform copy factories per content category
-  switch (ctx.category) {
+  switch (ctx?.category) {
     case "music_stream": {
       if (tp === "tiktok")
         return {
           hook: title
             ? `POV: "${title}" just hit different 🎵`
             : `POV: This song just changed everything 🎵`,
-          body: desc.slice(0, 80) || "The vibes are immaculate 🔥",
+          body: desc?.slice(0, 80) || "The vibes are immaculate 🔥",
           cta: `🔗 Link in bio to stream`,
         };
       if (tp === "twitter")
@@ -1290,7 +1285,7 @@ function buildCopyFromContext(
           hook: title
             ? `🎵 "${title}" is out now on ${platform}`
             : `🎵 New music just dropped`,
-          body: desc.slice(0, 100) || "",
+          body: desc?.slice(0, 100) || "",
           cta: `Stream it 🔗`,
         };
       if (tp === "youtube")
@@ -1316,7 +1311,7 @@ function buildCopyFromContext(
       if (tp === "threads")
         return {
           hook: title ? `"${title}" is out now 🎶` : `New music just dropped`,
-          body: desc.slice(0, 100) || `Feels like the right time for this one`,
+          body: desc?.slice(0, 100) || `Feels like the right time for this one`,
           cta: `Link in bio`,
         };
       if (tp === "facebook")
@@ -1390,7 +1385,7 @@ function buildCopyFromContext(
           hook: title
             ? `music video for "${title}" is live 🎬`
             : `new music video is live 🎬`,
-          body: desc.slice(0, 80) || `go watch it`,
+          body: desc?.slice(0, 80) || `go watch it`,
           cta: `link in bio`,
         };
       if (tp === "facebook")
@@ -1446,7 +1441,7 @@ function buildCopyFromContext(
       if (tp === "threads")
         return {
           hook: title ? `"${title}" 📹` : `new video 📹`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: `link in bio`,
         };
       if (tp === "facebook")
@@ -1469,7 +1464,7 @@ function buildCopyFromContext(
       if (tp === "tiktok")
         return {
           hook: title || `check this out 👀`,
-          body: desc.slice(0, 60) || "",
+          body: desc?.slice(0, 60) || "",
           cta: `🔗 follow for more`,
         };
       if (tp === "twitter")
@@ -1487,11 +1482,11 @@ function buildCopyFromContext(
       if (tp === "threads")
         return {
           hook: title || `look at this`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: ``,
         };
       return {
-        hook: title || `Check out this ${ctx.contentType} 👀`,
+        hook: title || `Check out this ${ctx?.contentType} 👀`,
         body: desc || `See what I posted on ${platform}!`,
         cta: `Follow me on ${platform} 🔗 Link in bio!`,
       };
@@ -1503,7 +1498,7 @@ function buildCopyFromContext(
           hook: title
             ? `🎙️ this podcast episode "${title}" changed how I think about music`
             : `🎙️ this podcast episode is insane`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: `🔗 full episode — link in bio`,
         };
       if (tp === "twitter")
@@ -1511,7 +1506,7 @@ function buildCopyFromContext(
           hook: title
             ? `🎙️ New episode: "${title}"`
             : `🎙️ New podcast episode out`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: `Listen 🔗`,
         };
       if (tp === "youtube")
@@ -1539,7 +1534,7 @@ function buildCopyFromContext(
           hook: title
             ? `new episode: "${title}" 🎙️`
             : `new podcast episode just dropped 🎙️`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: `link in bio`,
         };
       if (tp === "facebook")
@@ -1567,13 +1562,13 @@ function buildCopyFromContext(
           hook: title
             ? `🎟️ get your tickets NOW for "${title}" before they sell out`
             : `🎟️ tickets dropping NOW — don't miss this`,
-          body: desc.slice(0, 80) || `these go FAST`,
+          body: desc?.slice(0, 80) || `these go FAST`,
           cta: `🔗 grab tickets — link in bio`,
         };
       if (tp === "twitter")
         return {
           hook: title ? `🎟️ ${title}` : `🎟️ Tickets on sale now`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: `Get yours 🔗`,
         };
       if (tp === "youtube")
@@ -1599,7 +1594,7 @@ function buildCopyFromContext(
       if (tp === "threads")
         return {
           hook: title ? `"${title}" 🎟️` : `tickets are up 🎟️`,
-          body: desc.slice(0, 80) || `get em before they're gone`,
+          body: desc?.slice(0, 80) || `get em before they're gone`,
           cta: `link in bio`,
         };
       if (tp === "facebook")
@@ -1726,7 +1721,7 @@ function buildCopyFromContext(
           hook: title
             ? `"${title}" merch is live 🛍️`
             : `new merch just dropped 🛍️`,
-          body: desc.slice(0, 80) || `grab it before it's gone`,
+          body: desc?.slice(0, 80) || `grab it before it's gone`,
           cta: `link in bio`,
         };
       if (tp === "facebook")
@@ -1784,7 +1779,7 @@ function buildCopyFromContext(
       if (tp === "threads")
         return {
           hook: title ? `"${title}" ✍️` : `new post just went live ✍️`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: `link in bio`,
         };
       if (tp === "facebook")
@@ -1814,7 +1809,7 @@ function buildCopyFromContext(
           hook: title
             ? `check this out "${title}" 🔗`
             : `you need to see this 🔗`,
-          body: desc.slice(0, 60) || "",
+          body: desc?.slice(0, 60) || "",
           cta: `link in bio`,
         };
       if (tp === "twitter")
@@ -1834,7 +1829,7 @@ function buildCopyFromContext(
       if (tp === "threads")
         return {
           hook: title || `look at this`,
-          body: desc.slice(0, 80) || "",
+          body: desc?.slice(0, 80) || "",
           cta: `link in bio`,
         };
       if (tp === "facebook")
@@ -1863,63 +1858,63 @@ async function localAnalyzeUrl(
   req: GenerationRequest,
   platformRulesSubset: Record<string, PlatformRules>,
 ): Promise<unknown> {
-  const ctx = classifyUrl(url);
-  const meta = await fetchUrlMetadata(url, ctx);
+  const _ctx = classifyUrl(url);
+  const _meta = await fetchUrlMetadata(url, ctx);
 
-  const title = meta.title ?? "";
-  const desc = meta.description ?? "";
-  const siteName = meta.siteName ?? ctx.platform;
+  const _title = meta?.title ?? "";
+  const _desc = meta?.description ?? "";
+  const _siteName = meta?.siteName ?? ctx?.platform;
 
   // Generate shared (generic) copy and per-platform differentiated copy
-  const copy = buildCopyFromContext(
+  const _copy = buildCopyFromContext(
     ctx,
     { ...meta, siteName },
-    req.intent ?? "promote",
+    req?.intent ?? "promote",
   );
   const perPlatformCopy: Record<
     string,
     { hook: string; body: string; cta: string }
   > = {};
-  for (const p of req.platforms) {
+  for (const p of req?.platforms) {
     perPlatformCopy[p] = buildCopyFromContext(
       ctx,
       { ...meta, siteName },
-      req.intent ?? "promote",
+      req?.intent ?? "promote",
       p,
     );
   }
 
-  const summary =
-    [title, desc.slice(0, 120)].filter(Boolean).join(" — ") ||
-    `${ctx.category === "event" ? "Upcoming event" : "New content"} on ${siteName || url}`;
+  const _summary =
+    [title, desc?.slice(0, 120)].filter(Boolean).join(" — ") ||
+    `${ctx?.category === "event" ? "Upcoming event" : "New content"} on ${siteName || url}`;
 
-  logger.info(
-    `[MultimodalGen] URL analyzed: category=${ctx.category} title="${title || "(none)"}" platform=${siteName || ctx.platform}`,
+  logger?.info(
+    `[MultimodalGen] URL analyzed: category=${ctx?.category} title="${title || "(none)"}" platform=${siteName || ctx?.platform}`,
   );
 
   return {
     summary,
-    hook: copy.hook,
-    body: copy.body,
-    cta: copy.cta,
+    hook: copy?.hook,
+    body: copy?.body,
+    cta: copy?.cta,
     perPlatformCopy,
     title,
     description: desc,
     siteName,
-    author: meta.author,
-    imageUrl: meta.image,
-    publishDate: meta.publishDate,
+    author: meta?.author,
+    imageUrl: meta?.image,
+    publishDate: meta?.publishDate,
     sourceUrl: url,
-    urlCategory: ctx.category,
+    urlCategory: ctx?.category,
     modality: "url",
-    platforms: req.platforms,
-    intent: req.intent,
+    platforms: req?.platforms,
+    intent: req?.intent,
     metadata: {
-      ...(req.input.metadata || {}),
+      ...(req?.input.metadata || {}),
       sourceUrl: url,
       title,
       siteName,
-      urlCategory: ctx.category,
+      urlCategory: ctx?.category,
     },
     platformRules: platformRulesSubset,
   };
@@ -1928,28 +1923,28 @@ async function localAnalyzeUrl(
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function normalizeInput(req: GenerationRequest): Promise<unknown> {
-  const platformRulesSubset = req.platforms.reduce<
+  const _platformRulesSubset = req?.platforms.reduce<
     Record<string, PlatformRules>
   >((acc, p) => {
     acc[p] = getRules(p);
     return acc;
   }, {});
 
-  const payload = req.input.payload ?? "";
+  const _payload = req?.input.payload ?? "";
   let prefetchedMeta: PageMeta | null = null;
 
   // Pre-fetch URL metadata so MaxCore gets the full page content, not just a bare URL
-  if (req.input.modality === "url" && /^https?:\/\//i.test(payload)) {
+  if (req?.input.modality === "url" && /^https?:\/\//i?.test(payload)) {
     try {
-      const ctx = classifyUrl(payload);
+      const _ctx = classifyUrl(payload);
       prefetchedMeta = await fetchUrlMetadata(payload, ctx);
-      logger.debug(
-        `[MultimodalGen] Pre-fetched URL metadata: title="${prefetchedMeta.title ?? ""}" siteName="${prefetchedMeta.siteName ?? ""}"`,
+      logger?.debug(
+        `[MultimodalGen] Pre-fetched URL metadata: title="${prefetchedMeta?.title ?? ""}" siteName="${prefetchedMeta?.siteName ?? ""}"`,
       );
     } catch (fetchErr) {
-      logger.debug(
+      logger?.debug(
         "[MultimodalGen] URL pre-fetch failed (non-fatal):",
-        fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+        fetchErr instanceof Error ? fetchErr?.message : String(fetchErr),
       );
     }
   }
@@ -1958,22 +1953,22 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
     return await maxcorePost(
       "/analyze",
       {
-        modality: req.input.modality,
-        payload: req.input.payload,
-        artistProfileId: req.artistProfileId,
-        platforms: req.platforms,
-        intent: req.intent,
+        modality: req?.input.modality,
+        payload: req?.input.payload,
+        artistProfileId: req?.artistProfileId,
+        platforms: req?.platforms,
+        intent: req?.intent,
         // Merge pre-fetched metadata so MaxCore has the actual page content
         metadata: {
-          ...(req.input.metadata || {}),
+          ...(req?.input.metadata || {}),
           ...(prefetchedMeta
             ? {
-                title: prefetchedMeta.title,
-                description: prefetchedMeta.description,
-                siteName: prefetchedMeta.siteName,
-                author: prefetchedMeta.author,
-                image: prefetchedMeta.image,
-                publishDate: prefetchedMeta.publishDate,
+                title: prefetchedMeta?.title,
+                description: prefetchedMeta?.description,
+                siteName: prefetchedMeta?.siteName,
+                author: prefetchedMeta?.author,
+                image: prefetchedMeta?.image,
+                publishDate: prefetchedMeta?.publishDate,
               }
             : {}),
         },
@@ -1982,29 +1977,29 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
       8_000,
     ); // 8 s — fail fast to local fallback
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       "[MultimodalGen] MaxCore /analyze unavailable, using local fallback:",
-      err instanceof Error ? err.message : String(err),
+      err instanceof Error ? err?.message : String(err),
     );
 
     // For URL inputs: use the pre-fetched meta if available, otherwise fetch now
-    if (req.input.modality === "url" && /^https?:\/\//i.test(payload)) {
+    if (req?.input.modality === "url" && /^https?:\/\//i?.test(payload)) {
       try {
         return await localAnalyzeUrl(payload, req, platformRulesSubset);
       } catch (urlErr) {
-        logger.warn(
+        logger?.warn(
           "[MultimodalGen] URL metadata fetch failed:",
-          urlErr instanceof Error ? urlErr.message : String(urlErr),
+          urlErr instanceof Error ? urlErr?.message : String(urlErr),
         );
       }
     }
 
     return {
       summary: payload,
-      modality: req.input.modality,
-      platforms: req.platforms,
-      intent: req.intent,
-      metadata: req.input.metadata || {},
+      modality: req?.input.modality,
+      platforms: req?.platforms,
+      intent: req?.intent,
+      metadata: req?.input.metadata || {},
       platformRules: platformRulesSubset,
     };
   }
@@ -2016,36 +2011,36 @@ function buildStepParamsForPlatform(
   slotId?: string,
   purpose?: string,
 ): Record<string, any> {
-  const rules = getRules(platform);
+  const _rules = getRules(platform);
   const base: Record<string, any> = { platform, slotId, purpose };
 
   if (modality === "text") {
-    base.maxLength = rules.text.maxLength ?? rules.text.descriptionMax ?? 5000;
-    base.recommendedLength = rules.text.recommendedLength;
-    base.tone = rules.text.tone;
-    base.hashtagsAllowed = rules.text.hashtags?.allowed ?? false;
-    base.maxHashtags = rules.text.hashtags?.allowed
-      ? (rules.text.hashtags.max ?? 5)
+    base?.maxLength = rules?.text.maxLength ?? rules?.text.descriptionMax ?? 5000;
+    base?.recommendedLength = rules?.text.recommendedLength;
+    base?.tone = rules?.text.tone;
+    base?.hashtagsAllowed = rules?.text.hashtags?.allowed ?? false;
+    base?.maxHashtags = rules?.text.hashtags?.allowed
+      ? (rules?.text.hashtags?.max ?? 5)
       : 0;
     if (platform === "youtube") {
-      base.titleMax = rules.text.titleMax;
-      base.descriptionMax = rules.text.descriptionMax;
+      base?.titleMax = rules?.text.titleMax;
+      base?.descriptionMax = rules?.text.descriptionMax;
     }
   } else if (modality === "image") {
-    base.aspectRatios = rules.image.aspectRatios;
-    base.recommendedAspectRatio =
-      rules.image.recommended ?? rules.image.aspectRatios[0];
+    base?.aspectRatios = rules?.image.aspectRatios;
+    base?.recommendedAspectRatio =
+      rules?.image.recommended ?? rules?.image.aspectRatios[0];
   } else if (modality === "video") {
-    base.aspectRatios = rules.video.aspectRatios;
-    base.recommendedAspectRatio = rules.video.aspectRatios[0];
-    base.maxDurationSec = rules.video.maxDurationSec;
-    base.recommendedDurationSec =
-      rules.video.recommendedDurationSec ?? rules.video.recommendedShortSec;
-    base.requiresHook = rules.video.requiresHook ?? false;
+    base?.aspectRatios = rules?.video.aspectRatios;
+    base?.recommendedAspectRatio = rules?.video.aspectRatios[0];
+    base?.maxDurationSec = rules?.video.maxDurationSec;
+    base?.recommendedDurationSec =
+      rules?.video.recommendedDurationSec ?? rules?.video.recommendedShortSec;
+    base?.requiresHook = rules?.video.requiresHook ?? false;
   } else if (modality === "audio") {
-    base.voiceover = rules.audio.voiceover;
-    base.maxDurationSec = rules.audio.maxDurationSec;
-    base.audioStyle = rules.audio.style ?? rules.audio.tone ?? [];
+    base?.voiceover = rules?.audio.voiceover;
+    base?.maxDurationSec = rules?.audio.maxDurationSec;
+    base?.audioStyle = rules?.audio.style ?? rules?.audio.tone ?? [];
   }
 
   return base;
@@ -2062,49 +2057,49 @@ async function planTasks(
 }
 
 function buildDefaultPlan(req: GenerationRequest): TaskPlan {
-  const packSpec = req.packId ? (PACK_DEFINITIONS[req.packId] ?? null) : null;
+  const _packSpec = req?.packId ? (PACK_DEFINITIONS[req?.packId] ?? null) : null;
   const steps: TaskStep[] = [];
 
   if (packSpec) {
-    const textSlots = packSpec.filter((s) => s.modality === "text");
-    const imageSlots = packSpec.filter((s) => s.modality === "image");
-    const audioSlots = packSpec.filter((s) => s.modality === "audio");
-    const videoSlots = packSpec.filter((s) => s.modality === "video");
+    const _textSlots = packSpec?.filter((s) => s?.modality === "text");
+    const _imageSlots = packSpec?.filter((s) => s?.modality === "image");
+    const _audioSlots = packSpec?.filter((s) => s?.modality === "audio");
+    const _videoSlots = packSpec?.filter((s) => s?.modality === "video");
 
-    if (textSlots.length > 0) {
-      steps.push({
+    if (textSlots?.length > 0) {
+      steps?.push({
         id: "step_text",
         type: "generate",
         worker: "text",
         inputFrom: "normalizedInput",
         params: {
-          slots: textSlots.map((slot) => ({
+          slots: textSlots?.map((slot) => ({
             ...slot,
             ...buildStepParamsForPlatform(
-              slot.platform as Platform,
+              slot?.platform as Platform,
               "text",
-              slot.id,
-              slot.purpose,
+              slot?.id,
+              slot?.purpose,
             ),
           })),
         },
       });
     }
 
-    if (imageSlots.length > 0) {
-      steps.push({
+    if (imageSlots?.length > 0) {
+      steps?.push({
         id: "step_image",
         type: "generate",
         worker: "image",
         inputFrom: "normalizedInput",
         params: {
-          slots: imageSlots.map((slot) => ({
+          slots: imageSlots?.map((slot) => ({
             ...slot,
             ...buildStepParamsForPlatform(
-              slot.platform as Platform,
+              slot?.platform as Platform,
               "image",
-              slot.id,
-              slot.purpose,
+              slot?.id,
+              slot?.purpose,
             ),
           })),
         },
@@ -2112,36 +2107,36 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
     }
 
     for (const slot of audioSlots) {
-      steps.push({
-        id: `step_audio_${slot.id}`,
+      steps?.push({
+        id: `step_audio_${slot?.id}`,
         type: "generate",
         worker: "audio",
         inputFrom: "normalizedInput",
         params: buildStepParamsForPlatform(
-          slot.platform as Platform,
+          slot?.platform as Platform,
           "audio",
-          slot.id,
-          slot.purpose,
+          slot?.id,
+          slot?.purpose,
         ),
       });
     }
 
     for (const slot of videoSlots) {
-      steps.push({
-        id: `step_video_${slot.id}`,
+      steps?.push({
+        id: `step_video_${slot?.id}`,
         type: "generate",
         worker: "video",
         inputFrom: "normalizedInput",
         params: buildStepParamsForPlatform(
-          slot.platform as Platform,
+          slot?.platform as Platform,
           "video",
-          slot.id,
-          slot.purpose,
+          slot?.id,
+          slot?.purpose,
         ),
       });
     }
   } else {
-    const rawModality = (req.constraints?.outputModality as string) || "text";
+    const _rawModality = (req?.constraints?.outputModality as string) || "text";
     const outputModality: "text" | "image" | "audio" | "video" = [
       "text",
       "image",
@@ -2152,32 +2147,32 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
       : "text";
 
     if (outputModality === "image") {
-      const imageSlots = req.platforms.map((p) => ({
+      const _imageSlots = req?.platforms.map((p) => ({
         id: `${p}_image`,
         platform: p,
         modality: "image",
         purpose: "Platform image creative",
       }));
-      steps.push({
+      steps?.push({
         id: "step_image",
         type: "generate",
         worker: "image",
         inputFrom: "normalizedInput",
         params: {
-          slots: imageSlots.map((slot) => ({
+          slots: imageSlots?.map((slot) => ({
             ...slot,
             ...buildStepParamsForPlatform(
-              slot.platform as Platform,
+              slot?.platform as Platform,
               "image",
-              slot.id,
-              slot.purpose,
+              slot?.id,
+              slot?.purpose,
             ),
           })),
         },
       });
     } else if (outputModality === "audio") {
-      for (const platform of req.platforms) {
-        steps.push({
+      for (const platform of req?.platforms) {
+        steps?.push({
           id: `step_audio_${platform}`,
           type: "generate",
           worker: "audio",
@@ -2192,9 +2187,9 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
       }
     } else if (outputModality === "video") {
       // Always include a text step so the URL-extracted hook/body/cta is returned
-      // in data.assets — the client uses it to seed the video generator topic.
-      for (const platform of req.platforms) {
-        steps.push({
+      // in data?.assets — the client uses it to seed the video generator topic.
+      for (const platform of req?.platforms) {
+        steps?.push({
           id: `step_text_${platform}`,
           type: "generate",
           worker: "text",
@@ -2202,8 +2197,8 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
           params: buildStepParamsForPlatform(platform, "text"),
         });
       }
-      for (const platform of req.platforms) {
-        steps.push({
+      for (const platform of req?.platforms) {
+        steps?.push({
           id: `step_video_${platform}`,
           type: "generate",
           worker: "video",
@@ -2217,8 +2212,8 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
         });
       }
     } else {
-      for (const platform of req.platforms) {
-        steps.push({
+      for (const platform of req?.platforms) {
+        steps?.push({
           id: `step_text_${platform}`,
           type: "generate",
           worker: "text",
@@ -2229,20 +2224,20 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
     }
   }
 
-  if (steps.length === 0) {
-    steps.push({
+  if (steps?.length === 0) {
+    steps?.push({
       id: "step_text_default",
       type: "generate",
       worker: "text",
       inputFrom: "normalizedInput",
       params: buildStepParamsForPlatform(
-        req.platforms[0] ?? "instagram",
+        req?.platforms[0] ?? "instagram",
         "text",
       ),
     });
   }
 
-  return { requestId: req.id, steps };
+  return { requestId: req?.id, steps };
 }
 
 /**
@@ -2256,30 +2251,30 @@ function buildLocalTextAssets(
   inputs: Record<string, unknown>,
   req: GenerationRequest,
 ): GeneratedAsset[] {
-  const normalized = inputs?.normalized ?? {};
+  const _normalized = inputs?.normalized ?? {};
 
   // /api/analyze returns { payload_summary, semantic: { hook, core_message } }
   // rather than top-level hook/body/summary — handle both shapes.
-  const semantic: Record<string, string> = normalized.semantic ?? {};
+  const semantic: Record<string, string> = normalized?.semantic ?? {};
   const payloadSummary: string =
-    typeof normalized.payload_summary === "string"
-      ? normalized.payload_summary
-      : typeof req.input?.payload === "string"
-        ? req.input.payload.slice(0, 280)
+    typeof normalized?.payload_summary === "string"
+      ? normalized?.payload_summary
+      : typeof req?.input?.payload === "string"
+        ? req?.input.payload?.slice(0, 280)
         : "";
   const summary: string =
-    typeof normalized.summary === "string"
-      ? normalized.summary
+    typeof normalized?.summary === "string"
+      ? normalized?.summary
       : payloadSummary;
 
   const hook: string =
-    normalized.hook ??
-    semantic.hook ??
-    (summary.slice(0, 100) || req.intent || "New music out now");
+    normalized?.hook ??
+    semantic?.hook ??
+    (summary?.slice(0, 100) || req?.intent || "New music out now");
   const body: string =
-    normalized.body ?? semantic.core_message ?? (summary || hook);
-  const cta: string = normalized.cta ?? "Stream now 🎵";
-  const artist: string = normalized.artistName ?? semantic.artist_name ?? "";
+    normalized?.body ?? semantic?.core_message ?? (summary || hook);
+  const cta: string = normalized?.cta ?? "Stream now 🎵";
+  const artist: string = normalized?.artistName ?? semantic?.artist_name ?? "";
 
   const TEMPLATES: Record<
     string,
@@ -2299,33 +2294,33 @@ function buildLocalTextAssets(
     google_business: (h, b, c, _a, _tags) => `${h}\n\n${b}\n\n${c}`,
   };
 
-  return rawSlots.map((slot: Record<string, unknown>) => {
-    const platform = (slot.platform ?? req.platforms[0]) as Platform;
-    const rules = platform ? getRules(platform) : null;
+  return rawSlots?.map((slot: Record<string, unknown>) => {
+    const _platform = (slot?.platform ?? req?.platforms[0]) as Platform;
+    const _rules = platform ? getRules(platform) : null;
 
     // Use per-platform differentiated copy if available (from localAnalyzeUrl)
-    const perCopy = normalized.perPlatformCopy?.[platform];
-    const platformHook = perCopy?.hook ?? hook;
-    const platformBody = perCopy?.body ?? body;
-    const platformCta = perCopy?.cta ?? cta;
+    const _perCopy = normalized?.perPlatformCopy?.[platform];
+    const _platformHook = perCopy?.hook ?? hook;
+    const _platformBody = perCopy?.body ?? body;
+    const _platformCta = perCopy?.cta ?? cta;
 
     // Dynamic hashtags: respect platform rules for allowed count
-    const maxHashtags = rules?.text.hashtags?.allowed
-      ? (rules.text.hashtags.max ?? 5)
+    const _maxHashtags = rules?.text?.hashtags?.allowed
+      ? (rules?.text.hashtags?.max ?? 5)
       : 0;
-    const tags = getHashtagsForPlatform(
-      normalized.urlCategory ?? "social_post",
+    const _tags = getHashtagsForPlatform(
+      normalized?.urlCategory ?? "social_post",
       platform,
       maxHashtags,
       artist || undefined,
     );
 
-    const tplFn = TEMPLATES[platform] ?? TEMPLATES.instagram;
+    const _tplFn = TEMPLATES[platform] ?? TEMPLATES?.instagram;
     let payload = tplFn(platformHook, platformBody, platformCta, artist, tags);
-    if (rules) payload = enforceTextLength(payload, rules.text);
-    const enriched = rules
+    if (rules) payload = enforceTextLength(payload, rules?.text);
+    const _enriched = rules
       ? enrichTextAssetMetadata(payload, platform, rules, {
-          platformRules: rules.text,
+          platformRules: rules?.text,
           hook: platformHook,
           body: platformBody,
           cta: platformCta,
@@ -2336,95 +2331,95 @@ function buildLocalTextAssets(
       modality: "text" as OutputModality,
       payload,
       platform,
-      slotId: slot.id,
-      purpose: slot.purpose ?? "Post copy",
+      slotId: slot?.id,
+      purpose: slot?.purpose ?? "Post copy",
       metadata: { ...enriched, source: "local" },
     };
   });
 }
 
-const textWorker = {
+const _textWorker = {
   async run(
     step: TaskStep,
     inputs: Record<string, unknown>,
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
-    const packSpec = req.packId ? (PACK_DEFINITIONS[req.packId] ?? null) : null;
-    const rawSlots =
-      step.params?.slots ||
-      (step.params?.platform
+    const _packSpec = req?.packId ? (PACK_DEFINITIONS[req?.packId] ?? null) : null;
+    const _rawSlots =
+      step?.params?.slots ||
+      (step?.params?.platform
         ? [
             {
-              id: `${step.params.platform}_post`,
-              platform: step.params.platform,
+              id: `${step?.params.platform}_post`,
+              platform: step?.params.platform,
               modality: "text",
               purpose: "Post copy",
             },
           ]
-        : packSpec?.filter((s) => s.modality === "text") || [
+        : packSpec?.filter((s) => s?.modality === "text") || [
             {
               id: "post",
-              platform: req.platforms[0],
+              platform: req?.platforms[0],
               modality: "text",
               purpose: "Post copy",
             },
           ]);
 
-    rawSlots.map((slot: Record<string, unknown>) => ({
+    rawSlots?.map((slot: Record<string, unknown>) => ({
       ...slot,
-      platformRules: getRules(slot.platform as Platform)?.text ?? null,
+      platformRules: getRules(slot?.platform as Platform)?.text ?? null,
     }));
 
     // /generate/text returns raw model tokens or serialised internal objects.
     // Use /generate/content per slot instead — it always builds
     // caption = hook + "\n\n" + body + "\n\n" + cta server-side (never raw tokens).
     try {
-      const normalized = inputs?.normalized ?? {};
-      const semantic: Record<string, string> = normalized.semantic ?? {};
+      const _normalized = inputs?.normalized ?? {};
+      const semantic: Record<string, string> = normalized?.semantic ?? {};
 
       // Fetch this user's stored artist profile / autopilot preferences from the DB.
       // These fields take priority over whatever MaxCore's /analyze guessed, giving
       // every generation call a grounding in the user's own identity and style.
-      const userCtx = await fetchUserContext(req.userId ?? "");
+      const _userCtx = await fetchUserContext(req?.userId ?? "");
 
       // For URL inputs, build a human-readable topic from extracted metadata so
       // MaxCore generates content about the actual page, not a bare URL string.
       let topic: string;
-      if (req.input?.modality === "url") {
+      if (req?.input?.modality === "url") {
         // First check: does this URL exactly match one of the user's current releases?
         // If so, the release title + type + date is the most authoritative topic.
-        const matchedRelease = matchReleaseByUrl(
-          req.input.payload ?? "",
-          userCtx.currentReleases ?? null,
+        const _matchedRelease = matchReleaseByUrl(
+          req?.input.payload ?? "",
+          userCtx?.currentReleases ?? null,
         );
         if (matchedRelease) {
-          const relParts = [`${matchedRelease.title} (${matchedRelease.type})`];
-          if (matchedRelease.releaseDate)
-            relParts.push(`released ${matchedRelease.releaseDate}`);
-          if (userCtx.artistName) relParts.push(`by ${userCtx.artistName}`);
-          topic = relParts.join(" ");
-          logger.debug(`[MultimodalGen] URL matched user release: "${topic}"`);
+          const _relParts = [`${matchedRelease?.title} (${matchedRelease?.type})`];
+          if (matchedRelease?.releaseDate)
+            relParts?.push(`released ${matchedRelease?.releaseDate}`);
+          if (userCtx?.artistName) relParts?.push(`by ${userCtx?.artistName}`);
+          topic = relParts?.join(" ");
+          logger?.debug(`[MultimodalGen] URL matched user release: "${topic}"`);
         } else {
-          const meta = (normalized.metadata ?? {}) as Record<string, string>;
-          const urlTitle = normalized.title ?? meta.title ?? "";
-          const urlAuthor = normalized.author ?? meta.author ?? "";
-          const urlSite = normalized.siteName ?? meta.siteName ?? "";
-          const urlDesc = normalized.description ?? meta.description ?? "";
+          const _meta = (normalized?.metadata ?? {}) as Record<string, string>;
+          const _urlTitle = normalized?.title ?? meta?.title ?? "";
+          const _urlAuthor = normalized?.author ?? meta?.author ?? "";
+          const _urlSite = normalized?.siteName ?? meta?.siteName ?? "";
+          const _urlDesc = normalized?.description ?? meta?.description ?? "";
           if (urlTitle) {
             const parts: string[] = [urlTitle];
-            if (urlAuthor) parts.push(`by ${urlAuthor}`);
-            if (urlSite) parts.push(`on ${urlSite}`);
-            if (urlDesc) parts.push(`— ${urlDesc.slice(0, 200)}`);
-            topic = parts.join(" ");
+            if (urlAuthor) parts?.push(`by ${urlAuthor}`);
+            if (urlSite) parts?.push(`on ${urlSite}`);
+            if (urlDesc) parts?.push(`— ${urlDesc?.slice(0, 200)}`);
+            topic = parts?.join(" ");
           } else {
             // No title from metadata — try to parse a readable slug from the URL path.
-            // e.g. "pitchfork.com/reviews/albums/frank-ocean-blonde/" → "Frank Ocean Blonde"
-            const slugTopic = (() => {
+            // e?.g. "pitchfork?.com/reviews/albums/frank-ocean-blonde/" → "Frank Ocean Blonde"
+            const _slugTopic = (() => {
               try {
-                const u = new URL(req.input.payload ?? "");
-                const segments = u.pathname.split("/").filter(Boolean);
+                const _u = new URL(req?.input.payload ?? "");
+                const _segments = u?.pathname.split("/").filter(Boolean);
                 // Skip common non-descriptive segments like 'reviews', 'albums', 'watch', 'track', 'e', 'p', 'reel', 'posts'
-                const skip = new Set([
+                const _skip = new Set([
                   "reviews",
                   "albums",
                   "watch",
@@ -2445,19 +2440,19 @@ const textWorker = {
                   "blog",
                   "read",
                 ]);
-                const slug =
+                const _slug =
                   segments
-                    .filter((s) => !skip.has(s) && !/^\d{4,}$/.test(s))
+                    .filter((s) => !skip?.has(s) && !/^\d{4,}$/.test(s))
                     .pop() ?? "";
                 if (!slug) return "";
                 // Convert kebab/snake to title case: "frank-ocean-blonde" → "Frank Ocean Blonde"
-                const readable = slug
+                const _readable = slug
                   .replace(/[-_]/g, " ")
-                  .replace(/\b\w/g, (c) => c.toUpperCase());
-                const site =
-                  urlSite || u.hostname.replace(/^www\./, "").split(".")[0];
+                  .replace(/\b\w/g, (c) => c?.toUpperCase());
+                const _site =
+                  urlSite || u?.hostname.replace(/^www\./, "").split(".")[0];
                 return site
-                  ? `${readable} on ${site.charAt(0).toUpperCase() + site.slice(1)}`
+                  ? `${readable} on ${site?.charAt(0).toUpperCase() + site?.slice(1)}`
                   : readable;
               } catch {
                 return "";
@@ -2465,75 +2460,75 @@ const textWorker = {
             })();
             topic =
               slugTopic ||
-              normalized.summary ||
-              normalized.payload_summary ||
-              semantic.core_message ||
-              req.input?.payload ||
+              normalized?.summary ||
+              normalized?.payload_summary ||
+              semantic?.core_message ||
+              req?.input?.payload ||
               "";
           }
         }
-        logger.debug(
-          `[MultimodalGen] URL topic built: "${topic.slice(0, 120)}"`,
+        logger?.debug(
+          `[MultimodalGen] URL topic built: "${topic?.slice(0, 120)}"`,
         );
       } else {
         topic =
-          normalized.payload_summary ??
-          req.input?.payload ??
-          semantic.core_message ??
+          normalized?.payload_summary ??
+          req?.input?.payload ??
+          semantic?.core_message ??
           "";
       }
 
       // Merge DB context into the MaxCore params.  DB values take priority because
       // the user explicitly set them; fall back to whatever /analyze returned.
-      const resolvedArtistName =
-        userCtx.artistName ??
-        normalized.artistName ??
-        semantic.artist_name ??
-        normalized.author ??
-        (normalized.metadata as Record<string, unknown>)?.author ??
+      const _resolvedArtistName =
+        userCtx?.artistName ??
+        normalized?.artistName ??
+        semantic?.artist_name ??
+        normalized?.author ??
+        (normalized?.metadata as Record<string, unknown>)?.author ??
         undefined;
-      const resolvedGenre =
-        userCtx.genre ?? normalized.genre ?? semantic.genre ?? undefined;
-      const resolvedBrandVoice =
-        userCtx.brandVoice ??
-        normalized.brandVoice ??
-        semantic.brand_voice ??
+      const _resolvedGenre =
+        userCtx?.genre ?? normalized?.genre ?? semantic?.genre ?? undefined;
+      const _resolvedBrandVoice =
+        userCtx?.brandVoice ??
+        normalized?.brandVoice ??
+        semantic?.brand_voice ??
         undefined;
-      const resolvedTargetAudience =
-        userCtx.targetAudience ??
-        normalized.targetAudience ??
-        semantic.target_audience ??
+      const _resolvedTargetAudience =
+        userCtx?.targetAudience ??
+        normalized?.targetAudience ??
+        semantic?.target_audience ??
         undefined;
-      const resolvedTone = userCtx.contentTone ?? req.intent ?? "professional";
+      const _resolvedTone = userCtx?.contentTone ?? req?.intent ?? "professional";
       // Merge preferred hashtags: DB list first, then any from normalized (deduplicated)
-      const dbHashtags = userCtx.preferredHashtags ?? [];
-      const normHashtags =
-        (normalized.preferredHashtags as string[] | undefined) ?? [];
-      const resolvedHashtags = dbHashtags.length
+      const _dbHashtags = userCtx?.preferredHashtags ?? [];
+      const _normHashtags =
+        (normalized?.preferredHashtags as string[] | undefined) ?? [];
+      const _resolvedHashtags = dbHashtags?.length
         ? [...new Set([...dbHashtags, ...normHashtags])]
-        : normHashtags.length
+        : normHashtags?.length
           ? normHashtags
           : undefined;
 
       // Build an artist_context string so MaxCore can use the bio + USPs for richer copy.
       const artistContextParts: string[] = [];
-      if (userCtx.artistBio)
-        artistContextParts.push(userCtx.artistBio.slice(0, 300));
-      if (userCtx.uniqueSellingPoints?.length)
-        artistContextParts.push(
-          `Key strengths: ${userCtx.uniqueSellingPoints.slice(0, 5).join(", ")}`,
+      if (userCtx?.artistBio)
+        artistContextParts?.push(userCtx?.artistBio.slice(0, 300));
+      if (userCtx?.uniqueSellingPoints?.length)
+        artistContextParts?.push(
+          `Key strengths: ${userCtx?.uniqueSellingPoints.slice(0, 5).join(", ")}`,
         );
-      if (userCtx.subGenres?.length)
-        artistContextParts.push(
-          `Sub-genres: ${userCtx.subGenres.slice(0, 4).join(", ")}`,
+      if (userCtx?.subGenres?.length)
+        artistContextParts?.push(
+          `Sub-genres: ${userCtx?.subGenres.slice(0, 4).join(", ")}`,
         );
-      const artistContext = artistContextParts.join(". ") || undefined;
+      const _artistContext = artistContextParts?.join(". ") || undefined;
 
-      const perSlotResults = await Promise.allSettled(
-        rawSlots.map(async (slot: Record<string, unknown>) => {
+      const _perSlotResults = await Promise?.allSettled(
+        rawSlots?.map(async (slot: Record<string, unknown>) => {
           const platform: string =
-            slot.platform ?? req.platforms[0] ?? "instagram";
-          const mc = await maxcorePost(
+            slot?.platform ?? req?.platforms[0] ?? "instagram";
+          const _mc = await maxcorePost(
             "/generate/content",
             {
               platform,
@@ -2545,11 +2540,11 @@ const textWorker = {
               target_audience: resolvedTargetAudience,
               preferred_hashtags: resolvedHashtags,
               ...(artistContext ? { artist_context: artistContext } : {}),
-              ...(userCtx.callToActionStyle
-                ? { cta_style: userCtx.callToActionStyle }
+              ...(userCtx?.callToActionStyle
+                ? { cta_style: userCtx?.callToActionStyle }
                 : {}),
-              ...(userCtx.avoidTopics?.length
-                ? { avoid_topics: userCtx.avoidTopics }
+              ...(userCtx?.avoidTopics?.length
+                ? { avoid_topics: userCtx?.avoidTopics }
                 : {}),
             },
             8_000,
@@ -2559,10 +2554,10 @@ const textWorker = {
           const caption: string = mc?.caption ?? "";
           if (!caption) throw new Error("empty caption");
 
-          const rules = getRules(platform as Platform);
-          const payload = enforceTextLength(caption, rules.text);
-          const enriched = enrichTextAssetMetadata(payload, platform, rules, {
-            platformRules: rules.text,
+          const _rules = getRules(platform as Platform);
+          const _payload = enforceTextLength(caption, rules?.text);
+          const _enriched = enrichTextAssetMetadata(payload, platform, rules, {
+            platformRules: rules?.text,
             hook: mc?.hook ?? "",
             body: mc?.body ?? "",
             cta: mc?.cta ?? "",
@@ -2573,51 +2568,51 @@ const textWorker = {
             modality: "text" as OutputModality,
             payload,
             platform: platform as Platform,
-            slotId: slot.id,
-            purpose: slot.purpose ?? "Post copy",
+            slotId: slot?.id,
+            purpose: slot?.purpose ?? "Post copy",
             metadata: enriched,
           };
         }),
       );
 
-      const successful = perSlotResults
+      const _successful = perSlotResults
         .filter(
           (r): r is PromiseFulfilledResult<GeneratedAsset> =>
-            r.status === "fulfilled",
+            r?.status === "fulfilled",
         )
-        .map((r) => r.value);
+        .map((r) => r?.value);
 
-      if (successful.length > 0) return successful;
+      if (successful?.length > 0) return successful;
 
       // All per-slot MaxCore calls failed — fall back to local template builder.
-      logger.warn(
+      logger?.warn(
         "[MultimodalGen] All /generate/content slot calls failed — falling back to buildLocalTextAssets",
       );
-      const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
-      if (localAssets.length > 0) return localAssets;
+      const _localAssets = buildLocalTextAssets(rawSlots, inputs, req);
+      if (localAssets?.length > 0) return localAssets;
 
-      logger.warn(
+      logger?.warn(
         "[MultimodalGen] buildLocalTextAssets also returned empty — no text assets generated",
       );
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         "[MultimodalGen] /generate/content text worker error:",
-        err instanceof Error ? err.message : String(err),
+        err instanceof Error ? err?.message : String(err),
       );
       // Attempt local fallback even on unexpected errors
       try {
-        const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
-        if (localAssets.length > 0) {
-          logger.info(
+        const _localAssets = buildLocalTextAssets(rawSlots, inputs, req);
+        if (localAssets?.length > 0) {
+          logger?.info(
             "[MultimodalGen] Recovered via local text fallback after exception",
           );
           return localAssets;
         }
       } catch (fallbackErr) {
-        logger.warn(
+        logger?.warn(
           "[MultimodalGen] Local text fallback also failed:",
           fallbackErr instanceof Error
-            ? fallbackErr.message
+            ? fallbackErr?.message
             : String(fallbackErr),
         );
       }
@@ -2642,51 +2637,51 @@ function enrichTextAssetMetadata(
   rules: PlatformRules,
   existingMeta: Record<string, any> = {},
 ): Record<string, any> {
-  const hashtagRegex = /#[\w\u0080-\uFFFF]+/g;
-  const extractedHashtags: string[] = payload.match(hashtagRegex) ?? [];
-  const cleanText = payload.replace(hashtagRegex, "").trim();
+  const _hashtagRegex = /#[\w\u0080-\uFFFF]+/g;
+  const extractedHashtags: string[] = payload?.match(hashtagRegex) ?? [];
+  const _cleanText = payload?.replace(hashtagRegex, "").trim();
 
-  const emojiRegex = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
-  const emojiCount = (payload.match(emojiRegex) ?? []).length;
-  const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
-  const charCount = payload.length;
-  const charLimit = rules.text.maxCharCount ?? null;
+  const _emojiRegex = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
+  const _emojiCount = (payload?.match(emojiRegex) ?? []).length;
+  const _wordCount = cleanText?.split(/\s+/).filter(Boolean).length;
+  const _charCount = payload?.length;
+  const _charLimit = rules?.text.maxCharCount ?? null;
 
-  let hook: string | undefined = existingMeta.hook;
-  let body: string | undefined = existingMeta.body;
-  let cta: string | undefined = existingMeta.cta;
+  let hook: string | undefined = existingMeta?.hook;
+  let body: string | undefined = existingMeta?.body;
+  let cta: string | undefined = existingMeta?.cta;
 
   if (!hook && !body && !cta && cleanText) {
-    const paragraphs = cleanText
+    const _paragraphs = cleanText
       .split(/\n{2,}/)
-      .map((p) => p.trim())
+      .map((p) => p?.trim())
       .filter(Boolean);
-    if (paragraphs.length >= 3) {
+    if (paragraphs?.length >= 3) {
       hook = paragraphs[0];
-      cta = paragraphs[paragraphs.length - 1];
-      body = paragraphs.slice(1, -1).join("\n\n");
-    } else if (paragraphs.length === 2) {
+      cta = paragraphs[paragraphs?.length - 1];
+      body = paragraphs?.slice(1, -1).join("\n\n");
+    } else if (paragraphs?.length === 2) {
       hook = paragraphs[0];
       body = paragraphs[1];
     } else {
-      const sentences = cleanText.split(/(?<=[.!?])\s+/);
-      if (sentences.length >= 2) {
+      const _sentences = cleanText?.split(/(?<=[.!?])\s+/);
+      if (sentences?.length >= 2) {
         hook = sentences[0];
-        body = sentences.slice(1).join(" ");
+        body = sentences?.slice(1).join(" ");
       }
     }
     if (body) {
-      const ctaKw =
+      const _ctaKw =
         /\b(subscribe|follow|check out|stream now|listen now|tap|click|link in bio|watch|download|buy|shop|join|sign up|get it|available now|out now)\b/i;
-      const lines = body.split("\n");
-      const ctaIdx =
+      const _lines = body?.split("\n");
+      const _ctaIdx =
         lines
           .map((l, i) => ({ l, i }))
-          .filter(({ l }) => ctaKw.test(l))
+          .filter(({ l }) => ctaKw?.test(l))
           .pop()?.i ?? -1;
       if (ctaIdx > 0) {
-        cta = lines.slice(ctaIdx).join("\n").trim();
-        body = lines.slice(0, ctaIdx).join("\n").trim();
+        cta = lines?.slice(ctaIdx).join("\n").trim();
+        body = lines?.slice(0, ctaIdx).join("\n").trim();
       }
     }
   }
@@ -2700,34 +2695,34 @@ function enrichTextAssetMetadata(
       // TikTok: hook-first wins, keep it SHORT, 1–2 emojis max, a few hashtags
       if (hook) score += 20;
       else
-        suggestions.push(
+        suggestions?.push(
           "Start with a viral hook in the first 5 words to stop the scroll",
         );
       if (wordCount <= 15) score += 15;
       else if (wordCount > 25)
-        suggestions.push(
+        suggestions?.push(
           "Keep TikTok captions under 15 words for best performance",
         );
       if (emojiCount >= 1 && emojiCount <= 3) score += 10;
-      else if (emojiCount === 0) suggestions.push("Add 1–2 trending emojis");
-      if (extractedHashtags.length >= 2 && extractedHashtags.length <= 5)
+      else if (emojiCount === 0) suggestions?.push("Add 1–2 trending emojis");
+      if (extractedHashtags?.length >= 2 && extractedHashtags?.length <= 5)
         score += 5;
       if (cta) score += 10;
-      else suggestions.push('Add a "link in bio" or "follow for more" CTA');
+      else suggestions?.push('Add a "link in bio" or "follow for more" CTA');
       break;
 
     case "instagram":
       // Instagram: hashtags are essential (5–8 optimal), emoji adds flair, hook + CTA needed
       if (hook) score += 10;
-      else suggestions.push("Open with an attention-grabbing first line");
-      if (extractedHashtags.length >= 5) score += 20;
-      else if (extractedHashtags.length >= 2) score += 10;
-      else suggestions.push("Add 5–8 hashtags for maximum Instagram reach");
+      else suggestions?.push("Open with an attention-grabbing first line");
+      if (extractedHashtags?.length >= 5) score += 20;
+      else if (extractedHashtags?.length >= 2) score += 10;
+      else suggestions?.push("Add 5–8 hashtags for maximum Instagram reach");
       if (emojiCount >= 2 && emojiCount <= 8) score += 10;
       else if (emojiCount === 0)
-        suggestions.push("Add 2–4 emojis to boost visual appeal");
+        suggestions?.push("Add 2–4 emojis to boost visual appeal");
       if (cta) score += 10;
-      else suggestions.push('Add "Link in bio" to drive traffic');
+      else suggestions?.push('Add "Link in bio" to drive traffic');
       if (wordCount >= 20 && wordCount <= 150) score += 10;
       break;
 
@@ -2735,44 +2730,44 @@ function enrichTextAssetMetadata(
       // Facebook: conversational, moderate length, story-driven
       if (hook) score += 10;
       else
-        suggestions.push(
+        suggestions?.push(
           "Start with an engaging personal statement or question",
         );
       if (wordCount >= 20 && wordCount <= 80) score += 15;
       else if (wordCount < 10)
-        suggestions.push(
+        suggestions?.push(
           "Expand the post — Facebook users engage more with 40–80 word posts",
         );
       if (emojiCount >= 1 && emojiCount <= 5) score += 10;
       else if (emojiCount > 8)
-        suggestions.push(
+        suggestions?.push(
           "Too many emojis can reduce Facebook reach — keep it to 3–5",
         );
       if (cta) score += 15;
       else
-        suggestions.push(
+        suggestions?.push(
           "Add a call-to-action directing users to the link in comments",
         );
-      if (extractedHashtags.length <= 3) score += 5;
-      else if (extractedHashtags.length > 5)
-        suggestions.push("Facebook posts perform best with 1–3 hashtags");
+      if (extractedHashtags?.length <= 3) score += 5;
+      else if (extractedHashtags?.length > 5)
+        suggestions?.push("Facebook posts perform best with 1–3 hashtags");
       break;
 
     case "twitter":
       // Twitter/X: punchy, witty, under 240 chars is ideal, 1–2 hashtags only
       if (charCount <= 240) score += 20;
       else if (charCount > 270)
-        suggestions.push(
+        suggestions?.push(
           "Keep tweets under 240 characters for best engagement",
         );
       if (hook) score += 20;
       else
-        suggestions.push(
+        suggestions?.push(
           "Lead with your most interesting point — no warmup needed on X",
         );
-      if (extractedHashtags.length <= 2) score += 10;
+      if (extractedHashtags?.length <= 2) score += 10;
       else
-        suggestions.push(
+        suggestions?.push(
           "1–2 hashtags max on X/Twitter — more reduces engagement",
         );
       if (cta) score += 10;
@@ -2782,44 +2777,44 @@ function enrichTextAssetMetadata(
       // LinkedIn: professional, insightful, longer is OK, minimal emoji, strong hook
       if (hook) score += 20;
       else
-        suggestions.push(
+        suggestions?.push(
           "Open with a bold professional insight or surprising statistic",
         );
       if (wordCount >= 50) score += 15;
       else
-        suggestions.push(
+        suggestions?.push(
           "LinkedIn posts with 150+ words see 3x more engagement",
         );
       if (emojiCount <= 2) score += 10;
       else
-        suggestions.push(
+        suggestions?.push(
           "Reduce emojis for a more professional and credible tone",
         );
       if (cta) score += 15;
-      else suggestions.push("End with a question or CTA to drive comments");
-      if (extractedHashtags.length >= 2 && extractedHashtags.length <= 5)
+      else suggestions?.push("End with a question or CTA to drive comments");
+      if (extractedHashtags?.length >= 2 && extractedHashtags?.length <= 5)
         score += 5;
-      else if (extractedHashtags.length === 0)
-        suggestions.push(
+      else if (extractedHashtags?.length === 0)
+        suggestions?.push(
           "Add 3–5 professional hashtags to increase discoverability",
         );
       break;
 
     case "youtube":
       // YouTube: SEO-rich description, subscribe CTA is critical, keyword density matters
-      if (/subscribe|🔔/i.test(payload)) score += 25;
+      if (/subscribe|🔔/i?.test(payload)) score += 25;
       else
-        suggestions.push(
+        suggestions?.push(
           "Always include a subscribe + notification bell CTA for YouTube",
         );
       if (wordCount >= 30) score += 15;
       else
-        suggestions.push(
+        suggestions?.push(
           "YouTube descriptions should be 100–300 words for SEO",
         );
       if (hook) score += 15;
       else
-        suggestions.push(
+        suggestions?.push(
           "Put key info and keywords in the first 2 sentences of your description",
         );
       if (cta) score += 10;
@@ -2828,16 +2823,16 @@ function enrichTextAssetMetadata(
 
     case "threads":
       // Threads: casual, authentic, conversational — NO hashtags, minimal emoji
-      if (extractedHashtags.length === 0) score += 15;
+      if (extractedHashtags?.length === 0) score += 15;
       else
-        suggestions.push(
+        suggestions?.push(
           "Threads performs better without hashtags — remove them",
         );
       if (emojiCount <= 3) score += 10;
-      else suggestions.push("Keep it casual — max 2–3 emojis on Threads");
+      else suggestions?.push("Keep it casual — max 2–3 emojis on Threads");
       if (wordCount >= 10 && wordCount <= 60) score += 15;
       else if (wordCount > 100)
-        suggestions.push(
+        suggestions?.push(
           "Shorter, more conversational posts work best on Threads",
         );
       if (hook) score += 10;
@@ -2847,52 +2842,52 @@ function enrichTextAssetMetadata(
       // Google Business: professional, local, clear action CTA
       if (cta) score += 25;
       else
-        suggestions.push(
+        suggestions?.push(
           "Google Business posts must include a clear action (Visit, Call, Book)",
         );
       if (wordCount >= 20 && wordCount <= 100) score += 15;
       if (hook) score += 10;
-      if (extractedHashtags.length === 0) score += 10;
-      else suggestions.push("Google Business posts do not use hashtags");
+      if (extractedHashtags?.length === 0) score += 10;
+      else suggestions?.push("Google Business posts do not use hashtags");
       break;
 
     default:
       if (emojiCount >= 1 && emojiCount <= 5) score += 10;
-      if (extractedHashtags.length > 0 && extractedHashtags.length <= 10)
+      if (extractedHashtags?.length > 0 && extractedHashtags?.length <= 10)
         score += 10;
       if (wordCount >= 15 && wordCount <= 60) score += 10;
       if (hook) score += 10;
       if (cta) score += 10;
       if (emojiCount === 0)
-        suggestions.push("Add 1–3 emojis to increase engagement");
-      if (extractedHashtags.length === 0)
-        suggestions.push("Include relevant hashtags");
-      if (!cta) suggestions.push("Add a clear call-to-action");
-      if (wordCount < 10) suggestions.push("Expand content for better reach");
+        suggestions?.push("Add 1–3 emojis to increase engagement");
+      if (extractedHashtags?.length === 0)
+        suggestions?.push("Include relevant hashtags");
+      if (!cta) suggestions?.push("Add a clear call-to-action");
+      if (wordCount < 10) suggestions?.push("Expand content for better reach");
   }
 
-  if (charLimit && charCount > charLimit * 0.9)
-    suggestions.push("Near character limit — consider trimming");
-  score = Math.min(100, score);
+  if (charLimit && charCount > charLimit * 0?.9)
+    suggestions?.push("Near character limit — consider trimming");
+  score = Math?.min(100, score);
 
-  const positive =
+  const _positive =
     /\b(amazing|excited|love|great|best|awesome|happy|proud|thrilled|celebrate|new|launch|drop|release)\b/i;
-  const negative =
+  const _negative =
     /\b(struggle|hard|difficult|bad|fail|problem|issue|concern)\b/i;
-  const sentimentLabel = positive.test(payload)
+  const _sentimentLabel = positive?.test(payload)
     ? "positive"
-    : negative.test(payload)
+    : negative?.test(payload)
       ? "negative"
       : "neutral";
 
   return {
     ...existingMeta,
-    hook: hook ?? existingMeta.hook,
-    body: body ?? existingMeta.body,
-    cta: cta ?? existingMeta.cta,
+    hook: hook ?? existingMeta?.hook,
+    body: body ?? existingMeta?.body,
+    cta: cta ?? existingMeta?.cta,
     hashtags:
-      existingMeta.hashtags ??
-      (extractedHashtags.length > 0 ? extractedHashtags : undefined),
+      existingMeta?.hashtags ??
+      (extractedHashtags?.length > 0 ? extractedHashtags : undefined),
     charCount,
     charLimit,
     wordCount,
@@ -2901,65 +2896,65 @@ function enrichTextAssetMetadata(
     sentimentLabel,
     suggestions,
     optimalPostTime:
-      existingMeta.optimalPostTime ??
+      existingMeta?.optimalPostTime ??
       PLATFORM_OPTIMAL_TIMES[platform] ??
       "6 PM local",
   };
 }
 
-const imageWorker = {
+const _imageWorker = {
   async run(
     step: TaskStep,
     inputs: Record<string, unknown>,
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
-    const slots = step.params?.slots || [];
-    const slotsWithRules = slots.map((slot: Record<string, unknown>) => ({
+    const _slots = step?.params?.slots || [];
+    const _slotsWithRules = slots?.map((slot: Record<string, unknown>) => ({
       ...slot,
-      platformRules: getRules(slot.platform as Platform)?.image ?? null,
+      platformRules: getRules(slot?.platform as Platform)?.image ?? null,
     }));
 
-    const mapOutputs = (outputs: unknown[]) =>
-      outputs.map((o: Record<string, unknown>) => ({
+    const _mapOutputs = (outputs: unknown[]) =>
+      outputs?.map((o: Record<string, unknown>) => ({
         id: randomUUID(),
         modality: "image" as OutputModality,
-        payload: o.url || o.src || "",
-        platform: o.platform as Platform | undefined,
-        slotId: o.slotId,
-        purpose: o.purpose,
+        payload: o?.url || o?.src || "",
+        platform: o?.platform as Platform | undefined,
+        slotId: o?.slotId,
+        purpose: o?.purpose,
         metadata: {
-          ...(o.meta ?? {}),
-          aspectRatio: o.aspectRatio ?? step.params?.recommendedAspectRatio,
-          platformRules: o.platform
-            ? getRules(o.platform as Platform).image
+          ...(o?.meta ?? {}),
+          aspectRatio: o?.aspectRatio ?? step?.params?.recommendedAspectRatio,
+          platformRules: o?.platform
+            ? getRules(o?.platform as Platform).image
             : null,
         },
       }));
 
     try {
-      const result = await maxcorePost("/generate/image", {
+      const _result = await maxcorePost("/generate/image", {
         step,
         inputs,
         slots: slotsWithRules,
-        constraints: req.constraints,
-        artistProfileId: req.artistProfileId,
-        intent: req.intent,
-        platformRules: Object.fromEntries(
-          req.platforms.map((p) => [p, getRules(p).image]),
+        constraints: req?.constraints,
+        artistProfileId: req?.artistProfileId,
+        intent: req?.intent,
+        platformRules: Object?.fromEntries(
+          req?.platforms.map((p) => [p, getRules(p).image]),
         ),
       });
-      const allOutputs = Array.isArray(result.outputs) ? result.outputs : [];
+      const _allOutputs = Array?.isArray(result?.outputs) ? result?.outputs : [];
       // Only accept outputs whose URLs are absolute — relative paths from the
-      // remote server (e.g. /uploads/images/...) cannot be served by our server.
-      const outputs = allOutputs.filter((o: Record<string, unknown>) => {
-        const url = o.url || o.src || "";
-        return url.startsWith("http://") || url.startsWith("https://");
+      // remote server (e?.g. /uploads/images/...) cannot be served by our server.
+      const _outputs = allOutputs?.filter((o: Record<string, unknown>) => {
+        const _url = o?.url || o?.src || "";
+        return url?.startsWith("http://") || url?.startsWith("https://");
       });
-      if (outputs.length > 0) return mapOutputs(outputs);
+      if (outputs?.length > 0) return mapOutputs(outputs);
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         "[MultimodalGen] MaxCore /generate/image unavailable, using local fallback:",
-        err instanceof Error ? err.message : String(err),
+        err instanceof Error ? err?.message : String(err),
       );
     }
 
@@ -2967,45 +2962,45 @@ const imageWorker = {
     // Iterate over every slot so we produce one image per platform (not just
     // the first platform).  If no slots are present, fall back to one image
     // for each platform in the request.
-    const normalized = inputs?.normalized ?? {};
-    const prompt =
-      normalized.summary ??
-      req.input?.payload ??
-      req.intent ??
+    const _normalized = inputs?.normalized ?? {};
+    const _prompt =
+      normalized?.summary ??
+      req?.input?.payload ??
+      req?.intent ??
       "music artist promotional image";
     const fallbackPlatforms: Platform[] = (
-      slots.length > 0
-        ? slots.map((s: Record<string, unknown>) => s.platform as Platform)
-        : (req.platforms as Platform[])
+      slots?.length > 0
+        ? slots?.map((s: Record<string, unknown>) => s?.platform as Platform)
+        : (req?.platforms as Platform[])
     ).filter(Boolean);
 
     const generated: GeneratedAsset[] = [];
     for (const plat of fallbackPlatforms) {
-      const rules = getRules(plat);
+      const _rules = getRules(plat);
       try {
-        const img = await sharpImageService.generateImage({
+        const _img = await sharpImageService?.generateImage({
           prompt: String(prompt).slice(0, 200),
           platform: plat,
           tone:
-            (req.constraints as Record<string, unknown>)?.tone ?? "creative",
+            (req?.constraints as Record<string, unknown>)?.tone ?? "creative",
         });
-        generated.push({
+        generated?.push({
           id: randomUUID(),
           modality: "image" as OutputModality,
-          payload: img.publicUrl,
+          payload: img?.publicUrl,
           platform: plat,
           metadata: {
             aspectRatio:
-              step.params?.recommendedAspectRatio ??
-              rules.image.aspectRatios?.[0],
-            platformRules: rules.image,
+              step?.params?.recommendedAspectRatio ??
+              rules?.image.aspectRatios?.[0],
+            platformRules: rules?.image,
             source: "local-sharp",
           },
         });
       } catch (sharpErr) {
-        logger.warn(
+        logger?.warn(
           `[MultimodalGen] Sharp fallback failed for platform ${plat}:`,
-          sharpErr instanceof Error ? sharpErr.message : String(sharpErr),
+          sharpErr instanceof Error ? sharpErr?.message : String(sharpErr),
         );
       }
     }
@@ -3013,82 +3008,82 @@ const imageWorker = {
   },
 };
 
-const audioWorker = {
+const _audioWorker = {
   async run(
     step: TaskStep,
     inputs: Record<string, unknown>,
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
-    const platform = step.params?.platform as Platform | undefined;
-    const audioRules = platform ? getRules(platform).audio : null;
+    const _platform = step?.params?.platform as Platform | undefined;
+    const _audioRules = platform ? getRules(platform).audio : null;
 
     // 1. Try MaxCore remote audio generation first
     try {
-      const result = await maxcorePost("/generate/audio", {
+      const _result = await maxcorePost("/generate/audio", {
         step,
         inputs,
-        constraints: req.constraints,
-        artistProfileId: req.artistProfileId,
-        intent: req.intent,
+        constraints: req?.constraints,
+        artistProfileId: req?.artistProfileId,
+        intent: req?.intent,
         platformRules: audioRules,
       });
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-      if (outputs.length > 0) {
-        return outputs.map((o: Record<string, unknown>) => ({
+      const _outputs = Array?.isArray(result?.outputs) ? result?.outputs : [];
+      if (outputs?.length > 0) {
+        return outputs?.map((o: Record<string, unknown>) => ({
           id: randomUUID(),
           modality: "audio" as OutputModality,
-          payload: o.url || "",
-          platform: o.platform as Platform | undefined,
-          slotId: o.slotId,
+          payload: o?.url || "",
+          platform: o?.platform as Platform | undefined,
+          slotId: o?.slotId,
           metadata: {
-            ...(o.meta ?? {}),
+            ...(o?.meta ?? {}),
             maxDurationSec: audioRules?.maxDurationSec,
             platformRules: audioRules,
           },
         }));
       }
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         "[MultimodalGen] MaxCore /generate/audio unavailable — falling back to local audio generator:",
-        err instanceof Error ? err.message : String(err),
+        err instanceof Error ? err?.message : String(err),
       );
     }
 
     // 2. Local FFmpeg audio generator fallback — produces a real .mp3 file
     try {
-      const normalized = inputs?.normalized ?? {};
-      const genre = normalized.genre ?? req.constraints?.genre ?? "default";
-      const maxSec = audioRules?.maxDurationSec ?? 30;
-      const ttsText = [
-        normalized.hook,
-        normalized.body,
-        normalized.cta,
-        normalized.summary,
+      const _normalized = inputs?.normalized ?? {};
+      const _genre = normalized?.genre ?? req?.constraints?.genre ?? "default";
+      const _maxSec = audioRules?.maxDurationSec ?? 30;
+      const _ttsText = [
+        normalized?.hook,
+        normalized?.body,
+        normalized?.cta,
+        normalized?.summary,
       ]
         .filter(Boolean)
         .join(". ");
 
-      const audioResult = await generateLocalAudio({
+      const _audioResult = await generateLocalAudio({
         genre,
-        duration: Math.min(maxSec, 60),
-        text: ttsText || req.intent || undefined,
-        topic: req.intent,
-        artistName: normalized.artistName,
+        duration: Math?.min(maxSec, 60),
+        text: ttsText || req?.intent || undefined,
+        topic: req?.intent,
+        artistName: normalized?.artistName,
       });
 
-      if (audioResult.success && audioResult.url) {
-        logger.info(
-          `[MultimodalGen] Local audio generated: ${audioResult.url}`,
+      if (audioResult?.success && audioResult?.url) {
+        logger?.info(
+          `[MultimodalGen] Local audio generated: ${audioResult?.url}`,
         );
         return [
           {
             id: randomUUID(),
             modality: "audio" as OutputModality,
-            payload: audioResult.url,
+            payload: audioResult?.url,
             platform,
             metadata: {
               source: "local_ffmpeg",
-              durationSec: audioResult.durationSec,
+              durationSec: audioResult?.durationSec,
               maxDurationSec: audioRules?.maxDurationSec,
               platformRules: audioRules,
             },
@@ -3096,14 +3091,14 @@ const audioWorker = {
         ];
       }
 
-      logger.warn(
+      logger?.warn(
         "[MultimodalGen] Local audio generator returned no file:",
-        audioResult.error,
+        audioResult?.error,
       );
     } catch (localErr) {
-      logger.warn(
+      logger?.warn(
         "[MultimodalGen] Local audio generator threw:",
-        localErr instanceof Error ? localErr.message : String(localErr),
+        localErr instanceof Error ? localErr?.message : String(localErr),
       );
     }
 
@@ -3111,7 +3106,7 @@ const audioWorker = {
   },
 };
 
-const videoWorker = {
+const _videoWorker = {
   async run(
     step: TaskStep,
     _inputs: Record<string, unknown>,
@@ -3127,9 +3122,9 @@ const videoWorker = {
     // Returning an empty array here is intentional — the client detects zero
     // video assets and renders the ServerVideoGenerator widget, which drives the
     // async job flow described above.
-    logger.info(
-      `[MultimodalGen] videoWorker: skipping inline FFmpeg for step ${step.id} ` +
-        `(req ${req.id}) — client will use the async ServerVideoGenerator instead`,
+    logger?.info(
+      `[MultimodalGen] videoWorker: skipping inline FFmpeg for step ${step?.id} ` +
+        `(req ${req?.id}) — client will use the async ServerVideoGenerator instead`,
     );
     // Return empty so the client's zero-asset guard fires and renders the
     // ServerVideoGenerator widget (which drives the async job endpoint instead).
@@ -3137,7 +3132,7 @@ const videoWorker = {
   },
 };
 
-const workers = {
+const _workers = {
   text: textWorker,
   image: imageWorker,
   audio: audioWorker,
@@ -3147,49 +3142,49 @@ const workers = {
 export async function handleGeneration(
   req: GenerationRequest,
 ): Promise<MultimodalPackage> {
-  logger.info(
-    `[MultimodalGen] Starting generation: id=${req.id}, pack=${req.packId ?? "none"}, platforms=${req.platforms.join(",")}`,
+  logger?.info(
+    `[MultimodalGen] Starting generation: id=${req?.id}, pack=${req?.packId ?? "none"}, platforms=${req?.platforms.join(",")}`,
   );
 
-  const normalized = await normalizeInput(req);
-  const plan = await planTasks(normalized, req);
+  const _normalized = await normalizeInput(req);
+  const _plan = await planTasks(normalized, req);
 
-  const stepOutputs = new Map<string, GeneratedAsset[]>();
+  const _stepOutputs = new Map<string, GeneratedAsset[]>();
 
   // Separate steps that depend only on normalized input (can run in parallel)
   // from steps that depend on earlier step outputs (must run serially after dependencies)
-  const independentSteps = plan.steps.filter(
-    (s) => !s.inputFrom || s.inputFrom === "normalizedInput",
+  const _independentSteps = plan?.steps.filter(
+    (s) => !s?.inputFrom || s?.inputFrom === "normalizedInput",
   );
-  const dependentSteps = plan.steps.filter(
-    (s) => s.inputFrom && s.inputFrom !== "normalizedInput",
+  const _dependentSteps = plan?.steps.filter(
+    (s) => s?.inputFrom && s?.inputFrom !== "normalizedInput",
   );
 
   // Run all independent steps concurrently.
   // Each step is wrapped in try/catch so a failing video/audio render
   // doesn't abort the entire pipeline — the client handles empty assets
-  // by showing appropriate fallback UI (e.g. ServerVideoGenerator).
-  if (independentSteps.length > 0) {
-    await Promise.allSettled(
-      independentSteps.map(async (step) => {
-        const worker = workers[step.worker];
+  // by showing appropriate fallback UI (e?.g. ServerVideoGenerator).
+  if (independentSteps?.length > 0) {
+    await Promise?.allSettled(
+      independentSteps?.map(async (step) => {
+        const _worker = workers[step?.worker];
         if (!worker) {
-          logger.warn(`[MultimodalGen] Unknown worker: ${step.worker}`);
-          stepOutputs.set(step.id, []);
+          logger?.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
+          stepOutputs?.set(step?.id, []);
           return;
         }
         try {
-          const assets = await worker.run(step, { normalized }, req);
-          stepOutputs.set(step.id, assets);
-          logger.info(
-            `[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [parallel]`,
+          const _assets = await worker?.run(step, { normalized }, req);
+          stepOutputs?.set(step?.id, assets);
+          logger?.info(
+            `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [parallel]`,
           );
         } catch (err) {
-          logger.warn(
-            `[MultimodalGen] Step ${step.id} (${step.worker}) failed — returning empty assets:`,
-            err instanceof Error ? err.message : String(err),
+          logger?.warn(
+            `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets:`,
+            err instanceof Error ? err?.message : String(err),
           );
-          stepOutputs.set(step.id, []);
+          stepOutputs?.set(step?.id, []);
         }
       }),
     );
@@ -3197,41 +3192,41 @@ export async function handleGeneration(
 
   // Run dependent steps serially, each resolving its upstream outputs
   for (const step of dependentSteps) {
-    const worker = workers[step.worker];
+    const _worker = workers[step?.worker];
     if (!worker) {
-      logger.warn(`[MultimodalGen] Unknown worker: ${step.worker}`);
+      logger?.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
       continue;
     }
-    const inputs = {
+    const _inputs = {
       normalized,
-      stepAssets: (Array.isArray(step.inputFrom)
-        ? step.inputFrom
-        : [step.inputFrom]
-      ).flatMap((id: string) => stepOutputs.get(id) ?? []),
+      stepAssets: (Array?.isArray(step?.inputFrom)
+        ? step?.inputFrom
+        : [step?.inputFrom]
+      ).flatMap((id: string) => stepOutputs?.get(id) ?? []),
     };
     try {
-      const assets = await worker.run(step, inputs, req);
-      stepOutputs.set(step.id, assets);
-      logger.info(
-        `[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [sequential]`,
+      const _assets = await worker?.run(step, inputs, req);
+      stepOutputs?.set(step?.id, assets);
+      logger?.info(
+        `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [sequential]`,
       );
     } catch (err) {
-      logger.warn(
-        `[MultimodalGen] Step ${step.id} (${step.worker}) failed — returning empty assets:`,
-        err instanceof Error ? err.message : String(err),
+      logger?.warn(
+        `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets:`,
+        err instanceof Error ? err?.message : String(err),
       );
-      stepOutputs.set(step.id, []);
+      stepOutputs?.set(step?.id, []);
     }
   }
 
-  const allAssets = Array.from(stepOutputs.values()).flat();
+  const _allAssets = Array?.from(stepOutputs?.values()).flat();
 
-  logger.info(
-    `[MultimodalGen] Done: id=${req.id}, total_assets=${allAssets.length}`,
+  logger?.info(
+    `[MultimodalGen] Done: id=${req?.id}, total_assets=${allAssets?.length}`,
   );
 
   return {
-    requestId: req.id,
+    requestId: req?.id,
     assets: allAssets,
     plan,
     generatedAt: new Date().toISOString(),

@@ -6,38 +6,38 @@ import { useToast } from "@/hooks/use-toast";
 export function useMarkers(projectId: string | null) {
   const { markers, addMarker, updateMarker, deleteMarker } = useStudioStore();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
-  const markersQuery = useQuery({
+  const _markersQuery = useQuery({
     queryKey: ["markers", projectId],
     queryFn: async () => {
       if (!projectId) return { markers: [] };
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "GET",
         `/api/studio/projects/${projectId}/markers`,
       );
-      const data = await response.json();
+      const _data = await response?.json();
       return data;
     },
     enabled: !!projectId,
     staleTime: 30000, // 30 seconds
     onSuccess: (data) => {
       // Sync markers from API to Zustand store
-      if (data.markers) {
-        const currentMarkerIds = new Set(markers.map((m) => m.id));
-        new Set(data.markers.map((m: unknown) => m.id));
+      if (data?.markers) {
+        const _currentMarkerIds = new Set(markers?.map((m) => m?.id));
+        new Set(data?.markers.map((m: unknown) => m?.id));
 
         // Add or update markers from API
-        data.markers.forEach((marker: unknown) => {
-          if (!currentMarkerIds.has(marker.id)) {
+        data?.markers.forEach((marker: unknown) => {
+          if (!currentMarkerIds?.has(marker?.id)) {
             addMarker(marker);
           } else {
-            const currentMarker = markers.find((m) => m.id === marker.id);
+            const _currentMarker = markers?.find((m) => m?.id === marker?.id);
             if (
               currentMarker &&
-              JSON.stringify(currentMarker) !== JSON.stringify(marker)
+              JSON?.stringify(currentMarker) !== JSON?.stringify(marker)
             ) {
-              updateMarker(marker.id, marker);
+              updateMarker(marker?.id, marker);
             }
           }
         });
@@ -45,22 +45,22 @@ export function useMarkers(projectId: string | null) {
     },
   });
 
-  const createMarkerMutation = useMutation({
+  const _createMarkerMutation = useMutation({
     mutationFn: async (marker: Omit<Marker, "id">) => {
       if (!projectId) throw new Error("No project selected");
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/markers`,
         marker,
       );
-      return await response.json();
+      return await response?.json();
     },
     onMutate: async (newMarker) => {
-      await queryClient.cancelQueries({ queryKey: ["markers", projectId] });
-      const previousData = queryClient.getQueryData(["markers", projectId]);
-      const tempId = `temp-${Date.now()}`;
+      await queryClient?.cancelQueries({ queryKey: ["markers", projectId] });
+      const _previousData = queryClient?.getQueryData(["markers", projectId]);
+      const _tempId = `temp-${Date?.now()}`;
       const optimisticMarker: Marker = { id: tempId, ...newMarker };
-      queryClient.setQueryData(
+      queryClient?.setQueryData(
         ["markers", projectId],
         (old: { markers?: Array<Record<string, unknown>> }) => ({
           markers: [...(old?.markers || []), optimisticMarker],
@@ -71,14 +71,14 @@ export function useMarkers(projectId: string | null) {
     },
     onSuccess: (data, _variables, context) => {
       if (context?.tempId) {
-        deleteMarker(context.tempId);
+        deleteMarker(context?.tempId);
       }
       addMarker(data);
-      queryClient.setQueryData(
+      queryClient?.setQueryData(
         ["markers", projectId],
         (old: { markers?: Array<Record<string, unknown>> }) => ({
           markers: (old?.markers || [])
-            .filter((m: Record<string, unknown>) => m.id !== context?.tempId)
+            .filter((m: Record<string, unknown>) => m?.id !== context?.tempId)
             .concat(data),
         }),
       );
@@ -86,10 +86,10 @@ export function useMarkers(projectId: string | null) {
     },
     onError: (error: unknown, _variables, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(["markers", projectId], context.previousData);
+        queryClient?.setQueryData(["markers", projectId], context?.previousData);
       }
       if (context?.tempId) {
-        deleteMarker(context.tempId);
+        deleteMarker(context?.tempId);
       }
       toast({
         title: "Failed to create marker",
@@ -99,7 +99,7 @@ export function useMarkers(projectId: string | null) {
     },
   });
 
-  const updateMarkerMutation = useMutation({
+  const _updateMarkerMutation = useMutation({
     mutationFn: async ({
       id,
       updates,
@@ -107,22 +107,22 @@ export function useMarkers(projectId: string | null) {
       id: string;
       updates: Partial<Marker>;
     }) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "PATCH",
         `/api/studio/markers/${id}`,
         updates,
       );
-      return await response.json();
+      return await response?.json();
     },
     onMutate: async ({ id, updates }) => {
-      await queryClient.cancelQueries({ queryKey: ["markers", projectId] });
-      const previousData = queryClient.getQueryData(["markers", projectId]);
-      const previousMarker = markers.find((m) => m.id === id);
-      queryClient.setQueryData(
+      await queryClient?.cancelQueries({ queryKey: ["markers", projectId] });
+      const _previousData = queryClient?.getQueryData(["markers", projectId]);
+      const _previousMarker = markers?.find((m) => m?.id === id);
+      queryClient?.setQueryData(
         ["markers", projectId],
         (old: { markers?: Array<Record<string, unknown>> }) => ({
           markers: (old?.markers || []).map((m: Record<string, unknown>) =>
-            m.id === id ? { ...m, ...updates } : m,
+            m?.id === id ? { ...m, ...updates } : m,
           ),
         }),
       );
@@ -132,22 +132,22 @@ export function useMarkers(projectId: string | null) {
       return { previousMarker, previousData };
     },
     onSuccess: (data) => {
-      updateMarker(data.id, data);
-      queryClient.setQueryData(
+      updateMarker(data?.id, data);
+      queryClient?.setQueryData(
         ["markers", projectId],
         (old: { markers?: Array<Record<string, unknown>> }) => ({
           markers: (old?.markers || []).map((m: Record<string, unknown>) =>
-            m.id === data.id ? data : m,
+            m?.id === data?.id ? data : m,
           ),
         }),
       );
     },
     onError: (error: unknown, { id }, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(["markers", projectId], context.previousData);
+        queryClient?.setQueryData(["markers", projectId], context?.previousData);
       }
       if (context?.previousMarker) {
-        updateMarker(id, context.previousMarker);
+        updateMarker(id, context?.previousMarker);
       }
       toast({
         title: "Failed to update marker",
@@ -157,20 +157,20 @@ export function useMarkers(projectId: string | null) {
     },
   });
 
-  const deleteMarkerMutation = useMutation({
+  const _deleteMarkerMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/studio/markers/${id}`);
       return id;
     },
     onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: ["markers", projectId] });
-      const previousData = queryClient.getQueryData(["markers", projectId]);
-      const previousMarker = markers.find((m) => m.id === id);
-      queryClient.setQueryData(
+      await queryClient?.cancelQueries({ queryKey: ["markers", projectId] });
+      const _previousData = queryClient?.getQueryData(["markers", projectId]);
+      const _previousMarker = markers?.find((m) => m?.id === id);
+      queryClient?.setQueryData(
         ["markers", projectId],
         (old: { markers?: Array<Record<string, unknown>> }) => ({
           markers: (old?.markers || []).filter(
-            (m: Record<string, unknown>) => m.id !== id,
+            (m: Record<string, unknown>) => m?.id !== id,
           ),
         }),
       );
@@ -182,10 +182,10 @@ export function useMarkers(projectId: string | null) {
     },
     onError: (error: unknown, _id, context) => {
       if (context?.previousData) {
-        queryClient.setQueryData(["markers", projectId], context.previousData);
+        queryClient?.setQueryData(["markers", projectId], context?.previousData);
       }
       if (context?.previousMarker) {
-        addMarker(context.previousMarker);
+        addMarker(context?.previousMarker);
       }
       toast({
         title: "Failed to delete marker",
@@ -196,14 +196,14 @@ export function useMarkers(projectId: string | null) {
   });
 
   return {
-    markers: markersQuery.data?.markers || markers,
-    isLoading: markersQuery.isLoading,
-    error: markersQuery.error,
-    createMarker: createMarkerMutation.mutate,
-    updateMarker: updateMarkerMutation.mutate,
-    deleteMarker: deleteMarkerMutation.mutate,
-    isCreating: createMarkerMutation.isPending,
-    isUpdating: updateMarkerMutation.isPending,
-    isDeleting: deleteMarkerMutation.isPending,
+    markers: markersQuery?.data?.markers || markers,
+    isLoading: markersQuery?.isLoading,
+    error: markersQuery?.error,
+    createMarker: createMarkerMutation?.mutate,
+    updateMarker: updateMarkerMutation?.mutate,
+    deleteMarker: deleteMarkerMutation?.mutate,
+    isCreating: createMarkerMutation?.isPending,
+    isUpdating: updateMarkerMutation?.isPending,
+    isDeleting: deleteMarkerMutation?.isPending,
   };
 }

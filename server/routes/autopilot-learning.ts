@@ -1,27 +1,27 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth.js";
-import { autopilotLearningService } from "../services/autopilotLearningService.js";
-import { hyperLearningEngine } from "../services/hyperLearningEngine.js";
-import { logger } from "../logger.js";
-import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { requireAuth } from "../middleware/auth?.js";
+import { autopilotLearningService } from "../services/autopilotLearningService?.js";
+import { hyperLearningEngine } from "../services/hyperLearningEngine?.js";
+import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory?.js";
 
 async function getPdimArtistLearningData(artistId: string) {
   try {
-    const redis = await getRedisClient();
+    const _redis = await getRedisClient();
     if (!redis) return null;
-    const [patternRaw, peaksRaw, runsRaw, statsRaw] = await Promise.all([
-      redis.get(`mb:ads:${artistId}:patterns`).catch(() => null),
-      redis.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
-      redis.lrange(`mb:ads:${artistId}:runs`, 0, -1).catch(() => []),
-      redis.hgetall(`mb:ads:${artistId}:stats`).catch(() => null),
+    const [patternRaw, peaksRaw, runsRaw, statsRaw] = await Promise?.all([
+      redis?.get(`mb:ads:${artistId}:patterns`).catch(() => null),
+      redis?.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
+      redis?.lrange(`mb:ads:${artistId}:runs`, 0, -1).catch(() => []),
+      redis?.hgetall(`mb:ads:${artistId}:stats`).catch(() => null),
     ]);
     return {
-      patterns: patternRaw ? JSON.parse(patternRaw) : null,
+      patterns: patternRaw ? JSON?.parse(patternRaw) : null,
       peaks: (peaksRaw || [])
         .map((r: string) => {
           try {
-            return JSON.parse(r);
+            return JSON?.parse(r);
           } catch {
             return null;
           }
@@ -30,7 +30,7 @@ async function getPdimArtistLearningData(artistId: string) {
       runs: (runsRaw || [])
         .map((r: string) => {
           try {
-            return JSON.parse(r);
+            return JSON?.parse(r);
           } catch {
             return null;
           }
@@ -39,14 +39,14 @@ async function getPdimArtistLearningData(artistId: string) {
       stats: statsRaw || null,
     };
   } catch (e) {
-    logger.warn(
-      `[AutopilotLearning] PDIM artist data fetch failed: ${e.message}`,
+    logger?.warn(
+      `[AutopilotLearning] PDIM artist data fetch failed: ${e?.message}`,
     );
     return null;
   }
 }
 
-const router = Router();
+const _router = Router();
 
 // Delay first learning cycle by 90 seconds so it doesn't compete with
 // cold-start DB connections and slow down the initial page load.
@@ -54,84 +54,84 @@ const router = Router();
 // in single-process mode). Running HyperLearning on every cluster worker
 // fires 5+ expensive aggregate DB queries per cycle per worker and piles up
 // PDIM calls N× at the same time — defeating the in-process cache entirely.
-const _isBgWorkerForHL =
-  process.env.CLUSTER_WORKER_ID === undefined ||
-  process.env.CLUSTER_WORKER_ID === "0";
+const __isBgWorkerForHL =
+  process?.env.CLUSTER_WORKER_ID === undefined ||
+  process?.env.CLUSTER_WORKER_ID === "0";
 if (_isBgWorkerForHL) {
   setTimeout(() => {
-    hyperLearningEngine.start().catch((err) => {
-      logger.warn({ err: err }, "HyperLearning Engine failed to auto-start:");
+    hyperLearningEngine?.start().catch((err) => {
+      logger?.warn({ err: err }, "HyperLearning Engine failed to auto-start:");
     });
   }, 90_000);
 } else {
-  logger.info(
-    `[HyperLearning] Worker ${process.env.CLUSTER_WORKER_ID} — engine managed by worker 0`,
+  logger?.info(
+    `[HyperLearning] Worker ${process?.env.CLUSTER_WORKER_ID} — engine managed by worker 0`,
   );
 }
 
-router.get("/status", requireAuth, async (req, res) => {
+router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const hyperStatus = hyperLearningEngine.getStatus();
-    const metrics = hyperLearningEngine.getMetrics();
+    const _userId = req?.user!.id;
+    const _hyperStatus = hyperLearningEngine?.getStatus();
+    const _metrics = hyperLearningEngine?.getMetrics();
 
     const [insights, recommendations, performance, platformStats, pdimData] =
-      await Promise.all([
-        autopilotLearningService.getLearningInsights(userId),
-        autopilotLearningService.getRecommendations(userId),
-        autopilotLearningService.getPerformanceHistory(userId, { limit: 1 }),
-        autopilotLearningService.getPlatformStatistics(userId),
+      await Promise?.all([
+        autopilotLearningService?.getLearningInsights(userId),
+        autopilotLearningService?.getRecommendations(userId),
+        autopilotLearningService?.getPerformanceHistory(userId, { limit: 1 }),
+        autopilotLearningService?.getPlatformStatistics(userId),
         getPdimArtistLearningData(userId),
       ]);
 
-    res.json({
+    res?.json({
       success: true,
       learning: {
-        isActive: hyperStatus.isRunning,
-        totalDataPoints: metrics.totalDataPointsProcessed,
-        patternsDetected: metrics.patternsDetected,
-        microPatternsFound: metrics.microPatternsFound,
-        learningMultiplier: `${metrics.learningMultiplier.toFixed(1)}x`,
-        lastLearningCycle: hyperStatus.metrics.lastCycleAt || null,
-        processingTimeMs: metrics.actualProcessingTimeMs,
-        humanEquivalentHours: metrics.humanEquivalentHours,
+        isActive: hyperStatus?.isRunning,
+        totalDataPoints: metrics?.totalDataPointsProcessed,
+        patternsDetected: metrics?.patternsDetected,
+        microPatternsFound: metrics?.microPatternsFound,
+        learningMultiplier: `${metrics?.learningMultiplier.toFixed(1)}x`,
+        lastLearningCycle: hyperStatus?.metrics.lastCycleAt || null,
+        processingTimeMs: metrics?.actualProcessingTimeMs,
+        humanEquivalentHours: metrics?.humanEquivalentHours,
       },
       insights: {
-        total: insights.length,
-        types: insights.reduce((acc: Record<string, number>, i) => {
-          acc[i.type] = (acc[i.type] || 0) + 1;
+        total: insights?.length,
+        types: insights?.reduce((acc: Record<string, number>, i) => {
+          acc[i?.type] = (acc[i?.type] || 0) + 1;
           return acc;
         }, {}),
       },
       recommendations: {
-        total: recommendations.length,
-        actionable: recommendations.filter((r) => r.actionable).length,
+        total: recommendations?.length,
+        actionable: recommendations?.filter((r) => r?.actionable).length,
       },
       performance: {
-        totalRecorded: performance.total,
-        platformsCovered: platformStats.length,
-        platforms: platformStats.map((p) => ({
-          platform: p.platform,
-          postCount: p.postCount,
-          avgEngagement: p.avgEngagement,
+        totalRecorded: performance?.total,
+        platformsCovered: platformStats?.length,
+        platforms: platformStats?.map((p) => ({
+          platform: p?.platform,
+          postCount: p?.postCount,
+          avgEngagement: p?.avgEngagement,
         })),
       },
       adLearning: pdimData
         ? {
             source: "pdim",
-            platformsLearned: Object.keys(pdimData.patterns || {}),
-            peakWindows: pdimData.peaks.length,
-            runsRecorded: pdimData.runs.length,
-            topCtas: Object.values(pdimData.patterns || {})
-              .flatMap((p: Record<string, unknown>) => p.top_ctas || [])
+            platformsLearned: Object?.keys(pdimData?.patterns || {}),
+            peakWindows: pdimData?.peaks.length,
+            runsRecorded: pdimData?.runs.length,
+            topCtas: Object?.values(pdimData?.patterns || {})
+              .flatMap((p: Record<string, unknown>) => p?.top_ctas || [])
               .slice(0, 5),
-            topHooks: Object.values(pdimData.patterns || {})
-              .flatMap((p: Record<string, unknown>) => p.top_hooks || [])
+            topHooks: Object?.values(pdimData?.patterns || {})
+              .flatMap((p: Record<string, unknown>) => p?.top_hooks || [])
               .slice(0, 5),
-            avgRoas: Object.values(pdimData.patterns || {})
-              .map((p: Record<string, unknown>) => p.avg_roas)
+            avgRoas: Object?.values(pdimData?.patterns || {})
+              .map((p: Record<string, unknown>) => p?.avg_roas)
               .filter(Boolean),
-            stats: pdimData.stats,
+            stats: pdimData?.stats,
           }
         : null,
       capabilities: [
@@ -147,81 +147,81 @@ router.get("/status", requireAuth, async (req, res) => {
       ],
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get autopilot learning status:");
-    res.status(500).json({ error: "Failed to get autopilot learning status" });
+    logger?.warn({ err: error }, "Failed to get autopilot learning status:");
+    res?.status(500).json({ error: "Failed to get autopilot learning status" });
   }
 });
 
-const recordPerformanceSchema = z.object({
-  platform: z.string(),
-  contentType: z.string().optional(),
-  hookType: z.string().optional(),
-  hashtags: z.array(z.string()).optional(),
-  contentText: z.string().optional(),
-  mediaType: z.string().optional(),
-  postId: z.string().optional(),
-  postedAt: z.string().datetime().optional(),
-  metadata: z.record(z.string(), z.any()).optional(),
-  analytics: z.object({
-    impressions: z.number().optional(),
-    clicks: z.number().optional(),
-    shares: z.number().optional(),
-    likes: z.number().optional(),
-    comments: z.number().optional(),
-    saves: z.number().optional(),
-    reach: z.number().optional(),
-    engagementRate: z.number().optional(),
+const _recordPerformanceSchema = z?.object({
+  platform: z?.string(),
+  contentType: z?.string().optional(),
+  hookType: z?.string().optional(),
+  hashtags: z?.array(z?.string()).optional(),
+  contentText: z?.string().optional(),
+  mediaType: z?.string().optional(),
+  postId: z?.string().optional(),
+  postedAt: z?.string().datetime().optional(),
+  metadata: z?.record(z?.string(), z?.any()).optional(),
+  analytics: z?.object({
+    impressions: z?.number().optional(),
+    clicks: z?.number().optional(),
+    shares: z?.number().optional(),
+    likes: z?.number().optional(),
+    comments: z?.number().optional(),
+    saves: z?.number().optional(),
+    reach: z?.number().optional(),
+    engagementRate: z?.number().optional(),
   }),
 });
 
-router.get("/insights", requireAuth, async (req, res) => {
+router?.get("/insights", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const insights = await autopilotLearningService.getLearningInsights(userId);
+    const _userId = req?.user!.id;
+    const _insights = await autopilotLearningService?.getLearningInsights(userId);
 
-    res.json({
+    res?.json({
       success: true,
       insights,
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get learning insights:");
-    res.status(500).json({ error: "Failed to get learning insights" });
+    logger?.warn({ err: error }, "Failed to get learning insights:");
+    res?.status(500).json({ error: "Failed to get learning insights" });
   }
 });
 
-router.get("/recommendations", requireAuth, async (req, res) => {
+router?.get("/recommendations", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const recommendations =
-      await autopilotLearningService.getRecommendations(userId);
+    const _userId = req?.user!.id;
+    const _recommendations =
+      await autopilotLearningService?.getRecommendations(userId);
 
-    res.json({
+    res?.json({
       success: true,
       recommendations,
-      count: recommendations.length,
+      count: recommendations?.length,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get recommendations:");
-    res.status(500).json({ error: "Failed to get recommendations" });
+    logger?.warn({ err: error }, "Failed to get recommendations:");
+    res?.status(500).json({ error: "Failed to get recommendations" });
   }
 });
 
-router.get("/performance", requireAuth, async (req, res) => {
+router?.get("/performance", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { platform, limit, offset } = req.query;
+    const _userId = req?.user!.id;
+    const { platform, limit, offset } = req?.query;
 
-    const limitNum = Math.min(
-      Math.max(parseInt(limit as string, 10) || 50, 1),
+    const _limitNum = Math?.min(
+      Math?.max(parseInt(limit as string, 10) || 50, 1),
       500,
     );
-    const offsetNum = Math.min(
-      Math.max(parseInt(offset as string, 10) || 0, 0),
+    const _offsetNum = Math?.min(
+      Math?.max(parseInt(offset as string, 10) || 0, 0),
       100_000,
     );
 
-    const result = await autopilotLearningService.getPerformanceHistory(
+    const _result = await autopilotLearningService?.getPerformanceHistory(
       userId,
       {
         platform: platform as string | undefined,
@@ -230,186 +230,186 @@ router.get("/performance", requireAuth, async (req, res) => {
       },
     );
 
-    res.json({
+    res?.json({
       success: true,
-      data: result.data,
-      total: result.total,
+      data: result?.data,
+      total: result?.total,
       pagination: {
         limit: limitNum,
         offset: offsetNum,
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get performance history:");
-    res.status(500).json({ error: "Failed to get performance history" });
+    logger?.warn({ err: error }, "Failed to get performance history:");
+    res?.status(500).json({ error: "Failed to get performance history" });
   }
 });
 
-router.post("/record", requireAuth, async (req, res) => {
+router?.post("/record", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const data = recordPerformanceSchema.parse(req.body);
+    const _userId = req?.user!.id;
+    const _data = recordPerformanceSchema?.parse(req?.body);
 
-    const postData = {
-      platform: data.platform,
-      contentType: data.contentType,
-      hookType: data.hookType,
-      hashtags: data.hashtags,
-      contentText: data.contentText,
-      mediaType: data.mediaType,
-      postId: data.postId,
-      postedAt: data.postedAt ? new Date(data.postedAt) : undefined,
-      metadata: data.metadata,
+    const _postData = {
+      platform: data?.platform,
+      contentType: data?.contentType,
+      hookType: data?.hookType,
+      hashtags: data?.hashtags,
+      contentText: data?.contentText,
+      mediaType: data?.mediaType,
+      postId: data?.postId,
+      postedAt: data?.postedAt ? new Date(data?.postedAt) : undefined,
+      metadata: data?.metadata,
     };
 
-    const recordId = await autopilotLearningService.recordPerformance(
+    const _recordId = await autopilotLearningService?.recordPerformance(
       userId,
       postData,
-      data.analytics,
+      data?.analytics,
     );
 
-    res.json({
+    res?.json({
       success: true,
       recordId,
       message: "Performance data recorded successfully",
     });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ error: "Invalid data", details: error.issues });
+    if (error instanceof z?.ZodError) {
+      res?.status(400).json({ error: "Invalid data", details: error?.issues });
       return;
     }
-    logger.warn({ err: error }, "Failed to record performance:");
-    res.status(500).json({ error: "Failed to record performance data" });
+    logger?.warn({ err: error }, "Failed to record performance:");
+    res?.status(500).json({ error: "Failed to record performance data" });
   }
 });
 
-router.get("/optimal-times/:platform", requireAuth, async (req, res) => {
+router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { platform } = req.params;
+    const _userId = req?.user!.id;
+    const { platform } = req?.params;
 
-    const optimalTimes = await autopilotLearningService.getOptimalPostingTimes(
+    const _optimalTimes = await autopilotLearningService?.getOptimalPostingTimes(
       userId,
       platform,
     );
 
-    res.json({
+    res?.json({
       success: true,
       platform,
       optimalTimes,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get optimal posting times:");
-    res.status(500).json({ error: "Failed to get optimal posting times" });
+    logger?.warn({ err: error }, "Failed to get optimal posting times:");
+    res?.status(500).json({ error: "Failed to get optimal posting times" });
   }
 });
 
-router.get("/top-content", requireAuth, async (req, res) => {
+router?.get("/top-content", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { platform } = req.query;
+    const _userId = req?.user!.id;
+    const { platform } = req?.query;
 
-    const topContentTypes =
-      await autopilotLearningService.getTopPerformingContentTypes(
+    const _topContentTypes =
+      await autopilotLearningService?.getTopPerformingContentTypes(
         userId,
         platform as string | undefined,
       );
 
-    res.json({
+    res?.json({
       success: true,
       contentTypes: topContentTypes,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get top performing content types:");
+    logger?.warn({ err: error }, "Failed to get top performing content types:");
     res
       .status(500)
       .json({ error: "Failed to get top performing content types" });
   }
 });
 
-router.get("/patterns", requireAuth, async (req, res) => {
+router?.get("/patterns", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const patterns = await autopilotLearningService.detectPatterns(userId);
+    const _userId = req?.user!.id;
+    const _patterns = await autopilotLearningService?.detectPatterns(userId);
 
-    res.json({
+    res?.json({
       success: true,
       patterns,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to detect patterns:");
-    res.status(500).json({ error: "Failed to detect patterns" });
+    logger?.warn({ err: error }, "Failed to detect patterns:");
+    res?.status(500).json({ error: "Failed to detect patterns" });
   }
 });
 
-router.get("/platform-stats", requireAuth, async (req, res) => {
+router?.get("/platform-stats", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const stats = await autopilotLearningService.getPlatformStatistics(userId);
+    const _userId = req?.user!.id;
+    const _stats = await autopilotLearningService?.getPlatformStatistics(userId);
 
-    res.json({
+    res?.json({
       success: true,
       platforms: stats,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get platform statistics:");
-    res.status(500).json({ error: "Failed to get platform statistics" });
+    logger?.warn({ err: error }, "Failed to get platform statistics:");
+    res?.status(500).json({ error: "Failed to get platform statistics" });
   }
 });
 
-router.post("/generate-insights", requireAuth, async (req, res) => {
+router?.post("/generate-insights", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    await autopilotLearningService.generateInsights(userId);
+    const _userId = req?.user!.id;
+    await autopilotLearningService?.generateInsights(userId);
 
-    const insights = await autopilotLearningService.getLearningInsights(userId);
+    const _insights = await autopilotLearningService?.getLearningInsights(userId);
 
-    res.json({
+    res?.json({
       success: true,
       message: "Insights generated successfully",
       insights,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to generate insights:");
-    res.status(500).json({ error: "Failed to generate insights" });
+    logger?.warn({ err: error }, "Failed to generate insights:");
+    res?.status(500).json({ error: "Failed to generate insights" });
   }
 });
 
-router.get("/hyper/status", requireAuth, async (_req, res) => {
+router?.get("/hyper/status", requireAuth, async (_req, res) => {
   try {
-    const status = hyperLearningEngine.getStatus();
+    const _status = hyperLearningEngine?.getStatus();
 
-    res.json({
+    res?.json({
       success: true,
       hyperLearning: {
         enabled: true,
-        learningMultiplier: `${status.metrics.learningMultiplier.toFixed(1)}x`,
+        learningMultiplier: `${status?.metrics.learningMultiplier?.toFixed(1)}x`,
         description:
           "AI-powered learning system that analyzes patterns 3x faster than human capability",
         ...status,
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get hyper learning status:");
-    res.status(500).json({ error: "Failed to get hyper learning status" });
+    logger?.warn({ err: error }, "Failed to get hyper learning status:");
+    res?.status(500).json({ error: "Failed to get hyper learning status" });
   }
 });
 
-router.get("/hyper/insights", requireAuth, async (req, res) => {
+router?.get("/hyper/insights", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const hyperInsights = await hyperLearningEngine.getHyperInsights(userId);
-    const metrics = hyperLearningEngine.getMetrics();
+    const _userId = req?.user!.id;
+    const _hyperInsights = await hyperLearningEngine?.getHyperInsights(userId);
+    const _metrics = hyperLearningEngine?.getMetrics();
 
-    res.json({
+    res?.json({
       success: true,
       hyperInsights,
-      count: hyperInsights.length,
+      count: hyperInsights?.length,
       metrics: {
-        learningMultiplier: metrics.learningMultiplier,
-        humanEquivalentHours: metrics.humanEquivalentHours,
-        actualProcessingMs: metrics.actualProcessingTimeMs,
-        efficiency: `${((metrics.humanEquivalentHours * 3600000) / Math.max(1, metrics.actualProcessingTimeMs)).toFixed(1)}x faster than human`,
+        learningMultiplier: metrics?.learningMultiplier,
+        humanEquivalentHours: metrics?.humanEquivalentHours,
+        actualProcessingMs: metrics?.actualProcessingTimeMs,
+        efficiency: `${((metrics?.humanEquivalentHours * 3600000) / Math?.max(1, metrics?.actualProcessingTimeMs)).toFixed(1)}x faster than human`,
       },
       capabilities: {
         microPatternDetection:
@@ -422,59 +422,59 @@ router.get("/hyper/insights", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get hyper insights:");
-    res.status(500).json({ error: "Failed to get hyper insights" });
+    logger?.warn({ err: error }, "Failed to get hyper insights:");
+    res?.status(500).json({ error: "Failed to get hyper insights" });
   }
 });
 
-router.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
+router?.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { platform } = req.params;
+    const _userId = req?.user!.id;
+    const { platform } = req?.params;
 
-    const prediction = await hyperLearningEngine.predictOptimalContent(
+    const _prediction = await hyperLearningEngine?.predictOptimalContent(
       userId,
       platform,
     );
 
-    res.json({
+    res?.json({
       success: true,
       platform,
       prediction,
       explanation: {
-        timing: `Post on day ${prediction.optimalTiming.dayOfWeek} at ${prediction.optimalTiming.hour}:00 for best results`,
-        hook: `Start with a ${prediction.optimalHook} hook`,
-        length: `Keep content at ${prediction.optimalLength}`,
-        emojis: `Use ${prediction.optimalEmojiDensity}`,
+        timing: `Post on day ${prediction?.optimalTiming.dayOfWeek} at ${prediction?.optimalTiming.hour}:00 for best results`,
+        hook: `Start with a ${prediction?.optimalHook} hook`,
+        length: `Keep content at ${prediction?.optimalLength}`,
+        emojis: `Use ${prediction?.optimalEmojiDensity}`,
         hashtags:
-          prediction.optimalHashtagCount !== null
-            ? `Include ${prediction.optimalHashtagCount} hashtags`
+          prediction?.optimalHashtagCount !== null
+            ? `Include ${prediction?.optimalHashtagCount} hashtags`
             : "Hashtag count will be available once posting history is established",
-        expectedEngagement: `Predicted engagement rate: ${prediction.predictedEngagement.toFixed(2)}%`,
+        expectedEngagement: `Predicted engagement rate: ${prediction?.predictedEngagement.toFixed(2)}%`,
       },
-      microPatternRecommendations: prediction.microPatternRecommendations,
+      microPatternRecommendations: prediction?.microPatternRecommendations,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to predict optimal content:");
-    res.status(500).json({ error: "Failed to predict optimal content" });
+    logger?.warn({ err: error }, "Failed to predict optimal content:");
+    res?.status(500).json({ error: "Failed to predict optimal content" });
   }
 });
 
-router.get("/hyper/metrics", requireAuth, async (_req, res) => {
+router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
   try {
-    const metrics = hyperLearningEngine.getMetrics();
+    const _metrics = hyperLearningEngine?.getMetrics();
 
-    res.json({
+    res?.json({
       success: true,
       metrics,
       analysis: {
         patternsPerHour:
-          metrics.patternsDetected /
-          Math.max(1, metrics.actualProcessingTimeMs / 3600000),
+          metrics?.patternsDetected /
+          Math?.max(1, metrics?.actualProcessingTimeMs / 3600000),
         dataPointsPerSecond:
-          metrics.totalDataPointsProcessed /
-          Math.max(1, metrics.actualProcessingTimeMs / 1000),
-        microPatternDepth: metrics.microPatternsFound,
+          metrics?.totalDataPointsProcessed /
+          Math?.max(1, metrics?.actualProcessingTimeMs / 1000),
+        microPatternDepth: metrics?.microPatternsFound,
         predictionAccuracy: "Improving with each learning cycle",
       },
       comparison: {
@@ -485,9 +485,9 @@ router.get("/hyper/metrics", requireAuth, async (_req, res) => {
           breakRequired: true,
         },
         hyperLearning: {
-          patternsPerHour: Math.round(
-            metrics.patternsDetected /
-              Math.max(1, metrics.actualProcessingTimeMs / 3600000),
+          patternsPerHour: Math?.round(
+            metrics?.patternsDetected /
+              Math?.max(1, metrics?.actualProcessingTimeMs / 3600000),
           ),
           dimensionsAnalyzed: 15,
           workHoursPerDay: 24,
@@ -496,38 +496,38 @@ router.get("/hyper/metrics", requireAuth, async (_req, res) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get hyper metrics:");
-    res.status(500).json({ error: "Failed to get hyper metrics" });
+    logger?.warn({ err: error }, "Failed to get hyper metrics:");
+    res?.status(500).json({ error: "Failed to get hyper metrics" });
   }
 });
 
-router.post("/hyper/start", requireAuth, async (_req, res) => {
+router?.post("/hyper/start", requireAuth, async (_req, res) => {
   try {
-    await hyperLearningEngine.start();
-    const status = hyperLearningEngine.getStatus();
+    await hyperLearningEngine?.start();
+    const _status = hyperLearningEngine?.getStatus();
 
-    res.json({
+    res?.json({
       success: true,
       message: "HyperLearning Engine started",
       status,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to start hyper learning:");
-    res.status(500).json({ error: "Failed to start hyper learning" });
+    logger?.warn({ err: error }, "Failed to start hyper learning:");
+    res?.status(500).json({ error: "Failed to start hyper learning" });
   }
 });
 
-router.post("/hyper/stop", requireAuth, async (_req, res) => {
+router?.post("/hyper/stop", requireAuth, async (_req, res) => {
   try {
-    await hyperLearningEngine.stop();
+    await hyperLearningEngine?.stop();
 
-    res.json({
+    res?.json({
       success: true,
       message: "HyperLearning Engine stopped",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to stop hyper learning:");
-    res.status(500).json({ error: "Failed to stop hyper learning" });
+    logger?.warn({ err: error }, "Failed to stop hyper learning:");
+    res?.status(500).json({ error: "Failed to stop hyper learning" });
   }
 });
 

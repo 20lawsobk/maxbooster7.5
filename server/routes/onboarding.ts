@@ -1,127 +1,127 @@
 import { Router } from "express";
-import { onboardingService } from "../services/onboardingService.js";
-import { db } from "../db.js";
-import { users } from "../../shared/schema.js";
+import { onboardingService } from "../services/onboardingService?.js";
+import { db } from "../db?.js";
+import { users } from "../../shared/schema?.js";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger.js";
-import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth?.js";
 
-const router = Router();
+const _router = Router();
 
-router.get("/progress", requireAuth, async (req, res) => {
+router?.get("/progress", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const progress = await onboardingService.getOnboardingProgress(userId);
-    res.json(progress);
+    const _progress = await onboardingService?.getOnboardingProgress(userId);
+    res?.json(progress);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching onboarding progress:");
-    res.status(500).json({ error: "Failed to fetch onboarding progress" });
+    logger?.warn({ err: error }, "Error fetching onboarding progress:");
+    res?.status(500).json({ error: "Failed to fetch onboarding progress" });
   }
 });
 
-router.post("/complete-step", requireAuth, async (req, res) => {
+router?.post("/complete-step", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const { stepId } = req.body;
+    const { stepId } = req?.body;
     if (!stepId) {
-      return res.status(400).json({ error: "stepId is required" });
+      return res?.status(400).json({ error: "stepId is required" });
     }
 
-    const result = await onboardingService.completeStep(userId, stepId);
-    res.json(result);
+    const _result = await onboardingService?.completeStep(userId, stepId);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error completing onboarding step:");
-    res.status(500).json({ error: "Failed to complete step" });
+    logger?.warn({ err: error }, "Error completing onboarding step:");
+    res?.status(500).json({ error: "Failed to complete step" });
   }
 });
 
-router.post("/skip", requireAuth, async (req, res) => {
+router?.post("/skip", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const result = await onboardingService.skipOnboarding(userId);
-    res.json(result);
+    const _result = await onboardingService?.skipOnboarding(userId);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "Error skipping onboarding:");
-    res.status(500).json({ error: "Failed to skip onboarding" });
+    logger?.warn({ err: error }, "Error skipping onboarding:");
+    res?.status(500).json({ error: "Failed to skip onboarding" });
   }
 });
 
-router.get("/recommended-step", requireAuth, async (req, res) => {
+router?.get("/recommended-step", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const step = await onboardingService.getRecommendedNextStep(userId);
-    res.json({ recommendedStep: step });
+    const _step = await onboardingService?.getRecommendedNextStep(userId);
+    res?.json({ recommendedStep: step });
   } catch (error) {
-    logger.warn({ err: error }, "Error getting recommended step:");
-    res.status(500).json({ error: "Failed to get recommended step" });
+    logger?.warn({ err: error }, "Error getting recommended step:");
+    res?.status(500).json({ error: "Failed to get recommended step" });
   }
 });
 
-router.get("/tasks", requireAuth, async (_req, res) => {
+router?.get("/tasks", requireAuth, async (_req, res) => {
   try {
-    const tasks = await onboardingService.getTasks();
-    res.json({ tasks });
+    const _tasks = await onboardingService?.getTasks();
+    res?.json({ tasks });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching onboarding tasks:");
-    res.status(500).json({ error: "Failed to fetch tasks" });
+    logger?.warn({ err: error }, "Error fetching onboarding tasks:");
+    res?.status(500).json({ error: "Failed to fetch tasks" });
   }
 });
 
-router.post("/seed", requireAuth, async (req, res) => {
-  if (!req.user?.isAdmin) {
-    return res.status(403).json({ error: "Forbidden" });
+router?.post("/seed", requireAuth, async (req, res) => {
+  if (!req?.user?.isAdmin) {
+    return res?.status(403).json({ error: "Forbidden" });
   }
   try {
-    await onboardingService.seedDefaultTasks();
-    res.json({
+    await onboardingService?.seedDefaultTasks();
+    res?.json({
       success: true,
       message: "Onboarding tasks seeded successfully",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error seeding onboarding tasks:");
-    res.status(500).json({ error: "Failed to seed tasks" });
+    logger?.warn({ err: error }, "Error seeding onboarding tasks:");
+    res?.status(500).json({ error: "Failed to seed tasks" });
   }
 });
 
-router.get("/status", async (_req, res) => {
+router?.get("/status", async (_req, res) => {
   try {
-    const tasks = await onboardingService.getTasks();
-    res.json({
+    const _tasks = await onboardingService?.getTasks();
+    res?.json({
       status: "active",
       totalTasks: tasks?.length || 0,
-      version: "1.0.0",
+      version: "1?.0.0",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching onboarding status:");
-    res.status(500).json({ error: "Failed to fetch status" });
+    logger?.warn({ err: error }, "Error fetching onboarding status:");
+    res?.status(500).json({ error: "Failed to fetch status" });
   }
 });
 
-router.post("/complete-welcome", requireAuth, async (req, res) => {
+router?.post("/complete-welcome", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
     const { displayName, bio, avatarUrl, genres, interests, artistType } =
-      req.body;
+      req?.body;
 
     await db
       .update(users)
@@ -137,28 +137,28 @@ router.post("/complete-welcome", requireAuth, async (req, res) => {
           completedAt: new Date().toISOString(),
         },
       })
-      .where(eq(users.id, userId));
+      .where(eq(users?.id, userId));
 
-    logger.info(`Welcome flow completed for user ${userId}`);
+    logger?.info(`Welcome flow completed for user ${userId}`);
 
-    res.json({
+    res?.json({
       success: true,
       message: "Welcome flow completed successfully",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error completing welcome flow:");
-    res.status(500).json({ error: "Failed to complete welcome flow" });
+    logger?.warn({ err: error }, "Error completing welcome flow:");
+    res?.status(500).json({ error: "Failed to complete welcome flow" });
   }
 });
 
-router.post("/track-tutorial", requireAuth, async (req, res) => {
+router?.post("/track-tutorial", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const { tutorialId, stepId, completed } = req.body;
+    const { tutorialId, stepId, completed } = req?.body;
 
     if (!tutorialId || !stepId) {
       return res
@@ -169,23 +169,23 @@ router.post("/track-tutorial", requireAuth, async (req, res) => {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const tutorialProgress =
+    const _tutorialProgress =
       (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
-    const tutorialData = tutorialProgress[tutorialId] || {
+    const _tutorialData = tutorialProgress[tutorialId] || {
       completedSteps: [],
       startedAt: null,
       completedAt: null,
     };
 
-    if (!tutorialData.startedAt) {
-      tutorialData.startedAt = new Date().toISOString();
+    if (!tutorialData?.startedAt) {
+      tutorialData?.startedAt = new Date().toISOString();
     }
 
-    if (completed && !tutorialData.completedSteps.includes(stepId)) {
-      tutorialData.completedSteps.push(stepId);
+    if (completed && !tutorialData?.completedSteps.includes(stepId)) {
+      tutorialData?.completedSteps.push(stepId);
     }
 
     tutorialProgress[tutorialId] = tutorialData;
@@ -198,13 +198,13 @@ router.post("/track-tutorial", requireAuth, async (req, res) => {
           tutorials: tutorialProgress,
         },
       })
-      .where(eq(users.id, userId));
+      .where(eq(users?.id, userId));
 
-    logger.info(
+    logger?.info(
       `Tutorial ${tutorialId} step ${stepId} tracked for user ${userId}`,
     );
 
-    res.json({
+    res?.json({
       success: true,
       tutorialId,
       stepId,
@@ -212,39 +212,39 @@ router.post("/track-tutorial", requireAuth, async (req, res) => {
       progress: tutorialData,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error tracking tutorial progress:");
-    res.status(500).json({ error: "Failed to track tutorial progress" });
+    logger?.warn({ err: error }, "Error tracking tutorial progress:");
+    res?.status(500).json({ error: "Failed to track tutorial progress" });
   }
 });
 
-router.post("/skip-tutorial", requireAuth, async (req, res) => {
+router?.post("/skip-tutorial", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const { tutorialId, showAgainLater } = req.body;
+    const { tutorialId, showAgainLater } = req?.body;
 
     if (!tutorialId) {
-      return res.status(400).json({ error: "tutorialId is required" });
+      return res?.status(400).json({ error: "tutorialId is required" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const tutorialProgress =
+    const _tutorialProgress =
       (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
-    const tutorialData = tutorialProgress[tutorialId] || {
+    const _tutorialData = tutorialProgress[tutorialId] || {
       completedSteps: [],
       startedAt: null,
     };
 
-    tutorialData.skippedAt = new Date().toISOString();
-    tutorialData.showAgainLater = showAgainLater || false;
+    tutorialData?.skippedAt = new Date().toISOString();
+    tutorialData?.showAgainLater = showAgainLater || false;
 
     tutorialProgress[tutorialId] = tutorialData;
 
@@ -256,66 +256,66 @@ router.post("/skip-tutorial", requireAuth, async (req, res) => {
           tutorials: tutorialProgress,
         },
       })
-      .where(eq(users.id, userId));
+      .where(eq(users?.id, userId));
 
-    logger.info(`Tutorial ${tutorialId} skipped for user ${userId}`);
+    logger?.info(`Tutorial ${tutorialId} skipped for user ${userId}`);
 
-    res.json({
+    res?.json({
       success: true,
       tutorialId,
       showAgainLater,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error skipping tutorial:");
-    res.status(500).json({ error: "Failed to skip tutorial" });
+    logger?.warn({ err: error }, "Error skipping tutorial:");
+    res?.status(500).json({ error: "Failed to skip tutorial" });
   }
 });
 
-router.get("/tutorials", requireAuth, async (req, res) => {
+router?.get("/tutorials", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const tutorialProgress =
+    const _tutorialProgress =
       (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
 
-    res.json({
+    res?.json({
       tutorials: tutorialProgress,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching tutorial progress:");
-    res.status(500).json({ error: "Failed to fetch tutorial progress" });
+    logger?.warn({ err: error }, "Error fetching tutorial progress:");
+    res?.status(500).json({ error: "Failed to fetch tutorial progress" });
   }
 });
 
-router.post("/mark-celebrated", requireAuth, async (req, res) => {
+router?.post("/mark-celebrated", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const { actionType } = req.body;
+    const { actionType } = req?.body;
 
     if (!actionType) {
-      return res.status(400).json({ error: "actionType is required" });
+      return res?.status(400).json({ error: "actionType is required" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const celebrations =
+    const _celebrations =
       (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
     celebrations[actionType] = {
       celebratedAt: new Date().toISOString(),
@@ -329,96 +329,96 @@ router.post("/mark-celebrated", requireAuth, async (req, res) => {
           celebrations,
         },
       })
-      .where(eq(users.id, userId));
+      .where(eq(users?.id, userId));
 
-    logger.info(`First action ${actionType} celebrated for user ${userId}`);
+    logger?.info(`First action ${actionType} celebrated for user ${userId}`);
 
-    res.json({
+    res?.json({
       success: true,
       actionType,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error marking celebration:");
-    res.status(500).json({ error: "Failed to mark celebration" });
+    logger?.warn({ err: error }, "Error marking celebration:");
+    res?.status(500).json({ error: "Failed to mark celebration" });
   }
 });
 
-router.get("/first-actions", requireAuth, async (req, res) => {
+router?.get("/first-actions", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const celebrations =
+    const _celebrations =
       (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
 
-    res.json({
+    res?.json({
       celebrations,
       pending: {
-        first_track_upload: !celebrations.first_track_upload,
-        first_post_scheduled: !celebrations.first_post_scheduled,
-        first_beat_listed: !celebrations.first_beat_listed,
-        first_payout: !celebrations.first_payout,
-        first_collaboration: !celebrations.first_collaboration,
-        first_release: !celebrations.first_release,
-        profile_complete: !celebrations.profile_complete,
-        social_connected: !celebrations.social_connected,
+        first_track_upload: !celebrations?.first_track_upload,
+        first_post_scheduled: !celebrations?.first_post_scheduled,
+        first_beat_listed: !celebrations?.first_beat_listed,
+        first_payout: !celebrations?.first_payout,
+        first_collaboration: !celebrations?.first_collaboration,
+        first_release: !celebrations?.first_release,
+        profile_complete: !celebrations?.profile_complete,
+        social_connected: !celebrations?.social_connected,
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching first actions:");
-    res.status(500).json({ error: "Failed to fetch first actions" });
+    logger?.warn({ err: error }, "Error fetching first actions:");
+    res?.status(500).json({ error: "Failed to fetch first actions" });
   }
 });
 
-router.get("/check-first-login", requireAuth, async (req, res) => {
+router?.get("/check-first-login", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const onboardingData = user?.onboardingData as Record<string, unknown>;
-    const isFirstLogin = !onboardingData?.welcomeCompleted;
-    const hasCompletedOnboarding = user?.onboardingCompleted || false;
+    const _onboardingData = user?.onboardingData as Record<string, unknown>;
+    const _isFirstLogin = !onboardingData?.welcomeCompleted;
+    const _hasCompletedOnboarding = user?.onboardingCompleted || false;
 
-    res.json({
+    res?.json({
       isFirstLogin,
       hasCompletedOnboarding,
       showWelcomeWizard: isFirstLogin && !hasCompletedOnboarding,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error checking first login:");
-    res.status(500).json({ error: "Failed to check first login" });
+    logger?.warn({ err: error }, "Error checking first login:");
+    res?.status(500).json({ error: "Failed to check first login" });
   }
 });
 
-router.post("/dismiss-reminder", requireAuth, async (req, res) => {
+router?.post("/dismiss-reminder", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const { remindLater } = req.body;
+    const { remindLater } = req?.body;
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
     await db
@@ -429,23 +429,23 @@ router.post("/dismiss-reminder", requireAuth, async (req, res) => {
           reminderDismissedAt: new Date().toISOString(),
           remindLater: remindLater || false,
           remindAt: remindLater
-            ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            ? new Date(Date?.now() + 24 * 60 * 60 * 1000).toISOString()
             : null,
         },
       })
-      .where(eq(users.id, userId));
+      .where(eq(users?.id, userId));
 
-    res.json({
+    res?.json({
       success: true,
       remindLater,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error dismissing reminder:");
-    res.status(500).json({ error: "Failed to dismiss reminder" });
+    logger?.warn({ err: error }, "Error dismissing reminder:");
+    res?.status(500).json({ error: "Failed to dismiss reminder" });
   }
 });
 
-const DEFAULT_ACHIEVEMENTS = [
+const _DEFAULT_ACHIEVEMENTS = [
   {
     id: "profile_complete",
     name: "Profile Pro",
@@ -562,27 +562,27 @@ const DEFAULT_ACHIEVEMENTS = [
   },
 ];
 
-router.get("/achievements", requireAuth, async (req, res) => {
+router?.get("/achievements", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const unlockedAchievements =
+    const _unlockedAchievements =
       (user?.onboardingData as Record<string, unknown>)?.achievements || {};
-    const celebrations =
+    const _celebrations =
       (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
 
-    const achievements = DEFAULT_ACHIEVEMENTS.map((achievement) => {
-      const unlocked =
-        unlockedAchievements[achievement.id] || celebrations[achievement.id];
+    const _achievements = DEFAULT_ACHIEVEMENTS?.map((achievement) => {
+      const _unlocked =
+        unlockedAchievements[achievement?.id] || celebrations[achievement?.id];
       return {
         ...achievement,
         unlockedAt: unlocked?.unlockedAt || unlocked?.celebratedAt || null,
@@ -591,74 +591,74 @@ router.get("/achievements", requireAuth, async (req, res) => {
       };
     });
 
-    const totalPoints = achievements
-      .filter((a) => a.unlockedAt)
-      .reduce((sum, a) => sum + a.points, 0);
+    const _totalPoints = achievements
+      .filter((a) => a?.unlockedAt)
+      .reduce((sum, a) => sum + a?.points, 0);
 
-    const stats = {
-      total: achievements.length,
-      unlocked: achievements.filter((a) => a.unlockedAt).length,
+    const _stats = {
+      total: achievements?.length,
+      unlocked: achievements?.filter((a) => a?.unlockedAt).length,
       totalPoints,
       byCategory: {
-        onboarding: achievements.filter((a) => a.category === "onboarding"),
-        studio: achievements.filter((a) => a.category === "studio"),
-        distribution: achievements.filter((a) => a.category === "distribution"),
-        social: achievements.filter((a) => a.category === "social"),
-        marketplace: achievements.filter((a) => a.category === "marketplace"),
-        collaboration: achievements.filter(
-          (a) => a.category === "collaboration",
+        onboarding: achievements?.filter((a) => a?.category === "onboarding"),
+        studio: achievements?.filter((a) => a?.category === "studio"),
+        distribution: achievements?.filter((a) => a?.category === "distribution"),
+        social: achievements?.filter((a) => a?.category === "social"),
+        marketplace: achievements?.filter((a) => a?.category === "marketplace"),
+        collaboration: achievements?.filter(
+          (a) => a?.category === "collaboration",
         ),
-        streak: achievements.filter((a) => a.category === "streak"),
+        streak: achievements?.filter((a) => a?.category === "streak"),
       },
       byRarity: {
-        common: achievements.filter((a) => a.rarity === "common"),
-        rare: achievements.filter((a) => a.rarity === "rare"),
-        epic: achievements.filter((a) => a.rarity === "epic"),
-        legendary: achievements.filter((a) => a.rarity === "legendary"),
+        common: achievements?.filter((a) => a?.rarity === "common"),
+        rare: achievements?.filter((a) => a?.rarity === "rare"),
+        epic: achievements?.filter((a) => a?.rarity === "epic"),
+        legendary: achievements?.filter((a) => a?.rarity === "legendary"),
       },
     };
 
-    res.json({
+    res?.json({
       achievements,
       stats,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching achievements:");
-    res.status(500).json({ error: "Failed to fetch achievements" });
+    logger?.warn({ err: error }, "Error fetching achievements:");
+    res?.status(500).json({ error: "Failed to fetch achievements" });
   }
 });
 
-router.post("/unlock-achievement", requireAuth, async (req, res) => {
+router?.post("/unlock-achievement", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
-    const { achievementId } = req.body;
+    const { achievementId } = req?.body;
 
     if (!achievementId) {
-      return res.status(400).json({ error: "achievementId is required" });
+      return res?.status(400).json({ error: "achievementId is required" });
     }
 
-    const achievement = DEFAULT_ACHIEVEMENTS.find(
-      (a) => a.id === achievementId,
+    const _achievement = DEFAULT_ACHIEVEMENTS?.find(
+      (a) => a?.id === achievementId,
     );
     if (!achievement) {
-      return res.status(404).json({ error: "Achievement not found" });
+      return res?.status(404).json({ error: "Achievement not found" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    const achievements =
+    const _achievements =
       (user?.onboardingData as Record<string, unknown>)?.achievements || {};
 
     if (achievements[achievementId]?.unlockedAt) {
-      return res.json({
+      return res?.json({
         success: true,
         alreadyUnlocked: true,
         achievement: {
@@ -680,11 +680,11 @@ router.post("/unlock-achievement", requireAuth, async (req, res) => {
           achievements,
         },
       })
-      .where(eq(users.id, userId));
+      .where(eq(users?.id, userId));
 
-    logger.info(`Achievement ${achievementId} unlocked for user ${userId}`);
+    logger?.info(`Achievement ${achievementId} unlocked for user ${userId}`);
 
-    res.json({
+    res?.json({
       success: true,
       achievement: {
         ...achievement,
@@ -692,57 +692,57 @@ router.post("/unlock-achievement", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error unlocking achievement:");
-    res.status(500).json({ error: "Failed to unlock achievement" });
+    logger?.warn({ err: error }, "Error unlocking achievement:");
+    res?.status(500).json({ error: "Failed to unlock achievement" });
   }
 });
 
-router.get("/profile/completion", requireAuth, async (req, res) => {
+router?.get("/profile/completion", requireAuth, async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
+      return res?.status(401).json({ error: "User not authenticated" });
     }
 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
     if (!user) {
-      return res.status(404).json({ error: "User not found" });
+      return res?.status(404).json({ error: "User not found" });
     }
 
-    const onboardingData = (user.onboardingData as unknown) || {};
+    const _onboardingData = (user?.onboardingData as unknown) || {};
 
-    const completion = {
-      emailVerified: user.emailVerified || false,
-      artistType: onboardingData.artistType || null,
-      genres: onboardingData.genres || [],
-      hasPhoto: !!user.avatarUrl,
-      bio: user.bio || null,
-      socialLinks: onboardingData.socialLinks || [],
+    const _completion = {
+      emailVerified: user?.emailVerified || false,
+      artistType: onboardingData?.artistType || null,
+      genres: onboardingData?.genres || [],
+      hasPhoto: !!user?.avatarUrl,
+      bio: user?.bio || null,
+      socialLinks: onboardingData?.socialLinks || [],
     };
 
     let completedSteps = 0;
-    const totalSteps = 6;
+    const _totalSteps = 6;
 
-    if (completion.emailVerified) completedSteps++;
-    if (completion.artistType) completedSteps++;
-    if (completion.genres.length > 0) completedSteps++;
-    if (completion.hasPhoto) completedSteps++;
-    if (completion.bio && completion.bio.length > 20) completedSteps++;
-    if (completion.socialLinks.length > 0) completedSteps++;
+    if (completion?.emailVerified) completedSteps++;
+    if (completion?.artistType) completedSteps++;
+    if (completion?.genres.length > 0) completedSteps++;
+    if (completion?.hasPhoto) completedSteps++;
+    if (completion?.bio && completion?.bio.length > 20) completedSteps++;
+    if (completion?.socialLinks.length > 0) completedSteps++;
 
-    res.json({
+    res?.json({
       ...completion,
-      completionPercentage: Math.round((completedSteps / totalSteps) * 100),
+      completionPercentage: Math?.round((completedSteps / totalSteps) * 100),
       totalPoints: completedSteps * 25,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching profile completion:");
-    res.status(500).json({ error: "Failed to fetch profile completion" });
+    logger?.warn({ err: error }, "Error fetching profile completion:");
+    res?.status(500).json({ error: "Failed to fetch profile completion" });
   }
 });
 

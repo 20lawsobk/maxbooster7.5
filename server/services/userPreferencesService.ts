@@ -254,37 +254,37 @@ class UserPreferencesService {
 
   async getUserPreferences(userId: string): Promise<UserPreferences | null> {
     try {
-      const redis = await getRedisClient();
+      const _redis = await getRedisClient();
       if (redis) {
-        const cached = await redis.get(`${this.CACHE_PREFIX}${userId}`);
+        const _cached = await redis?.get(`${this?.CACHE_PREFIX}${userId}`);
         if (cached) {
-          return JSON.parse(cached);
+          return JSON?.parse(cached);
         }
       }
 
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
       if (!user) return null;
 
-      const preferences =
-        (user.preferences as UserPreferences) ||
-        this.getDefaultPreferences("solo", "emerging");
+      const _preferences =
+        (user?.preferences as UserPreferences) ||
+        this?.getDefaultPreferences("solo", "emerging");
 
       if (redis) {
-        await redis.setEx(
-          `${this.CACHE_PREFIX}${userId}`,
-          this.CACHE_TTL,
-          JSON.stringify(preferences),
+        await redis?.setEx(
+          `${this?.CACHE_PREFIX}${userId}`,
+          this?.CACHE_TTL,
+          JSON?.stringify(preferences),
         );
       }
 
       return preferences;
     } catch (error) {
-      logger.warn({ err: error }, "Error getting user preferences:");
-      return this.getDefaultPreferences("solo", "emerging");
+      logger?.warn({ err: error }, "Error getting user preferences:");
+      return this?.getDefaultPreferences("solo", "emerging");
     }
   }
 
@@ -293,28 +293,28 @@ class UserPreferencesService {
     updates: Partial<UserPreferences>,
   ): Promise<UserPreferences> {
     try {
-      const current =
-        (await this.getUserPreferences(userId)) ||
-        this.getDefaultPreferences("solo", "emerging");
-      const updated = this.deepMerge(current, updates);
+      const _current =
+        (await this?.getUserPreferences(userId)) ||
+        this?.getDefaultPreferences("solo", "emerging");
+      const _updated = this?.deepMerge(current, updates);
 
       await db
         .update(users)
         .set({ preferences: updated as Record<string, unknown> })
-        .where(eq(users.id, userId));
+        .where(eq(users?.id, userId));
 
-      const redis = await getRedisClient();
+      const _redis = await getRedisClient();
       if (redis) {
-        await redis.setEx(
-          `${this.CACHE_PREFIX}${userId}`,
-          this.CACHE_TTL,
-          JSON.stringify(updated),
+        await redis?.setEx(
+          `${this?.CACHE_PREFIX}${userId}`,
+          this?.CACHE_TTL,
+          JSON?.stringify(updated),
         );
       }
 
       return updated;
     } catch (error) {
-      logger.warn({ err: error }, "Error updating user preferences:");
+      logger?.warn({ err: error }, "Error updating user preferences:");
       throw error;
     }
   }
@@ -358,11 +358,11 @@ class UserPreferencesService {
       betaFeatures: false,
     };
 
-    const artistDefaults = ARTIST_TYPE_DEFAULTS[artistType] || {};
-    const stageModifiers = CAREER_STAGE_MODIFIERS[careerStage] || {};
+    const _artistDefaults = ARTIST_TYPE_DEFAULTS[artistType] || {};
+    const _stageModifiers = CAREER_STAGE_MODIFIERS[careerStage] || {};
 
-    return this.deepMerge(
-      this.deepMerge(baseDefaults, artistDefaults),
+    return this?.deepMerge(
+      this?.deepMerge(baseDefaults, artistDefaults),
       stageModifiers,
     );
   }
@@ -372,38 +372,38 @@ class UserPreferencesService {
     event: BehaviorEvent,
   ): Promise<void> {
     try {
-      const redis = await getRedisClient();
+      const _redis = await getRedisClient();
       if (!redis) return;
 
-      const key = `${this.BEHAVIOR_PREFIX}${userId}:${event.eventType}`;
-      const eventData = JSON.stringify({ ...event, timestamp: new Date() });
+      const _key = `${this?.BEHAVIOR_PREFIX}${userId}:${event?.eventType}`;
+      const _eventData = JSON?.stringify({ ...event, timestamp: new Date() });
 
-      await redis.lPush(key, eventData);
-      await redis.lTrim(key, 0, 99);
-      await redis.expire(key, 86400 * 30);
+      await redis?.lPush(key, eventData);
+      await redis?.lTrim(key, 0, 99);
+      await redis?.expire(key, 86400 * 30);
     } catch (error) {
-      logger.warn({ err: error }, "Error recording behavior event:");
+      logger?.warn({ err: error }, "Error recording behavior event:");
     }
   }
 
   async learnFromBehavior(userId: string): Promise<PreferenceRecommendation[]> {
     try {
-      const redis = await getRedisClient();
+      const _redis = await getRedisClient();
       if (!redis) return [];
 
       const recommendations: PreferenceRecommendation[] = [];
-      const preferences = await this.getUserPreferences(userId);
+      const _preferences = await this?.getUserPreferences(userId);
       if (!preferences) return [];
 
-      const featureUsage = await this.analyzeFeatureUsage(userId, redis);
-      const timePatterns = await this.analyzeTimePatterns(userId, redis);
-      const contentPatterns = await this.analyzeContentPatterns(userId, redis);
+      const _featureUsage = await this?.analyzeFeatureUsage(userId, redis);
+      const _timePatterns = await this?.analyzeTimePatterns(userId, redis);
+      const _contentPatterns = await this?.analyzeContentPatterns(userId, redis);
 
       if (
-        featureUsage.studioUsage > 0.7 &&
-        preferences.studioPreferences.autoSave === false
+        featureUsage?.studioUsage > 0?.7 &&
+        preferences?.studioPreferences.autoSave === false
       ) {
-        recommendations.push({
+        recommendations?.push({
           category: "studio",
           recommendation: "Enable auto-save for your studio projects",
           reason:
@@ -415,21 +415,21 @@ class UserPreferencesService {
       }
 
       if (
-        timePatterns.peakHour &&
-        !preferences.contentPreferences.preferredPostingTimes.includes(
-          `${timePatterns.peakHour}:00`,
+        timePatterns?.peakHour &&
+        !preferences?.contentPreferences.preferredPostingTimes?.includes(
+          `${timePatterns?.peakHour}:00`,
         )
       ) {
-        recommendations.push({
+        recommendations?.push({
           category: "content",
-          recommendation: `Consider posting around ${timePatterns.peakHour}:00`,
+          recommendation: `Consider posting around ${timePatterns?.peakHour}:00`,
           reason: "This aligns with when your content gets the most engagement",
           priority: "medium",
           actionable: true,
           suggestedValue: {
             preferredPostingTimes: [
-              `${timePatterns.peakHour}:00`,
-              ...preferences.contentPreferences.preferredPostingTimes.slice(
+              `${timePatterns?.peakHour}:00`,
+              ...preferences?.contentPreferences.preferredPostingTimes?.slice(
                 0,
                 2,
               ),
@@ -439,31 +439,31 @@ class UserPreferencesService {
       }
 
       if (
-        contentPatterns.topContentType &&
-        !preferences.contentPreferences.contentTypes.includes(
-          contentPatterns.topContentType,
+        contentPatterns?.topContentType &&
+        !preferences?.contentPreferences.contentTypes?.includes(
+          contentPatterns?.topContentType,
         )
       ) {
-        recommendations.push({
+        recommendations?.push({
           category: "content",
-          recommendation: `Add "${contentPatterns.topContentType}" to your content types`,
+          recommendation: `Add "${contentPatterns?.topContentType}" to your content types`,
           reason: "This content type performs well based on your activity",
           priority: "medium",
           actionable: true,
           suggestedValue: {
             contentTypes: [
-              ...preferences.contentPreferences.contentTypes,
-              contentPatterns.topContentType,
+              ...preferences?.contentPreferences.contentTypes,
+              contentPatterns?.topContentType,
             ],
           },
         });
       }
 
       if (
-        featureUsage.aiUsage < 0.2 &&
-        preferences.aiAssistantLevel !== "minimal"
+        featureUsage?.aiUsage < 0?.2 &&
+        preferences?.aiAssistantLevel !== "minimal"
       ) {
-        recommendations.push({
+        recommendations?.push({
           category: "ai",
           recommendation: "Consider trying our AI assistant features",
           reason:
@@ -475,7 +475,7 @@ class UserPreferencesService {
 
       return recommendations;
     } catch (error) {
-      logger.warn({ err: error }, "Error learning from behavior:");
+      logger?.warn({ err: error }, "Error learning from behavior:");
       return [];
     }
   }
@@ -483,14 +483,14 @@ class UserPreferencesService {
   async getPreferenceRecommendations(
     userId: string,
   ): Promise<PreferenceRecommendation[]> {
-    const behaviorRecommendations = await this.learnFromBehavior(userId);
-    const preferences = await this.getUserPreferences(userId);
+    const _behaviorRecommendations = await this?.learnFromBehavior(userId);
+    const _preferences = await this?.getUserPreferences(userId);
     if (!preferences) return behaviorRecommendations;
 
     const generalRecommendations: PreferenceRecommendation[] = [];
 
-    if (preferences.genres.length === 0) {
-      generalRecommendations.push({
+    if (preferences?.genres.length === 0) {
+      generalRecommendations?.push({
         category: "profile",
         recommendation: "Add your primary genres to get better recommendations",
         reason: "Genre information helps us tailor content suggestions",
@@ -499,8 +499,8 @@ class UserPreferencesService {
       });
     }
 
-    if (preferences.targetAudience.regions.length === 0) {
-      generalRecommendations.push({
+    if (preferences?.targetAudience.regions?.length === 0) {
+      generalRecommendations?.push({
         category: "audience",
         recommendation: "Define your target audience regions",
         reason: "This helps optimize posting times and distribution",
@@ -510,9 +510,9 @@ class UserPreferencesService {
     }
 
     if (
-      preferences.dashboardLayout.widgets.filter((w) => w.visible).length < 3
+      preferences?.dashboardLayout.widgets?.filter((w) => w?.visible).length < 3
     ) {
-      generalRecommendations.push({
+      generalRecommendations?.push({
         category: "dashboard",
         recommendation: "Enable more dashboard widgets for a complete overview",
         reason: "More widgets help you track important metrics",
@@ -528,11 +528,11 @@ class UserPreferencesService {
     userId: string,
     layout: DashboardLayout,
   ): Promise<void> {
-    await this.updateUserPreferences(userId, { dashboardLayout: layout });
+    await this?.updateUserPreferences(userId, { dashboardLayout: layout });
   }
 
   async getDashboardLayout(userId: string): Promise<DashboardLayout> {
-    const preferences = await this.getUserPreferences(userId);
+    const _preferences = await this?.getUserPreferences(userId);
     return (
       preferences?.dashboardLayout || {
         preset: "standard",
@@ -545,13 +545,13 @@ class UserPreferencesService {
     userId: string,
     redis: Record<string, unknown>,
   ): Promise<{ studioUsage: number; aiUsage: number; socialUsage: number }> {
-    const studioEvents =
-      (await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:studio_action`)) || 0;
-    const aiEvents =
-      (await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:ai_action`)) || 0;
-    const socialEvents =
-      (await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:social_action`)) || 0;
-    const total = studioEvents + aiEvents + socialEvents || 1;
+    const _studioEvents =
+      (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:studio_action`)) || 0;
+    const _aiEvents =
+      (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:ai_action`)) || 0;
+    const _socialEvents =
+      (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:social_action`)) || 0;
+    const _total = studioEvents + aiEvents + socialEvents || 1;
 
     return {
       studioUsage: studioEvents / total,
@@ -564,25 +564,25 @@ class UserPreferencesService {
     userId: string,
     redis: Record<string, unknown>,
   ): Promise<{ peakHour: number | null }> {
-    const events = await redis.lRange(
-      `${this.BEHAVIOR_PREFIX}${userId}:login`,
+    const _events = await redis?.lRange(
+      `${this?.BEHAVIOR_PREFIX}${userId}:login`,
       0,
       -1,
     );
-    if (!events || events.length === 0) return { peakHour: null };
+    if (!events || events?.length === 0) return { peakHour: null };
 
     const hourCounts: Record<number, number> = {};
     for (const eventStr of events) {
       try {
-        const event = JSON.parse(eventStr);
-        const hour = new Date(event.timestamp).getHours();
+        const _event = JSON?.parse(eventStr);
+        const _hour = new Date(event?.timestamp).getHours();
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
       } catch {
         /* intentional: malformed event string → skipped */
       }
     }
 
-    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    const _peakHour = Object?.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
     return { peakHour: peakHour ? parseInt(peakHour[0]) : null };
   }
 
@@ -590,27 +590,27 @@ class UserPreferencesService {
     userId: string,
     redis: Record<string, unknown>,
   ): Promise<{ topContentType: string | null }> {
-    const events = await redis.lRange(
-      `${this.BEHAVIOR_PREFIX}${userId}:content_create`,
+    const _events = await redis?.lRange(
+      `${this?.BEHAVIOR_PREFIX}${userId}:content_create`,
       0,
       -1,
     );
-    if (!events || events.length === 0) return { topContentType: null };
+    if (!events || events?.length === 0) return { topContentType: null };
 
     const typeCounts: Record<string, number> = {};
     for (const eventStr of events) {
       try {
-        const event = JSON.parse(eventStr);
-        if (event.context?.contentType) {
-          typeCounts[event.context.contentType] =
-            (typeCounts[event.context.contentType] || 0) + 1;
+        const _event = JSON?.parse(eventStr);
+        if (event?.context?.contentType) {
+          typeCounts[event?.context.contentType] =
+            (typeCounts[event?.context.contentType] || 0) + 1;
         }
       } catch {
         /* intentional: malformed event string → skipped */
       }
     }
 
-    const topType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+    const _topType = Object?.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
     return { topContentType: topType ? topType[0] : null };
   }
 
@@ -618,14 +618,14 @@ class UserPreferencesService {
     target: T,
     source: Partial<T>,
   ): T {
-    const output = { ...target };
+    const _output = { ...target };
     for (const key in source) {
       if (
         source[key] &&
         typeof source[key] === "object" &&
-        !Array.isArray(source[key])
+        !Array?.isArray(source[key])
       ) {
-        output[key] = this.deepMerge(
+        output[key] = this?.deepMerge(
           target[key] || {},
           source[key] as Record<string, unknown>,
         );
@@ -637,4 +637,4 @@ class UserPreferencesService {
   }
 }
 
-export const userPreferencesService = new UserPreferencesService();
+export const _userPreferencesService = new UserPreferencesService();

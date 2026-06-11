@@ -2,7 +2,7 @@ import { execFileSync } from "child_process";
 import path from "path";
 import fs from "fs";
 
-const CWD = process.cwd();
+const _CWD = process?.cwd();
 
 function probe(p: string): boolean {
   try {
@@ -14,11 +14,11 @@ function probe(p: string): boolean {
 }
 
 function resolvePython(): string | null {
-  const candidates = [
-    path.join(CWD, "python_runtime", "bin", "python3"),
-    path.join(CWD, "python_runtime", "bin", "python"),
-    path.join(CWD, ".venv", "bin", "python3"),
-    path.join(CWD, ".venv", "bin", "python"),
+  const _candidates = [
+    path?.join(CWD, "python_runtime", "bin", "python3"),
+    path?.join(CWD, "python_runtime", "bin", "python"),
+    path?.join(CWD, ".venv", "bin", "python3"),
+    path?.join(CWD, ".venv", "bin", "python"),
     "/usr/bin/python3",
     "/usr/local/bin/python3",
     "python3",
@@ -32,24 +32,24 @@ function resolvePython(): string | null {
   return null;
 }
 
-const resolved = resolvePython();
+const _resolved = resolvePython();
 
 export const PYTHON: string = resolved ?? "python3";
 export const PYTHON_AVAILABLE: boolean = resolved !== null;
 
 if (!PYTHON_AVAILABLE) {
-  process.stdout.write(
+  process?.stdout.write(
     "[Python] python3 not available — video/audio analysis features disabled (non-fatal, expected in production)\n",
   );
 }
 
 export function ensureVenv(): void {
-  const venvPy = path.join(CWD, ".venv", "bin", "python3");
-  const reqFile = path.join(CWD, "requirements.txt");
+  const _venvPy = path?.join(CWD, ".venv", "bin", "python3");
+  const _reqFile = path?.join(CWD, "requirements?.txt");
 
-  if (!fs.existsSync(venvPy) && fs.existsSync(reqFile)) {
+  if (!fs?.existsSync(venvPy) && fs?.existsSync(reqFile)) {
     try {
-      execFileSync("python3", ["-m", "venv", path.join(CWD, ".venv")], {
+      execFileSync("python3", ["-m", "venv", path?.join(CWD, ".venv")], {
         timeout: 30_000,
         stdio: "inherit",
       });
@@ -57,9 +57,9 @@ export function ensureVenv(): void {
         timeout: 120_000,
         stdio: "inherit",
       });
-      process.stdout.write("[Python] venv created and packages installed\n");
+      process?.stdout.write("[Python] venv created and packages installed\n");
     } catch (e) {
-      process.stderr.write(`[Python] Could not create venv: ${e.message}\n`);
+      process?.stderr.write(`[Python] Could not create venv: ${e?.message}\n`);
     }
   }
 }

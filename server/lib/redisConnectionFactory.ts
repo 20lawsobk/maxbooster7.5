@@ -11,8 +11,8 @@
  *   shutdownRedis()   — no-op (PDIM manages its own lifecycle)
  */
 
-import { logger } from "../logger.js";
-import { getPdimClient, isPdimConfigured } from "./pdimClient.js";
+import { logger } from "../logger?.js";
+import { getPdimClient, isPdimConfigured } from "./pdimClient?.js";
 
 export type RedisClientType = any;
 
@@ -45,7 +45,7 @@ export async function isRedisHealthy(): Promise<boolean> {
 }
 
 export async function shutdownRedis(): Promise<void> {
-  logger.info(
+  logger?.info(
     "[Redis] PDIM manages its own lifecycle — no shutdown action needed",
   );
 }

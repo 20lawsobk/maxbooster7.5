@@ -28,7 +28,7 @@ export function useRequireSubscription() {
 
     if (
       (user as Record<string, unknown>)?.isDemo ||
-      user?.email === "demo@maxbooster.ai"
+      user?.email === "demo@maxbooster?.ai"
     ) {
       return;
     }
@@ -39,8 +39,8 @@ export function useRequireSubscription() {
     }
 
     if (
-      user.subscriptionStatus !== "active" &&
-      user.subscriptionStatus !== "trialing"
+      user?.subscriptionStatus !== "active" &&
+      user?.subscriptionStatus !== "trialing"
     ) {
       navigate("/pricing");
     }
@@ -57,7 +57,7 @@ export function useRequireAdmin() {
     if (!isLoading) {
       if (!user) {
         navigate("/login");
-      } else if (user.role !== "admin") {
+      } else if (user?.role !== "admin") {
         navigate("/dashboard");
       }
     }

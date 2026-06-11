@@ -81,10 +81,10 @@ const CODEC_MIME_TYPES: Record<string, string[]> = {
   vp9: ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp9"],
   vp8: ["video/webm;codecs=vp8,opus", "video/webm;codecs=vp8"],
   h264: [
-    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
-    "video/mp4;codecs=avc1.42E01E",
+    "video/mp4;codecs=avc1?.42E01E,mp4a?.40.2",
+    "video/mp4;codecs=avc1?.42E01E",
   ],
-  av1: ["video/webm;codecs=av01.0.04M.08", "video/mp4;codecs=av01.0.04M.08"],
+  av1: ["video/webm;codecs=av01?.0.04M?.08", "video/mp4;codecs=av01?.0.04M?.08"],
 };
 
 class BrowserCapabilitiesDetector {
@@ -92,32 +92,32 @@ class BrowserCapabilitiesDetector {
   private testCanvas: HTMLCanvasElement | null = null;
 
   async detect(): Promise<BrowserCapabilities> {
-    if (this.cachedCapabilities) {
-      return this.cachedCapabilities;
+    if (this?.cachedCapabilities) {
+      return this?.cachedCapabilities;
     }
 
-    this.testCanvas = document.createElement("canvas");
-    this.testCanvas.width = 1;
-    this.testCanvas.height = 1;
+    this?.testCanvas = document?.createElement("canvas");
+    this?.testCanvas.width = 1;
+    this?.testCanvas.height = 1;
 
-    const [webgl, canvas, media, audio, device] = await Promise.all([
-      this.detectWebGL(),
-      this.detectCanvas(),
-      this.detectMedia(),
-      this.detectAudio(),
-      this.detectDevice(),
+    const [webgl, canvas, media, audio, device] = await Promise?.all([
+      this?.detectWebGL(),
+      this?.detectCanvas(),
+      this?.detectMedia(),
+      this?.detectAudio(),
+      this?.detectDevice(),
     ]);
 
-    const overall = this.calculateOverall(webgl, canvas, media, audio, device);
+    const _overall = this?.calculateOverall(webgl, canvas, media, audio, device);
 
-    this.cachedCapabilities = { webgl, canvas, media, audio, device, overall };
-    this.testCanvas = null;
+    this?.cachedCapabilities = { webgl, canvas, media, audio, device, overall };
+    this?.testCanvas = null;
 
-    return this.cachedCapabilities;
+    return this?.cachedCapabilities;
   }
 
   private detectWebGL(): WebGLCapabilities {
-    const canvas = this.testCanvas!;
+    const _canvas = this?.testCanvas!;
 
     let webgl2 = false;
     let webgl1 = false;
@@ -130,33 +130,33 @@ class BrowserCapabilitiesDetector {
     let blendMinMax = false;
     let colorBufferFloat = false;
 
-    const gl2 = canvas.getContext("webgl2");
+    const _gl2 = canvas?.getContext("webgl2");
     if (gl2) {
       webgl2 = true;
       webgl1 = true;
-      maxTextureSize = gl2.getParameter(gl2.MAX_TEXTURE_SIZE);
-      maxTextureUnits = gl2.getParameter(gl2.MAX_TEXTURE_IMAGE_UNITS);
-      floatTextures = gl2.getExtension("EXT_color_buffer_float") !== null;
+      maxTextureSize = gl2?.getParameter(gl2?.MAX_TEXTURE_SIZE);
+      maxTextureUnits = gl2?.getParameter(gl2?.MAX_TEXTURE_IMAGE_UNITS);
+      floatTextures = gl2?.getExtension("EXT_color_buffer_float") !== null;
       depthTextures = true;
       vertexArrayObjects = true;
       instancedArrays = true;
       blendMinMax = true;
       colorBufferFloat = floatTextures;
     } else {
-      const gl1 =
-        canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+      const _gl1 =
+        canvas?.getContext("webgl") || canvas?.getContext("experimental-webgl");
       if (gl1) {
         webgl1 = true;
-        const gl = gl1 as WebGLRenderingContext;
-        maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-        maxTextureUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-        floatTextures = gl.getExtension("OES_texture_float") !== null;
-        depthTextures = gl.getExtension("WEBGL_depth_texture") !== null;
+        const _gl = gl1 as WebGLRenderingContext;
+        maxTextureSize = gl?.getParameter(gl?.MAX_TEXTURE_SIZE);
+        maxTextureUnits = gl?.getParameter(gl?.MAX_TEXTURE_IMAGE_UNITS);
+        floatTextures = gl?.getExtension("OES_texture_float") !== null;
+        depthTextures = gl?.getExtension("WEBGL_depth_texture") !== null;
         vertexArrayObjects =
-          gl.getExtension("OES_vertex_array_object") !== null;
-        instancedArrays = gl.getExtension("ANGLE_instanced_arrays") !== null;
-        blendMinMax = gl.getExtension("EXT_blend_minmax") !== null;
-        colorBufferFloat = gl.getExtension("WEBGL_color_buffer_float") !== null;
+          gl?.getExtension("OES_vertex_array_object") !== null;
+        instancedArrays = gl?.getExtension("ANGLE_instanced_arrays") !== null;
+        blendMinMax = gl?.getExtension("EXT_blend_minmax") !== null;
+        colorBufferFloat = gl?.getExtension("WEBGL_color_buffer_float") !== null;
       }
     }
 
@@ -175,15 +175,15 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectCanvas(): CanvasCapabilities {
-    const offscreenCanvas = typeof OffscreenCanvas !== "undefined";
+    const _offscreenCanvas = typeof OffscreenCanvas !== "undefined";
 
     let canvas2d = false;
     let willReadFrequently = false;
     try {
-      const ctx = this.testCanvas!.getContext("2d");
+      const _ctx = this?.testCanvas!.getContext("2d");
       canvas2d = ctx !== null;
       if (ctx) {
-        const testCtx = this.testCanvas!.getContext("2d", {
+        const _testCtx = this?.testCanvas!.getContext("2d", {
           willReadFrequently: true,
         });
         willReadFrequently = testCtx !== null;
@@ -192,12 +192,12 @@ class BrowserCapabilitiesDetector {
 
     let captureStream = false;
     try {
-      captureStream = typeof this.testCanvas!.captureStream === "function";
+      captureStream = typeof this?.testCanvas!.captureStream === "function";
     } catch {}
 
     let imageEncoding = false;
     try {
-      imageEncoding = typeof this.testCanvas!.toBlob === "function";
+      imageEncoding = typeof this?.testCanvas!.toBlob === "function";
     } catch {}
 
     return {
@@ -210,9 +210,9 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectMedia(): MediaCapabilities {
-    const mediaRecorder = typeof MediaRecorder !== "undefined";
+    const _mediaRecorder = typeof MediaRecorder !== "undefined";
 
-    const codecs = {
+    const _codecs = {
       vp9: false,
       vp8: false,
       h264: false,
@@ -222,18 +222,18 @@ class BrowserCapabilitiesDetector {
     const mimeTypes: string[] = [];
 
     if (mediaRecorder) {
-      for (const [codec, types] of Object.entries(CODEC_MIME_TYPES)) {
+      for (const [codec, types] of Object?.entries(CODEC_MIME_TYPES)) {
         for (const mimeType of types) {
-          if (MediaRecorder.isTypeSupported(mimeType)) {
+          if (MediaRecorder?.isTypeSupported(mimeType)) {
             codecs[codec as keyof typeof codecs] = true;
-            mimeTypes.push(mimeType);
+            mimeTypes?.push(mimeType);
             break;
           }
         }
       }
     }
 
-    const maxBitrate = this.estimateMaxBitrate();
+    const _maxBitrate = this?.estimateMaxBitrate();
 
     return {
       mediaRecorder,
@@ -244,12 +244,12 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectAudio(): AudioCapabilities {
-    const audioContext =
+    const _audioContext =
       typeof AudioContext !== "undefined" ||
       typeof (window as Record<string, unknown>).webkitAudioContext !==
         "undefined";
-    const offlineAudioContext = typeof OfflineAudioContext !== "undefined";
-    const audioWorklet =
+    const _offlineAudioContext = typeof OfflineAudioContext !== "undefined";
+    const _audioWorklet =
       audioContext && typeof AudioWorkletNode !== "undefined";
 
     let webAudioApi = false;
@@ -259,14 +259,13 @@ class BrowserCapabilitiesDetector {
 
     if (audioContext) {
       try {
-        const ctx = new (
-          AudioContext || (window as Record<string, unknown>).webkitAudioContext
-        )();
+        const _ctx = new (AudioContext ||
+          (window as Record<string, unknown>).webkitAudioContext)();
         webAudioApi = true;
-        mediaElementSource = typeof ctx.createMediaElementSource === "function";
-        analyserNode = typeof ctx.createAnalyser === "function";
-        decodeAudioData = typeof ctx.decodeAudioData === "function";
-        ctx.close();
+        mediaElementSource = typeof ctx?.createMediaElementSource === "function";
+        analyserNode = typeof ctx?.createAnalyser === "function";
+        decodeAudioData = typeof ctx?.decodeAudioData === "function";
+        ctx?.close();
       } catch {}
     }
 
@@ -282,15 +281,15 @@ class BrowserCapabilitiesDetector {
   }
 
   private async detectDevice(): Promise<DeviceCapabilities> {
-    const navigator_any = navigator as Record<string, unknown>;
-    const deviceMemory = navigator_any.deviceMemory ?? 4;
-    const hardwareConcurrency = navigator.hardwareConcurrency ?? 4;
+    const _navigator_any = navigator as Record<string, unknown>;
+    const _deviceMemory = navigator_any?.deviceMemory ?? 4;
+    const _hardwareConcurrency = navigator?.hardwareConcurrency ?? 4;
 
-    const isMobile =
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent,
+    const _isMobile =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i?.test(
+        navigator?.userAgent,
       );
-    const isLowPower = deviceMemory < 4 || hardwareConcurrency < 4;
+    const _isLowPower = deviceMemory < 4 || hardwareConcurrency < 4;
 
     let maxFrameRate = 60;
     let preferredResolution: "720p" | "1080p" | "4k" = "1080p";
@@ -304,8 +303,8 @@ class BrowserCapabilitiesDetector {
     }
 
     let supportsHDR = false;
-    if (typeof window.matchMedia === "function") {
-      supportsHDR = window.matchMedia("(dynamic-range: high)").matches;
+    if (typeof window?.matchMedia === "function") {
+      supportsHDR = window?.matchMedia("(dynamic-range: high)").matches;
     }
 
     return {
@@ -320,11 +319,11 @@ class BrowserCapabilitiesDetector {
   }
 
   private estimateMaxBitrate(): number {
-    const navigator_any = navigator as Record<string, unknown>;
-    const connection = navigator_any.connection;
+    const _navigator_any = navigator as Record<string, unknown>;
+    const _connection = navigator_any?.connection;
 
     if (connection) {
-      const effectiveType = connection.effectiveType;
+      const _effectiveType = connection?.effectiveType;
       switch (effectiveType) {
         case "slow-2g":
         case "2g":
@@ -351,34 +350,34 @@ class BrowserCapabilitiesDetector {
     let recommendedRenderer: "webgl2" | "webgl1" | "canvas2d" = "canvas2d";
     let maxSafeResolution = 720;
 
-    if (webgl.webgl2 && webgl.floatTextures && device.deviceMemory >= 8) {
+    if (webgl?.webgl2 && webgl?.floatTextures && device?.deviceMemory >= 8) {
       tier = "high";
       recommendedRenderer = "webgl2";
       maxSafeResolution = 2160;
-    } else if (webgl.webgl2 || (webgl.webgl1 && webgl.vertexArrayObjects)) {
+    } else if (webgl?.webgl2 || (webgl?.webgl1 && webgl?.vertexArrayObjects)) {
       tier = "medium";
-      recommendedRenderer = webgl.webgl2 ? "webgl2" : "webgl1";
+      recommendedRenderer = webgl?.webgl2 ? "webgl2" : "webgl1";
       maxSafeResolution = 1080;
-    } else if (webgl.webgl1) {
+    } else if (webgl?.webgl1) {
       tier = "low";
       recommendedRenderer = "webgl1";
       maxSafeResolution = 720;
-    } else if (canvas.canvas2d) {
+    } else if (canvas?.canvas2d) {
       tier = "low";
       recommendedRenderer = "canvas2d";
       maxSafeResolution = 720;
     }
 
-    if (device.isLowPower) {
-      maxSafeResolution = Math.min(maxSafeResolution, 720);
+    if (device?.isLowPower) {
+      maxSafeResolution = Math?.min(maxSafeResolution, 720);
       if (tier === "high") tier = "medium";
     }
 
-    const supportsExport = media.mediaRecorder && canvas.captureStream;
-    const supportsRealtime =
-      (webgl.webgl2 || webgl.webgl1) &&
-      audio.webAudioApi &&
-      device.maxFrameRate >= 30;
+    const _supportsExport = media?.mediaRecorder && canvas?.captureStream;
+    const _supportsRealtime =
+      (webgl?.webgl2 || webgl?.webgl1) &&
+      audio?.webAudioApi &&
+      device?.maxFrameRate >= 30;
 
     return {
       tier,
@@ -390,7 +389,7 @@ class BrowserCapabilitiesDetector {
   }
 
   clearCache(): void {
-    this.cachedCapabilities = null;
+    this?.cachedCapabilities = null;
   }
 }
 
@@ -400,12 +399,12 @@ export function getBrowserCapabilities(): Promise<BrowserCapabilities> {
   if (!detectorInstance) {
     detectorInstance = new BrowserCapabilitiesDetector();
   }
-  return detectorInstance.detect();
+  return detectorInstance?.detect();
 }
 
 export function clearCapabilitiesCache(): void {
   if (detectorInstance) {
-    detectorInstance.clearCache();
+    detectorInstance?.clearCache();
   }
 }
 
@@ -417,13 +416,13 @@ export function createRenderingContext(
 
   switch (preferred) {
     case "webgl2":
-      fallbackOrder.push("webgl2", "webgl1", "canvas2d");
+      fallbackOrder?.push("webgl2", "webgl1", "canvas2d");
       break;
     case "webgl1":
-      fallbackOrder.push("webgl1", "canvas2d");
+      fallbackOrder?.push("webgl1", "canvas2d");
       break;
     case "canvas2d":
-      fallbackOrder.push("canvas2d");
+      fallbackOrder?.push("canvas2d");
       break;
   }
 
@@ -437,7 +436,7 @@ export function createRenderingContext(
 
       switch (rendererType) {
         case "webgl2":
-          context = canvas.getContext("webgl2", {
+          context = canvas?.getContext("webgl2", {
             alpha: true,
             antialias: true,
             premultipliedAlpha: true,
@@ -445,16 +444,16 @@ export function createRenderingContext(
           }) as WebGL2RenderingContext;
           break;
         case "webgl1":
-          context = (canvas.getContext("webgl", {
+          context = (canvas?.getContext("webgl", {
             alpha: true,
             antialias: true,
             premultipliedAlpha: true,
             preserveDrawingBuffer: true,
           }) ||
-            canvas.getContext("experimental-webgl")) as WebGLRenderingContext;
+            canvas?.getContext("experimental-webgl")) as WebGLRenderingContext;
           break;
         case "canvas2d":
-          context = canvas.getContext("2d", {
+          context = canvas?.getContext("2d", {
             alpha: true,
           }) as CanvasRenderingContext2D;
           break;
@@ -463,8 +462,8 @@ export function createRenderingContext(
       if (context) {
         return {
           primary: rendererType,
-          fallbacks: fallbackOrder.slice(
-            fallbackOrder.indexOf(rendererType) + 1,
+          fallbacks: fallbackOrder?.slice(
+            fallbackOrder?.indexOf(rendererType) + 1,
           ),
           available: true,
           context,
@@ -493,30 +492,30 @@ export function getOptimalExportSettings(capabilities: BrowserCapabilities): {
   let format: "webm" | "mp4" = "webm";
   let codec = "vp8";
 
-  if (media.codecs.vp9) {
+  if (media?.codecs.vp9) {
     format = "webm";
     codec = "vp9";
-  } else if (media.codecs.h264) {
+  } else if (media?.codecs.h264) {
     format = "mp4";
     codec = "h264";
-  } else if (media.codecs.vp8) {
+  } else if (media?.codecs.vp8) {
     format = "webm";
     codec = "vp8";
   }
 
   let resolution: "720p" | "1080p" | "4k" = "1080p";
-  if (overall.maxSafeResolution >= 2160) {
+  if (overall?.maxSafeResolution >= 2160) {
     resolution = "4k";
-  } else if (overall.maxSafeResolution >= 1080) {
+  } else if (overall?.maxSafeResolution >= 1080) {
     resolution = "1080p";
   } else {
     resolution = "720p";
   }
 
   let frameRate: 24 | 30 | 60 = 30;
-  if (device.maxFrameRate >= 60 && !device.isLowPower) {
+  if (device?.maxFrameRate >= 60 && !device?.isLowPower) {
     frameRate = 60;
-  } else if (device.maxFrameRate >= 30) {
+  } else if (device?.maxFrameRate >= 30) {
     frameRate = 30;
   } else {
     frameRate = 24;
@@ -528,9 +527,9 @@ export function getOptimalExportSettings(capabilities: BrowserCapabilities): {
     "4k": 35_000_000,
   };
 
-  const bitrate = Math.min(
+  const _bitrate = Math?.min(
     baseBitrate[resolution] * (frameRate / 30),
-    media.maxBitrate,
+    media?.maxBitrate,
   );
 
   return { format, codec, resolution, frameRate, bitrate };
@@ -580,20 +579,20 @@ export function getWebGLLimits(): {
   maxFragmentUniformVectors: number;
   maxVertexUniformVectors: number;
 } | null {
-  const canvas = document.createElement("canvas");
-  const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+  const _canvas = document?.createElement("canvas");
+  const _gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
 
   if (!gl) return null;
 
   return {
-    maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
-    maxCubeMapSize: gl.getParameter(gl.MAX_CUBE_MAP_TEXTURE_SIZE),
-    maxViewportDims: gl.getParameter(gl.MAX_VIEWPORT_DIMS),
-    maxRenderbufferSize: gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
-    maxVertexAttribs: gl.getParameter(gl.MAX_VERTEX_ATTRIBS),
-    maxVaryingVectors: gl.getParameter(gl.MAX_VARYING_VECTORS),
-    maxFragmentUniformVectors: gl.getParameter(gl.MAX_FRAGMENT_UNIFORM_VECTORS),
-    maxVertexUniformVectors: gl.getParameter(gl.MAX_VERTEX_UNIFORM_VECTORS),
+    maxTextureSize: gl?.getParameter(gl?.MAX_TEXTURE_SIZE),
+    maxCubeMapSize: gl?.getParameter(gl?.MAX_CUBE_MAP_TEXTURE_SIZE),
+    maxViewportDims: gl?.getParameter(gl?.MAX_VIEWPORT_DIMS),
+    maxRenderbufferSize: gl?.getParameter(gl?.MAX_RENDERBUFFER_SIZE),
+    maxVertexAttribs: gl?.getParameter(gl?.MAX_VERTEX_ATTRIBS),
+    maxVaryingVectors: gl?.getParameter(gl?.MAX_VARYING_VECTORS),
+    maxFragmentUniformVectors: gl?.getParameter(gl?.MAX_FRAGMENT_UNIFORM_VECTORS),
+    maxVertexUniformVectors: gl?.getParameter(gl?.MAX_VERTEX_UNIFORM_VECTORS),
   };
 }
 
@@ -607,24 +606,24 @@ export function estimateRenderPerformance(
   canRealtime: boolean;
   recommendedQuality: "low" | "medium" | "high";
 } {
-  const pixels = width * height;
+  const _pixels = width * height;
   const { device, overall } = capabilities;
 
   let baseFps = 60;
 
-  if (pixels > 1920 * 1080) baseFps *= 0.5;
-  else if (pixels > 1280 * 720) baseFps *= 0.75;
+  if (pixels > 1920 * 1080) baseFps *= 0?.5;
+  else if (pixels > 1280 * 720) baseFps *= 0?.75;
 
-  if (layerCount > 10) baseFps *= 0.7;
-  else if (layerCount > 5) baseFps *= 0.85;
+  if (layerCount > 10) baseFps *= 0?.7;
+  else if (layerCount > 5) baseFps *= 0?.85;
 
-  if (overall.tier === "low") baseFps *= 0.5;
-  else if (overall.tier === "medium") baseFps *= 0.75;
+  if (overall?.tier === "low") baseFps *= 0?.5;
+  else if (overall?.tier === "medium") baseFps *= 0?.75;
 
-  if (device.isLowPower) baseFps *= 0.6;
+  if (device?.isLowPower) baseFps *= 0?.6;
 
-  const estimatedFps = Math.round(Math.min(60, Math.max(10, baseFps)));
-  const canRealtime = estimatedFps >= 24;
+  const _estimatedFps = Math?.round(Math?.min(60, Math?.max(10, baseFps)));
+  const _canRealtime = estimatedFps >= 24;
 
   let recommendedQuality: "low" | "medium" | "high" = "high";
   if (estimatedFps < 30) recommendedQuality = "low";

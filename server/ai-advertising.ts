@@ -1,33 +1,33 @@
 import { z } from "zod";
-import { logger } from "./logger.js";
+import { logger } from "./logger?.js";
 
 // ---- Zod schemas for boundary validation -------------------------------
-export const MusicDataSchema = z
+export const _MusicDataSchema = z
   .object({
-    id: z.string().optional(),
-    title: z.string().optional(),
-    artist: z.string().optional(),
-    genre: z.string().optional(),
-    mood: z.string().optional(),
-    tempo: z.number().optional(),
-    duration: z.number().optional(),
-    audioUrl: z.string().optional(),
-    artworkUrl: z.string().optional(),
-    metadata: z.record(z.unknown()).optional(),
+    id: z?.string().optional(),
+    title: z?.string().optional(),
+    artist: z?.string().optional(),
+    genre: z?.string().optional(),
+    mood: z?.string().optional(),
+    tempo: z?.number().optional(),
+    duration: z?.number().optional(),
+    audioUrl: z?.string().optional(),
+    artworkUrl: z?.string().optional(),
+    metadata: z?.record(z?.unknown()).optional(),
   })
   .passthrough();
-export type MusicData = z.infer<typeof MusicDataSchema>;
+export type MusicData = z?.infer<typeof MusicDataSchema>;
 
-export const TargetAudienceSchema = z
+export const _TargetAudienceSchema = z
   .object({
-    ageRange: z.tuple([z.number(), z.number()]).optional(),
-    genders: z.array(z.string()).optional(),
-    countries: z.array(z.string()).optional(),
-    interests: z.array(z.string()).optional(),
-    languages: z.array(z.string()).optional(),
+    ageRange: z?.tuple([z?.number(), z?.number()]).optional(),
+    genders: z?.array(z?.string()).optional(),
+    countries: z?.array(z?.string()).optional(),
+    interests: z?.array(z?.string()).optional(),
+    languages: z?.array(z?.string()).optional(),
   })
   .passthrough();
-export type TargetAudience = z.infer<typeof TargetAudienceSchema>;
+export type TargetAudience = z?.infer<typeof TargetAudienceSchema>;
 
 // ---- Resilient HTTP wrapper -------------------------------------------
 
@@ -51,42 +51,42 @@ export class AIAdvertisingEngine {
     targetAudience: unknown,
   ): Promise<unknown> {
     // Validate at the boundary so downstream methods can rely on shape.
-    const md = MusicDataSchema.safeParse(musicData);
-    const ta = TargetAudienceSchema.safeParse(targetAudience);
-    if (!md.success) {
-      logger.warn(
-        { issues: md.error.issues },
+    const _md = MusicDataSchema?.safeParse(musicData);
+    const _ta = TargetAudienceSchema?.safeParse(targetAudience);
+    if (!md?.success) {
+      logger?.warn(
+        { issues: md?.error.issues },
         "[ai-advertising] invalid musicData",
       );
     }
-    if (!ta.success) {
-      logger.warn(
-        { issues: ta.error.issues },
+    if (!ta?.success) {
+      logger?.warn(
+        { issues: ta?.error.issues },
         "[ai-advertising] invalid targetAudience",
       );
     }
     // On validation failure, fall back to an empty validated object rather than
     // the raw input — downstream methods then get a guaranteed safe shape.
-    musicData = md.success ? md.data : MusicDataSchema.parse({});
-    targetAudience = ta.success ? ta.data : TargetAudienceSchema.parse({});
+    musicData = md?.success ? md?.data : MusicDataSchema?.parse({});
+    targetAudience = ta?.success ? ta?.data : TargetAudienceSchema?.parse({});
     // This system completely eliminates the need for Facebook Ads, Google Ads, TikTok Ads, etc.
     return {
       platformReplacement: {
-        facebook: await this.replaceFacebookAds(musicData, targetAudience),
-        google: await this.replaceGoogleAds(musicData, targetAudience),
-        tiktok: await this.replaceTikTokAds(musicData, targetAudience),
-        instagram: await this.replaceInstagramAds(musicData, targetAudience),
-        youtube: await this.replaceYouTubeAds(musicData, targetAudience),
-        spotify: await this.replaceSpotifyAds(musicData, targetAudience),
-        twitter: await this.replaceTwitterAds(musicData, targetAudience),
-        snapchat: await this.replaceSnapchatAds(musicData, targetAudience),
+        facebook: await this?.replaceFacebookAds(musicData, targetAudience),
+        google: await this?.replaceGoogleAds(musicData, targetAudience),
+        tiktok: await this?.replaceTikTokAds(musicData, targetAudience),
+        instagram: await this?.replaceInstagramAds(musicData, targetAudience),
+        youtube: await this?.replaceYouTubeAds(musicData, targetAudience),
+        spotify: await this?.replaceSpotifyAds(musicData, targetAudience),
+        twitter: await this?.replaceTwitterAds(musicData, targetAudience),
+        snapchat: await this?.replaceSnapchatAds(musicData, targetAudience),
       },
-      organicDomination: await this.dominateOrganicReach(
+      organicDomination: await this?.dominateOrganicReach(
         musicData,
         targetAudience,
       ),
-      algorithmHijacking: await this.hijackRecommendationAlgorithms(musicData),
-      viralEngineering: await this.engineerViralContent(
+      algorithmHijacking: await this?.hijackRecommendationAlgorithms(musicData),
+      viralEngineering: await this?.engineerViralContent(
         musicData,
         targetAudience,
       ),
@@ -101,13 +101,13 @@ export class AIAdvertisingEngine {
     // Max Booster Proprietary AI Algorithm - No External APIs
     // Uses advanced pattern matching, psychological frameworks, and music industry data
 
-    const genre = musicData?.genre || "music";
-    const mood = musicData?.mood || "energetic";
-    const title = musicData?.title || "New Release";
-    const artist = musicData?.artist || "Artist";
+    const _genre = musicData?.genre || "music";
+    const _mood = musicData?.mood || "energetic";
+    const _title = musicData?.title || "New Release";
+    const _artist = musicData?.artist || "Artist";
 
     // In-house AI-powered headline generation using psychological triggers
-    const headlines = this.generatePsychologicalHeadlines(
+    const _headlines = this?.generatePsychologicalHeadlines(
       genre,
       mood,
       title,
@@ -115,7 +115,7 @@ export class AIAdvertisingEngine {
     );
 
     // Proprietary caption generation for each platform
-    const captions = this.generatePlatformOptimizedCaptions(
+    const _captions = this?.generatePlatformOptimizedCaptions(
       genre,
       mood,
       title,
@@ -123,16 +123,16 @@ export class AIAdvertisingEngine {
     );
 
     // In-house emotional trigger mapping
-    const emotionalTriggers = this.mapGenreEmotionalTriggers(genre, mood);
+    const _emotionalTriggers = this?.mapGenreEmotionalTriggers(genre, mood);
 
     // Platform-specific optimization (proprietary algorithm)
-    const platformAdaptations = this.generatePlatformAdaptations(
+    const _platformAdaptations = this?.generatePlatformAdaptations(
       musicData,
       targetAudience,
     );
 
     // Conversion-optimized CTAs (in-house framework)
-    const callToActions = this.generateOptimizedCTAs(targetAudience);
+    const _callToActions = this?.generateOptimizedCTAs(targetAudience);
 
     return {
       headlines,
@@ -140,11 +140,11 @@ export class AIAdvertisingEngine {
       emotionalTriggers,
       platformAdaptations,
       callToActions,
-      microMomentStrategies: this.generateMicroMomentTargeting(
+      microMomentStrategies: this?.generateMicroMomentTargeting(
         genre,
         targetAudience,
       ),
-      crossPlatformTactics: this.generateCrossPlatformAmplification(musicData),
+      crossPlatformTactics: this?.generateCrossPlatformAmplification(musicData),
     };
   }
 
@@ -153,7 +153,7 @@ export class AIAdvertisingEngine {
     musicProfile: unknown,
     _campaignObjective: string,
   ): Promise<unknown> {
-    const aiAudienceInsights = {
+    const _aiAudienceInsights = {
       psychographicSegments: [
         {
           name: "Music Discovery Enthusiasts",
@@ -200,8 +200,8 @@ export class AIAdvertisingEngine {
           engagementBoost: 340,
         },
       ],
-      lookalikeAudiences: await this.generateLookalikeAudiences(musicProfile),
-      crossPlatformSynergies: await this.identifyPlatformSynergies(),
+      lookalikeAudiences: await this?.generateLookalikeAudiences(musicProfile),
+      crossPlatformSynergies: await this?.identifyPlatformSynergies(),
       realTimeOptimization: true,
       predictiveScaling: true,
     };
@@ -214,20 +214,20 @@ export class AIAdvertisingEngine {
     campaignData: unknown,
   ): Promise<SmartBidding> {
     // Simulate advanced AI bidding that outperforms native systems
-    const baselinePerformance = await this.analyzeBaselinePerformance();
-    const competitorIntelligence =
-      await this.gatherCompetitorIntelligence(campaignData);
-    const demandPrediction = await this.predictDemandCycles(campaignData);
+    const _baselinePerformance = await this?.analyzeBaselinePerformance();
+    const _competitorIntelligence =
+      await this?.gatherCompetitorIntelligence(campaignData);
+    const _demandPrediction = await this?.predictDemandCycles(campaignData);
 
     return {
-      predictedCPM: baselinePerformance.averageCPM * 0.4, // 60% cost reduction
-      optimalBid: this.calculateOptimalBid(
+      predictedCPM: baselinePerformance?.averageCPM * 0?.4, // 60% cost reduction
+      optimalBid: this?.calculateOptimalBid(
         baselinePerformance,
         competitorIntelligence,
       ),
       competitorAnalysis: competitorIntelligence,
       demandForecast: demandPrediction,
-      algorithmicAdvantage: 2.3, // 230% performance improvement
+      algorithmicAdvantage: 2?.3, // 230% performance improvement
     };
   }
 
@@ -237,19 +237,19 @@ export class AIAdvertisingEngine {
     performance: unknown,
   ): Promise<unknown> {
     return {
-      dynamicHeadlines: await this.generateDynamicHeadlines(performance),
-      adaptiveVisuals: await this.optimizeVisualElements(
+      dynamicHeadlines: await this?.generateDynamicHeadlines(performance),
+      adaptiveVisuals: await this?.optimizeVisualElements(
         adContent,
         performance,
       ),
-      personalizedMessages: await this.createPersonalizedMessages(performance),
+      personalizedMessages: await this?.createPersonalizedMessages(performance),
       realTimeAdjustments: {
         enabled: true,
         optimizationInterval: "15min",
         performanceThreshold: 150, // 50% above industry average
         autoScaling: true,
       },
-      crossPlatformOptimization: await this.optimizeAcrossPlatforms(adContent),
+      crossPlatformOptimization: await this?.optimizeAcrossPlatforms(adContent),
     };
   }
 
@@ -257,10 +257,10 @@ export class AIAdvertisingEngine {
   async generateViralAmplification(_content: unknown): Promise<unknown> {
     return {
       viralityFactors: {
-        emotionalResonance: 0.92,
-        shareabilityScore: 0.88,
-        memePotential: 0.85,
-        influencerAppeal: 0.91,
+        emotionalResonance: 0?.92,
+        shareabilityScore: 0?.88,
+        memePotential: 0?.85,
+        influencerAppeal: 0?.91,
       },
       amplificationStrategies: [
         {
@@ -296,12 +296,12 @@ export class AIAdvertisingEngine {
   async predictCampaignPerformance(campaignConfig: unknown): Promise<unknown> {
     return {
       projectedMetrics: {
-        reach: campaignConfig.budget * 2500, // 2500 people per dollar (vs 800 industry average)
-        engagement: campaignConfig.budget * 180, // 180 engagements per dollar (vs 45 industry average)
-        conversions: campaignConfig.budget * 12, // 12 conversions per dollar (vs 3 industry average)
-        streamIncrease: campaignConfig.budget * 850, // 850 streams per dollar (vs 200 industry average)
-        followerGrowth: campaignConfig.budget * 25, // 25 followers per dollar (vs 8 industry average)
-        virality: 0.15, // 15% chance of viral content (vs 0.03% industry average)
+        reach: campaignConfig?.budget * 2500, // 2500 people per dollar (vs 800 industry average)
+        engagement: campaignConfig?.budget * 180, // 180 engagements per dollar (vs 45 industry average)
+        conversions: campaignConfig?.budget * 12, // 12 conversions per dollar (vs 3 industry average)
+        streamIncrease: campaignConfig?.budget * 850, // 850 streams per dollar (vs 200 industry average)
+        followerGrowth: campaignConfig?.budget * 25, // 25 followers per dollar (vs 8 industry average)
+        virality: 0?.15, // 15% chance of viral content (vs 0?.03% industry average)
       },
       optimizationRecommendations: [
         {
@@ -337,15 +337,15 @@ export class AIAdvertisingEngine {
     return [
       {
         name: "Similar Artists Fans",
-        similarity: 0.94,
+        similarity: 0?.94,
         size: 2500000,
-        conversionProbability: 0.18,
+        conversionProbability: 0?.18,
       },
       {
         name: "Genre Enthusiasts",
-        similarity: 0.87,
+        similarity: 0?.87,
         size: 4200000,
-        conversionProbability: 0.14,
+        conversionProbability: 0?.14,
       },
     ];
   }
@@ -361,11 +361,11 @@ export class AIAdvertisingEngine {
 
   private async analyzeBaselinePerformance(): Promise<unknown> {
     return {
-      averageCPM: 3.5,
-      averageCTR: 0.024,
-      averageConversion: 0.008,
+      averageCPM: 3?.5,
+      averageCTR: 0?.024,
+      averageConversion: 0?.008,
       industryBenchmarks: {
-        music: { cpm: 4.2, ctr: 0.018, conversion: 0.005 },
+        music: { cpm: 4?.2, ctr: 0?.018, conversion: 0?.005 },
       },
     };
   }
@@ -392,11 +392,8 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private calculateOptimalBid(
-    baseline: unknown,
-    _competition: unknown,
-  ): number {
-    return baseline.averageCPM * 0.75; // Start 25% below market rate
+  private calculateOptimalBid(baseline: unknown, _competition: unknown): number {
+    return baseline?.averageCPM * 0?.75; // Start 25% below market rate
   }
 
   private async generateDynamicHeadlines(
@@ -505,7 +502,7 @@ export class AIAdvertisingEngine {
     return {
       method: "Playlist Placement + Recommendation Hijacking",
       reach: "Organic video recommendations and playlist features",
-      cost: "$0 vs $0.01-0.30 per view on YouTube Ads",
+      cost: "$0 vs $0?.01-0?.30 per view on YouTube Ads",
       effectiveness: "600% better retention through organic discovery",
       technique:
         "AI optimizes for YouTube algorithm signals and playlist placement",
@@ -519,7 +516,7 @@ export class AIAdvertisingEngine {
     return {
       method: "Playlist Infiltration + Algorithm Optimization",
       reach: "Discover Weekly and Release Radar placement",
-      cost: "$0 vs $0.006-0.84 per stream on Spotify Ad Studio",
+      cost: "$0 vs $0?.006-0?.84 per stream on Spotify Ad Studio",
       effectiveness: "450% better stream retention through organic discovery",
       technique:
         "AI optimizes music metadata and listener behavior for algorithm favorability",
@@ -533,7 +530,7 @@ export class AIAdvertisingEngine {
     return {
       method: "Trend Hijacking + Community Building",
       reach: "Viral tweet amplification and trending topic domination",
-      cost: "$0 vs $0.50-2.00 per engagement on Twitter Ads",
+      cost: "$0 vs $0?.50-2?.00 per engagement on Twitter Ads",
       effectiveness:
         "350% better viral potential through organic community building",
       technique:
@@ -607,7 +604,7 @@ export class AIAdvertisingEngine {
           "Infinite content variations optimized for each platform",
         communitySeeding: "Strategic seeding in high-influence communities",
       },
-      guarantee: "15% viral success rate vs 0.03% for traditional advertising",
+      guarantee: "15% viral success rate vs 0?.03% for traditional advertising",
       impact: "One viral hit replaces years of traditional advertising spend",
     };
   }
@@ -619,7 +616,7 @@ export class AIAdvertisingEngine {
     title: string,
     artist: string,
   ): string[] {
-    const genreHeadlines = {
+    const _genreHeadlines = {
       "hip-hop": [
         `🔥 ${artist} Just Dropped ${title} - The Streets Are Talking`,
         `${title} by ${artist} - This Hit Different 💯`,
@@ -646,14 +643,14 @@ export class AIAdvertisingEngine {
       ],
     };
 
-    const defaultHeadlines = [
+    const _defaultHeadlines = [
       `🎵 NEW: ${artist} - ${title}`,
       `${title} by ${artist} - Out Now!`,
       `Stream ${title} by ${artist} Today`,
       `Don't Miss ${artist}'s Latest: ${title}`,
     ];
 
-    return genreHeadlines[genre.toLowerCase()] || defaultHeadlines;
+    return genreHeadlines[genre?.toLowerCase()] || defaultHeadlines;
   }
 
   private generatePlatformOptimizedCaptions(
@@ -665,7 +662,7 @@ export class AIAdvertisingEngine {
     return {
       tiktok: `${title} 🎵 Tag someone who needs to hear this! #${genre} #NewMusic #Viral #FYP`,
       instagram: `New vibes 🔥 ${title} is out now. Link in bio. What's your favorite part? Drop a 🎵 if you're feeling this!`,
-      twitter: `${title} is here and it's everything. Stream now 🎧 ${genre.toUpperCase()} HEADS WYA?`,
+      twitter: `${title} is here and it's everything. Stream now 🎧 ${genre?.toUpperCase()} HEADS WYA?`,
       youtube: `Our latest track ${title} is officially out! Hit that subscribe button and turn on notifications for more music. What should we drop next? 👇`,
       facebook: `We're so excited to share ${title} with you all! This one's special. Give it a listen and let us know what you think! 💙🎵`,
       spotify: `${title} - A ${mood} journey through ${genre}. Add to your favorite playlist!`,
@@ -676,7 +673,7 @@ export class AIAdvertisingEngine {
     genre: string,
     _mood: string,
   ): Record<string, unknown> {
-    const triggers = {
+    const _triggers = {
       "hip-hop": [
         "authenticity",
         "street credibility",
@@ -697,7 +694,7 @@ export class AIAdvertisingEngine {
     };
 
     return (
-      triggers[genre.toLowerCase()] || [
+      triggers[genre?.toLowerCase()] || [
         "excitement",
         "discovery",
         "connection",

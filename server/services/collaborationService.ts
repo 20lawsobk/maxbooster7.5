@@ -52,32 +52,32 @@ class CollaborationService {
       throw new Error("Cannot send connection request to yourself");
     }
 
-    const existingConnection = await db
+    const _existingConnection = await db
       .select()
       .from(artistConnections)
       .where(
         or(
           and(
-            eq(artistConnections.requesterId, fromId),
-            eq(artistConnections.receiverId, toId),
+            eq(artistConnections?.requesterId, fromId),
+            eq(artistConnections?.receiverId, toId),
           ),
           and(
-            eq(artistConnections.requesterId, toId),
-            eq(artistConnections.receiverId, fromId),
+            eq(artistConnections?.requesterId, toId),
+            eq(artistConnections?.receiverId, fromId),
           ),
         ),
       )
       .limit(1);
 
-    if (existingConnection.length > 0) {
-      const conn = existingConnection[0];
-      if (conn.status === "accepted") {
+    if (existingConnection?.length > 0) {
+      const _conn = existingConnection[0];
+      if (conn?.status === "accepted") {
         throw new Error("Already connected with this artist");
       }
-      if (conn.status === "pending") {
+      if (conn?.status === "pending") {
         throw new Error("Connection request already pending");
       }
-      if (conn.status === "declined" && conn.requesterId === fromId) {
+      if (conn?.status === "declined" && conn?.requesterId === fromId) {
         throw new Error("Your previous connection request was declined");
       }
     }
@@ -102,18 +102,18 @@ class CollaborationService {
     const [connection] = await db
       .select()
       .from(artistConnections)
-      .where(eq(artistConnections.id, connectionId))
+      .where(eq(artistConnections?.id, connectionId))
       .limit(1);
 
     if (!connection) {
       throw new Error("Connection request not found");
     }
 
-    if (connection.receiverId !== userId) {
+    if (connection?.receiverId !== userId) {
       throw new Error("Not authorized to accept this connection");
     }
 
-    if (connection.status !== "pending") {
+    if (connection?.status !== "pending") {
       throw new Error("Connection request is no longer pending");
     }
 
@@ -123,7 +123,7 @@ class CollaborationService {
         status: "accepted",
         acceptedAt: new Date(),
       })
-      .where(eq(artistConnections.id, connectionId))
+      .where(eq(artistConnections?.id, connectionId))
       .returning();
 
     return updated;
@@ -136,14 +136,14 @@ class CollaborationService {
     const [connection] = await db
       .select()
       .from(artistConnections)
-      .where(eq(artistConnections.id, connectionId))
+      .where(eq(artistConnections?.id, connectionId))
       .limit(1);
 
     if (!connection) {
       throw new Error("Connection request not found");
     }
 
-    if (connection.receiverId !== userId) {
+    if (connection?.receiverId !== userId) {
       throw new Error("Not authorized to decline this connection");
     }
 
@@ -152,7 +152,7 @@ class CollaborationService {
       .set({
         status: "declined",
       })
-      .where(eq(artistConnections.id, connectionId))
+      .where(eq(artistConnections?.id, connectionId))
       .returning();
 
     return updated;
@@ -161,36 +161,36 @@ class CollaborationService {
   async getConnections(
     userId: string,
   ): Promise<(ArtistConnection & { connectedUser: Partial<User> })[]> {
-    const connections = await db
+    const _connections = await db
       .select()
       .from(artistConnections)
       .where(
         and(
-          eq(artistConnections.status, "accepted"),
+          eq(artistConnections?.status, "accepted"),
           or(
-            eq(artistConnections.requesterId, userId),
-            eq(artistConnections.receiverId, userId),
+            eq(artistConnections?.requesterId, userId),
+            eq(artistConnections?.receiverId, userId),
           ),
         ),
       )
-      .orderBy(desc(artistConnections.acceptedAt));
+      .orderBy(desc(artistConnections?.acceptedAt));
 
-    const result = await Promise.all(
-      connections.map(async (conn) => {
-        const connectedUserId =
-          conn.requesterId === userId ? conn.receiverId : conn.requesterId;
+    const _result = await Promise?.all(
+      connections?.map(async (conn) => {
+        const _connectedUserId =
+          conn?.requesterId === userId ? conn?.receiverId : conn?.requesterId;
         const [user] = await db
           .select({
-            id: users.id,
-            username: users.username,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            avatarUrl: users.avatarUrl,
-            bio: users.bio,
-            location: users.location,
+            id: users?.id,
+            username: users?.username,
+            firstName: users?.firstName,
+            lastName: users?.lastName,
+            avatarUrl: users?.avatarUrl,
+            bio: users?.bio,
+            location: users?.location,
           })
           .from(users)
-          .where(eq(users.id, connectedUserId))
+          .where(eq(users?.id, connectedUserId))
           .limit(1);
 
         return {
@@ -206,31 +206,31 @@ class CollaborationService {
   async getPendingRequests(
     userId: string,
   ): Promise<(ArtistConnection & { requester: Partial<User> })[]> {
-    const requests = await db
+    const _requests = await db
       .select()
       .from(artistConnections)
       .where(
         and(
-          eq(artistConnections.receiverId, userId),
-          eq(artistConnections.status, "pending"),
+          eq(artistConnections?.receiverId, userId),
+          eq(artistConnections?.status, "pending"),
         ),
       )
-      .orderBy(desc(artistConnections.createdAt));
+      .orderBy(desc(artistConnections?.createdAt));
 
-    const result = await Promise.all(
-      requests.map(async (req) => {
+    const _result = await Promise?.all(
+      requests?.map(async (req) => {
         const [requester] = await db
           .select({
-            id: users.id,
-            username: users.username,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            avatarUrl: users.avatarUrl,
-            bio: users.bio,
-            location: users.location,
+            id: users?.id,
+            username: users?.username,
+            firstName: users?.firstName,
+            lastName: users?.lastName,
+            avatarUrl: users?.avatarUrl,
+            bio: users?.bio,
+            location: users?.location,
           })
           .from(users)
-          .where(eq(users.id, req.requesterId))
+          .where(eq(users?.id, req?.requesterId))
           .limit(1);
 
         return {
@@ -250,96 +250,96 @@ class CollaborationService {
     const [currentUser] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
     if (!currentUser) {
       throw new Error("User not found");
     }
 
-    const existingConnections = await db
+    const _existingConnections = await db
       .select({
-        requesterId: artistConnections.requesterId,
-        receiverId: artistConnections.receiverId,
+        requesterId: artistConnections?.requesterId,
+        receiverId: artistConnections?.receiverId,
       })
       .from(artistConnections)
       .where(
         or(
-          eq(artistConnections.requesterId, userId),
-          eq(artistConnections.receiverId, userId),
+          eq(artistConnections?.requesterId, userId),
+          eq(artistConnections?.receiverId, userId),
         ),
       );
 
-    const excludeIds = new Set([userId]);
-    existingConnections.forEach((conn) => {
-      excludeIds.add(conn.requesterId);
-      excludeIds.add(conn.receiverId);
+    const _excludeIds = new Set([userId]);
+    existingConnections?.forEach((conn) => {
+      excludeIds?.add(conn?.requesterId);
+      excludeIds?.add(conn?.receiverId);
     });
 
-    const potentialMatches = await db
+    const _potentialMatches = await db
       .select({
-        id: users.id,
-        username: users.username,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        avatarUrl: users.avatarUrl,
-        bio: users.bio,
-        location: users.location,
-        createdAt: users.createdAt,
-        onboardingData: users.onboardingData,
+        id: users?.id,
+        username: users?.username,
+        firstName: users?.firstName,
+        lastName: users?.lastName,
+        avatarUrl: users?.avatarUrl,
+        bio: users?.bio,
+        location: users?.location,
+        createdAt: users?.createdAt,
+        onboardingData: users?.onboardingData,
       })
       .from(users)
-      .where(notInArray(users.id, Array.from(excludeIds)))
+      .where(notInArray(users?.id, Array?.from(excludeIds)))
       .limit(100);
 
-    const userFactors = this.extractMatchingFactors(currentUser);
-    const scoredMatches: CollaboratorMatch[] = potentialMatches.map((match) => {
-      const matchFactors = this.extractMatchingFactors(
+    const _userFactors = this?.extractMatchingFactors(currentUser);
+    const scoredMatches: CollaboratorMatch[] = potentialMatches?.map((match) => {
+      const _matchFactors = this?.extractMatchingFactors(
         match as Record<string, unknown>,
       );
-      const { score, reasons } = this.calculateMatchScore(
+      const { score, reasons } = this?.calculateMatchScore(
         userFactors,
         matchFactors,
       );
 
       return {
         user: {
-          id: match.id,
-          username: match.username,
-          firstName: match.firstName,
-          lastName: match.lastName,
-          avatarUrl: match.avatarUrl,
-          bio: match.bio,
-          location: match.location,
+          id: match?.id,
+          username: match?.username,
+          firstName: match?.firstName,
+          lastName: match?.lastName,
+          avatarUrl: match?.avatarUrl,
+          bio: match?.bio,
+          location: match?.location,
         },
         matchScore: score,
         matchReasons: reasons,
       };
     });
 
-    scoredMatches.sort((a, b) => b.matchScore - a.matchScore);
-    return scoredMatches.slice(0, limit);
+    scoredMatches?.sort((a, b) => b?.matchScore - a?.matchScore);
+    return scoredMatches?.slice(0, limit);
   }
 
   private extractMatchingFactors(
     user: Record<string, unknown>,
   ): MatchingFactors {
-    const onboardingData = user.onboardingData || {};
+    const _onboardingData = user?.onboardingData || {};
     const skills: string[] = [];
 
-    if (onboardingData.artistType) {
-      skills.push(onboardingData.artistType.toLowerCase());
+    if (onboardingData?.artistType) {
+      skills?.push(onboardingData?.artistType.toLowerCase());
     }
-    if (onboardingData.skills) {
-      skills.push(...onboardingData.skills.map((s: string) => s.toLowerCase()));
+    if (onboardingData?.skills) {
+      skills?.push(...onboardingData?.skills.map((s: string) => s?.toLowerCase()));
     }
 
     return {
-      genre: onboardingData.primaryGenre || onboardingData.genre || null,
+      genre: onboardingData?.primaryGenre || onboardingData?.genre || null,
       skills,
-      followerCount: onboardingData.followerCount || 0,
-      location: user.location || null,
-      lastActive: user.createdAt || null,
+      followerCount: onboardingData?.followerCount || 0,
+      location: user?.location || null,
+      lastActive: user?.createdAt || null,
     };
   }
 
@@ -351,55 +351,55 @@ class CollaborationService {
     const reasons: string[] = [];
 
     if (
-      user.genre &&
-      match.genre &&
-      user.genre.toLowerCase() === match.genre.toLowerCase()
+      user?.genre &&
+      match?.genre &&
+      user?.genre.toLowerCase() === match?.genre.toLowerCase()
     ) {
       score += 30;
-      reasons.push(`Same genre: ${user.genre}`);
+      reasons?.push(`Same genre: ${user?.genre}`);
     }
 
-    for (const userSkill of user.skills) {
-      const complements = SKILL_COMPLEMENTS[userSkill] || [];
-      for (const matchSkill of match.skills) {
-        if (complements.includes(matchSkill)) {
+    for (const userSkill of user?.skills) {
+      const _complements = SKILL_COMPLEMENTS[userSkill] || [];
+      for (const matchSkill of match?.skills) {
+        if (complements?.includes(matchSkill)) {
           score += 25;
-          reasons.push(`Complementary skills: ${userSkill} + ${matchSkill}`);
+          reasons?.push(`Complementary skills: ${userSkill} + ${matchSkill}`);
           break;
         }
       }
     }
 
-    if (user.followerCount > 0 && match.followerCount > 0) {
-      const ratio =
-        Math.min(user.followerCount, match.followerCount) /
-        Math.max(user.followerCount, match.followerCount);
-      if (ratio > 0.5) {
-        score += Math.round(20 * ratio);
-        reasons.push("Similar audience size");
+    if (user?.followerCount > 0 && match?.followerCount > 0) {
+      const _ratio =
+        Math?.min(user?.followerCount, match?.followerCount) /
+        Math?.max(user?.followerCount, match?.followerCount);
+      if (ratio > 0?.5) {
+        score += Math?.round(20 * ratio);
+        reasons?.push("Similar audience size");
       }
     }
 
     if (
-      user.location &&
-      match.location &&
-      user.location.toLowerCase() === match.location.toLowerCase()
+      user?.location &&
+      match?.location &&
+      user?.location.toLowerCase() === match?.location.toLowerCase()
     ) {
       score += 15;
-      reasons.push(`Same location: ${user.location}`);
+      reasons?.push(`Same location: ${user?.location}`);
     }
 
-    if (match.lastActive) {
-      const daysSinceActive = Math.floor(
-        (Date.now() - new Date(match.lastActive).getTime()) /
+    if (match?.lastActive) {
+      const _daysSinceActive = Math?.floor(
+        (Date?.now() - new Date(match?.lastActive).getTime()) /
           (1000 * 60 * 60 * 24),
       );
       if (daysSinceActive < 7) {
         score += 10;
-        reasons.push("Recently active");
+        reasons?.push("Recently active");
       } else if (daysSinceActive < 30) {
         score += 5;
-        reasons.push("Active this month");
+        reasons?.push("Active this month");
       }
     }
 
@@ -421,18 +421,18 @@ class CollaborationService {
       .insert(collaborationProjects)
       .values({
         ownerId: userId,
-        title: data.title,
-        description: data.description,
-        genre: data.genre,
-        lookingFor: data.lookingFor,
-        maxMembers: data.maxMembers || 10,
-        isPublic: data.isPublic !== false,
+        title: data?.title,
+        description: data?.description,
+        genre: data?.genre,
+        lookingFor: data?.lookingFor,
+        maxMembers: data?.maxMembers || 10,
+        isPublic: data?.isPublic !== false,
         status: "open",
       })
       .returning();
 
-    await db.insert(projectMembers).values({
-      projectId: project.id,
+    await db?.insert(projectMembers).values({
+      projectId: project?.id,
       userId,
       role: "owner",
       status: "active",
@@ -445,40 +445,40 @@ class CollaborationService {
     userId?: string,
     filters?: { genre?: string; status?: string; ownOnly?: boolean },
   ): Promise<ProjectWithMembers[]> {
-    let query = db.select().from(collaborationProjects);
+    let query = db?.select().from(collaborationProjects);
 
     if (filters?.ownOnly && userId) {
-      query = query.where(eq(collaborationProjects.ownerId, userId)) as Record<
+      query = query?.where(eq(collaborationProjects?.ownerId, userId)) as Record<
         string,
         unknown
       >;
     } else if (filters?.status) {
-      query = query.where(
-        eq(collaborationProjects.status, filters.status),
+      query = query?.where(
+        eq(collaborationProjects?.status, filters?.status),
       ) as Record<string, unknown>;
     }
 
-    const projects = await query.orderBy(desc(collaborationProjects.createdAt));
+    const _projects = await query?.orderBy(desc(collaborationProjects?.createdAt));
 
-    const result = await Promise.all(
-      projects.map(async (project) => {
-        const members = await db
+    const _result = await Promise?.all(
+      projects?.map(async (project) => {
+        const _members = await db
           .select()
           .from(projectMembers)
-          .where(eq(projectMembers.projectId, project.id));
+          .where(eq(projectMembers?.projectId, project?.id));
 
-        const membersWithUsers = await Promise.all(
-          members.map(async (member) => {
+        const _membersWithUsers = await Promise?.all(
+          members?.map(async (member) => {
             const [user] = await db
               .select({
-                id: users.id,
-                username: users.username,
-                firstName: users.firstName,
-                lastName: users.lastName,
-                avatarUrl: users.avatarUrl,
+                id: users?.id,
+                username: users?.username,
+                firstName: users?.firstName,
+                lastName: users?.lastName,
+                avatarUrl: users?.avatarUrl,
               })
               .from(users)
-              .where(eq(users.id, member.userId))
+              .where(eq(users?.id, member?.userId))
               .limit(1);
 
             return { ...member, user: user || {} };
@@ -487,14 +487,14 @@ class CollaborationService {
 
         const [owner] = await db
           .select({
-            id: users.id,
-            username: users.username,
-            firstName: users.firstName,
-            lastName: users.lastName,
-            avatarUrl: users.avatarUrl,
+            id: users?.id,
+            username: users?.username,
+            firstName: users?.firstName,
+            lastName: users?.lastName,
+            avatarUrl: users?.avatarUrl,
           })
           .from(users)
-          .where(eq(users.id, project.ownerId))
+          .where(eq(users?.id, project?.ownerId))
           .limit(1);
 
         return {
@@ -516,38 +516,38 @@ class CollaborationService {
     const [project] = await db
       .select()
       .from(collaborationProjects)
-      .where(eq(collaborationProjects.id, projectId))
+      .where(eq(collaborationProjects?.id, projectId))
       .limit(1);
 
     if (!project) {
       throw new Error("Project not found");
     }
 
-    if (project.status !== "open") {
+    if (project?.status !== "open") {
       throw new Error("Project is not accepting new members");
     }
 
-    const existingMember = await db
+    const _existingMember = await db
       .select()
       .from(projectMembers)
       .where(
         and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId),
+          eq(projectMembers?.projectId, projectId),
+          eq(projectMembers?.userId, userId),
         ),
       )
       .limit(1);
 
-    if (existingMember.length > 0) {
+    if (existingMember?.length > 0) {
       throw new Error("Already a member of this project");
     }
 
-    const currentMembers = await db
+    const _currentMembers = await db
       .select()
       .from(projectMembers)
-      .where(eq(projectMembers.projectId, projectId));
+      .where(eq(projectMembers?.projectId, projectId));
 
-    if (currentMembers.length >= (project.maxMembers || 10)) {
+    if (currentMembers?.length >= (project?.maxMembers || 10)) {
       throw new Error("Project has reached maximum members");
     }
 
@@ -568,14 +568,14 @@ class CollaborationService {
     const [project] = await db
       .select()
       .from(collaborationProjects)
-      .where(eq(collaborationProjects.id, projectId))
+      .where(eq(collaborationProjects?.id, projectId))
       .limit(1);
 
     if (!project) {
       throw new Error("Project not found");
     }
 
-    if (project.ownerId === userId) {
+    if (project?.ownerId === userId) {
       throw new Error(
         "Project owner cannot leave. Transfer ownership or delete the project.",
       );
@@ -585,8 +585,8 @@ class CollaborationService {
       .delete(projectMembers)
       .where(
         and(
-          eq(projectMembers.projectId, projectId),
-          eq(projectMembers.userId, userId),
+          eq(projectMembers?.projectId, projectId),
+          eq(projectMembers?.userId, userId),
         ),
       );
   }
@@ -603,63 +603,63 @@ class CollaborationService {
     let whereConditions: unknown[] = [];
 
     if (query) {
-      whereConditions.push(
+      whereConditions?.push(
         or(
-          ilike(users.username, `%${query}%`),
-          ilike(users.firstName, `%${query}%`),
-          ilike(users.lastName, `%${query}%`),
-          ilike(users.bio, `%${query}%`),
+          ilike(users?.username, `%${query}%`),
+          ilike(users?.firstName, `%${query}%`),
+          ilike(users?.lastName, `%${query}%`),
+          ilike(users?.bio, `%${query}%`),
         ),
       );
     }
 
     if (filters?.location) {
-      whereConditions.push(ilike(users.location, `%${filters.location}%`));
+      whereConditions?.push(ilike(users?.location, `%${filters?.location}%`));
     }
 
-    const results = await db
+    const _results = await db
       .select({
-        id: users.id,
-        username: users.username,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        avatarUrl: users.avatarUrl,
-        bio: users.bio,
-        location: users.location,
-        onboardingData: users.onboardingData,
+        id: users?.id,
+        username: users?.username,
+        firstName: users?.firstName,
+        lastName: users?.lastName,
+        avatarUrl: users?.avatarUrl,
+        bio: users?.bio,
+        location: users?.location,
+        onboardingData: users?.onboardingData,
       })
       .from(users)
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .where(whereConditions?.length > 0 ? and(...whereConditions) : undefined)
       .limit(limit);
 
     let filteredResults = results;
 
     if (filters?.genre) {
-      filteredResults = results.filter((user) => {
-        const data = user.onboardingData as Record<string, unknown>;
-        const userGenre = data?.primaryGenre || data?.genre;
+      filteredResults = results?.filter((user) => {
+        const _data = user?.onboardingData as Record<string, unknown>;
+        const _userGenre = data?.primaryGenre || data?.genre;
         return (
           userGenre &&
-          userGenre.toLowerCase().includes(filters.genre!.toLowerCase())
+          userGenre?.toLowerCase().includes(filters?.genre!.toLowerCase())
         );
       });
     }
 
-    if (filters?.skills && filters.skills.length > 0) {
-      filteredResults = filteredResults.filter((user) => {
-        const data = user.onboardingData as Record<string, unknown>;
-        const userSkills = [
+    if (filters?.skills && filters?.skills.length > 0) {
+      filteredResults = filteredResults?.filter((user) => {
+        const _data = user?.onboardingData as Record<string, unknown>;
+        const _userSkills = [
           data?.artistType?.toLowerCase(),
-          ...(data?.skills || []).map((s: string) => s.toLowerCase()),
+          ...(data?.skills || []).map((s: string) => s?.toLowerCase()),
         ].filter(Boolean);
 
-        return filters.skills!.some((skill) =>
-          userSkills.includes(skill.toLowerCase()),
+        return filters?.skills!.some((skill) =>
+          userSkills?.includes(skill?.toLowerCase()),
         );
       });
     }
 
-    return filteredResults.map(({ onboardingData, ...rest }) => rest);
+    return filteredResults?.map(({ onboardingData, ...rest }) => rest);
   }
 
   async getConnectionStatus(
@@ -672,12 +672,12 @@ class CollaborationService {
       .where(
         or(
           and(
-            eq(artistConnections.requesterId, userId),
-            eq(artistConnections.receiverId, otherUserId),
+            eq(artistConnections?.requesterId, userId),
+            eq(artistConnections?.receiverId, otherUserId),
           ),
           and(
-            eq(artistConnections.requesterId, otherUserId),
-            eq(artistConnections.receiverId, userId),
+            eq(artistConnections?.requesterId, otherUserId),
+            eq(artistConnections?.receiverId, userId),
           ),
         ),
       )
@@ -687,28 +687,28 @@ class CollaborationService {
       return { status: null, connectionId: null };
     }
 
-    return { status: connection.status, connectionId: connection.id };
+    return { status: connection?.status, connectionId: connection?.id };
   }
 
   async removeConnection(connectionId: string, userId: string): Promise<void> {
     const [connection] = await db
       .select()
       .from(artistConnections)
-      .where(eq(artistConnections.id, connectionId))
+      .where(eq(artistConnections?.id, connectionId))
       .limit(1);
 
     if (!connection) {
       throw new Error("Connection not found");
     }
 
-    if (connection.requesterId !== userId && connection.receiverId !== userId) {
+    if (connection?.requesterId !== userId && connection?.receiverId !== userId) {
       throw new Error("Not authorized to remove this connection");
     }
 
     await db
       .delete(artistConnections)
-      .where(eq(artistConnections.id, connectionId));
+      .where(eq(artistConnections?.id, connectionId));
   }
 }
 
-export const collaborationService = new CollaborationService();
+export const _collaborationService = new CollaborationService();

@@ -17,15 +17,10 @@
 
 import dns from "dns";
 import { eq } from "drizzle-orm";
-import { db, pool } from "../../db.js";
+import { db, pool } from "../../db?.js";
 import { claimedDomains } from "@shared/schema";
-import { logger } from "../../logger.js";
-import {
-  NS1,
-  NS2,
-  PLATFORM_DOMAIN,
-  DOMAIN_PRICES,
-} from "../domainRegistrarService.js";
+import { logger } from "../../logger?.js";
+import { NS1, NS2, PLATFORM_DOMAIN, DOMAIN_PRICES } from "../domainRegistrarService?.js";
 import type {
   RegistrarProvider,
   AvailabilityResult,
@@ -35,20 +30,20 @@ import type {
   DomainInfo,
   TransferParams,
   TransferResult,
-} from "./types.js";
+} from "./types?.js";
 
-const dnsResolve = dns.promises.resolve;
+const _dnsResolve = dns?.promises.resolve;
 
 async function dnsAvailable(fqdn: string): Promise<boolean> {
-  const timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
-    Promise.race([
+  const _timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
+    Promise?.race([
       p,
       new Promise<T>((_, r) => setTimeout(() => r(new Error("timeout")), ms)),
     ]);
   for (const type of ["NS", "A"] as const) {
     try {
-      const recs = await timeout(2500, dnsResolve(fqdn, type));
-      if (recs && recs.length > 0) return false;
+      const _recs = await timeout(2500, dnsResolve(fqdn, type));
+      if (recs && recs?.length > 0) return false;
     } catch {
       /* ENOTFOUND / timeout → not registered */
     }
@@ -61,18 +56,18 @@ export class InternalRegistrarProvider implements RegistrarProvider {
 
   async checkAvailability(fqdn: string): Promise<AvailabilityResult> {
     const [dbRow] = await db
-      .select({ id: claimedDomains.id, status: claimedDomains.status })
+      .select({ id: claimedDomains?.id, status: claimedDomains?.status })
       .from(claimedDomains)
-      .where(eq(claimedDomains.domain, fqdn.toLowerCase()))
+      .where(eq(claimedDomains?.domain, fqdn?.toLowerCase()))
       .limit(1);
 
     if (dbRow) {
       return { fqdn, available: false, ownedByPlatform: true };
     }
 
-    const dnsGone = await dnsAvailable(fqdn);
-    const tld = "." + fqdn.split(".").slice(1).join(".");
-    const priceEntry = DOMAIN_PRICES[tld];
+    const _dnsGone = await dnsAvailable(fqdn);
+    const _tld = "." + fqdn?.split(".").slice(1).join(".");
+    const _priceEntry = DOMAIN_PRICES[tld];
 
     return {
       fqdn,
@@ -80,8 +75,8 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       price: priceEntry
         ? {
             tld,
-            registrationCents: priceEntry.registrationCents,
-            renewalCents: priceEntry.renewalCents,
+            registrationCents: priceEntry?.registrationCents,
+            renewalCents: priceEntry?.renewalCents,
             isPremium: false,
           }
         : undefined,
@@ -90,16 +85,16 @@ export class InternalRegistrarProvider implements RegistrarProvider {
 
   async registerDomain(params: RegisterParams): Promise<RegisterResult> {
     const { fqdn, userId, years, privacyEnabled } = params;
-    const domainLower = fqdn.toLowerCase();
-    const tld = "." + domainLower.split(".").slice(1).join(".");
-    const sld = domainLower.split(".")[0];
-    const isPlatformSub = domainLower.endsWith(`.${PLATFORM_DOMAIN}`);
+    const _domainLower = fqdn?.toLowerCase();
+    const _tld = "." + domainLower?.split(".").slice(1).join(".");
+    const _sld = domainLower?.split(".")[0];
+    const _isPlatformSub = domainLower?.endsWith(`.${PLATFORM_DOMAIN}`);
 
-    const expiresAt = new Date();
-    expiresAt.setFullYear(expiresAt.getFullYear() + years);
+    const _expiresAt = new Date();
+    expiresAt?.setFullYear(expiresAt?.getFullYear() + years);
 
     // Insert claimed_domains row
-    await db.insert(claimedDomains).values({
+    await db?.insert(claimedDomains).values({
       userId,
       domain: domainLower,
       sld,
@@ -117,10 +112,10 @@ export class InternalRegistrarProvider implements RegistrarProvider {
 
     // Auto-create DNS zone — always active/verified for Max Booster-registered domains.
     // Subscription payment is the authorization; no TXT ownership proof is required.
-    await this._ensureDnsZone(domainLower, userId, true);
+    await this?._ensureDnsZone(domainLower, userId, true);
 
-    logger.info(
-      { fqdn: domainLower, provider: this.name },
+    logger?.info(
+      { fqdn: domainLower, provider: this?.name },
       "[InternalRegistrar] domain registered",
     );
 
@@ -137,40 +132,40 @@ export class InternalRegistrarProvider implements RegistrarProvider {
 
   async renewDomain(fqdn: string, years: number): Promise<RenewResult> {
     const [row] = await db
-      .select({ id: claimedDomains.id, expiresAt: claimedDomains.expiresAt })
+      .select({ id: claimedDomains?.id, expiresAt: claimedDomains?.expiresAt })
       .from(claimedDomains)
-      .where(eq(claimedDomains.domain, fqdn.toLowerCase()))
+      .where(eq(claimedDomains?.domain, fqdn?.toLowerCase()))
       .limit(1);
 
     if (!row)
       throw new Error(`Domain not found in Max Booster registry: ${fqdn}`);
 
-    const base =
-      row.expiresAt && row.expiresAt > new Date() ? row.expiresAt : new Date();
-    const expiresAt = new Date(base);
-    expiresAt.setFullYear(expiresAt.getFullYear() + years);
+    const _base =
+      row?.expiresAt && row?.expiresAt > new Date() ? row?.expiresAt : new Date();
+    const _expiresAt = new Date(base);
+    expiresAt?.setFullYear(expiresAt?.getFullYear() + years);
 
     await db
       .update(claimedDomains)
       .set({ expiresAt, status: "active", updatedAt: new Date() })
-      .where(eq(claimedDomains.id, row.id));
+      .where(eq(claimedDomains?.id, row?.id));
 
-    logger.info(
-      { fqdn, years, expiresAt, provider: this.name },
+    logger?.info(
+      { fqdn, years, expiresAt, provider: this?.name },
       "[InternalRegistrar] domain renewed",
     );
     return { ok: true, expiresAt, years };
   }
 
   async setNameservers(fqdn: string, nameservers: string[]): Promise<void> {
-    const ns1 = nameservers[0] ?? NS1;
-    const ns2 = nameservers[1] ?? NS2;
+    const _ns1 = nameservers[0] ?? NS1;
+    const _ns2 = nameservers[1] ?? NS2;
     await db
       .update(claimedDomains)
       .set({ nameserver1: ns1, nameserver2: ns2, updatedAt: new Date() })
-      .where(eq(claimedDomains.domain, fqdn.toLowerCase()));
-    logger.info(
-      { fqdn, ns1, ns2, provider: this.name },
+      .where(eq(claimedDomains?.domain, fqdn?.toLowerCase()));
+    logger?.info(
+      { fqdn, ns1, ns2, provider: this?.name },
       "[InternalRegistrar] nameservers updated",
     );
   }
@@ -179,19 +174,19 @@ export class InternalRegistrarProvider implements RegistrarProvider {
     const [row] = await db
       .select()
       .from(claimedDomains)
-      .where(eq(claimedDomains.domain, fqdn.toLowerCase()))
+      .where(eq(claimedDomains?.domain, fqdn?.toLowerCase()))
       .limit(1);
 
     if (!row) throw new Error(`Domain not found: ${fqdn}`);
 
     return {
-      fqdn: row.domain,
-      status: row.status,
-      expiresAt: row.expiresAt ?? undefined,
-      nameservers: [row.nameserver1 ?? NS1, row.nameserver2 ?? NS2].filter(
+      fqdn: row?.domain,
+      status: row?.status,
+      expiresAt: row?.expiresAt ?? undefined,
+      nameservers: [row?.nameserver1 ?? NS1, row?.nameserver2 ?? NS2].filter(
         Boolean,
       ),
-      autoRenew: row.autoRenew,
+      autoRenew: row?.autoRenew,
       locked: false,
     };
   }
@@ -200,21 +195,21 @@ export class InternalRegistrarProvider implements RegistrarProvider {
     await db
       .update(claimedDomains)
       .set({ status: "released", autoRenew: false, updatedAt: new Date() })
-      .where(eq(claimedDomains.domain, fqdn.toLowerCase()));
+      .where(eq(claimedDomains?.domain, fqdn?.toLowerCase()));
 
     // Remove DNS zone so the slot is truly freed
     try {
-      await pool.query("DELETE FROM dns_zones WHERE domain = $1", [
-        fqdn.toLowerCase(),
+      await pool?.query("DELETE FROM dns_zones WHERE domain = $1", [
+        fqdn?.toLowerCase(),
       ]);
     } catch (e) {
-      logger.warn(
-        { fqdn, err: e.message },
+      logger?.warn(
+        { fqdn, err: e?.message },
         "[InternalRegistrar] DNS zone removal on release failed (non-fatal)",
       );
     }
-    logger.info(
-      { fqdn, provider: this.name },
+    logger?.info(
+      { fqdn, provider: this?.name },
       "[InternalRegistrar] domain released (soft)",
     );
   }
@@ -222,11 +217,11 @@ export class InternalRegistrarProvider implements RegistrarProvider {
   async initiateTransferIn(params: TransferParams): Promise<TransferResult> {
     // Internal provider doesn't do EPP transfers — this is for BYOD (user points NS here)
     const { fqdn, userId } = params;
-    const domainLower = fqdn.toLowerCase();
-    const tld = "." + domainLower.split(".").slice(1).join(".");
-    const sld = domainLower.split(".")[0];
+    const _domainLower = fqdn?.toLowerCase();
+    const _tld = "." + domainLower?.split(".").slice(1).join(".");
+    const _sld = domainLower?.split(".")[0];
 
-    await db.insert(claimedDomains).values({
+    await db?.insert(claimedDomains).values({
       userId,
       domain: domainLower,
       sld,
@@ -242,7 +237,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       pricePaidCents: 0,
     });
 
-    await this._ensureDnsZone(domainLower, userId, false);
+    await this?._ensureDnsZone(domainLower, userId, false);
 
     return {
       ok: true,
@@ -253,10 +248,10 @@ export class InternalRegistrarProvider implements RegistrarProvider {
 
   async healthCheck(): Promise<{ ok: boolean; message?: string }> {
     try {
-      await db.select({ id: claimedDomains.id }).from(claimedDomains).limit(1);
+      await db?.select({ id: claimedDomains?.id }).from(claimedDomains).limit(1);
       return { ok: true, message: "Internal DB registry reachable" };
     } catch (e) {
-      return { ok: false, message: e.message };
+      return { ok: false, message: e?.message };
     }
   }
 
@@ -268,20 +263,20 @@ export class InternalRegistrarProvider implements RegistrarProvider {
     isActive: boolean,
   ): Promise<void> {
     try {
-      const existing = await pool.query(
+      const _existing = await pool?.query(
         "SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1",
         [fqdn],
       );
-      if (existing.rows.length > 0) return;
+      if (existing?.rows.length > 0) return;
 
-      const { rows } = await pool.query(
+      const { rows } = await pool?.query(
         `INSERT INTO dns_zones (user_id, domain, status, is_verified, nameserver1, nameserver2)
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         [userId, fqdn, isActive ? "active" : "pending", isActive, NS1, NS2],
       );
-      const zoneId = rows[0].id;
+      const _zoneId = rows[0].id;
 
-      await pool.query(
+      await pool?.query(
         `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl) VALUES
          ($1, $2, $3, 'NS',  '@', $4, 3600),
          ($1, $2, $3, 'SOA', '@', $5, 3600)`,
@@ -293,10 +288,10 @@ export class InternalRegistrarProvider implements RegistrarProvider {
           `${NS1} hostmaster.${PLATFORM_DOMAIN} 1 3600 900 604800 300`,
         ],
       );
-      logger.info({ fqdn, zoneId }, "[InternalRegistrar] DNS zone ensured");
+      logger?.info({ fqdn, zoneId }, "[InternalRegistrar] DNS zone ensured");
     } catch (e) {
-      logger.warn(
-        { fqdn, err: e.message },
+      logger?.warn(
+        { fqdn, err: e?.message },
         "[InternalRegistrar] _ensureDnsZone failed (non-fatal)",
       );
     }

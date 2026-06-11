@@ -16,42 +16,42 @@ export function useKeyboardShortcuts(
   shortcuts: KeyboardShortcut[],
   enabled = true,
 ) {
-  const shortcutsRef = useRef(shortcuts);
+  const _shortcutsRef = useRef(shortcuts);
 
   useEffect(() => {
-    shortcutsRef.current = shortcuts;
+    shortcutsRef?.current = shortcuts;
   }, [shortcuts]);
 
-  const handleKeyDown = useCallback(
+  const _handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!enabled) return;
 
-      const target = e.target as HTMLElement;
+      const _target = e?.target as HTMLElement;
       if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.contentEditable === "true"
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.contentEditable === "true"
       ) {
         return;
       }
 
-      for (const shortcut of shortcutsRef.current) {
-        const ctrlMatch =
-          shortcut.ctrl === undefined ||
-          shortcut.ctrl === (e.ctrlKey || e.metaKey);
-        const shiftMatch =
-          shortcut.shift === undefined || shortcut.shift === e.shiftKey;
-        const altMatch =
-          shortcut.alt === undefined || shortcut.alt === e.altKey;
-        const metaMatch =
-          shortcut.meta === undefined || shortcut.meta === e.metaKey;
-        const keyMatch = shortcut.key.toLowerCase() === e.key.toLowerCase();
+      for (const shortcut of shortcutsRef?.current) {
+        const _ctrlMatch =
+          shortcut?.ctrl === undefined ||
+          shortcut?.ctrl === (e?.ctrlKey || e?.metaKey);
+        const _shiftMatch =
+          shortcut?.shift === undefined || shortcut?.shift === e?.shiftKey;
+        const _altMatch =
+          shortcut?.alt === undefined || shortcut?.alt === e?.altKey;
+        const _metaMatch =
+          shortcut?.meta === undefined || shortcut?.meta === e?.metaKey;
+        const _keyMatch = shortcut?.key.toLowerCase() === e?.key.toLowerCase();
 
         if (keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch) {
-          if (shortcut.preventDefault !== false) {
-            e.preventDefault();
+          if (shortcut?.preventDefault !== false) {
+            e?.preventDefault();
           }
-          shortcut.handler();
+          shortcut?.handler();
           break;
         }
       }
@@ -61,20 +61,20 @@ export function useKeyboardShortcuts(
 
   useEffect(() => {
     if (enabled) {
-      window.addEventListener("keydown", handleKeyDown);
-      return () => window.removeEventListener("keydown", handleKeyDown);
+      window?.addEventListener("keydown", handleKeyDown);
+      return () => window?.removeEventListener("keydown", handleKeyDown);
     }
   }, [handleKeyDown, enabled]);
 
-  return shortcuts.map((s) => ({
-    key: s.key,
-    description: s.description || "",
-    category: s.category || "General",
+  return shortcuts?.map((s) => ({
+    key: s?.key,
+    description: s?.description || "",
+    category: s?.category || "General",
     modifiers: [
-      s.ctrl && "Ctrl",
-      s.shift && "Shift",
-      s.alt && "Alt",
-      s.meta && "Cmd",
+      s?.ctrl && "Ctrl",
+      s?.shift && "Shift",
+      s?.alt && "Alt",
+      s?.meta && "Cmd",
     ]
       .filter(Boolean)
       .join("+"),
@@ -85,32 +85,32 @@ export function useShortcutOverlay() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "?" && !e.ctrlKey && !e.altKey && !e.metaKey) {
-        const target = e.target as HTMLElement;
+    const _handleKeyDown = (e: KeyboardEvent) => {
+      if (e?.key === "?" && !e?.ctrlKey && !e?.altKey && !e?.metaKey) {
+        const _target = e?.target as HTMLElement;
         if (
-          target.tagName !== "INPUT" &&
-          target.tagName !== "TEXTAREA" &&
-          target.contentEditable !== "true"
+          target?.tagName !== "INPUT" &&
+          target?.tagName !== "TEXTAREA" &&
+          target?.contentEditable !== "true"
         ) {
-          e.preventDefault();
+          e?.preventDefault();
           setIsOpen((prev) => !prev);
         }
       }
-      if (e.key === "Escape" && isOpen) {
+      if (e?.key === "Escape" && isOpen) {
         setIsOpen(false);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window?.addEventListener("keydown", handleKeyDown);
+    return () => window?.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
 
   return { isOpen, setIsOpen, toggle: () => setIsOpen((prev) => !prev) };
 }
 
 // Studio DAW specific shortcuts - comprehensive professional DAW controls
-export const STUDIO_SHORTCUTS = {
+export const _STUDIO_SHORTCUTS = {
   // Transport Controls
   PLAY_PAUSE: { key: " ", description: "Play/Pause", category: "Transport" },
   STOP: { key: "s", description: "Stop", category: "Transport" },

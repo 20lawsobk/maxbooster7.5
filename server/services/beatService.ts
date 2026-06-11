@@ -1,6 +1,6 @@
 import { storage } from "../storage";
 import { stripeService } from "./stripeService";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export class BeatService {
   async purchaseBeat(
@@ -9,23 +9,23 @@ export class BeatService {
     licenseType: "standard" | "exclusive",
   ) {
     try {
-      const beat = await storage.getBeat(beatId);
+      const _beat = await storage?.getBeat(beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
 
-      if (licenseType === "exclusive" && beat.isExclusiveSold) {
+      if (licenseType === "exclusive" && beat?.isExclusiveSold) {
         throw new Error("Exclusive license already sold");
       }
 
-      const price =
-        licenseType === "standard" ? beat.standardPrice : beat.exclusivePrice;
+      const _price =
+        licenseType === "standard" ? beat?.standardPrice : beat?.exclusivePrice;
       if (!price) {
         throw new Error("License not available");
       }
 
       // Create Stripe payment intent
-      const paymentIntent = await stripeService.createBeatPurchaseIntent(
+      const _paymentIntent = await stripeService?.createBeatPurchaseIntent(
         beatId,
         buyerId,
         licenseType,
@@ -34,12 +34,12 @@ export class BeatService {
 
       return {
         success: true,
-        paymentIntent: paymentIntent.client_secret,
+        paymentIntent: paymentIntent?.client_secret,
         licenseType,
         price,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Beat purchase error:");
+      logger?.warn({ err: error }, "Beat purchase error:");
       throw error;
     }
   }
@@ -54,22 +54,22 @@ export class BeatService {
   ) {
     try {
       // Create sale record
-      const sale = await storage.createBeatSale({
+      const _sale = await storage?.createBeatSale({
         beatId,
         buyerId,
         sellerId,
         licenseType,
-        price: price.toString(),
+        price: price?.toString(),
         stripePaymentIntentId: paymentIntentId,
       });
 
       // If exclusive license, mark beat as sold
       if (licenseType === "exclusive") {
-        await storage.updateBeat(beatId, { isExclusiveSold: true });
+        await storage?.updateBeat(beatId, { isExclusiveSold: true });
       }
 
       // Generate license agreement
-      const licenseAgreement = await this.generateLicenseAgreement(
+      const _licenseAgreement = await this?.generateLicenseAgreement(
         sale,
         licenseType,
       );
@@ -80,7 +80,7 @@ export class BeatService {
         licenseAgreement,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Beat purchase completion error:");
+      logger?.warn({ err: error }, "Beat purchase completion error:");
       throw error;
     }
   }
@@ -90,7 +90,7 @@ export class BeatService {
     licenseType: "standard" | "exclusive",
   ) {
     // Generate legal license agreement based on license type
-    const terms =
+    const _terms =
       licenseType === "standard"
         ? {
             commercialUse: true,
@@ -106,7 +106,7 @@ export class BeatService {
           };
 
     return {
-      id: `license_${sale.id}`,
+      id: `license_${sale?.id}`,
       terms,
       generatedAt: new Date(),
     };
@@ -114,13 +114,13 @@ export class BeatService {
 
   async getBeatAnalytics(beatId: string, userId: string) {
     try {
-      const analytics = await storage.getBeatAnalytics(beatId, userId);
+      const _analytics = await storage?.getBeatAnalytics(beatId, userId);
       return analytics;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Beat analytics error:");
+      logger?.warn({ err: error }, "Beat analytics error:");
       throw new Error("Failed to fetch beat analytics");
     }
   }
 }
 
-export const beatService = new BeatService();
+export const _beatService = new BeatService();

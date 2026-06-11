@@ -15,7 +15,7 @@ import {
   type InsertWorkspaceAuditLog,
 } from "@shared/schema";
 import { eq, and, desc, count } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
 
 export type WorkspaceType = "artist" | "label" | "agency" | "management";
@@ -71,57 +71,57 @@ export class WorkspaceService {
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "") +
       "-" +
-      crypto.randomBytes(4).toString("hex")
+      crypto?.randomBytes(4).toString("hex")
     );
   }
 
   private generateInviteToken(): string {
-    return crypto.randomBytes(32).toString("hex");
+    return crypto?.randomBytes(32).toString("hex");
   }
 
   async createWorkspace(
     params: CreateWorkspaceParams,
   ): Promise<{ success: boolean; workspace?: Workspace; error?: string }> {
     try {
-      const slug = this.generateSlug(params.name);
+      const _slug = this?.generateSlug(params?.name);
 
       const [workspace] = await db
         .insert(workspaces)
         .values({
-          name: params.name,
+          name: params?.name,
           slug,
-          type: params.type,
-          ownerId: params.ownerId,
-          description: params.description,
-          settings: params.settings || undefined,
-          branding: params.branding || undefined,
+          type: params?.type,
+          ownerId: params?.ownerId,
+          description: params?.description,
+          settings: params?.settings || undefined,
+          branding: params?.branding || undefined,
         })
         .returning();
 
-      await this.initializeDefaultRoles(workspace.id);
+      await this?.initializeDefaultRoles(workspace?.id);
 
-      const ownerRole = await this.getRoleByName(workspace.id, "Owner");
+      const _ownerRole = await this?.getRoleByName(workspace?.id, "Owner");
       if (ownerRole) {
-        await this.addMember({
-          workspaceId: workspace.id,
-          userId: params.ownerId,
-          roleId: ownerRole.id,
+        await this?.addMember({
+          workspaceId: workspace?.id,
+          userId: params?.ownerId,
+          roleId: ownerRole?.id,
           role: "owner",
         });
       }
 
-      await this.logAuditEvent({
-        workspaceId: workspace.id,
-        userId: params.ownerId,
-        action: "workspace.created",
+      await this?.logAuditEvent({
+        workspaceId: workspace?.id,
+        userId: params?.ownerId,
+        action: "workspace?.created",
         resourceType: "workspace",
-        resourceId: workspace.id,
-        newValues: { name: params.name, type: params.type },
+        resourceId: workspace?.id,
+        newValues: { name: params?.name, type: params?.type },
       });
 
       return { success: true, workspace };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Create workspace error:");
+      logger?.warn({ err: error }, "Create workspace error:");
       return { success: false, error: "Failed to create workspace" };
     }
   }
@@ -131,11 +131,11 @@ export class WorkspaceService {
       const [workspace] = await db
         .select()
         .from(workspaces)
-        .where(eq(workspaces.id, workspaceId))
+        .where(eq(workspaces?.id, workspaceId))
         .limit(1);
       return workspace || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get workspace error:");
+      logger?.warn({ err: error }, "Get workspace error:");
       return null;
     }
   }
@@ -145,34 +145,34 @@ export class WorkspaceService {
       const [workspace] = await db
         .select()
         .from(workspaces)
-        .where(eq(workspaces.slug, slug))
+        .where(eq(workspaces?.slug, slug))
         .limit(1);
       return workspace || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get workspace by slug error:");
+      logger?.warn({ err: error }, "Get workspace by slug error:");
       return null;
     }
   }
 
   async getUserWorkspaces(userId: string): Promise<Workspace[]> {
     try {
-      const memberships = await db
+      const _memberships = await db
         .select({
           workspace: workspaces,
-          role: workspaceMembers.role,
+          role: workspaceMembers?.role,
         })
         .from(workspaceMembers)
-        .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
+        .innerJoin(workspaces, eq(workspaceMembers?.workspaceId, workspaces?.id))
         .where(
           and(
-            eq(workspaceMembers.userId, userId),
-            eq(workspaceMembers.status, "active"),
+            eq(workspaceMembers?.userId, userId),
+            eq(workspaceMembers?.status, "active"),
           ),
         );
 
-      return memberships.map((m) => m.workspace);
+      return memberships?.map((m) => m?.workspace);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get user workspaces error:");
+      logger?.warn({ err: error }, "Get user workspaces error:");
       return [];
     }
   }
@@ -183,7 +183,7 @@ export class WorkspaceService {
     userId: string,
   ): Promise<{ success: boolean; workspace?: Workspace; error?: string }> {
     try {
-      const existingWorkspace = await this.getWorkspace(workspaceId);
+      const _existingWorkspace = await this?.getWorkspace(workspaceId);
       if (!existingWorkspace) {
         return { success: false, error: "Workspace not found" };
       }
@@ -194,13 +194,13 @@ export class WorkspaceService {
           ...updates,
           updatedAt: new Date(),
         })
-        .where(eq(workspaces.id, workspaceId))
+        .where(eq(workspaces?.id, workspaceId))
         .returning();
 
-      await this.logAuditEvent({
+      await this?.logAuditEvent({
         workspaceId,
         userId,
-        action: "workspace.updated",
+        action: "workspace?.updated",
         resourceType: "workspace",
         resourceId: workspaceId,
         previousValues: existingWorkspace,
@@ -209,7 +209,7 @@ export class WorkspaceService {
 
       return { success: true, workspace };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Update workspace error:");
+      logger?.warn({ err: error }, "Update workspace error:");
       return { success: false, error: "Failed to update workspace" };
     }
   }
@@ -219,29 +219,29 @@ export class WorkspaceService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const workspace = await this.getWorkspace(workspaceId);
+      const _workspace = await this?.getWorkspace(workspaceId);
       if (!workspace) {
         return { success: false, error: "Workspace not found" };
       }
 
-      if (workspace.ownerId !== userId) {
+      if (workspace?.ownerId !== userId) {
         return {
           success: false,
           error: "Only the workspace owner can delete it",
         };
       }
 
-      await db.delete(workspaces).where(eq(workspaces.id, workspaceId));
+      await db?.delete(workspaces).where(eq(workspaces?.id, workspaceId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Delete workspace error:");
+      logger?.warn({ err: error }, "Delete workspace error:");
       return { success: false, error: "Failed to delete workspace" };
     }
   }
 
   private async initializeDefaultRoles(workspaceId: string): Promise<void> {
-    const defaultRoles = [
+    const _defaultRoles = [
       {
         name: "Owner",
         description: "Full access to all workspace features",
@@ -339,13 +339,13 @@ export class WorkspaceService {
     ];
 
     for (const role of defaultRoles) {
-      await db.insert(workspaceRoles).values({
+      await db?.insert(workspaceRoles).values({
         workspaceId,
-        name: role.name,
-        description: role.description,
-        permissions: role.permissions,
-        isSystem: role.isSystem,
-        priority: role.priority,
+        name: role?.name,
+        description: role?.description,
+        permissions: role?.permissions,
+        isSystem: role?.isSystem,
+        priority: role?.priority,
       });
     }
   }
@@ -360,14 +360,14 @@ export class WorkspaceService {
         .from(workspaceRoles)
         .where(
           and(
-            eq(workspaceRoles.workspaceId, workspaceId),
-            eq(workspaceRoles.name, name),
+            eq(workspaceRoles?.workspaceId, workspaceId),
+            eq(workspaceRoles?.name, name),
           ),
         )
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get role by name error:");
+      logger?.warn({ err: error }, "Get role by name error:");
       return null;
     }
   }
@@ -380,9 +380,9 @@ export class WorkspaceService {
     invitedBy?: string;
   }): Promise<{ success: boolean; member?: WorkspaceMember; error?: string }> {
     try {
-      const existingMember = await this.getMember(
-        params.workspaceId,
-        params.userId,
+      const _existingMember = await this?.getMember(
+        params?.workspaceId,
+        params?.userId,
       );
       if (existingMember) {
         return {
@@ -394,12 +394,12 @@ export class WorkspaceService {
       const [member] = await db
         .insert(workspaceMembers)
         .values({
-          workspaceId: params.workspaceId,
-          userId: params.userId,
-          roleId: params.roleId,
-          role: params.role,
-          invitedBy: params.invitedBy,
-          invitedAt: params.invitedBy ? new Date() : undefined,
+          workspaceId: params?.workspaceId,
+          userId: params?.userId,
+          roleId: params?.roleId,
+          role: params?.role,
+          invitedBy: params?.invitedBy,
+          invitedAt: params?.invitedBy ? new Date() : undefined,
           joinedAt: new Date(),
           status: "active",
         })
@@ -407,7 +407,7 @@ export class WorkspaceService {
 
       return { success: true, member };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Add member error:");
+      logger?.warn({ err: error }, "Add member error:");
       return { success: false, error: "Failed to add member" };
     }
   }
@@ -422,42 +422,42 @@ export class WorkspaceService {
         .from(workspaceMembers)
         .where(
           and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.userId, userId),
+            eq(workspaceMembers?.workspaceId, workspaceId),
+            eq(workspaceMembers?.userId, userId),
           ),
         )
         .limit(1);
       return member || null;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get member error:");
+      logger?.warn({ err: error }, "Get member error:");
       return null;
     }
   }
 
   async getMembers(workspaceId: string): Promise<any[]> {
     try {
-      const members = await db
+      const _members = await db
         .select({
-          id: workspaceMembers.id,
-          userId: workspaceMembers.userId,
-          role: workspaceMembers.role,
-          roleId: workspaceMembers.roleId,
-          status: workspaceMembers.status,
-          joinedAt: workspaceMembers.joinedAt,
-          lastActiveAt: workspaceMembers.lastActiveAt,
-          userEmail: users.email,
-          userFirstName: users.firstName,
-          userLastName: users.lastName,
-          userProfileImage: users.profileImageUrl,
+          id: workspaceMembers?.id,
+          userId: workspaceMembers?.userId,
+          role: workspaceMembers?.role,
+          roleId: workspaceMembers?.roleId,
+          status: workspaceMembers?.status,
+          joinedAt: workspaceMembers?.joinedAt,
+          lastActiveAt: workspaceMembers?.lastActiveAt,
+          userEmail: users?.email,
+          userFirstName: users?.firstName,
+          userLastName: users?.lastName,
+          userProfileImage: users?.profileImageUrl,
         })
         .from(workspaceMembers)
-        .innerJoin(users, eq(workspaceMembers.userId, users.id))
-        .where(eq(workspaceMembers.workspaceId, workspaceId))
-        .orderBy(desc(workspaceMembers.joinedAt));
+        .innerJoin(users, eq(workspaceMembers?.userId, users?.id))
+        .where(eq(workspaceMembers?.workspaceId, workspaceId))
+        .orderBy(desc(workspaceMembers?.joinedAt));
 
       return members;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get members error:");
+      logger?.warn({ err: error }, "Get members error:");
       return [];
     }
   }
@@ -475,8 +475,8 @@ export class WorkspaceService {
         .from(workspaceMembers)
         .where(
           and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.id, memberId),
+            eq(workspaceMembers?.workspaceId, workspaceId),
+            eq(workspaceMembers?.id, memberId),
           ),
         )
         .limit(1);
@@ -485,7 +485,7 @@ export class WorkspaceService {
         return { success: false, error: "Member not found" };
       }
 
-      const previousRole = member.role;
+      const _previousRole = member?.role;
 
       await db
         .update(workspaceMembers)
@@ -494,13 +494,13 @@ export class WorkspaceService {
           roleId: newRoleId,
           updatedAt: new Date(),
         })
-        .where(eq(workspaceMembers.id, memberId));
+        .where(eq(workspaceMembers?.id, memberId));
 
       if (updatedBy) {
-        await this.logAuditEvent({
+        await this?.logAuditEvent({
           workspaceId,
           userId: updatedBy,
-          action: "member.role_changed",
+          action: "member?.role_changed",
           resourceType: "member",
           resourceId: memberId,
           previousValues: { role: previousRole },
@@ -510,7 +510,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Update member role error:");
+      logger?.warn({ err: error }, "Update member role error:");
       return { success: false, error: "Failed to update member role" };
     }
   }
@@ -526,8 +526,8 @@ export class WorkspaceService {
         .from(workspaceMembers)
         .where(
           and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.id, memberId),
+            eq(workspaceMembers?.workspaceId, workspaceId),
+            eq(workspaceMembers?.id, memberId),
           ),
         )
         .limit(1);
@@ -536,26 +536,26 @@ export class WorkspaceService {
         return { success: false, error: "Member not found" };
       }
 
-      if (member.role === "owner") {
+      if (member?.role === "owner") {
         return { success: false, error: "Cannot remove the workspace owner" };
       }
 
       await db
         .delete(workspaceMembers)
-        .where(eq(workspaceMembers.id, memberId));
+        .where(eq(workspaceMembers?.id, memberId));
 
-      await this.logAuditEvent({
+      await this?.logAuditEvent({
         workspaceId,
         userId: removedBy,
-        action: "member.removed",
+        action: "member?.removed",
         resourceType: "member",
         resourceId: memberId,
-        previousValues: { userId: member.userId, role: member.role },
+        previousValues: { userId: member?.userId, role: member?.role },
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Remove member error:");
+      logger?.warn({ err: error }, "Remove member error:");
       return { success: false, error: "Failed to remove member" };
     }
   }
@@ -566,15 +566,15 @@ export class WorkspaceService {
     error?: string;
   }> {
     try {
-      const existingUser = await db
+      const _existingUser = await db
         .select()
         .from(users)
-        .where(eq(users.email, params.email))
+        .where(eq(users?.email, params?.email))
         .limit(1);
 
-      if (existingUser.length > 0) {
-        const existingMember = await this.getMember(
-          params.workspaceId,
+      if (existingUser?.length > 0) {
+        const _existingMember = await this?.getMember(
+          params?.workspaceId,
           existingUser[0].id,
         );
         if (existingMember) {
@@ -590,9 +590,9 @@ export class WorkspaceService {
         .from(workspaceInvitations)
         .where(
           and(
-            eq(workspaceInvitations.workspaceId, params.workspaceId),
-            eq(workspaceInvitations.email, params.email),
-            eq(workspaceInvitations.status, "pending"),
+            eq(workspaceInvitations?.workspaceId, params?.workspaceId),
+            eq(workspaceInvitations?.email, params?.email),
+            eq(workspaceInvitations?.status, "pending"),
           ),
         )
         .limit(1);
@@ -604,36 +604,36 @@ export class WorkspaceService {
         };
       }
 
-      const token = this.generateInviteToken();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
+      const _token = this?.generateInviteToken();
+      const _expiresAt = new Date();
+      expiresAt?.setDate(expiresAt?.getDate() + 7);
 
       const [invitation] = await db
         .insert(workspaceInvitations)
         .values({
-          workspaceId: params.workspaceId,
-          email: params.email,
-          role: params.role,
-          roleId: params.roleId,
+          workspaceId: params?.workspaceId,
+          email: params?.email,
+          role: params?.role,
+          roleId: params?.roleId,
           token,
-          invitedBy: params.invitedBy,
-          message: params.message,
+          invitedBy: params?.invitedBy,
+          message: params?.message,
           expiresAt,
         })
         .returning();
 
-      await this.logAuditEvent({
-        workspaceId: params.workspaceId,
-        userId: params.invitedBy,
-        action: "invitation.sent",
+      await this?.logAuditEvent({
+        workspaceId: params?.workspaceId,
+        userId: params?.invitedBy,
+        action: "invitation?.sent",
         resourceType: "invitation",
-        resourceId: invitation.id,
-        newValues: { email: params.email, role: params.role },
+        resourceId: invitation?.id,
+        newValues: { email: params?.email, role: params?.role },
       });
 
       return { success: true, invitation };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Invite member error:");
+      logger?.warn({ err: error }, "Invite member error:");
       return { success: false, error: "Failed to send invitation" };
     }
   }
@@ -646,37 +646,37 @@ export class WorkspaceService {
       const [invitation] = await db
         .select()
         .from(workspaceInvitations)
-        .where(eq(workspaceInvitations.token, token))
+        .where(eq(workspaceInvitations?.token, token))
         .limit(1);
 
       if (!invitation) {
         return { success: false, error: "Invalid invitation token" };
       }
 
-      if (invitation.status !== "pending") {
+      if (invitation?.status !== "pending") {
         return {
           success: false,
           error: "Invitation has already been used or expired",
         };
       }
 
-      if (new Date() > invitation.expiresAt) {
+      if (new Date() > invitation?.expiresAt) {
         await db
           .update(workspaceInvitations)
           .set({ status: "expired" })
-          .where(eq(workspaceInvitations.id, invitation.id));
+          .where(eq(workspaceInvitations?.id, invitation?.id));
         return { success: false, error: "Invitation has expired" };
       }
 
-      const addResult = await this.addMember({
-        workspaceId: invitation.workspaceId,
+      const _addResult = await this?.addMember({
+        workspaceId: invitation?.workspaceId,
         userId,
-        roleId: invitation.roleId ?? undefined,
-        role: invitation.role ?? "member",
-        invitedBy: invitation.invitedBy,
+        roleId: invitation?.roleId ?? undefined,
+        role: invitation?.role ?? "member",
+        invitedBy: invitation?.invitedBy,
       });
 
-      if (!addResult.success) {
+      if (!addResult?.success) {
         return addResult;
       }
 
@@ -687,19 +687,19 @@ export class WorkspaceService {
           acceptedAt: new Date(),
           acceptedByUserId: userId,
         })
-        .where(eq(workspaceInvitations.id, invitation.id));
+        .where(eq(workspaceInvitations?.id, invitation?.id));
 
-      await this.logAuditEvent({
-        workspaceId: invitation.workspaceId,
+      await this?.logAuditEvent({
+        workspaceId: invitation?.workspaceId,
         userId,
-        action: "invitation.accepted",
+        action: "invitation?.accepted",
         resourceType: "invitation",
-        resourceId: invitation.id,
+        resourceId: invitation?.id,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Accept invitation error:");
+      logger?.warn({ err: error }, "Accept invitation error:");
       return { success: false, error: "Failed to accept invitation" };
     }
   }
@@ -708,20 +708,20 @@ export class WorkspaceService {
     workspaceId: string,
   ): Promise<WorkspaceInvitation[]> {
     try {
-      const invitations = await db
+      const _invitations = await db
         .select()
         .from(workspaceInvitations)
         .where(
           and(
-            eq(workspaceInvitations.workspaceId, workspaceId),
-            eq(workspaceInvitations.status, "pending"),
+            eq(workspaceInvitations?.workspaceId, workspaceId),
+            eq(workspaceInvitations?.status, "pending"),
           ),
         )
-        .orderBy(desc(workspaceInvitations.createdAt));
+        .orderBy(desc(workspaceInvitations?.createdAt));
 
       return invitations;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get pending invitations error:");
+      logger?.warn({ err: error }, "Get pending invitations error:");
       return [];
     }
   }
@@ -734,7 +734,7 @@ export class WorkspaceService {
       const [invitation] = await db
         .select()
         .from(workspaceInvitations)
-        .where(eq(workspaceInvitations.id, invitationId))
+        .where(eq(workspaceInvitations?.id, invitationId))
         .limit(1);
 
       if (!invitation) {
@@ -744,19 +744,19 @@ export class WorkspaceService {
       await db
         .update(workspaceInvitations)
         .set({ status: "cancelled" })
-        .where(eq(workspaceInvitations.id, invitationId));
+        .where(eq(workspaceInvitations?.id, invitationId));
 
-      await this.logAuditEvent({
-        workspaceId: invitation.workspaceId,
+      await this?.logAuditEvent({
+        workspaceId: invitation?.workspaceId,
         userId: cancelledBy,
-        action: "invitation.cancelled",
+        action: "invitation?.cancelled",
         resourceType: "invitation",
         resourceId: invitationId,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Cancel invitation error:");
+      logger?.warn({ err: error }, "Cancel invitation error:");
       return { success: false, error: "Failed to cancel invitation" };
     }
   }
@@ -767,23 +767,23 @@ export class WorkspaceService {
     addedBy: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      await db.insert(workspaceCatalogs).values({
+      await db?.insert(workspaceCatalogs).values({
         workspaceId,
         projectId,
         addedBy,
       });
 
-      await this.logAuditEvent({
+      await this?.logAuditEvent({
         workspaceId,
         userId: addedBy,
-        action: "catalog.project_added",
+        action: "catalog?.project_added",
         resourceType: "project",
         resourceId: projectId,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Add to catalog error:");
+      logger?.warn({ err: error }, "Add to catalog error:");
       return { success: false, error: "Failed to add to catalog" };
     }
   }
@@ -798,37 +798,37 @@ export class WorkspaceService {
         .delete(workspaceCatalogs)
         .where(
           and(
-            eq(workspaceCatalogs.workspaceId, workspaceId),
-            eq(workspaceCatalogs.projectId, projectId),
+            eq(workspaceCatalogs?.workspaceId, workspaceId),
+            eq(workspaceCatalogs?.projectId, projectId),
           ),
         );
 
-      await this.logAuditEvent({
+      await this?.logAuditEvent({
         workspaceId,
         userId: removedBy,
-        action: "catalog.project_removed",
+        action: "catalog?.project_removed",
         resourceType: "project",
         resourceId: projectId,
       });
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Remove from catalog error:");
+      logger?.warn({ err: error }, "Remove from catalog error:");
       return { success: false, error: "Failed to remove from catalog" };
     }
   }
 
   async getCatalog(workspaceId: string): Promise<any[]> {
     try {
-      const catalog = await db
+      const _catalog = await db
         .select()
         .from(workspaceCatalogs)
-        .where(eq(workspaceCatalogs.workspaceId, workspaceId))
-        .orderBy(desc(workspaceCatalogs.createdAt));
+        .where(eq(workspaceCatalogs?.workspaceId, workspaceId))
+        .orderBy(desc(workspaceCatalogs?.createdAt));
 
       return catalog;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get catalog error:");
+      logger?.warn({ err: error }, "Get catalog error:");
       return [];
     }
   }
@@ -837,9 +837,9 @@ export class WorkspaceService {
     params: Omit<InsertWorkspaceAuditLog, "createdAt">,
   ): Promise<void> {
     try {
-      await db.insert(workspaceAuditLog).values(params);
+      await db?.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Log audit event error:");
+      logger?.warn({ err: error }, "Log audit event error:");
     }
   }
 
@@ -849,30 +849,30 @@ export class WorkspaceService {
     offset: number = 0,
   ): Promise<any[]> {
     try {
-      const logs = await db
+      const _logs = await db
         .select({
-          id: workspaceAuditLog.id,
-          action: workspaceAuditLog.action,
-          resourceType: workspaceAuditLog.resourceType,
-          resourceId: workspaceAuditLog.resourceId,
-          changes: workspaceAuditLog.changes,
-          previousValues: workspaceAuditLog.previousValues,
-          newValues: workspaceAuditLog.newValues,
-          createdAt: workspaceAuditLog.createdAt,
-          userId: workspaceAuditLog.userId,
-          userEmail: users.email,
-          userName: users.firstName,
+          id: workspaceAuditLog?.id,
+          action: workspaceAuditLog?.action,
+          resourceType: workspaceAuditLog?.resourceType,
+          resourceId: workspaceAuditLog?.resourceId,
+          changes: workspaceAuditLog?.changes,
+          previousValues: workspaceAuditLog?.previousValues,
+          newValues: workspaceAuditLog?.newValues,
+          createdAt: workspaceAuditLog?.createdAt,
+          userId: workspaceAuditLog?.userId,
+          userEmail: users?.email,
+          userName: users?.firstName,
         })
         .from(workspaceAuditLog)
-        .leftJoin(users, eq(workspaceAuditLog.userId, users.id))
-        .where(eq(workspaceAuditLog.workspaceId, workspaceId))
-        .orderBy(desc(workspaceAuditLog.createdAt))
+        .leftJoin(users, eq(workspaceAuditLog?.userId, users?.id))
+        .where(eq(workspaceAuditLog?.workspaceId, workspaceId))
+        .orderBy(desc(workspaceAuditLog?.createdAt))
         .limit(limit)
         .offset(offset);
 
       return logs;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get audit log error:");
+      logger?.warn({ err: error }, "Get audit log error:");
       return [];
     }
   }
@@ -884,13 +884,13 @@ export class WorkspaceService {
         .from(workspaceMembers)
         .where(
           and(
-            eq(workspaceMembers.workspaceId, workspaceId),
-            eq(workspaceMembers.status, "active"),
+            eq(workspaceMembers?.workspaceId, workspaceId),
+            eq(workspaceMembers?.status, "active"),
           ),
         );
       return result?.count || 0;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get member count error:");
+      logger?.warn({ err: error }, "Get member count error:");
       return 0;
     }
   }
@@ -899,15 +899,15 @@ export class WorkspaceService {
     workspaceId: string,
     userId: string,
   ): Promise<boolean> {
-    const member = await this.getMember(workspaceId, userId);
-    return member !== null && member.status === "active";
+    const _member = await this?.getMember(workspaceId, userId);
+    return member !== null && member?.status === "active";
   }
 
   async getMemberRole(
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceRoleType | null> {
-    const member = await this.getMember(workspaceId, userId);
+    const _member = await this?.getMember(workspaceId, userId);
     return (member?.role as WorkspaceRoleType) || null;
   }
 
@@ -919,35 +919,35 @@ export class WorkspaceService {
     sharedBy: string;
   }): Promise<{ success: boolean; shares?: unknown[]; error?: string }> {
     try {
-      const shares = [];
+      const _shares = [];
 
-      for (const memberId of params.memberIds) {
-        const share = {
-          id: crypto.randomUUID(),
-          projectId: params.projectId,
+      for (const memberId of params?.memberIds) {
+        const _share = {
+          id: crypto?.randomUUID(),
+          projectId: params?.projectId,
           userId: memberId,
-          permission: params.permission,
-          sharedBy: params.sharedBy,
+          permission: params?.permission,
+          sharedBy: params?.sharedBy,
           createdAt: new Date().toISOString(),
         };
-        shares.push(share);
+        shares?.push(share);
       }
 
-      await this.logAuditEvent({
-        workspaceId: params.workspaceId,
-        userId: params.sharedBy,
-        action: "project.shared",
+      await this?.logAuditEvent({
+        workspaceId: params?.workspaceId,
+        userId: params?.sharedBy,
+        action: "project?.shared",
         resourceType: "project",
-        resourceId: params.projectId,
+        resourceId: params?.projectId,
         newValues: {
-          memberCount: params.memberIds.length,
-          permission: params.permission,
+          memberCount: params?.memberIds.length,
+          permission: params?.permission,
         },
       });
 
       return { success: true, shares };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Share project error:");
+      logger?.warn({ err: error }, "Share project error:");
       return { success: false, error: "Failed to share project" };
     }
   }
@@ -986,42 +986,42 @@ export class WorkspaceService {
     error?: string;
   }> {
     try {
-      const token = crypto.randomBytes(16).toString("hex");
-      const baseUrl = process.env.BASE_URL || "https://maxbooster.app";
+      const _token = crypto?.randomBytes(16).toString("hex");
+      const _baseUrl = process?.env.BASE_URL || "https://maxbooster?.app";
 
       let expiresAt = null;
-      if (params.expirationDays) {
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + params.expirationDays);
-        expiresAt = expDate.toISOString();
+      if (params?.expirationDays) {
+        const _expDate = new Date();
+        expDate?.setDate(expDate?.getDate() + params?.expirationDays);
+        expiresAt = expDate?.toISOString();
       }
 
-      const link = {
-        id: crypto.randomUUID(),
+      const _link = {
+        id: crypto?.randomUUID(),
         url: `${baseUrl}/share/${token}`,
-        projectId: params.projectId,
-        permission: params.permission,
+        projectId: params?.projectId,
+        permission: params?.permission,
         expiresAt,
-        password: !!params.password,
+        password: !!params?.password,
         accessCount: 0,
         createdAt: new Date().toISOString(),
-        createdBy: params.createdBy,
-        allowDownload: params.allowDownload ?? true,
-        requireSignIn: params.requireSignIn ?? false,
+        createdBy: params?.createdBy,
+        allowDownload: params?.allowDownload ?? true,
+        requireSignIn: params?.requireSignIn ?? false,
       };
 
-      await this.logAuditEvent({
-        workspaceId: params.workspaceId,
-        userId: params.createdBy,
-        action: "share_link.created",
+      await this?.logAuditEvent({
+        workspaceId: params?.workspaceId,
+        userId: params?.createdBy,
+        action: "share_link?.created",
         resourceType: "share_link",
-        resourceId: link.id,
-        newValues: { permission: params.permission, expiresAt },
+        resourceId: link?.id,
+        newValues: { permission: params?.permission, expiresAt },
       });
 
       return { success: true, link };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Create share link error:");
+      logger?.warn({ err: error }, "Create share link error:");
       return { success: false, error: "Failed to create share link" };
     }
   }
@@ -1039,31 +1039,31 @@ export class WorkspaceService {
 
   async getWorkspacePresence(workspaceId: string): Promise<any[]> {
     try {
-      const members = await this.getMembers(workspaceId);
+      const _members = await this?.getMembers(workspaceId);
 
-      return members.map((member) => ({
-        userId: member.userId,
+      return members?.map((member) => ({
+        userId: member?.userId,
         displayName:
-          `${member.userFirstName || ""} ${member.userLastName || ""}`.trim() ||
-          member.userEmail,
-        avatar: member.userProfileImage,
-        color: this.generateUserColor(member.userId),
+          `${member?.userFirstName || ""} ${member?.userLastName || ""}`.trim() ||
+          member?.userEmail,
+        avatar: member?.userProfileImage,
+        color: this?.generateUserColor(member?.userId),
         status:
-          member.lastActiveAt &&
-          Date.now() - new Date(member.lastActiveAt).getTime() < 5 * 60 * 1000
+          member?.lastActiveAt &&
+          Date?.now() - new Date(member?.lastActiveAt).getTime() < 5 * 60 * 1000
             ? "online"
             : "offline",
         cursor: null,
         selection: null,
       }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Get workspace presence error:");
+      logger?.warn({ err: error }, "Get workspace presence error:");
       return [];
     }
   }
 
   private generateUserColor(userId: string): string {
-    const colors = [
+    const _colors = [
       "#FF6B6B",
       "#4ECDC4",
       "#45B7D1",
@@ -1075,11 +1075,11 @@ export class WorkspaceService {
       "#BB8FCE",
       "#85C1E9",
     ];
-    const hash = userId
+    const _hash = userId
       .split("")
-      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
+      .reduce((acc, char) => acc + char?.charCodeAt(0), 0);
+    return colors[hash % colors?.length];
   }
 }
 
-export const workspaceService = new WorkspaceService();
+export const _workspaceService = new WorkspaceService();

@@ -129,34 +129,34 @@ export class PocketDimension extends EventEmitter {
   constructor(config: PocketDimensionConfig) {
     super();
 
-    this.id = config.id;
-    this.name = config.name;
-    this.chunkSize = config.chunkSize || 1024 * 1024; // 1MB default
-    this.maxRecursionDepth = config.maxRecursionDepth || 10;
-    this.compressionLevel = config.compressionLevel || 9;
-    this.enableDeduplication = config.enableDeduplication ?? true;
-    this.enableVersioning = config.enableVersioning ?? true;
-    this.storagePath = config.storagePath || "./pocket-dimensions";
+    this?.id = config?.id;
+    this?.name = config?.name;
+    this?.chunkSize = config?.chunkSize || 1024 * 1024; // 1MB default
+    this?.maxRecursionDepth = config?.maxRecursionDepth || 10;
+    this?.compressionLevel = config?.compressionLevel || 9;
+    this?.enableDeduplication = config?.enableDeduplication ?? true;
+    this?.enableVersioning = config?.enableVersioning ?? true;
+    this?.storagePath = config?.storagePath || "./pocket-dimensions";
 
-    if (config.encryptionKey) {
-      this.rawEncryptionKey = config.encryptionKey;
-      this.encryptionKey = scryptSync(
-        config.encryptionKey,
+    if (config?.encryptionKey) {
+      this?.rawEncryptionKey = config?.encryptionKey;
+      this?.encryptionKey = scryptSync(
+        config?.encryptionKey,
         "pocket-dimension-salt",
         32,
       );
     }
 
-    this.metadata = {
-      id: this.id,
-      name: this.name,
+    this?.metadata = {
+      id: this?.id,
+      name: this?.name,
       createdAt: new Date(),
       updatedAt: new Date(),
       totalSize: 0,
       compressedSize: 0,
       chunkCount: 0,
       maxDepth: 0,
-      encrypted: !!this.encryptionKey,
+      encrypted: !!this?.encryptionKey,
       version: 1,
     };
   }
@@ -174,31 +174,31 @@ export class PocketDimension extends EventEmitter {
       get: (target, prop: string) => {
         if (typeof prop === "string") {
           // Check if this is a nested dimension
-          if (target.nestedDimensions.has(prop)) {
-            return target.nestedDimensions.get(prop)!.asBracketAccessor();
+          if (target?.nestedDimensions.has(prop)) {
+            return target?.nestedDimensions.get(prop)!.asBracketAccessor();
           }
           // Check if this is an existing entry
-          if (target.entries.has(prop)) {
-            return target.read(prop);
+          if (target?.entries.has(prop)) {
+            return target?.read(prop);
           }
           // Return accessor for creating new entry
           return {
-            write: (data: Buffer | string) => target.write(prop, data),
-            read: () => target.read(prop),
-            delete: () => target.delete(prop),
-            exists: () => target.exists(prop),
+            write: (data: Buffer | string) => target?.write(prop, data),
+            read: () => target?.read(prop),
+            delete: () => target?.delete(prop),
+            exists: () => target?.exists(prop),
             createDimension: (config?: Partial<PocketDimensionConfig>) =>
-              target.createNestedDimension(prop, config),
+              target?.createNestedDimension(prop, config),
           };
         }
-        return Reflect.get(target, prop);
+        return Reflect?.get(target, prop);
       },
       set: (target, prop: string, value: Buffer | string) => {
         if (typeof prop === "string") {
-          target.write(prop, value);
+          target?.write(prop, value);
           return true;
         }
-        return Reflect.set(target, prop, value);
+        return Reflect?.set(target, prop, value);
       },
     }) as unknown as PocketBracketAccessor;
   }
@@ -208,80 +208,80 @@ export class PocketDimension extends EventEmitter {
   // ============================================================================
 
   async open(): Promise<void> {
-    if (this.isOpen) return;
+    if (this?.isOpen) return;
 
     // Ensure storage directory exists
-    await fs.mkdir(path.join(this.storagePath, this.id), { recursive: true });
+    await fs?.mkdir(path?.join(this?.storagePath, this?.id), { recursive: true });
 
     // Load metadata if exists
     try {
-      const metaPath = path.join(this.storagePath, this.id, "metadata.json");
-      const metaData = await fs.readFile(metaPath, "utf-8");
-      this.metadata = JSON.parse(metaData);
+      const _metaPath = path?.join(this?.storagePath, this?.id, "metadata?.json");
+      const _metaData = await fs?.readFile(metaPath, "utf-8");
+      this?.metadata = JSON?.parse(metaData);
 
       // Load encryption key if the dimension was encrypted
-      if (this.metadata.encrypted && !this.encryptionKey) {
-        const keyPath = path.join(this.storagePath, this.id, ".keyfile");
+      if (this?.metadata.encrypted && !this?.encryptionKey) {
+        const _keyPath = path?.join(this?.storagePath, this?.id, ".keyfile");
         try {
-          const keyData = await fs.readFile(keyPath, "utf-8");
-          const keyInfo = JSON.parse(keyData);
-          this.rawEncryptionKey = keyInfo.key;
-          this.encryptionKey = scryptSync(
-            keyInfo.key,
+          const _keyData = await fs?.readFile(keyPath, "utf-8");
+          const _keyInfo = JSON?.parse(keyData);
+          this?.rawEncryptionKey = keyInfo?.key;
+          this?.encryptionKey = scryptSync(
+            keyInfo?.key,
             "pocket-dimension-salt",
             32,
           );
         } catch {
           throw new Error(
-            `Encrypted pocket dimension ${this.id} is missing its keyfile - data cannot be decrypted`,
+            `Encrypted pocket dimension ${this?.id} is missing its keyfile - data cannot be decrypted`,
           );
         }
       }
 
       // Load index
-      const indexPath = path.join(this.storagePath, this.id, "index.json");
-      const indexData = await fs.readFile(indexPath, "utf-8");
-      const index = JSON.parse(indexData);
+      const _indexPath = path?.join(this?.storagePath, this?.id, "index?.json");
+      const _indexData = await fs?.readFile(indexPath, "utf-8");
+      const _index = JSON?.parse(indexData);
 
-      this.entries = new Map(Object.entries(index.entries));
-      this.chunks = new Map(Object.entries(index.chunks));
+      this?.entries = new Map(Object?.entries(index?.entries));
+      this?.chunks = new Map(Object?.entries(index?.chunks));
     } catch (error) {
-      if (error.message?.includes("keyfile")) {
+      if (error?.message?.includes("keyfile")) {
         throw error; // Re-throw keyfile errors
       }
       // New dimension, start fresh
     }
 
-    this.isOpen = true;
-    this.emit("opened", { id: this.id, name: this.name });
+    this?.isOpen = true;
+    this?.emit("opened", { id: this?.id, name: this?.name });
   }
 
   async close(): Promise<void> {
-    if (!this.isOpen) return;
+    if (!this?.isOpen) return;
 
     // Persist metadata
-    await this.persistMetadata();
+    await this?.persistMetadata();
 
     // Close nested dimensions
-    for (const [, nested] of this.nestedDimensions) {
-      await nested.close();
+    for (const [, nested] of this?.nestedDimensions) {
+      await nested?.close();
     }
 
-    this.isOpen = false;
-    this.emit("closed", { id: this.id });
+    this?.isOpen = false;
+    this?.emit("closed", { id: this?.id });
   }
 
   private async persistMetadata(): Promise<void> {
-    const metaPath = path.join(this.storagePath, this.id, "metadata.json");
-    await fs.writeFile(metaPath, JSON.stringify(this.metadata, null, 2));
+    const _metaPath = path?.join(this?.storagePath, this?.id, "metadata?.json");
+    await fs?.writeFile(metaPath, JSON?.stringify(this?.metadata, null, 2));
 
-    const indexPath = path.join(this.storagePath, this.id, "index.json");
-    await fs.writeFile(
+    const _indexPath = path?.join(this?.storagePath, this?.id, "index?.json");
+    await fs?.writeFile(
       indexPath,
-      JSON.stringify(
+      JSON?.stringify(
         {
-          entries: Object.fromEntries(this.entries),
-          chunks: Object.fromEntries(this.chunks),
+          entries: Object?.fromEntries(this?.entries),
+          chunks: Object?.fromEntries(this?.chunks),
         },
         null,
         2,
@@ -289,13 +289,13 @@ export class PocketDimension extends EventEmitter {
     );
 
     // Persist encryption key if encrypted (stored separately for security)
-    if (this.rawEncryptionKey) {
-      const keyPath = path.join(this.storagePath, this.id, ".keyfile");
-      await fs.writeFile(
+    if (this?.rawEncryptionKey) {
+      const _keyPath = path?.join(this?.storagePath, this?.id, ".keyfile");
+      await fs?.writeFile(
         keyPath,
-        JSON.stringify(
+        JSON?.stringify(
           {
-            key: this.rawEncryptionKey,
+            key: this?.rawEncryptionKey,
             createdAt: new Date().toISOString(),
           },
           null,
@@ -315,30 +315,30 @@ export class PocketDimension extends EventEmitter {
     data: Buffer | string,
     options?: { depth?: number },
   ): Promise<PocketEntry> {
-    if (!this.isOpen) await this.open();
+    if (!this?.isOpen) await this?.open();
 
-    const buffer = typeof data === "string" ? Buffer.from(data) : data;
-    const depth = options?.depth || 0;
+    const _buffer = typeof data === "string" ? Buffer?.from(data) : data;
+    const _depth = options?.depth || 0;
 
-    if (depth > this.maxRecursionDepth) {
+    if (depth > this?.maxRecursionDepth) {
       throw new Error(
-        `Maximum recursion depth (${this.maxRecursionDepth}) exceeded - dimension inception limit reached`,
+        `Maximum recursion depth (${this?.maxRecursionDepth}) exceeded - dimension inception limit reached`,
       );
     }
 
-    const originalSize = buffer.length;
+    const _originalSize = buffer?.length;
     const chunks: string[] = [];
     let compressedSize = 0;
 
     // Split into chunks
-    for (let offset = 0; offset < buffer.length; offset += this.chunkSize) {
-      const chunkData = buffer.subarray(
+    for (let offset = 0; offset < buffer?.length; offset += this?.chunkSize) {
+      const _chunkData = buffer?.subarray(
         offset,
-        Math.min(offset + this.chunkSize, buffer.length),
+        Math?.min(offset + this?.chunkSize, buffer?.length),
       );
-      const chunk = await this.processChunk(chunkData, depth);
-      chunks.push(chunk.id);
-      compressedSize += chunk.compressedSize;
+      const _chunk = await this?.processChunk(chunkData, depth);
+      chunks?.push(chunk?.id);
+      compressedSize += chunk?.compressedSize;
     }
 
     const entry: PocketEntry = {
@@ -347,18 +347,18 @@ export class PocketDimension extends EventEmitter {
       size: originalSize,
       compressedSize,
       chunks,
-      createdAt: this.entries.has(entryPath)
-        ? this.entries.get(entryPath)!.createdAt
+      createdAt: this?.entries.has(entryPath)
+        ? this?.entries.get(entryPath)!.createdAt
         : new Date(),
       modifiedAt: new Date(),
-      version: (this.entries.get(entryPath)?.version || 0) + 1,
+      version: (this?.entries.get(entryPath)?.version || 0) + 1,
       metadata: {},
     };
 
-    this.entries.set(entryPath, entry);
-    this.updateMetadata(originalSize, compressedSize);
+    this?.entries.set(entryPath, entry);
+    this?.updateMetadata(originalSize, compressedSize);
 
-    this.emit("written", {
+    this?.emit("written", {
       path: entryPath,
       size: originalSize,
       compressedSize,
@@ -372,49 +372,49 @@ export class PocketDimension extends EventEmitter {
     depth: number,
   ): Promise<PocketChunk> {
     // Generate content-addressed hash
-    const hash = this.hashContent(data);
+    const _hash = this?.hashContent(data);
 
     // Check for deduplication
-    if (this.enableDeduplication && this.chunks.has(hash)) {
-      const existing = this.chunks.get(hash)!;
-      existing.accessCount++;
-      existing.lastAccessed = new Date();
+    if (this?.enableDeduplication && this?.chunks.has(hash)) {
+      const _existing = this?.chunks.get(hash)!;
+      existing?.accessCount++;
+      existing?.lastAccessed = new Date();
       return existing;
     }
 
     // Compress the chunk
-    const compressed = await this.compress(data);
+    const _compressed = await this?.compress(data);
 
     // Encrypt if enabled
-    const finalData = this.encryptionKey
-      ? this.encrypt(compressed)
+    const _finalData = this?.encryptionKey
+      ? this?.encrypt(compressed)
       : compressed;
 
     // Store the chunk
-    this.chunkData.set(hash, finalData);
-    await this.persistChunk(hash, finalData);
+    this?.chunkData.set(hash, finalData);
+    await this?.persistChunk(hash, finalData);
 
     const chunk: PocketChunk = {
       id: hash,
-      size: data.length,
-      compressedSize: finalData.length,
-      compressionRatio: data.length / finalData.length,
+      size: data?.length,
+      compressedSize: finalData?.length,
+      compressionRatio: data?.length / finalData?.length,
       createdAt: new Date(),
       accessCount: 1,
       lastAccessed: new Date(),
-      encrypted: !!this.encryptionKey,
+      encrypted: !!this?.encryptionKey,
       depth,
     };
 
-    this.chunks.set(hash, chunk);
+    this?.chunks.set(hash, chunk);
 
     return chunk;
   }
 
   private async persistChunk(id: string, data: Buffer): Promise<void> {
-    const chunkDir = path.join(this.storagePath, this.id, "chunks");
-    await fs.mkdir(chunkDir, { recursive: true });
-    await fs.writeFile(path.join(chunkDir, id), data);
+    const _chunkDir = path?.join(this?.storagePath, this?.id, "chunks");
+    await fs?.mkdir(chunkDir, { recursive: true });
+    await fs?.writeFile(path?.join(chunkDir, id), data);
   }
 
   // ============================================================================
@@ -422,55 +422,55 @@ export class PocketDimension extends EventEmitter {
   // ============================================================================
 
   async read(entryPath: string): Promise<Buffer> {
-    if (!this.isOpen) await this.open();
+    if (!this?.isOpen) await this?.open();
 
-    const entry = this.entries.get(entryPath);
+    const _entry = this?.entries.get(entryPath);
     if (!entry) {
       throw new Error(`Entry not found in pocket dimension: ${entryPath}`);
     }
 
     const chunks: Buffer[] = [];
 
-    for (const chunkId of entry.chunks) {
-      const chunkData = await this.readChunk(chunkId);
-      chunks.push(chunkData);
+    for (const chunkId of entry?.chunks) {
+      const _chunkData = await this?.readChunk(chunkId);
+      chunks?.push(chunkData);
     }
 
-    this.emit("read", { path: entryPath, size: entry.size });
+    this?.emit("read", { path: entryPath, size: entry?.size });
 
-    return Buffer.concat(chunks);
+    return Buffer?.concat(chunks);
   }
 
   private async readChunk(id: string): Promise<Buffer> {
     // Check in-memory cache first
-    let data = this.chunkData.get(id);
+    let data = this?.chunkData.get(id);
 
     if (!data) {
       // Load from disk
-      const chunkPath = path.join(this.storagePath, this.id, "chunks", id);
-      data = await fs.readFile(chunkPath);
-      this.chunkData.set(id, data);
+      const _chunkPath = path?.join(this?.storagePath, this?.id, "chunks", id);
+      data = await fs?.readFile(chunkPath);
+      this?.chunkData.set(id, data);
     }
 
     // Decrypt if needed
-    const decrypted = this.encryptionKey ? this.decrypt(data) : data;
+    const _decrypted = this?.encryptionKey ? this?.decrypt(data) : data;
 
     // Decompress
-    const decompressed = await this.decompress(decrypted);
+    const _decompressed = await this?.decompress(decrypted);
 
     // Update access stats
-    const chunk = this.chunks.get(id);
+    const _chunk = this?.chunks.get(id);
     if (chunk) {
-      chunk.accessCount++;
-      chunk.lastAccessed = new Date();
+      chunk?.accessCount++;
+      chunk?.lastAccessed = new Date();
     }
 
     return decompressed;
   }
 
   async readStream(entryPath: string): Promise<Readable> {
-    const data = await this.read(entryPath);
-    return Readable.from(data);
+    const _data = await this?.read(entryPath);
+    return Readable?.from(data);
   }
 
   // ============================================================================
@@ -481,32 +481,32 @@ export class PocketDimension extends EventEmitter {
     dimensionPath: string,
     config?: Partial<PocketDimensionConfig>,
   ): Promise<PocketDimension> {
-    if (!this.isOpen) await this.open();
+    if (!this?.isOpen) await this?.open();
 
-    if (this.currentDepth >= this.maxRecursionDepth) {
+    if (this?.currentDepth >= this?.maxRecursionDepth) {
       throw new Error(
-        `Maximum dimension nesting depth (${this.maxRecursionDepth}) reached - cannot go deeper into the pocket dimension`,
+        `Maximum dimension nesting depth (${this?.maxRecursionDepth}) reached - cannot go deeper into the pocket dimension`,
       );
     }
 
-    const nested = new PocketDimension({
-      id: `${this.id}/${dimensionPath}`,
+    const _nested = new PocketDimension({
+      id: `${this?.id}/${dimensionPath}`,
       name: dimensionPath,
       encryptionKey: config?.encryptionKey,
-      chunkSize: config?.chunkSize || this.chunkSize,
-      maxRecursionDepth: config?.maxRecursionDepth || this.maxRecursionDepth,
-      compressionLevel: config?.compressionLevel || this.compressionLevel,
+      chunkSize: config?.chunkSize || this?.chunkSize,
+      maxRecursionDepth: config?.maxRecursionDepth || this?.maxRecursionDepth,
+      compressionLevel: config?.compressionLevel || this?.compressionLevel,
       enableDeduplication:
-        config?.enableDeduplication ?? this.enableDeduplication,
-      enableVersioning: config?.enableVersioning ?? this.enableVersioning,
-      storagePath: this.storagePath,
+        config?.enableDeduplication ?? this?.enableDeduplication,
+      enableVersioning: config?.enableVersioning ?? this?.enableVersioning,
+      storagePath: this?.storagePath,
     });
 
-    (nested as Record<string, unknown>).currentDepth = this.currentDepth + 1;
-    (nested as Record<string, unknown>).metadata.parentDimension = this.id;
+    (nested as Record<string, unknown>).currentDepth = this?.currentDepth + 1;
+    (nested as Record<string, unknown>).metadata?.parentDimension = this?.id;
 
-    await nested.open();
-    this.nestedDimensions.set(dimensionPath, nested);
+    await nested?.open();
+    this?.nestedDimensions.set(dimensionPath, nested);
 
     // Create directory entry
     const entry: PocketEntry = {
@@ -518,25 +518,25 @@ export class PocketDimension extends EventEmitter {
       createdAt: new Date(),
       modifiedAt: new Date(),
       version: 1,
-      metadata: { dimensionId: nested.id },
+      metadata: { dimensionId: nested?.id },
     };
 
-    this.entries.set(dimensionPath, entry);
-    this.metadata.maxDepth = Math.max(
-      this.metadata.maxDepth,
-      this.currentDepth + 1,
+    this?.entries.set(dimensionPath, entry);
+    this?.metadata.maxDepth = Math?.max(
+      this?.metadata.maxDepth,
+      this?.currentDepth + 1,
     );
 
-    this.emit("dimensionCreated", {
+    this?.emit("dimensionCreated", {
       path: dimensionPath,
-      depth: this.currentDepth + 1,
+      depth: this?.currentDepth + 1,
     });
 
     return nested;
   }
 
   getNestedDimension(path: string): PocketDimension | undefined {
-    return this.nestedDimensions.get(path);
+    return this?.nestedDimensions.get(path);
   }
 
   // ============================================================================
@@ -544,44 +544,44 @@ export class PocketDimension extends EventEmitter {
   // ============================================================================
 
   exists(entryPath: string): boolean {
-    return this.entries.has(entryPath);
+    return this?.entries.has(entryPath);
   }
 
   async delete(entryPath: string): Promise<boolean> {
-    if (!this.isOpen) await this.open();
+    if (!this?.isOpen) await this?.open();
 
-    const entry = this.entries.get(entryPath);
+    const _entry = this?.entries.get(entryPath);
     if (!entry) return false;
 
     // If it's a dimension, close and remove it
-    if (entry.type === "dimension") {
-      const nested = this.nestedDimensions.get(entryPath);
+    if (entry?.type === "dimension") {
+      const _nested = this?.nestedDimensions.get(entryPath);
       if (nested) {
-        await nested.close();
-        this.nestedDimensions.delete(entryPath);
+        await nested?.close();
+        this?.nestedDimensions.delete(entryPath);
       }
     }
 
     // Note: In production, we'd garbage collect orphaned chunks
     // For now, just remove the entry
-    this.entries.delete(entryPath);
+    this?.entries.delete(entryPath);
 
-    this.metadata.totalSize -= entry.size;
-    this.metadata.compressedSize -= entry.compressedSize;
+    this?.metadata.totalSize -= entry?.size;
+    this?.metadata.compressedSize -= entry?.compressedSize;
 
-    this.emit("deleted", { path: entryPath });
+    this?.emit("deleted", { path: entryPath });
 
     return true;
   }
 
   async list(prefix?: string): Promise<PocketEntry[]> {
-    if (!this.isOpen) await this.open();
+    if (!this?.isOpen) await this?.open();
 
     const results: PocketEntry[] = [];
 
-    for (const [path, entry] of this.entries) {
-      if (!prefix || path.startsWith(prefix)) {
-        results.push(entry);
+    for (const [path, entry] of this?.entries) {
+      if (!prefix || path?.startsWith(prefix)) {
+        results?.push(entry);
       }
     }
 
@@ -592,28 +592,28 @@ export class PocketDimension extends EventEmitter {
     let uniqueChunks = 0;
     let duplicateRefs = 0;
 
-    for (const chunk of this.chunks.values()) {
+    for (const chunk of this?.chunks.values()) {
       uniqueChunks++;
-      duplicateRefs += chunk.accessCount - 1;
+      duplicateRefs += chunk?.accessCount - 1;
     }
 
-    const deduplicationSavings =
+    const _deduplicationSavings =
       duplicateRefs > 0
         ? (duplicateRefs / (uniqueChunks + duplicateRefs)) * 100
         : 0;
 
     return {
-      totalEntries: this.entries.size,
-      totalSize: this.metadata.totalSize,
-      compressedSize: this.metadata.compressedSize,
+      totalEntries: this?.entries.size,
+      totalSize: this?.metadata.totalSize,
+      compressedSize: this?.metadata.compressedSize,
       compressionRatio:
-        this.metadata.totalSize > 0
-          ? this.metadata.totalSize / this.metadata.compressedSize
+        this?.metadata.totalSize > 0
+          ? this?.metadata.totalSize / this?.metadata.compressedSize
           : 0,
       deduplicationSavings,
-      nestedDimensions: this.nestedDimensions.size,
-      maxDepth: this.metadata.maxDepth,
-      chunkCount: this.chunks.size,
+      nestedDimensions: this?.nestedDimensions.size,
+      maxDepth: this?.metadata.maxDepth,
+      chunkCount: this?.chunks.size,
       uniqueChunks,
     };
   }
@@ -625,46 +625,46 @@ export class PocketDimension extends EventEmitter {
   private async compress(data: Buffer): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const gzip = createGzip({
-        level: this.compressionLevel,
+      const _gzip = createGzip({
+        level: this?.compressionLevel,
         memLevel: 9,
-        strategy: zlibConstants.Z_DEFAULT_STRATEGY,
+        strategy: zlibConstants?.Z_DEFAULT_STRATEGY,
       });
 
-      const source = Readable.from(data);
-      const destination = new Writable({
+      const _source = Readable?.from(data);
+      const _destination = new Writable({
         write(chunk, _encoding, callback) {
-          chunks.push(chunk);
+          chunks?.push(chunk);
           callback();
         },
         final(callback) {
-          resolve(Buffer.concat(chunks));
+          resolve(Buffer?.concat(chunks));
           callback();
         },
       });
 
-      source.pipe(gzip).pipe(destination).on("error", reject);
+      source?.pipe(gzip).pipe(destination).on("error", reject);
     });
   }
 
   private async decompress(data: Buffer): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const gunzip = createGunzip();
+      const _gunzip = createGunzip();
 
-      const source = Readable.from(data);
-      const destination = new Writable({
+      const _source = Readable?.from(data);
+      const _destination = new Writable({
         write(chunk, _encoding, callback) {
-          chunks.push(chunk);
+          chunks?.push(chunk);
           callback();
         },
         final(callback) {
-          resolve(Buffer.concat(chunks));
+          resolve(Buffer?.concat(chunks));
           callback();
         },
       });
 
-      source.pipe(gunzip).pipe(destination).on("error", reject);
+      source?.pipe(gunzip).pipe(destination).on("error", reject);
     });
   }
 
@@ -673,31 +673,31 @@ export class PocketDimension extends EventEmitter {
   // ============================================================================
 
   private encrypt(data: Buffer): Buffer {
-    if (!this.encryptionKey) return data;
+    if (!this?.encryptionKey) return data;
 
-    const iv = randomBytes(16);
-    const cipher = createCipheriv("aes-256-gcm", this.encryptionKey, iv);
+    const _iv = randomBytes(16);
+    const _cipher = createCipheriv("aes-256-gcm", this?.encryptionKey, iv);
 
-    const encrypted = Buffer.concat([cipher.update(data), cipher.final()]);
-    const authTag = cipher.getAuthTag();
+    const _encrypted = Buffer?.concat([cipher?.update(data), cipher?.final()]);
+    const _authTag = cipher?.getAuthTag();
 
     // Prepend IV and auth tag
-    return Buffer.concat([iv, authTag, encrypted]);
+    return Buffer?.concat([iv, authTag, encrypted]);
   }
 
   private decrypt(data: Buffer): Buffer {
-    if (!this.encryptionKey) return data;
+    if (!this?.encryptionKey) return data;
 
-    const iv = data.subarray(0, 16);
-    const authTag = data.subarray(16, 32);
-    const encrypted = data.subarray(32);
+    const _iv = data?.subarray(0, 16);
+    const _authTag = data?.subarray(16, 32);
+    const _encrypted = data?.subarray(32);
 
-    const decipher = createDecipheriv("aes-256-gcm", this.encryptionKey, iv, {
+    const _decipher = createDecipheriv("aes-256-gcm", this?.encryptionKey, iv, {
       authTagLength: 16,
     });
-    decipher.setAuthTag(authTag);
+    decipher?.setAuthTag(authTag);
 
-    return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+    return Buffer?.concat([decipher?.update(encrypted), decipher?.final()]);
   }
 
   // ============================================================================
@@ -709,22 +709,22 @@ export class PocketDimension extends EventEmitter {
   }
 
   private updateMetadata(originalSize: number, compressedSize: number): void {
-    this.metadata.totalSize += originalSize;
-    this.metadata.compressedSize += compressedSize;
-    this.metadata.chunkCount = this.chunks.size;
-    this.metadata.updatedAt = new Date();
+    this?.metadata.totalSize += originalSize;
+    this?.metadata.compressedSize += compressedSize;
+    this?.metadata.chunkCount = this?.chunks.size;
+    this?.metadata.updatedAt = new Date();
   }
 
   getMetadata(): PocketMetadata {
-    return { ...this.metadata };
+    return { ...this?.metadata };
   }
 
   getId(): string {
-    return this.id;
+    return this?.id;
   }
 
   getName(): string {
-    return this.name;
+    return this?.name;
   }
 }
 
@@ -757,31 +757,31 @@ export class PocketDimensionManager {
   private storagePath: string;
 
   private constructor(storagePath: string = "./pocket-dimensions") {
-    this.storagePath = storagePath;
+    this?.storagePath = storagePath;
   }
 
   static getInstance(storagePath?: string): PocketDimensionManager {
-    if (!PocketDimensionManager.instance) {
-      PocketDimensionManager.instance = new PocketDimensionManager(storagePath);
+    if (!PocketDimensionManager?.instance) {
+      PocketDimensionManager?.instance = new PocketDimensionManager(storagePath);
     }
-    return PocketDimensionManager.instance;
+    return PocketDimensionManager?.instance;
   }
 
   /**
    * Open or create a pocket dimension with bracket notation access
-   * Usage: const pocket = await manager.openPocket('my-dimension');
-   *        pocket['files/audio.mp3'].write(audioData);
+   * Usage: const _pocket = await manager?.openPocket('my-dimension');
+   *        pocket['files/audio?.mp3'].write(audioData);
    */
   async openPocket<T extends string>(
     id: T,
     config?: Partial<PocketDimensionConfig>,
   ): Promise<PocketDimension & PocketBracketAccessor> {
-    if (this.dimensions.has(id)) {
-      const dimension = this.dimensions.get(id)!;
+    if (this?.dimensions.has(id)) {
+      const _dimension = this?.dimensions.get(id)!;
       return dimension as PocketDimension & PocketBracketAccessor;
     }
 
-    const dimension = new PocketDimension({
+    const _dimension = new PocketDimension({
       id,
       name: config?.name || id,
       encryptionKey: config?.encryptionKey,
@@ -790,53 +790,53 @@ export class PocketDimensionManager {
       compressionLevel: config?.compressionLevel,
       enableDeduplication: config?.enableDeduplication,
       enableVersioning: config?.enableVersioning,
-      storagePath: this.storagePath,
+      storagePath: this?.storagePath,
     });
 
-    await dimension.open();
-    this.dimensions.set(id, dimension);
+    await dimension?.open();
+    this?.dimensions.set(id, dimension);
 
     // Return dimension with bracket accessor capability
     return new Proxy(dimension, {
       get: (target, prop: string) => {
         if (prop in target) {
-          const value = (target as Record<string, unknown>)[prop];
-          return typeof value === "function" ? value.bind(target) : value;
+          const _value = (target as Record<string, unknown>)[prop];
+          return typeof value === "function" ? value?.bind(target) : value;
         }
         // Bracket accessor for paths
-        return target.asBracketAccessor()[prop];
+        return target?.asBracketAccessor()[prop];
       },
       set: (target, prop: string, value: Buffer | string) => {
         if (prop in target) {
           (target as Record<string, unknown>)[prop] = value;
           return true;
         }
-        target.write(prop, value);
+        target?.write(prop, value);
         return true;
       },
     }) as PocketDimension & PocketBracketAccessor;
   }
 
   async closePocket(id: string): Promise<void> {
-    const dimension = this.dimensions.get(id);
+    const _dimension = this?.dimensions.get(id);
     if (dimension) {
-      await dimension.close();
-      this.dimensions.delete(id);
+      await dimension?.close();
+      this?.dimensions.delete(id);
     }
   }
 
   async closeAll(): Promise<void> {
-    for (const [id] of this.dimensions) {
-      await this.closePocket(id);
+    for (const [id] of this?.dimensions) {
+      await this?.closePocket(id);
     }
   }
 
   listPockets(): string[] {
-    return Array.from(this.dimensions.keys());
+    return Array?.from(this?.dimensions.keys());
   }
 
   getPocket(id: string): PocketDimension | undefined {
-    return this.dimensions.get(id);
+    return this?.dimensions.get(id);
   }
 
   getGlobalStats(): {
@@ -847,14 +847,14 @@ export class PocketDimensionManager {
     let totalSize = 0;
     let compressedSize = 0;
 
-    for (const dimension of this.dimensions.values()) {
-      const stats = dimension.getStats();
-      totalSize += stats.totalSize;
-      compressedSize += stats.compressedSize;
+    for (const dimension of this?.dimensions.values()) {
+      const _stats = dimension?.getStats();
+      totalSize += stats?.totalSize;
+      compressedSize += stats?.compressedSize;
     }
 
     return {
-      pockets: this.dimensions.size,
+      pockets: this?.dimensions.size,
       totalSize,
       compressedSize,
     };
@@ -862,7 +862,7 @@ export class PocketDimensionManager {
 }
 
 // Export singleton
-export const pocketManager = PocketDimensionManager.getInstance(
+export const _pocketManager = PocketDimensionManager?.getInstance(
   "./pocket-dimensions",
 );
 
@@ -874,7 +874,7 @@ export async function pocket<T extends string>(
   id: T,
   config?: Partial<PocketDimensionConfig>,
 ): Promise<PocketDimension & PocketBracketAccessor> {
-  return pocketManager.openPocket(id, config);
+  return pocketManager?.openPocket(id, config);
 }
 
 export default {

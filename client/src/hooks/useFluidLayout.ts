@@ -36,17 +36,17 @@ const DEFAULT_CONFIG: FluidLayoutConfig = {
 export function useFluidLayout(
   config: FluidLayoutConfig = {},
 ): FluidLayoutResult {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const _containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200,
+    typeof window !== "undefined" ? window?.innerWidth : 1200,
   );
   const [containerHeight, setContainerHeight] = useState(
-    typeof window !== "undefined" ? window.innerHeight : 800,
+    typeof window !== "undefined" ? window?.innerHeight : 800,
   );
 
   const { mobileMax, tabletMax, desktopMax } = { ...DEFAULT_CONFIG, ...config };
 
-  const calculateLayoutMode = useCallback(
+  const _calculateLayoutMode = useCallback(
     (width: number): LayoutMode => {
       if (width < mobileMax!) return "mobile";
       if (width < tabletMax!) return "tablet";
@@ -61,9 +61,9 @@ export function useFluidLayout(
   );
 
   useEffect(() => {
-    const container = containerRef.current;
+    const _container = containerRef?.current;
 
-    const updateDimensions = (width: number, height: number) => {
+    const _updateDimensions = (width: number, height: number) => {
       if (width > 0 && height > 0) {
         setContainerWidth(width);
         setContainerHeight(height);
@@ -72,21 +72,21 @@ export function useFluidLayout(
     };
 
     if (container) {
-      const resizeObserver = new ResizeObserver((entries) => {
+      const _resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
-          const { width, height } = entry.contentRect;
+          const { width, height } = entry?.contentRect;
           updateDimensions(width, height);
         }
       });
-      resizeObserver.observe(container);
-      return () => resizeObserver.disconnect();
+      resizeObserver?.observe(container);
+      return () => resizeObserver?.disconnect();
     } else {
-      const handleResize = () => {
-        updateDimensions(window.innerWidth, window.innerHeight);
+      const _handleResize = () => {
+        updateDimensions(window?.innerWidth, window?.innerHeight);
       };
       handleResize();
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
+      window?.addEventListener("resize", handleResize);
+      return () => window?.removeEventListener("resize", handleResize);
     }
   }, [calculateLayoutMode]);
 
@@ -139,7 +139,7 @@ export function getFluidGridCols(
     case "tablet":
       return "grid-cols-2";
     case "desktop":
-      return `grid-cols-${Math.min(defaultCols, 3)}`;
+      return `grid-cols-${Math?.min(defaultCols, 3)}`;
     case "wide":
       return `grid-cols-${defaultCols}`;
   }
@@ -149,7 +149,7 @@ export function getFluidTextSize(
   layoutMode: LayoutMode,
   base: "sm" | "base" | "lg" | "xl" = "base",
 ): string {
-  const sizeMap = {
+  const _sizeMap = {
     sm: {
       mobile: "text-xs",
       tablet: "text-sm",

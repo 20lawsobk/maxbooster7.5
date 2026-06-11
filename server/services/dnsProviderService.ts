@@ -23,15 +23,15 @@
  *   porkbun      — Porkbun API v3
  */
 
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 // ── Timeout-guarded fetch: adds a 8s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
-const timedFetch = (
+const _timedFetch = (
   url: string | URL | Request,
   init: RequestInit = {},
 ): Promise<Response> =>
-  fetch(url, { signal: AbortSignal.timeout(8_000), ...init });
+  fetch(url, { signal: AbortSignal?.timeout(8_000), ...init });
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
@@ -91,31 +91,31 @@ export interface ProviderCredentials {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const GODADDY_API_BASE = "https://api.godaddy.com";
-const CLOUDFLARE_API_BASE = "https://api.cloudflare.com/client/v4";
-const DO_API_BASE = "https://api.digitalocean.com/v2";
-const PORKBUN_API_BASE = "https://porkbun.com/api/json/v3";
+const _GODADDY_API_BASE = "https://api?.godaddy.com";
+const _CLOUDFLARE_API_BASE = "https://api?.cloudflare.com/client/v4";
+const _DO_API_BASE = "https://api?.digitalocean.com/v2";
+const _PORKBUN_API_BASE = "https://porkbun?.com/api/json/v3";
 
 /** Minimum TTL Vercel enforces — we apply the same floor. */
-const MIN_TTL = 60;
+const _MIN_TTL = 60;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function extractRootDomain(domain: string): string {
-  const parts = domain.split(".");
-  if (parts.length >= 2) return parts.slice(-2).join(".");
+  const _parts = domain?.split(".");
+  if (parts?.length >= 2) return parts?.slice(-2).join(".");
   return domain;
 }
 
 export function extractSubdomainPart(domain: string): string {
-  const parts = domain.split(".");
-  if (parts.length > 2) return parts.slice(0, -2).join(".");
+  const _parts = domain?.split(".");
+  if (parts?.length > 2) return parts?.slice(0, -2).join(".");
   return "@";
 }
 
 /** Enforce the minimum TTL floor (60 s) — matches Vercel's policy. */
 function clampTtl(ttl: number): number {
-  return Math.max(MIN_TTL, ttl);
+  return Math?.max(MIN_TTL, ttl);
 }
 
 /**
@@ -130,19 +130,19 @@ async function fetchWithRetry(
   let lastErr: unknown;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const res = await timedFetch(url, init);
+      const _res = await timedFetch(url, init);
       // Retry on server errors; surface client errors immediately
-      if (res.status >= 500 && attempt < maxRetries - 1) {
-        const delay = 500 * Math.pow(2, attempt);
+      if (res?.status >= 500 && attempt < maxRetries - 1) {
+        const _delay = 500 * Math?.pow(2, attempt);
         await new Promise((r) => setTimeout(r, delay));
-        lastErr = new Error(`HTTP ${res.status}`);
+        lastErr = new Error(`HTTP ${res?.status}`);
         continue;
       }
       return res;
     } catch (err) {
       lastErr = err;
       if (attempt < maxRetries - 1) {
-        const delay = 500 * Math.pow(2, attempt);
+        const _delay = 500 * Math?.pow(2, attempt);
         await new Promise((r) => setTimeout(r, delay));
       }
     }
@@ -156,12 +156,12 @@ class GoDaddyProvider implements DnsProvider {
   name = "godaddy";
 
   private authHeader(creds: ProviderCredentials): string {
-    return `sso-key ${creds.apiKey}:${creds.apiSecret}`;
+    return `sso-key ${creds?.apiKey}:${creds?.apiSecret}`;
   }
 
   private commonHeaders(creds: ProviderCredentials): Record<string, string> {
     return {
-      Authorization: this.authHeader(creds),
+      Authorization: this?.authHeader(creds),
       "Content-Type": "application/json",
       Accept: "application/json",
     };
@@ -171,20 +171,20 @@ class GoDaddyProvider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<DnsRecord[]> {
-    const rootDomain = extractRootDomain(domain);
-    const resp = await fetchWithRetry(
+    const _rootDomain = extractRootDomain(domain);
+    const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records`,
-      { headers: this.commonHeaders(credentials) },
+      { headers: this?.commonHeaders(credentials) },
     );
-    if (!resp.ok) {
-      const text = await resp.text();
-      logger.warn("[GoDaddy] listRecords error", {
-        status: resp.status,
+    if (!resp?.ok) {
+      const _text = await resp?.text();
+      logger?.warn("[GoDaddy] listRecords error", {
+        status: resp?.status,
         body: text,
       });
-      throw new Error(`GoDaddy API error: ${resp.status}`);
+      throw new Error(`GoDaddy API error: ${resp?.status}`);
     }
-    const data = (await resp.json()) as Array<{
+    const _data = (await resp?.json()) as Array<{
       type: string;
       name: string;
       data: string;
@@ -195,16 +195,16 @@ class GoDaddyProvider implements DnsProvider {
       protocol?: string;
       service?: string;
     }>;
-    return data.map((r) => ({
-      type: r.type,
-      name: r.name,
-      value: r.data,
-      ttl: clampTtl(r.ttl),
-      priority: r.priority,
-      port: r.port,
-      weight: r.weight,
-      protocol: r.protocol,
-      service: r.service,
+    return data?.map((r) => ({
+      type: r?.type,
+      name: r?.name,
+      value: r?.data,
+      ttl: clampTtl(r?.ttl),
+      priority: r?.priority,
+      port: r?.port,
+      weight: r?.weight,
+      protocol: r?.protocol,
+      service: r?.service,
     }));
   }
 
@@ -213,34 +213,34 @@ class GoDaddyProvider implements DnsProvider {
     record: DnsRecord,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const rootDomain = extractRootDomain(domain);
+    const _rootDomain = extractRootDomain(domain);
     const body: Record<string, unknown> = {
-      type: record.type,
-      name: record.name,
-      data: record.value,
-      ttl: clampTtl(record.ttl),
+      type: record?.type,
+      name: record?.name,
+      data: record?.value,
+      ttl: clampTtl(record?.ttl),
     };
-    if (record.priority !== undefined) body.priority = record.priority;
-    if (record.port !== undefined) body.port = record.port;
-    if (record.weight !== undefined) body.weight = record.weight;
-    if (record.protocol) body.protocol = record.protocol;
-    if (record.service) body.service = record.service;
+    if (record?.priority !== undefined) body?.priority = record?.priority;
+    if (record?.port !== undefined) body?.port = record?.port;
+    if (record?.weight !== undefined) body?.weight = record?.weight;
+    if (record?.protocol) body?.protocol = record?.protocol;
+    if (record?.service) body?.service = record?.service;
 
-    const resp = await fetchWithRetry(
+    const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records`,
       {
         method: "PATCH",
-        headers: this.commonHeaders(credentials),
-        body: JSON.stringify([body]),
+        headers: this?.commonHeaders(credentials),
+        body: JSON?.stringify([body]),
       },
     );
-    if (!resp.ok) {
-      const text = await resp.text();
-      logger.warn("[GoDaddy] addRecord error", {
-        status: resp.status,
+    if (!resp?.ok) {
+      const _text = await resp?.text();
+      logger?.warn("[GoDaddy] addRecord error", {
+        status: resp?.status,
         body: text,
       });
-      throw new Error(`GoDaddy API error: ${resp.status}`);
+      throw new Error(`GoDaddy API error: ${resp?.status}`);
     }
     return true;
   }
@@ -252,43 +252,43 @@ class GoDaddyProvider implements DnsProvider {
     originalType: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const rootDomain = extractRootDomain(domain);
-    if (originalName !== record.name || originalType !== record.type) {
-      await this.deleteRecord(
+    const _rootDomain = extractRootDomain(domain);
+    if (originalName !== record?.name || originalType !== record?.type) {
+      await this?.deleteRecord(
         domain,
         originalType,
         originalName,
         credentials,
       ).catch((err) => {
-        logger.warn(
-          `[GoDaddy] Could not delete old record during update — stale record may remain: ${err.message}`,
+        logger?.warn(
+          `[GoDaddy] Could not delete old record during update — stale record may remain: ${err?.message}`,
         );
       });
-      return this.addRecord(domain, record, credentials);
+      return this?.addRecord(domain, record, credentials);
     }
     const body: Record<string, unknown> = {
-      data: record.value,
-      ttl: clampTtl(record.ttl),
+      data: record?.value,
+      ttl: clampTtl(record?.ttl),
     };
-    if (record.priority !== undefined) body.priority = record.priority;
-    if (record.port !== undefined) body.port = record.port;
-    if (record.weight !== undefined) body.weight = record.weight;
+    if (record?.priority !== undefined) body?.priority = record?.priority;
+    if (record?.port !== undefined) body?.port = record?.port;
+    if (record?.weight !== undefined) body?.weight = record?.weight;
 
-    const resp = await fetchWithRetry(
+    const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records/${originalType}/${originalName}`,
       {
         method: "PUT",
-        headers: this.commonHeaders(credentials),
-        body: JSON.stringify([body]),
+        headers: this?.commonHeaders(credentials),
+        body: JSON?.stringify([body]),
       },
     );
-    if (!resp.ok) {
-      const text = await resp.text();
-      logger.warn("[GoDaddy] updateRecord error", {
-        status: resp.status,
+    if (!resp?.ok) {
+      const _text = await resp?.text();
+      logger?.warn("[GoDaddy] updateRecord error", {
+        status: resp?.status,
         body: text,
       });
-      throw new Error(`GoDaddy API error: ${resp.status}`);
+      throw new Error(`GoDaddy API error: ${resp?.status}`);
     }
     return true;
   }
@@ -299,18 +299,18 @@ class GoDaddyProvider implements DnsProvider {
     recordName: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const rootDomain = extractRootDomain(domain);
-    const resp = await fetchWithRetry(
+    const _rootDomain = extractRootDomain(domain);
+    const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records/${recordType}/${recordName}`,
-      { method: "DELETE", headers: this.commonHeaders(credentials) },
+      { method: "DELETE", headers: this?.commonHeaders(credentials) },
     );
-    if (!resp.ok) {
-      const text = await resp.text();
-      logger.warn("[GoDaddy] deleteRecord error", {
-        status: resp.status,
+    if (!resp?.ok) {
+      const _text = await resp?.text();
+      logger?.warn("[GoDaddy] deleteRecord error", {
+        status: resp?.status,
         body: text,
       });
-      throw new Error(`GoDaddy API error: ${resp.status}`);
+      throw new Error(`GoDaddy API error: ${resp?.status}`);
     }
     return true;
   }
@@ -320,36 +320,36 @@ class GoDaddyProvider implements DnsProvider {
     records: DnsRecord[],
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const rootDomain = extractRootDomain(domain);
-    const body = records.map((r) => {
+    const _rootDomain = extractRootDomain(domain);
+    const _body = records?.map((r) => {
       const rec: Record<string, unknown> = {
-        type: r.type,
-        name: r.name,
-        data: r.value,
-        ttl: clampTtl(r.ttl),
+        type: r?.type,
+        name: r?.name,
+        data: r?.value,
+        ttl: clampTtl(r?.ttl),
       };
-      if (r.priority !== undefined) rec.priority = r.priority;
-      if (r.port !== undefined) rec.port = r.port;
-      if (r.weight !== undefined) rec.weight = r.weight;
-      if (r.protocol) rec.protocol = r.protocol;
-      if (r.service) rec.service = r.service;
+      if (r?.priority !== undefined) rec?.priority = r?.priority;
+      if (r?.port !== undefined) rec?.port = r?.port;
+      if (r?.weight !== undefined) rec?.weight = r?.weight;
+      if (r?.protocol) rec?.protocol = r?.protocol;
+      if (r?.service) rec?.service = r?.service;
       return rec;
     });
-    const resp = await fetchWithRetry(
+    const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records`,
       {
         method: "PATCH",
-        headers: this.commonHeaders(credentials),
-        body: JSON.stringify(body),
+        headers: this?.commonHeaders(credentials),
+        body: JSON?.stringify(body),
       },
     );
-    if (!resp.ok) {
-      const text = await resp.text();
-      logger.warn("[GoDaddy] batchUpsert error", {
-        status: resp.status,
+    if (!resp?.ok) {
+      const _text = await resp?.text();
+      logger?.warn("[GoDaddy] batchUpsert error", {
+        status: resp?.status,
         body: text,
       });
-      throw new Error(`GoDaddy API error: ${resp.status}`);
+      throw new Error(`GoDaddy API error: ${resp?.status}`);
     }
     return true;
   }
@@ -358,12 +358,12 @@ class GoDaddyProvider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const rootDomain = extractRootDomain(domain);
-    const resp = await fetchWithRetry(
+    const _rootDomain = extractRootDomain(domain);
+    const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}`,
-      { headers: this.commonHeaders(credentials) },
+      { headers: this?.commonHeaders(credentials) },
     );
-    return resp.ok;
+    return resp?.ok;
   }
 }
 
@@ -374,7 +374,7 @@ class CloudflareProvider implements DnsProvider {
 
   private headers(creds: ProviderCredentials): Record<string, string> {
     return {
-      Authorization: `Bearer ${creds.apiKey}`,
+      Authorization: `Bearer ${creds?.apiKey}`,
       "Content-Type": "application/json",
     };
   }
@@ -383,30 +383,30 @@ class CloudflareProvider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<string> {
-    const rootDomain = extractRootDomain(domain);
-    const resp = await fetchWithRetry(
+    const _rootDomain = extractRootDomain(domain);
+    const _resp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones?name=${rootDomain}`,
-      { headers: this.headers(credentials) },
+      { headers: this?.headers(credentials) },
     );
-    if (!resp.ok) throw new Error(`Cloudflare zones error: ${resp.status}`);
-    const data = (await resp.json()) as { result: Array<{ id: string }> };
-    if (!data.result?.length)
+    if (!resp?.ok) throw new Error(`Cloudflare zones error: ${resp?.status}`);
+    const _data = (await resp?.json()) as { result: Array<{ id: string }> };
+    if (!data?.result?.length)
       throw new Error(`Zone not found for ${rootDomain}`);
-    return data.result[0].id;
+    return data?.result[0].id;
   }
 
   async listRecords(
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<DnsRecord[]> {
-    const zoneId = await this.getZoneId(domain, credentials);
-    const resp = await fetchWithRetry(
+    const _zoneId = await this?.getZoneId(domain, credentials);
+    const _resp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records?per_page=500`,
-      { headers: this.headers(credentials) },
+      { headers: this?.headers(credentials) },
     );
-    if (!resp.ok)
-      throw new Error(`Cloudflare listRecords error: ${resp.status}`);
-    const data = (await resp.json()) as {
+    if (!resp?.ok)
+      throw new Error(`Cloudflare listRecords error: ${resp?.status}`);
+    const _data = (await resp?.json()) as {
       result: Array<{
         type: string;
         name: string;
@@ -415,12 +415,12 @@ class CloudflareProvider implements DnsProvider {
         priority?: number;
       }>;
     };
-    return data.result.map((r) => ({
-      type: r.type,
-      name: r.name,
-      value: r.content,
-      ttl: clampTtl(r.ttl === 1 ? 300 : r.ttl),
-      priority: r.priority,
+    return data?.result.map((r) => ({
+      type: r?.type,
+      name: r?.name,
+      value: r?.content,
+      ttl: clampTtl(r?.ttl === 1 ? 300 : r?.ttl),
+      priority: r?.priority,
     }));
   }
 
@@ -429,23 +429,23 @@ class CloudflareProvider implements DnsProvider {
     record: DnsRecord,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zoneId = await this.getZoneId(domain, credentials);
+    const _zoneId = await this?.getZoneId(domain, credentials);
     const body: Record<string, unknown> = {
-      type: record.type,
-      name: record.name,
-      content: record.value,
-      ttl: clampTtl(record.ttl),
+      type: record?.type,
+      name: record?.name,
+      content: record?.value,
+      ttl: clampTtl(record?.ttl),
     };
-    if (record.priority !== undefined) body.priority = record.priority;
-    const resp = await fetchWithRetry(
+    if (record?.priority !== undefined) body?.priority = record?.priority;
+    const _resp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records`,
       {
         method: "POST",
-        headers: this.headers(credentials),
-        body: JSON.stringify(body),
+        headers: this?.headers(credentials),
+        body: JSON?.stringify(body),
       },
     );
-    if (!resp.ok) throw new Error(`Cloudflare addRecord error: ${resp.status}`);
+    if (!resp?.ok) throw new Error(`Cloudflare addRecord error: ${resp?.status}`);
     return true;
   }
 
@@ -456,37 +456,37 @@ class CloudflareProvider implements DnsProvider {
     originalType: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zoneId = await this.getZoneId(domain, credentials);
-    const listResp = await fetchWithRetry(
+    const _zoneId = await this?.getZoneId(domain, credentials);
+    const _listResp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records?type=${originalType}&name=${originalName}`,
-      { headers: this.headers(credentials) },
+      { headers: this?.headers(credentials) },
     );
-    if (!listResp.ok)
-      throw new Error(`Cloudflare find record error: ${listResp.status}`);
-    const listData = (await listResp.json()) as {
+    if (!listResp?.ok)
+      throw new Error(`Cloudflare find record error: ${listResp?.status}`);
+    const _listData = (await listResp?.json()) as {
       result: Array<{ id: string }>;
     };
-    if (!listData.result?.length)
+    if (!listData?.result?.length)
       throw new Error("Record not found for update");
-    const recordId = listData.result[0].id;
+    const _recordId = listData?.result[0].id;
 
     const body: Record<string, unknown> = {
-      type: record.type,
-      name: record.name,
-      content: record.value,
-      ttl: clampTtl(record.ttl),
+      type: record?.type,
+      name: record?.name,
+      content: record?.value,
+      ttl: clampTtl(record?.ttl),
     };
-    if (record.priority !== undefined) body.priority = record.priority;
-    const resp = await fetchWithRetry(
+    if (record?.priority !== undefined) body?.priority = record?.priority;
+    const _resp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records/${recordId}`,
       {
         method: "PUT",
-        headers: this.headers(credentials),
-        body: JSON.stringify(body),
+        headers: this?.headers(credentials),
+        body: JSON?.stringify(body),
       },
     );
-    if (!resp.ok)
-      throw new Error(`Cloudflare updateRecord error: ${resp.status}`);
+    if (!resp?.ok)
+      throw new Error(`Cloudflare updateRecord error: ${resp?.status}`);
     return true;
   }
 
@@ -496,26 +496,26 @@ class CloudflareProvider implements DnsProvider {
     recordName: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zoneId = await this.getZoneId(domain, credentials);
-    const listResp = await fetchWithRetry(
+    const _zoneId = await this?.getZoneId(domain, credentials);
+    const _listResp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records?type=${recordType}&name=${recordName}`,
-      { headers: this.headers(credentials) },
+      { headers: this?.headers(credentials) },
     );
-    if (!listResp.ok)
-      throw new Error(`Cloudflare find record error: ${listResp.status}`);
-    const listData = (await listResp.json()) as {
+    if (!listResp?.ok)
+      throw new Error(`Cloudflare find record error: ${listResp?.status}`);
+    const _listData = (await listResp?.json()) as {
       result: Array<{ id: string }>;
     };
-    if (!listData.result?.length)
+    if (!listData?.result?.length)
       throw new Error("Record not found for delete");
-    const recordId = listData.result[0].id;
+    const _recordId = listData?.result[0].id;
 
-    const resp = await fetchWithRetry(
+    const _resp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records/${recordId}`,
-      { method: "DELETE", headers: this.headers(credentials) },
+      { method: "DELETE", headers: this?.headers(credentials) },
     );
-    if (!resp.ok)
-      throw new Error(`Cloudflare deleteRecord error: ${resp.status}`);
+    if (!resp?.ok)
+      throw new Error(`Cloudflare deleteRecord error: ${resp?.status}`);
     return true;
   }
 
@@ -526,15 +526,15 @@ class CloudflareProvider implements DnsProvider {
   ): Promise<boolean> {
     for (const record of records) {
       try {
-        await this.updateRecord(
+        await this?.updateRecord(
           domain,
           record,
-          record.name,
-          record.type,
+          record?.name,
+          record?.type,
           credentials,
         );
       } catch {
-        await this.addRecord(domain, record, credentials);
+        await this?.addRecord(domain, record, credentials);
       }
     }
     return true;
@@ -545,7 +545,7 @@ class CloudflareProvider implements DnsProvider {
     credentials: ProviderCredentials,
   ): Promise<boolean> {
     try {
-      await this.getZoneId(domain, credentials);
+      await this?.getZoneId(domain, credentials);
       return true;
     } catch {
       return false;
@@ -567,43 +567,43 @@ class NamecheapProvider implements DnsProvider {
    * apiSecret = Namecheap username (stored in apiSecret field for UI simplicity)
    */
   private baseParams(creds: ProviderCredentials): string {
-    const ip = process.env.SERVER_PUBLIC_IP || "0.0.0.0";
-    return `ApiUser=${creds.apiSecret}&ApiKey=${creds.apiKey}&UserName=${creds.apiSecret}&ClientIp=${ip}`;
+    const _ip = process?.env.SERVER_PUBLIC_IP || "0?.0.0?.0";
+    return `ApiUser=${creds?.apiSecret}&ApiKey=${creds?.apiKey}&UserName=${creds?.apiSecret}&ClientIp=${ip}`;
   }
 
   private async callApi(params: string): Promise<string> {
-    const resp = await fetchWithRetry(
-      `https://api.namecheap.com/xml.response?${params}`,
+    const _resp = await fetchWithRetry(
+      `https://api?.namecheap.com/xml?.response?${params}`,
       {},
     );
-    return resp.text();
+    return resp?.text();
   }
 
   private isSuccess(xml: string): boolean {
-    return xml.includes('Status="OK"');
+    return xml?.includes('Status="OK"');
   }
 
   async listRecords(
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<DnsRecord[]> {
-    const root = extractRootDomain(domain);
-    const [sld, tld] = root.split(".");
-    const xml = await this.callApi(
-      `${this.baseParams(credentials)}&Command=namecheap.domains.dns.getHosts&SLD=${sld}&TLD=${tld}`,
+    const _root = extractRootDomain(domain);
+    const [sld, tld] = root?.split(".");
+    const _xml = await this?.callApi(
+      `${this?.baseParams(credentials)}&Command=namecheap?.domains.dns?.getHosts&SLD=${sld}&TLD=${tld}`,
     );
-    if (!this.isSuccess(xml)) {
-      logger.warn("[Namecheap] listRecords failed", {
+    if (!this?.isSuccess(xml)) {
+      logger?.warn("[Namecheap] listRecords failed", {
         domain,
-        xml: xml.slice(0, 500),
+        xml: xml?.slice(0, 500),
       });
       throw new Error("Namecheap API error on listRecords");
     }
-    const hostMatches = [...xml.matchAll(/<host\s+([^/]*?)\/>/gi)];
-    return hostMatches.map((m) => {
-      const attrs = m[1];
-      const get = (a: string) => {
-        const match = attrs.match(new RegExp(`${a}="([^"]*)"`, "i"));
+    const _hostMatches = [...xml?.matchAll(/<host\s+([^/]*?)\/>/gi)];
+    return hostMatches?.map((m) => {
+      const _attrs = m[1];
+      const _get = (a: string) => {
+        const _match = attrs?.match(new RegExp(`${a}="([^"]*)"`, "i"));
         return match ? match[1] : "";
       };
       return {
@@ -621,9 +621,9 @@ class NamecheapProvider implements DnsProvider {
     record: DnsRecord,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const existing = await this.listRecords(domain, credentials);
-    const all = [...existing, record];
-    return this.setAllRecords(domain, all, credentials);
+    const _existing = await this?.listRecords(domain, credentials);
+    const _all = [...existing, record];
+    return this?.setAllRecords(domain, all, credentials);
   }
 
   async updateRecord(
@@ -633,11 +633,11 @@ class NamecheapProvider implements DnsProvider {
     originalType: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const existing = await this.listRecords(domain, credentials);
-    const filtered = existing.filter(
-      (r) => !(r.name === originalName && r.type === originalType),
+    const _existing = await this?.listRecords(domain, credentials);
+    const _filtered = existing?.filter(
+      (r) => !(r?.name === originalName && r?.type === originalType),
     );
-    return this.setAllRecords(domain, [...filtered, record], credentials);
+    return this?.setAllRecords(domain, [...filtered, record], credentials);
   }
 
   async deleteRecord(
@@ -646,11 +646,11 @@ class NamecheapProvider implements DnsProvider {
     recordName: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const existing = await this.listRecords(domain, credentials);
-    const filtered = existing.filter(
-      (r) => !(r.name === recordName && r.type === recordType),
+    const _existing = await this?.listRecords(domain, credentials);
+    const _filtered = existing?.filter(
+      (r) => !(r?.name === recordName && r?.type === recordType),
     );
-    return this.setAllRecords(domain, filtered, credentials);
+    return this?.setAllRecords(domain, filtered, credentials);
   }
 
   async batchUpsertRecords(
@@ -658,11 +658,11 @@ class NamecheapProvider implements DnsProvider {
     records: DnsRecord[],
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const existing = await this.listRecords(domain, credentials);
-    const merged = new Map<string, DnsRecord>();
-    for (const r of existing) merged.set(`${r.type}:${r.name}`, r);
-    for (const r of records) merged.set(`${r.type}:${r.name}`, r);
-    return this.setAllRecords(domain, [...merged.values()], credentials);
+    const _existing = await this?.listRecords(domain, credentials);
+    const _merged = new Map<string, DnsRecord>();
+    for (const r of existing) merged?.set(`${r?.type}:${r?.name}`, r);
+    for (const r of records) merged?.set(`${r?.type}:${r?.name}`, r);
+    return this?.setAllRecords(domain, [...merged?.values()], credentials);
   }
 
   private async setAllRecords(
@@ -670,31 +670,31 @@ class NamecheapProvider implements DnsProvider {
     records: DnsRecord[],
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const root = extractRootDomain(domain);
-    const [sld, tld] = root.split(".");
-    const params = new URLSearchParams({
-      ...Object.fromEntries(
-        this.baseParams(credentials)
+    const _root = extractRootDomain(domain);
+    const [sld, tld] = root?.split(".");
+    const _params = new URLSearchParams({
+      ...Object?.fromEntries(
+        this?.baseParams(credentials)
           .split("&")
-          .map((p) => p.split("=") as [string, string]),
+          .map((p) => p?.split("=") as [string, string]),
       ),
-      Command: "namecheap.domains.dns.setHosts",
+      Command: "namecheap?.domains.dns?.setHosts",
       SLD: sld,
       TLD: tld,
     });
-    records.forEach((r, i) => {
-      params.set(`HostName${i + 1}`, r.name);
-      params.set(`RecordType${i + 1}`, r.type);
-      params.set(`Address${i + 1}`, r.value);
-      params.set(`TTL${i + 1}`, String(clampTtl(r.ttl)));
-      if (r.priority !== undefined)
-        params.set(`MXPref${i + 1}`, String(r.priority));
+    records?.forEach((r, i) => {
+      params?.set(`HostName${i + 1}`, r?.name);
+      params?.set(`RecordType${i + 1}`, r?.type);
+      params?.set(`Address${i + 1}`, r?.value);
+      params?.set(`TTL${i + 1}`, String(clampTtl(r?.ttl)));
+      if (r?.priority !== undefined)
+        params?.set(`MXPref${i + 1}`, String(r?.priority));
     });
-    const xml = await this.callApi(params.toString());
-    if (!this.isSuccess(xml)) {
-      logger.warn("[Namecheap] setAllRecords failed", {
+    const _xml = await this?.callApi(params?.toString());
+    if (!this?.isSuccess(xml)) {
+      logger?.warn("[Namecheap] setAllRecords failed", {
         domain,
-        xml: xml.slice(0, 500),
+        xml: xml?.slice(0, 500),
       });
       throw new Error("Namecheap API error on setHosts");
     }
@@ -706,7 +706,7 @@ class NamecheapProvider implements DnsProvider {
     credentials: ProviderCredentials,
   ): Promise<boolean> {
     try {
-      await this.listRecords(domain, credentials);
+      await this?.listRecords(domain, credentials);
       return true;
     } catch {
       return false;
@@ -721,7 +721,7 @@ class DigitalOceanProvider implements DnsProvider {
 
   private headers(creds: ProviderCredentials): Record<string, string> {
     return {
-      Authorization: `Bearer ${creds.apiKey}`,
+      Authorization: `Bearer ${creds?.apiKey}`,
       "Content-Type": "application/json",
     };
   }
@@ -734,7 +734,7 @@ class DigitalOceanProvider implements DnsProvider {
   /** DO stores the record name relative to the zone root. */
   private toDoName(fqdn: string, zone: string): string {
     if (fqdn === zone || fqdn === "@") return "@";
-    if (fqdn.endsWith(`.${zone}`)) return fqdn.slice(0, -(zone.length + 1));
+    if (fqdn?.endsWith(`.${zone}`)) return fqdn?.slice(0, -(zone?.length + 1));
     return fqdn;
   }
 
@@ -742,17 +742,17 @@ class DigitalOceanProvider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<DnsRecord[]> {
-    const zone = this.zoneDomain(domain);
+    const _zone = this?.zoneDomain(domain);
     let page = 1;
     const results: DnsRecord[] = [];
     while (true) {
-      const resp = await fetchWithRetry(
+      const _resp = await fetchWithRetry(
         `${DO_API_BASE}/domains/${zone}/records?per_page=200&page=${page}`,
-        { headers: this.headers(credentials) },
+        { headers: this?.headers(credentials) },
       );
-      if (!resp.ok)
-        throw new Error(`DigitalOcean listRecords error: ${resp.status}`);
-      const data = (await resp.json()) as {
+      if (!resp?.ok)
+        throw new Error(`DigitalOcean listRecords error: ${resp?.status}`);
+      const _data = (await resp?.json()) as {
         domain_records: Array<{
           type: string;
           name: string;
@@ -764,18 +764,18 @@ class DigitalOceanProvider implements DnsProvider {
         }>;
         links?: { pages?: { next?: string } };
       };
-      for (const r of data.domain_records) {
-        results.push({
-          type: r.type,
-          name: r.name,
-          value: r.data,
-          ttl: clampTtl(r.ttl),
-          priority: r.priority,
-          port: r.port,
-          weight: r.weight,
+      for (const r of data?.domain_records) {
+        results?.push({
+          type: r?.type,
+          name: r?.name,
+          value: r?.data,
+          ttl: clampTtl(r?.ttl),
+          priority: r?.priority,
+          port: r?.port,
+          weight: r?.weight,
         });
       }
-      if (!data.links?.pages?.next) break;
+      if (!data?.links?.pages?.next) break;
       page++;
     }
     return results;
@@ -786,26 +786,26 @@ class DigitalOceanProvider implements DnsProvider {
     record: DnsRecord,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zone = this.zoneDomain(domain);
+    const _zone = this?.zoneDomain(domain);
     const body: Record<string, unknown> = {
-      type: record.type,
-      name: this.toDoName(record.name, zone),
-      data: record.value,
-      ttl: clampTtl(record.ttl),
+      type: record?.type,
+      name: this?.toDoName(record?.name, zone),
+      data: record?.value,
+      ttl: clampTtl(record?.ttl),
     };
-    if (record.priority !== undefined) body.priority = record.priority;
-    if (record.port !== undefined) body.port = record.port;
-    if (record.weight !== undefined) body.weight = record.weight;
-    const resp = await fetchWithRetry(
+    if (record?.priority !== undefined) body?.priority = record?.priority;
+    if (record?.port !== undefined) body?.port = record?.port;
+    if (record?.weight !== undefined) body?.weight = record?.weight;
+    const _resp = await fetchWithRetry(
       `${DO_API_BASE}/domains/${zone}/records`,
       {
         method: "POST",
-        headers: this.headers(credentials),
-        body: JSON.stringify(body),
+        headers: this?.headers(credentials),
+        body: JSON?.stringify(body),
       },
     );
-    if (!resp.ok)
-      throw new Error(`DigitalOcean addRecord error: ${resp.status}`);
+    if (!resp?.ok)
+      throw new Error(`DigitalOcean addRecord error: ${resp?.status}`);
     return true;
   }
 
@@ -815,22 +815,22 @@ class DigitalOceanProvider implements DnsProvider {
     recordName: string,
     credentials: ProviderCredentials,
   ): Promise<number | null> {
-    const records = await this.listRecords(zone, credentials);
-    const match = records.find(
-      (r) => r.type === recordType && r.name === recordName,
+    const _records = await this?.listRecords(zone, credentials);
+    const _match = records?.find(
+      (r) => r?.type === recordType && r?.name === recordName,
     );
     if (!match) return null;
     // We need the numeric ID from the API directly
-    const resp = await fetchWithRetry(
+    const _resp = await fetchWithRetry(
       `${DO_API_BASE}/domains/${zone}/records?type=${recordType}&per_page=200`,
-      { headers: this.headers(credentials) },
+      { headers: this?.headers(credentials) },
     );
-    if (!resp.ok) return null;
-    const data = (await resp.json()) as {
+    if (!resp?.ok) return null;
+    const _data = (await resp?.json()) as {
       domain_records: Array<{ id: number; name: string; type: string }>;
     };
-    const found = data.domain_records.find(
-      (r) => r.type === recordType && r.name === recordName,
+    const _found = data?.domain_records.find(
+      (r) => r?.type === recordType && r?.name === recordName,
     );
     return found?.id ?? null;
   }
@@ -842,33 +842,33 @@ class DigitalOceanProvider implements DnsProvider {
     originalType: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zone = this.zoneDomain(domain);
-    const id = await this.findRecordId(
+    const _zone = this?.zoneDomain(domain);
+    const _id = await this?.findRecordId(
       zone,
       originalType,
-      this.toDoName(originalName, zone),
+      this?.toDoName(originalName, zone),
       credentials,
     );
     if (!id) {
-      return this.addRecord(domain, record, credentials);
+      return this?.addRecord(domain, record, credentials);
     }
     const body: Record<string, unknown> = {
-      type: record.type,
-      name: this.toDoName(record.name, zone),
-      data: record.value,
-      ttl: clampTtl(record.ttl),
+      type: record?.type,
+      name: this?.toDoName(record?.name, zone),
+      data: record?.value,
+      ttl: clampTtl(record?.ttl),
     };
-    if (record.priority !== undefined) body.priority = record.priority;
-    const resp = await fetchWithRetry(
+    if (record?.priority !== undefined) body?.priority = record?.priority;
+    const _resp = await fetchWithRetry(
       `${DO_API_BASE}/domains/${zone}/records/${id}`,
       {
         method: "PUT",
-        headers: this.headers(credentials),
-        body: JSON.stringify(body),
+        headers: this?.headers(credentials),
+        body: JSON?.stringify(body),
       },
     );
-    if (!resp.ok)
-      throw new Error(`DigitalOcean updateRecord error: ${resp.status}`);
+    if (!resp?.ok)
+      throw new Error(`DigitalOcean updateRecord error: ${resp?.status}`);
     return true;
   }
 
@@ -878,20 +878,20 @@ class DigitalOceanProvider implements DnsProvider {
     recordName: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zone = this.zoneDomain(domain);
-    const id = await this.findRecordId(
+    const _zone = this?.zoneDomain(domain);
+    const _id = await this?.findRecordId(
       zone,
       recordType,
-      this.toDoName(recordName, zone),
+      this?.toDoName(recordName, zone),
       credentials,
     );
     if (!id) return true;
-    const resp = await fetchWithRetry(
+    const _resp = await fetchWithRetry(
       `${DO_API_BASE}/domains/${zone}/records/${id}`,
-      { method: "DELETE", headers: this.headers(credentials) },
+      { method: "DELETE", headers: this?.headers(credentials) },
     );
-    if (!resp.ok)
-      throw new Error(`DigitalOcean deleteRecord error: ${resp.status}`);
+    if (!resp?.ok)
+      throw new Error(`DigitalOcean deleteRecord error: ${resp?.status}`);
     return true;
   }
 
@@ -902,15 +902,15 @@ class DigitalOceanProvider implements DnsProvider {
   ): Promise<boolean> {
     for (const record of records) {
       try {
-        await this.updateRecord(
+        await this?.updateRecord(
           domain,
           record,
-          record.name,
-          record.type,
+          record?.name,
+          record?.type,
           credentials,
         );
       } catch {
-        await this.addRecord(domain, record, credentials);
+        await this?.addRecord(domain, record, credentials);
       }
     }
     return true;
@@ -920,11 +920,11 @@ class DigitalOceanProvider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zone = this.zoneDomain(domain);
-    const resp = await fetchWithRetry(`${DO_API_BASE}/domains/${zone}`, {
-      headers: this.headers(credentials),
+    const _zone = this?.zoneDomain(domain);
+    const _resp = await fetchWithRetry(`${DO_API_BASE}/domains/${zone}`, {
+      headers: this?.headers(credentials),
     });
-    return resp.ok;
+    return resp?.ok;
   }
 }
 
@@ -935,21 +935,21 @@ class PorkbunProvider implements DnsProvider {
 
   /** Porkbun requires both API key and secret in every request body. */
   private authBody(creds: ProviderCredentials): Record<string, string> {
-    return { apikey: creds.apiKey, secretapikey: creds.apiSecret };
+    return { apikey: creds?.apiKey, secretapikey: creds?.apiSecret };
   }
 
   private async postJson<T>(
     path: string,
     body: Record<string, unknown>,
   ): Promise<T> {
-    const resp = await fetchWithRetry(`${PORKBUN_API_BASE}${path}`, {
+    const _resp = await fetchWithRetry(`${PORKBUN_API_BASE}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON?.stringify(body),
     });
-    const data = (await resp.json()) as { status: string } & T;
+    const _data = (await resp?.json()) as { status: string } & T;
     if ((data as Record<string, unknown>).status !== "SUCCESS") {
-      throw new Error(`Porkbun error on ${path}: ${JSON.stringify(data)}`);
+      throw new Error(`Porkbun error on ${path}: ${JSON?.stringify(data)}`);
     }
     return data;
   }
@@ -958,8 +958,8 @@ class PorkbunProvider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<DnsRecord[]> {
-    const root = extractRootDomain(domain);
-    const data = await this.postJson<{
+    const _root = extractRootDomain(domain);
+    const _data = await this?.postJson<{
       records: Array<{
         type: string;
         name: string;
@@ -967,13 +967,13 @@ class PorkbunProvider implements DnsProvider {
         ttl: string;
         prio?: string;
       }>;
-    }>(`/dns/retrieve/${root}`, this.authBody(credentials));
-    return (data.records || []).map((r) => ({
-      type: r.type,
-      name: r.name,
-      value: r.content,
-      ttl: clampTtl(parseInt(r.ttl || "300", 10)),
-      priority: r.prio ? parseInt(r.prio, 10) : undefined,
+    }>(`/dns/retrieve/${root}`, this?.authBody(credentials));
+    return (data?.records || []).map((r) => ({
+      type: r?.type,
+      name: r?.name,
+      value: r?.content,
+      ttl: clampTtl(parseInt(r?.ttl || "300", 10)),
+      priority: r?.prio ? parseInt(r?.prio, 10) : undefined,
     }));
   }
 
@@ -982,15 +982,15 @@ class PorkbunProvider implements DnsProvider {
     record: DnsRecord,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const root = extractRootDomain(domain);
-    await this.postJson(`/dns/create/${root}`, {
-      ...this.authBody(credentials),
-      type: record.type,
-      name: record.name === "@" ? "" : record.name,
-      content: record.value,
-      ttl: String(clampTtl(record.ttl)),
-      ...(record.priority !== undefined
-        ? { prio: String(record.priority) }
+    const _root = extractRootDomain(domain);
+    await this?.postJson(`/dns/create/${root}`, {
+      ...this?.authBody(credentials),
+      type: record?.type,
+      name: record?.name === "@" ? "" : record?.name,
+      content: record?.value,
+      ttl: String(clampTtl(record?.ttl)),
+      ...(record?.priority !== undefined
+        ? { prio: String(record?.priority) }
         : {}),
     });
     return true;
@@ -1002,20 +1002,20 @@ class PorkbunProvider implements DnsProvider {
     name: string,
     credentials: ProviderCredentials,
   ): Promise<string | null> {
-    const records = await this.listRecords(domain, credentials);
-    const match = records.find((r) => r.type === type && r.name === name);
+    const _records = await this?.listRecords(domain, credentials);
+    const _match = records?.find((r) => r?.type === type && r?.name === name);
     if (!match) return null;
     // Fetch with type to get ID
-    const root = extractRootDomain(domain);
-    const data = await this.postJson<{
+    const _root = extractRootDomain(domain);
+    const _data = await this?.postJson<{
       records: Array<{ id: string; type: string; name: string }>;
     }>(
       `/dns/retrieveByNameType/${root}/${type}/${name === "@" ? "" : name}`,
-      this.authBody(credentials),
+      this?.authBody(credentials),
     ).catch(() => ({
       records: [] as Array<{ id: string; type: string; name: string }>,
     }));
-    return data.records[0]?.id ?? null;
+    return data?.records[0]?.id ?? null;
   }
 
   async updateRecord(
@@ -1025,22 +1025,22 @@ class PorkbunProvider implements DnsProvider {
     originalType: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const root = extractRootDomain(domain);
-    const id = await this.findRecordId(
+    const _root = extractRootDomain(domain);
+    const _id = await this?.findRecordId(
       domain,
       originalType,
       originalName,
       credentials,
     );
-    if (!id) return this.addRecord(domain, record, credentials);
-    await this.postJson(`/dns/edit/${root}/${id}`, {
-      ...this.authBody(credentials),
-      type: record.type,
-      name: record.name === "@" ? "" : record.name,
-      content: record.value,
-      ttl: String(clampTtl(record.ttl)),
-      ...(record.priority !== undefined
-        ? { prio: String(record.priority) }
+    if (!id) return this?.addRecord(domain, record, credentials);
+    await this?.postJson(`/dns/edit/${root}/${id}`, {
+      ...this?.authBody(credentials),
+      type: record?.type,
+      name: record?.name === "@" ? "" : record?.name,
+      content: record?.value,
+      ttl: String(clampTtl(record?.ttl)),
+      ...(record?.priority !== undefined
+        ? { prio: String(record?.priority) }
         : {}),
     });
     return true;
@@ -1052,17 +1052,17 @@ class PorkbunProvider implements DnsProvider {
     recordName: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const root = extractRootDomain(domain);
-    const id = await this.findRecordId(
+    const _root = extractRootDomain(domain);
+    const _id = await this?.findRecordId(
       domain,
       recordType,
       recordName,
       credentials,
     );
     if (!id) return true;
-    await this.postJson(
+    await this?.postJson(
       `/dns/delete/${root}/${id}`,
-      this.authBody(credentials),
+      this?.authBody(credentials),
     );
     return true;
   }
@@ -1074,15 +1074,15 @@ class PorkbunProvider implements DnsProvider {
   ): Promise<boolean> {
     for (const record of records) {
       try {
-        await this.updateRecord(
+        await this?.updateRecord(
           domain,
           record,
-          record.name,
-          record.type,
+          record?.name,
+          record?.type,
           credentials,
         );
       } catch {
-        await this.addRecord(domain, record, credentials);
+        await this?.addRecord(domain, record, credentials);
       }
     }
     return true;
@@ -1093,7 +1093,7 @@ class PorkbunProvider implements DnsProvider {
     credentials: ProviderCredentials,
   ): Promise<boolean> {
     try {
-      await this.listRecords(domain, credentials);
+      await this?.listRecords(domain, credentials);
       return true;
     } catch {
       return false;
@@ -1117,19 +1117,19 @@ class Route53Provider implements DnsProvider {
     secretKey: string,
     region: string,
   ): Promise<Record<string, string>> {
-    const crypto = await import("crypto");
-    const now = new Date();
-    const amzDate = now.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
-    const dateStamp = amzDate.slice(0, 8);
-    const urlObj = new URL(url);
-    const host = urlObj.hostname;
-    const service = "route53";
-    const canonicalUri = urlObj.pathname;
-    const canonicalQS = urlObj.searchParams.toString();
-    const canonicalHeaders = `host:${host}\nx-amz-date:${amzDate}\n`;
-    const signedHeaders = "host;x-amz-date";
-    const payloadHash = crypto.createHash("sha256").update(body).digest("hex");
-    const canonicalRequest = [
+    const _crypto = await import("crypto");
+    const _now = new Date();
+    const _amzDate = now?.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const _dateStamp = amzDate?.slice(0, 8);
+    const _urlObj = new URL(url);
+    const _host = urlObj?.hostname;
+    const _service = "route53";
+    const _canonicalUri = urlObj?.pathname;
+    const _canonicalQS = urlObj?.searchParams.toString();
+    const _canonicalHeaders = `host:${host}\nx-amz-date:${amzDate}\n`;
+    const _signedHeaders = "host;x-amz-date";
+    const _payloadHash = crypto?.createHash("sha256").update(body).digest("hex");
+    const _canonicalRequest = [
       method,
       canonicalUri,
       canonicalQS,
@@ -1137,20 +1137,20 @@ class Route53Provider implements DnsProvider {
       signedHeaders,
       payloadHash,
     ].join("\n");
-    const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
-    const stringToSign = [
+    const _credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+    const _stringToSign = [
       "AWS4-HMAC-SHA256",
       amzDate,
       credentialScope,
-      crypto.createHash("sha256").update(canonicalRequest).digest("hex"),
+      crypto?.createHash("sha256").update(canonicalRequest).digest("hex"),
     ].join("\n");
-    const hmac = (key: Buffer | string, data: string): Buffer =>
-      crypto.createHmac("sha256", key).update(data).digest();
-    const signingKey = hmac(
+    const _hmac = (key: Buffer | string, data: string): Buffer =>
+      crypto?.createHmac("sha256", key).update(data).digest();
+    const _signingKey = hmac(
       hmac(hmac(hmac(`AWS4${secretKey}`, dateStamp), region), service),
       "aws4_request",
     );
-    const signature = crypto
+    const _signature = crypto
       .createHmac("sha256", signingKey)
       .update(stringToSign)
       .digest("hex");
@@ -1165,35 +1165,35 @@ class Route53Provider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<string> {
-    const root = extractRootDomain(domain);
-    const url = `https://route53.amazonaws.com/2013-04-01/hostedzone?dnsname=${root}`;
-    const headers = await this.sign(
+    const _root = extractRootDomain(domain);
+    const _url = `https://route53?.amazonaws.com/2013-04-01/hostedzone?dnsname=${root}`;
+    const _headers = await this?.sign(
       "GET",
       url,
       "",
-      credentials.apiKey,
-      credentials.apiSecret,
-      credentials.region || "us-east-1",
+      credentials?.apiKey,
+      credentials?.apiSecret,
+      credentials?.region || "us-east-1",
     );
-    const resp = await fetchWithRetry(url, { headers });
-    const text = await resp.text();
-    const match = text.match(/<Id>\/hostedzone\/([^<]+)<\/Id>/);
+    const _resp = await fetchWithRetry(url, { headers });
+    const _text = await resp?.text();
+    const _match = text?.match(/<Id>\/hostedzone\/([^<]+)<\/Id>/);
     if (!match) throw new Error(`Route53: hosted zone not found for ${root}`);
     return match[1];
   }
 
   private makeChangeXml(action: string, record: DnsRecord): string {
-    const name = record.name === "@" ? "" : `${record.name}.`;
-    const rrValue =
-      record.type === "MX"
-        ? `<Value>${record.priority} ${record.value}</Value>`
-        : `<Value>${record.value}</Value>`;
+    const _name = record?.name === "@" ? "" : `${record?.name}.`;
+    const _rrValue =
+      record?.type === "MX"
+        ? `<Value>${record?.priority} ${record?.value}</Value>`
+        : `<Value>${record?.value}</Value>`;
     return `<Change>
   <Action>${action}</Action>
   <ResourceRecordSet>
     <Name>${name}</Name>
-    <Type>${record.type}</Type>
-    <TTL>${clampTtl(record.ttl)}</TTL>
+    <Type>${record?.type}</Type>
+    <TTL>${clampTtl(record?.ttl)}</TTL>
     <ResourceRecords>${rrValue}</ResourceRecords>
   </ResourceRecordSet>
 </Change>`;
@@ -1204,28 +1204,28 @@ class Route53Provider implements DnsProvider {
     xml: string,
     credentials: ProviderCredentials,
   ): Promise<void> {
-    const url = `https://route53.amazonaws.com/2013-04-01/hostedzone/${zoneId}/rrset`;
-    const body = `<?xml version="1.0" encoding="UTF-8"?>
-<ChangeResourceRecordSetsRequest xmlns="https://route53.amazonaws.com/doc/2013-04-01/">
+    const _url = `https://route53?.amazonaws.com/2013-04-01/hostedzone/${zoneId}/rrset`;
+    const _body = `<?xml version="1?.0" encoding="UTF-8"?>
+<ChangeResourceRecordSetsRequest xmlns="https://route53?.amazonaws.com/doc/2013-04-01/">
   <ChangeBatch><Changes>${xml}</Changes></ChangeBatch>
 </ChangeResourceRecordSetsRequest>`;
-    const headers = await this.sign(
+    const _headers = await this?.sign(
       "POST",
       url,
       body,
-      credentials.apiKey,
-      credentials.apiSecret,
-      credentials.region || "us-east-1",
+      credentials?.apiKey,
+      credentials?.apiSecret,
+      credentials?.region || "us-east-1",
     );
-    const resp = await fetchWithRetry(url, {
+    const _resp = await fetchWithRetry(url, {
       method: "POST",
       headers: { ...headers, "Content-Type": "application/xml" },
       body,
     });
-    if (!resp.ok) {
-      const text = await resp.text();
+    if (!resp?.ok) {
+      const _text = await resp?.text();
       throw new Error(
-        `Route53 changeBatch error: ${resp.status} — ${text.slice(0, 200)}`,
+        `Route53 changeBatch error: ${resp?.status} — ${text?.slice(0, 200)}`,
       );
     }
   }
@@ -1234,42 +1234,42 @@ class Route53Provider implements DnsProvider {
     domain: string,
     credentials: ProviderCredentials,
   ): Promise<DnsRecord[]> {
-    const zoneId = await this.getHostedZoneId(domain, credentials);
-    const url = `https://route53.amazonaws.com/2013-04-01/hostedzone/${zoneId}/rrset?maxitems=300`;
-    const headers = await this.sign(
+    const _zoneId = await this?.getHostedZoneId(domain, credentials);
+    const _url = `https://route53?.amazonaws.com/2013-04-01/hostedzone/${zoneId}/rrset?maxitems=300`;
+    const _headers = await this?.sign(
       "GET",
       url,
       "",
-      credentials.apiKey,
-      credentials.apiSecret,
-      credentials.region || "us-east-1",
+      credentials?.apiKey,
+      credentials?.apiSecret,
+      credentials?.region || "us-east-1",
     );
-    const resp = await fetchWithRetry(url, { headers });
-    const text = await resp.text();
+    const _resp = await fetchWithRetry(url, { headers });
+    const _text = await resp?.text();
     const records: DnsRecord[] = [];
-    const rrsMatches = [
-      ...text.matchAll(/<ResourceRecordSet>([\s\S]*?)<\/ResourceRecordSet>/g),
+    const _rrsMatches = [
+      ...text?.matchAll(/<ResourceRecordSet>([\s\S]*?)<\/ResourceRecordSet>/g),
     ];
     for (const m of rrsMatches) {
-      const rrs = m[1];
-      const getTag = (t: string) => {
-        const mm = rrs.match(new RegExp(`<${t}>([^<]*)</${t}>`));
+      const _rrs = m[1];
+      const _getTag = (t: string) => {
+        const _mm = rrs?.match(new RegExp(`<${t}>([^<]*)</${t}>`));
         return mm ? mm[1] : "";
       };
-      const type = getTag("Type");
-      const name = getTag("Name").replace(/\.$/, "");
-      const ttl = clampTtl(parseInt(getTag("TTL") || "300", 10));
-      const valueMatches = [...rrs.matchAll(/<Value>([^<]*)<\/Value>/g)];
+      const _type = getTag("Type");
+      const _name = getTag("Name").replace(/\.$/, "");
+      const _ttl = clampTtl(parseInt(getTag("TTL") || "300", 10));
+      const _valueMatches = [...rrs?.matchAll(/<Value>([^<]*)<\/Value>/g)];
       for (const v of valueMatches) {
-        const raw = v[1];
+        const _raw = v[1];
         let value = raw;
         let priority: number | undefined;
         if (type === "MX") {
-          const parts = raw.split(" ");
+          const _parts = raw?.split(" ");
           priority = parseInt(parts[0], 10);
-          value = parts.slice(1).join(" ");
+          value = parts?.slice(1).join(" ");
         }
-        records.push({ type, name, value, ttl, priority });
+        records?.push({ type, name, value, ttl, priority });
       }
     }
     return records;
@@ -1280,10 +1280,10 @@ class Route53Provider implements DnsProvider {
     record: DnsRecord,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zoneId = await this.getHostedZoneId(domain, credentials);
-    await this.changeBatch(
+    const _zoneId = await this?.getHostedZoneId(domain, credentials);
+    await this?.changeBatch(
       zoneId,
-      this.makeChangeXml("UPSERT", record),
+      this?.makeChangeXml("UPSERT", record),
       credentials,
     );
     return true;
@@ -1296,7 +1296,7 @@ class Route53Provider implements DnsProvider {
     _originalType: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    return this.addRecord(domain, record, credentials);
+    return this?.addRecord(domain, record, credentials);
   }
 
   async deleteRecord(
@@ -1305,15 +1305,15 @@ class Route53Provider implements DnsProvider {
     recordName: string,
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const existing = await this.listRecords(domain, credentials);
-    const target = existing.find(
-      (r) => r.type === recordType && r.name === recordName,
+    const _existing = await this?.listRecords(domain, credentials);
+    const _target = existing?.find(
+      (r) => r?.type === recordType && r?.name === recordName,
     );
     if (!target) return true;
-    const zoneId = await this.getHostedZoneId(domain, credentials);
-    await this.changeBatch(
+    const _zoneId = await this?.getHostedZoneId(domain, credentials);
+    await this?.changeBatch(
       zoneId,
-      this.makeChangeXml("DELETE", target),
+      this?.makeChangeXml("DELETE", target),
       credentials,
     );
     return true;
@@ -1324,9 +1324,9 @@ class Route53Provider implements DnsProvider {
     records: DnsRecord[],
     credentials: ProviderCredentials,
   ): Promise<boolean> {
-    const zoneId = await this.getHostedZoneId(domain, credentials);
-    const xml = records.map((r) => this.makeChangeXml("UPSERT", r)).join("\n");
-    await this.changeBatch(zoneId, xml, credentials);
+    const _zoneId = await this?.getHostedZoneId(domain, credentials);
+    const _xml = records?.map((r) => this?.makeChangeXml("UPSERT", r)).join("\n");
+    await this?.changeBatch(zoneId, xml, credentials);
     return true;
   }
 
@@ -1335,7 +1335,7 @@ class Route53Provider implements DnsProvider {
     credentials: ProviderCredentials,
   ): Promise<boolean> {
     try {
-      await this.getHostedZoneId(domain, credentials);
+      await this?.getHostedZoneId(domain, credentials);
       return true;
     } catch {
       return false;
@@ -1355,7 +1355,7 @@ const providers: Record<string, DnsProvider> = {
 };
 
 export function getProvider(name: string): DnsProvider {
-  const provider = providers[name.toLowerCase()];
+  const _provider = providers[name?.toLowerCase()];
   if (!provider)
     throw new Error(
       `Unknown DNS provider: ${name}. Supported: ${getSupportedProviders().join(", ")}`,
@@ -1364,12 +1364,12 @@ export function getProvider(name: string): DnsProvider {
 }
 
 export function getSupportedProviders(): string[] {
-  return Object.keys(providers);
+  return Object?.keys(providers);
 }
 
 // ─── Record metadata ──────────────────────────────────────────────────────────
 
-export const SUPPORTED_RECORD_TYPES = [
+export const _SUPPORTED_RECORD_TYPES = [
   "A",
   "AAAA",
   "CNAME",
@@ -1382,7 +1382,7 @@ export const SUPPORTED_RECORD_TYPES = [
 ] as const;
 export type SupportedRecordType = (typeof SUPPORTED_RECORD_TYPES)[number];
 
-export const TTL_PRESETS = [
+export const _TTL_PRESETS = [
   { label: "Auto (60 s)", value: 60 },
   { label: "5 min", value: 300 },
   { label: "30 min", value: 1800 },
@@ -1419,26 +1419,26 @@ export const PROVIDER_CREDENTIAL_LABELS: Record<
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 export function validateDnsRecord(record: DnsRecord): string | null {
-  if (!SUPPORTED_RECORD_TYPES.includes(record.type as SupportedRecordType)) {
-    return `Unsupported record type: ${record.type}`;
+  if (!SUPPORTED_RECORD_TYPES?.includes(record?.type as SupportedRecordType)) {
+    return `Unsupported record type: ${record?.type}`;
   }
-  if (!record.name || record.name.length > 253) {
+  if (!record?.name || record?.name.length > 253) {
     return "Record name is required and must be under 253 characters";
   }
-  if (!record.value) {
+  if (!record?.value) {
     return "Record value is required";
   }
-  if (record.ttl < MIN_TTL || record.ttl > 604800) {
+  if (record?.ttl < MIN_TTL || record?.ttl > 604800) {
     return `TTL must be between ${MIN_TTL} and 604800 seconds`;
   }
 
-  switch (record.type) {
+  switch (record?.type) {
     case "A": {
-      const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
-      if (!ipv4.test(record.value))
+      const _ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
+      if (!ipv4?.test(record?.value))
         return "A record must be a valid IPv4 address";
       if (
-        record.value
+        record?.value
           .split(".")
           .map(Number)
           .some((p) => p > 255)
@@ -1447,57 +1447,57 @@ export function validateDnsRecord(record: DnsRecord): string | null {
       break;
     }
     case "AAAA": {
-      const ipv6 =
+      const _ipv6 =
         /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
-      if (!ipv6.test(record.value))
+      if (!ipv6?.test(record?.value))
         return "AAAA record must be a valid IPv6 address";
       break;
     }
     case "CNAME":
     case "ALIAS": {
-      const hostname = /^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.?$/;
-      if (!hostname.test(record.value))
+      const _hostname = /^[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.?$/;
+      if (!hostname?.test(record?.value))
         return "CNAME/ALIAS must be a valid hostname";
       break;
     }
     case "MX": {
       if (
-        record.priority === undefined ||
-        record.priority < 0 ||
-        record.priority > 65535
+        record?.priority === undefined ||
+        record?.priority < 0 ||
+        record?.priority > 65535
       ) {
         return "MX record requires a priority between 0 and 65535";
       }
       break;
     }
     case "TXT": {
-      if (record.value.length > 4096)
+      if (record?.value.length > 4096)
         return "TXT record value is too long (max 4096 chars)";
       break;
     }
     case "CAA": {
-      const caaPattern = /^\d+ (issue|issuewild|iodef) ".+"$/;
-      if (!caaPattern.test(record.value)) {
-        return 'CAA value must be: <flags> <tag> "<value>" e.g. 0 issue "letsencrypt.org"';
+      const _caaPattern = /^\d+ (issue|issuewild|iodef) ".+"$/;
+      if (!caaPattern?.test(record?.value)) {
+        return 'CAA value must be: <flags> <tag> "<value>" e?.g. 0 issue "letsencrypt?.org"';
       }
       break;
     }
     case "SRV": {
       if (
-        record.priority === undefined ||
-        record.priority < 0 ||
-        record.priority > 65535
+        record?.priority === undefined ||
+        record?.priority < 0 ||
+        record?.priority > 65535
       ) {
         return "SRV record requires a priority between 0 and 65535";
       }
       if (
-        record.weight === undefined ||
-        record.weight < 0 ||
-        record.weight > 65535
+        record?.weight === undefined ||
+        record?.weight < 0 ||
+        record?.weight > 65535
       ) {
         return "SRV record requires a weight between 0 and 65535";
       }
-      if (record.port === undefined || record.port < 0 || record.port > 65535) {
+      if (record?.port === undefined || record?.port < 0 || record?.port > 65535) {
         return "SRV record requires a port between 0 and 65535";
       }
       break;
@@ -1512,18 +1512,18 @@ export function validateDnsRecord(record: DnsRecord): string | null {
  */
 export function buildCaaRecords(_domain: string): DnsRecord[] {
   return [
-    { type: "CAA", name: "@", value: '0 issue "letsencrypt.org"', ttl: 3600 },
-    { type: "CAA", name: "@", value: '0 issue "pki.goog"', ttl: 3600 },
+    { type: "CAA", name: "@", value: '0 issue "letsencrypt?.org"', ttl: 3600 },
+    { type: "CAA", name: "@", value: '0 issue "pki?.goog"', ttl: 3600 },
     {
       type: "CAA",
       name: "@",
-      value: '0 issuewild "letsencrypt.org"',
+      value: '0 issuewild "letsencrypt?.org"',
       ttl: 3600,
     },
     {
       type: "CAA",
       name: "@",
-      value: '0 iodef "mailto:admin@max-booster.com"',
+      value: '0 iodef "mailto:admin@max-booster?.com"',
       ttl: 3600,
     },
   ];

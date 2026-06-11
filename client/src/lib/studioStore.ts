@@ -74,7 +74,7 @@ export type FaderMode =
   | "bus8";
 
 // Spatial Audio Types
-export type SpeakerConfiguration = "stereo" | "5.1" | "7.1" | "9.1.6";
+export type SpeakerConfiguration = "stereo" | "5?.1" | "7?.1" | "9?.1.6";
 export type ObjectType = "bed" | "object";
 
 export interface SpatialObject {
@@ -162,7 +162,7 @@ export interface StoreTrack {
   groupId?: string;
 }
 
-// Autoscroll modes matching Studio One Pro 7.2+
+// Autoscroll modes matching Studio One Pro 7?.2+
 export type AutoscrollMode =
   | "off"
   | "turnover"
@@ -308,7 +308,7 @@ const NASHVILLE_SCALE_INTERVALS: Record<MusicalKey, number[]> = {
   B: [11, 1, 3, 4, 6, 8, 10],
 };
 
-const ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII"];
+const _ROMAN_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII"];
 
 export function formatChord(
   chordRoot: string,
@@ -320,7 +320,7 @@ export function formatChord(
     return `${chordRoot}${chordQuality}`;
   }
 
-  const normalizedRoot = chordRoot
+  const _normalizedRoot = chordRoot
     .replace("b", "#")
     .replace("Db", "C#")
     .replace("Eb", "D#")
@@ -328,7 +328,7 @@ export function formatChord(
     .replace("Ab", "G#")
     .replace("Bb", "A#");
 
-  let rootSemitone = MUSICAL_KEYS.indexOf(normalizedRoot as MusicalKey);
+  let rootSemitone = MUSICAL_KEYS?.indexOf(normalizedRoot as MusicalKey);
   if (rootSemitone === -1) {
     const flatToSharp: Record<string, MusicalKey> = {
       Db: "C#",
@@ -337,9 +337,9 @@ export function formatChord(
       Ab: "G#",
       Bb: "A#",
     };
-    const converted = flatToSharp[chordRoot];
+    const _converted = flatToSharp[chordRoot];
     if (converted) {
-      rootSemitone = MUSICAL_KEYS.indexOf(converted);
+      rootSemitone = MUSICAL_KEYS?.indexOf(converted);
     }
   }
 
@@ -347,11 +347,11 @@ export function formatChord(
     return `${chordRoot}${chordQuality}`;
   }
 
-  const scaleIntervals = NASHVILLE_SCALE_INTERVALS[key];
+  const _scaleIntervals = NASHVILLE_SCALE_INTERVALS[key];
   let scaleDegree = -1;
   let accidental = "";
 
-  for (let i = 0; i < scaleIntervals.length; i++) {
+  for (let i = 0; i < scaleIntervals?.length; i++) {
     if (scaleIntervals[i] === rootSemitone) {
       scaleDegree = i + 1;
       break;
@@ -359,7 +359,7 @@ export function formatChord(
   }
 
   if (scaleDegree === -1) {
-    for (let i = 0; i < scaleIntervals.length; i++) {
+    for (let i = 0; i < scaleIntervals?.length; i++) {
       if ((scaleIntervals[i] + 1) % 12 === rootSemitone) {
         scaleDegree = i + 1;
         accidental = "#";
@@ -377,25 +377,25 @@ export function formatChord(
     return `${chordRoot}${chordQuality}`;
   }
 
-  const isMinor =
-    chordQuality.startsWith("m") && !chordQuality.startsWith("maj");
-  const isDiminished = chordQuality.includes("dim");
-  const qualitySuffix = chordQuality.replace(/^m(?!aj)/, "");
+  const _isMinor =
+    chordQuality?.startsWith("m") && !chordQuality?.startsWith("maj");
+  const _isDiminished = chordQuality?.includes("dim");
+  const _qualitySuffix = chordQuality?.replace(/^m(?!aj)/, "");
 
   if (mode === "nashville") {
-    const prefix = accidental === "#" ? "#" : accidental === "b" ? "b" : "";
-    const minorSuffix = isMinor ? "m" : isDiminished ? "o" : "";
-    return `${prefix}${scaleDegree}${minorSuffix}${qualitySuffix.replace("dim", "").replace("m", "")}`;
+    const _prefix = accidental === "#" ? "#" : accidental === "b" ? "b" : "";
+    const _minorSuffix = isMinor ? "m" : isDiminished ? "o" : "";
+    return `${prefix}${scaleDegree}${minorSuffix}${qualitySuffix?.replace("dim", "").replace("m", "")}`;
   }
 
   if (mode === "roman") {
-    const romanBase = ROMAN_NUMERALS[scaleDegree - 1];
-    const prefix = accidental === "#" ? "#" : accidental === "b" ? "b" : "";
+    const _romanBase = ROMAN_NUMERALS[scaleDegree - 1];
+    const _prefix = accidental === "#" ? "#" : accidental === "b" ? "b" : "";
 
     if (isMinor || isDiminished) {
-      const lowerRoman = romanBase.toLowerCase();
-      const dimSuffix = isDiminished ? "o" : "";
-      return `${prefix}${lowerRoman}${dimSuffix}${qualitySuffix.replace("dim", "").replace("m", "")}`;
+      const _lowerRoman = romanBase?.toLowerCase();
+      const _dimSuffix = isDiminished ? "o" : "";
+      return `${prefix}${lowerRoman}${dimSuffix}${qualitySuffix?.replace("dim", "").replace("m", "")}`;
     } else {
       return `${prefix}${romanBase}${qualitySuffix}`;
     }
@@ -523,7 +523,7 @@ export interface StudioState {
   minProjectDuration: number; // Minimum duration before expansion
   autoExpandEnabled: boolean; // Auto-expand timeline when playhead exceeds
 
-  // Smart Re-engagement (Studio One 7.2 style)
+  // Smart Re-engagement (Studio One 7?.2 style)
   autoscrollPaused: boolean; // True when user manually scrolled during playback
   lastManualScrollTime: number; // Timestamp of last manual scroll
 
@@ -716,7 +716,7 @@ export interface StudioState {
   fitTimelineToContents: (contentEndTime: number) => void;
   setAutoExpandEnabled: (enabled: boolean) => void;
 
-  // Smart Re-engagement Actions (Studio One 7.2 style)
+  // Smart Re-engagement Actions (Studio One 7?.2 style)
   pauseAutoscroll: () => void; // Called when user manually scrolls during playback
   resumeAutoscroll: () => void; // Called when user presses F or clicks autoscroll button
   isAutoscrollActive: () => boolean; // Returns false if mode is off or paused
@@ -820,7 +820,7 @@ export interface StudioState {
   getNextSetlistItem: () => SetlistItem | null;
 }
 
-export const useStudioStore = create<StudioState>((set, get) => ({
+export const _useStudioStore = create<StudioState>((set, get) => ({
   // Current Project
   currentProjectId: null,
   setCurrentProjectId: (projectId: string | null) =>
@@ -841,10 +841,10 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   timeSignature: "4/4",
   metronomeEnabled: false,
 
-  zoom: 1.0,
+  zoom: 1?.0,
   scrollPosition: 0,
   snapEnabled: true,
-  snapResolution: 0.25, // Quarter note at 120 BPM
+  snapResolution: 0?.25, // Quarter note at 120 BPM
 
   selectedTrackIds: [],
   selectedClipIds: [],
@@ -875,7 +875,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   bufferSize: 256,
 
   // Metronome Advanced
-  metronomeVolume: 0.5,
+  metronomeVolume: 0?.5,
 
   // Punch Recording
   punchMode: false,
@@ -896,7 +896,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Spatial Audio State
   spatialObjects: [],
-  speakerConfig: "7.1",
+  speakerConfig: "7?.1",
   binauralEnabled: false,
 
   // Lyrics State
@@ -909,9 +909,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     fontFamily: "Inter, sans-serif",
     textColor: "#ffffff",
     highlightColor: "#fbbf24",
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    backgroundColor: "rgba(0, 0, 0, 0?.85)",
     textAlign: "center" as const,
-    lineSpacing: 1.5,
+    lineSpacing: 1?.5,
     showWordHighlight: true,
     teleprompterMode: false,
   },
@@ -938,7 +938,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   gridDivision: 4,
 
   // Crossfade Settings
-  crossfadeLength: 0.01,
+  crossfadeLength: 0?.01,
   crossfadeCurve: "equal-power",
 
   // Infinite Timeline State (Studio One style - default 5 minutes)
@@ -947,7 +947,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   minProjectDuration: 60, // Minimum 1 minute
   autoExpandEnabled: true,
 
-  // Smart Re-engagement State (Studio One 7.2 style)
+  // Smart Re-engagement State (Studio One 7?.2 style)
   autoscrollPaused: false,
   lastManualScrollTime: 0,
 
@@ -1004,7 +1004,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     {
       id: "setlist-demo",
       name: "Demo Show",
-      createdAt: Date.now(),
+      createdAt: Date?.now(),
       items: [
         {
           id: "item-1",
@@ -1059,7 +1059,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setIsPlaying: (playing) => set({ isPlaying: playing }),
   setIsRecording: (recording) => set({ isRecording: recording }),
   toggleFollowPlayhead: () =>
-    set((state) => ({ followPlayhead: !state.followPlayhead })),
+    set((state) => ({ followPlayhead: !state?.followPlayhead })),
   setAutoscrollMode: (mode) =>
     set({ autoscrollMode: mode, followPlayhead: mode !== "off" }),
   cycleAutoscrollMode: () =>
@@ -1070,9 +1070,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         "continuous-centered",
         "continuous-left",
       ];
-      const currentIndex = modes.indexOf(state.autoscrollMode);
-      const nextIndex = (currentIndex + 1) % modes.length;
-      const nextMode = modes[nextIndex];
+      const _currentIndex = modes?.indexOf(state?.autoscrollMode);
+      const _nextIndex = (currentIndex + 1) % modes?.length;
+      const _nextMode = modes[nextIndex];
       return { autoscrollMode: nextMode, followPlayhead: nextMode !== "off" };
     }),
 
@@ -1080,36 +1080,36 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setLoopEnabled: (enabled) => set({ loopEnabled: enabled }),
   setLoopStart: (time) => set({ loopStart: time }),
   setLoopEnd: (time) => set({ loopEnd: time }),
-  setTempo: (tempo) => set({ tempo: Math.max(40, Math.min(240, tempo)) }),
+  setTempo: (tempo) => set({ tempo: Math?.max(40, Math?.min(240, tempo)) }),
   setTimeSignature: (signature) => set({ timeSignature: signature }),
   setMetronomeEnabled: (enabled) => set({ metronomeEnabled: enabled }),
 
   // View Actions
-  setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(10, zoom)) }),
+  setZoom: (zoom) => set({ zoom: Math?.max(0?.1, Math?.min(10, zoom)) }),
   setScrollPosition: (position) =>
-    set({ scrollPosition: Math.max(0, position) }),
-  toggleSnap: () => set((state) => ({ snapEnabled: !state.snapEnabled })),
+    set({ scrollPosition: Math?.max(0, position) }),
+  toggleSnap: () => set((state) => ({ snapEnabled: !state?.snapEnabled })),
   setSnapResolution: (resolution) => set({ snapResolution: resolution }),
 
   // Selection Actions
   selectTrack: (trackId, multi = false) =>
     set((state) => ({
       selectedTrackIds: multi
-        ? state.selectedTrackIds.includes(trackId)
-          ? state.selectedTrackIds.filter((id) => id !== trackId)
-          : [...state.selectedTrackIds, trackId]
+        ? state?.selectedTrackIds.includes(trackId)
+          ? state?.selectedTrackIds.filter((id) => id !== trackId)
+          : [...state?.selectedTrackIds, trackId]
         : [trackId],
-      selectedTrackId: multi ? state.selectedTrackId : trackId,
+      selectedTrackId: multi ? state?.selectedTrackId : trackId,
     })),
 
   selectClip: (clipId, multi = false) =>
     set((state) => ({
       selectedClipIds: multi
-        ? state.selectedClipIds.includes(clipId)
-          ? state.selectedClipIds.filter((id) => id !== clipId)
-          : [...state.selectedClipIds, clipId]
+        ? state?.selectedClipIds.includes(clipId)
+          ? state?.selectedClipIds.filter((id) => id !== clipId)
+          : [...state?.selectedClipIds, clipId]
         : [clipId],
-      selectedClipId: multi ? state.selectedClipId : clipId,
+      selectedClipId: multi ? state?.selectedClipId : clipId,
     })),
 
   selectMarker: (markerId) => set({ selectedMarkerId: markerId }),
@@ -1127,64 +1127,64 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setTracks: (tracks) => set({ tracks }),
   setTrackVolume: (trackId, volume) =>
     set((state) => ({
-      tracks: state.tracks.map((t) =>
-        t.id === trackId
-          ? { ...t, volume: Math.max(0, Math.min(1, volume)) }
+      tracks: state?.tracks.map((t) =>
+        t?.id === trackId
+          ? { ...t, volume: Math?.max(0, Math?.min(1, volume)) }
           : t,
       ),
     })),
   setTrackPan: (trackId, pan) =>
     set((state) => ({
-      tracks: state.tracks.map((t) =>
-        t.id === trackId ? { ...t, pan: Math.max(-1, Math.min(1, pan)) } : t,
+      tracks: state?.tracks.map((t) =>
+        t?.id === trackId ? { ...t, pan: Math?.max(-1, Math?.min(1, pan)) } : t,
       ),
     })),
   setTrackMute: (trackId, mute) =>
     set((state) => ({
-      tracks: state.tracks.map((t) => (t.id === trackId ? { ...t, mute } : t)),
+      tracks: state?.tracks.map((t) => (t?.id === trackId ? { ...t, mute } : t)),
     })),
   setTrackSolo: (trackId, solo) =>
     set((state) => ({
-      tracks: state.tracks.map((t) => (t.id === trackId ? { ...t, solo } : t)),
+      tracks: state?.tracks.map((t) => (t?.id === trackId ? { ...t, solo } : t)),
     })),
   setTrackArmed: (trackId, armed) =>
     set((state) => ({
-      tracks: state.tracks.map((t) => (t.id === trackId ? { ...t, armed } : t)),
+      tracks: state?.tracks.map((t) => (t?.id === trackId ? { ...t, armed } : t)),
     })),
 
   // Browser Actions
   toggleBrowser: () =>
-    set((state) => ({ browserVisible: !state.browserVisible })),
+    set((state) => ({ browserVisible: !state?.browserVisible })),
   setBrowserSearchQuery: (query) => set({ browserSearchQuery: query }),
   setBrowserActiveTab: (tab) => set({ browserActiveTab: tab }),
   setBrowserSelectedItem: (itemId) => set({ browserSelectedItem: itemId }),
 
   // Inspector Actions
   toggleInspector: () =>
-    set((state) => ({ inspectorVisible: !state.inspectorVisible })),
+    set((state) => ({ inspectorVisible: !state?.inspectorVisible })),
 
   // Routing Matrix Actions
   toggleRoutingMatrix: () =>
-    set((state) => ({ routingMatrixVisible: !state.routingMatrixVisible })),
+    set((state) => ({ routingMatrixVisible: !state?.routingMatrixVisible })),
 
   // Marker Actions
   addMarker: (marker) =>
     set((state) => ({
-      markers: [...state.markers, marker].sort((a, b) => a.time - b.time),
+      markers: [...state?.markers, marker].sort((a, b) => a?.time - b?.time),
     })),
 
   updateMarker: (id, updates) =>
     set((state) => ({
-      markers: state.markers
-        .map((m) => (m.id === id ? { ...m, ...updates } : m))
-        .sort((a, b) => a.time - b.time),
+      markers: state?.markers
+        .map((m) => (m?.id === id ? { ...m, ...updates } : m))
+        .sort((a, b) => a?.time - b?.time),
     })),
 
   deleteMarker: (id) =>
     set((state) => ({
-      markers: state.markers.filter((m) => m.id !== id),
+      markers: state?.markers.filter((m) => m?.id !== id),
       selectedMarkerId:
-        state.selectedMarkerId === id ? null : state.selectedMarkerId,
+        state?.selectedMarkerId === id ? null : state?.selectedMarkerId,
     })),
 
   // Audio Device Actions
@@ -1195,7 +1195,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Metronome Actions
   setMetronomeVolume: (volume) =>
-    set({ metronomeVolume: Math.max(0, Math.min(1, volume)) }),
+    set({ metronomeVolume: Math?.max(0, Math?.min(1, volume)) }),
 
   // Punch Recording Actions
   setPunchMode: (enabled) => set({ punchMode: enabled }),
@@ -1206,25 +1206,25 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   addTake: (trackId, take) =>
     set((state) => ({
       takesByTrack: {
-        ...state.takesByTrack,
-        [trackId]: [...(state.takesByTrack[trackId] || []), take],
+        ...state?.takesByTrack,
+        [trackId]: [...(state?.takesByTrack[trackId] || []), take],
       },
     })),
   updateTake: (trackId, takeId, updates) =>
     set((state) => ({
       takesByTrack: {
-        ...state.takesByTrack,
-        [trackId]: (state.takesByTrack[trackId] || []).map((t) =>
-          t.id === takeId ? { ...t, ...updates } : t,
+        ...state?.takesByTrack,
+        [trackId]: (state?.takesByTrack[trackId] || []).map((t) =>
+          t?.id === takeId ? { ...t, ...updates } : t,
         ),
       },
     })),
   deleteTake: (trackId, takeId) =>
     set((state) => ({
       takesByTrack: {
-        ...state.takesByTrack,
-        [trackId]: (state.takesByTrack[trackId] || []).filter(
-          (t) => t.id !== takeId,
+        ...state?.takesByTrack,
+        [trackId]: (state?.takesByTrack[trackId] || []).filter(
+          (t) => t?.id !== takeId,
         ),
       },
     })),
@@ -1232,26 +1232,26 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Chord Track Actions
   addChord: (chord) =>
     set((state) => ({
-      chords: [...state.chords, chord].sort(
-        (a, b) => a.startTime - b.startTime,
+      chords: [...state?.chords, chord].sort(
+        (a, b) => a?.startTime - b?.startTime,
       ),
     })),
 
   updateChord: (id, updates) =>
     set((state) => ({
-      chords: state.chords
-        .map((c) => (c.id === id ? { ...c, ...updates } : c))
-        .sort((a, b) => a.startTime - b.startTime),
+      chords: state?.chords
+        .map((c) => (c?.id === id ? { ...c, ...updates } : c))
+        .sort((a, b) => a?.startTime - b?.startTime),
     })),
 
   deleteChord: (id) =>
     set((state) => ({
-      chords: state.chords.filter((c) => c.id !== id),
+      chords: state?.chords.filter((c) => c?.id !== id),
     })),
 
   transposeChords: (semitones) =>
     set((state) => {
-      const CHORD_ROOTS = [
+      const _CHORD_ROOTS = [
         "C",
         "C#",
         "D",
@@ -1266,14 +1266,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         "B",
       ];
       return {
-        chords: state.chords.map((chord) => {
-          const rootIndex = CHORD_ROOTS.indexOf(chord.root);
+        chords: state?.chords.map((chord) => {
+          const _rootIndex = CHORD_ROOTS?.indexOf(chord?.root);
           if (rootIndex === -1) return chord;
-          const newRootIndex = (rootIndex + semitones + 12) % 12;
-          const newRoot = CHORD_ROOTS[newRootIndex];
-          let newBass = chord.bass;
-          if (chord.bass) {
-            const bassIndex = CHORD_ROOTS.indexOf(chord.bass);
+          const _newRootIndex = (rootIndex + semitones + 12) % 12;
+          const _newRoot = CHORD_ROOTS[newRootIndex];
+          let newBass = chord?.bass;
+          if (chord?.bass) {
+            const _bassIndex = CHORD_ROOTS?.indexOf(chord?.bass);
             if (bassIndex !== -1) {
               newBass = CHORD_ROOTS[(bassIndex + semitones + 12) % 12];
             }
@@ -1281,7 +1281,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
           return {
             ...chord,
             root: newRoot,
-            name: `${newRoot}${chord.quality}${newBass ? `/${newBass}` : ""}`,
+            name: `${newRoot}${chord?.quality}${newBass ? `/${newBass}` : ""}`,
             bass: newBass,
           };
         }),
@@ -1291,28 +1291,28 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Video Track Actions
   addVideoClip: (clip) =>
     set((state) => ({
-      videoClips: [...state.videoClips, clip].sort(
-        (a, b) => a.startTime - b.startTime,
+      videoClips: [...state?.videoClips, clip].sort(
+        (a, b) => a?.startTime - b?.startTime,
       ),
     })),
 
   updateVideoClip: (id, updates) =>
     set((state) => ({
-      videoClips: state.videoClips
-        .map((c) => (c.id === id ? { ...c, ...updates } : c))
-        .sort((a, b) => a.startTime - b.startTime),
+      videoClips: state?.videoClips
+        .map((c) => (c?.id === id ? { ...c, ...updates } : c))
+        .sort((a, b) => a?.startTime - b?.startTime),
     })),
 
   deleteVideoClip: (id) =>
     set((state) => ({
-      videoClips: state.videoClips.filter((c) => c.id !== id),
+      videoClips: state?.videoClips.filter((c) => c?.id !== id),
     })),
 
   // Fader Flip Actions
   setFaderMode: (channelId, mode) =>
     set((state) => ({
       faderModes: {
-        ...state.faderModes,
+        ...state?.faderModes,
         [channelId]: mode,
       },
     })),
@@ -1324,19 +1324,19 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Spatial Audio Actions
   addSpatialObject: (object) =>
     set((state) => ({
-      spatialObjects: [...state.spatialObjects, object],
+      spatialObjects: [...state?.spatialObjects, object],
     })),
 
   updateSpatialObject: (id, updates) =>
     set((state) => ({
-      spatialObjects: state.spatialObjects.map((o) =>
-        o.id === id ? { ...o, ...updates } : o,
+      spatialObjects: state?.spatialObjects.map((o) =>
+        o?.id === id ? { ...o, ...updates } : o,
       ),
     })),
 
   deleteSpatialObject: (id) =>
     set((state) => ({
-      spatialObjects: state.spatialObjects.filter((o) => o.id !== id),
+      spatialObjects: state?.spatialObjects.filter((o) => o?.id !== id),
     })),
 
   setSpeakerConfig: (config) => set({ speakerConfig: config }),
@@ -1346,33 +1346,33 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Lyrics Actions
   addLyric: (line) =>
     set((state) => ({
-      lyrics: [...state.lyrics, line].sort((a, b) => a.startTime - b.startTime),
+      lyrics: [...state?.lyrics, line].sort((a, b) => a?.startTime - b?.startTime),
     })),
 
   updateLyric: (id, updates) =>
     set((state) => ({
-      lyrics: state.lyrics
-        .map((l) => (l.id === id ? { ...l, ...updates } : l))
-        .sort((a, b) => a.startTime - b.startTime),
+      lyrics: state?.lyrics
+        .map((l) => (l?.id === id ? { ...l, ...updates } : l))
+        .sort((a, b) => a?.startTime - b?.startTime),
     })),
 
   deleteLyric: (id) =>
     set((state) => ({
-      lyrics: state.lyrics.filter((l) => l.id !== id),
+      lyrics: state?.lyrics.filter((l) => l?.id !== id),
     })),
 
   selectLyric: (id) => set({ selectedLyricId: id }),
 
   snapLyricToPlayhead: (id) =>
     set((state) => {
-      const currentTime = state.currentTime;
-      const lyric = state.lyrics.find((l) => l.id === id);
+      const _currentTime = state?.currentTime;
+      const _lyric = state?.lyrics.find((l) => l?.id === id);
       if (!lyric) return state;
-      const duration = lyric.endTime - lyric.startTime;
+      const _duration = lyric?.endTime - lyric?.startTime;
       return {
-        lyrics: state.lyrics
+        lyrics: state?.lyrics
           .map((l) =>
-            l.id === id
+            l?.id === id
               ? {
                   ...l,
                   startTime: currentTime,
@@ -1380,31 +1380,31 @@ export const useStudioStore = create<StudioState>((set, get) => ({
                 }
               : l,
           )
-          .sort((a, b) => a.startTime - b.startTime),
+          .sort((a, b) => a?.startTime - b?.startTime),
       };
     }),
 
   toggleLyricsDisplay: () =>
-    set((state) => ({ lyricsDisplayVisible: !state.lyricsDisplayVisible })),
+    set((state) => ({ lyricsDisplayVisible: !state?.lyricsDisplayVisible })),
 
   toggleLyricsTrack: () =>
-    set((state) => ({ lyricsTrackVisible: !state.lyricsTrackVisible })),
+    set((state) => ({ lyricsTrackVisible: !state?.lyricsTrackVisible })),
 
   updateLyricsDisplaySettings: (updates) =>
     set((state) => ({
-      lyricsDisplaySettings: { ...state.lyricsDisplaySettings, ...updates },
+      lyricsDisplaySettings: { ...state?.lyricsDisplaySettings, ...updates },
     })),
 
   importLyrics: (text) => {
-    const lines = text.split("\n").filter((line) => line.trim());
-    const newLyrics: LyricLine[] = lines.map((line, index) => ({
-      id: `lyric-${Date.now()}-${index}`,
-      text: line.trim(),
+    const _lines = text?.split("\n").filter((line) => line?.trim());
+    const newLyrics: LyricLine[] = lines?.map((line, index) => ({
+      id: `lyric-${Date?.now()}-${index}`,
+      text: line?.trim(),
       words: line
         .trim()
         .split(/\s+/)
         .map((word, wordIndex) => ({
-          id: `word-${Date.now()}-${index}-${wordIndex}`,
+          id: `word-${Date?.now()}-${index}-${wordIndex}`,
           text: word,
           startTime: index * 4,
           endTime: index * 4 + 2,
@@ -1413,32 +1413,32 @@ export const useStudioStore = create<StudioState>((set, get) => ({
       endTime: (index + 1) * 4,
     }));
     set((state) => ({
-      lyrics: [...state.lyrics, ...newLyrics].sort(
-        (a, b) => a.startTime - b.startTime,
+      lyrics: [...state?.lyrics, ...newLyrics].sort(
+        (a, b) => a?.startTime - b?.startTime,
       ),
     }));
   },
 
   getCurrentLyricLine: () => {
-    const state = get();
-    const currentTime = state.currentTime;
+    const _state = get();
+    const _currentTime = state?.currentTime;
     return (
-      state.lyrics.find(
-        (line) => currentTime >= line.startTime && currentTime < line.endTime,
+      state?.lyrics.find(
+        (line) => currentTime >= line?.startTime && currentTime < line?.endTime,
       ) || null
     );
   },
 
   getCurrentLyricWord: () => {
-    const state = get();
-    const currentTime = state.currentTime;
-    const currentLine = state.lyrics.find(
-      (line) => currentTime >= line.startTime && currentTime < line.endTime,
+    const _state = get();
+    const _currentTime = state?.currentTime;
+    const _currentLine = state?.lyrics.find(
+      (line) => currentTime >= line?.startTime && currentTime < line?.endTime,
     );
     if (!currentLine) return null;
     return (
-      currentLine.words.find(
-        (word) => currentTime >= word.startTime && currentTime < word.endTime,
+      currentLine?.words.find(
+        (word) => currentTime >= word?.startTime && currentTime < word?.endTime,
       ) || null
     );
   },
@@ -1446,9 +1446,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Recording Mode Actions
   setRecordingMode: (mode) => set({ recordingMode: mode }),
   setPreRollBars: (bars) =>
-    set({ preRollBars: Math.max(0, Math.min(8, bars)) }),
+    set({ preRollBars: Math?.max(0, Math?.min(8, bars)) }),
   setCountInBars: (bars) =>
-    set({ countInBars: Math.max(0, Math.min(8, bars)) }),
+    set({ countInBars: Math?.max(0, Math?.min(8, bars)) }),
   setReturnToStartOnStop: (enabled) => set({ returnToStartOnStop: enabled }),
   setInputMonitoring: (enabled) => set({ inputMonitoring: enabled }),
 
@@ -1462,38 +1462,38 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Automation Actions
   setAutomationMode: (mode) => set({ automationMode: mode }),
   toggleAutomationLanes: () =>
-    set((state) => ({ automationLanesVisible: !state.automationLanesVisible })),
+    set((state) => ({ automationLanesVisible: !state?.automationLanesVisible })),
   setSelectedAutomationParameter: (param) =>
     set({ selectedAutomationParameter: param }),
 
   // Grid Actions
   toggleGridVisible: () =>
-    set((state) => ({ gridVisible: !state.gridVisible })),
+    set((state) => ({ gridVisible: !state?.gridVisible })),
   setGridDivision: (division) => set({ gridDivision: division }),
 
   // Crossfade Actions
   setCrossfadeLength: (length) =>
-    set({ crossfadeLength: Math.max(0.001, Math.min(5, length)) }),
+    set({ crossfadeLength: Math?.max(0?.001, Math?.min(5, length)) }),
   setCrossfadeCurve: (curve) => set({ crossfadeCurve: curve }),
 
   // Infinite Timeline Actions (Studio One style)
   setProjectDuration: (duration) =>
     set((state) => ({
-      projectDuration: Math.max(state.minProjectDuration, duration),
+      projectDuration: Math?.max(state?.minProjectDuration, duration),
     })),
 
-  setProjectEndMarker: (time) => set({ projectEndMarker: Math.max(0, time) }),
+  setProjectEndMarker: (time) => set({ projectEndMarker: Math?.max(0, time) }),
 
   // Dynamic expansion: auto-allocate more time when playhead nears end
   expandTimelineIfNeeded: (playheadTime) =>
     set((state) => {
-      if (!state.autoExpandEnabled) return {};
+      if (!state?.autoExpandEnabled) return {};
 
       // Expand when playhead is within 10% of the end
-      const threshold = state.projectDuration * 0.9;
+      const _threshold = state?.projectDuration * 0?.9;
       if (playheadTime >= threshold) {
         // Expand by 50% each time
-        const newDuration = state.projectDuration * 1.5;
+        const _newDuration = state?.projectDuration * 1?.5;
         return { projectDuration: newDuration };
       }
       return {};
@@ -1503,8 +1503,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   fitTimelineToContents: (contentEndTime) =>
     set((state) => {
       // Add 10% padding after content
-      const paddedDuration = contentEndTime * 1.1;
-      const newDuration = Math.max(state.minProjectDuration, paddedDuration);
+      const _paddedDuration = contentEndTime * 1?.1;
+      const _newDuration = Math?.max(state?.minProjectDuration, paddedDuration);
       return {
         projectDuration: newDuration,
         projectEndMarker: contentEndTime,
@@ -1513,11 +1513,11 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   setAutoExpandEnabled: (enabled) => set({ autoExpandEnabled: enabled }),
 
-  // Smart Re-engagement Actions (Studio One 7.2 style)
+  // Smart Re-engagement Actions (Studio One 7?.2 style)
   pauseAutoscroll: () =>
     set({
       autoscrollPaused: true,
-      lastManualScrollTime: Date.now(),
+      lastManualScrollTime: Date?.now(),
     }),
 
   resumeAutoscroll: () =>
@@ -1526,8 +1526,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }),
 
   isAutoscrollActive: () => {
-    const state = get();
-    return state.autoscrollMode !== "off" && !state.autoscrollPaused;
+    const _state = get();
+    return state?.autoscrollMode !== "off" && !state?.autoscrollPaused;
   },
 
   // Adaptive Grid and Sync Actions (Studio One style)
@@ -1542,18 +1542,18 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setHorizontalDropMode: (enabled) => set({ horizontalDropMode: enabled }),
 
   getAdaptiveSnapInterval: (zoom: number): number => {
-    const state = get();
-    const tempo = state.tempo;
-    const secondsPerBeat = 60 / tempo;
+    const _state = get();
+    const _tempo = state?.tempo;
+    const _secondsPerBeat = 60 / tempo;
 
-    if (zoom < 0.5) {
-      const [numerator] = state.timeSignature.split("/").map(Number);
+    if (zoom < 0?.5) {
+      const [numerator] = state?.timeSignature.split("/").map(Number);
       return secondsPerBeat * numerator;
-    } else if (zoom < 1.0) {
+    } else if (zoom < 1?.0) {
       return secondsPerBeat;
-    } else if (zoom < 2.0) {
+    } else if (zoom < 2?.0) {
       return secondsPerBeat / 4;
-    } else if (zoom < 3.0) {
+    } else if (zoom < 3?.0) {
       return secondsPerBeat / 8;
     } else {
       return secondsPerBeat / 16;
@@ -1564,15 +1564,15 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   addTempoMap: (map) =>
     set((state) => ({
       projectTempoMaps: [
-        ...state.projectTempoMaps.filter((m) => m.clipId !== map.clipId),
+        ...state?.projectTempoMaps.filter((m) => m?.clipId !== map?.clipId),
         map,
       ],
     })),
 
   removeTempoMap: (clipId) =>
     set((state) => ({
-      projectTempoMaps: state.projectTempoMaps.filter(
-        (m) => m.clipId !== clipId,
+      projectTempoMaps: state?.projectTempoMaps.filter(
+        (m) => m?.clipId !== clipId,
       ),
     })),
 
@@ -1583,8 +1583,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }),
 
   getTempoMapForClip: (clipId) => {
-    const state = get();
-    return state.projectTempoMaps.find((m) => m.clipId === clipId);
+    const _state = get();
+    return state?.projectTempoMaps.find((m) => m?.clipId === clipId);
   },
 
   // Frozen Track Actions
@@ -1592,20 +1592,20 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({ isFreezing: true, freezingTrackId: trackId });
 
     // Mock freeze process - simulate render time proportional to duration
-    const renderTime = Math.min(2000, Math.max(500, duration * 200));
+    const _renderTime = Math?.min(2000, Math?.max(500, duration * 200));
     await new Promise((resolve) => setTimeout(resolve, renderTime));
 
     const frozenState: FrozenTrackState = {
       trackId,
-      frozenAt: Date.now(),
+      frozenAt: Date?.now(),
       originalPlugins: [], // Would store actual plugin state in production
-      frozenAudioUrl: `/frozen/${trackId}-${Date.now()}.wav`,
+      frozenAudioUrl: `/frozen/${trackId}-${Date?.now()}.wav`,
       frozenDuration: duration,
     };
 
     set((state) => ({
       frozenTracks: [
-        ...state.frozenTracks.filter((f) => f.trackId !== trackId),
+        ...state?.frozenTracks.filter((f) => f?.trackId !== trackId),
         frozenState,
       ],
       isFreezing: false,
@@ -1615,12 +1615,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   unfreezeTrack: (trackId) =>
     set((state) => ({
-      frozenTracks: state.frozenTracks.filter((f) => f.trackId !== trackId),
+      frozenTracks: state?.frozenTracks.filter((f) => f?.trackId !== trackId),
     })),
 
   isTrackFrozen: (trackId) => {
-    const state = get();
-    return state.frozenTracks.some((f) => f.trackId === trackId);
+    const _state = get();
+    return state?.frozenTracks.some((f) => f?.trackId === trackId);
   },
 
   setIsFreezing: (freezing, trackId = null) =>
@@ -1630,8 +1630,8 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     }),
 
   getFrozenTrackCount: () => {
-    const state = get();
-    return state.frozenTracks.length;
+    const _state = get();
+    return state?.frozenTracks.length;
   },
 
   // Global Transpose Actions
@@ -1639,33 +1639,33 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       projectKey: key,
       originalProjectKey:
-        state.globalTranspose === 0 ? key : state.originalProjectKey,
+        state?.globalTranspose === 0 ? key : state?.originalProjectKey,
     })),
 
   setProjectKeyMode: (mode) => set({ projectKeyMode: mode }),
 
   setGlobalTranspose: (semitones) =>
     set({
-      globalTranspose: Math.max(-12, Math.min(12, semitones)),
+      globalTranspose: Math?.max(-12, Math?.min(12, semitones)),
     }),
 
   transposeUp: () =>
     set((state) => ({
-      globalTranspose: Math.min(12, state.globalTranspose + 1),
+      globalTranspose: Math?.min(12, state?.globalTranspose + 1),
     })),
 
   transposeDown: () =>
     set((state) => ({
-      globalTranspose: Math.max(-12, state.globalTranspose - 1),
+      globalTranspose: Math?.max(-12, state?.globalTranspose - 1),
     })),
 
   resetTranspose: () => set({ globalTranspose: 0 }),
 
   getTransposedKey: () => {
-    const state = get();
-    if (state.globalTranspose === 0) return state.projectKey;
-    const keyIndex = MUSICAL_KEYS.indexOf(state.projectKey);
-    const newIndex = (keyIndex + state.globalTranspose + 12) % 12;
+    const _state = get();
+    if (state?.globalTranspose === 0) return state?.projectKey;
+    const _keyIndex = MUSICAL_KEYS?.indexOf(state?.projectKey);
+    const _newIndex = (keyIndex + state?.globalTranspose + 12) % 12;
     return MUSICAL_KEYS[newIndex];
   },
 
@@ -1675,243 +1675,243 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   cycleChordDisplayMode: () =>
     set((state) => {
       const modes: ChordDisplayMode[] = ["standard", "nashville", "roman"];
-      const currentIndex = modes.indexOf(state.chordDisplayMode);
-      const nextIndex = (currentIndex + 1) % modes.length;
+      const _currentIndex = modes?.indexOf(state?.chordDisplayMode);
+      const _nextIndex = (currentIndex + 1) % modes?.length;
       return { chordDisplayMode: modes[nextIndex] };
     }),
 
   getFormattedChord: (chordRoot: string, chordQuality: string) => {
-    const state = get();
+    const _state = get();
     return formatChord(
       chordRoot,
       chordQuality,
-      state.projectKey,
-      state.chordDisplayMode,
+      state?.projectKey,
+      state?.chordDisplayMode,
     );
   },
 
   // Mastering Project Actions
   createMasteringProject: (name) => {
     const newProject: MasteringProject = {
-      id: `mastering-${Date.now()}`,
+      id: `mastering-${Date?.now()}`,
       name,
       songs: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: Date?.now(),
+      updatedAt: Date?.now(),
       targetLoudness: -14,
       format: "wav",
       sampleRate: 44100,
       bitDepth: 24,
     };
     set((state) => ({
-      masteringProjects: [...state.masteringProjects, newProject],
-      activeMasteringProjectId: newProject.id,
+      masteringProjects: [...state?.masteringProjects, newProject],
+      activeMasteringProjectId: newProject?.id,
     }));
   },
 
   deleteMasteringProject: (id) =>
     set((state) => ({
-      masteringProjects: state.masteringProjects.filter((p) => p.id !== id),
+      masteringProjects: state?.masteringProjects.filter((p) => p?.id !== id),
       activeMasteringProjectId:
-        state.activeMasteringProjectId === id
+        state?.activeMasteringProjectId === id
           ? null
-          : state.activeMasteringProjectId,
+          : state?.activeMasteringProjectId,
     })),
 
   setActiveMasteringProject: (id) => set({ activeMasteringProjectId: id }),
 
   addSongToProject: (projectId, song) =>
     set((state) => ({
-      masteringProjects: state.masteringProjects.map((p) => {
-        if (p.id !== projectId) return p;
+      masteringProjects: state?.masteringProjects.map((p) => {
+        if (p?.id !== projectId) return p;
         const newSong: MasteringSong = {
-          id: song.id || `song-${Date.now()}`,
+          id: song?.id || `song-${Date?.now()}`,
           projectId,
-          title: song.title || "Untitled Song",
-          sourceFileUrl: song.sourceFileUrl,
-          masteredFileUrl: song.masteredFileUrl,
-          duration: song.duration || 0,
-          order: song.order ?? p.songs.length,
-          loudness: song.loudness,
-          peakLevel: song.peakLevel,
+          title: song?.title || "Untitled Song",
+          sourceFileUrl: song?.sourceFileUrl,
+          masteredFileUrl: song?.masteredFileUrl,
+          duration: song?.duration || 0,
+          order: song?.order ?? p?.songs.length,
+          loudness: song?.loudness,
+          peakLevel: song?.peakLevel,
           isProcessing: false,
-          lastUpdated: Date.now(),
+          lastUpdated: Date?.now(),
         };
         return {
           ...p,
-          songs: [...p.songs, newSong],
-          updatedAt: Date.now(),
+          songs: [...p?.songs, newSong],
+          updatedAt: Date?.now(),
         };
       }),
     })),
 
   removeSongFromProject: (projectId, songId) =>
     set((state) => ({
-      masteringProjects: state.masteringProjects.map((p) => {
-        if (p.id !== projectId) return p;
+      masteringProjects: state?.masteringProjects.map((p) => {
+        if (p?.id !== projectId) return p;
         return {
           ...p,
-          songs: p.songs.filter((s) => s.id !== songId),
-          updatedAt: Date.now(),
+          songs: p?.songs.filter((s) => s?.id !== songId),
+          updatedAt: Date?.now(),
         };
       }),
     })),
 
   reorderSongs: (projectId, songIds) =>
     set((state) => ({
-      masteringProjects: state.masteringProjects.map((p) => {
-        if (p.id !== projectId) return p;
-        const orderedSongs = songIds
+      masteringProjects: state?.masteringProjects.map((p) => {
+        if (p?.id !== projectId) return p;
+        const _orderedSongs = songIds
           .map((id, index) => {
-            const song = p.songs.find((s) => s.id === id);
+            const _song = p?.songs.find((s) => s?.id === id);
             return song ? { ...song, order: index } : null;
           })
           .filter((s): s is MasteringSong => s !== null);
         return {
           ...p,
           songs: orderedSongs,
-          updatedAt: Date.now(),
+          updatedAt: Date?.now(),
         };
       }),
     })),
 
   updateMasteringSettings: (projectId, settings) =>
     set((state) => ({
-      masteringProjects: state.masteringProjects.map((p) => {
-        if (p.id !== projectId) return p;
+      masteringProjects: state?.masteringProjects.map((p) => {
+        if (p?.id !== projectId) return p;
         return {
           ...p,
           ...settings,
-          updatedAt: Date.now(),
+          updatedAt: Date?.now(),
         };
       }),
     })),
 
   updateMasteringSong: (projectId, songId, updates) =>
     set((state) => ({
-      masteringProjects: state.masteringProjects.map((p) => {
-        if (p.id !== projectId) return p;
+      masteringProjects: state?.masteringProjects.map((p) => {
+        if (p?.id !== projectId) return p;
         return {
           ...p,
-          songs: p.songs.map((s) =>
-            s.id === songId ? { ...s, ...updates, lastUpdated: Date.now() } : s,
+          songs: p?.songs.map((s) =>
+            s?.id === songId ? { ...s, ...updates, lastUpdated: Date?.now() } : s,
           ),
-          updatedAt: Date.now(),
+          updatedAt: Date?.now(),
         };
       }),
     })),
 
   toggleMasteringPanel: () =>
-    set((state) => ({ masteringPanelVisible: !state.masteringPanelVisible })),
+    set((state) => ({ masteringPanelVisible: !state?.masteringPanelVisible })),
 
   setMasteringProcessing: (processing) =>
     set({ isMasteringProcessing: processing }),
 
   getActiveMasteringProject: () => {
-    const state = get();
+    const _state = get();
     return (
-      state.masteringProjects.find(
-        (p) => p.id === state.activeMasteringProjectId,
+      state?.masteringProjects.find(
+        (p) => p?.id === state?.activeMasteringProjectId,
       ) || null
     );
   },
 
   // Launcher Actions (Ableton Session View style)
   addLauncherClip: (clip) => {
-    if (!clip.trackId) {
+    if (!clip?.trackId) {
       throw new Error(
         "LauncherClip requires a trackId - this is a programming error",
       );
     }
     const newClip: LauncherClip = {
-      id: clip.id || `clip-${Date.now()}`,
-      trackId: clip.trackId,
-      slotIndex: clip.slotIndex ?? 0,
-      name: clip.name || "New Clip",
-      color: clip.color || "#4ade80",
-      duration: clip.duration ?? 4,
+      id: clip?.id || `clip-${Date?.now()}`,
+      trackId: clip?.trackId,
+      slotIndex: clip?.slotIndex ?? 0,
+      name: clip?.name || "New Clip",
+      color: clip?.color || "#4ade80",
+      duration: clip?.duration ?? 4,
       isPlaying: false,
       isQueued: false,
-      audioUrl: clip.audioUrl,
+      audioUrl: clip?.audioUrl,
     };
     set((state) => ({
-      launcherClips: [...state.launcherClips, newClip],
+      launcherClips: [...state?.launcherClips, newClip],
     }));
   },
 
   removeLauncherClip: (clipId) =>
     set((state) => ({
-      launcherClips: state.launcherClips.filter((c) => c.id !== clipId),
-      activeLauncherClips: state.activeLauncherClips.filter(
+      launcherClips: state?.launcherClips.filter((c) => c?.id !== clipId),
+      activeLauncherClips: state?.activeLauncherClips.filter(
         (id) => id !== clipId,
       ),
-      queuedLauncherClips: state.queuedLauncherClips.filter(
+      queuedLauncherClips: state?.queuedLauncherClips.filter(
         (id) => id !== clipId,
       ),
     })),
 
   updateLauncherClip: (clipId, updates) =>
     set((state) => ({
-      launcherClips: state.launcherClips.map((c) =>
-        c.id === clipId ? { ...c, ...updates } : c,
+      launcherClips: state?.launcherClips.map((c) =>
+        c?.id === clipId ? { ...c, ...updates } : c,
       ),
     })),
 
   triggerClip: (clipId) =>
     set((state) => {
-      const clip = state.launcherClips.find((c) => c.id === clipId);
+      const _clip = state?.launcherClips.find((c) => c?.id === clipId);
       if (!clip) return {};
 
       // Stop any playing clip on the same track
-      const stoppedClips = state.launcherClips
+      const _stoppedClips = state?.launcherClips
         .filter(
-          (c) => c.trackId === clip.trackId && c.id !== clipId && c.isPlaying,
+          (c) => c?.trackId === clip?.trackId && c?.id !== clipId && c?.isPlaying,
         )
-        .map((c) => c.id);
+        .map((c) => c?.id);
 
       // If clip is already playing, stop it
-      if (clip.isPlaying) {
+      if (clip?.isPlaying) {
         return {
-          launcherClips: state.launcherClips.map((c) =>
-            c.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c,
+          launcherClips: state?.launcherClips.map((c) =>
+            c?.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c,
           ),
-          activeLauncherClips: state.activeLauncherClips.filter(
+          activeLauncherClips: state?.activeLauncherClips.filter(
             (id) => id !== clipId,
           ),
         };
       }
 
       // Queue the clip (simulating quantize behavior)
-      const isImmediate = state.launcherQuantize === "1beat";
+      const _isImmediate = state?.launcherQuantize === "1beat";
 
       if (isImmediate) {
         // Immediately trigger
         return {
-          launcherClips: state.launcherClips.map((c) => {
-            if (c.id === clipId)
+          launcherClips: state?.launcherClips.map((c) => {
+            if (c?.id === clipId)
               return { ...c, isPlaying: true, isQueued: false };
-            if (stoppedClips.includes(c.id))
+            if (stoppedClips?.includes(c?.id))
               return { ...c, isPlaying: false, isQueued: false };
             return c;
           }),
           activeLauncherClips: [
-            ...state.activeLauncherClips.filter(
-              (id) => !stoppedClips.includes(id),
+            ...state?.activeLauncherClips.filter(
+              (id) => !stoppedClips?.includes(id),
             ),
             clipId,
           ],
-          queuedLauncherClips: state.queuedLauncherClips.filter(
+          queuedLauncherClips: state?.queuedLauncherClips.filter(
             (id) => id !== clipId,
           ),
         };
       } else {
         // Queue for next quantize point
         return {
-          launcherClips: state.launcherClips.map((c) =>
-            c.id === clipId ? { ...c, isQueued: true } : c,
+          launcherClips: state?.launcherClips.map((c) =>
+            c?.id === clipId ? { ...c, isQueued: true } : c,
           ),
           queuedLauncherClips: [
-            ...state.queuedLauncherClips.filter((id) => id !== clipId),
+            ...state?.queuedLauncherClips.filter((id) => id !== clipId),
             clipId,
           ],
         };
@@ -1920,13 +1920,13 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   stopClip: (clipId) =>
     set((state) => ({
-      launcherClips: state.launcherClips.map((c) =>
-        c.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c,
+      launcherClips: state?.launcherClips.map((c) =>
+        c?.id === clipId ? { ...c, isPlaying: false, isQueued: false } : c,
       ),
-      activeLauncherClips: state.activeLauncherClips.filter(
+      activeLauncherClips: state?.activeLauncherClips.filter(
         (id) => id !== clipId,
       ),
-      queuedLauncherClips: state.queuedLauncherClips.filter(
+      queuedLauncherClips: state?.queuedLauncherClips.filter(
         (id) => id !== clipId,
       ),
     })),
@@ -1934,53 +1934,53 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   triggerScene: (sceneIndex) =>
     set((state) => {
       // Find all clips in this scene
-      const clipsInScene = state.launcherClips.filter(
-        (c) => c.slotIndex === sceneIndex,
+      const _clipsInScene = state?.launcherClips.filter(
+        (c) => c?.slotIndex === sceneIndex,
       );
-      const clipIds = clipsInScene.map((c) => c.id);
-      const trackIds = clipsInScene.map((c) => c.trackId);
+      const _clipIds = clipsInScene?.map((c) => c?.id);
+      const _trackIds = clipsInScene?.map((c) => c?.trackId);
 
       // Stop clips on the same tracks that are not in this scene
-      const clipsToStop = state.launcherClips.filter(
+      const _clipsToStop = state?.launcherClips.filter(
         (c) =>
-          trackIds.includes(c.trackId) &&
-          !clipIds.includes(c.id) &&
-          (c.isPlaying || c.isQueued),
+          trackIds?.includes(c?.trackId) &&
+          !clipIds?.includes(c?.id) &&
+          (c?.isPlaying || c?.isQueued),
       );
 
-      const isImmediate = state.launcherQuantize === "1beat";
+      const _isImmediate = state?.launcherQuantize === "1beat";
 
       if (isImmediate) {
         return {
-          launcherClips: state.launcherClips.map((c) => {
-            if (clipIds.includes(c.id)) {
+          launcherClips: state?.launcherClips.map((c) => {
+            if (clipIds?.includes(c?.id)) {
               return { ...c, isPlaying: true, isQueued: false };
             }
-            if (clipsToStop.map((cs) => cs.id).includes(c.id)) {
+            if (clipsToStop?.map((cs) => cs?.id).includes(c?.id)) {
               return { ...c, isPlaying: false, isQueued: false };
             }
             return c;
           }),
           activeLauncherClips: [
-            ...state.activeLauncherClips.filter(
-              (id) => !clipsToStop.map((c) => c.id).includes(id),
+            ...state?.activeLauncherClips.filter(
+              (id) => !clipsToStop?.map((c) => c?.id).includes(id),
             ),
             ...clipIds,
           ],
-          queuedLauncherClips: state.queuedLauncherClips.filter(
-            (id) => !clipIds.includes(id),
+          queuedLauncherClips: state?.queuedLauncherClips.filter(
+            (id) => !clipIds?.includes(id),
           ),
         };
       } else {
         return {
-          launcherClips: state.launcherClips.map((c) => {
-            if (clipIds.includes(c.id)) {
+          launcherClips: state?.launcherClips.map((c) => {
+            if (clipIds?.includes(c?.id)) {
               return { ...c, isQueued: true };
             }
             return c;
           }),
           queuedLauncherClips: [
-            ...new Set([...state.queuedLauncherClips, ...clipIds]),
+            ...new Set([...state?.queuedLauncherClips, ...clipIds]),
           ],
         };
       }
@@ -1988,7 +1988,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   stopAllClips: () =>
     set((state) => ({
-      launcherClips: state.launcherClips.map((c) => ({
+      launcherClips: state?.launcherClips.map((c) => ({
         ...c,
         isPlaying: false,
         isQueued: false,
@@ -1999,24 +1999,24 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   setLauncherQuantize: (quantize) => set({ launcherQuantize: quantize }),
 
-  toggleLauncher: () => set((state) => ({ showLauncher: !state.showLauncher })),
+  toggleLauncher: () => set((state) => ({ showLauncher: !state?.showLauncher })),
 
   addLauncherScene: (scene) => {
-    const state = get();
-    const maxIndex = state.launcherScenes.reduce(
-      (max, s) => Math.max(max, s.index),
+    const _state = get();
+    const _maxIndex = state?.launcherScenes.reduce(
+      (max, s) => Math?.max(max, s?.index),
       -1,
     );
     const newScene: LauncherScene = {
-      id: scene.id || `scene-${Date.now()}`,
-      index: scene.index ?? maxIndex + 1,
-      name: scene.name || `Scene ${maxIndex + 2}`,
-      color: scene.color || "#8b5cf6",
-      tempo: scene.tempo,
+      id: scene?.id || `scene-${Date?.now()}`,
+      index: scene?.index ?? maxIndex + 1,
+      name: scene?.name || `Scene ${maxIndex + 2}`,
+      color: scene?.color || "#8b5cf6",
+      tempo: scene?.tempo,
     };
     set((state) => ({
-      launcherScenes: [...state.launcherScenes, newScene].sort(
-        (a, b) => a.index - b.index,
+      launcherScenes: [...state?.launcherScenes, newScene].sort(
+        (a, b) => a?.index - b?.index,
       ),
     }));
   },
@@ -2024,117 +2024,117 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   removeLauncherScene: (sceneIndex) =>
     set((state) => {
       // Remove all clips in this scene
-      const clipsToRemove = state.launcherClips.filter(
-        (c) => c.slotIndex === sceneIndex,
+      const _clipsToRemove = state?.launcherClips.filter(
+        (c) => c?.slotIndex === sceneIndex,
       );
-      const clipIdsToRemove = clipsToRemove.map((c) => c.id);
+      const _clipIdsToRemove = clipsToRemove?.map((c) => c?.id);
 
       return {
-        launcherScenes: state.launcherScenes
-          .filter((s) => s.index !== sceneIndex)
+        launcherScenes: state?.launcherScenes
+          .filter((s) => s?.index !== sceneIndex)
           .map((s, i) => ({ ...s, index: i })),
-        launcherClips: state.launcherClips
-          .filter((c) => c.slotIndex !== sceneIndex)
+        launcherClips: state?.launcherClips
+          .filter((c) => c?.slotIndex !== sceneIndex)
           .map((c) => ({
             ...c,
-            slotIndex: c.slotIndex > sceneIndex ? c.slotIndex - 1 : c.slotIndex,
+            slotIndex: c?.slotIndex > sceneIndex ? c?.slotIndex - 1 : c?.slotIndex,
           })),
-        activeLauncherClips: state.activeLauncherClips.filter(
-          (id) => !clipIdsToRemove.includes(id),
+        activeLauncherClips: state?.activeLauncherClips.filter(
+          (id) => !clipIdsToRemove?.includes(id),
         ),
-        queuedLauncherClips: state.queuedLauncherClips.filter(
-          (id) => !clipIdsToRemove.includes(id),
+        queuedLauncherClips: state?.queuedLauncherClips.filter(
+          (id) => !clipIdsToRemove?.includes(id),
         ),
       };
     }),
 
   updateLauncherScene: (sceneId, updates) =>
     set((state) => ({
-      launcherScenes: state.launcherScenes.map((s) =>
-        s.id === sceneId ? { ...s, ...updates } : s,
+      launcherScenes: state?.launcherScenes.map((s) =>
+        s?.id === sceneId ? { ...s, ...updates } : s,
       ),
     })),
 
   getLauncherClipsForTrack: (trackId) => {
-    const state = get();
-    return state.launcherClips.filter((c) => c.trackId === trackId);
+    const _state = get();
+    return state?.launcherClips.filter((c) => c?.trackId === trackId);
   },
 
   getLauncherClipAt: (trackId, slotIndex) => {
-    const state = get();
-    return state.launcherClips.find(
-      (c) => c.trackId === trackId && c.slotIndex === slotIndex,
+    const _state = get();
+    return state?.launcherClips.find(
+      (c) => c?.trackId === trackId && c?.slotIndex === slotIndex,
     );
   },
 
   // Show Page Actions (Live Performance Environment)
   createSetlist: (name) => {
     const newSetlist: Setlist = {
-      id: `setlist-${Date.now()}`,
+      id: `setlist-${Date?.now()}`,
       name,
       items: [],
-      createdAt: Date.now(),
+      createdAt: Date?.now(),
     };
     set((state) => ({
-      setlists: [...state.setlists, newSetlist],
-      activeSetlistId: newSetlist.id,
+      setlists: [...state?.setlists, newSetlist],
+      activeSetlistId: newSetlist?.id,
     }));
   },
 
   deleteSetlist: (id) =>
     set((state) => ({
-      setlists: state.setlists.filter((s) => s.id !== id),
+      setlists: state?.setlists.filter((s) => s?.id !== id),
       activeSetlistId:
-        state.activeSetlistId === id ? null : state.activeSetlistId,
+        state?.activeSetlistId === id ? null : state?.activeSetlistId,
       performanceState:
-        state.performanceState.currentSetlistId === id
+        state?.performanceState.currentSetlistId === id
           ? {
-              ...state.performanceState,
+              ...state?.performanceState,
               currentSetlistId: null,
               isPerforming: false,
             }
-          : state.performanceState,
+          : state?.performanceState,
     })),
 
   addItemToSetlist: (setlistId, item) =>
     set((state) => ({
-      setlists: state.setlists.map((s) => {
-        if (s.id !== setlistId) return s;
+      setlists: state?.setlists.map((s) => {
+        if (s?.id !== setlistId) return s;
         const newItem: SetlistItem = {
-          id: item.id || `item-${Date.now()}`,
-          name: item.name || "New Song",
-          duration: item.duration || 180,
-          bpm: item.bpm || 120,
-          key: item.key || "C",
-          notes: item.notes,
-          audioUrl: item.audioUrl,
-          order: item.order ?? s.items.length,
+          id: item?.id || `item-${Date?.now()}`,
+          name: item?.name || "New Song",
+          duration: item?.duration || 180,
+          bpm: item?.bpm || 120,
+          key: item?.key || "C",
+          notes: item?.notes,
+          audioUrl: item?.audioUrl,
+          order: item?.order ?? s?.items.length,
         };
         return {
           ...s,
-          items: [...s.items, newItem],
+          items: [...s?.items, newItem],
         };
       }),
     })),
 
   removeItemFromSetlist: (setlistId, itemId) =>
     set((state) => ({
-      setlists: state.setlists.map((s) => {
-        if (s.id !== setlistId) return s;
+      setlists: state?.setlists.map((s) => {
+        if (s?.id !== setlistId) return s;
         return {
           ...s,
-          items: s.items.filter((i) => i.id !== itemId),
+          items: s?.items.filter((i) => i?.id !== itemId),
         };
       }),
     })),
 
   reorderSetlistItems: (setlistId, itemIds) =>
     set((state) => ({
-      setlists: state.setlists.map((s) => {
-        if (s.id !== setlistId) return s;
-        const orderedItems = itemIds
+      setlists: state?.setlists.map((s) => {
+        if (s?.id !== setlistId) return s;
+        const _orderedItems = itemIds
           .map((id, index) => {
-            const item = s.items.find((i) => i.id === id);
+            const _item = s?.items.find((i) => i?.id === id);
             return item ? { ...item, order: index } : null;
           })
           .filter((i): i is SetlistItem => i !== null);
@@ -2150,7 +2150,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   startPerformance: () =>
     set((state) => ({
       performanceState: {
-        currentSetlistId: state.activeSetlistId,
+        currentSetlistId: state?.activeSetlistId,
         currentItemIndex: 0,
         isPerforming: true,
         elapsedTime: 0,
@@ -2160,24 +2160,24 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   stopPerformance: () =>
     set((state) => ({
       performanceState: {
-        ...state.performanceState,
+        ...state?.performanceState,
         isPerforming: false,
       },
     })),
 
   nextItem: () =>
     set((state) => {
-      const setlist = state.setlists.find(
-        (s) => s.id === state.performanceState.currentSetlistId,
+      const _setlist = state?.setlists.find(
+        (s) => s?.id === state?.performanceState.currentSetlistId,
       );
       if (!setlist) return {};
-      const nextIndex = Math.min(
-        state.performanceState.currentItemIndex + 1,
-        setlist.items.length - 1,
+      const _nextIndex = Math?.min(
+        state?.performanceState.currentItemIndex + 1,
+        setlist?.items.length - 1,
       );
       return {
         performanceState: {
-          ...state.performanceState,
+          ...state?.performanceState,
           currentItemIndex: nextIndex,
         },
       };
@@ -2186,62 +2186,62 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   previousItem: () =>
     set((state) => ({
       performanceState: {
-        ...state.performanceState,
-        currentItemIndex: Math.max(
+        ...state?.performanceState,
+        currentItemIndex: Math?.max(
           0,
-          state.performanceState.currentItemIndex - 1,
+          state?.performanceState.currentItemIndex - 1,
         ),
       },
     })),
 
   goToItem: (index) =>
     set((state) => {
-      const setlist = state.setlists.find(
-        (s) => s.id === state.performanceState.currentSetlistId,
+      const _setlist = state?.setlists.find(
+        (s) => s?.id === state?.performanceState.currentSetlistId,
       );
       if (!setlist) return {};
-      const clampedIndex = Math.max(
+      const _clampedIndex = Math?.max(
         0,
-        Math.min(index, setlist.items.length - 1),
+        Math?.min(index, setlist?.items.length - 1),
       );
       return {
         performanceState: {
-          ...state.performanceState,
+          ...state?.performanceState,
           currentItemIndex: clampedIndex,
         },
       };
     }),
 
-  toggleShowPage: () => set((state) => ({ showShowPage: !state.showShowPage })),
+  toggleShowPage: () => set((state) => ({ showShowPage: !state?.showShowPage })),
 
   updatePerformanceElapsedTime: (time) =>
     set((state) => ({
       performanceState: {
-        ...state.performanceState,
+        ...state?.performanceState,
         elapsedTime: time,
       },
     })),
 
   getActiveSetlist: () => {
-    const state = get();
-    return state.setlists.find((s) => s.id === state.activeSetlistId) || null;
+    const _state = get();
+    return state?.setlists.find((s) => s?.id === state?.activeSetlistId) || null;
   },
 
   getCurrentSetlistItem: () => {
-    const state = get();
-    const setlist = state.setlists.find(
-      (s) => s.id === state.performanceState.currentSetlistId,
+    const _state = get();
+    const _setlist = state?.setlists.find(
+      (s) => s?.id === state?.performanceState.currentSetlistId,
     );
     if (!setlist) return null;
-    return setlist.items[state.performanceState.currentItemIndex] || null;
+    return setlist?.items[state?.performanceState.currentItemIndex] || null;
   },
 
   getNextSetlistItem: () => {
-    const state = get();
-    const setlist = state.setlists.find(
-      (s) => s.id === state.performanceState.currentSetlistId,
+    const _state = get();
+    const _setlist = state?.setlists.find(
+      (s) => s?.id === state?.performanceState.currentSetlistId,
     );
     if (!setlist) return null;
-    return setlist.items[state.performanceState.currentItemIndex + 1] || null;
+    return setlist?.items[state?.performanceState.currentItemIndex + 1] || null;
   },
 }));

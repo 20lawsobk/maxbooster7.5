@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface CDNConfig {
   enabled: boolean;
@@ -36,67 +36,67 @@ class CDNManager {
   private config: CDNConfig;
 
   private constructor() {
-    this.config = {
-      enabled: process.env.CDN_ENABLED === "true",
+    this?.config = {
+      enabled: process?.env.CDN_ENABLED === "true",
       provider:
-        (process.env.CDN_PROVIDER as Record<string, unknown>) || "cloudflare",
-      baseUrl: process.env.CDN_BASE_URL || "",
+        (process?.env.CDN_PROVIDER as Record<string, unknown>) || "cloudflare",
+      baseUrl: process?.env.CDN_BASE_URL || "",
       staticAssetPaths: ["/static", "/assets", "/uploads", "/audio"],
       cacheControlRules: DEFAULT_CACHE_RULES,
-      purgeApiKey: process.env.CDN_PURGE_API_KEY,
-      purgeEndpoint: process.env.CDN_PURGE_ENDPOINT,
+      purgeApiKey: process?.env.CDN_PURGE_API_KEY,
+      purgeEndpoint: process?.env.CDN_PURGE_ENDPOINT,
     };
   }
 
   static getInstance(): CDNManager {
-    if (!CDNManager.instance) {
-      CDNManager.instance = new CDNManager();
+    if (!CDNManager?.instance) {
+      CDNManager?.instance = new CDNManager();
     }
-    return CDNManager.instance;
+    return CDNManager?.instance;
   }
 
   getAssetUrl(path: string): string {
-    if (!this.config.enabled || !this.config.baseUrl) {
+    if (!this?.config.enabled || !this?.config.baseUrl) {
       return path;
     }
-    return `${this.config.baseUrl}${path}`;
+    return `${this?.config.baseUrl}${path}`;
   }
 
   getCacheHeaders(path: string): Record<string, string> {
     const headers: Record<string, string> = {};
 
-    for (const rule of this.config.cacheControlRules) {
-      const matches =
-        typeof rule.pattern === "string"
-          ? path.includes(rule.pattern)
-          : rule.pattern.test(path);
+    for (const rule of this?.config.cacheControlRules) {
+      const _matches =
+        typeof rule?.pattern === "string"
+          ? path?.includes(rule?.pattern)
+          : rule?.pattern.test(path);
 
       if (matches) {
         const directives: string[] = [];
 
-        if (rule.private) {
-          directives.push("private");
+        if (rule?.private) {
+          directives?.push("private");
         } else {
-          directives.push("public");
+          directives?.push("public");
         }
 
-        directives.push(`max-age=${rule.maxAge}`);
+        directives?.push(`max-age=${rule?.maxAge}`);
 
-        if (rule.staleWhileRevalidate) {
-          directives.push(
-            `stale-while-revalidate=${rule.staleWhileRevalidate}`,
+        if (rule?.staleWhileRevalidate) {
+          directives?.push(
+            `stale-while-revalidate=${rule?.staleWhileRevalidate}`,
           );
         }
 
-        if (rule.staleIfError) {
-          directives.push(`stale-if-error=${rule.staleIfError}`);
+        if (rule?.staleIfError) {
+          directives?.push(`stale-if-error=${rule?.staleIfError}`);
         }
 
-        if (rule.immutable) {
-          directives.push("immutable");
+        if (rule?.immutable) {
+          directives?.push("immutable");
         }
 
-        headers["Cache-Control"] = directives.join(", ");
+        headers["Cache-Control"] = directives?.join(", ");
         break;
       }
     }
@@ -109,90 +109,90 @@ class CDNManager {
   }
 
   async purgeCache(paths: string[]): Promise<boolean> {
-    if (!this.config.purgeEndpoint || !this.config.purgeApiKey) {
-      logger.warn("CDN purge not configured");
+    if (!this?.config.purgeEndpoint || !this?.config.purgeApiKey) {
+      logger?.warn("CDN purge not configured");
       return false;
     }
 
     try {
-      const response = await fetch(this.config.purgeEndpoint, {
+      const _response = await fetch(this?.config.purgeEndpoint, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.config.purgeApiKey}`,
+          Authorization: `Bearer ${this?.config.purgeApiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ files: paths }),
-        signal: AbortSignal.timeout(10000),
+        body: JSON?.stringify({ files: paths }),
+        signal: AbortSignal?.timeout(10000),
       });
 
-      if (response.ok) {
-        logger.info(`CDN cache purged for ${paths.length} paths`);
+      if (response?.ok) {
+        logger?.info(`CDN cache purged for ${paths?.length} paths`);
         return true;
       } else {
-        logger.warn("CDN purge failed:", await response.text());
+        logger?.warn("CDN purge failed:", await response?.text());
         return false;
       }
     } catch (error) {
-      logger.warn({ err: error }, "CDN purge error:");
+      logger?.warn({ err: error }, "CDN purge error:");
       return false;
     }
   }
 
   async purgeAll(): Promise<boolean> {
-    if (!this.config.purgeEndpoint || !this.config.purgeApiKey) {
-      logger.warn("CDN purge not configured");
+    if (!this?.config.purgeEndpoint || !this?.config.purgeApiKey) {
+      logger?.warn("CDN purge not configured");
       return false;
     }
 
     try {
-      const response = await fetch(this.config.purgeEndpoint, {
+      const _response = await fetch(this?.config.purgeEndpoint, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.config.purgeApiKey}`,
+          Authorization: `Bearer ${this?.config.purgeApiKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ purge_everything: true }),
-        signal: AbortSignal.timeout(10000),
+        body: JSON?.stringify({ purge_everything: true }),
+        signal: AbortSignal?.timeout(10000),
       });
 
-      if (response.ok) {
-        logger.info("CDN cache fully purged");
+      if (response?.ok) {
+        logger?.info("CDN cache fully purged");
         return true;
       } else {
-        logger.warn("CDN full purge failed:", await response.text());
+        logger?.warn("CDN full purge failed:", await response?.text());
         return false;
       }
     } catch (error) {
-      logger.warn({ err: error }, "CDN full purge error:");
+      logger?.warn({ err: error }, "CDN full purge error:");
       return false;
     }
   }
 
   getConfig(): CDNConfig {
-    return { ...this.config };
+    return { ...this?.config };
   }
 
   isEnabled(): boolean {
-    return this.config.enabled;
+    return this?.config.enabled;
   }
 }
 
-export const cdnManager = CDNManager.getInstance();
+export const _cdnManager = CDNManager?.getInstance();
 
 export function cdnCacheMiddleware(
   req: Request,
   res: Response,
   next: NextFunction,
 ): void {
-  const headers = cdnManager.getCacheHeaders(req.path);
+  const _headers = cdnManager?.getCacheHeaders(req?.path);
 
-  for (const [key, value] of Object.entries(headers)) {
-    res.setHeader(key, value);
+  for (const [key, value] of Object?.entries(headers)) {
+    res?.setHeader(key, value);
   }
 
   next();
 }
 
 export function cdnAssetUrlHelper(path: string): string {
-  return cdnManager.getAssetUrl(path);
+  return cdnManager?.getAssetUrl(path);
 }

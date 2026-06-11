@@ -21,23 +21,23 @@ import {
   SIMULATION_PERIODS,
   runFullLifecycleSimulation,
 } from "./realLifeSimulation";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import fs from "fs";
 import path from "path";
 
 async function runQuickSimulation() {
-  logger.info("\n");
-  logger.info(
+  logger?.info("\n");
+  logger?.info(
     "╔══════════════════════════════════════════════════════════════╗",
   );
-  logger.info(
+  logger?.info(
     "║         MAX BOOSTER QUICK SIMULATION (1 Month)               ║",
   );
-  logger.info(
+  logger?.info(
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
-  const simulation = new RealLifeSimulationEngine({
+  const _simulation = new RealLifeSimulationEngine({
     periodName: "1_month",
     daysToSimulate: 30,
     initialUsers: 100,
@@ -46,70 +46,70 @@ async function runQuickSimulation() {
     snapshotIntervalDays: 1,
   });
 
-  const result = await simulation.runSimulation();
+  const _result = await simulation?.runSimulation();
 
   // Save results
-  const reportPath = path.join(process.cwd(), "SIMULATION_QUICK_RESULTS.md");
-  fs.writeFileSync(reportPath, generateReport(result));
-  logger.info(`\n📝 Report saved to: ${reportPath}\n`);
+  const _reportPath = path?.join(process?.cwd(), "SIMULATION_QUICK_RESULTS?.md");
+  fs?.writeFileSync(reportPath, generateReport(result));
+  logger?.info(`\n📝 Report saved to: ${reportPath}\n`);
 
-  return result.systemTests.failed === 0;
+  return result?.systemTests.failed === 0;
 }
 
 async function runPeriodSimulation(periodName: string) {
   if (!SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS]) {
-    logger.warn(`Invalid period: ${periodName}`);
-    logger.warn(`Valid periods: ${Object.keys(SIMULATION_PERIODS).join(", ")}`);
-    process.exit(1);
+    logger?.warn(`Invalid period: ${periodName}`);
+    logger?.warn(`Valid periods: ${Object?.keys(SIMULATION_PERIODS).join(", ")}`);
+    process?.exit(1);
   }
 
-  logger.info("\n");
-  logger.info(
+  logger?.info("\n");
+  logger?.info(
     "╔══════════════════════════════════════════════════════════════╗",
   );
-  logger.info(`║         MAX BOOSTER SIMULATION: ${periodName.padEnd(25)}║`);
-  logger.info(
+  logger?.info(`║         MAX BOOSTER SIMULATION: ${periodName?.padEnd(25)}║`);
+  logger?.info(
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
-  const days =
+  const _days =
     SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS];
 
-  const simulation = new RealLifeSimulationEngine({
+  const _simulation = new RealLifeSimulationEngine({
     periodName: periodName as keyof typeof SIMULATION_PERIODS,
     daysToSimulate: days,
-    initialUsers: 100 + Math.floor(days / 30) * 10,
-    initialReleases: 50 + Math.floor(days / 30) * 5,
+    initialUsers: 100 + Math?.floor(days / 30) * 10,
+    initialReleases: 50 + Math?.floor(days / 30) * 5,
     seedMoney: 10000 + days * 100,
-    snapshotIntervalDays: Math.max(1, Math.floor(days / 30)),
+    snapshotIntervalDays: Math?.max(1, Math?.floor(days / 30)),
   });
 
-  const result = await simulation.runSimulation();
+  const _result = await simulation?.runSimulation();
 
   // Save results
-  const reportPath = path.join(
-    process.cwd(),
-    `SIMULATION_${periodName.toUpperCase()}_RESULTS.md`,
+  const _reportPath = path?.join(
+    process?.cwd(),
+    `SIMULATION_${periodName?.toUpperCase()}_RESULTS?.md`,
   );
-  fs.writeFileSync(reportPath, generateReport(result));
-  logger.info(`\n📝 Report saved to: ${reportPath}\n`);
+  fs?.writeFileSync(reportPath, generateReport(result));
+  logger?.info(`\n📝 Report saved to: ${reportPath}\n`);
 
-  return result.systemTests.failed === 0;
+  return result?.systemTests.failed === 0;
 }
 
 async function runFullSimulation() {
-  const results = await runFullLifecycleSimulation();
+  const _results = await runFullLifecycleSimulation();
 
   // Generate comprehensive report
-  const reportPath = path.join(
-    process.cwd(),
-    "SIMULATION_FULL_LIFECYCLE_RESULTS.md",
+  const _reportPath = path?.join(
+    process?.cwd(),
+    "SIMULATION_FULL_LIFECYCLE_RESULTS?.md",
   );
-  fs.writeFileSync(reportPath, generateFullReport(results));
-  logger.info(`\n📝 Full lifecycle report saved to: ${reportPath}\n`);
+  fs?.writeFileSync(reportPath, generateFullReport(results));
+  logger?.info(`\n📝 Full lifecycle report saved to: ${reportPath}\n`);
 
-  const allPassed = Object.values(results).every(
-    (r) => r.systemTests.failed === 0,
+  const _allPassed = Object?.values(results).every(
+    (r) => r?.systemTests.failed === 0,
   );
   return allPassed;
 }
@@ -117,10 +117,10 @@ async function runFullSimulation() {
 function generateReport(result: Record<string, unknown>): string {
   const { config, finalMetrics, kpis, systemTests, recommendations } = result;
 
-  const testStatus =
-    systemTests.failed === 0
+  const _testStatus =
+    systemTests?.failed === 0
       ? "✅ ALL TESTS PASSED"
-      : systemTests.criticalIssues.length > 0
+      : systemTests?.criticalIssues.length > 0
         ? "❌ CRITICAL ISSUES FOUND"
         : "⚠️ WARNINGS DETECTED";
 
@@ -128,10 +128,10 @@ function generateReport(result: Record<string, unknown>): string {
 
 ## Executive Summary
 
-**Period:** ${config.periodName} (${config.daysToSimulate} simulated days)
+**Period:** ${config?.periodName} (${config?.daysToSimulate} simulated days)
 **Status:** ${testStatus}
 **Generated:** ${new Date().toISOString()}
-**Acceleration:** 98% (real time: ${(result.realDuration / 1000 / 60).toFixed(1)} minutes)
+**Acceleration:** 98% (real time: ${(result?.realDuration / 1000 / 60).toFixed(1)} minutes)
 
 ---
 
@@ -139,13 +139,13 @@ function generateReport(result: Record<string, unknown>): string {
 
 | Metric | Passed | Failed | Warnings |
 |--------|--------|--------|----------|
-| System Tests | ${systemTests.passed} | ${systemTests.failed} | ${systemTests.warnings} |
+| System Tests | ${systemTests?.passed} | ${systemTests?.failed} | ${systemTests?.warnings} |
 
 ${
-  systemTests.criticalIssues.length > 0
+  systemTests?.criticalIssues.length > 0
     ? `
 ### Critical Issues
-${systemTests.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n")}
+${systemTests?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n")}
 `
     : ""
 }
@@ -156,52 +156,52 @@ ${systemTests.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n")
 
 | KPI | Value | Status |
 |-----|-------|--------|
-| User Growth Rate | ${kpis.userGrowthRate.toFixed(1)}% | ${kpis.userGrowthRate > 0 ? "✅" : "❌"} |
-| Revenue Growth Rate | ${kpis.revenueGrowthRate.toFixed(1)}% | ${kpis.revenueGrowthRate > 0 ? "✅" : "❌"} |
-| Churn Rate | ${kpis.churnRate.toFixed(2)}% | ${kpis.churnRate < 5 ? "✅" : kpis.churnRate < 10 ? "⚠️" : "❌"} |
-| LTV | $${kpis.ltv.toFixed(2)} | ${kpis.ltv > 100 ? "✅" : "⚠️"} |
-| LTV/CAC Ratio | ${(kpis.ltv / kpis.cac).toFixed(2)} | ${kpis.ltv / kpis.cac > 3 ? "✅" : kpis.ltv / kpis.cac > 1 ? "⚠️" : "❌"} |
-| Viral Coefficient | ${kpis.viralCoefficient.toFixed(2)} | ${kpis.viralCoefficient > 0.5 ? "✅" : "⚠️"} |
-| NPS Score | ${kpis.nps.toFixed(0)} | ${kpis.nps > 50 ? "✅" : kpis.nps > 0 ? "⚠️" : "❌"} |
-| System Uptime | ${kpis.systemUptime.toFixed(2)}% | ${kpis.systemUptime > 99.9 ? "✅" : kpis.systemUptime > 99 ? "⚠️" : "❌"} |
-| Autonomous Efficiency | ${kpis.autonomousEfficiency.toFixed(1)}% | ${kpis.autonomousEfficiency > 90 ? "✅" : "⚠️"} |
+| User Growth Rate | ${kpis?.userGrowthRate.toFixed(1)}% | ${kpis?.userGrowthRate > 0 ? "✅" : "❌"} |
+| Revenue Growth Rate | ${kpis?.revenueGrowthRate.toFixed(1)}% | ${kpis?.revenueGrowthRate > 0 ? "✅" : "❌"} |
+| Churn Rate | ${kpis?.churnRate.toFixed(2)}% | ${kpis?.churnRate < 5 ? "✅" : kpis?.churnRate < 10 ? "⚠️" : "❌"} |
+| LTV | $${kpis?.ltv.toFixed(2)} | ${kpis?.ltv > 100 ? "✅" : "⚠️"} |
+| LTV/CAC Ratio | ${(kpis?.ltv / kpis?.cac).toFixed(2)} | ${kpis?.ltv / kpis?.cac > 3 ? "✅" : kpis?.ltv / kpis?.cac > 1 ? "⚠️" : "❌"} |
+| Viral Coefficient | ${kpis?.viralCoefficient.toFixed(2)} | ${kpis?.viralCoefficient > 0?.5 ? "✅" : "⚠️"} |
+| NPS Score | ${kpis?.nps.toFixed(0)} | ${kpis?.nps > 50 ? "✅" : kpis?.nps > 0 ? "⚠️" : "❌"} |
+| System Uptime | ${kpis?.systemUptime.toFixed(2)}% | ${kpis?.systemUptime > 99?.9 ? "✅" : kpis?.systemUptime > 99 ? "⚠️" : "❌"} |
+| Autonomous Efficiency | ${kpis?.autonomousEfficiency.toFixed(1)}% | ${kpis?.autonomousEfficiency > 90 ? "✅" : "⚠️"} |
 
 ---
 
 ## Final Metrics
 
 ### Users
-- **Total Users:** ${finalMetrics.users.total.toLocaleString()}
-- **Active Users:** ${finalMetrics.users.active.toLocaleString()}
-- **Free:** ${finalMetrics.users.byTier.free} | **Basic:** ${finalMetrics.users.byTier.basic} | **Pro:** ${finalMetrics.users.byTier.pro} | **Enterprise:** ${finalMetrics.users.byTier.enterprise}
+- **Total Users:** ${finalMetrics?.users.total?.toLocaleString()}
+- **Active Users:** ${finalMetrics?.users.active?.toLocaleString()}
+- **Free:** ${finalMetrics?.users.byTier?.free} | **Basic:** ${finalMetrics?.users.byTier?.basic} | **Pro:** ${finalMetrics?.users.byTier?.pro} | **Enterprise:** ${finalMetrics?.users.byTier?.enterprise}
 
 ### Revenue
-- **MRR:** $${finalMetrics.revenue.mrr.toFixed(2)}
-- **ARR:** $${finalMetrics.revenue.arr.toFixed(2)}
-- **Lifetime Revenue:** $${finalMetrics.revenue.lifetime.toFixed(2)}
+- **MRR:** $${finalMetrics?.revenue.mrr?.toFixed(2)}
+- **ARR:** $${finalMetrics?.revenue.arr?.toFixed(2)}
+- **Lifetime Revenue:** $${finalMetrics?.revenue.lifetime?.toFixed(2)}
 
 ### Content & Streams
-- **Total Streams:** ${finalMetrics.streams.total.toLocaleString()}
-- **Viral Releases:** ${finalMetrics.streams.viralReleases}
-- **Avg Streams/Release:** ${finalMetrics.streams.avgPerRelease.toFixed(0)}
+- **Total Streams:** ${finalMetrics?.streams.total?.toLocaleString()}
+- **Viral Releases:** ${finalMetrics?.streams.viralReleases}
+- **Avg Streams/Release:** ${finalMetrics?.streams.avgPerRelease?.toFixed(0)}
 
 ### Platform Health
-- **Uptime:** ${finalMetrics.platform.uptime.toFixed(2)}%
-- **Response Time:** ${finalMetrics.platform.responseTime}ms
-- **Error Rate:** ${(finalMetrics.platform.errorRate * 100).toFixed(3)}%
+- **Uptime:** ${finalMetrics?.platform.uptime?.toFixed(2)}%
+- **Response Time:** ${finalMetrics?.platform.responseTime}ms
+- **Error Rate:** ${(finalMetrics?.platform.errorRate * 100).toFixed(3)}%
 
 ### Autonomous Systems Performance
-- **Posts Auto-Published:** ${finalMetrics.autonomous.postsAutoPublished.toLocaleString()}
-- **Campaigns Auto-Launched:** ${finalMetrics.autonomous.campaignsAutoLaunched.toLocaleString()}
-- **Releases Auto-Distributed:** ${finalMetrics.autonomous.releasesAutoDistributed.toLocaleString()}
-- **AI Decisions Made:** ${finalMetrics.autonomous.decisionsAutoMade.toLocaleString()}
-- **Human Interventions Required:** ${finalMetrics.autonomous.interventionsRequired}
+- **Posts Auto-Published:** ${finalMetrics?.autonomous.postsAutoPublished?.toLocaleString()}
+- **Campaigns Auto-Launched:** ${finalMetrics?.autonomous.campaignsAutoLaunched?.toLocaleString()}
+- **Releases Auto-Distributed:** ${finalMetrics?.autonomous.releasesAutoDistributed?.toLocaleString()}
+- **AI Decisions Made:** ${finalMetrics?.autonomous.decisionsAutoMade?.toLocaleString()}
+- **Human Interventions Required:** ${finalMetrics?.autonomous.interventionsRequired}
 
 ---
 
 ## Recommendations
 
-${recommendations.map((rec: string, i: number) => `${i + 1}. ${rec}`).join("\n")}
+${recommendations?.map((rec: string, i: number) => `${i + 1}. ${rec}`).join("\n")}
 
 ---
 
@@ -223,14 +223,14 @@ ${
 }
 
 function generateFullReport(results: Record<string, any>): string {
-  const periods = Object.entries(results);
-  const allPassed = periods.every(([_, r]) => r.systemTests?.failed === 0);
+  const _periods = Object?.entries(results);
+  const _allPassed = periods?.every(([_, r]) => r?.systemTests?.failed === 0);
 
   let report = `# Max Booster Full Lifecycle Simulation Report
 
 ## Executive Summary
 
-**Periods Tested:** ${periods.length}
+**Periods Tested:** ${periods?.length}
 **Time Range:** 1 Month to 50 Years
 **Acceleration:** 98%
 **Status:** ${allPassed ? "✅ ALL PERIODS PASSED" : "⚠️ SOME ISSUES DETECTED"}
@@ -245,12 +245,12 @@ function generateFullReport(results: Record<string, any>): string {
 `;
 
   for (const [period, result] of periods) {
-    if (result.error) {
+    if (result?.error) {
       report += `| ${period} | - | ERROR | - | - | - | - |\n`;
       continue;
     }
 
-    report += `| ${period} | ${result.config.daysToSimulate}d | ${result.finalMetrics.users.total.toLocaleString()} | $${result.finalMetrics.revenue.mrr.toFixed(2)} | ${result.finalMetrics.platform.uptime.toFixed(2)}% | ${result.systemTests.passed} | ${result.systemTests.failed} |\n`;
+    report += `| ${period} | ${result?.config.daysToSimulate}d | ${result?.finalMetrics.users?.total.toLocaleString()} | $${result?.finalMetrics.revenue?.mrr.toFixed(2)} | ${result?.finalMetrics.platform?.uptime.toFixed(2)}% | ${result?.systemTests.passed} | ${result?.systemTests.failed} |\n`;
   }
 
   report += `
@@ -268,12 +268,12 @@ function generateFullReport(results: Record<string, any>): string {
   }[] = [];
 
   for (const [period, result] of periods) {
-    if (!result.error && result.finalMetrics) {
-      snapshots.push({
+    if (!result?.error && result?.finalMetrics) {
+      snapshots?.push({
         period,
-        users: result.finalMetrics.users.total,
-        mrr: result.finalMetrics.revenue.mrr,
-        streams: result.finalMetrics.streams.total,
+        users: result?.finalMetrics.users?.total,
+        mrr: result?.finalMetrics.revenue?.mrr,
+        streams: result?.finalMetrics.streams?.total,
       });
     }
   }
@@ -281,17 +281,17 @@ function generateFullReport(results: Record<string, any>): string {
   report += `### User Growth Over Time
 `;
   for (const s of snapshots) {
-    const bars = "█".repeat(Math.min(50, Math.floor(s.users / 100)));
-    report += `${s.period.padEnd(12)} | ${bars} ${s.users.toLocaleString()}\n`;
+    const _bars = "█".repeat(Math?.min(50, Math?.floor(s?.users / 100)));
+    report += `${s?.period.padEnd(12)} | ${bars} ${s?.users.toLocaleString()}\n`;
   }
 
   report += `
 ### Revenue Growth Over Time
 `;
-  const maxMRR = Math.max(...snapshots.map((s) => s.mrr));
+  const _maxMRR = Math?.max(...snapshots?.map((s) => s?.mrr));
   for (const s of snapshots) {
-    const bars = "█".repeat(Math.min(50, Math.floor((s.mrr / maxMRR) * 50)));
-    report += `${s.period.padEnd(12)} | ${bars} $${s.mrr.toFixed(2)}\n`;
+    const _bars = "█".repeat(Math?.min(50, Math?.floor((s?.mrr / maxMRR) * 50)));
+    report += `${s?.period.padEnd(12)} | ${bars} $${s?.mrr.toFixed(2)}\n`;
   }
 
   report += `
@@ -301,16 +301,16 @@ function generateFullReport(results: Record<string, any>): string {
 
 `;
 
-  const allIssues = new Set<string>();
+  const _allIssues = new Set<string>();
   for (const [period, result] of periods) {
-    if (result.systemTests?.criticalIssues) {
-      for (const issue of result.systemTests.criticalIssues) {
-        allIssues.add(`[${period}] ${issue}`);
+    if (result?.systemTests?.criticalIssues) {
+      for (const issue of result?.systemTests.criticalIssues) {
+        allIssues?.add(`[${period}] ${issue}`);
       }
     }
   }
 
-  if (allIssues.size === 0) {
+  if (allIssues?.size === 0) {
     report += `✅ No critical issues detected across any simulation period.\n`;
   } else {
     for (const issue of allIssues) {
@@ -327,11 +327,11 @@ Based on the full lifecycle simulation:
 
 `;
 
-  const recommendations = new Set<string>();
+  const _recommendations = new Set<string>();
   for (const [_, result] of periods) {
-    if (result.recommendations) {
-      for (const rec of result.recommendations) {
-        recommendations.add(rec);
+    if (result?.recommendations) {
+      for (const rec of result?.recommendations) {
+        recommendations?.add(rec);
       }
     }
   }
@@ -382,8 +382,8 @@ Consider running targeted simulations after fixes to verify improvements.
 }
 
 async function main() {
-  const args = process.argv.slice(2);
-  const command = args[0] || "quick";
+  const _args = process?.argv.slice(2);
+  const _command = args[0] || "quick";
 
   let success = false;
 
@@ -401,15 +401,15 @@ async function main() {
         break;
 
       case "period":
-        const period = args[1];
+        const _period = args[1];
         if (!period) {
-          logger.warn(
+          logger?.warn(
             "Please specify a period. Example: npm run simulate:period 1_year",
           );
-          logger.warn(
-            `Available periods: ${Object.keys(SIMULATION_PERIODS).join(", ")}`,
+          logger?.warn(
+            `Available periods: ${Object?.keys(SIMULATION_PERIODS).join(", ")}`,
           );
-          process.exit(1);
+          process?.exit(1);
         }
         success = await runPeriodSimulation(period);
         break;
@@ -418,22 +418,22 @@ async function main() {
         if (SIMULATION_PERIODS[command as keyof typeof SIMULATION_PERIODS]) {
           success = await runPeriodSimulation(command);
         } else {
-          logger.warn(`Unknown command: ${command}`);
-          logger.warn("Usage:");
-          logger.warn("  quick     - Run 1-month simulation");
-          logger.warn("  full      - Run full 50-year lifecycle");
-          logger.warn(
+          logger?.warn(`Unknown command: ${command}`);
+          logger?.warn("Usage:");
+          logger?.warn("  quick     - Run 1-month simulation");
+          logger?.warn("  full      - Run full 50-year lifecycle");
+          logger?.warn(
             "  period X  - Run specific period (1_month, 1_year, etc.)",
           );
-          process.exit(1);
+          process?.exit(1);
         }
     }
   } catch (error) {
-    logger.warn({ err: error }, "Simulation failed:");
-    process.exit(1);
+    logger?.warn({ err: error }, "Simulation failed:");
+    process?.exit(1);
   }
 
-  process.exit(success ? 0 : 1);
+  process?.exit(success ? 0 : 1);
 }
 
 main();

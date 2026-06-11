@@ -1,24 +1,24 @@
 import { Router, Request, Response } from "express";
-import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
-import { logger } from "../logger.js";
-import { unifiedAIController } from "../services/unifiedAIController.js";
-import { storage } from "../storage.js";
-import { notificationService } from "../services/notificationService.js";
-import { pythonAIService } from "../services/pythonAIService.js";
-import { MaxCoreAIClient } from "../services/maxcoreClient.js";
-import { renderVideo as renderAdvancedVideo } from "../services/advancedVideoRendererService.js";
+import { requireAuth, requireAuthOnly } from "../middleware/auth?.js";
+import { logger } from "../logger?.js";
+import { unifiedAIController } from "../services/unifiedAIController?.js";
+import { storage } from "../storage?.js";
+import { notificationService } from "../services/notificationService?.js";
+import { pythonAIService } from "../services/pythonAIService?.js";
+import { MaxCoreAIClient } from "../services/maxcoreClient?.js";
+import { renderVideo as renderAdvancedVideo } from "../services/advancedVideoRendererService?.js";
 import {
   storeUploadedFile,
   handleUploadError,
   createHardenedUpload,
-} from "../middleware/uploadHandler.js";
-import { db } from "../db.js";
+} from "../middleware/uploadHandler?.js";
+import { db } from "../db?.js";
 import { eq, desc, and, isNotNull } from "drizzle-orm";
 import { adCampaigns, adCreatives, systemSettings } from "@shared/schema";
-import { aiModelManager } from "../services/aiModelManager.js";
-import { autopilotEngine } from "../autopilot-engine.js";
+import { aiModelManager } from "../services/aiModelManager?.js";
+import { autopilotEngine } from "../autopilot-engine?.js";
 
-const imageUpload = createHardenedUpload({
+const _imageUpload = createHardenedUpload({
   maxFileSize: 10 * 1024 * 1024,
   maxFiles: 1,
   allowedMimes: ["image/jpeg", "image/png", "image/webp", "image/gif"],
@@ -30,76 +30,76 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string };
 }
 
-const router = Router();
+const _router = Router();
 
-router.get(
+router?.get(
   "/campaigns",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await storage.getAdvertisingCampaigns(userId);
-      res.json(campaigns);
+      const _userId = req?.user!.id;
+      const _campaigns = await storage?.getAdvertisingCampaigns(userId);
+      res?.json(campaigns);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get campaigns:");
-      res.status(500).json({ error: "Failed to get campaigns" });
+      logger?.warn({ err: error }, "Failed to get campaigns:");
+      res?.status(500).json({ error: "Failed to get campaigns" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/ai-insights",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const insights = await storage.getAdvertisingInsights(userId);
-      res.json(insights);
+      const _userId = req?.user!.id;
+      const _insights = await storage?.getAdvertisingInsights(userId);
+      res?.json(insights);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get AI insights:");
-      res.status(500).json({ error: "Failed to get AI insights" });
+      logger?.warn({ err: error }, "Failed to get AI insights:");
+      res?.status(500).json({ error: "Failed to get AI insights" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/audience-segments",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const segments = await storage.getAudienceSegments(userId);
-      res.json({ segments });
+      const _userId = req?.user!.id;
+      const _segments = await storage?.getAudienceSegments(userId);
+      res?.json({ segments });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get audience segments:");
-      res.status(500).json({ error: "Failed to get audience segments" });
+      logger?.warn({ err: error }, "Failed to get audience segments:");
+      res?.status(500).json({ error: "Failed to get audience segments" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/creative-fatigue",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const creatives = await storage.getCreativeFatigue(userId);
-      res.json({ creatives });
+      const _userId = req?.user!.id;
+      const _creatives = await storage?.getCreativeFatigue(userId);
+      res?.json({ creatives });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get creative fatigue:");
-      res.status(500).json({ error: "Failed to get creative fatigue" });
+      logger?.warn({ err: error }, "Failed to get creative fatigue:");
+      res?.status(500).json({ error: "Failed to get creative fatigue" });
     }
   },
 );
 
-router.patch(
+router?.patch(
   "/creatives/:creativeId",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { creativeId } = req.params;
-      const { action } = req.body as {
+      const _userId = req?.user!.id;
+      const { creativeId } = req?.params;
+      const { action } = req?.body as {
         action: "refresh" | "pause" | "resume" | "archive" | string;
       };
 
@@ -117,12 +117,12 @@ router.patch(
         .select()
         .from(adCreatives)
         .where(
-          and(eq(adCreatives.id, creativeId), eq(adCreatives.userId, userId)),
+          and(eq(adCreatives?.id, creativeId), eq(adCreatives?.userId, userId)),
         )
         .limit(1);
 
       if (!existing) {
-        return res.status(404).json({ error: "Creative not found" });
+        return res?.status(404).json({ error: "Creative not found" });
       }
 
       const statusMap: Record<string, string> = {
@@ -132,79 +132,79 @@ router.patch(
         archive: "archived",
       };
 
-      const newStatus = statusMap[action] ?? existing.status ?? "active";
+      const _newStatus = statusMap[action] ?? existing?.status ?? "active";
 
-      const performanceUpdate =
+      const _performanceUpdate =
         action === "refresh"
           ? {
-              ...((existing.performance as Record<string, any>) ?? {}),
+              ...((existing?.performance as Record<string, any>) ?? {}),
               fatigueResetAt: new Date().toISOString(),
             }
-          : existing.performance;
+          : existing?.performance;
 
       const [updated] = await db
         .update(adCreatives)
         .set({ status: newStatus, performance: performanceUpdate })
         .where(
-          and(eq(adCreatives.id, creativeId), eq(adCreatives.userId, userId)),
+          and(eq(adCreatives?.id, creativeId), eq(adCreatives?.userId, userId)),
         )
         .returning();
 
-      return res.json({
+      return res?.json({
         creative: updated,
         message: `Creative ${action === "refresh" ? "refreshed" : action + "d"} successfully`,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to update creative:");
-      return res.status(500).json({ error: "Failed to update creative" });
+      logger?.warn({ err: error }, "Failed to update creative:");
+      return res?.status(500).json({ error: "Failed to update creative" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/bidding-strategies",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const strategies = await storage.getBiddingStrategies(userId);
-      res.json({ strategies });
+      const _userId = req?.user!.id;
+      const _strategies = await storage?.getBiddingStrategies(userId);
+      res?.json({ strategies });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get bidding strategies:");
-      res.status(500).json({ error: "Failed to get bidding strategies" });
+      logger?.warn({ err: error }, "Failed to get bidding strategies:");
+      res?.status(500).json({ error: "Failed to get bidding strategies" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/lookalike-audiences",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const audiences = await storage.getLookalikeAudiences(userId);
-      res.json({ audiences });
+      const _userId = req?.user!.id;
+      const _audiences = await storage?.getLookalikeAudiences(userId);
+      res?.json({ audiences });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get lookalike audiences:");
-      res.status(500).json({ error: "Failed to get lookalike audiences" });
+      logger?.warn({ err: error }, "Failed to get lookalike audiences:");
+      res?.status(500).json({ error: "Failed to get lookalike audiences" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/lookalike-audiences",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
       const { name, sourceAudience, targetPlatforms, estimatedSize, status } =
-        req.body;
+        req?.body;
       if (!name) {
-        return res.status(400).json({ error: "Audience name is required" });
+        return res?.status(400).json({ error: "Audience name is required" });
       }
-      const existing = await storage.getLookalikeAudiences(userId);
-      const newAudience = {
-        id: `aud_${Date.now()}`,
+      const _existing = await storage?.getLookalikeAudiences(userId);
+      const _newAudience = {
+        id: `aud_${Date?.now()}`,
         name,
         sourceAudience: sourceAudience || "Custom Audience",
         targetPlatforms: targetPlatforms || [],
@@ -212,7 +212,7 @@ router.post(
         status: status || "building",
         createdAt: new Date().toISOString(),
       };
-      const updated = [...existing, newAudience];
+      const _updated = [...existing, newAudience];
       await db
         .insert(systemSettings)
         .values({
@@ -220,33 +220,33 @@ router.post(
           value: updated as Record<string, unknown>,
         })
         .onConflictDoUpdate({
-          target: systemSettings.key,
+          target: systemSettings?.key,
           set: { value: updated as Record<string, unknown> },
         });
-      res.status(201).json(newAudience);
+      res?.status(201).json(newAudience);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to create lookalike audience:");
-      res.status(500).json({ error: "Failed to create lookalike audience" });
+      logger?.warn({ err: error }, "Failed to create lookalike audience:");
+      res?.status(500).json({ error: "Failed to create lookalike audience" });
     }
   },
 );
 
-router.patch(
+router?.patch(
   "/lookalike-audiences/:id",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const { id } = req.params;
-      const existing = await storage.getLookalikeAudiences(userId);
-      const idx = existing.findIndex(
-        (a: Record<string, unknown>) => a.id === id,
+      const _userId = req?.user!.id;
+      const { id } = req?.params;
+      const _existing = await storage?.getLookalikeAudiences(userId);
+      const _idx = existing?.findIndex(
+        (a: Record<string, unknown>) => a?.id === id,
       );
       if (idx === -1) {
-        return res.status(404).json({ error: "Audience not found" });
+        return res?.status(404).json({ error: "Audience not found" });
       }
       const { name, sourceAudience, targetPlatforms, estimatedSize, status } =
-        req.body;
+        req?.body;
       existing[idx] = {
         ...existing[idx],
         ...(name !== undefined && { name }),
@@ -263,89 +263,89 @@ router.patch(
           value: existing as Record<string, unknown>,
         })
         .onConflictDoUpdate({
-          target: systemSettings.key,
+          target: systemSettings?.key,
           set: { value: existing as Record<string, unknown> },
         });
-      res.json(existing[idx]);
+      res?.json(existing[idx]);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to update lookalike audience:");
-      res.status(500).json({ error: "Failed to update lookalike audience" });
+      logger?.warn({ err: error }, "Failed to update lookalike audience:");
+      res?.status(500).json({ error: "Failed to update lookalike audience" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/forecasts",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const forecasts = await storage.getAdvertisingForecasts(userId);
-      res.json({ forecasts: forecasts ? [forecasts] : [] });
+      const _userId = req?.user!.id;
+      const _forecasts = await storage?.getAdvertisingForecasts(userId);
+      res?.json({ forecasts: forecasts ? [forecasts] : [] });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get forecasts:");
-      res.status(500).json({ error: "Failed to get forecasts" });
+      logger?.warn({ err: error }, "Failed to get forecasts:");
+      res?.status(500).json({ error: "Failed to get forecasts" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/competitor-insights",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const insights = await storage.getCompetitorInsights(userId);
-      res.json({ insights });
+      const _userId = req?.user!.id;
+      const _insights = await storage?.getCompetitorInsights(userId);
+      res?.json({ insights });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get competitor insights:");
-      res.status(500).json({ error: "Failed to get competitor insights" });
+      logger?.warn({ err: error }, "Failed to get competitor insights:");
+      res?.status(500).json({ error: "Failed to get competitor insights" });
     }
   },
 );
 
-router.get("/ab-tests", requireAuth, async (req: AuthenticatedRequest, res) => {
+router?.get("/ab-tests", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req.user!.id;
-    const creatives = await db
+    const _userId = req?.user!.id;
+    const _creatives = await db
       .select()
       .from(adCreatives)
       .where(
-        and(eq(adCreatives.userId, userId), isNotNull(adCreatives.variants)),
+        and(eq(adCreatives?.userId, userId), isNotNull(adCreatives?.variants)),
       )
-      .orderBy(desc(adCreatives.createdAt))
+      .orderBy(desc(adCreatives?.createdAt))
       .limit(50);
 
-    const tests = creatives
+    const _tests = creatives
       .filter(
         (c) =>
-          c.variants &&
-          Array.isArray(c.variants) &&
-          (c.variants as unknown[]).length > 1,
+          c?.variants &&
+          Array?.isArray(c?.variants) &&
+          (c?.variants as unknown[]).length > 1,
       )
       .map((c) => ({
-        id: c.id,
-        name: c.name,
-        status: c.status || "draft",
-        campaignId: c.campaignId,
-        variants: c.variants,
-        performance: c.performance || null,
-        createdAt: c.createdAt,
+        id: c?.id,
+        name: c?.name,
+        status: c?.status || "draft",
+        campaignId: c?.campaignId,
+        variants: c?.variants,
+        performance: c?.performance || null,
+        createdAt: c?.createdAt,
       }));
 
-    res.json({ tests });
+    res?.json({ tests });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get A/B tests:");
-    res.status(500).json({ error: "Failed to get A/B tests" });
+    logger?.warn({ err: error }, "Failed to get A/B tests:");
+    res?.status(500).json({ error: "Failed to get A/B tests" });
   }
 });
 
-router.post(
+router?.post(
   "/campaigns",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
+      const _userId = req?.user!.id;
       const {
         name,
         platform: platformDirect,
@@ -354,16 +354,16 @@ router.post(
         endDate,
         targetAudience,
         creativeIds,
-      } = req.body;
-      const platform =
+      } = req?.body;
+      const _platform =
         platformDirect ||
-        (Array.isArray(targetAudience?.platforms) &&
-        targetAudience.platforms.length > 0
-          ? targetAudience.platforms[0]
+        (Array?.isArray(targetAudience?.platforms) &&
+        targetAudience?.platforms.length > 0
+          ? targetAudience?.platforms[0]
           : null);
 
       if (!name || typeof name !== "string") {
-        return res.status(400).json({ error: "Campaign name is required" });
+        return res?.status(400).json({ error: "Campaign name is required" });
       }
       if (!platform || typeof platform !== "string") {
         return res.status(400).json({
@@ -372,10 +372,10 @@ router.post(
         });
       }
 
-      const platforms =
-        Array.isArray(targetAudience?.platforms) &&
-        targetAudience.platforms.length > 0
-          ? targetAudience.platforms
+      const _platforms =
+        Array?.isArray(targetAudience?.platforms) &&
+        targetAudience?.platforms.length > 0
+          ? targetAudience?.platforms
           : [platform];
 
       const [campaign] = await db
@@ -390,7 +390,7 @@ router.post(
           startDate: startDate ? new Date(startDate) : null,
           endDate: endDate ? new Date(endDate) : null,
           targetAudience: targetAudience || null,
-          creativeIds: Array.isArray(creativeIds) ? creativeIds : [],
+          creativeIds: Array?.isArray(creativeIds) ? creativeIds : [],
           status: "active",
         })
         .returning();
@@ -399,70 +399,70 @@ router.post(
       // and ensures content generation is queued for all target platforms
       setImmediate(async () => {
         try {
-          await notificationService.sendAdCampaignCreatedNotification(
+          await notificationService?.sendAdCampaignCreatedNotification(
             userId,
             name,
           );
         } catch (err) {
-          logger.warn({ err: err }, "Ad campaign created notification error:");
+          logger?.warn({ err: err }, "Ad campaign created notification error:");
         }
 
         try {
           // Warm up the per-user MaxCore advertising AI model
-          const advertisingModel =
-            await aiModelManager.getAdvertisingAutopilot(userId);
-          await advertisingModel.generateCampaignRecommendations(
+          const _advertisingModel =
+            await aiModelManager?.getAdvertisingAutopilot(userId);
+          await advertisingModel?.generateCampaignRecommendations(
             objective || "awareness",
             null,
           );
-          logger.info(
-            { userId, campaignId: campaign.id },
+          logger?.info(
+            { userId, campaignId: campaign?.id },
             "MaxCore ad model primed for new campaign",
           );
         } catch (err) {
-          logger.warn({ err }, "MaxCore ad model priming error (non-fatal):");
+          logger?.warn({ err }, "MaxCore ad model priming error (non-fatal):");
         }
 
         try {
           // Configure the autopilot engine with this campaign's targeting and start content scheduling
-          const engineConfig = await autopilotEngine.getConfig();
-          await autopilotEngine.configure({
+          const _engineConfig = await autopilotEngine?.getConfig();
+          await autopilotEngine?.configure({
             ...engineConfig,
-            platforms: platforms.map((p: string) => p.toLowerCase()),
+            platforms: platforms?.map((p: string) => p?.toLowerCase()),
             campaignObjective:
               (objective as Record<string, unknown>) || "awareness",
           });
           // Start the engine if not already running so it schedules the first content generation
-          const status = await autopilotEngine.getStatus();
-          if (!status.isRunning) {
-            await autopilotEngine.start();
-            logger.info(
-              { userId, campaignId: campaign.id },
+          const _status = await autopilotEngine?.getStatus();
+          if (!status?.isRunning) {
+            await autopilotEngine?.start();
+            logger?.info(
+              { userId, campaignId: campaign?.id },
               "Autopilot engine started for new campaign",
             );
           }
         } catch (err) {
-          logger.warn({ err }, "Autopilot engine start error (non-fatal):");
+          logger?.warn({ err }, "Autopilot engine start error (non-fatal):");
         }
       });
 
-      res.status(201).json({ success: true, campaign });
+      res?.status(201).json({ success: true, campaign });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to create campaign:");
-      res.status(500).json({ error: "Failed to create campaign" });
+      logger?.warn({ err: error }, "Failed to create campaign:");
+      res?.status(500).json({ error: "Failed to create campaign" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/upload-image",
   requireAuth,
-  imageUpload.single("image"),
+  imageUpload?.single("image"),
   handleUploadError,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req.user!.id;
-      const file = req.file;
+      const _userId = req?.user!.id;
+      const _file = req?.file;
       if (!file) {
         return res.status(400).json({
           error:
@@ -470,100 +470,100 @@ router.post(
         });
       }
       const { url, key } = await storeUploadedFile(file, userId, "images");
-      res.json({ success: true, url, key });
+      res?.json({ success: true, url, key });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to upload ad image:");
-      res.status(500).json({ error: "Failed to upload image" });
+      logger?.warn({ err: error }, "Failed to upload ad image:");
+      res?.status(500).json({ error: "Failed to upload image" });
     }
   },
 );
 
 // Advertising autopilot status — returns isRunning, config, modelStatus + campaign metrics
-router.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
+router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req.user!.id;
+    const _userId = req?.user!.id;
 
-    const [campaigns, autopilotConfig] = await Promise.all([
+    const [campaigns, autopilotConfig] = await Promise?.all([
       db
         .select({
-          platform: adCampaigns.platform,
-          status: adCampaigns.status,
-          budget: adCampaigns.budget,
+          platform: adCampaigns?.platform,
+          status: adCampaigns?.status,
+          budget: adCampaigns?.budget,
         })
         .from(adCampaigns)
-        .where(eq(adCampaigns.userId, userId))
+        .where(eq(adCampaigns?.userId, userId))
         .limit(100),
-      storage.getAdvertisingAutopilotConfig(userId),
+      storage?.getAdvertisingAutopilotConfig(userId),
     ]);
 
-    const activeCampaigns = campaigns.filter((c) => c.status === "active");
-    const connectedPlatforms = [
-      ...new Set(activeCampaigns.map((c) => c.platform)),
+    const _activeCampaigns = campaigns?.filter((c) => c?.status === "active");
+    const _connectedPlatforms = [
+      ...new Set(activeCampaigns?.map((c) => c?.platform)),
     ];
-    const totalBudget = campaigns.reduce((sum, c) => sum + (c.budget || 0), 0);
+    const _totalBudget = campaigns?.reduce((sum, c) => sum + (c?.budget || 0), 0);
 
-    res.json({
+    res?.json({
       isRunning: autopilotConfig?.isRunning || false,
       config: autopilotConfig || null,
       status: {
-        campaignStatus: activeCampaigns.length > 0 ? "active" : "inactive",
+        campaignStatus: activeCampaigns?.length > 0 ? "active" : "inactive",
         connectedPlatforms,
         budget: totalBudget,
         spent: 0,
-        activeCampaigns: activeCampaigns.length,
+        activeCampaigns: activeCampaigns?.length,
       },
       modelStatus: {
-        advertising: { trained: false, version: "1.0.0" },
+        advertising: { trained: false, version: "1?.0.0" },
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get advertising status:");
-    res.status(500).json({ error: "Failed to get status" });
+    logger?.warn({ err: error }, "Failed to get advertising status:");
+    res?.status(500).json({ error: "Failed to get status" });
   }
 });
 
 // Start advertising autopilot
-router.post("/start", requireAuth, async (req: AuthenticatedRequest, res) => {
+router?.post("/start", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req.user!.id;
-    let config = await storage.getAdvertisingAutopilotConfig(userId);
+    const _userId = req?.user!.id;
+    let config = await storage?.getAdvertisingAutopilotConfig(userId);
     config = { ...(config || {}), isRunning: true, enabled: true };
-    await storage.saveAdvertisingAutopilotConfig(userId, config);
-    logger.info(`✅ Advertising autopilot started for user ${userId}`);
-    res.json({
+    await storage?.saveAdvertisingAutopilotConfig(userId, config);
+    logger?.info(`✅ Advertising autopilot started for user ${userId}`);
+    res?.json({
       success: true,
       message: "Advertising autopilot activated",
       config,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to start advertising autopilot:");
-    res.status(500).json({ error: "Failed to start advertising autopilot" });
+    logger?.warn({ err: error }, "Failed to start advertising autopilot:");
+    res?.status(500).json({ error: "Failed to start advertising autopilot" });
   }
 });
 
 // Stop advertising autopilot
-router.post("/stop", requireAuth, async (req: AuthenticatedRequest, res) => {
+router?.post("/stop", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req.user!.id;
-    let config = await storage.getAdvertisingAutopilotConfig(userId);
+    const _userId = req?.user!.id;
+    let config = await storage?.getAdvertisingAutopilotConfig(userId);
     config = { ...(config || {}), isRunning: false, enabled: false };
-    await storage.saveAdvertisingAutopilotConfig(userId, config);
-    logger.info(`⏸️ Advertising autopilot paused for user ${userId}`);
-    res.json({ success: true, message: "Advertising autopilot paused" });
+    await storage?.saveAdvertisingAutopilotConfig(userId, config);
+    logger?.info(`⏸️ Advertising autopilot paused for user ${userId}`);
+    res?.json({ success: true, message: "Advertising autopilot paused" });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to stop advertising autopilot:");
-    res.status(500).json({ error: "Failed to stop advertising autopilot" });
+    logger?.warn({ err: error }, "Failed to stop advertising autopilot:");
+    res?.status(500).json({ error: "Failed to stop advertising autopilot" });
   }
 });
 
 // Configure advertising autopilot
-router.post(
+router?.post(
   "/configure",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const existing = await storage.getAdvertisingAutopilotConfig(userId);
+      const _userId = req?.user!.id;
+      const _existing = await storage?.getAdvertisingAutopilotConfig(userId);
       // Extract only known autopilot config fields — never spread the entire body.
       const {
         enabled,
@@ -588,9 +588,9 @@ router.post(
         engagementThreshold,
         minConfidenceThreshold,
         autoAnalyzeBeforePosting,
-      } = req.body;
-      const patch = Object.fromEntries(
-        Object.entries({
+      } = req?.body;
+      const _patch = Object?.fromEntries(
+        Object?.entries({
           enabled,
           platforms,
           campaignObjective,
@@ -615,16 +615,16 @@ router.post(
           autoAnalyzeBeforePosting,
         }).filter(([, v]) => v !== undefined),
       );
-      const config = { ...(existing || {}), ...patch };
-      await storage.saveAdvertisingAutopilotConfig(userId, config);
-      logger.info(`⚙️ Advertising autopilot configured for user ${userId}`);
-      res.json({
+      const _config = { ...(existing || {}), ...patch };
+      await storage?.saveAdvertisingAutopilotConfig(userId, config);
+      logger?.info(`⚙️ Advertising autopilot configured for user ${userId}`);
+      res?.json({
         success: true,
         message: "Advertising autopilot configuration updated",
         config,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to configure advertising autopilot:");
+      logger?.warn({ err: error }, "Failed to configure advertising autopilot:");
       res
         .status(500)
         .json({ error: "Failed to configure advertising autopilot" });
@@ -633,55 +633,55 @@ router.post(
 );
 
 // Variants endpoint
-router.get("/variants", requireAuth, async (req: AuthenticatedRequest, res) => {
+router?.get("/variants", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req.user!.id;
-    const creatives = await db
+    const _userId = req?.user!.id;
+    const _creatives = await db
       .select()
       .from(adCreatives)
-      .where(eq(adCreatives.userId, userId))
-      .orderBy(desc(adCreatives.createdAt))
+      .where(eq(adCreatives?.userId, userId))
+      .orderBy(desc(adCreatives?.createdAt))
       .limit(100);
 
-    const variants = creatives.flatMap((c) => {
-      if (!c.variants || !Array.isArray(c.variants)) return [];
-      return (c.variants as Record<string, unknown>[]).map(
+    const _variants = creatives?.flatMap((c) => {
+      if (!c?.variants || !Array?.isArray(c?.variants)) return [];
+      return (c?.variants as Record<string, unknown>[]).map(
         (v: Record<string, unknown>, idx: number) => ({
-          id: `${c.id}-v${idx}`,
-          creativeId: c.id,
-          creativeName: c.name,
+          id: `${c?.id}-v${idx}`,
+          creativeId: c?.id,
+          creativeName: c?.name,
           variantIndex: idx,
           ...v,
         }),
       );
     });
 
-    res.json({ variants });
+    res?.json({ variants });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to get variants:");
-    res.status(500).json({ error: "Failed to get variants" });
+    logger?.warn({ err: error }, "Failed to get variants:");
+    res?.status(500).json({ error: "Failed to get variants" });
   }
 });
 
 // Attribution endpoints — derive from campaign data
-router.get(
+router?.get(
   "/attribution/channels",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await db
+      const _userId = req?.user!.id;
+      const _campaigns = await db
         .select({
-          platform: adCampaigns.platform,
-          budget: adCampaigns.budget,
-          status: adCampaigns.status,
-          performance: adCampaigns.performance,
+          platform: adCampaigns?.platform,
+          budget: adCampaigns?.budget,
+          status: adCampaigns?.status,
+          performance: adCampaigns?.performance,
         })
         .from(adCampaigns)
-        .where(eq(adCampaigns.userId, userId))
+        .where(eq(adCampaigns?.userId, userId))
         .limit(200);
 
-      const channelMap = new Map<
+      const _channelMap = new Map<
         string,
         {
           spend: number;
@@ -691,107 +691,107 @@ router.get(
         }
       >();
       for (const c of campaigns) {
-        const perf = (c.performance || {}) as Record<string, unknown>;
-        const entry = channelMap.get(c.platform) || {
+        const _perf = (c?.performance || {}) as Record<string, unknown>;
+        const _entry = channelMap?.get(c?.platform) || {
           spend: 0,
           conversions: 0,
           revenue: 0,
           campaigns: 0,
         };
-        entry.spend += Number(c.budget || 0);
-        entry.conversions += Number(perf.conversions || 0);
-        entry.revenue += Number(perf.revenue || 0);
-        entry.campaigns += 1;
-        channelMap.set(c.platform, entry);
+        entry?.spend += Number(c?.budget || 0);
+        entry?.conversions += Number(perf?.conversions || 0);
+        entry?.revenue += Number(perf?.revenue || 0);
+        entry?.campaigns += 1;
+        channelMap?.set(c?.platform, entry);
       }
 
-      const channels = Array.from(channelMap.entries()).map(
+      const _channels = Array?.from(channelMap?.entries()).map(
         ([platform, data]) => ({
           platform,
-          spend: data.spend,
-          conversions: data.conversions,
-          revenue: data.revenue,
-          roas: data.spend > 0 ? data.revenue / data.spend : 0,
-          campaigns: data.campaigns,
+          spend: data?.spend,
+          conversions: data?.conversions,
+          revenue: data?.revenue,
+          roas: data?.spend > 0 ? data?.revenue / data?.spend : 0,
+          campaigns: data?.campaigns,
         }),
       );
 
-      res.json({ channels });
+      res?.json({ channels });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get attribution channels:");
-      res.status(500).json({ error: "Failed to get attribution channels" });
+      logger?.warn({ err: error }, "Failed to get attribution channels:");
+      res?.status(500).json({ error: "Failed to get attribution channels" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/attribution/paths",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await db
+      const _userId = req?.user!.id;
+      const _campaigns = await db
         .select({
-          platform: adCampaigns.platform,
-          objective: adCampaigns.objective,
-          performance: adCampaigns.performance,
+          platform: adCampaigns?.platform,
+          objective: adCampaigns?.objective,
+          performance: adCampaigns?.performance,
         })
         .from(adCampaigns)
         .where(
           and(
-            eq(adCampaigns.userId, userId),
-            isNotNull(adCampaigns.performance),
+            eq(adCampaigns?.userId, userId),
+            isNotNull(adCampaigns?.performance),
           ),
         )
         .limit(100);
 
-      const paths = campaigns
+      const _paths = campaigns
         .filter(
-          (c) => (c.performance as Record<string, unknown>)?.conversions > 0,
+          (c) => (c?.performance as Record<string, unknown>)?.conversions > 0,
         )
         .map((c) => ({
-          path: [c.platform, c.objective || "conversion"].filter(Boolean),
+          path: [c?.platform, c?.objective || "conversion"].filter(Boolean),
           conversions:
-            (c.performance as Record<string, unknown>)?.conversions || 0,
-          revenue: (c.performance as Record<string, unknown>)?.revenue || 0,
+            (c?.performance as Record<string, unknown>)?.conversions || 0,
+          revenue: (c?.performance as Record<string, unknown>)?.revenue || 0,
         }));
 
-      res.json({ paths });
+      res?.json({ paths });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get attribution paths:");
-      res.status(500).json({ error: "Failed to get attribution paths" });
+      logger?.warn({ err: error }, "Failed to get attribution paths:");
+      res?.status(500).json({ error: "Failed to get attribution paths" });
     }
   },
 );
 
 // Dashboard endpoints
-router.get(
+router?.get(
   "/dashboard/attribution",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await db
+      const _userId = req?.user!.id;
+      const _campaigns = await db
         .select({
-          platform: adCampaigns.platform,
-          budget: adCampaigns.budget,
-          performance: adCampaigns.performance,
+          platform: adCampaigns?.platform,
+          budget: adCampaigns?.budget,
+          performance: adCampaigns?.performance,
         })
         .from(adCampaigns)
-        .where(eq(adCampaigns.userId, userId))
+        .where(eq(adCampaigns?.userId, userId))
         .limit(200);
 
-      const channelMap = new Map<string, number>();
+      const _channelMap = new Map<string, number>();
       let total = 0;
       for (const c of campaigns) {
-        const rev = Number(
-          (c.performance as Record<string, unknown>)?.revenue || c.budget || 0,
+        const _rev = Number(
+          (c?.performance as Record<string, unknown>)?.revenue || c?.budget || 0,
         );
-        channelMap.set(c.platform, (channelMap.get(c.platform) || 0) + rev);
+        channelMap?.set(c?.platform, (channelMap?.get(c?.platform) || 0) + rev);
         total += rev;
       }
 
-      const channels = Array.from(channelMap.entries()).map(
+      const _channels = Array?.from(channelMap?.entries()).map(
         ([platform, revenue]) => ({
           platform,
           revenue,
@@ -799,166 +799,166 @@ router.get(
         }),
       );
 
-      res.json({ attribution: { channels, total } });
+      res?.json({ attribution: { channels, total } });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get dashboard attribution:");
-      res.status(500).json({ error: "Failed to get dashboard attribution" });
+      logger?.warn({ err: error }, "Failed to get dashboard attribution:");
+      res?.status(500).json({ error: "Failed to get dashboard attribution" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/dashboard/paths",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await db
+      const _userId = req?.user!.id;
+      const _campaigns = await db
         .select({
-          platform: adCampaigns.platform,
-          objective: adCampaigns.objective,
-          performance: adCampaigns.performance,
-          status: adCampaigns.status,
+          platform: adCampaigns?.platform,
+          objective: adCampaigns?.objective,
+          performance: adCampaigns?.performance,
+          status: adCampaigns?.status,
         })
         .from(adCampaigns)
-        .where(eq(adCampaigns.userId, userId))
+        .where(eq(adCampaigns?.userId, userId))
         .limit(100);
 
-      const paths = campaigns
-        .filter((c) => c.status === "active" || c.status === "completed")
+      const _paths = campaigns
+        .filter((c) => c?.status === "active" || c?.status === "completed")
         .map((c) => ({
-          channel: c.platform,
-          objective: c.objective,
+          channel: c?.platform,
+          objective: c?.objective,
           conversions:
-            (c.performance as Record<string, unknown>)?.conversions || 0,
+            (c?.performance as Record<string, unknown>)?.conversions || 0,
         }));
 
-      res.json({ paths });
+      res?.json({ paths });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get dashboard paths:");
-      res.status(500).json({ error: "Failed to get dashboard paths" });
+      logger?.warn({ err: error }, "Failed to get dashboard paths:");
+      res?.status(500).json({ error: "Failed to get dashboard paths" });
     }
   },
 );
 
 // ROAS endpoints
-router.get(
+router?.get(
   "/roas/audience-segments",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await db
+      const _userId = req?.user!.id;
+      const _campaigns = await db
         .select({
-          id: adCampaigns.id,
-          name: adCampaigns.name,
-          targetAudience: adCampaigns.targetAudience,
-          budget: adCampaigns.budget,
-          performance: adCampaigns.performance,
+          id: adCampaigns?.id,
+          name: adCampaigns?.name,
+          targetAudience: adCampaigns?.targetAudience,
+          budget: adCampaigns?.budget,
+          performance: adCampaigns?.performance,
         })
         .from(adCampaigns)
         .where(
           and(
-            eq(adCampaigns.userId, userId),
-            isNotNull(adCampaigns.targetAudience),
+            eq(adCampaigns?.userId, userId),
+            isNotNull(adCampaigns?.targetAudience),
           ),
         )
         .limit(50);
 
-      const segments = campaigns.map((c) => ({
-        campaignId: c.id,
-        campaignName: c.name,
-        audience: c.targetAudience,
-        spend: Number(c.budget || 0),
+      const _segments = campaigns?.map((c) => ({
+        campaignId: c?.id,
+        campaignName: c?.name,
+        audience: c?.targetAudience,
+        spend: Number(c?.budget || 0),
         roas: (() => {
-          const perf = c.performance as Record<string, unknown>;
-          const revenue = Number(perf?.revenue || 0);
-          const spend = Number(c.budget || 0);
+          const _perf = c?.performance as Record<string, unknown>;
+          const _revenue = Number(perf?.revenue || 0);
+          const _spend = Number(c?.budget || 0);
           return spend > 0 ? revenue / spend : 0;
         })(),
       }));
 
-      res.json({ segments });
+      res?.json({ segments });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get ROAS audience segments:");
-      res.status(500).json({ error: "Failed to get ROAS audience segments" });
+      logger?.warn({ err: error }, "Failed to get ROAS audience segments:");
+      res?.status(500).json({ error: "Failed to get ROAS audience segments" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/roas/campaigns",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await db
+      const _userId = req?.user!.id;
+      const _campaigns = await db
         .select()
         .from(adCampaigns)
-        .where(eq(adCampaigns.userId, userId))
-        .orderBy(desc(adCampaigns.createdAt))
+        .where(eq(adCampaigns?.userId, userId))
+        .orderBy(desc(adCampaigns?.createdAt))
         .limit(100);
-      res.json({ campaigns });
+      res?.json({ campaigns });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get ROAS campaigns:");
-      res.status(500).json({ error: "Failed to get ROAS campaigns" });
+      logger?.warn({ err: error }, "Failed to get ROAS campaigns:");
+      res?.status(500).json({ error: "Failed to get ROAS campaigns" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/roas/creative-fatigue-analysis",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const creatives = await db
+      const _userId = req?.user!.id;
+      const _creatives = await db
         .select()
         .from(adCreatives)
-        .where(eq(adCreatives.userId, userId))
-        .orderBy(desc(adCreatives.createdAt))
+        .where(eq(adCreatives?.userId, userId))
+        .orderBy(desc(adCreatives?.createdAt))
         .limit(100);
 
       const fatigued: Record<string, unknown>[] = [];
       const healthy: Record<string, unknown>[] = [];
 
       for (const c of creatives) {
-        const perf = (c.performance || {}) as Record<string, unknown>;
-        const ctr = Number(perf.ctr || 0);
-        const impressions = Number(perf.impressions || 0);
-        const age = c.createdAt
-          ? Math.floor(
-              (Date.now() - new Date(c.createdAt).getTime()) /
+        const _perf = (c?.performance || {}) as Record<string, unknown>;
+        const _ctr = Number(perf?.ctr || 0);
+        const _impressions = Number(perf?.impressions || 0);
+        const _age = c?.createdAt
+          ? Math?.floor(
+              (Date?.now() - new Date(c?.createdAt).getTime()) /
                 (1000 * 60 * 60 * 24),
             )
           : 0;
 
-        const isFatigued = (impressions > 10000 && ctr < 0.5) || age > 60;
+        const _isFatigued = (impressions > 10000 && ctr < 0?.5) || age > 60;
 
-        const item = {
-          id: c.id,
-          name: c.name,
-          type: c.type,
-          campaignId: c.campaignId,
+        const _item = {
+          id: c?.id,
+          name: c?.name,
+          type: c?.type,
+          campaignId: c?.campaignId,
           ctr,
           impressions,
           ageInDays: age,
-          status: c.status,
+          status: c?.status,
           fatigueScore: isFatigued
-            ? Math.min(100, age + (impressions > 10000 ? 30 : 0))
-            : Math.max(0, age / 2),
+            ? Math?.min(100, age + (impressions > 10000 ? 30 : 0))
+            : Math?.max(0, age / 2),
         };
 
         if (isFatigued) {
-          fatigued.push(item);
+          fatigued?.push(item);
         } else {
-          healthy.push(item);
+          healthy?.push(item);
         }
       }
 
-      res.json({ analysis: { fatigued, healthy } });
+      res?.json({ analysis: { fatigued, healthy } });
     } catch (error) {
-      logger.warn(
+      logger?.warn(
         { err: error },
         "Failed to get ROAS creative fatigue analysis:",
       );
@@ -969,94 +969,94 @@ router.get(
   },
 );
 
-router.get(
+router?.get(
   "/roas/forecast",
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req.user!.id;
-      const campaigns = await db
+      const _userId = req?.user!.id;
+      const _campaigns = await db
         .select({
-          budget: adCampaigns.budget,
-          dailyBudget: adCampaigns.dailyBudget,
-          performance: adCampaigns.performance,
-          status: adCampaigns.status,
+          budget: adCampaigns?.budget,
+          dailyBudget: adCampaigns?.dailyBudget,
+          performance: adCampaigns?.performance,
+          status: adCampaigns?.status,
         })
         .from(adCampaigns)
         .where(
-          and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, "active")),
+          and(eq(adCampaigns?.userId, userId), eq(adCampaigns?.status, "active")),
         )
         .limit(100);
 
-      const totalDailyBudget = campaigns.reduce(
-        (sum, c) => sum + Number(c.dailyBudget || c.budget / 30 || 0),
+      const _totalDailyBudget = campaigns?.reduce(
+        (sum, c) => sum + Number(c?.dailyBudget || c?.budget / 30 || 0),
         0,
       );
-      const avgRoas = (() => {
-        const withPerf = campaigns.filter(
-          (c) => (c.performance as Record<string, unknown>)?.roas,
+      const _avgRoas = (() => {
+        const _withPerf = campaigns?.filter(
+          (c) => (c?.performance as Record<string, unknown>)?.roas,
         );
-        if (!withPerf.length) return 2.5;
+        if (!withPerf?.length) return 2?.5;
         return (
-          withPerf.reduce(
+          withPerf?.reduce(
             (sum, c) =>
               sum +
-              Number((c.performance as Record<string, unknown>).roas || 0),
+              Number((c?.performance as Record<string, unknown>).roas || 0),
             0,
-          ) / withPerf.length
+          ) / withPerf?.length
         );
       })();
 
-      const daily = Array.from({ length: 7 }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() + i + 1);
-        const jitter = 0.85 + Math.random() * 0.3;
-        const spend = totalDailyBudget * jitter;
+      const _daily = Array?.from({ length: 7 }, (_, i) => {
+        const _date = new Date();
+        date?.setDate(date?.getDate() + i + 1);
+        const _jitter = 0?.85 + Math?.random() * 0?.3;
+        const _spend = totalDailyBudget * jitter;
         return {
-          date: date.toISOString().split("T")[0],
+          date: date?.toISOString().split("T")[0],
           spend,
           revenue: spend * avgRoas,
           roas: avgRoas * jitter,
         };
       });
 
-      const weekly = Array.from({ length: 4 }, (_, i) => {
-        const spend = totalDailyBudget * 7 * (0.9 + i * 0.05);
+      const _weekly = Array?.from({ length: 4 }, (_, i) => {
+        const _spend = totalDailyBudget * 7 * (0?.9 + i * 0?.05);
         return { week: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
       });
 
-      const monthly = Array.from({ length: 3 }, (_, i) => {
-        const spend = totalDailyBudget * 30 * (0.95 + i * 0.03);
+      const _monthly = Array?.from({ length: 3 }, (_, i) => {
+        const _spend = totalDailyBudget * 30 * (0?.95 + i * 0?.03);
         return { month: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
       });
 
-      res.json({
+      res?.json({
         forecast: {
           daily,
           weekly,
           monthly,
-          activeCampaigns: campaigns.length,
+          activeCampaigns: campaigns?.length,
           dailyBudget: totalDailyBudget,
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get ROAS forecast:");
-      res.status(500).json({ error: "Failed to get ROAS forecast" });
+      logger?.warn({ err: error }, "Failed to get ROAS forecast:");
+      res?.status(500).json({ error: "Failed to get ROAS forecast" });
     }
   },
 );
 
 // AI-powered campaign optimization
-router.post("/optimize-campaign", requireAuth, async (req, res) => {
+router?.post("/optimize-campaign", requireAuth, async (req, res) => {
   try {
-    const { campaignId, performance } = req.body;
+    const { campaignId, performance } = req?.body;
 
     if (!campaignId) {
-      return res.status(400).json({ error: "Campaign ID is required" });
+      return res?.status(400).json({ error: "Campaign ID is required" });
     }
 
     // Build campaign object for AI optimization
-    const campaign = {
+    const _campaign = {
       id: campaignId,
       name: performance?.name || "Campaign",
       platform: performance?.platform || "instagram",
@@ -1091,45 +1091,45 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
         conversions: performance?.conversions || 5,
         spend: performance?.spend || 100,
         revenue: performance?.revenue || 150,
-        ctr: performance?.ctr || 0.05,
-        cvr: performance?.cvr || 0.1,
+        ctr: performance?.ctr || 0?.05,
+        cvr: performance?.cvr || 0?.1,
         cpc: performance?.cpc || 2,
         cpa: performance?.cpa || 20,
-        roas: performance?.roas || 1.5,
+        roas: performance?.roas || 1?.5,
       },
     };
 
-    const result = await unifiedAIController.optimizeAd({
+    const _result = await unifiedAIController?.optimizeAd({
       campaign,
       action: "score",
     });
 
-    if (!result.success) {
-      return res.status(500).json({ error: result.error });
+    if (!result?.success) {
+      return res?.status(500).json({ error: result?.error });
     }
 
-    res.json({
+    res?.json({
       success: true,
       campaignId,
-      optimization: result.data,
-      recommendations: result.data?.recommendations || [],
+      optimization: result?.data,
+      recommendations: result?.data?.recommendations || [],
     });
 
-    const userId = (req as AuthenticatedRequest).user?.id;
+    const _userId = (req as AuthenticatedRequest).user?.id;
     if (userId) {
       setImmediate(async () => {
         try {
-          const campaignName = performance?.name || `Campaign ${campaignId}`;
-          const topRec =
-            (result.data?.recommendations as string[] | undefined)?.[0] ||
+          const _campaignName = performance?.name || `Campaign ${campaignId}`;
+          const _topRec =
+            (result?.data?.recommendations as string[] | undefined)?.[0] ||
             "Review your targeting and creatives for better performance.";
-          await notificationService.sendAdCampaignOptimizedNotification(
+          await notificationService?.sendAdCampaignOptimizedNotification(
             userId,
             campaignName,
             topRec,
           );
         } catch (err) {
-          logger.warn(
+          logger?.warn(
             { err: err },
             "Ad campaign optimized notification error:",
           );
@@ -1137,13 +1137,13 @@ router.post("/optimize-campaign", requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
-    logger.warn({ err: error }, "Failed to optimize campaign:");
-    res.status(500).json({ error: "Failed to optimize campaign" });
+    logger?.warn({ err: error }, "Failed to optimize campaign:");
+    res?.status(500).json({ error: "Failed to optimize campaign" });
   }
 });
 
 // AI-powered content generation for ads
-router.post("/generate-content", requireAuthOnly, async (req, res) => {
+router?.post("/generate-content", requireAuthOnly, async (req, res) => {
   try {
     const {
       campaignId,
@@ -1151,9 +1151,9 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
       platform = "instagram",
       topic = "new music release",
       tone = "energetic",
-    } = req.body;
+    } = req?.body;
 
-    const validPlatforms = [
+    const _validPlatforms = [
       "instagram",
       "twitter",
       "facebook",
@@ -1161,33 +1161,33 @@ router.post("/generate-content", requireAuthOnly, async (req, res) => {
       "youtube",
       "linkedin",
     ];
-    const validTones = ["professional", "casual", "energetic", "promotional"];
+    const _validTones = ["professional", "casual", "energetic", "promotional"];
 
-    const result = await unifiedAIController.generateContent({
-      tone: validTones.includes(tone) ? tone : "energetic",
-      platform: validPlatforms.includes(platform) ? platform : "instagram",
+    const _result = await unifiedAIController?.generateContent({
+      tone: validTones?.includes(tone) ? tone : "energetic",
+      platform: validPlatforms?.includes(platform) ? platform : "instagram",
       topic: topic || "new music",
       contentType: contentType === "ad_copy" ? "promotional" : contentType,
       includeHashtags: true,
       includeEmojis: true,
     });
 
-    if (!result.success) {
-      return res.status(500).json({ error: result.error });
+    if (!result?.success) {
+      return res?.status(500).json({ error: result?.error });
     }
 
-    res.json({
+    res?.json({
       success: true,
       campaignId,
-      content: result.data,
+      content: result?.data,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Failed to generate ad content:");
-    res.status(500).json({ error: "Failed to generate content" });
+    logger?.warn({ err: error }, "Failed to generate ad content:");
+    res?.status(500).json({ error: "Failed to generate content" });
   }
 });
 
-router.post(
+router?.post(
   "/generate-video",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
@@ -1202,10 +1202,10 @@ router.post(
         goal,
         artist_name,
         quality,
-      } = req.body;
+      } = req?.body;
 
       // Route through the Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
-      const result = await renderAdvancedVideo({
+      const _result = await renderAdvancedVideo({
         topic: topic || "music promotion",
         platform: platform || "instagram",
         template: template || "cinematic_promo",
@@ -1217,19 +1217,21 @@ router.post(
         quality: quality || "cinematic",
       });
 
-      if (!result.success) {
-        return res.status(500).json({
-          success: false,
-          message: result.error || "Video generation failed",
-        });
+      if (!result?.success) {
+        return res
+          .status(500)
+          .json({
+            success: false,
+            message: result?.error || "Video generation failed",
+          });
       }
 
-      logger.info(
-        `[AdVideoGen] Video ready via ${result.source || "renderer"}`,
+      logger?.info(
+        `[AdVideoGen] Video ready via ${result?.source || "renderer"}`,
       );
-      res.json(result);
+      res?.json(result);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to generate ad video:");
+      logger?.warn({ err: error }, "Failed to generate ad video:");
       res
         .status(500)
         .json({ success: false, message: "Video generation failed" });
@@ -1237,12 +1239,12 @@ router.post(
   },
 );
 
-router.post(
+router?.post(
   "/generate-image",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { topic, platform, tone, goal, artist_name, style } = req.body;
+      const { topic, platform, tone, goal, artist_name, style } = req?.body;
 
       if (!topic) {
         return res
@@ -1261,7 +1263,7 @@ router.post(
       };
       let mcImageData: McImageResp | null = null;
       try {
-        mcImageData = await MaxCoreAIClient.infer<McImageResp>(
+        mcImageData = await MaxCoreAIClient?.infer<McImageResp>(
           "/api/generate/image",
           {
             topic,
@@ -1277,13 +1279,13 @@ router.post(
       }
 
       if (mcImageData?.url || mcImageData?.image_url) {
-        return res.json({ success: true, ...mcImageData });
+        return res?.json({ success: true, ...mcImageData });
       }
 
       // MaxCore is the sole image generation source — no Python AI fallback.
       // Return a structured visual spec so the caller can render a placeholder
       // until the next MaxCore request succeeds.
-      return res.json({
+      return res?.json({
         success: false,
         image_url: null,
         visual_spec: {
@@ -1298,7 +1300,7 @@ router.post(
           "MaxCore image generation temporarily unavailable — retry shortly",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Failed to generate ad image:");
+      logger?.warn({ err: error }, "Failed to generate ad image:");
       res
         .status(500)
         .json({ success: false, message: "Image generation failed" });
@@ -1306,16 +1308,16 @@ router.post(
   },
 );
 
-router.get(
+router?.get(
   "/video-templates",
   requireAuthOnly,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await pythonAIService.getCinematicTemplates();
-      if (result.success && result.data) {
-        res.json(result.data);
+      const _result = await pythonAIService?.getCinematicTemplates();
+      if (result?.success && result?.data) {
+        res?.json(result?.data);
       } else {
-        res.json({
+        res?.json({
           templates: [
             {
               id: "cinematic_promo",
@@ -1357,7 +1359,7 @@ router.get(
         });
       }
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get ad video templates:");
+      logger?.warn({ err: error }, "Failed to get ad video templates:");
       res
         .status(500)
         .json({ success: false, message: "Failed to get templates" });

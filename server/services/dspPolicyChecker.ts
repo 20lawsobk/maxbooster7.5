@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import fs from "fs";
 
 // Optional sharp support with graceful fallback
@@ -10,10 +10,10 @@ async function getSharp() {
   try {
     sharpModule = (await import("sharp")).default;
     sharpAvailable = true;
-    logger.info("Sharp module loaded for DSP policy checking");
+    logger?.info("Sharp module loaded for DSP policy checking");
     return sharpModule;
   } catch (error) {
-    logger.warn(
+    logger?.warn(
       "Sharp not available - cover art validation will use basic checks",
     );
     sharpModule = false;
@@ -754,28 +754,28 @@ export class DSPPolicyChecker {
   private policies: Map<string, DSPPolicy> = new Map();
 
   constructor() {
-    for (const [key, policy] of Object.entries(DSP_POLICIES)) {
-      this.policies.set(key.toLowerCase(), policy);
+    for (const [key, policy] of Object?.entries(DSP_POLICIES)) {
+      this?.policies.set(key?.toLowerCase(), policy);
     }
   }
 
   getPolicy(dsp: string): DSPPolicy | undefined {
-    return this.policies.get(dsp.toLowerCase());
+    return this?.policies.get(dsp?.toLowerCase());
   }
 
   getAllPolicies(): DSPPolicy[] {
-    return Array.from(this.policies.values());
+    return Array?.from(this?.policies.values());
   }
 
   listDSPs(): string[] {
-    return Array.from(this.policies.keys());
+    return Array?.from(this?.policies.keys());
   }
 
   async checkCompliance(
     release: ReleaseToCheck,
     dsp: string,
   ): Promise<ComplianceResult> {
-    const policy = this.getPolicy(dsp);
+    const _policy = this?.getPolicy(dsp);
     if (!policy) {
       return {
         dsp,
@@ -796,23 +796,23 @@ export class DSPPolicyChecker {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
 
-    const metadataErrors = this.checkMetadataCompliance(release, policy);
-    errors.push(...metadataErrors);
+    const _metadataErrors = this?.checkMetadataCompliance(release, policy);
+    errors?.push(...metadataErrors);
 
-    const coverArtResult = await this.checkCoverArtCompliance(release, policy);
-    errors.push(...coverArtResult.errors);
-    warnings.push(...coverArtResult.warnings);
+    const _coverArtResult = await this?.checkCoverArtCompliance(release, policy);
+    errors?.push(...coverArtResult?.errors);
+    warnings?.push(...coverArtResult?.warnings);
 
-    const audioErrors = this.checkAudioCompliance(release, policy);
-    errors.push(...audioErrors);
+    const _audioErrors = this?.checkAudioCompliance(release, policy);
+    errors?.push(...audioErrors);
 
-    const timingResult = this.checkReleaseTiming(release, policy);
-    errors.push(...timingResult.errors);
-    warnings.push(...timingResult.warnings);
+    const _timingResult = this?.checkReleaseTiming(release, policy);
+    errors?.push(...timingResult?.errors);
+    warnings?.push(...timingResult?.warnings);
 
     return {
       dsp,
-      compliant: errors.length === 0,
+      compliant: errors?.length === 0,
       errors,
       warnings,
       checkedAt: new Date(),
@@ -824,84 +824,84 @@ export class DSPPolicyChecker {
     policy: DSPPolicy,
   ): ComplianceError[] {
     const errors: ComplianceError[] = [];
-    const meta = policy.metadata;
+    const _meta = policy?.metadata;
 
-    if (!release.title) {
-      errors.push({
+    if (!release?.title) {
+      errors?.push({
         category: "metadata",
         field: "title",
         message: "Title is required",
         requirement: "Release title must be provided",
       });
-    } else if (release.title.length > meta.maxTitleLength) {
-      errors.push({
+    } else if (release?.title.length > meta?.maxTitleLength) {
+      errors?.push({
         category: "metadata",
         field: "title",
-        message: `Title exceeds maximum length of ${meta.maxTitleLength} characters`,
-        requirement: `Maximum ${meta.maxTitleLength} characters`,
-        currentValue: release.title.length,
+        message: `Title exceeds maximum length of ${meta?.maxTitleLength} characters`,
+        requirement: `Maximum ${meta?.maxTitleLength} characters`,
+        currentValue: release?.title.length,
       });
     }
 
-    if (!release.artist) {
-      errors.push({
+    if (!release?.artist) {
+      errors?.push({
         category: "metadata",
         field: "artist",
         message: "Artist name is required",
         requirement: "Primary artist name must be provided",
       });
-    } else if (release.artist.length > meta.maxArtistLength) {
-      errors.push({
+    } else if (release?.artist.length > meta?.maxArtistLength) {
+      errors?.push({
         category: "metadata",
         field: "artist",
-        message: `Artist name exceeds maximum length of ${meta.maxArtistLength} characters`,
-        requirement: `Maximum ${meta.maxArtistLength} characters`,
-        currentValue: release.artist.length,
+        message: `Artist name exceeds maximum length of ${meta?.maxArtistLength} characters`,
+        requirement: `Maximum ${meta?.maxArtistLength} characters`,
+        currentValue: release?.artist.length,
       });
     }
 
-    if (release.label && release.label.length > meta.maxLabelLength) {
-      errors.push({
+    if (release?.label && release?.label.length > meta?.maxLabelLength) {
+      errors?.push({
         category: "metadata",
         field: "label",
-        message: `Label name exceeds maximum length of ${meta.maxLabelLength} characters`,
-        requirement: `Maximum ${meta.maxLabelLength} characters`,
-        currentValue: release.label.length,
+        message: `Label name exceeds maximum length of ${meta?.maxLabelLength} characters`,
+        requirement: `Maximum ${meta?.maxLabelLength} characters`,
+        currentValue: release?.label.length,
       });
     }
 
-    const titleLower = (release.title || "").toLowerCase();
-    for (const term of meta.bannedTerms) {
-      if (titleLower.includes(term.toLowerCase())) {
-        errors.push({
+    const _titleLower = (release?.title || "").toLowerCase();
+    for (const term of meta?.bannedTerms) {
+      if (titleLower?.includes(term?.toLowerCase())) {
+        errors?.push({
           category: "metadata",
           field: "title",
           message: `Title contains banned term: "${term}"`,
-          requirement: `Titles cannot contain: ${meta.bannedTerms.join(", ")}`,
+          requirement: `Titles cannot contain: ${meta?.bannedTerms.join(", ")}`,
         });
       }
     }
 
-    if (release.tracks) {
-      for (let i = 0; i < release.tracks.length; i++) {
-        const track = release.tracks[i];
-        if (track.title && track.title.length > meta.maxTitleLength) {
-          errors.push({
+    if (release?.tracks) {
+      for (let i = 0; i < release?.tracks.length; i++) {
+        const _track = release?.tracks[i];
+        if (track?.title && track?.title.length > meta?.maxTitleLength) {
+          errors?.push({
             category: "metadata",
             field: `tracks[${i}].title`,
             message: `Track title exceeds maximum length`,
-            requirement: `Maximum ${meta.maxTitleLength} characters`,
-            currentValue: track.title.length,
+            requirement: `Maximum ${meta?.maxTitleLength} characters`,
+            currentValue: track?.title.length,
           });
         }
 
-        if (track.lyrics && track.lyrics.length > meta.maxLyricsLength) {
-          errors.push({
+        if (track?.lyrics && track?.lyrics.length > meta?.maxLyricsLength) {
+          errors?.push({
             category: "metadata",
             field: `tracks[${i}].lyrics`,
             message: `Lyrics exceed maximum length`,
-            requirement: `Maximum ${meta.maxLyricsLength} characters`,
-            currentValue: track.lyrics.length,
+            requirement: `Maximum ${meta?.maxLyricsLength} characters`,
+            currentValue: track?.lyrics.length,
           });
         }
       }
@@ -916,14 +916,14 @@ export class DSPPolicyChecker {
   ): Promise<{ errors: ComplianceError[]; warnings: ComplianceWarning[] }> {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
-    const art = policy.coverArt;
+    const _art = policy?.coverArt;
 
     if (
-      !release.coverArtPath &&
-      !release.coverArtUrl &&
-      !release.coverArtMetadata
+      !release?.coverArtPath &&
+      !release?.coverArtUrl &&
+      !release?.coverArtMetadata
     ) {
-      errors.push({
+      errors?.push({
         category: "coverArt",
         field: "coverArt",
         message: "Cover art is required",
@@ -932,95 +932,95 @@ export class DSPPolicyChecker {
       return { errors, warnings };
     }
 
-    let metadata = release.coverArtMetadata;
+    let metadata = release?.coverArtMetadata;
 
-    if (release.coverArtPath && fs.existsSync(release.coverArtPath)) {
+    if (release?.coverArtPath && fs?.existsSync(release?.coverArtPath)) {
       try {
-        const sharpInstance = await getSharp();
+        const _sharpInstance = await getSharp();
         if (!sharpInstance) {
-          logger.warn(
+          logger?.warn(
             "Sharp not available - skipping cover art validation for file path",
           );
         } else {
-          const imageInfo = await sharpInstance(
-            release.coverArtPath,
+          const _imageInfo = await sharpInstance(
+            release?.coverArtPath,
           ).metadata();
-          const stats = fs.statSync(release.coverArtPath);
+          const _stats = fs?.statSync(release?.coverArtPath);
 
           metadata = {
-            width: imageInfo.width,
-            height: imageInfo.height,
-            format: imageInfo.format,
-            fileSize: stats.size,
+            width: imageInfo?.width,
+            height: imageInfo?.height,
+            format: imageInfo?.format,
+            fileSize: stats?.size,
           };
         }
       } catch (error) {
-        logger.warn({ err: error }, "Error reading cover art metadata:");
+        logger?.warn({ err: error }, "Error reading cover art metadata:");
       }
     }
 
     if (metadata) {
-      if (metadata.width && metadata.width < art.minWidth) {
-        errors.push({
+      if (metadata?.width && metadata?.width < art?.minWidth) {
+        errors?.push({
           category: "coverArt",
-          field: "coverArt.width",
-          message: `Cover art width (${metadata.width}px) is below minimum (${art.minWidth}px)`,
-          requirement: `Minimum width: ${art.minWidth}px`,
-          currentValue: metadata.width,
+          field: "coverArt?.width",
+          message: `Cover art width (${metadata?.width}px) is below minimum (${art?.minWidth}px)`,
+          requirement: `Minimum width: ${art?.minWidth}px`,
+          currentValue: metadata?.width,
         });
       }
 
-      if (metadata.height && metadata.height < art.minHeight) {
-        errors.push({
+      if (metadata?.height && metadata?.height < art?.minHeight) {
+        errors?.push({
           category: "coverArt",
-          field: "coverArt.height",
-          message: `Cover art height (${metadata.height}px) is below minimum (${art.minHeight}px)`,
-          requirement: `Minimum height: ${art.minHeight}px`,
-          currentValue: metadata.height,
+          field: "coverArt?.height",
+          message: `Cover art height (${metadata?.height}px) is below minimum (${art?.minHeight}px)`,
+          requirement: `Minimum height: ${art?.minHeight}px`,
+          currentValue: metadata?.height,
         });
       }
 
       if (
-        metadata.width &&
-        metadata.height &&
-        metadata.width !== metadata.height
+        metadata?.width &&
+        metadata?.height &&
+        metadata?.width !== metadata?.height
       ) {
-        errors.push({
+        errors?.push({
           category: "coverArt",
-          field: "coverArt.aspectRatio",
-          message: `Cover art must be square (1:1 aspect ratio). Current: ${metadata.width}x${metadata.height}`,
+          field: "coverArt?.aspectRatio",
+          message: `Cover art must be square (1:1 aspect ratio). Current: ${metadata?.width}x${metadata?.height}`,
           requirement: "Aspect ratio must be 1:1",
-          currentValue: `${metadata.width}x${metadata.height}`,
+          currentValue: `${metadata?.width}x${metadata?.height}`,
         });
       }
 
-      if (metadata.format) {
-        const format = metadata.format.toLowerCase();
-        if (!art.formats.includes(format)) {
-          errors.push({
+      if (metadata?.format) {
+        const _format = metadata?.format.toLowerCase();
+        if (!art?.formats.includes(format)) {
+          errors?.push({
             category: "coverArt",
-            field: "coverArt.format",
+            field: "coverArt?.format",
             message: `Cover art format "${format}" is not accepted`,
-            requirement: `Accepted formats: ${art.formats.join(", ")}`,
+            requirement: `Accepted formats: ${art?.formats.join(", ")}`,
             currentValue: format,
           });
         }
       }
 
-      if (metadata.fileSize && metadata.fileSize > art.maxFileSize) {
-        errors.push({
+      if (metadata?.fileSize && metadata?.fileSize > art?.maxFileSize) {
+        errors?.push({
           category: "coverArt",
-          field: "coverArt.fileSize",
-          message: `Cover art file size (${Math.round(metadata.fileSize / 1024 / 1024)}MB) exceeds maximum`,
-          requirement: `Maximum file size: ${Math.round(art.maxFileSize / 1024 / 1024)}MB`,
-          currentValue: metadata.fileSize,
+          field: "coverArt?.fileSize",
+          message: `Cover art file size (${Math?.round(metadata?.fileSize / 1024 / 1024)}MB) exceeds maximum`,
+          requirement: `Maximum file size: ${Math?.round(art?.maxFileSize / 1024 / 1024)}MB`,
+          currentValue: metadata?.fileSize,
         });
       }
 
-      if (metadata.width && metadata.width < 3000) {
-        warnings.push({
+      if (metadata?.width && metadata?.width < 3000) {
+        warnings?.push({
           category: "coverArt",
-          field: "coverArt.width",
+          field: "coverArt?.width",
           message: "Cover art resolution could be higher for best quality",
           suggestion:
             "Use 3000x3000 pixels for optimal quality across all platforms",
@@ -1036,87 +1036,87 @@ export class DSPPolicyChecker {
     policy: DSPPolicy,
   ): ComplianceError[] {
     const errors: ComplianceError[] = [];
-    const audio = policy.audio;
+    const _audio = policy?.audio;
 
-    if (!release.audioFiles || release.audioFiles.length === 0) {
+    if (!release?.audioFiles || release?.audioFiles.length === 0) {
       return errors;
     }
 
-    for (let i = 0; i < release.audioFiles.length; i++) {
-      const file = release.audioFiles[i];
+    for (let i = 0; i < release?.audioFiles.length; i++) {
+      const _file = release?.audioFiles[i];
 
-      if (file.format) {
-        const format = file.format.toLowerCase();
-        if (!audio.formats.includes(format)) {
-          errors.push({
+      if (file?.format) {
+        const _format = file?.format.toLowerCase();
+        if (!audio?.formats.includes(format)) {
+          errors?.push({
             category: "audio",
             field: `audioFiles[${i}].format`,
             message: `Audio format "${format}" is not accepted`,
-            requirement: `Accepted formats: ${audio.formats.join(", ")}`,
+            requirement: `Accepted formats: ${audio?.formats.join(", ")}`,
             currentValue: format,
           });
         }
       }
 
-      if (file.bitDepth) {
-        if (file.bitDepth < audio.minBitDepth) {
-          errors.push({
+      if (file?.bitDepth) {
+        if (file?.bitDepth < audio?.minBitDepth) {
+          errors?.push({
             category: "audio",
             field: `audioFiles[${i}].bitDepth`,
-            message: `Bit depth (${file.bitDepth}) is below minimum (${audio.minBitDepth})`,
-            requirement: `Minimum bit depth: ${audio.minBitDepth}`,
-            currentValue: file.bitDepth,
+            message: `Bit depth (${file?.bitDepth}) is below minimum (${audio?.minBitDepth})`,
+            requirement: `Minimum bit depth: ${audio?.minBitDepth}`,
+            currentValue: file?.bitDepth,
           });
         }
-        if (file.bitDepth > audio.maxBitDepth) {
-          errors.push({
+        if (file?.bitDepth > audio?.maxBitDepth) {
+          errors?.push({
             category: "audio",
             field: `audioFiles[${i}].bitDepth`,
-            message: `Bit depth (${file.bitDepth}) exceeds maximum (${audio.maxBitDepth})`,
-            requirement: `Maximum bit depth: ${audio.maxBitDepth}`,
-            currentValue: file.bitDepth,
+            message: `Bit depth (${file?.bitDepth}) exceeds maximum (${audio?.maxBitDepth})`,
+            requirement: `Maximum bit depth: ${audio?.maxBitDepth}`,
+            currentValue: file?.bitDepth,
           });
         }
       }
 
-      if (file.sampleRate && !audio.sampleRates.includes(file.sampleRate)) {
-        errors.push({
+      if (file?.sampleRate && !audio?.sampleRates.includes(file?.sampleRate)) {
+        errors?.push({
           category: "audio",
           field: `audioFiles[${i}].sampleRate`,
-          message: `Sample rate ${file.sampleRate}Hz is not accepted`,
-          requirement: `Accepted sample rates: ${audio.sampleRates.join(", ")}Hz`,
-          currentValue: file.sampleRate,
+          message: `Sample rate ${file?.sampleRate}Hz is not accepted`,
+          requirement: `Accepted sample rates: ${audio?.sampleRates.join(", ")}Hz`,
+          currentValue: file?.sampleRate,
         });
       }
 
-      if (file.duration) {
-        if (file.duration < audio.minDuration) {
-          errors.push({
+      if (file?.duration) {
+        if (file?.duration < audio?.minDuration) {
+          errors?.push({
             category: "audio",
             field: `audioFiles[${i}].duration`,
-            message: `Track duration (${file.duration}s) is below minimum (${audio.minDuration}s)`,
-            requirement: `Minimum duration: ${audio.minDuration} seconds`,
-            currentValue: file.duration,
+            message: `Track duration (${file?.duration}s) is below minimum (${audio?.minDuration}s)`,
+            requirement: `Minimum duration: ${audio?.minDuration} seconds`,
+            currentValue: file?.duration,
           });
         }
-        if (file.duration > audio.maxDuration) {
-          errors.push({
+        if (file?.duration > audio?.maxDuration) {
+          errors?.push({
             category: "audio",
             field: `audioFiles[${i}].duration`,
-            message: `Track duration (${file.duration}s) exceeds maximum (${audio.maxDuration}s)`,
-            requirement: `Maximum duration: ${audio.maxDuration} seconds`,
-            currentValue: file.duration,
+            message: `Track duration (${file?.duration}s) exceeds maximum (${audio?.maxDuration}s)`,
+            requirement: `Maximum duration: ${audio?.maxDuration} seconds`,
+            currentValue: file?.duration,
           });
         }
       }
 
-      if (file.truePeak !== undefined && file.truePeak > audio.truePeakMax) {
-        errors.push({
+      if (file?.truePeak !== undefined && file?.truePeak > audio?.truePeakMax) {
+        errors?.push({
           category: "audio",
           field: `audioFiles[${i}].truePeak`,
-          message: `True peak (${file.truePeak}dB) exceeds maximum (${audio.truePeakMax}dB)`,
-          requirement: `Maximum true peak: ${audio.truePeakMax}dB`,
-          currentValue: file.truePeak,
+          message: `True peak (${file?.truePeak}dB) exceeds maximum (${audio?.truePeakMax}dB)`,
+          requirement: `Maximum true peak: ${audio?.truePeakMax}dB`,
+          currentValue: file?.truePeak,
         });
       }
     }
@@ -1130,10 +1130,10 @@ export class DSPPolicyChecker {
   ): { errors: ComplianceError[]; warnings: ComplianceWarning[] } {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
-    const timing = policy.releaseTiming;
+    const _timing = policy?.releaseTiming;
 
-    if (!release.releaseDate) {
-      errors.push({
+    if (!release?.releaseDate) {
+      errors?.push({
         category: "timing",
         field: "releaseDate",
         message: "Release date is required",
@@ -1142,43 +1142,43 @@ export class DSPPolicyChecker {
       return { errors, warnings };
     }
 
-    const releaseDate = new Date(release.releaseDate);
-    const now = new Date();
-    const daysUntilRelease = Math.floor(
-      (releaseDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    const _releaseDate = new Date(release?.releaseDate);
+    const _now = new Date();
+    const _daysUntilRelease = Math?.floor(
+      (releaseDate?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (daysUntilRelease < 0) {
-      errors.push({
+      errors?.push({
         category: "timing",
         field: "releaseDate",
         message: "Release date is in the past",
         requirement: "Release date must be in the future",
-        currentValue: releaseDate.toISOString(),
+        currentValue: releaseDate?.toISOString(),
       });
-    } else if (daysUntilRelease < timing.minLeadTime) {
-      errors.push({
+    } else if (daysUntilRelease < timing?.minLeadTime) {
+      errors?.push({
         category: "timing",
         field: "releaseDate",
         message: `Release date is only ${daysUntilRelease} days away`,
-        requirement: `Minimum lead time: ${timing.minLeadTime} days`,
+        requirement: `Minimum lead time: ${timing?.minLeadTime} days`,
         currentValue: daysUntilRelease,
       });
     }
 
-    if (daysUntilRelease > timing.maxFutureDate) {
-      errors.push({
+    if (daysUntilRelease > timing?.maxFutureDate) {
+      errors?.push({
         category: "timing",
         field: "releaseDate",
         message: `Release date is ${daysUntilRelease} days in the future`,
-        requirement: `Maximum future date: ${timing.maxFutureDate} days`,
+        requirement: `Maximum future date: ${timing?.maxFutureDate} days`,
         currentValue: daysUntilRelease,
       });
     }
 
-    const dayOfWeek = releaseDate.getDay();
-    if (dayOfWeek !== timing.preferredReleaseDay) {
-      const days = [
+    const _dayOfWeek = releaseDate?.getDay();
+    if (dayOfWeek !== timing?.preferredReleaseDay) {
+      const _days = [
         "Sunday",
         "Monday",
         "Tuesday",
@@ -1187,11 +1187,11 @@ export class DSPPolicyChecker {
         "Friday",
         "Saturday",
       ];
-      warnings.push({
+      warnings?.push({
         category: "timing",
         field: "releaseDate",
         message: `Release date falls on ${days[dayOfWeek]}`,
-        suggestion: `${days[timing.preferredReleaseDay]} releases are preferred for better chart performance`,
+        suggestion: `${days[timing?.preferredReleaseDay]} releases are preferred for better chart performance`,
       });
     }
 
@@ -1203,8 +1203,8 @@ export class DSPPolicyChecker {
   ): Promise<{ [dsp: string]: ComplianceResult }> {
     const results: { [dsp: string]: ComplianceResult } = {};
 
-    for (const dsp of this.listDSPs()) {
-      results[dsp] = await this.checkCompliance(release, dsp);
+    for (const dsp of this?.listDSPs()) {
+      results[dsp] = await this?.checkCompliance(release, dsp);
     }
 
     return results;
@@ -1217,40 +1217,40 @@ export class DSPPolicyChecker {
     timing: string[];
     additional: string[];
   } | null {
-    const policy = this.getPolicy(dsp);
+    const _policy = this?.getPolicy(dsp);
     if (!policy) return null;
 
     return {
       coverArt: [
-        `Dimensions: ${policy.coverArt.minWidth}x${policy.coverArt.minHeight} to ${policy.coverArt.maxWidth}x${policy.coverArt.maxHeight} pixels`,
-        `Aspect ratio: ${policy.coverArt.aspectRatio}`,
-        `Formats: ${policy.coverArt.formats.join(", ")}`,
-        `Max file size: ${Math.round(policy.coverArt.maxFileSize / 1024 / 1024)}MB`,
-        `Color mode: ${policy.coverArt.colorMode.join(", ")}`,
+        `Dimensions: ${policy?.coverArt.minWidth}x${policy?.coverArt.minHeight} to ${policy?.coverArt.maxWidth}x${policy?.coverArt.maxHeight} pixels`,
+        `Aspect ratio: ${policy?.coverArt.aspectRatio}`,
+        `Formats: ${policy?.coverArt.formats?.join(", ")}`,
+        `Max file size: ${Math?.round(policy?.coverArt.maxFileSize / 1024 / 1024)}MB`,
+        `Color mode: ${policy?.coverArt.colorMode?.join(", ")}`,
       ],
       audio: [
-        `Formats: ${policy.audio.formats.join(", ")}`,
-        `Bit depth: ${policy.audio.minBitDepth}-${policy.audio.maxBitDepth} bit`,
-        `Sample rates: ${policy.audio.sampleRates.join(", ")}Hz`,
-        `Duration: ${policy.audio.minDuration}s - ${policy.audio.maxDuration}s`,
-        `Loudness target: ${policy.audio.loudnessTargetLUFS} LUFS`,
-        `True peak max: ${policy.audio.truePeakMax}dB`,
+        `Formats: ${policy?.audio.formats?.join(", ")}`,
+        `Bit depth: ${policy?.audio.minBitDepth}-${policy?.audio.maxBitDepth} bit`,
+        `Sample rates: ${policy?.audio.sampleRates?.join(", ")}Hz`,
+        `Duration: ${policy?.audio.minDuration}s - ${policy?.audio.maxDuration}s`,
+        `Loudness target: ${policy?.audio.loudnessTargetLUFS} LUFS`,
+        `True peak max: ${policy?.audio.truePeakMax}dB`,
       ],
       metadata: [
-        `Title: max ${policy.metadata.maxTitleLength} characters`,
-        `Artist: max ${policy.metadata.maxArtistLength} characters`,
-        `Label: max ${policy.metadata.maxLabelLength} characters`,
-        `Required fields: ${policy.metadata.requiredFields.join(", ")}`,
-        `Banned terms: ${policy.metadata.bannedTerms.join(", ")}`,
+        `Title: max ${policy?.metadata.maxTitleLength} characters`,
+        `Artist: max ${policy?.metadata.maxArtistLength} characters`,
+        `Label: max ${policy?.metadata.maxLabelLength} characters`,
+        `Required fields: ${policy?.metadata.requiredFields?.join(", ")}`,
+        `Banned terms: ${policy?.metadata.bannedTerms?.join(", ")}`,
       ],
       timing: [
-        `Minimum lead time: ${policy.releaseTiming.minLeadTime} days`,
-        `Maximum future date: ${policy.releaseTiming.maxFutureDate} days`,
-        `Preferred release day: ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][policy.releaseTiming.preferredReleaseDay]}`,
+        `Minimum lead time: ${policy?.releaseTiming.minLeadTime} days`,
+        `Maximum future date: ${policy?.releaseTiming.maxFutureDate} days`,
+        `Preferred release day: ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][policy?.releaseTiming.preferredReleaseDay]}`,
       ],
-      additional: policy.additionalRequirements,
+      additional: policy?.additionalRequirements,
     };
   }
 }
 
-export const dspPolicyChecker = new DSPPolicyChecker();
+export const _dspPolicyChecker = new DSPPolicyChecker();

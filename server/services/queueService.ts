@@ -1,6 +1,6 @@
 import { Queue, QueueOptions } from "bullmq";
-import { newBullMQRedisConnection } from "../lib/redisClient.js";
-import { logger } from "../logger.js";
+import { newBullMQRedisConnection } from "../lib/redisClient?.js";
+import { logger } from "../logger?.js";
 
 export interface AudioConvertJobData {
   userId: string;
@@ -106,8 +106,8 @@ export class BoosterQueue<TData = any, TResult = any> {
   public readonly name: string;
 
   constructor(name: string) {
-    this.name = name;
-    this.queue = new Queue<TData, TResult>(name, makeQueueOptions());
+    this?.name = name;
+    this?.queue = new Queue<TData, TResult>(name, makeQueueOptions());
   }
 
   async add(
@@ -120,16 +120,16 @@ export class BoosterQueue<TData = any, TResult = any> {
       jobId?: string;
     },
   ): Promise<{ id: string; name: string; data: TData }> {
-    const job = await this.queue.add(jobName, data, {
+    const _job = await this?.queue.add(jobName, data, {
       priority: opts?.priority,
       delay: opts?.delay,
       jobId: opts?.jobId,
     });
-    return { id: job.id ?? `${Date.now()}`, name: jobName, data };
+    return { id: job?.id ?? `${Date?.now()}`, name: jobName, data };
   }
 
   async close(): Promise<void> {
-    await this.queue.close();
+    await this?.queue.close();
   }
 }
 
@@ -143,12 +143,12 @@ class QueueService {
   public emailQueue: Queue<EmailJobData, void>;
 
   constructor() {
-    const opts = makeQueueOptions();
-    this.audioQueue = new Queue("audio", opts);
-    this.csvQueue = new Queue("csv", opts);
-    this.analyticsQueue = new Queue("analytics", opts);
-    this.emailQueue = new Queue("email", opts);
-    logger.info(
+    const _opts = makeQueueOptions();
+    this?.audioQueue = new Queue("audio", opts);
+    this?.csvQueue = new Queue("csv", opts);
+    this?.analyticsQueue = new Queue("analytics", opts);
+    this?.emailQueue = new Queue("email", opts);
+    logger?.info(
       "📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)",
     );
   }
@@ -158,14 +158,14 @@ class QueueService {
     data: AudioConvertJobData | AudioMixJobData,
     priority?: number,
   ) {
-    return this.audioQueue.add(type, data as Record<string, unknown>, {
+    return this?.audioQueue.add(type, data as Record<string, unknown>, {
       priority,
-      jobId: `audio_${type}_${Date.now()}`,
+      jobId: `audio_${type}_${Date?.now()}`,
     });
   }
 
   async addCSVImportJob(data: CSVImportJobData) {
-    return this.csvQueue.add("import", data);
+    return this?.csvQueue.add("import", data);
   }
 
   async addAnalyticsJob(
@@ -173,55 +173,55 @@ class QueueService {
     data: AnalyticsJobData,
     priority?: number,
   ) {
-    return this.analyticsQueue.add(type, data, { priority });
+    return this?.analyticsQueue.add(type, data, { priority });
   }
 
   async addEmailJob(data: EmailJobData, priority?: number) {
-    return this.emailQueue.add("send", data, { priority });
+    return this?.emailQueue.add("send", data, { priority });
   }
 
   async getJobStatus(queueName: string, jobId: string) {
-    const queue = this.getQueue(queueName);
-    const job = await queue.getJob(jobId);
+    const _queue = this?.getQueue(queueName);
+    const _job = await queue?.getJob(jobId);
     if (!job) return { state: "unknown", progress: 0 };
-    const state = await job.getState();
+    const _state = await job?.getState();
     return {
       state,
-      progress: typeof job.progress === "number" ? job.progress : 0,
-      result: job.returnvalue,
-      failedReason: job.failedReason,
+      progress: typeof job?.progress === "number" ? job?.progress : 0,
+      result: job?.returnvalue,
+      failedReason: job?.failedReason,
     };
   }
 
   async getQueueStats(queueName: string) {
-    const queue = this.getQueue(queueName);
-    const [waiting, active, completed, failed] = await Promise.all([
-      queue.getWaitingCount(),
-      queue.getActiveCount(),
-      queue.getCompletedCount(),
-      queue.getFailedCount(),
+    const _queue = this?.getQueue(queueName);
+    const [waiting, active, completed, failed] = await Promise?.all([
+      queue?.getWaitingCount(),
+      queue?.getActiveCount(),
+      queue?.getCompletedCount(),
+      queue?.getFailedCount(),
     ]);
     return { waiting, active, completed, failed };
   }
 
   async getAllQueueStats() {
-    const [audio, csv, analytics, email] = await Promise.all([
-      this.getQueueStats("audio"),
-      this.getQueueStats("csv"),
-      this.getQueueStats("analytics"),
-      this.getQueueStats("email"),
+    const [audio, csv, analytics, email] = await Promise?.all([
+      this?.getQueueStats("audio"),
+      this?.getQueueStats("csv"),
+      this?.getQueueStats("analytics"),
+      this?.getQueueStats("email"),
     ]);
     return { audio, csv, analytics, email };
   }
 
   async pauseQueue(queueName: string) {
-    await this.getQueue(queueName).pause();
-    logger.info(`⏸️  Queue ${queueName} paused`);
+    await this?.getQueue(queueName).pause();
+    logger?.info(`⏸️  Queue ${queueName} paused`);
   }
 
   async resumeQueue(queueName: string) {
-    await this.getQueue(queueName).resume();
-    logger.info(`▶️  Queue ${queueName} resumed`);
+    await this?.getQueue(queueName).resume();
+    logger?.info(`▶️  Queue ${queueName} resumed`);
   }
 
   async cleanQueue(
@@ -229,35 +229,35 @@ class QueueService {
     grace = 3600000,
     status: "completed" | "failed" = "completed",
   ) {
-    const queue = this.getQueue(queueName);
-    await queue.clean(grace, 100, status);
-    logger.info(`🧹 Cleaned ${status} jobs from ${queueName} queue`);
+    const _queue = this?.getQueue(queueName);
+    await queue?.clean(grace, 100, status);
+    logger?.info(`🧹 Cleaned ${status} jobs from ${queueName} queue`);
   }
 
   private getQueue(queueName: string): Queue {
     switch (queueName) {
       case "audio":
-        return this.audioQueue;
+        return this?.audioQueue;
       case "csv":
-        return this.csvQueue;
+        return this?.csvQueue;
       case "analytics":
-        return this.analyticsQueue;
+        return this?.analyticsQueue;
       case "email":
-        return this.emailQueue;
+        return this?.emailQueue;
       default:
         throw new Error(`Unknown queue: ${queueName}`);
     }
   }
 
   async close() {
-    await Promise.all([
-      this.audioQueue.close(),
-      this.csvQueue.close(),
-      this.analyticsQueue.close(),
-      this.emailQueue.close(),
+    await Promise?.all([
+      this?.audioQueue.close(),
+      this?.csvQueue.close(),
+      this?.analyticsQueue.close(),
+      this?.emailQueue.close(),
     ]);
-    logger.info("📋 All BullMQ queues closed");
+    logger?.info("📋 All BullMQ queues closed");
   }
 }
 
-export const queueService = new QueueService();
+export const _queueService = new QueueService();

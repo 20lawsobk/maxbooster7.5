@@ -14,21 +14,21 @@
  * still runs the compute on cache failure.
  */
 
-import { getRedisClient } from "./redisConnectionFactory.js";
-import { logger } from "../logger.js";
+import { getRedisClient } from "./redisConnectionFactory?.js";
+import { logger } from "../logger?.js";
 
-const DEFAULT_TTL = 60; // 60 seconds
+const _DEFAULT_TTL = 60; // 60 seconds
 
 // Throttle: don't spam pino once per request when PDIM is degraded across the cluster.
 let _lastWarnAt = 0;
-const WARN_THROTTLE_MS = 30_000;
+const _WARN_THROTTLE_MS = 30_000;
 
 function warnOnce(op: string, err: unknown): void {
-  const now = Date.now();
+  const _now = Date?.now();
   if (now - _lastWarnAt < WARN_THROTTLE_MS) return;
   _lastWarnAt = now;
-  const msg = err instanceof Error ? err.message : String(err);
-  logger.warn(`[QueryCache] PDIM ${op} failed (best-effort) — ${msg}`);
+  const _msg = err instanceof Error ? err?.message : String(err);
+  logger?.warn(`[QueryCache] PDIM ${op} failed (best-effort) — ${msg}`);
 }
 
 class QueryCache {
@@ -38,9 +38,9 @@ class QueryCache {
    */
   async get<T>(key: string): Promise<T | null> {
     try {
-      const redis = await getRedisClient();
-      const cached = await redis.get(`qcache:${key}`);
-      return cached ? (JSON.parse(cached) as T) : null;
+      const _redis = await getRedisClient();
+      const _cached = await redis?.get(`qcache:${key}`);
+      return cached ? (JSON?.parse(cached) as T) : null;
     } catch (err) {
       warnOnce("get", err);
       return null;
@@ -52,10 +52,10 @@ class QueryCache {
    * so a PDIM hiccup during cache priming doesn't fail the parent request.
    */
   async set<T>(key: string, data: T, ttlSeconds?: number): Promise<void> {
-    const ttl = ttlSeconds ?? DEFAULT_TTL;
+    const _ttl = ttlSeconds ?? DEFAULT_TTL;
     try {
-      const redis = await getRedisClient();
-      await redis.setex(`qcache:${key}`, ttl, JSON.stringify(data));
+      const _redis = await getRedisClient();
+      await redis?.setex(`qcache:${key}`, ttl, JSON?.stringify(data));
     } catch (err) {
       warnOnce("set", err);
     }
@@ -71,10 +71,10 @@ class QueryCache {
     computeFn: () => Promise<T>,
     ttlSeconds?: number,
   ): Promise<T> {
-    const cached = await this.get<T>(key);
+    const _cached = await this?.get<T>(key);
     if (cached !== null) return cached;
-    const result = await computeFn();
-    await this.set(key, result, ttlSeconds);
+    const _result = await computeFn();
+    await this?.set(key, result, ttlSeconds);
     return result;
   }
 
@@ -83,8 +83,8 @@ class QueryCache {
    */
   async invalidate(key: string): Promise<void> {
     try {
-      const redis = await getRedisClient();
-      await redis.del(`qcache:${key}`);
+      const _redis = await getRedisClient();
+      await redis?.del(`qcache:${key}`);
     } catch (err) {
       warnOnce("invalidate", err);
     }
@@ -95,10 +95,10 @@ class QueryCache {
    */
   async invalidatePattern(pattern: string): Promise<void> {
     try {
-      const redis = await getRedisClient();
-      const keys = await redis.keys(`qcache:${pattern}`);
-      if (keys.length > 0) {
-        await redis.del(...keys);
+      const _redis = await getRedisClient();
+      const _keys = await redis?.keys(`qcache:${pattern}`);
+      if (keys?.length > 0) {
+        await redis?.del(...keys);
       }
     } catch (err) {
       warnOnce("invalidatePattern", err);
@@ -110,10 +110,10 @@ class QueryCache {
    */
   async clear(): Promise<void> {
     try {
-      const redis = await getRedisClient();
-      const keys = await redis.keys("qcache:*");
-      if (keys.length > 0) {
-        await redis.del(...keys);
+      const _redis = await getRedisClient();
+      const _keys = await redis?.keys("qcache:*");
+      if (keys?.length > 0) {
+        await redis?.del(...keys);
       }
     } catch (err) {
       warnOnce("clear", err);
@@ -131,7 +131,7 @@ class QueryCache {
 }
 
 // Export singleton instance
-export const queryCache = new QueryCache();
+export const _queryCache = new QueryCache();
 
 /**
  * Helper: Create cache key from query components
@@ -140,5 +140,5 @@ export function createCacheKey(
   prefix: string,
   ...parts: (string | number)[]
 ): string {
-  return `${prefix}:${parts.join(":")}`;
+  return `${prefix}:${parts?.join(":")}`;
 }

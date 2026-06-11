@@ -1,19 +1,8 @@
 import { randomBytes } from "crypto";
-import { db } from "../db.js";
-import {
-  organicAssets,
-  organicChannels,
-  organicRoiSnapshots,
-  organicAssetLifetime,
-  type OrganicAsset,
-  type OrganicChannel,
-  type OrganicRoiSnapshot,
-  type OrganicAssetLifetimeRecord,
-  type InsertOrganicAsset,
-  type InsertOrganicChannel,
-} from "@shared/schema";
+import { db } from "../db?.js";
+import { organicAssets, organicChannels, organicRoiSnapshots, organicAssetLifetime, type OrganicAsset, type OrganicChannel, type OrganicRoiSnapshot, type OrganicAssetLifetimeRecord, type InsertOrganicAsset, type InsertOrganicChannel } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 interface AssetPerformance {
   monthlyViews: number;
@@ -81,26 +70,26 @@ interface AssetCandidate {
   basedOnChannelId?: string;
 }
 
-const HOURLY_RATE_ESTIMATE = 50;
-const MINIMUM_ROI_THRESHOLD = 1.0;
-const EXPLORE_RATIO = 0.2;
+const _HOURLY_RATE_ESTIMATE = 50;
+const _MINIMUM_ROI_THRESHOLD = 1?.0;
+const _EXPLORE_RATIO = 0?.2;
 
 class OrganicCompoundingService {
   async computeOrganicRoi(asset: OrganicAsset): Promise<RoiData> {
     try {
-      const performance = asset.performance as AssetPerformance | null;
-      const revenueGenerated = performance?.revenueGenerated ?? 0;
+      const _performance = asset?.performance as AssetPerformance | null;
+      const _revenueGenerated = performance?.revenueGenerated ?? 0;
 
-      const creationCostDollars =
-        (asset.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE;
-      const distributionCost = asset.distributionCost ?? 0;
-      const totalCost = creationCostDollars + distributionCost;
+      const _creationCostDollars =
+        (asset?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE;
+      const _distributionCost = asset?.distributionCost ?? 0;
+      const _totalCost = creationCostDollars + distributionCost;
 
-      const effectiveRoi =
+      const _effectiveRoi =
         totalCost > 0 ? (revenueGenerated - totalCost) / totalCost : 0;
 
-      const now = new Date();
-      const periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const _now = new Date();
+      const _periodStart = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       return {
         revenueOverPeriod: revenueGenerated,
@@ -111,7 +100,7 @@ class OrganicCompoundingService {
         periodEnd: now,
       };
     } catch (error) {
-      logger.warn({ err: error }, "Error computing organic ROI:");
+      logger?.warn({ err: error }, "Error computing organic ROI:");
       throw error;
     }
   }
@@ -121,39 +110,39 @@ class OrganicCompoundingService {
     assets: OrganicAsset[],
   ): number {
     try {
-      const channelAssets = assets.filter((a) => {
-        const performance = a.performance as AssetPerformance | null;
-        return performance && performance.revenueGenerated > 0;
+      const _channelAssets = assets?.filter((a) => {
+        const _performance = a?.performance as AssetPerformance | null;
+        return performance && performance?.revenueGenerated > 0;
       });
 
-      if (channelAssets.length === 0) {
-        return channel.audienceQualityScore ?? 0.5;
+      if (channelAssets?.length === 0) {
+        return channel?.audienceQualityScore ?? 0?.5;
       }
 
-      const totalRevenue = channelAssets.reduce((sum, a) => {
-        const perf = a.performance as AssetPerformance;
+      const _totalRevenue = channelAssets?.reduce((sum, a) => {
+        const _perf = a?.performance as AssetPerformance;
         return sum + (perf?.revenueGenerated ?? 0);
       }, 0);
 
-      const totalCost = channelAssets.reduce((sum, a) => {
+      const _totalCost = channelAssets?.reduce((sum, a) => {
         return (
           sum +
-          (a.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
-          (a.distributionCost ?? 0)
+          (a?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
+          (a?.distributionCost ?? 0)
         );
       }, 0);
 
-      const roi = totalCost > 0 ? totalRevenue / totalCost : 0;
-      const reach = channel.estimatedMonthlyReach ?? 0;
-      const audienceQuality = channel.audienceQualityScore ?? 0.5;
+      const _roi = totalCost > 0 ? totalRevenue / totalCost : 0;
+      const _reach = channel?.estimatedMonthlyReach ?? 0;
+      const _audienceQuality = channel?.audienceQualityScore ?? 0?.5;
 
-      const reachScore = Math.min(reach / 100000, 1);
-      const efficiencyScore =
-        roi * 0.4 + reachScore * 0.3 + audienceQuality * 0.3;
+      const _reachScore = Math?.min(reach / 100000, 1);
+      const _efficiencyScore =
+        roi * 0?.4 + reachScore * 0?.3 + audienceQuality * 0?.3;
 
-      return Math.max(0, Math.min(1, efficiencyScore));
+      return Math?.max(0, Math?.min(1, efficiencyScore));
     } catch (error) {
-      logger.warn({ err: error }, "Error computing channel efficiency:");
+      logger?.warn({ err: error }, "Error computing channel efficiency:");
       return 0;
     }
   }
@@ -166,14 +155,14 @@ class OrganicCompoundingService {
     const candidates: AssetCandidate[] = [];
 
     try {
-      const topPerformingAssets = existingAssets
+      const _topPerformingAssets = existingAssets
         .filter((a) => {
-          const perf = a.performance as AssetPerformance | null;
-          return perf && perf.revenueGenerated > 0;
+          const _perf = a?.performance as AssetPerformance | null;
+          return perf && perf?.revenueGenerated > 0;
         })
         .sort((a, b) => {
-          const perfA = a.performance as AssetPerformance;
-          const perfB = b.performance as AssetPerformance;
+          const _perfA = a?.performance as AssetPerformance;
+          const _perfB = b?.performance as AssetPerformance;
           return (
             (perfB?.revenueGenerated ?? 0) - (perfA?.revenueGenerated ?? 0)
           );
@@ -181,19 +170,19 @@ class OrganicCompoundingService {
         .slice(0, 5);
 
       for (const asset of topPerformingAssets) {
-        candidates.push({
+        candidates?.push({
           assetId: `candidate_${randomBytes(8).toString("hex")}`,
-          type: asset.type,
-          topic: `${asset.topic} - Extended`,
-          intent: asset.intent,
-          creationCostHours: (asset.creationCostHours ?? 0) * 0.8,
-          distributionCost: asset.distributionCost ?? 0,
-          basedOnAssetId: asset.id,
+          type: asset?.type,
+          topic: `${asset?.topic} - Extended`,
+          intent: asset?.intent,
+          creationCostHours: (asset?.creationCostHours ?? 0) * 0?.8,
+          distributionCost: asset?.distributionCost ?? 0,
+          basedOnAssetId: asset?.id,
         });
       }
 
-      const topChannels = channels
-        .filter((c) => (c.efficiencyScore ?? 0) > 0.5)
+      const _topChannels = channels
+        .filter((c) => (c?.efficiencyScore ?? 0) > 0?.5)
         .slice(0, 3);
 
       for (const channel of topChannels) {
@@ -203,7 +192,7 @@ class OrganicCompoundingService {
           Array<{ type: string; hours: number }>
         > = {
           social: [
-            { type: "tiktok_reel_clip", hours: 1.5 },
+            { type: "tiktok_reel_clip", hours: 1?.5 },
             { type: "instagram_reel", hours: 2 },
           ],
           video: [
@@ -223,31 +212,31 @@ class OrganicCompoundingService {
             { type: "press_release", hours: 4 },
           ],
         };
-        const assetDefs = channelAssetMap[channel.type] ?? [
+        const _assetDefs = channelAssetMap[channel?.type] ?? [
           { type: "seo_article", hours: 5 },
-          { type: "tiktok_reel_clip", hours: 1.5 },
+          { type: "tiktok_reel_clip", hours: 1?.5 },
         ];
         for (const def of assetDefs) {
-          candidates.push({
+          candidates?.push({
             assetId: `candidate_${randomBytes(8).toString("hex")}`,
-            type: def.type,
-            topic: `${def.type.replace(/_/g, " ")} for ${channel.name}`,
-            intent: channel.type === "search" ? "search" : "discovery",
-            creationCostHours: def.hours,
+            type: def?.type,
+            topic: `${def?.type.replace(/_/g, " ")} for ${channel?.name}`,
+            intent: channel?.type === "search" ? "search" : "discovery",
+            creationCostHours: def?.hours,
             distributionCost: 0,
-            basedOnChannelId: channel.id,
+            basedOnChannelId: channel?.id,
           });
         }
       }
 
-      if (candidates.length < 5) {
+      if (candidates?.length < 5) {
         // Music-career-specific evergreen asset types ordered by ROI-to-effort ratio
-        const defaultTypes = [
+        const _defaultTypes = [
           {
             type: "tiktok_reel_clip",
             topic: "Studio Behind-the-Scenes Clip",
             intent: "discovery",
-            hours: 1.5,
+            hours: 1?.5,
           },
           {
             type: "instagram_reel",
@@ -306,14 +295,14 @@ class OrganicCompoundingService {
           },
         ];
 
-        const needed = 5 - candidates.length;
-        for (const defaultAsset of defaultTypes.slice(0, needed)) {
-          candidates.push({
+        const _needed = 5 - candidates?.length;
+        for (const defaultAsset of defaultTypes?.slice(0, needed)) {
+          candidates?.push({
             assetId: `candidate_${randomBytes(8).toString("hex")}`,
-            type: defaultAsset.type,
-            topic: defaultAsset.topic,
-            intent: defaultAsset.intent,
-            creationCostHours: defaultAsset.hours,
+            type: defaultAsset?.type,
+            topic: defaultAsset?.topic,
+            intent: defaultAsset?.intent,
+            creationCostHours: defaultAsset?.hours,
             distributionCost: 0,
           });
         }
@@ -321,7 +310,7 @@ class OrganicCompoundingService {
 
       return candidates;
     } catch (error) {
-      logger.warn({ err: error }, "Error proposing candidate assets:");
+      logger?.warn({ err: error }, "Error proposing candidate assets:");
       return [];
     }
   }
@@ -332,53 +321,53 @@ class OrganicCompoundingService {
     channels: OrganicChannel[],
   ): { effectiveRoi: number; streams: number; ltv: number } {
     try {
-      const similarAssets = existingAssets.filter(
-        (a) => a.type === candidate.type || a.intent === candidate.intent,
+      const _similarAssets = existingAssets?.filter(
+        (a) => a?.type === candidate?.type || a?.intent === candidate?.intent,
       );
 
       let avgRevenue = 0;
       let avgStreams = 0;
 
-      if (similarAssets.length > 0) {
-        const totalRevenue = similarAssets.reduce((sum, a) => {
-          const perf = a.performance as AssetPerformance | null;
+      if (similarAssets?.length > 0) {
+        const _totalRevenue = similarAssets?.reduce((sum, a) => {
+          const _perf = a?.performance as AssetPerformance | null;
           return sum + (perf?.revenueGenerated ?? 0);
         }, 0);
-        const totalStreams = similarAssets.reduce((sum, a) => {
-          const perf = a.performance as AssetPerformance | null;
+        const _totalStreams = similarAssets?.reduce((sum, a) => {
+          const _perf = a?.performance as AssetPerformance | null;
           return sum + (perf?.streamingConversions ?? 0);
         }, 0);
 
-        avgRevenue = totalRevenue / similarAssets.length;
-        avgStreams = totalStreams / similarAssets.length;
+        avgRevenue = totalRevenue / similarAssets?.length;
+        avgStreams = totalStreams / similarAssets?.length;
       } else {
         avgRevenue = 100;
         avgStreams = 50;
       }
 
-      const creationCost = candidate.creationCostHours * HOURLY_RATE_ESTIMATE;
-      const totalCost = creationCost + candidate.distributionCost;
+      const _creationCost = candidate?.creationCostHours * HOURLY_RATE_ESTIMATE;
+      const _totalCost = creationCost + candidate?.distributionCost;
 
-      const expectedRevenue = avgRevenue * 1.2;
-      const effectiveRoi =
+      const _expectedRevenue = avgRevenue * 1?.2;
+      const _effectiveRoi =
         totalCost > 0 ? (expectedRevenue - totalCost) / totalCost : 0;
 
-      const avgChannelLtv =
-        channels.length > 0
-          ? channels.reduce((sum, c) => {
-              const hist =
-                c.historicalPerformance as HistoricalPerformance | null;
+      const _avgChannelLtv =
+        channels?.length > 0
+          ? channels?.reduce((sum, c) => {
+              const _hist =
+                c?.historicalPerformance as HistoricalPerformance | null;
               return sum + (hist?.avgLtvOfUsers ?? 5);
-            }, 0) / channels.length
+            }, 0) / channels?.length
           : 5;
 
       return {
         effectiveRoi,
-        streams: avgStreams * 1.1,
+        streams: avgStreams * 1?.1,
         ltv: avgChannelLtv,
       };
     } catch (error) {
-      logger.warn({ err: error }, "Error estimating future ROI:");
+      logger?.warn({ err: error }, "Error estimating future ROI:");
       return { effectiveRoi: 0, streams: 0, ltv: 0 };
     }
   }
@@ -388,21 +377,21 @@ class OrganicCompoundingService {
     expectedRoi: { effectiveRoi: number; streams: number; ltv: number },
   ): number {
     try {
-      const roiScore = Math.min(expectedRoi.effectiveRoi / 2, 1);
+      const _roiScore = Math?.min(expectedRoi?.effectiveRoi / 2, 1);
 
-      const timeEfficiency =
-        candidate.creationCostHours > 0
-          ? Math.min(expectedRoi.streams / candidate.creationCostHours / 20, 1)
+      const _timeEfficiency =
+        candidate?.creationCostHours > 0
+          ? Math?.min(expectedRoi?.streams / candidate?.creationCostHours / 20, 1)
           : 0;
 
-      const ltvScore = Math.min(expectedRoi.ltv / 20, 1);
+      const _ltvScore = Math?.min(expectedRoi?.ltv / 20, 1);
 
-      const efficiencyScore =
-        roiScore * 0.5 + timeEfficiency * 0.3 + ltvScore * 0.2;
+      const _efficiencyScore =
+        roiScore * 0?.5 + timeEfficiency * 0?.3 + ltvScore * 0?.2;
 
-      return Math.max(0, Math.min(1, efficiencyScore));
+      return Math?.max(0, Math?.min(1, efficiencyScore));
     } catch (error) {
-      logger.warn({ err: error }, "Error computing efficiency score:");
+      logger?.warn({ err: error }, "Error computing efficiency score:");
       return 0;
     }
   }
@@ -412,36 +401,36 @@ class OrganicCompoundingService {
     timeBudgetHours: number,
   ): ScoredCandidate[] {
     try {
-      const numExplore = Math.floor(candidates.length * EXPLORE_RATIO);
-      const numExploit = candidates.length - numExplore;
+      const _numExplore = Math?.floor(candidates?.length * EXPLORE_RATIO);
+      const _numExploit = candidates?.length - numExplore;
 
-      const sortedByEfficiency = [...candidates].sort(
-        (a, b) => b.efficiencyScore - a.efficiencyScore,
+      const _sortedByEfficiency = [...candidates].sort(
+        (a, b) => b?.efficiencyScore - a?.efficiencyScore,
       );
-      const exploitCandidates = sortedByEfficiency.slice(0, numExploit);
+      const _exploitCandidates = sortedByEfficiency?.slice(0, numExploit);
 
-      const exploreCandidates = sortedByEfficiency
+      const _exploreCandidates = sortedByEfficiency
         .slice(numExploit)
-        .sort(() => Math.random() - 0.5)
+        .sort(() => Math?.random() - 0?.5)
         .slice(0, numExplore);
 
-      const allCandidates = [...exploitCandidates, ...exploreCandidates].sort(
-        (a, b) => b.efficiencyScore - a.efficiencyScore,
+      const _allCandidates = [...exploitCandidates, ...exploreCandidates].sort(
+        (a, b) => b?.efficiencyScore - a?.efficiencyScore,
       );
 
       const selected: ScoredCandidate[] = [];
       let usedHours = 0;
 
       for (const candidate of allCandidates) {
-        if (usedHours + candidate.timeCostHours <= timeBudgetHours) {
-          selected.push(candidate);
-          usedHours += candidate.timeCostHours;
+        if (usedHours + candidate?.timeCostHours <= timeBudgetHours) {
+          selected?.push(candidate);
+          usedHours += candidate?.timeCostHours;
         }
       }
 
       return selected;
     } catch (error) {
-      logger.warn({ err: error }, "Error selecting assets under budget:");
+      logger?.warn({ err: error }, "Error selecting assets under budget:");
       return [];
     }
   }
@@ -451,27 +440,27 @@ class OrganicCompoundingService {
     channels: OrganicChannel[],
   ): OrganicChannel[] {
     try {
-      const sortedChannels = [...channels].sort((a, b) => {
-        const scoreA =
-          (a.efficiencyScore ?? 0) * (a.audienceQualityScore ?? 0.5);
-        const scoreB =
-          (b.efficiencyScore ?? 0) * (b.audienceQualityScore ?? 0.5);
+      const _sortedChannels = [...channels].sort((a, b) => {
+        const _scoreA =
+          (a?.efficiencyScore ?? 0) * (a?.audienceQualityScore ?? 0?.5);
+        const _scoreB =
+          (b?.efficiencyScore ?? 0) * (b?.audienceQualityScore ?? 0?.5);
         return scoreB - scoreA;
       });
 
-      return sortedChannels.slice(0, 3);
+      return sortedChannels?.slice(0, 3);
     } catch (error) {
-      logger.warn({ err: error }, "Error selecting best channels for asset:");
+      logger?.warn({ err: error }, "Error selecting best channels for asset:");
       return [];
     }
   }
 
   labelSelectionReason(candidate: ScoredCandidate): string {
-    if (candidate.efficiencyScore >= 0.8) {
+    if (candidate?.efficiencyScore >= 0?.8) {
       return "high_efficiency_score";
-    } else if (candidate.expectedRoi >= MINIMUM_ROI_THRESHOLD) {
+    } else if (candidate?.expectedRoi >= MINIMUM_ROI_THRESHOLD) {
       return "exceeds_roi_threshold";
-    } else if (candidate.expectedStreams > 100) {
+    } else if (candidate?.expectedStreams > 100) {
       return "high_stream_potential";
     } else {
       return "exploration_candidate";
@@ -480,25 +469,25 @@ class OrganicCompoundingService {
 
   calculateDecay(asset: OrganicAsset): number {
     try {
-      const decayCurve = asset.decayCurve as DecayCurve | null;
+      const _decayCurve = asset?.decayCurve as DecayCurve | null;
       if (!decayCurve) return 1;
 
-      const halfLifeDays = decayCurve.halfLifeDays || 90;
-      const stabilityScore = decayCurve.stabilityScore || 0.5;
+      const _halfLifeDays = decayCurve?.halfLifeDays || 90;
+      const _stabilityScore = decayCurve?.stabilityScore || 0?.5;
 
-      const createdAt = asset.createdAt
-        ? new Date(asset.createdAt)
+      const _createdAt = asset?.createdAt
+        ? new Date(asset?.createdAt)
         : new Date();
-      const ageInDays =
-        (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+      const _ageInDays =
+        (Date?.now() - createdAt?.getTime()) / (1000 * 60 * 60 * 24);
 
-      const decayFactor = Math.pow(0.5, ageInDays / halfLifeDays);
+      const _decayFactor = Math?.pow(0?.5, ageInDays / halfLifeDays);
 
-      const adjustedDecay = (decayFactor * (1 + stabilityScore)) / 2;
+      const _adjustedDecay = (decayFactor * (1 + stabilityScore)) / 2;
 
-      return Math.max(0.1, Math.min(1, adjustedDecay));
+      return Math?.max(0?.1, Math?.min(1, adjustedDecay));
     } catch (error) {
-      logger.warn({ err: error }, "Error calculating decay:");
+      logger?.warn({ err: error }, "Error calculating decay:");
       return 1;
     }
   }
@@ -508,31 +497,31 @@ class OrganicCompoundingService {
     weekStart: Date,
     timeBudgetHours: number,
   ): Promise<WeeklyState> {
-    logger.info(`Starting weekly organic loop for user ${userId}`, {
+    logger?.info(`Starting weekly organic loop for user ${userId}`, {
       weekStart,
       timeBudgetHours,
     });
 
     try {
-      const assets = await this.getAssets(userId);
-      const channels = await this.getChannels(userId);
+      const _assets = await this?.getAssets(userId);
+      const _channels = await this?.getChannels(userId);
 
-      logger.info(
-        `Loaded ${assets.length} assets and ${channels.length} channels`,
+      logger?.info(
+        `Loaded ${assets?.length} assets and ${channels?.length} channels`,
       );
 
       for (const asset of assets) {
-        const roi = await this.computeOrganicRoi(asset);
-        await this.saveRoiSnapshot(userId, asset.id, roi);
-        await this.updateLifetimeStats(userId, asset.id);
+        const _roi = await this?.computeOrganicRoi(asset);
+        await this?.saveRoiSnapshot(userId, asset?.id, roi);
+        await this?.updateLifetimeStats(userId, asset?.id);
       }
 
       for (const channel of channels) {
-        const efficiency = this.computeChannelEfficiency(channel, assets);
-        await this.updateChannelEfficiency(channel.id, efficiency);
+        const _efficiency = this?.computeChannelEfficiency(channel, assets);
+        await this?.updateChannelEfficiency(channel?.id, efficiency);
       }
 
-      const candidateAssets = this.proposeCandidateAssets(
+      const _candidateAssets = this?.proposeCandidateAssets(
         userId,
         assets,
         channels,
@@ -540,38 +529,38 @@ class OrganicCompoundingService {
 
       const scoredCandidates: ScoredCandidate[] = [];
       for (const cand of candidateAssets) {
-        const expectedRoi = this.estimateFutureRoi(cand, assets, channels);
-        const efficiencyScore = this.computeEfficiencyScore(cand, expectedRoi);
+        const _expectedRoi = this?.estimateFutureRoi(cand, assets, channels);
+        const _efficiencyScore = this?.computeEfficiencyScore(cand, expectedRoi);
 
-        scoredCandidates.push({
-          assetId: cand.assetId,
-          expectedRoi: expectedRoi.effectiveRoi,
-          expectedStreams: expectedRoi.streams,
-          expectedLtv: expectedRoi.ltv,
+        scoredCandidates?.push({
+          assetId: cand?.assetId,
+          expectedRoi: expectedRoi?.effectiveRoi,
+          expectedStreams: expectedRoi?.streams,
+          expectedLtv: expectedRoi?.ltv,
           efficiencyScore,
-          timeCostHours: cand.creationCostHours,
-          type: cand.type,
-          topic: cand.topic,
-          intent: cand.intent,
+          timeCostHours: cand?.creationCostHours,
+          type: cand?.type,
+          topic: cand?.topic,
+          intent: cand?.intent,
         });
       }
 
-      const selected = this.selectAssetsUnderBudget(
+      const _selected = this?.selectAssetsUnderBudget(
         scoredCandidates,
         timeBudgetHours,
       );
 
       const placements: Placement[] = [];
       for (const sel of selected) {
-        const bestChannels = this.selectBestChannelsForAsset(
-          sel.assetId,
+        const _bestChannels = this?.selectBestChannelsForAsset(
+          sel?.assetId,
           channels,
         );
         for (const ch of bestChannels) {
-          placements.push({
-            assetId: sel.assetId,
-            channelId: ch.id,
-            expectedReach: ch.estimatedMonthlyReach ?? 0,
+          placements?.push({
+            assetId: sel?.assetId,
+            channelId: ch?.id,
+            expectedReach: ch?.estimatedMonthlyReach ?? 0,
           });
         }
       }
@@ -580,22 +569,22 @@ class OrganicCompoundingService {
         weekStart,
         timeBudgetHours,
         candidateAssets: scoredCandidates,
-        selectedAssets: selected.map((s) => ({
-          assetId: s.assetId,
-          reason: this.labelSelectionReason(s),
+        selectedAssets: selected?.map((s) => ({
+          assetId: s?.assetId,
+          reason: this?.labelSelectionReason(s),
         })),
         placements,
       };
 
-      logger.info(`Weekly organic loop completed for user ${userId}`, {
-        candidatesGenerated: scoredCandidates.length,
-        assetsSelected: selected.length,
-        placementsCreated: placements.length,
+      logger?.info(`Weekly organic loop completed for user ${userId}`, {
+        candidatesGenerated: scoredCandidates?.length,
+        assetsSelected: selected?.length,
+        placementsCreated: placements?.length,
       });
 
       return weeklyState;
     } catch (error) {
-      logger.warn({ err: error }, "Error in weekly organic loop:");
+      logger?.warn({ err: error }, "Error in weekly organic loop:");
       throw error;
     }
   }
@@ -613,10 +602,10 @@ class OrganicCompoundingService {
         })
         .returning();
 
-      logger.info(`Created organic asset ${asset.id} for user ${userId}`);
+      logger?.info(`Created organic asset ${asset?.id} for user ${userId}`);
       return asset;
     } catch (error) {
-      logger.warn({ err: error }, "Error creating organic asset:");
+      logger?.warn({ err: error }, "Error creating organic asset:");
       throw error;
     }
   }
@@ -632,12 +621,12 @@ class OrganicCompoundingService {
           performance,
           updatedAt: new Date(),
         })
-        .where(eq(organicAssets.id, assetId))
+        .where(eq(organicAssets?.id, assetId))
         .returning();
 
       return updated || null;
     } catch (error) {
-      logger.warn({ err: error }, "Error updating asset performance:");
+      logger?.warn({ err: error }, "Error updating asset performance:");
       throw error;
     }
   }
@@ -647,11 +636,11 @@ class OrganicCompoundingService {
       return await db
         .select()
         .from(organicAssets)
-        .where(eq(organicAssets.userId, userId))
-        .orderBy(desc(organicAssets.createdAt))
+        .where(eq(organicAssets?.userId, userId))
+        .orderBy(desc(organicAssets?.createdAt))
         .limit(500);
     } catch (error) {
-      logger.warn({ err: error }, "Error getting assets:");
+      logger?.warn({ err: error }, "Error getting assets:");
       throw error;
     }
   }
@@ -661,12 +650,12 @@ class OrganicCompoundingService {
       const [asset] = await db
         .select()
         .from(organicAssets)
-        .where(eq(organicAssets.id, assetId))
+        .where(eq(organicAssets?.id, assetId))
         .limit(1);
 
       return asset || null;
     } catch (error) {
-      logger.warn({ err: error }, "Error getting asset by id:");
+      logger?.warn({ err: error }, "Error getting asset by id:");
       throw error;
     }
   }
@@ -684,10 +673,10 @@ class OrganicCompoundingService {
         })
         .returning();
 
-      logger.info(`Created organic channel ${channel.id} for user ${userId}`);
+      logger?.info(`Created organic channel ${channel?.id} for user ${userId}`);
       return channel;
     } catch (error) {
-      logger.warn({ err: error }, "Error creating organic channel:");
+      logger?.warn({ err: error }, "Error creating organic channel:");
       throw error;
     }
   }
@@ -703,12 +692,12 @@ class OrganicCompoundingService {
           efficiencyScore,
           updatedAt: new Date(),
         })
-        .where(eq(organicChannels.id, channelId))
+        .where(eq(organicChannels?.id, channelId))
         .returning();
 
       return updated || null;
     } catch (error) {
-      logger.warn({ err: error }, "Error updating channel efficiency:");
+      logger?.warn({ err: error }, "Error updating channel efficiency:");
       throw error;
     }
   }
@@ -718,10 +707,10 @@ class OrganicCompoundingService {
       return await db
         .select()
         .from(organicChannels)
-        .where(eq(organicChannels.userId, userId))
-        .orderBy(desc(organicChannels.efficiencyScore));
+        .where(eq(organicChannels?.userId, userId))
+        .orderBy(desc(organicChannels?.efficiencyScore));
     } catch (error) {
-      logger.warn({ err: error }, "Error getting channels:");
+      logger?.warn({ err: error }, "Error getting channels:");
       throw error;
     }
   }
@@ -737,18 +726,18 @@ class OrganicCompoundingService {
         .values({
           userId,
           assetId,
-          revenueOverPeriod: roiData.revenueOverPeriod,
-          creationCost: roiData.creationCost,
-          distributionCost: roiData.distributionCost,
-          effectiveRoi: roiData.effectiveRoi,
-          periodStart: roiData.periodStart,
-          periodEnd: roiData.periodEnd,
+          revenueOverPeriod: roiData?.revenueOverPeriod,
+          creationCost: roiData?.creationCost,
+          distributionCost: roiData?.distributionCost,
+          effectiveRoi: roiData?.effectiveRoi,
+          periodStart: roiData?.periodStart,
+          periodEnd: roiData?.periodEnd,
         })
         .returning();
 
       return snapshot;
     } catch (error) {
-      logger.warn({ err: error }, "Error saving ROI snapshot:");
+      logger?.warn({ err: error }, "Error saving ROI snapshot:");
       throw error;
     }
   }
@@ -763,13 +752,13 @@ class OrganicCompoundingService {
         .from(organicRoiSnapshots)
         .where(
           and(
-            eq(organicRoiSnapshots.userId, userId),
-            eq(organicRoiSnapshots.assetId, assetId),
+            eq(organicRoiSnapshots?.userId, userId),
+            eq(organicRoiSnapshots?.assetId, assetId),
           ),
         )
-        .orderBy(desc(organicRoiSnapshots.createdAt));
+        .orderBy(desc(organicRoiSnapshots?.createdAt));
     } catch (error) {
-      logger.warn({ err: error }, "Error getting ROI history:");
+      logger?.warn({ err: error }, "Error getting ROI history:");
       throw error;
     }
   }
@@ -779,24 +768,24 @@ class OrganicCompoundingService {
     assetId: string,
   ): Promise<OrganicAssetLifetimeRecord | null> {
     try {
-      const asset = await this.getAssetById(assetId);
+      const _asset = await this?.getAssetById(assetId);
       if (!asset) return null;
 
-      const roiHistory = await this.getRoiHistory(userId, assetId);
+      const _roiHistory = await this?.getRoiHistory(userId, assetId);
 
-      const lifetimeRevenue = roiHistory.reduce(
-        (sum, r) => sum + (r.revenueOverPeriod ?? 0),
+      const _lifetimeRevenue = roiHistory?.reduce(
+        (sum, r) => sum + (r?.revenueOverPeriod ?? 0),
         0,
       );
-      const performance = asset.performance as AssetPerformance | null;
-      const lifetimeStreams = performance?.streamingConversions ?? 0;
+      const _performance = asset?.performance as AssetPerformance | null;
+      const _lifetimeStreams = performance?.streamingConversions ?? 0;
 
-      const totalCreationCostHours = asset.creationCostHours ?? 0;
-      const totalDistributionCost = asset.distributionCost ?? 0;
-      const totalCost =
+      const _totalCreationCostHours = asset?.creationCostHours ?? 0;
+      const _totalDistributionCost = asset?.distributionCost ?? 0;
+      const _totalCost =
         totalCreationCostHours * HOURLY_RATE_ESTIMATE + totalDistributionCost;
 
-      const effectiveRoi =
+      const _effectiveRoi =
         totalCost > 0 ? (lifetimeRevenue - totalCost) / totalCost : 0;
 
       const [existing] = await db
@@ -804,8 +793,8 @@ class OrganicCompoundingService {
         .from(organicAssetLifetime)
         .where(
           and(
-            eq(organicAssetLifetime.userId, userId),
-            eq(organicAssetLifetime.assetId, assetId),
+            eq(organicAssetLifetime?.userId, userId),
+            eq(organicAssetLifetime?.assetId, assetId),
           ),
         )
         .limit(1);
@@ -821,7 +810,7 @@ class OrganicCompoundingService {
             effectiveRoi,
             lastSeen: new Date(),
           })
-          .where(eq(organicAssetLifetime.id, existing.id))
+          .where(eq(organicAssetLifetime?.id, existing?.id))
           .returning();
 
         return updated;
@@ -836,7 +825,7 @@ class OrganicCompoundingService {
             totalCreationCostHours,
             totalDistributionCost,
             effectiveRoi,
-            firstSeen: asset.createdAt ?? new Date(),
+            firstSeen: asset?.createdAt ?? new Date(),
             lastSeen: new Date(),
           })
           .returning();
@@ -844,7 +833,7 @@ class OrganicCompoundingService {
         return created;
       }
     } catch (error) {
-      logger.warn({ err: error }, "Error updating lifetime stats:");
+      logger?.warn({ err: error }, "Error updating lifetime stats:");
       throw error;
     }
   }
@@ -859,15 +848,15 @@ class OrganicCompoundingService {
         .from(organicAssetLifetime)
         .where(
           and(
-            eq(organicAssetLifetime.userId, userId),
-            eq(organicAssetLifetime.assetId, assetId),
+            eq(organicAssetLifetime?.userId, userId),
+            eq(organicAssetLifetime?.assetId, assetId),
           ),
         )
         .limit(1);
 
       return stats || null;
     } catch (error) {
-      logger.warn({ err: error }, "Error getting lifetime stats:");
+      logger?.warn({ err: error }, "Error getting lifetime stats:");
       throw error;
     }
   }
@@ -877,43 +866,43 @@ class OrganicCompoundingService {
     limit: number = 10,
   ): Promise<OrganicAsset[]> {
     try {
-      const assets = await this.getAssets(userId);
+      const _assets = await this?.getAssets(userId);
 
       return assets
         .sort((a, b) => {
-          const roiA = this.calculateQuickRoi(a);
-          const roiB = this.calculateQuickRoi(b);
+          const _roiA = this?.calculateQuickRoi(a);
+          const _roiB = this?.calculateQuickRoi(b);
           return roiB - roiA;
         })
         .slice(0, limit);
     } catch (error) {
-      logger.warn({ err: error }, "Error getting top performing assets:");
+      logger?.warn({ err: error }, "Error getting top performing assets:");
       throw error;
     }
   }
 
   private calculateQuickRoi(asset: OrganicAsset): number {
-    const performance = asset.performance as AssetPerformance | null;
-    const revenue = performance?.revenueGenerated ?? 0;
-    const cost =
-      (asset.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
-      (asset.distributionCost ?? 0);
+    const _performance = asset?.performance as AssetPerformance | null;
+    const _revenue = performance?.revenueGenerated ?? 0;
+    const _cost =
+      (asset?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
+      (asset?.distributionCost ?? 0);
     return cost > 0 ? (revenue - cost) / cost : 0;
   }
 
   async getAssetsExceedingPaidRoi(
     userId: string,
-    paidRoiBaseline: number = 0.5,
+    paidRoiBaseline: number = 0?.5,
   ): Promise<OrganicAsset[]> {
     try {
-      const assets = await this.getAssets(userId);
+      const _assets = await this?.getAssets(userId);
 
-      return assets.filter((asset) => {
-        const roi = this.calculateQuickRoi(asset);
+      return assets?.filter((asset) => {
+        const _roi = this?.calculateQuickRoi(asset);
         return roi > paidRoiBaseline;
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error getting assets exceeding paid ROI:");
+      logger?.warn({ err: error }, "Error getting assets exceeding paid ROI:");
       throw error;
     }
   }
@@ -928,8 +917,8 @@ class OrganicCompoundingService {
     topChannels: { channelId: string; name: string; efficiency: number }[];
   }> {
     try {
-      const assets = await this.getAssets(userId);
-      const channels = await this.getChannels(userId);
+      const _assets = await this?.getAssets(userId);
+      const _channels = await this?.getChannels(userId);
 
       let totalRevenue = 0;
       let totalCost = 0;
@@ -937,37 +926,37 @@ class OrganicCompoundingService {
       let roiSum = 0;
 
       for (const asset of assets) {
-        const perf = asset.performance as AssetPerformance | null;
-        const revenue = perf?.revenueGenerated ?? 0;
-        const cost =
-          (asset.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
-          (asset.distributionCost ?? 0);
-        const roi = cost > 0 ? (revenue - cost) / cost : 0;
+        const _perf = asset?.performance as AssetPerformance | null;
+        const _revenue = perf?.revenueGenerated ?? 0;
+        const _cost =
+          (asset?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
+          (asset?.distributionCost ?? 0);
+        const _roi = cost > 0 ? (revenue - cost) / cost : 0;
 
         totalRevenue += revenue;
         totalCost += cost;
         roiSum += roi;
 
-        if (roi >= 1.0) {
+        if (roi >= 1?.0) {
           assetsAbove100Roi++;
         }
       }
 
-      const overallRoi =
+      const _overallRoi =
         totalCost > 0 ? (totalRevenue - totalCost) / totalCost : 0;
-      const avgRoiPerAsset = assets.length > 0 ? roiSum / assets.length : 0;
+      const _avgRoiPerAsset = assets?.length > 0 ? roiSum / assets?.length : 0;
 
-      const topChannels = channels
-        .sort((a, b) => (b.efficiencyScore ?? 0) - (a.efficiencyScore ?? 0))
+      const _topChannels = channels
+        .sort((a, b) => (b?.efficiencyScore ?? 0) - (a?.efficiencyScore ?? 0))
         .slice(0, 5)
         .map((c) => ({
-          channelId: c.id,
-          name: c.name,
-          efficiency: c.efficiencyScore ?? 0,
+          channelId: c?.id,
+          name: c?.name,
+          efficiency: c?.efficiencyScore ?? 0,
         }));
 
       return {
-        totalAssets: assets.length,
+        totalAssets: assets?.length,
         totalRevenue,
         totalCost,
         overallRoi,
@@ -976,10 +965,10 @@ class OrganicCompoundingService {
         topChannels,
       };
     } catch (error) {
-      logger.warn({ err: error }, "Error getting compounding metrics:");
+      logger?.warn({ err: error }, "Error getting compounding metrics:");
       throw error;
     }
   }
 }
 
-export const organicCompoundingService = new OrganicCompoundingService();
+export const _organicCompoundingService = new OrganicCompoundingService();

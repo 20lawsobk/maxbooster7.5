@@ -27,7 +27,7 @@ import { AutonomousAutopilot } from "../autonomous-autopilot";
 import { AutopilotEngine } from "../autopilot-engine";
 import { UserPocketDimensionService } from "./userPocketDimensionService";
 
-const PROMO_CARD_TEMPLATES = {
+const _PROMO_CARD_TEMPLATES = {
   minimal: {
     name: "Minimal",
     description: "Clean design with focus on artwork",
@@ -52,36 +52,36 @@ const PROMO_CARD_DIMENSIONS: Record<string, { width: number; height: number }> =
 class PromotionalToolsService {
   private autopilotEngines: Map<string, AutopilotEngine> = new Map();
   private autonomousAutopilots: Map<string, AutonomousAutopilot> = new Map();
-  private pocketService = UserPocketDimensionService.getInstance();
+  private pocketService = UserPocketDimensionService?.getInstance();
   private static readonly MAX_ENGINES = 10_000;
 
   private evictOldestEngine<V>(map: Map<string, V>): void {
-    const oldest = map.keys().next().value;
-    if (oldest !== undefined) map.delete(oldest);
+    const _oldest = map?.keys().next().value;
+    if (oldest !== undefined) map?.delete(oldest);
   }
 
   getAutopilotForUser(userId: string): AutopilotEngine {
-    if (!this.autopilotEngines.has(userId)) {
-      if (this.autopilotEngines.size >= PromotionalToolsService.MAX_ENGINES) {
-        this.evictOldestEngine(this.autopilotEngines);
+    if (!this?.autopilotEngines.has(userId)) {
+      if (this?.autopilotEngines.size >= PromotionalToolsService?.MAX_ENGINES) {
+        this?.evictOldestEngine(this?.autopilotEngines);
       }
-      const engine = AutopilotEngine.createForSocialAndAds(userId);
-      this.autopilotEngines.set(userId, engine);
+      const _engine = AutopilotEngine?.createForSocialAndAds(userId);
+      this?.autopilotEngines.set(userId, engine);
     }
-    return this.autopilotEngines.get(userId)!;
+    return this?.autopilotEngines.get(userId)!;
   }
 
   getAutonomousAutopilotForUser(userId: string): AutonomousAutopilot {
-    if (!this.autonomousAutopilots.has(userId)) {
+    if (!this?.autonomousAutopilots.has(userId)) {
       if (
-        this.autonomousAutopilots.size >= PromotionalToolsService.MAX_ENGINES
+        this?.autonomousAutopilots.size >= PromotionalToolsService?.MAX_ENGINES
       ) {
-        this.evictOldestEngine(this.autonomousAutopilots);
+        this?.evictOldestEngine(this?.autonomousAutopilots);
       }
-      const autopilot = AutonomousAutopilot.createForSocialAndAds(userId);
-      this.autonomousAutopilots.set(userId, autopilot);
+      const _autopilot = AutonomousAutopilot?.createForSocialAndAds(userId);
+      this?.autonomousAutopilots.set(userId, autopilot);
     }
-    return this.autonomousAutopilots.get(userId)!;
+    return this?.autonomousAutopilots.get(userId)!;
   }
 
   async createPreSavePage(
@@ -89,15 +89,15 @@ class PromotionalToolsService {
     releaseId: string,
     config: Partial<PreSavePage>,
   ): Promise<PreSavePage> {
-    const release = await db.query.releases.findFirst({
-      where: eq(releases.id, releaseId),
+    const _release = await db?.query.releases?.findFirst({
+      where: eq(releases?.id, releaseId),
     });
 
     if (!release) {
       throw new Error("Release not found");
     }
 
-    const slug = config.slug || this.generateSlug(release.title);
+    const _slug = config?.slug || this?.generateSlug(release?.title);
 
     const [page] = await db
       .insert(preSavePages)
@@ -105,53 +105,53 @@ class PromotionalToolsService {
         releaseId,
         userId,
         slug,
-        title: release.title,
+        title: release?.title,
         artistName:
-          (release.metadata as Record<string, unknown>)?.artistName ||
+          (release?.metadata as Record<string, unknown>)?.artistName ||
           "Unknown Artist",
-        coverArtUrl: release.artworkUrl,
-        releaseDate: release.releaseDate,
-        description: config.description,
-        backgroundColor: config.backgroundColor || "#1a1a2e",
-        textColor: config.textColor || "#ffffff",
-        buttonColor: config.buttonColor || "#4ecdc4",
-        spotifyPreSaveUrl: config.spotifyPreSaveUrl,
-        appleMusicPreAddUrl: config.appleMusicPreAddUrl,
-        deezerPreSaveUrl: config.deezerPreSaveUrl,
-        amazonMusicUrl: config.amazonMusicUrl,
-        youtubeUrl: config.youtubeUrl,
-        tidalUrl: config.tidalUrl,
-        socialLinks: config.socialLinks || {},
-        customLinks: config.customLinks || [],
-        emailCapture: config.emailCapture ?? true,
+        coverArtUrl: release?.artworkUrl,
+        releaseDate: release?.releaseDate,
+        description: config?.description,
+        backgroundColor: config?.backgroundColor || "#1a1a2e",
+        textColor: config?.textColor || "#ffffff",
+        buttonColor: config?.buttonColor || "#4ecdc4",
+        spotifyPreSaveUrl: config?.spotifyPreSaveUrl,
+        appleMusicPreAddUrl: config?.appleMusicPreAddUrl,
+        deezerPreSaveUrl: config?.deezerPreSaveUrl,
+        amazonMusicUrl: config?.amazonMusicUrl,
+        youtubeUrl: config?.youtubeUrl,
+        tidalUrl: config?.tidalUrl,
+        socialLinks: config?.socialLinks || {},
+        customLinks: config?.customLinks || [],
+        emailCapture: config?.emailCapture ?? true,
       })
       .returning();
 
-    const autopilot = this.getAutopilotForUser(userId);
-    autopilot.emit("preSavePageCreated", { pageId: page.id, releaseId });
+    const _autopilot = this?.getAutopilotForUser(userId);
+    autopilot?.emit("preSavePageCreated", { pageId: page?.id, releaseId });
 
-    logger.info("Pre-save page created:", { pageId: page.id, slug: page.slug });
+    logger?.info("Pre-save page created:", { pageId: page?.id, slug: page?.slug });
     return page;
   }
 
   async getPreSavePage(pageId: string): Promise<PreSavePage | null> {
-    const page = await db.query.preSavePages.findFirst({
-      where: eq(preSavePages.id, pageId),
+    const _page = await db?.query.preSavePages?.findFirst({
+      where: eq(preSavePages?.id, pageId),
     });
     return page || null;
   }
 
   async getPreSavePageBySlug(slug: string): Promise<PreSavePage | null> {
-    const page = await db.query.preSavePages.findFirst({
-      where: eq(preSavePages.slug, slug),
+    const _page = await db?.query.preSavePages?.findFirst({
+      where: eq(preSavePages?.slug, slug),
     });
     return page || null;
   }
 
   async getUserPreSavePages(userId: string): Promise<PreSavePage[]> {
-    return await db.query.preSavePages.findMany({
-      where: eq(preSavePages.userId, userId),
-      orderBy: [desc(preSavePages.createdAt)],
+    return await db?.query.preSavePages?.findMany({
+      where: eq(preSavePages?.userId, userId),
+      orderBy: [desc(preSavePages?.createdAt)],
     });
   }
 
@@ -163,7 +163,7 @@ class PromotionalToolsService {
     const [updated] = await db
       .update(preSavePages)
       .set({ ...updates, updatedAt: new Date() })
-      .where(and(eq(preSavePages.id, pageId), eq(preSavePages.userId, userId)))
+      .where(and(eq(preSavePages?.id, pageId), eq(preSavePages?.userId, userId)))
       .returning();
 
     if (!updated) throw new Error("Pre-save page not found");
@@ -175,26 +175,26 @@ class PromotionalToolsService {
     event: "view" | "presave" | "email" | "click",
     platform?: string,
   ): Promise<void> {
-    const page = await this.getPreSavePage(pageId);
+    const _page = await this?.getPreSavePage(pageId);
     if (!page) return;
 
     const updates: Partial<PreSavePage> = {};
     switch (event) {
       case "view":
-        updates.views = (page.views || 0) + 1;
+        updates?.views = (page?.views || 0) + 1;
         break;
       case "presave":
-        updates.preSaves = (page.preSaves || 0) + 1;
+        updates?.preSaves = (page?.preSaves || 0) + 1;
         break;
       case "email":
-        updates.emailSignups = (page.emailSignups || 0) + 1;
+        updates?.emailSignups = (page?.emailSignups || 0) + 1;
         break;
       case "click":
         if (platform) {
-          const clicks =
-            (page.clicksByPlatform as Record<string, number>) || {};
+          const _clicks =
+            (page?.clicksByPlatform as Record<string, number>) || {};
           clicks[platform] = (clicks[platform] || 0) + 1;
-          updates.clicksByPlatform = clicks;
+          updates?.clicksByPlatform = clicks;
         }
         break;
     }
@@ -202,23 +202,23 @@ class PromotionalToolsService {
     await db
       .update(preSavePages)
       .set(updates)
-      .where(eq(preSavePages.id, pageId));
+      .where(eq(preSavePages?.id, pageId));
   }
 
   async captureEmail(pageId: string, email: string): Promise<boolean> {
-    const page = await this.getPreSavePage(pageId);
-    if (!page || !page.emailCapture) return false;
+    const _page = await this?.getPreSavePage(pageId);
+    if (!page || !page?.emailCapture) return false;
 
-    const emailList = (page.emailList as string[]) || [];
-    if (!emailList.includes(email)) {
-      emailList.push(email);
+    const _emailList = (page?.emailList as string[]) || [];
+    if (!emailList?.includes(email)) {
+      emailList?.push(email);
       await db
         .update(preSavePages)
         .set({
           emailList,
-          emailSignups: (page.emailSignups || 0) + 1,
+          emailSignups: (page?.emailSignups || 0) + 1,
         })
-        .where(eq(preSavePages.id, pageId));
+        .where(eq(preSavePages?.id, pageId));
     }
     return true;
   }
@@ -226,8 +226,8 @@ class PromotionalToolsService {
   async deletePreSavePage(pageId: string, userId: string): Promise<boolean> {
     const [deleted] = await db
       .delete(preSavePages)
-      .where(and(eq(preSavePages.id, pageId), eq(preSavePages.userId, userId)))
-      .returning({ id: preSavePages.id });
+      .where(and(eq(preSavePages?.id, pageId), eq(preSavePages?.userId, userId)))
+      .returning({ id: preSavePages?.id });
     return !!deleted;
   }
 
@@ -244,34 +244,34 @@ class PromotionalToolsService {
       fontFamily?: string;
     },
   ): Promise<PromoCard> {
-    const release = await db.query.releases.findFirst({
-      where: eq(releases.id, releaseId),
+    const _release = await db?.query.releases?.findFirst({
+      where: eq(releases?.id, releaseId),
     });
 
     if (!release) throw new Error("Release not found");
 
-    const dimensions =
-      PROMO_CARD_DIMENSIONS[config.type] || PROMO_CARD_DIMENSIONS.square;
-    const cardId = randomBytes(8).toString("hex");
+    const _dimensions =
+      PROMO_CARD_DIMENSIONS[config?.type] || PROMO_CARD_DIMENSIONS?.square;
+    const _cardId = randomBytes(8).toString("hex");
 
     let generatedImageUrl: string | null = null;
     try {
-      const imageBuffer = await sharpImageService.createPromoCard({
-        width: dimensions.width,
-        height: dimensions.height,
-        backgroundColor: config.backgroundColor || "#1a1a2e",
-        textColor: config.textColor || "#ffffff",
-        accentColor: config.accentColor || "#4ecdc4",
+      const _imageBuffer = await sharpImageService?.createPromoCard({
+        width: dimensions?.width,
+        height: dimensions?.height,
+        backgroundColor: config?.backgroundColor || "#1a1a2e",
+        textColor: config?.textColor || "#ffffff",
+        accentColor: config?.accentColor || "#4ecdc4",
         artistName:
-          (release.metadata as Record<string, unknown>)?.artistName ||
+          (release?.metadata as Record<string, unknown>)?.artistName ||
           "Unknown Artist",
-        trackTitle: release.title,
-        releaseDate: release.releaseDate?.toLocaleDateString(),
-        template: config.template || "minimal",
-        coverArtUrl: release.artworkUrl,
+        trackTitle: release?.title,
+        releaseDate: release?.releaseDate?.toLocaleDateString(),
+        template: config?.template || "minimal",
+        coverArtUrl: release?.artworkUrl,
       });
 
-      const result = await this.pocketService.storeFile(
+      const _result = await this?.pocketService.storeFile(
         userId,
         `promo-card-${cardId}.png`,
         imageBuffer,
@@ -279,12 +279,12 @@ class PromotionalToolsService {
           folder: "promo-cards",
           mimeType: "image/png",
           isPublic: true,
-          metadata: { releaseId, type: config.type },
+          metadata: { releaseId, type: config?.type },
         },
       );
-      generatedImageUrl = `/api/storage/file/${result.fileKey}`;
+      generatedImageUrl = `/api/storage/file/${result?.fileKey}`;
     } catch (error) {
-      logger.warn({ err: error }, "Failed to generate promo card image:");
+      logger?.warn({ err: error }, "Failed to generate promo card image:");
     }
 
     const [card] = await db
@@ -292,26 +292,26 @@ class PromotionalToolsService {
       .values({
         releaseId,
         userId,
-        type: config.type,
-        template: config.template || "minimal",
-        coverArtUrl: release.artworkUrl,
+        type: config?.type,
+        template: config?.template || "minimal",
+        coverArtUrl: release?.artworkUrl,
         artistName:
-          (release.metadata as Record<string, unknown>)?.artistName ||
+          (release?.metadata as Record<string, unknown>)?.artistName ||
           "Unknown Artist",
-        trackTitle: release.title,
-        releaseDate: release.releaseDate?.toLocaleDateString(),
-        customText: config.customText,
-        backgroundColor: config.backgroundColor || "#1a1a2e",
-        textColor: config.textColor || "#ffffff",
-        accentColor: config.accentColor || "#4ecdc4",
-        fontFamily: config.fontFamily || "Inter",
+        trackTitle: release?.title,
+        releaseDate: release?.releaseDate?.toLocaleDateString(),
+        customText: config?.customText,
+        backgroundColor: config?.backgroundColor || "#1a1a2e",
+        textColor: config?.textColor || "#ffffff",
+        accentColor: config?.accentColor || "#4ecdc4",
+        fontFamily: config?.fontFamily || "Inter",
         generatedImageUrl,
-        width: dimensions.width,
-        height: dimensions.height,
+        width: dimensions?.width,
+        height: dimensions?.height,
       })
       .returning();
 
-    logger.info("Promo card created:", { cardId: card.id, type: config.type });
+    logger?.info("Promo card created:", { cardId: card?.id, type: config?.type });
     return card;
   }
 
@@ -320,17 +320,17 @@ class PromotionalToolsService {
     releaseId?: string,
   ): Promise<PromoCard[]> {
     if (releaseId) {
-      return await db.query.promoCards.findMany({
+      return await db?.query.promoCards?.findMany({
         where: and(
-          eq(promoCards.userId, userId),
-          eq(promoCards.releaseId, releaseId),
+          eq(promoCards?.userId, userId),
+          eq(promoCards?.releaseId, releaseId),
         ),
-        orderBy: [desc(promoCards.createdAt)],
+        orderBy: [desc(promoCards?.createdAt)],
       });
     }
-    return await db.query.promoCards.findMany({
-      where: eq(promoCards.userId, userId),
-      orderBy: [desc(promoCards.createdAt)],
+    return await db?.query.promoCards?.findMany({
+      where: eq(promoCards?.userId, userId),
+      orderBy: [desc(promoCards?.createdAt)],
     });
   }
 
@@ -341,8 +341,8 @@ class PromotionalToolsService {
   async deletePromoCard(cardId: string, userId: string): Promise<boolean> {
     const [deleted] = await db
       .delete(promoCards)
-      .where(and(eq(promoCards.id, cardId), eq(promoCards.userId, userId)))
-      .returning({ id: promoCards.id });
+      .where(and(eq(promoCards?.id, cardId), eq(promoCards?.userId, userId)))
+      .returning({ id: promoCards?.id });
     return !!deleted;
   }
 
@@ -360,8 +360,8 @@ class PromotionalToolsService {
       accentColor?: string;
     },
   ): Promise<MiniVideo> {
-    const release = await db.query.releases.findFirst({
-      where: eq(releases.id, releaseId),
+    const _release = await db?.query.releases?.findFirst({
+      where: eq(releases?.id, releaseId),
     });
 
     if (!release) throw new Error("Release not found");
@@ -371,23 +371,23 @@ class PromotionalToolsService {
       .values({
         releaseId,
         userId,
-        type: config.type,
+        type: config?.type,
         duration: 15,
-        aspectRatio: config.aspectRatio,
-        coverArtUrl: release.artworkUrl,
-        audioPreviewUrl: config.audioPreviewUrl,
-        audioStartTime: config.audioStartTime || 0,
-        backgroundColor: config.backgroundColor || "#1a1a2e",
-        accentColor: config.accentColor || "#4ecdc4",
-        textOverlay: config.textOverlay,
-        animationStyle: config.animationStyle || "wave",
+        aspectRatio: config?.aspectRatio,
+        coverArtUrl: release?.artworkUrl,
+        audioPreviewUrl: config?.audioPreviewUrl,
+        audioStartTime: config?.audioStartTime || 0,
+        backgroundColor: config?.backgroundColor || "#1a1a2e",
+        accentColor: config?.accentColor || "#4ecdc4",
+        textOverlay: config?.textOverlay,
+        animationStyle: config?.animationStyle || "wave",
         generatedVideoUrl: `/api/distribution/promo/mini-video/${randomBytes(8).toString("hex")}/render`,
       })
       .returning();
 
-    logger.info("Mini video created:", {
-      videoId: video.id,
-      type: config.type,
+    logger?.info("Mini video created:", {
+      videoId: video?.id,
+      type: config?.type,
     });
     return video;
   }
@@ -397,25 +397,25 @@ class PromotionalToolsService {
     releaseId?: string,
   ): Promise<MiniVideo[]> {
     if (releaseId) {
-      return await db.query.miniVideos.findMany({
+      return await db?.query.miniVideos?.findMany({
         where: and(
-          eq(miniVideos.userId, userId),
-          eq(miniVideos.releaseId, releaseId),
+          eq(miniVideos?.userId, userId),
+          eq(miniVideos?.releaseId, releaseId),
         ),
-        orderBy: [desc(miniVideos.createdAt)],
+        orderBy: [desc(miniVideos?.createdAt)],
       });
     }
-    return await db.query.miniVideos.findMany({
-      where: eq(miniVideos.userId, userId),
-      orderBy: [desc(miniVideos.createdAt)],
+    return await db?.query.miniVideos?.findMany({
+      where: eq(miniVideos?.userId, userId),
+      orderBy: [desc(miniVideos?.createdAt)],
     });
   }
 
   async deleteMiniVideo(videoId: string, userId: string): Promise<boolean> {
     const [deleted] = await db
       .delete(miniVideos)
-      .where(and(eq(miniVideos.id, videoId), eq(miniVideos.userId, userId)))
-      .returning({ id: miniVideos.id });
+      .where(and(eq(miniVideos?.id, videoId), eq(miniVideos?.userId, userId)))
+      .returning({ id: miniVideos?.id });
     return !!deleted;
   }
 
@@ -435,15 +435,15 @@ class PromotionalToolsService {
         releaseId,
         trackId,
         userId,
-        type: config.type,
-        sourceUrl: config.sourceUrl,
+        type: config?.type,
+        sourceUrl: config?.sourceUrl,
         duration: 8,
-        loopPoint: config.loopPoint || 0,
+        loopPoint: config?.loopPoint || 0,
         status: "draft",
       })
       .returning();
 
-    logger.info("Spotify Canvas created:", { canvasId: canvas.id, trackId });
+    logger?.info("Spotify Canvas created:", { canvasId: canvas?.id, trackId });
     return canvas;
   }
 
@@ -451,7 +451,7 @@ class PromotionalToolsService {
     const [canvas] = await db
       .update(spotifyCanvases)
       .set({ status: "processing" })
-      .where(eq(spotifyCanvases.id, canvasId))
+      .where(eq(spotifyCanvases?.id, canvasId))
       .returning();
 
     if (!canvas) throw new Error("Canvas not found");
@@ -461,30 +461,30 @@ class PromotionalToolsService {
         .update(spotifyCanvases)
         .set({
           status: "ready",
-          generatedCanvasUrl: `/uploads/canvases/${canvas.id}.mp4`,
+          generatedCanvasUrl: `/uploads/canvases/${canvas?.id}.mp4`,
         })
-        .where(eq(spotifyCanvases.id, canvasId));
+        .where(eq(spotifyCanvases?.id, canvasId));
     }, 5000);
 
     return canvas;
   }
 
   async submitSpotifyCanvas(canvasId: string): Promise<SpotifyCanvas> {
-    const canvas = await db.query.spotifyCanvases.findFirst({
-      where: eq(spotifyCanvases.id, canvasId),
+    const _canvas = await db?.query.spotifyCanvases?.findFirst({
+      where: eq(spotifyCanvases?.id, canvasId),
     });
 
     if (!canvas) throw new Error("Canvas not found");
-    if (canvas.status !== "ready")
+    if (canvas?.status !== "ready")
       throw new Error("Canvas must be processed before submission");
 
     const [updated] = await db
       .update(spotifyCanvases)
       .set({ status: "submitted", submittedAt: new Date() })
-      .where(eq(spotifyCanvases.id, canvasId))
+      .where(eq(spotifyCanvases?.id, canvasId))
       .returning();
 
-    logger.info("Spotify Canvas submitted:", { canvasId });
+    logger?.info("Spotify Canvas submitted:", { canvasId });
     return updated;
   }
 
@@ -493,22 +493,22 @@ class PromotionalToolsService {
     releaseId?: string,
   ): Promise<SpotifyCanvas[]> {
     if (releaseId) {
-      return await db.query.spotifyCanvases.findMany({
+      return await db?.query.spotifyCanvases?.findMany({
         where: and(
-          eq(spotifyCanvases.userId, userId),
-          eq(spotifyCanvases.releaseId, releaseId),
+          eq(spotifyCanvases?.userId, userId),
+          eq(spotifyCanvases?.releaseId, releaseId),
         ),
-        orderBy: [desc(spotifyCanvases.createdAt)],
+        orderBy: [desc(spotifyCanvases?.createdAt)],
       });
     }
-    return await db.query.spotifyCanvases.findMany({
-      where: eq(spotifyCanvases.userId, userId),
-      orderBy: [desc(spotifyCanvases.createdAt)],
+    return await db?.query.spotifyCanvases?.findMany({
+      where: eq(spotifyCanvases?.userId, userId),
+      orderBy: [desc(spotifyCanvases?.createdAt)],
     });
   }
 
   async deleteSpotifyCanvas(canvasId: string): Promise<void> {
-    await db.delete(spotifyCanvases).where(eq(spotifyCanvases.id, canvasId));
+    await db?.delete(spotifyCanvases).where(eq(spotifyCanvases?.id, canvasId));
   }
 
   async createLyricsSync(
@@ -522,8 +522,8 @@ class PromotionalToolsService {
     },
   ): Promise<LyricsSync> {
     let lyrics: unknown[] = [];
-    if (config.syncMethod === "auto" || config.syncMethod === "ai") {
-      lyrics = this.autoSyncLyrics(config.plainText);
+    if (config?.syncMethod === "auto" || config?.syncMethod === "ai") {
+      lyrics = this?.autoSyncLyrics(config?.plainText);
     }
 
     const [sync] = await db
@@ -532,25 +532,25 @@ class PromotionalToolsService {
         trackId,
         releaseId,
         userId,
-        language: config.language,
+        language: config?.language,
         lyrics,
-        plainText: config.plainText,
-        syncMethod: config.syncMethod || "manual",
-        status: lyrics.length > 0 ? "synced" : "draft",
+        plainText: config?.plainText,
+        syncMethod: config?.syncMethod || "manual",
+        status: lyrics?.length > 0 ? "synced" : "draft",
       })
       .returning();
 
-    logger.info("Lyrics sync created:", { syncId: sync.id, trackId });
+    logger?.info("Lyrics sync created:", { syncId: sync?.id, trackId });
     return sync;
   }
 
   private autoSyncLyrics(plainText: string): unknown[] {
-    const lines = plainText.split("\n").filter((line) => line.trim());
-    const avgDuration = 3;
-    return lines.map((text, index) => ({
+    const _lines = plainText?.split("\n").filter((line) => line?.trim());
+    const _avgDuration = 3;
+    return lines?.map((text, index) => ({
       startTime: index * avgDuration,
       endTime: (index + 1) * avgDuration,
-      text: text.trim(),
+      text: text?.trim(),
     }));
   }
 
@@ -566,7 +566,7 @@ class PromotionalToolsService {
         syncMethod: "manual",
         updatedAt: new Date(),
       })
-      .where(eq(lyricsSyncs.id, syncId))
+      .where(eq(lyricsSyncs?.id, syncId))
       .returning();
 
     if (!sync) throw new Error("Lyrics sync not found");
@@ -574,23 +574,23 @@ class PromotionalToolsService {
   }
 
   async submitLyricsToplatforms(syncId: string): Promise<LyricsSync> {
-    const sync = await db.query.lyricsSyncs.findFirst({
-      where: eq(lyricsSyncs.id, syncId),
+    const _sync = await db?.query.lyricsSyncs?.findFirst({
+      where: eq(lyricsSyncs?.id, syncId),
     });
 
     if (!sync) throw new Error("Lyrics sync not found");
-    if (sync.status !== "synced")
+    if (sync?.status !== "synced")
       throw new Error("Lyrics must be synced before submission");
 
     const [updated] = await db
       .update(lyricsSyncs)
       .set({ status: "submitted", updatedAt: new Date() })
-      .where(eq(lyricsSyncs.id, syncId))
+      .where(eq(lyricsSyncs?.id, syncId))
       .returning();
 
-    logger.info("Lyrics submitted to platforms:", {
+    logger?.info("Lyrics submitted to platforms:", {
       syncId,
-      platforms: sync.platforms,
+      platforms: sync?.platforms,
     });
     return updated;
   }
@@ -600,52 +600,52 @@ class PromotionalToolsService {
     releaseId?: string,
   ): Promise<LyricsSync[]> {
     if (releaseId) {
-      return await db.query.lyricsSyncs.findMany({
+      return await db?.query.lyricsSyncs?.findMany({
         where: and(
-          eq(lyricsSyncs.userId, userId),
-          eq(lyricsSyncs.releaseId, releaseId),
+          eq(lyricsSyncs?.userId, userId),
+          eq(lyricsSyncs?.releaseId, releaseId),
         ),
-        orderBy: [desc(lyricsSyncs.createdAt)],
+        orderBy: [desc(lyricsSyncs?.createdAt)],
       });
     }
-    return await db.query.lyricsSyncs.findMany({
-      where: eq(lyricsSyncs.userId, userId),
-      orderBy: [desc(lyricsSyncs.createdAt)],
+    return await db?.query.lyricsSyncs?.findMany({
+      where: eq(lyricsSyncs?.userId, userId),
+      orderBy: [desc(lyricsSyncs?.createdAt)],
     });
   }
 
   async deleteLyricsSync(syncId: string): Promise<void> {
-    await db.delete(lyricsSyncs).where(eq(lyricsSyncs.id, syncId));
+    await db?.delete(lyricsSyncs).where(eq(lyricsSyncs?.id, syncId));
   }
 
   exportLRC(sync: LyricsSync): string {
-    const lyricsArray = (sync.lyrics as unknown[]) || [];
+    const _lyricsArray = (sync?.lyrics as unknown[]) || [];
     let lrc = "";
     for (const line of lyricsArray) {
-      const minutes = Math.floor(line.startTime / 60);
-      const seconds = (line.startTime % 60).toFixed(2);
-      lrc += `[${minutes.toString().padStart(2, "0")}:${seconds.padStart(5, "0")}]${line.text}\n`;
+      const _minutes = Math?.floor(line?.startTime / 60);
+      const _seconds = (line?.startTime % 60).toFixed(2);
+      lrc += `[${minutes?.toString().padStart(2, "0")}:${seconds?.padStart(5, "0")}]${line?.text}\n`;
     }
     return lrc;
   }
 
   exportSRT(sync: LyricsSync): string {
-    const lyricsArray = (sync.lyrics as unknown[]) || [];
+    const _lyricsArray = (sync?.lyrics as unknown[]) || [];
     let srt = "";
-    lyricsArray.forEach((line, index) => {
-      const startTime = this.formatSRTTime(line.startTime);
-      const endTime = this.formatSRTTime(line.endTime);
-      srt += `${index + 1}\n${startTime} --> ${endTime}\n${line.text}\n\n`;
+    lyricsArray?.forEach((line, index) => {
+      const _startTime = this?.formatSRTTime(line?.startTime);
+      const _endTime = this?.formatSRTTime(line?.endTime);
+      srt += `${index + 1}\n${startTime} --> ${endTime}\n${line?.text}\n\n`;
     });
     return srt;
   }
 
   private formatSRTTime(seconds: number): string {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    const ms = Math.floor((seconds % 1) * 1000);
-    return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")},${ms.toString().padStart(3, "0")}`;
+    const _hours = Math?.floor(seconds / 3600);
+    const _mins = Math?.floor((seconds % 3600) / 60);
+    const _secs = Math?.floor(seconds % 60);
+    const _ms = Math?.floor((seconds % 1) * 1000);
+    return `${hours?.toString().padStart(2, "0")}:${mins?.toString().padStart(2, "0")}:${secs?.toString().padStart(2, "0")},${ms?.toString().padStart(3, "0")}`;
   }
 
   private generateSlug(title: string): string {
@@ -660,18 +660,18 @@ class PromotionalToolsService {
   }
 
   async calculateArtistScore(userId: string): Promise<ArtistScore> {
-    this.getAutonomousAutopilotForUser(userId);
+    this?.getAutonomousAutopilotForUser(userId);
 
-    const streamingScore = Math.random() * 100;
-    const socialScore = Math.random() * 100;
-    const playlistScore = Math.random() * 100;
-    const radioScore = Math.random() * 100;
+    const _streamingScore = Math?.random() * 100;
+    const _socialScore = Math?.random() * 100;
+    const _playlistScore = Math?.random() * 100;
+    const _radioScore = Math?.random() * 100;
 
-    const artistScore =
-      streamingScore * 0.4 +
-      socialScore * 0.25 +
-      playlistScore * 0.25 +
-      radioScore * 0.1;
+    const _artistScore =
+      streamingScore * 0?.4 +
+      socialScore * 0?.25 +
+      playlistScore * 0?.25 +
+      radioScore * 0?.1;
 
     let careerStage = "undiscovered";
     if (artistScore > 80) careerStage = "superstar";
@@ -690,8 +690,8 @@ class PromotionalToolsService {
         socialScore,
         playlistScore,
         radioScore,
-        growthVelocity: Math.random() * 50 - 25,
-        momentumScore: Math.random() * 100,
+        growthVelocity: Math?.random() * 50 - 25,
+        momentumScore: Math?.random() * 100,
         triggerCities: ["Los Angeles", "London", "Tokyo", "Berlin"],
         breakoutMarkets: ["United States", "United Kingdom", "Japan"],
         audienceDemographics: {
@@ -702,14 +702,14 @@ class PromotionalToolsService {
         },
         competitorBenchmark: {
           avgScore: 45,
-          percentile: Math.floor(artistScore),
+          percentile: Math?.floor(artistScore),
         },
         milestones: [],
         predictions: { nextMilestone: "mainstream", estimatedDays: 90 },
       })
       .returning();
 
-    logger.info("Artist score calculated:", {
+    logger?.info("Artist score calculated:", {
       userId,
       artistScore,
       careerStage,
@@ -718,9 +718,9 @@ class PromotionalToolsService {
   }
 
   async getArtistScores(userId: string, limit = 30): Promise<ArtistScore[]> {
-    return await db.query.artistScores.findMany({
-      where: eq(artistScores.userId, userId),
-      orderBy: [desc(artistScores.date)],
+    return await db?.query.artistScores?.findMany({
+      where: eq(artistScores?.userId, userId),
+      orderBy: [desc(artistScores?.date)],
       limit,
     });
   }
@@ -743,49 +743,49 @@ class PromotionalToolsService {
       .values({
         userId,
         listingId,
-        campaignType: config.campaignType,
-        budget: config.budget || 0,
-        targetGenres: config.targetGenres || [],
-        targetCountries: config.targetCountries || [],
-        placement: config.placement || "trending",
+        campaignType: config?.campaignType,
+        budget: config?.budget || 0,
+        targetGenres: config?.targetGenres || [],
+        targetCountries: config?.targetCountries || [],
+        placement: config?.placement || "trending",
         status: "active",
-        startDate: config.startDate || new Date(),
-        endDate: config.endDate,
+        startDate: config?.startDate || new Date(),
+        endDate: config?.endDate,
       })
       .returning();
 
-    const autopilot = this.getAutopilotForUser(userId);
-    autopilot.emit("beatPromotionCreated", {
-      promotionId: promo.id,
+    const _autopilot = this?.getAutopilotForUser(userId);
+    autopilot?.emit("beatPromotionCreated", {
+      promotionId: promo?.id,
       listingId,
     });
 
-    logger.info("Beat promotion created:", { promoId: promo.id, listingId });
+    logger?.info("Beat promotion created:", { promoId: promo?.id, listingId });
     return promo;
   }
 
   async getBeatPromotions(userId: string): Promise<BeatPromotion[]> {
-    return await db.query.beatPromotions.findMany({
-      where: eq(beatPromotions.userId, userId),
-      orderBy: [desc(beatPromotions.createdAt)],
+    return await db?.query.beatPromotions?.findMany({
+      where: eq(beatPromotions?.userId, userId),
+      orderBy: [desc(beatPromotions?.createdAt)],
     });
   }
 
   async generatePersonalizedRecommendations(
     userId: string,
   ): Promise<MarketplaceRecommendation[]> {
-    const existingRecs = await db.query.marketplaceRecommendations.findMany({
-      where: eq(marketplaceRecommendations.userId, userId),
-      orderBy: [desc(marketplaceRecommendations.createdAt)],
+    const _existingRecs = await db?.query.marketplaceRecommendations?.findMany({
+      where: eq(marketplaceRecommendations?.userId, userId),
+      orderBy: [desc(marketplaceRecommendations?.createdAt)],
       limit: 20,
     });
 
-    if (existingRecs.length > 0) {
+    if (existingRecs?.length > 0) {
       return existingRecs;
     }
 
     const recommendations: unknown[] = [];
-    const types = [
+    const _types = [
       "for_you",
       "trending",
       "similar",
@@ -795,25 +795,25 @@ class PromotionalToolsService {
 
     for (const type of types) {
       for (let i = 0; i < 4; i++) {
-        recommendations.push({
+        recommendations?.push({
           userId,
           recommendationType: type,
-          score: Math.random() * 100,
+          score: Math?.random() * 100,
           reason: `Based on your ${type === "for_you" ? "listening history" : type}`,
-          metadata: { algorithm: "collaborative_filtering", version: "2.0" },
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          metadata: { algorithm: "collaborative_filtering", version: "2?.0" },
+          expiresAt: new Date(Date?.now() + 24 * 60 * 60 * 1000),
         });
       }
     }
 
-    const inserted = await db
+    const _inserted = await db
       .insert(marketplaceRecommendations)
       .values(recommendations)
       .returning();
 
-    logger.info("Personalized recommendations generated:", {
+    logger?.info("Personalized recommendations generated:", {
       userId,
-      count: inserted.length,
+      count: inserted?.length,
     });
     return inserted;
   }
@@ -822,17 +822,17 @@ class PromotionalToolsService {
     userId: string,
     releaseId: string,
   ): Promise<void> {
-    const autopilot = this.getAutonomousAutopilotForUser(userId);
+    const _autopilot = this?.getAutonomousAutopilotForUser(userId);
 
-    await autopilot.startAutonomousMode({
+    await autopilot?.startAutonomousMode({
       enabled: true,
       contentObjectives: ["engagement", "brand-awareness", "release-promotion"],
       adaptivePosting: true,
       crossPlatformSyncing: true,
     });
 
-    logger.info("Autonomous promotion started:", { userId, releaseId });
+    logger?.info("Autonomous promotion started:", { userId, releaseId });
   }
 }
 
-export const promotionalToolsService = new PromotionalToolsService();
+export const _promotionalToolsService = new PromotionalToolsService();

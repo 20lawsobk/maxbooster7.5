@@ -1,4 +1,4 @@
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
 export interface LintError {
   field: string;
@@ -130,7 +130,7 @@ const DSP_CHAR_LIMITS: { [dsp: string]: { [field: string]: number } } = {
   },
 };
 
-const EXPLICIT_TERMS = [
+const _EXPLICIT_TERMS = [
   "fuck",
   "shit",
   "bitch",
@@ -153,7 +153,7 @@ const EXPLICIT_TERMS = [
   "bullshit",
 ];
 
-const BANNED_TITLE_PATTERNS = [
+const _BANNED_TITLE_PATTERNS = [
   /\bkaraoke\b/i,
   /\bcover version\b/i,
   /\bin the style of\b/i,
@@ -166,7 +166,7 @@ const BANNED_TITLE_PATTERNS = [
   /\bremake\b/i,
 ];
 
-const VALID_LANGUAGES = [
+const _VALID_LANGUAGES = [
   "en",
   "es",
   "fr",
@@ -210,7 +210,7 @@ const VALID_LANGUAGES = [
   "sw",
 ];
 
-const VALID_GENRES = [
+const _VALID_GENRES = [
   "Pop",
   "Rock",
   "Hip-Hop/Rap",
@@ -250,8 +250,8 @@ const VALID_GENRES = [
 
 export class LabelCopyLinter {
   private containsExplicitContent(text: string): boolean {
-    const lowerText = text.toLowerCase();
-    return EXPLICIT_TERMS.some((term) => lowerText.includes(term));
+    const _lowerText = text?.toLowerCase();
+    return EXPLICIT_TERMS?.some((term) => lowerText?.includes(term));
   }
 
   private validateTitle(
@@ -260,10 +260,10 @@ export class LabelCopyLinter {
   ): { errors: LintError[]; warnings: LintWarning[] } {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
-    const fieldName = isTrack ? "trackTitle" : "title";
+    const _fieldName = isTrack ? "trackTitle" : "title";
 
-    if (!title || title.trim().length === 0) {
-      errors.push({
+    if (!title || title?.trim().length === 0) {
+      errors?.push({
         field: fieldName,
         message: "Title is required",
         severity: "critical",
@@ -272,8 +272,8 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    if (title.length < 2) {
-      errors.push({
+    if (title?.length < 2) {
+      errors?.push({
         field: fieldName,
         message: "Title must be at least 2 characters",
         severity: "error",
@@ -282,10 +282,10 @@ export class LabelCopyLinter {
     }
 
     for (const pattern of BANNED_TITLE_PATTERNS) {
-      if (pattern.test(title)) {
-        errors.push({
+      if (pattern?.test(title)) {
+        errors?.push({
           field: fieldName,
-          message: `Title contains banned term matching "${pattern.source}"`,
+          message: `Title contains banned term matching "${pattern?.source}"`,
           severity: "error",
           code: "TITLE_BANNED_TERM",
         });
@@ -293,7 +293,7 @@ export class LabelCopyLinter {
     }
 
     if (/^\s|\s$/.test(title)) {
-      warnings.push({
+      warnings?.push({
         field: fieldName,
         message: "Title has leading or trailing whitespace",
         severity: "warning",
@@ -303,7 +303,7 @@ export class LabelCopyLinter {
     }
 
     if (/\s{2,}/.test(title)) {
-      warnings.push({
+      warnings?.push({
         field: fieldName,
         message: "Title contains multiple consecutive spaces",
         severity: "warning",
@@ -312,8 +312,8 @@ export class LabelCopyLinter {
       });
     }
 
-    if (title === title.toUpperCase() && title.length > 3) {
-      warnings.push({
+    if (title === title?.toUpperCase() && title?.length > 3) {
+      warnings?.push({
         field: fieldName,
         message: "Title is in all uppercase",
         severity: "warning",
@@ -323,7 +323,7 @@ export class LabelCopyLinter {
     }
 
     if (/[!?]{2,}/.test(title)) {
-      warnings.push({
+      warnings?.push({
         field: fieldName,
         message: "Title contains excessive punctuation",
         severity: "info",
@@ -341,8 +341,8 @@ export class LabelCopyLinter {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
 
-    if (!artist || artist.trim().length === 0) {
-      errors.push({
+    if (!artist || artist?.trim().length === 0) {
+      errors?.push({
         field: "artist",
         message: "Artist name is required",
         severity: "critical",
@@ -351,8 +351,8 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    if (/^(various|unknown|n\/a|tbd|tba)$/i.test(artist.trim())) {
-      errors.push({
+    if (/^(various|unknown|n\/a|tbd|tba)$/i?.test(artist?.trim())) {
+      errors?.push({
         field: "artist",
         message: "Invalid artist name placeholder",
         severity: "error",
@@ -360,8 +360,8 @@ export class LabelCopyLinter {
       });
     }
 
-    if (artist.includes("/") || artist.includes("&")) {
-      warnings.push({
+    if (artist?.includes("/") || artist?.includes("&")) {
+      warnings?.push({
         field: "artist",
         message:
           "Consider using featured artist field instead of combining artists in name",
@@ -381,8 +381,8 @@ export class LabelCopyLinter {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
 
-    if (!genre || genre.trim().length === 0) {
-      errors.push({
+    if (!genre || genre?.trim().length === 0) {
+      errors?.push({
         field: "genre",
         message: "Genre is required for distribution",
         severity: "error",
@@ -391,16 +391,16 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    const normalizedGenre = genre.toLowerCase().trim();
-    const validGenresLower = VALID_GENRES.map((g) => g.toLowerCase());
+    const _normalizedGenre = genre?.toLowerCase().trim();
+    const _validGenresLower = VALID_GENRES?.map((g) => g?.toLowerCase());
 
-    if (!validGenresLower.includes(normalizedGenre)) {
-      warnings.push({
+    if (!validGenresLower?.includes(normalizedGenre)) {
+      warnings?.push({
         field: "genre",
         message: `Genre "${genre}" may not be recognized by all DSPs`,
         severity: "warning",
         code: "GENRE_NOT_STANDARD",
-        suggestion: `Consider using a standard genre like: ${VALID_GENRES.slice(0, 5).join(", ")}`,
+        suggestion: `Consider using a standard genre like: ${VALID_GENRES?.slice(0, 5).join(", ")}`,
       });
     }
 
@@ -415,7 +415,7 @@ export class LabelCopyLinter {
     const warnings: LintWarning[] = [];
 
     if (!releaseDate) {
-      errors.push({
+      errors?.push({
         field: "releaseDate",
         message: "Release date is required",
         severity: "error",
@@ -424,9 +424,9 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    const date = new Date(releaseDate);
-    if (isNaN(date.getTime())) {
-      errors.push({
+    const _date = new Date(releaseDate);
+    if (isNaN(date?.getTime())) {
+      errors?.push({
         field: "releaseDate",
         message: "Invalid release date format",
         severity: "error",
@@ -435,18 +435,18 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    const now = new Date();
-    const minFutureDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const _now = new Date();
+    const _minFutureDate = new Date(now?.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     if (date < now) {
-      warnings.push({
+      warnings?.push({
         field: "releaseDate",
         message: "Release date is in the past. Some DSPs require future dates.",
         severity: "warning",
         code: "RELEASE_DATE_PAST",
       });
     } else if (date < minFutureDate) {
-      warnings.push({
+      warnings?.push({
         field: "releaseDate",
         message:
           "Release date is less than 7 days away. Some DSPs require longer lead times.",
@@ -457,9 +457,9 @@ export class LabelCopyLinter {
       });
     }
 
-    const dayOfWeek = date.getDay();
+    const _dayOfWeek = date?.getDay();
     if (dayOfWeek !== 5) {
-      warnings.push({
+      warnings?.push({
         field: "releaseDate",
         message:
           "Release date is not a Friday. Industry standard is Friday releases.",
@@ -479,8 +479,8 @@ export class LabelCopyLinter {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
 
-    if (!release.copyrightHolder) {
-      errors.push({
+    if (!release?.copyrightHolder) {
+      errors?.push({
         field: "copyrightHolder",
         message: "Copyright holder (℗) is required",
         severity: "error",
@@ -488,20 +488,20 @@ export class LabelCopyLinter {
       });
     }
 
-    if (!release.copyrightYear) {
-      errors.push({
+    if (!release?.copyrightYear) {
+      errors?.push({
         field: "copyrightYear",
         message: "Copyright year is required",
         severity: "error",
         code: "COPYRIGHT_YEAR_REQUIRED",
       });
     } else {
-      const currentYear = new Date().getFullYear();
+      const _currentYear = new Date().getFullYear();
       if (
-        release.copyrightYear < 1900 ||
-        release.copyrightYear > currentYear + 1
+        release?.copyrightYear < 1900 ||
+        release?.copyrightYear > currentYear + 1
       ) {
-        errors.push({
+        errors?.push({
           field: "copyrightYear",
           message: `Copyright year must be between 1900 and ${currentYear + 1}`,
           severity: "error",
@@ -510,8 +510,8 @@ export class LabelCopyLinter {
       }
     }
 
-    if (!release.publishingHolder) {
-      warnings.push({
+    if (!release?.publishingHolder) {
+      warnings?.push({
         field: "publishingHolder",
         message: "Publishing rights holder (©) is recommended",
         severity: "warning",
@@ -530,8 +530,8 @@ export class LabelCopyLinter {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
 
-    if (!label || label.trim().length === 0) {
-      warnings.push({
+    if (!label || label?.trim().length === 0) {
+      warnings?.push({
         field: "label",
         message: "Label name is recommended. Will default to artist name.",
         severity: "info",
@@ -551,7 +551,7 @@ export class LabelCopyLinter {
     const warnings: LintWarning[] = [];
 
     if (!language) {
-      warnings.push({
+      warnings?.push({
         field: "language",
         message: "Primary language is recommended",
         severity: "warning",
@@ -560,9 +560,9 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    const normalizedLang = language.toLowerCase().substring(0, 2);
-    if (!VALID_LANGUAGES.includes(normalizedLang)) {
-      warnings.push({
+    const _normalizedLang = language?.toLowerCase().substring(0, 2);
+    if (!VALID_LANGUAGES?.includes(normalizedLang)) {
+      warnings?.push({
         field: "language",
         message: `Language code "${language}" may not be recognized`,
         severity: "warning",
@@ -580,19 +580,19 @@ export class LabelCopyLinter {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
 
-    const textToCheck = [
-      release.title,
-      release.artist,
-      ...(release.tracks?.map((t) => t.title) || []),
-      ...(release.tracks?.flatMap((t) => (t.lyrics ? [t.lyrics] : [])) || []),
+    const _textToCheck = [
+      release?.title,
+      release?.artist,
+      ...(release?.tracks?.map((t) => t?.title) || []),
+      ...(release?.tracks?.flatMap((t) => (t?.lyrics ? [t?.lyrics] : [])) || []),
     ]
       .filter(Boolean)
       .join(" ");
 
-    const hasExplicitContent = this.containsExplicitContent(textToCheck);
+    const _hasExplicitContent = this?.containsExplicitContent(textToCheck);
 
-    if (hasExplicitContent && !release.isExplicit) {
-      warnings.push({
+    if (hasExplicitContent && !release?.isExplicit) {
+      warnings?.push({
         field: "isExplicit",
         message:
           "Content appears to contain explicit language but is not marked as explicit",
@@ -613,8 +613,8 @@ export class LabelCopyLinter {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
 
-    if (!tracks || tracks.length === 0) {
-      errors.push({
+    if (!tracks || tracks?.length === 0) {
+      errors?.push({
         field: "tracks",
         message: "At least one track is required",
         severity: "critical",
@@ -623,10 +623,10 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    const trackNumbers = tracks.map((t) => t.trackNumber).filter(Boolean);
-    const uniqueNumbers = new Set(trackNumbers);
-    if (trackNumbers.length !== uniqueNumbers.size) {
-      errors.push({
+    const _trackNumbers = tracks?.map((t) => t?.trackNumber).filter(Boolean);
+    const _uniqueNumbers = new Set(trackNumbers);
+    if (trackNumbers?.length !== uniqueNumbers?.size) {
+      errors?.push({
         field: "tracks",
         message: "Duplicate track numbers found",
         severity: "error",
@@ -634,35 +634,35 @@ export class LabelCopyLinter {
       });
     }
 
-    tracks.forEach((track, index) => {
+    tracks?.forEach((track, index) => {
       const { errors: titleErrors, warnings: titleWarnings } =
-        this.validateTitle(track.title, true);
-      errors.push(
-        ...titleErrors.map((e) => ({
+        this?.validateTitle(track?.title, true);
+      errors?.push(
+        ...titleErrors?.map((e) => ({
           ...e,
-          field: `tracks[${index}].${e.field}`,
+          field: `tracks[${index}].${e?.field}`,
         })),
       );
-      warnings.push(
-        ...titleWarnings.map((w) => ({
+      warnings?.push(
+        ...titleWarnings?.map((w) => ({
           ...w,
-          field: `tracks[${index}].${w.field}`,
+          field: `tracks[${index}].${w?.field}`,
         })),
       );
 
-      if (!track.isrc) {
-        warnings.push({
+      if (!track?.isrc) {
+        warnings?.push({
           field: `tracks[${index}].isrc`,
-          message: `Track "${track.title}" is missing ISRC code`,
+          message: `Track "${track?.title}" is missing ISRC code`,
           severity: "warning",
           code: "TRACK_ISRC_MISSING",
         });
       }
 
-      if (!track.duration || track.duration < 30) {
-        warnings.push({
+      if (!track?.duration || track?.duration < 30) {
+        warnings?.push({
           field: `tracks[${index}].duration`,
-          message: `Track "${track.title}" is very short (${track.duration || 0}s). May not qualify for streaming royalties.`,
+          message: `Track "${track?.title}" is very short (${track?.duration || 0}s). May not qualify for streaming royalties.`,
           severity: "warning",
           code: "TRACK_SHORT_DURATION",
         });
@@ -679,8 +679,8 @@ export class LabelCopyLinter {
     const errors: LintError[] = [];
     const warnings: LintWarning[] = [];
 
-    if (!coverArt || !coverArt.url) {
-      errors.push({
+    if (!coverArt || !coverArt?.url) {
+      errors?.push({
         field: "coverArt",
         message: "Cover art is required for distribution",
         severity: "critical",
@@ -689,9 +689,9 @@ export class LabelCopyLinter {
       return { errors, warnings };
     }
 
-    if (coverArt.width && coverArt.height) {
-      if (coverArt.width !== coverArt.height) {
-        errors.push({
+    if (coverArt?.width && coverArt?.height) {
+      if (coverArt?.width !== coverArt?.height) {
+        errors?.push({
           field: "coverArt",
           message: "Cover art must be square (1:1 aspect ratio)",
           severity: "error",
@@ -699,10 +699,10 @@ export class LabelCopyLinter {
         });
       }
 
-      if (coverArt.width < 3000 || coverArt.height < 3000) {
-        errors.push({
+      if (coverArt?.width < 3000 || coverArt?.height < 3000) {
+        errors?.push({
           field: "coverArt",
-          message: `Cover art must be at least 3000x3000 pixels. Current: ${coverArt.width}x${coverArt.height}`,
+          message: `Cover art must be at least 3000x3000 pixels. Current: ${coverArt?.width}x${coverArt?.height}`,
           severity: "error",
           code: "COVER_ART_TOO_SMALL",
         });
@@ -710,10 +710,10 @@ export class LabelCopyLinter {
     }
 
     if (
-      coverArt.format &&
-      !["jpg", "jpeg", "png"].includes(coverArt.format.toLowerCase())
+      coverArt?.format &&
+      !["jpg", "jpeg", "png"].includes(coverArt?.format.toLowerCase())
     ) {
-      errors.push({
+      errors?.push({
         field: "coverArt",
         message: "Cover art must be JPG or PNG format",
         severity: "error",
@@ -721,8 +721,8 @@ export class LabelCopyLinter {
       });
     }
 
-    if (coverArt.fileSize && coverArt.fileSize > 10 * 1024 * 1024) {
-      warnings.push({
+    if (coverArt?.fileSize && coverArt?.fileSize > 10 * 1024 * 1024) {
+      warnings?.push({
         field: "coverArt",
         message: "Cover art file size exceeds 10MB",
         severity: "warning",
@@ -741,30 +741,30 @@ export class LabelCopyLinter {
     score: number;
     breakdown: LintResult["breakdown"];
   } {
-    const criticalErrors = errors.filter(
-      (e) => e.severity === "critical",
+    const _criticalErrors = errors?.filter(
+      (e) => e?.severity === "critical",
     ).length;
-    const regularErrors = errors.filter((e) => e.severity === "error").length;
-    const warningsCount = warnings.filter(
-      (w) => w.severity === "warning",
+    const _regularErrors = errors?.filter((e) => e?.severity === "error").length;
+    const _warningsCount = warnings?.filter(
+      (w) => w?.severity === "warning",
     ).length;
-    const infoCount = warnings.filter((w) => w.severity === "info").length;
+    const _infoCount = warnings?.filter((w) => w?.severity === "info").length;
 
-    const basePenalty =
+    const _basePenalty =
       criticalErrors * 25 +
       regularErrors * 10 +
       warningsCount * 3 +
       infoCount * 1;
-    const score = Math.max(0, 100 - basePenalty);
+    const _score = Math?.max(0, 100 - basePenalty);
 
-    const breakdown = {
-      metadata: Math.max(0, 100 - (criticalErrors * 20 + regularErrors * 10)),
-      formatting: Math.max(0, 100 - warningsCount * 5),
+    const _breakdown = {
+      metadata: Math?.max(0, 100 - (criticalErrors * 20 + regularErrors * 10)),
+      formatting: Math?.max(0, 100 - warningsCount * 5),
       compliance: criticalErrors === 0 ? 100 : 0,
-      completeness: Math.max(0, 100 - (warningsCount * 2 + infoCount)),
+      completeness: Math?.max(0, 100 - (warningsCount * 2 + infoCount)),
     };
 
-    return { score: Math.round(score), breakdown };
+    return { score: Math?.round(score), breakdown };
   }
 
   private checkDSPCompatibility(
@@ -772,27 +772,27 @@ export class LabelCopyLinter {
   ): LintResult["dspCompatibility"] {
     const compatibility: LintResult["dspCompatibility"] = {};
 
-    for (const [dsp, limits] of Object.entries(DSP_CHAR_LIMITS)) {
+    for (const [dsp, limits] of Object?.entries(DSP_CHAR_LIMITS)) {
       const issues: string[] = [];
 
-      if (release.title && release.title.length > limits.title) {
-        issues.push(`Title exceeds ${dsp} limit of ${limits.title} characters`);
+      if (release?.title && release?.title.length > limits?.title) {
+        issues?.push(`Title exceeds ${dsp} limit of ${limits?.title} characters`);
       }
 
-      if (release.artist && release.artist.length > limits.artist) {
-        issues.push(
-          `Artist name exceeds ${dsp} limit of ${limits.artist} characters`,
+      if (release?.artist && release?.artist.length > limits?.artist) {
+        issues?.push(
+          `Artist name exceeds ${dsp} limit of ${limits?.artist} characters`,
         );
       }
 
-      if (release.label && release.label.length > limits.label) {
-        issues.push(
-          `Label name exceeds ${dsp} limit of ${limits.label} characters`,
+      if (release?.label && release?.label.length > limits?.label) {
+        issues?.push(
+          `Label name exceeds ${dsp} limit of ${limits?.label} characters`,
         );
       }
 
       compatibility[dsp] = {
-        compatible: issues.length === 0,
+        compatible: issues?.length === 0,
         issues,
       };
     }
@@ -804,29 +804,29 @@ export class LabelCopyLinter {
     const allErrors: LintError[] = [];
     const allWarnings: LintWarning[] = [];
 
-    const validations = [
-      this.validateTitle(release.title),
-      this.validateArtist(release.artist),
-      this.validateGenre(release.genre),
-      this.validateReleaseDate(release.releaseDate),
-      this.validateCopyright(release),
-      this.validateLabel(release.label),
-      this.validateLanguage(release.language),
-      this.validateExplicitContent(release),
-      this.validateTracks(release.tracks),
-      this.validateCoverArt(release.coverArt),
+    const _validations = [
+      this?.validateTitle(release?.title),
+      this?.validateArtist(release?.artist),
+      this?.validateGenre(release?.genre),
+      this?.validateReleaseDate(release?.releaseDate),
+      this?.validateCopyright(release),
+      this?.validateLabel(release?.label),
+      this?.validateLanguage(release?.language),
+      this?.validateExplicitContent(release),
+      this?.validateTracks(release?.tracks),
+      this?.validateCoverArt(release?.coverArt),
     ];
 
-    validations.forEach(({ errors, warnings }) => {
-      allErrors.push(...errors);
-      allWarnings.push(...warnings);
+    validations?.forEach(({ errors, warnings }) => {
+      allErrors?.push(...errors);
+      allWarnings?.push(...warnings);
     });
 
-    const { score, breakdown } = this.calculateScore(allErrors, allWarnings);
-    const dspCompatibility = this.checkDSPCompatibility(release);
+    const { score, breakdown } = this?.calculateScore(allErrors, allWarnings);
+    const _dspCompatibility = this?.checkDSPCompatibility(release);
 
     const result: LintResult = {
-      valid: allErrors.filter((e) => e.severity === "critical").length === 0,
+      valid: allErrors?.filter((e) => e?.severity === "critical").length === 0,
       errors: allErrors,
       warnings: allWarnings,
       score,
@@ -834,17 +834,17 @@ export class LabelCopyLinter {
       dspCompatibility,
     };
 
-    logger.info(
-      `Label copy lint completed: score=${score}, errors=${allErrors.length}, warnings=${allWarnings.length}`,
+    logger?.info(
+      `Label copy lint completed: score=${score}, errors=${allErrors?.length}, warnings=${allWarnings?.length}`,
     );
 
     return result;
   }
 
   validateForDSP(release: ReleaseMetadata, dsp: string): LintResult {
-    const baseResult = this.lint(release);
+    const _baseResult = this?.lint(release);
 
-    const dspLimits = DSP_CHAR_LIMITS[dsp.toLowerCase()];
+    const _dspLimits = DSP_CHAR_LIMITS[dsp?.toLowerCase()];
     if (!dspLimits) {
       return baseResult;
     }
@@ -852,19 +852,19 @@ export class LabelCopyLinter {
     const dspErrors: LintError[] = [];
     const dspWarnings: LintWarning[] = [];
 
-    if (release.title && release.title.length > dspLimits.title) {
-      dspErrors.push({
+    if (release?.title && release?.title.length > dspLimits?.title) {
+      dspErrors?.push({
         field: "title",
-        message: `Title exceeds ${dsp} limit of ${dspLimits.title} characters (current: ${release.title.length})`,
+        message: `Title exceeds ${dsp} limit of ${dspLimits?.title} characters (current: ${release?.title.length})`,
         severity: "error",
         code: "DSP_TITLE_TOO_LONG",
       });
     }
 
-    if (release.artist && release.artist.length > dspLimits.artist) {
-      dspErrors.push({
+    if (release?.artist && release?.artist.length > dspLimits?.artist) {
+      dspErrors?.push({
         field: "artist",
-        message: `Artist name exceeds ${dsp} limit of ${dspLimits.artist} characters`,
+        message: `Artist name exceeds ${dsp} limit of ${dspLimits?.artist} characters`,
         severity: "error",
         code: "DSP_ARTIST_TOO_LONG",
       });
@@ -872,9 +872,9 @@ export class LabelCopyLinter {
 
     return {
       ...baseResult,
-      errors: [...baseResult.errors, ...dspErrors],
-      warnings: [...baseResult.warnings, ...dspWarnings],
-      valid: baseResult.valid && dspErrors.length === 0,
+      errors: [...baseResult?.errors, ...dspErrors],
+      warnings: [...baseResult?.warnings, ...dspWarnings],
+      valid: baseResult?.valid && dspErrors?.length === 0,
     };
   }
 
@@ -882,10 +882,10 @@ export class LabelCopyLinter {
     const suggestions: FixSuggestion[] = [];
 
     for (const error of errors) {
-      switch (error.code) {
+      switch (error?.code) {
         case "TITLE_WHITESPACE":
-          suggestions.push({
-            field: error.field,
+          suggestions?.push({
+            field: error?.field,
             original: "",
             suggested: "Trim whitespace",
             reason: "Remove leading and trailing spaces",
@@ -894,8 +894,8 @@ export class LabelCopyLinter {
           break;
 
         case "TITLE_MULTIPLE_SPACES":
-          suggestions.push({
-            field: error.field,
+          suggestions?.push({
+            field: error?.field,
             original: "",
             suggested: "Replace multiple spaces with single space",
             reason: "Normalize spacing",
@@ -904,8 +904,8 @@ export class LabelCopyLinter {
           break;
 
         case "TITLE_ALL_CAPS":
-          suggestions.push({
-            field: error.field,
+          suggestions?.push({
+            field: error?.field,
             original: "",
             suggested: "Convert to title case",
             reason: "Better readability and DSP compliance",
@@ -914,7 +914,7 @@ export class LabelCopyLinter {
           break;
 
         case "GENRE_REQUIRED":
-          suggestions.push({
+          suggestions?.push({
             field: "genre",
             original: "",
             suggested: "Pop",
@@ -924,7 +924,7 @@ export class LabelCopyLinter {
           break;
 
         case "RELEASE_DATE_NOT_FRIDAY":
-          suggestions.push({
+          suggestions?.push({
             field: "releaseDate",
             original: "",
             suggested: "Change to upcoming Friday",
@@ -943,32 +943,32 @@ export class LabelCopyLinter {
     appliedFixes: string[];
   } {
     const appliedFixes: string[] = [];
-    const fixed = { ...release };
+    const _fixed = { ...release };
 
-    if (fixed.title) {
-      const originalTitle = fixed.title;
-      fixed.title = fixed.title.trim().replace(/\s+/g, " ");
-      if (fixed.title !== originalTitle) {
-        appliedFixes.push("Normalized title whitespace");
+    if (fixed?.title) {
+      const _originalTitle = fixed?.title;
+      fixed?.title = fixed?.title.trim().replace(/\s+/g, " ");
+      if (fixed?.title !== originalTitle) {
+        appliedFixes?.push("Normalized title whitespace");
       }
     }
 
-    if (fixed.artist) {
-      const originalArtist = fixed.artist;
-      fixed.artist = fixed.artist.trim().replace(/\s+/g, " ");
-      if (fixed.artist !== originalArtist) {
-        appliedFixes.push("Normalized artist whitespace");
+    if (fixed?.artist) {
+      const _originalArtist = fixed?.artist;
+      fixed?.artist = fixed?.artist.trim().replace(/\s+/g, " ");
+      if (fixed?.artist !== originalArtist) {
+        appliedFixes?.push("Normalized artist whitespace");
       }
     }
 
-    if (fixed.tracks) {
-      fixed.tracks = fixed.tracks.map((track, index) => {
-        const originalTitle = track.title;
-        const fixedTitle = track.title?.trim().replace(/\s+/g, " ");
+    if (fixed?.tracks) {
+      fixed?.tracks = fixed?.tracks.map((track, index) => {
+        const _originalTitle = track?.title;
+        const _fixedTitle = track?.title?.trim().replace(/\s+/g, " ");
         if (fixedTitle !== originalTitle) {
-          appliedFixes.push(`Normalized track ${index + 1} title whitespace`);
+          appliedFixes?.push(`Normalized track ${index + 1} title whitespace`);
         }
-        return { ...track, title: fixedTitle || track.title };
+        return { ...track, title: fixedTitle || track?.title };
       });
     }
 
@@ -976,4 +976,4 @@ export class LabelCopyLinter {
   }
 }
 
-export const labelCopyLinter = new LabelCopyLinter();
+export const _labelCopyLinter = new LabelCopyLinter();

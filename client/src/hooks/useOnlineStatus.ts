@@ -33,9 +33,9 @@ declare global {
 
 function getNetworkConnection(): NetworkInformation | null {
   return (
-    navigator.connection ||
-    navigator.mozConnection ||
-    navigator.webkitConnection ||
+    navigator?.connection ||
+    navigator?.mozConnection ||
+    navigator?.webkitConnection ||
     null
   );
 }
@@ -43,7 +43,7 @@ function getNetworkConnection(): NetworkInformation | null {
 function assessConnectionQuality(
   connection: NetworkInformation | null,
 ): ConnectionQuality {
-  if (!navigator.onLine) return "offline";
+  if (!navigator?.onLine) return "offline";
   if (!connection) return "good";
 
   const { effectiveType, downlink, rtt } = connection;
@@ -65,47 +65,47 @@ export function useOnlineStatus(): OnlineStatusState & {
   checkConnection: () => Promise<boolean>;
 } {
   const [state, setState] = useState<OnlineStatusState>(() => {
-    const connection = getNetworkConnection();
+    const _connection = getNetworkConnection();
     return {
-      isOnline: navigator.onLine,
-      isOffline: !navigator.onLine,
+      isOnline: navigator?.onLine,
+      isOffline: !navigator?.onLine,
       connectionQuality: assessConnectionQuality(connection),
       effectiveType: connection?.effectiveType || null,
       downlink: connection?.downlink || null,
       rtt: connection?.rtt || null,
-      lastOnlineAt: navigator.onLine ? Date.now() : null,
-      lastOfflineAt: navigator.onLine ? null : Date.now(),
+      lastOnlineAt: navigator?.onLine ? Date?.now() : null,
+      lastOfflineAt: navigator?.onLine ? null : Date?.now(),
       offlineDuration: null,
     };
   });
 
   useEffect(() => {
-    const connection = getNetworkConnection();
+    const _connection = getNetworkConnection();
 
-    const handleOnline = () => {
-      const now = Date.now();
+    const _handleOnline = () => {
+      const _now = Date?.now();
       setState((prev) => ({
         ...prev,
         isOnline: true,
         isOffline: false,
         connectionQuality: assessConnectionQuality(connection),
         lastOnlineAt: now,
-        offlineDuration: prev.lastOfflineAt ? now - prev.lastOfflineAt : null,
+        offlineDuration: prev?.lastOfflineAt ? now - prev?.lastOfflineAt : null,
       }));
     };
 
-    const handleOffline = () => {
+    const _handleOffline = () => {
       setState((prev) => ({
         ...prev,
         isOnline: false,
         isOffline: true,
         connectionQuality: "offline",
-        lastOfflineAt: Date.now(),
+        lastOfflineAt: Date?.now(),
       }));
     };
 
-    const handleConnectionChange = () => {
-      const conn = getNetworkConnection();
+    const _handleConnectionChange = () => {
+      const _conn = getNetworkConnection();
       setState((prev) => ({
         ...prev,
         connectionQuality: assessConnectionQuality(conn),
@@ -115,37 +115,37 @@ export function useOnlineStatus(): OnlineStatusState & {
       }));
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window?.addEventListener("online", handleOnline);
+    window?.addEventListener("offline", handleOffline);
 
     if (connection) {
-      connection.addEventListener("change", handleConnectionChange);
+      connection?.addEventListener("change", handleConnectionChange);
     }
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window?.removeEventListener("online", handleOnline);
+      window?.removeEventListener("offline", handleOffline);
       if (connection) {
-        connection.removeEventListener("change", handleConnectionChange);
+        connection?.removeEventListener("change", handleConnectionChange);
       }
     };
   }, []);
 
-  const checkConnection = useCallback(async (): Promise<boolean> => {
-    if (!navigator.onLine) return false;
+  const _checkConnection = useCallback(async (): Promise<boolean> => {
+    if (!navigator?.onLine) return false;
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const _controller = new AbortController();
+      const _timeoutId = setTimeout(() => controller?.abort(), 5000);
 
-      const response = await fetch("/api/health", {
+      const _response = await fetch("/api/health", {
         method: "HEAD",
         cache: "no-store",
-        signal: controller.signal,
+        signal: controller?.signal,
       });
 
       clearTimeout(timeoutId);
-      return response.ok;
+      return response?.ok;
     } catch {
       return false;
     }

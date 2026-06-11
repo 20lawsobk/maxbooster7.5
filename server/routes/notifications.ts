@@ -4,15 +4,15 @@ import { db, dbRead } from "../db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { notifications, users } from "../../shared/schema";
 import { requireAuth } from "../middleware/auth";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 import crypto from "crypto";
-import { webPushService } from "../services/webPushService.js";
-import { buildSilentPayload } from "../services/pushNotificationTypes.js";
-import { requireUUIDParam } from "../middleware/requestValidation.js";
+import { webPushService } from "../services/webPushService?.js";
+import { buildSilentPayload } from "../services/pushNotificationTypes?.js";
+import { requireUUIDParam } from "../middleware/requestValidation?.js";
 
-const router = Router();
+const _router = Router();
 
-router.use(requireAuth);
+router?.use(requireAuth);
 
 interface NotificationPreferences {
   muteAll: boolean;
@@ -106,77 +106,77 @@ const defaultPreferences: NotificationPreferences = {
   },
 };
 
-router.get("/", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.get("/", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-    const offset = (page - 1) * limit;
-    const category = req.query.category as string | undefined;
-    const unreadOnly = req.query.unread === "true";
+    const _page = Math?.max(parseInt(req?.query.page as string) || 1, 1);
+    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 100);
+    const _offset = (page - 1) * limit;
+    const _category = req?.query.category as string | undefined;
+    const _unreadOnly = req?.query.unread === "true";
 
-    const conditions: unknown[] = [eq(notifications.userId, req.user.id)];
+    const conditions: unknown[] = [eq(notifications?.userId, req?.user.id)];
     if (unreadOnly) {
-      conditions.push(eq(notifications.isRead, false));
+      conditions?.push(eq(notifications?.isRead, false));
     }
     if (category) {
-      conditions.push(
-        sql`${notifications.metadata}->>'category' = ${category} OR (${notifications.metadata}->>'category' IS NULL AND ${notifications.type} LIKE ${category + "%"})`,
+      conditions?.push(
+        sql`${notifications?.metadata}->>'category' = ${category} OR (${notifications?.metadata}->>'category' IS NULL AND ${notifications?.type} LIKE ${category + "%"})`,
       );
     }
 
-    const reader = dbRead ?? db;
-    const userNotifications = await reader
+    const _reader = dbRead ?? db;
+    const _userNotifications = await reader
       .select()
       .from(notifications)
       .where(and(...conditions))
-      .orderBy(desc(notifications.createdAt))
+      .orderBy(desc(notifications?.createdAt))
       .limit(limit)
       .offset(offset);
 
-    const mappedNotifications = userNotifications.map(
+    const _mappedNotifications = userNotifications?.map(
       (n: Record<string, unknown>) => ({
         ...n,
-        priority: n.metadata?.priority || "normal",
-        category: n.metadata?.category || getCategory(n.type),
-        actionLabel: n.metadata?.actionLabel || null,
-        groupId: n.metadata?.groupId || null,
-        expiresAt: n.metadata?.expiresAt || null,
+        priority: n?.metadata?.priority || "normal",
+        category: n?.metadata?.category || getCategory(n?.type),
+        actionLabel: n?.metadata?.actionLabel || null,
+        groupId: n?.metadata?.groupId || null,
+        expiresAt: n?.metadata?.expiresAt || null,
       }),
     );
 
-    return res.json(mappedNotifications);
+    return res?.json(mappedNotifications);
   } catch (error) {
-    logger.warn({ err: error }, "Get notifications error:");
-    res.status(500).json({ error: "Get notifications error:" });
+    logger?.warn({ err: error }, "Get notifications error:");
+    res?.status(500).json({ error: "Get notifications error:" });
   }
 });
 
-router.put(
+router?.put(
   "/:id/read",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
+    if (!req?.user) {
+      return res?.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const { id } = req.params;
-      const notification = await storage.getNotificationById(id);
+      const { id } = req?.params;
+      const _notification = await storage?.getNotificationById(id);
 
       if (!notification) {
-        return res.status(404).json({ error: "Notification not found" });
+        return res?.status(404).json({ error: "Notification not found" });
       }
-      if (notification.userId !== req.user.id) {
-        return res.status(403).json({ error: "Not authorized" });
+      if (notification?.userId !== req?.user.id) {
+        return res?.status(403).json({ error: "Not authorized" });
       }
 
-      await storage.markNotificationRead(id);
+      await storage?.markNotificationRead(id);
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: {
           type: "marked_read",
@@ -185,7 +185,7 @@ router.put(
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Mark notification read error:");
+      logger?.warn({ err: error }, "Mark notification read error:");
       return res
         .status(500)
         .json({ error: "Failed to mark notification as read" });
@@ -193,15 +193,15 @@ router.put(
   },
 );
 
-router.put("/mark-all-read", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.put("/mark-all-read", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    await storage.markAllNotificationsRead(req.user.id);
+    await storage?.markAllNotificationsRead(req?.user.id);
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: {
         type: "marked_all_read",
@@ -210,20 +210,20 @@ router.put("/mark-all-read", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Mark all read error:");
-    return res.status(500).json({ error: "Failed to mark all as read" });
+    logger?.warn({ err: error }, "Mark all read error:");
+    return res?.status(500).json({ error: "Failed to mark all as read" });
   }
 });
 
-router.delete("/clear-all", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.delete("/clear-all", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    await db.delete(notifications).where(eq(notifications.userId, req.user.id));
+    await db?.delete(notifications).where(eq(notifications?.userId, req?.user.id));
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: {
         type: "dismissed",
@@ -232,33 +232,33 @@ router.delete("/clear-all", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Clear all notifications error:");
-    return res.status(500).json({ error: "Failed to clear notifications" });
+    logger?.warn({ err: error }, "Clear all notifications error:");
+    return res?.status(500).json({ error: "Failed to clear notifications" });
   }
 });
 
-router.delete(
+router?.delete(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
+    if (!req?.user) {
+      return res?.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const { id } = req.params;
-      const notification = await storage.getNotificationById(id);
+      const { id } = req?.params;
+      const _notification = await storage?.getNotificationById(id);
 
       if (!notification) {
-        return res.status(404).json({ error: "Notification not found" });
+        return res?.status(404).json({ error: "Notification not found" });
       }
-      if (notification.userId !== req.user.id) {
-        return res.status(403).json({ error: "Not authorized" });
+      if (notification?.userId !== req?.user.id) {
+        return res?.status(403).json({ error: "Not authorized" });
       }
 
-      await storage.deleteNotification(id);
+      await storage?.deleteNotification(id);
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: {
           type: "dismissed",
@@ -267,94 +267,94 @@ router.delete(
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Delete notification error:");
-      return res.status(500).json({ error: "Failed to delete notification" });
+      logger?.warn({ err: error }, "Delete notification error:");
+      return res?.status(500).json({ error: "Failed to delete notification" });
     }
   },
 );
 
-router.get("/preferences", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.get("/preferences", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const user = await storage.getUser(req.user.id);
-    const savedPrefs =
+    const _user = await storage?.getUser(req?.user.id);
+    const _savedPrefs =
       user?.notificationSettings as NotificationPreferences | null;
 
-    const mergedPrefs = {
+    const _mergedPrefs = {
       ...defaultPreferences,
       ...savedPrefs,
       quietHours: {
-        ...defaultPreferences.quietHours,
+        ...defaultPreferences?.quietHours,
         ...savedPrefs?.quietHours,
       },
       email: {
-        ...defaultPreferences.email,
+        ...defaultPreferences?.email,
         ...savedPrefs?.email,
         categories: {
-          ...defaultPreferences.email.categories,
+          ...defaultPreferences?.email.categories,
           ...savedPrefs?.email?.categories,
         },
       },
       push: {
-        ...defaultPreferences.push,
+        ...defaultPreferences?.push,
         ...savedPrefs?.push,
         categories: {
-          ...defaultPreferences.push.categories,
+          ...defaultPreferences?.push.categories,
           ...savedPrefs?.push?.categories,
         },
       },
       sms: {
-        ...defaultPreferences.sms,
+        ...defaultPreferences?.sms,
         ...savedPrefs?.sms,
         categories: {
-          ...defaultPreferences.sms.categories,
+          ...defaultPreferences?.sms.categories,
           ...savedPrefs?.sms?.categories,
         },
       },
-      inApp: { ...defaultPreferences.inApp, ...savedPrefs?.inApp },
+      inApp: { ...defaultPreferences?.inApp, ...savedPrefs?.inApp },
     };
 
-    return res.json(mergedPrefs);
+    return res?.json(mergedPrefs);
   } catch (error) {
-    logger.warn({ err: error }, "Get notification preferences error:");
-    return res.json(defaultPreferences);
+    logger?.warn({ err: error }, "Get notification preferences error:");
+    return res?.json(defaultPreferences);
   }
 });
 
-router.put("/preferences", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.put("/preferences", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const newPreferences = req.body as Partial<NotificationPreferences>;
+    const _newPreferences = req?.body as Partial<NotificationPreferences>;
 
-    await storage.updateUser(req.user.id, {
+    await storage?.updateUser(req?.user.id, {
       notificationSettings: newPreferences,
     });
 
     let outcomeType = "preference_saved";
     let outcomeMessage = "Notification preferences updated";
 
-    if (newPreferences.muteAll !== undefined) {
+    if (newPreferences?.muteAll !== undefined) {
       outcomeType = "mute_toggled";
-      outcomeMessage = newPreferences.muteAll
+      outcomeMessage = newPreferences?.muteAll
         ? "All notifications muted"
         : "Notifications unmuted";
-    } else if (newPreferences.quietHours?.enabled !== undefined) {
+    } else if (newPreferences?.quietHours?.enabled !== undefined) {
       outcomeType = "quiet_hours_set";
-      outcomeMessage = newPreferences.quietHours.enabled
+      outcomeMessage = newPreferences?.quietHours.enabled
         ? "Quiet hours enabled"
         : "Quiet hours disabled";
-    } else if (newPreferences.email?.frequency) {
+    } else if (newPreferences?.email?.frequency) {
       outcomeType = "digest_changed";
-      outcomeMessage = `Email digest set to ${newPreferences.email.frequency}`;
+      outcomeMessage = `Email digest set to ${newPreferences?.email.frequency}`;
     }
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: {
         type: outcomeType,
@@ -363,32 +363,32 @@ router.put("/preferences", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Update notification preferences error:");
-    return res.status(500).json({ error: "Failed to update preferences" });
+    logger?.warn({ err: error }, "Update notification preferences error:");
+    return res?.status(500).json({ error: "Failed to update preferences" });
   }
 });
 
-router.post("/push/subscribe", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.post("/push/subscribe", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const { endpoint, keys } = req.body;
+    const { endpoint, keys } = req?.body;
 
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
-      return res.status(400).json({ error: "Invalid push subscription data" });
+      return res?.status(400).json({ error: "Invalid push subscription data" });
     }
 
-    const user = await storage.getUser(req.user.id);
-    const currentSettings =
+    const _user = await storage?.getUser(req?.user.id);
+    const _currentSettings =
       (user?.notificationSettings as Record<string, unknown>) || {};
 
-    await storage.updateUser(req.user.id, {
+    await storage?.updateUser(req?.user.id, {
       notificationSettings: {
         ...currentSettings,
         push: {
-          ...currentSettings.push,
+          ...currentSettings?.push,
           enabled: true,
           subscription: {
             endpoint,
@@ -398,7 +398,7 @@ router.post("/push/subscribe", async (req: Request, res: Response) => {
       },
     });
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: {
         type: "push_permission_granted",
@@ -407,35 +407,35 @@ router.post("/push/subscribe", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Push subscribe error:");
+    logger?.warn({ err: error }, "Push subscribe error:");
     return res
       .status(500)
       .json({ error: "Failed to subscribe to push notifications" });
   }
 });
 
-router.post("/push/unsubscribe", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.post("/push/unsubscribe", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const user = await storage.getUser(req.user.id);
-    const currentSettings =
+    const _user = await storage?.getUser(req?.user.id);
+    const _currentSettings =
       (user?.notificationSettings as Record<string, unknown>) || {};
 
-    await storage.updateUser(req.user.id, {
+    await storage?.updateUser(req?.user.id, {
       notificationSettings: {
         ...currentSettings,
         push: {
-          ...currentSettings.push,
+          ...currentSettings?.push,
           enabled: false,
           subscription: null,
         },
       },
     });
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: {
         type: "channel_toggled",
@@ -444,42 +444,42 @@ router.post("/push/unsubscribe", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Push unsubscribe error:");
+    logger?.warn({ err: error }, "Push unsubscribe error:");
     return res
       .status(500)
       .json({ error: "Failed to unsubscribe from push notifications" });
   }
 });
 
-router.post("/sms/verify", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.post("/sms/verify", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const { phoneNumber } = req.body;
+    const { phoneNumber } = req?.body;
 
     if (!phoneNumber) {
-      return res.status(400).json({ error: "Phone number is required" });
+      return res?.status(400).json({ error: "Phone number is required" });
     }
 
-    const cleanPhone = phoneNumber.replace(/\D/g, "");
-    if (cleanPhone.length < 10) {
-      return res.status(400).json({ error: "Invalid phone number format" });
+    const _cleanPhone = phoneNumber?.replace(/\D/g, "");
+    if (cleanPhone?.length < 10) {
+      return res?.status(400).json({ error: "Invalid phone number format" });
     }
 
-    const verificationCode = crypto.randomInt(100000, 1000000).toString();
+    const _verificationCode = crypto?.randomInt(100000, 1000000).toString();
 
-    const user = await storage.getUser(req.user.id);
-    const currentSettings =
+    const _user = await storage?.getUser(req?.user.id);
+    const _currentSettings =
       (user?.notificationSettings as Record<string, unknown>) || {};
 
     // ── Attempt real SMS delivery via Twilio ──────────────────────────────────
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
-    const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
-    const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+    const _twilioSid = process?.env.TWILIO_ACCOUNT_SID;
+    const _twilioToken = process?.env.TWILIO_AUTH_TOKEN;
+    const _verifyServiceSid = process?.env.TWILIO_VERIFY_SERVICE_SID;
+    const _twilioPhone = process?.env.TWILIO_PHONE_NUMBER;
+    const _messagingServiceSid = process?.env.TWILIO_MESSAGING_SERVICE_SID;
 
     // 'twilio_verify' = Twilio owns/checks the code; 'local' = we generate & check it.
     let verificationMethod: "twilio_verify" | "local" = "local";
@@ -489,21 +489,21 @@ router.post("/sms/verify", async (req: Request, res: Response) => {
       // Preferred: Twilio Verify — handles code generation, expiry, retries, and
       // fraud guard. The code lives with Twilio and is validated in /sms/confirm
       // via verificationChecks — NOT against our locally generated code.
-      const twilio = (await import("twilio")).default;
-      const client = twilio(twilioSid, twilioToken);
-      const templateSid = process.env.TWILIO_VERIFY_TEMPLATE_SID;
+      const _twilio = (await import("twilio")).default;
+      const _client = twilio(twilioSid, twilioToken);
+      const _templateSid = process?.env.TWILIO_VERIFY_TEMPLATE_SID;
       const params: Record<string, string> = {
         to: phoneNumber,
         channel: "sms",
       };
-      if (templateSid) params.templateSid = templateSid;
-      await client.verify.v2
+      if (templateSid) params?.templateSid = templateSid;
+      await client?.verify.v2
         .services(verifyServiceSid)
-        .verifications.create(params);
+        .verifications?.create(params);
       verificationMethod = "twilio_verify";
       smsDelivered = true;
-      logger.info(
-        `[SMS] Max Booster verify code dispatched via Twilio Verify to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`,
+      logger?.info(
+        `[SMS] Max Booster verify code dispatched via Twilio Verify to ${phoneNumber?.slice(0, 5)}*** for user ${req?.user.id}`,
       );
     } else if (
       twilioSid &&
@@ -513,51 +513,51 @@ router.post("/sms/verify", async (req: Request, res: Response) => {
       // Fallback: Twilio Messages API with fully branded body.
       // Uses Messaging Service SID (preferred — matches service name "Max Booster")
       // or falls back to a raw phone number.
-      const twilio = (await import("twilio")).default;
-      const client = twilio(twilioSid, twilioToken);
-      const smsBody =
+      const _twilio = (await import("twilio")).default;
+      const _client = twilio(twilioSid, twilioToken);
+      const _smsBody =
         `Your Max Booster verification code is: ${verificationCode}\n\n` +
         `This code expires in 10 minutes. If you didn't request this, you can safely ignore this message.\n\n` +
         `— The Max Booster Team`;
-      const msgParams = messagingServiceSid
+      const _msgParams = messagingServiceSid
         ? { to: phoneNumber, messagingServiceSid, body: smsBody }
         : { to: phoneNumber, from: twilioPhone as string, body: smsBody };
-      await client.messages.create(msgParams);
+      await client?.messages.create(msgParams);
       smsDelivered = true;
-      const sender = messagingServiceSid
-        ? `MessagingService(${messagingServiceSid.slice(0, 6)}***)`
+      const _sender = messagingServiceSid
+        ? `MessagingService(${messagingServiceSid?.slice(0, 6)}***)`
         : `from(${twilioPhone})`;
-      logger.info(
-        `[SMS] Max Booster branded code sent via ${sender} to ${phoneNumber.slice(0, 5)}*** for user ${req.user.id}`,
+      logger?.info(
+        `[SMS] Max Booster branded code sent via ${sender} to ${phoneNumber?.slice(0, 5)}*** for user ${req?.user.id}`,
       );
     } else {
-      logger.info(
-        `[SMS DEV] Max Booster verification code for ${phoneNumber.slice(0, 5)}***: ${verificationCode}`,
+      logger?.info(
+        `[SMS DEV] Max Booster verification code for ${phoneNumber?.slice(0, 5)}***: ${verificationCode}`,
       );
     }
 
-    await storage.updateUser(req.user.id, {
+    await storage?.updateUser(req?.user.id, {
       notificationSettings: {
         ...currentSettings,
         sms: {
-          ...currentSettings.sms,
+          ...currentSettings?.sms,
           phoneNumber,
           verified: false,
           verificationMethod,
           // For Twilio Verify, Twilio holds the code — we don't store it locally.
           pendingVerification:
             verificationMethod === "twilio_verify" ? null : verificationCode,
-          pendingVerificationExpiry: Date.now() + 10 * 60 * 1000,
+          pendingVerificationExpiry: Date?.now() + 10 * 60 * 1000,
         },
       },
     });
 
     // In dev / no-provider mode we can't deliver a real SMS, so surface the code
     // to the client (gated to non-production) for the built-in demo verification UI.
-    const isProd = process.env.NODE_ENV === "production";
-    const devCode = !smsDelivered && !isProd ? verificationCode : undefined;
+    const _isProd = process?.env.NODE_ENV === "production";
+    const _devCode = !smsDelivered && !isProd ? verificationCode : undefined;
 
-    return res.json({
+    return res?.json({
       success: true,
       message: smsDelivered
         ? "A Max Booster verification code has been sent to your phone."
@@ -565,62 +565,66 @@ router.post("/sms/verify", async (req: Request, res: Response) => {
       ...(devCode ? { devCode } : {}),
     });
   } catch (error) {
-    logger.warn({ err: error }, "SMS verify error:");
+    logger?.warn({ err: error }, "SMS verify error:");
     return res
       .status(500)
       .json({ error: "Failed to send Max Booster verification code" });
   }
 });
 
-router.post("/sms/confirm", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.post("/sms/confirm", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const { code } = req.body;
+    const { code } = req?.body;
 
-    const user = await storage.getUser(req.user.id);
-    const currentSettings =
+    const _user = await storage?.getUser(req?.user.id);
+    const _currentSettings =
       (user?.notificationSettings as Record<string, unknown>) || {};
-    const smsSettings = (currentSettings.sms as Record<string, unknown>) || {};
-    const method = smsSettings.verificationMethod as string | undefined;
-    const pendingCode = smsSettings.pendingVerification as string | undefined;
-    const expiry = smsSettings.pendingVerificationExpiry as number | undefined;
-    const phoneNumber = smsSettings.phoneNumber as string | undefined;
-    const submitted = (code as string)?.trim();
+    const _smsSettings = (currentSettings?.sms as Record<string, unknown>) || {};
+    const _method = smsSettings?.verificationMethod as string | undefined;
+    const _pendingCode = smsSettings?.pendingVerification as string | undefined;
+    const _expiry = smsSettings?.pendingVerificationExpiry as number | undefined;
+    const _phoneNumber = smsSettings?.phoneNumber as string | undefined;
+    const _submitted = (code as string)?.trim();
 
     if (!submitted) {
-      return res.status(400).json({ error: "Verification code is required." });
+      return res?.status(400).json({ error: "Verification code is required." });
     }
-    if (expiry && Date.now() > expiry) {
-      return res.status(400).json({
-        error:
-          "Code expired. Please request a new Max Booster verification code.",
-      });
+    if (expiry && Date?.now() > expiry) {
+      return res
+        .status(400)
+        .json({
+          error:
+            "Code expired. Please request a new Max Booster verification code.",
+        });
     }
 
     if (method === "twilio_verify") {
       // Twilio owns the code — validate against Twilio Verify, not a local copy.
-      const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-      const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-      const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+      const _twilioSid = process?.env.TWILIO_ACCOUNT_SID;
+      const _twilioToken = process?.env.TWILIO_AUTH_TOKEN;
+      const _verifyServiceSid = process?.env.TWILIO_VERIFY_SERVICE_SID;
       if (!twilioSid || !twilioToken || !verifyServiceSid || !phoneNumber) {
         return res.status(400).json({
           error:
             "No pending verification. Please request a new Max Booster code.",
         });
       }
-      const twilio = (await import("twilio")).default;
-      const client = twilio(twilioSid, twilioToken);
-      const check = await client.verify.v2
+      const _twilio = (await import("twilio")).default;
+      const _client = twilio(twilioSid, twilioToken);
+      const _check = await client?.verify.v2
         .services(verifyServiceSid)
-        .verificationChecks.create({ to: phoneNumber, code: submitted });
-      if (check.status !== "approved") {
-        return res.status(400).json({
-          error:
-            "Invalid verification code. Please check your SMS and try again.",
-        });
+        .verificationChecks?.create({ to: phoneNumber, code: submitted });
+      if (check?.status !== "approved") {
+        return res
+          .status(400)
+          .json({
+            error:
+              "Invalid verification code. Please check your SMS and try again.",
+          });
       }
     } else {
       // Local mode (Messages API or dev): compare against the stored code.
@@ -638,7 +642,7 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
       }
     }
 
-    await storage.updateUser(req.user.id, {
+    await storage?.updateUser(req?.user.id, {
       notificationSettings: {
         ...currentSettings,
         sms: {
@@ -650,10 +654,10 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
       },
     });
 
-    logger.info(
-      `[SMS] Phone verified for user ${req.user.id} — Max Booster SMS notifications active`,
+    logger?.info(
+      `[SMS] Phone verified for user ${req?.user.id} — Max Booster SMS notifications active`,
     );
-    return res.json({
+    return res?.json({
       success: true,
       message:
         "Phone number verified — Max Booster SMS notifications are now active.",
@@ -664,21 +668,21 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "SMS confirm error:");
+    logger?.warn({ err: error }, "SMS confirm error:");
     return res
       .status(500)
       .json({ error: "Failed to confirm Max Booster verification code" });
   }
 });
 
-router.post("/test", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.post("/test", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const notification = await storage.createNotification({
-      userId: req.user.id,
+    const _notification = await storage?.createNotification({
+      userId: req?.user.id,
       type: "system_update",
       title: "Test Notification",
       message:
@@ -691,18 +695,19 @@ router.post("/test", async (req: Request, res: Response) => {
       typeof (global as Record<string, unknown>).broadcastNotification ===
       "function"
     ) {
-      (global as Record<string, unknown>).broadcastNotification(req.user.id, {
+      (global as Record<string, unknown>).broadcastNotification(req?.user.id, {
         ...notification,
         priority: "normal",
         category: "system",
       });
     }
 
-    const { notificationDispatcher } =
-      await import("../services/notificationDispatcher.js");
-    const pushResult = await notificationDispatcher.sendTestToUser(req.user.id);
+    const { notificationDispatcher } = await import(
+      "../services/notificationDispatcher?.js"
+    );
+    const _pushResult = await notificationDispatcher?.sendTestToUser(req?.user.id);
 
-    return res.json({
+    return res?.json({
       success: true,
       message: "Test notification sent",
       notification,
@@ -711,34 +716,37 @@ router.post("/test", async (req: Request, res: Response) => {
         type: "delivered",
         success: true,
         message:
-          pushResult.totalSent > 0
-            ? `Test delivered to ${pushResult.totalSent} device(s) via [${pushResult.channels.join(", ")}]`
+          pushResult?.totalSent > 0
+            ? `Test delivered to ${pushResult?.totalSent} device(s) via [${pushResult?.channels.join(", ")}]`
             : "In-app notification sent (no push subscriptions registered)",
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Test notification error:");
-    return res.status(500).json({ error: "Failed to send test notification" });
+    logger?.warn({ err: error }, "Test notification error:");
+    return res?.status(500).json({ error: "Failed to send test notification" });
   }
 });
 
-router.get("/push/status", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+router?.get("/push/status", async (req: Request, res: Response) => {
+  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
   try {
-    const { notificationDispatcher } =
-      await import("../services/notificationDispatcher.js");
-    const { desktopPushService } =
-      await import("../services/desktopPushService.js");
-    const { mobilePushService } =
-      await import("../services/mobilePushService.js");
+    const { notificationDispatcher } = await import(
+      "../services/notificationDispatcher?.js"
+    );
+    const { desktopPushService } = await import(
+      "../services/desktopPushService?.js"
+    );
+    const { mobilePushService } = await import(
+      "../services/mobilePushService?.js"
+    );
 
-    const [breakdown, mobileStatus, serviceStatus] = await Promise.all([
-      desktopPushService.getSubscriptionBreakdown(req.user.id),
-      mobilePushService.getUserTokenStatus(req.user.id),
-      Promise.resolve(notificationDispatcher.getStatus()),
+    const [breakdown, mobileStatus, serviceStatus] = await Promise?.all([
+      desktopPushService?.getSubscriptionBreakdown(req?.user.id),
+      mobilePushService?.getUserTokenStatus(req?.user.id),
+      Promise?.resolve(notificationDispatcher?.getStatus()),
     ]);
 
-    return res.json({
+    return res?.json({
       services: serviceStatus,
       subscriptions: {
         web: breakdown,
@@ -746,33 +754,34 @@ router.get("/push/status", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Push status error:");
-    return res.status(500).json({ error: "Failed to get push status" });
+    logger?.warn({ err: error }, "Push status error:");
+    return res?.status(500).json({ error: "Failed to get push status" });
   }
 });
 
-router.post("/mobile-tokens", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+router?.post("/mobile-tokens", async (req: Request, res: Response) => {
+  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
   try {
-    const { token, platform, deviceName, appVersion } = req.body;
+    const { token, platform, deviceName, appVersion } = req?.body;
 
     if (!token)
-      return res.status(400).json({ error: "Device token is required" });
+      return res?.status(400).json({ error: "Device token is required" });
     if (!["android", "ios"].includes(platform)) {
-      return res.status(400).json({ error: "Platform must be android or ios" });
+      return res?.status(400).json({ error: "Platform must be android or ios" });
     }
 
-    const { mobilePushService } =
-      await import("../services/mobilePushService.js");
-    await mobilePushService.registerToken(
-      req.user.id,
+    const { mobilePushService } = await import(
+      "../services/mobilePushService?.js"
+    );
+    await mobilePushService?.registerToken(
+      req?.user.id,
       token,
       platform,
       deviceName,
       appVersion,
     );
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: {
         type: "push_permission_granted",
@@ -781,27 +790,28 @@ router.post("/mobile-tokens", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Mobile token register error:");
+    logger?.warn({ err: error }, "Mobile token register error:");
     return res
       .status(500)
       .json({ error: "Failed to register mobile device token" });
   }
 });
 
-router.delete("/mobile-tokens", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+router?.delete("/mobile-tokens", async (req: Request, res: Response) => {
+  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
   try {
-    const { token } = req.body;
-    const { mobilePushService } =
-      await import("../services/mobilePushService.js");
+    const { token } = req?.body;
+    const { mobilePushService } = await import(
+      "../services/mobilePushService?.js"
+    );
 
     if (token) {
-      await mobilePushService.deactivateToken(token);
+      await mobilePushService?.deactivateToken(token);
     } else {
-      await mobilePushService.removeUserTokens(req.user.id);
+      await mobilePushService?.removeUserTokens(req?.user.id);
     }
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: {
         type: "channel_toggled",
@@ -812,22 +822,23 @@ router.delete("/mobile-tokens", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Mobile token remove error:");
+    logger?.warn({ err: error }, "Mobile token remove error:");
     return res
       .status(500)
       .json({ error: "Failed to remove mobile device token" });
   }
 });
 
-router.get("/mobile-tokens", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+router?.get("/mobile-tokens", async (req: Request, res: Response) => {
+  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
   try {
-    const { mobilePushService } =
-      await import("../services/mobilePushService.js");
-    const status = await mobilePushService.getUserTokenStatus(req.user.id);
-    return res.json(status);
+    const { mobilePushService } = await import(
+      "../services/mobilePushService?.js"
+    );
+    const _status = await mobilePushService?.getUserTokenStatus(req?.user.id);
+    return res?.json(status);
   } catch (error) {
-    logger.warn({ err: error }, "Mobile tokens list error:");
+    logger?.warn({ err: error }, "Mobile tokens list error:");
     return res
       .status(500)
       .json({ error: "Failed to list mobile device tokens" });
@@ -945,63 +956,63 @@ function getCategory(type: string): string {
   return categoryMap[type] || "system";
 }
 
-router.post("/push/silent", async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: "Not authenticated" });
+router?.post("/push/silent", async (req: Request, res: Response) => {
+  if (!req?.user) {
+    return res?.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const { reason = "feed_refresh" } = req.body;
-    const validReasons = ["feed_refresh", "message_sync", "count_update"];
-    const safeReason = validReasons.includes(reason) ? reason : "feed_refresh";
+    const { reason = "feed_refresh" } = req?.body;
+    const _validReasons = ["feed_refresh", "message_sync", "count_update"];
+    const _safeReason = validReasons?.includes(reason) ? reason : "feed_refresh";
 
-    if (!webPushService.isReady()) {
-      return res.json({ success: false, message: "Push not configured" });
+    if (!webPushService?.isReady()) {
+      return res?.json({ success: false, message: "Push not configured" });
     }
 
-    const payload = buildSilentPayload(safeReason as Record<string, unknown>);
-    const result = await webPushService.sendRichToUser(req.user.id, payload);
+    const _payload = buildSilentPayload(safeReason as Record<string, unknown>);
+    const _result = await webPushService?.sendRichToUser(req?.user.id, payload);
 
-    return res.json({ success: true, sent: result.sent, reason: safeReason });
+    return res?.json({ success: true, sent: result?.sent, reason: safeReason });
   } catch (error) {
-    logger.warn({ err: error }, "Silent push error:");
-    return res.status(500).json({ error: "Failed to send silent push" });
+    logger?.warn({ err: error }, "Silent push error:");
+    return res?.status(500).json({ error: "Failed to send silent push" });
   }
 });
 
 // ── Canonical push routes (called by usePushNotifications hook) ──────────────
 
 // Returns VAPID public key so the browser can create a push subscription
-router.get("/push-key", (_req: Request, res: Response) => {
-  const publicKey = webPushService.getPublicKey();
+router?.get("/push-key", (_req: Request, res: Response) => {
+  const _publicKey = webPushService?.getPublicKey();
   if (!publicKey) {
-    return res.status(503).json({ error: "Push notifications not configured" });
+    return res?.status(503).json({ error: "Push notifications not configured" });
   }
-  return res.json({ publicKey });
+  return res?.json({ publicKey });
 });
 
 // Save a new push subscription (writes to pushSubscriptions DB table)
 // Also auto-enables push in notification settings so the dispatcher delivers.
-router.post("/push-subscriptions", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+router?.post("/push-subscriptions", async (req: Request, res: Response) => {
+  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
 
   try {
-    const { endpoint, keys } = req.body;
+    const { endpoint, keys } = req?.body;
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
-      return res.status(400).json({ error: "Invalid push subscription data" });
+      return res?.status(400).json({ error: "Invalid push subscription data" });
     }
 
-    const ua = req.headers["user-agent"] || undefined;
-    await webPushService.saveSubscription(req.user.id, { endpoint, keys }, ua);
+    const _ua = req?.headers["user-agent"] || undefined;
+    await webPushService?.saveSubscription(req?.user.id, { endpoint, keys }, ua);
 
     // Auto-enable push in notification settings when user subscribes.
     // The user has already granted browser permission — honour that intent.
     try {
-      const currentSettings =
-        (req.user.notificationSettings as Record<string, unknown>) || {};
-      const currentPush =
-        (currentSettings.push as Record<string, unknown>) || {};
-      if (currentPush.enabled !== true) {
+      const _currentSettings =
+        (req?.user.notificationSettings as Record<string, unknown>) || {};
+      const _currentPush =
+        (currentSettings?.push as Record<string, unknown>) || {};
+      if (currentPush?.enabled !== true) {
         await db
           .update(users)
           .set({
@@ -1011,36 +1022,36 @@ router.post("/push-subscriptions", async (req: Request, res: Response) => {
             },
             updatedAt: new Date(),
           })
-          .where(eq(users.id, req.user.id));
+          .where(eq(users?.id, req?.user.id));
       }
     } catch (settingsErr) {
-      logger.warn(
+      logger?.warn(
         { err: settingsErr },
         "Push subscribe: could not auto-enable push setting (non-fatal)",
       );
     }
 
-    return res.json({ success: true, message: "Push subscription registered" });
+    return res?.json({ success: true, message: "Push subscription registered" });
   } catch (error) {
-    logger.warn({ err: error }, "Push subscribe error:");
-    return res.status(500).json({ error: "Failed to save push subscription" });
+    logger?.warn({ err: error }, "Push subscribe error:");
+    return res?.status(500).json({ error: "Failed to save push subscription" });
   }
 });
 
 // Remove a push subscription from the DB
-router.delete("/push-subscriptions", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+router?.delete("/push-subscriptions", async (req: Request, res: Response) => {
+  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
 
   try {
-    const { endpoint } = req.body;
+    const { endpoint } = req?.body;
     if (endpoint) {
-      await webPushService.removeSubscription(endpoint);
+      await webPushService?.removeSubscription(endpoint);
     } else {
-      await webPushService.removeUserSubscriptions(req.user.id);
+      await webPushService?.removeUserSubscriptions(req?.user.id);
     }
-    return res.json({ success: true, message: "Push subscription removed" });
+    return res?.json({ success: true, message: "Push subscription removed" });
   } catch (error) {
-    logger.warn({ err: error }, "Push unsubscribe error:");
+    logger?.warn({ err: error }, "Push unsubscribe error:");
     return res
       .status(500)
       .json({ error: "Failed to remove push subscription" });
@@ -1048,39 +1059,39 @@ router.delete("/push-subscriptions", async (req: Request, res: Response) => {
 });
 
 // Returns subscription status in the format expected by the hook
-router.get(
+router?.get(
   "/push-subscriptions/status",
   async (req: Request, res: Response) => {
-    if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+    if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
 
     try {
-      const subs = await webPushService.getUserSubscriptions(req.user.id);
-      return res.json({
-        hasSubscriptions: subs.length > 0,
-        count: subs.length,
-        devices: subs.map((s: Record<string, unknown>) => ({
-          id: s.id,
-          userAgent: s.userAgent || "Unknown device",
-          createdAt: s.createdAt,
+      const _subs = await webPushService?.getUserSubscriptions(req?.user.id);
+      return res?.json({
+        hasSubscriptions: subs?.length > 0,
+        count: subs?.length,
+        devices: subs?.map((s: Record<string, unknown>) => ({
+          id: s?.id,
+          userAgent: s?.userAgent || "Unknown device",
+          createdAt: s?.createdAt,
         })),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Push subscription status error:");
-      return res.json({ hasSubscriptions: false, count: 0, devices: [] });
+      logger?.warn({ err: error }, "Push subscription status error:");
+      return res?.json({ hasSubscriptions: false, count: 0, devices: [] });
     }
   },
 );
 
 // Send a real Web Push test notification to all of the user's subscribed devices
-router.post("/push-test", async (req: Request, res: Response) => {
-  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
+router?.post("/push-test", async (req: Request, res: Response) => {
+  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
 
   try {
-    if (!webPushService.isReady()) {
-      return res.status(503).json({ error: "Push service not configured" });
+    if (!webPushService?.isReady()) {
+      return res?.status(503).json({ error: "Push service not configured" });
     }
 
-    const result = await webPushService.sendToUser(req.user.id, {
+    const _result = await webPushService?.sendToUser(req?.user.id, {
       title: "🔔 Max Booster Push Test",
       body: "Push notifications are working! You'll receive alerts for royalties, campaigns, and more.",
       url: "/notifications",
@@ -1089,78 +1100,78 @@ router.post("/push-test", async (req: Request, res: Response) => {
       data: { category: "system" },
     });
 
-    return res.json({
+    return res?.json({
       success: true,
-      sent: result.sent,
-      failed: result.failed,
+      sent: result?.sent,
+      failed: result?.failed,
       message:
-        result.sent > 0
-          ? `Test delivered to ${result.sent} device(s)`
+        result?.sent > 0
+          ? `Test delivered to ${result?.sent} device(s)`
           : "No push subscriptions registered on this account",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Push test error:");
-    return res.status(500).json({ error: "Failed to send push test" });
+    logger?.warn({ err: error }, "Push test error:");
+    return res?.status(500).json({ error: "Failed to send push test" });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get(
+router?.get(
   "/unread-count",
   requireAuth,
   async (req: Request, res: Response) => {
-    const userId = req.user?.id;
+    const _userId = req?.user?.id;
     if (!userId) {
-      return res.status(401).json({ error: "Not authenticated" });
+      return res?.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const reader = dbRead ?? db;
-      const result = await reader
+      const _reader = dbRead ?? db;
+      const _result = await reader
         .select({ count: sql<number>`count(*)` })
         .from(notifications)
         .where(
           and(
-            eq(notifications.userId, userId),
-            eq(notifications.isRead, false),
+            eq(notifications?.userId, userId),
+            eq(notifications?.isRead, false),
           ),
         );
 
-      const count = result[0]?.count || 0;
+      const _count = result[0]?.count || 0;
 
-      return res.json({ count });
+      return res?.json({ count });
     } catch (error) {
-      logger.warn({ err: error }, "Get unread count error:");
-      return res.json({ count: 0 });
+      logger?.warn({ err: error }, "Get unread count error:");
+      return res?.json({ count: 0 });
     }
   },
 );
 
 // GET /:id - get single notification (after all specific paths to avoid route shadowing)
-router.get(
+router?.get(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
-    const userId = req.user?.id;
-    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+    const _userId = req?.user?.id;
+    if (!userId) return res?.status(401).json({ error: "Not authenticated" });
     try {
       const [notification] = await db
         .select()
         .from(notifications)
         .where(
           and(
-            eq(notifications.id, req.params.id),
-            eq(notifications.userId, userId),
+            eq(notifications?.id, req?.params.id),
+            eq(notifications?.userId, userId),
           ),
         )
         .limit(1);
       if (!notification)
-        return res.status(404).json({ error: "Notification not found" });
-      res.json(notification);
+        return res?.status(404).json({ error: "Notification not found" });
+      res?.json(notification);
     } catch (error) {
-      logger.warn({ err: error }, "Get notification error:");
-      res.status(500).json({ error: "Failed to fetch notification" });
+      logger?.warn({ err: error }, "Get notification error:");
+      res?.status(500).json({ error: "Failed to fetch notification" });
     }
   },
 );

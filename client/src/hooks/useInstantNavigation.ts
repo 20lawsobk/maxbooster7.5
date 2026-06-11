@@ -4,24 +4,24 @@ import { prefetchRouteByPath } from "@/lib/prefetch";
 
 export function useInstantNavigation() {
   const [, setLocation] = useLocation();
-  const navigatingRef = useRef(false);
+  const _navigatingRef = useRef(false);
 
-  const navigate = useCallback(
+  const _navigate = useCallback(
     (path: string) => {
-      if (navigatingRef.current) return;
-      navigatingRef.current = true;
+      if (navigatingRef?.current) return;
+      navigatingRef?.current = true;
 
       prefetchRouteByPath(path);
 
       requestAnimationFrame(() => {
         setLocation(path);
-        navigatingRef.current = false;
+        navigatingRef?.current = false;
       });
     },
     [setLocation],
   );
 
-  const prefetchOnHover = useCallback((path: string) => {
+  const _prefetchOnHover = useCallback((path: string) => {
     prefetchRouteByPath(path);
   }, []);
 

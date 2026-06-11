@@ -1,60 +1,60 @@
 import { Router, type RequestHandler } from "express";
-import { require2FA } from "../middleware/auth.js";
-import { db } from "../db.js";
+import { require2FA } from "../middleware/auth?.js";
+import { db } from "../db?.js";
 import {
   users,
   projects,
   releases,
   securityThreats,
-} from "../../shared/schema.js";
+} from "../../shared/schema?.js";
 import { count, eq } from "drizzle-orm";
-import { logger } from "../logger.js";
+import { logger } from "../logger?.js";
 
-const router = Router();
+const _router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Authentication required" });
+  if (!req?.isAuthenticated()) {
+    return res?.status(401).json({ error: "Authentication required" });
   }
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
+  if (req?.user?.role !== "admin") {
+    return res?.status(403).json({ error: "Admin access required" });
   }
   next();
 };
 
-router.use(requireAdmin);
-router.use(require2FA);
+router?.use(requireAdmin);
+router?.use(require2FA);
 
-router.get("/results", async (_req, res) => {
+router?.get("/results", async (_req, res) => {
   try {
-    const now = new Date();
-    new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const _now = new Date();
+    new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const [userCount, projectCount, releaseCount] = await Promise.all([
-      db.select({ count: count() }).from(users),
-      db.select({ count: count() }).from(projects),
-      db.select({ count: count() }).from(releases),
+    const [userCount, projectCount, releaseCount] = await Promise?.all([
+      db?.select({ count: count() }).from(users),
+      db?.select({ count: count() }).from(projects),
+      db?.select({ count: count() }).from(releases),
     ]);
 
     let securityIssues = 0;
     try {
-      const threatCount = await db
+      const _threatCount = await db
         .select({ count: count() })
         .from(securityThreats)
-        .where(eq(securityThreats.status, "active"));
+        .where(eq(securityThreats?.status, "active"));
       securityIssues = threatCount[0]?.count || 0;
     } catch {
       securityIssues = 0;
     }
 
-    const securityScore = Math.max(70, 100 - securityIssues * 5);
-    const functionalityScore = userCount[0]?.count ? 95 : 80;
-    const performanceScore = 92;
-    const codeQualityScore = 88;
-    const accessibilityScore = 85;
-    const seoScore = 90;
+    const _securityScore = Math?.max(70, 100 - securityIssues * 5);
+    const _functionalityScore = userCount[0]?.count ? 95 : 80;
+    const _performanceScore = 92;
+    const _codeQualityScore = 88;
+    const _accessibilityScore = 85;
+    const _seoScore = 90;
 
-    const overallScore = Math.round(
+    const _overallScore = Math?.round(
       (securityScore +
         functionalityScore +
         performanceScore +
@@ -64,7 +64,7 @@ router.get("/results", async (_req, res) => {
         6,
     );
 
-    const auditItems = [
+    const _auditItems = [
       {
         category: "Security",
         item: "HTTPS Enabled",
@@ -157,13 +157,13 @@ router.get("/results", async (_req, res) => {
       },
     ];
 
-    const passCount = auditItems.filter((i) => i.status === "pass").length;
-    const warningCount = auditItems.filter(
-      (i) => i.status === "warning",
+    const _passCount = auditItems?.filter((i) => i?.status === "pass").length;
+    const _warningCount = auditItems?.filter(
+      (i) => i?.status === "warning",
     ).length;
-    const failCount = auditItems.filter((i) => i.status === "fail").length;
+    const _failCount = auditItems?.filter((i) => i?.status === "fail").length;
 
-    res.json({
+    res?.json({
       overallScore,
       securityScore,
       functionalityScore,
@@ -177,7 +177,7 @@ router.get("/results", async (_req, res) => {
         passed: passCount,
         warnings: warningCount,
         failed: failCount,
-        total: auditItems.length,
+        total: auditItems?.length,
       },
       recommendations: [
         {
@@ -193,22 +193,22 @@ router.get("/results", async (_req, res) => {
       ],
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching audit results:");
-    res.status(500).json({ error: "Failed to fetch audit results" });
+    logger?.warn({ err: error }, "Error fetching audit results:");
+    res?.status(500).json({ error: "Failed to fetch audit results" });
   }
 });
 
-router.post("/run", async (_req, res) => {
+router?.post("/run", async (_req, res) => {
   try {
-    logger.info("Manual audit triggered by admin");
-    res.json({
+    logger?.info("Manual audit triggered by admin");
+    res?.json({
       success: true,
       message: "Audit started",
       estimatedTime: "2 minutes",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error running audit:");
-    res.status(500).json({ error: "Failed to start audit" });
+    logger?.warn({ err: error }, "Error running audit:");
+    res?.status(500).json({ error: "Failed to start audit" });
   }
 });
 
