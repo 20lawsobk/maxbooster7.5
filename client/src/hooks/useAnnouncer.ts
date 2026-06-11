@@ -74,7 +74,7 @@ export function useAnnouncer(
         if (debounceTimer?.current) {
           clearTimeout(debounceTimer?.current);
         }
-        debounceTimer?.current = setTimeout(doAnnounce, debounceMs);
+        debounceTimer.current = setTimeout(doAnnounce, debounceMs);
       } else {
         doAnnounce();
       }
@@ -109,7 +109,7 @@ export function useLoadingAnnouncer(isLoading: boolean, context?: string) {
     } else if (!isLoading && previousLoading?.current) {
       announceLoadingComplete(context);
     }
-    previousLoading?.current = isLoading;
+    previousLoading.current = isLoading;
   }, [isLoading, context]);
 }
 
@@ -128,7 +128,7 @@ export function useDialogAnnouncer(isOpen: boolean, dialogName: string) {
     } else if (!isOpen && previousOpen?.current) {
       announceDialogClose(dialogName);
     }
-    previousOpen?.current = isOpen;
+    previousOpen.current = isOpen;
   }, [isOpen, dialogName]);
 }
 

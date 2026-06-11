@@ -40,10 +40,10 @@
  */
 
 import { Request, Response, NextFunction } from "express";
-import { distributedCache } from "../infrastructure/distributedCache?.js";
-import { getRedisClient } from "../lib/redisClient?.js";
-import { isPdimConfigured } from "../lib/pdimClient?.js";
-import { logger } from "../logger?.js";
+import { distributedCache } from "../infrastructure/distributedCache.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { isPdimConfigured } from "../lib/pdimClient.js";
+import { logger } from "../logger.js";
 
 // ── ETag ──────────────────────────────────────────────────────────────────────
 function generateETag(body: unknown): string {
@@ -241,7 +241,7 @@ export class APIResponseCache {
       );
       return;
     }
-    this?.pollTimer = setInterval(() => void this?.pollTick(), POLL_INTERVAL_MS);
+    this.pollTimer = setInterval(() => void this?.pollTick(), POLL_INTERVAL_MS);
     logger?.info(
       `[APICache] Cross-pod invalidation poller started (${POLL_INTERVAL_MS} ms interval, ~${POLL_INTERVAL_MS + 50} ms max propagation lag)`,
     );
@@ -250,7 +250,7 @@ export class APIResponseCache {
   stopPoller(): void {
     if (this?.pollTimer !== null) {
       clearInterval(this?.pollTimer);
-      this?.pollTimer = null;
+      this.pollTimer = null;
     }
   }
 
@@ -264,7 +264,7 @@ export class APIResponseCache {
     if (!distributedCache?.isConnected()) return;
     // Skip PDIM calls while PDIM is in any warm-up phase or circuit is open —
     // the 100 ms interval would otherwise flood the exec queue during cold-start.
-    const { cbIsPdimUnhealthy } = await import("../lib/pdimCircuitBreaker?.js");
+    const { cbIsPdimUnhealthy } = await import("../lib/pdimCircuitBreaker.js");
     if (cbIsPdimUnhealthy()) return;
     try {
       const _redis = getRedisClient();
@@ -310,10 +310,10 @@ export class APIResponseCache {
         } catch {
           /* ignore malformed regex events in PDIM */
         }
-        if (ts > this?.lastPatternCleared) this?.lastPatternCleared = ts;
+        if (ts > this?.lastPatternCleared) this.lastPatternCleared = ts;
       }
 
-      this?.pollSeq = seq;
+      this.pollSeq = seq;
     } catch {
       // PDIM temporarily unreachable — skip this tick
     }
@@ -427,7 +427,7 @@ export class APIResponseCache {
     const _regex = new RegExp(pattern);
     this?.l1ApplyRegex(regex);
     const _ts = Date?.now();
-    this?.lastPatternCleared = Math?.max(this?.lastPatternCleared, ts);
+    this.lastPatternCleared = Math?.max(this?.lastPatternCleared, ts);
 
     if (!distributedCache?.isConnected()) return;
 
@@ -453,7 +453,7 @@ export class APIResponseCache {
     this?.l1.clear();
     this?.bustL1.clear();
     this?.processedUsers.clear();
-    this?.lastPatternCleared = 0;
+    this.lastPatternCleared = 0;
   }
 
   getStats() {
@@ -542,7 +542,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     // Override res?.json using its own type signature — no any cast needed.
     // typeof res?.json resolves to Express's `(body?: any) => Response`, so the
     // override is fully type-safe without suppressing lint rules.
-    const jsonOverride: typeof res?.json = function cachedJson(body) {
+    const jsonOverride: typeof res.json = function cachedJson(body) {
       if (res?.statusCode >= 200 && res?.statusCode < 300) {
         const _etag = generateETag(body);
         apiCache?.set(
@@ -565,7 +565,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       }
       return originalJson(body);
     };
-    res?.json = jsonOverride;
+    res.json = jsonOverride;
 
     next();
   };

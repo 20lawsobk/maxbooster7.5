@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface LintError {
   field: string;
@@ -947,7 +947,7 @@ export class LabelCopyLinter {
 
     if (fixed?.title) {
       const _originalTitle = fixed?.title;
-      fixed?.title = fixed?.title.trim().replace(/\s+/g, " ");
+      fixed.title = fixed?.title.trim().replace(/\s+/g, " ");
       if (fixed?.title !== originalTitle) {
         appliedFixes?.push("Normalized title whitespace");
       }
@@ -955,14 +955,14 @@ export class LabelCopyLinter {
 
     if (fixed?.artist) {
       const _originalArtist = fixed?.artist;
-      fixed?.artist = fixed?.artist.trim().replace(/\s+/g, " ");
+      fixed.artist = fixed?.artist.trim().replace(/\s+/g, " ");
       if (fixed?.artist !== originalArtist) {
         appliedFixes?.push("Normalized artist whitespace");
       }
     }
 
     if (fixed?.tracks) {
-      fixed?.tracks = fixed?.tracks.map((track, index) => {
+      fixed.tracks = fixed?.tracks.map((track, index) => {
         const _originalTitle = track?.title;
         const _fixedTitle = track?.title?.trim().replace(/\s+/g, " ");
         if (fixedTitle !== originalTitle) {

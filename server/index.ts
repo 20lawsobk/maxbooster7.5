@@ -1,29 +1,29 @@
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
-import "./lib/consoleErrorFilter?.js";
+import "./lib/consoleErrorFilter.js";
 // Mandatory observability — must load before anything else can throw
-import "./instrument?.js";
+import "./instrument.js";
 // Typed env — validates critical vars at startup, throws if DATABASE_URL/SESSION_SECRET missing
-import { env } from "./config/env?.js";
+import { env } from "./config/env.js";
 
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import compression from "compression";
-import { brotliMiddleware } from "./middleware/brotliCompression?.js";
-import { logger } from "./logger?.js";
-import { setupStartupEndpoints, startupProbes } from "./startup-probes?.js";
+import { brotliMiddleware } from "./middleware/brotliCompression.js";
+import { logger } from "./logger.js";
+import { setupStartupEndpoints, startupProbes } from "./startup-probes.js";
 import {
   cloudflareMiddleware,
   buildTrustProxyValue,
-} from "./middleware/cloudflare?.js";
+} from "./middleware/cloudflare.js";
 import path from "path";
 import fs from "fs";
-import { isProductionEnv } from "./lib/envHelpers?.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 // MANDATORY safety imports - these MUST load successfully
-import { initializeSafetySystems, applyMandatoryMiddleware, globalErrorHandler as safetyErrorHandler, sanitizationMiddleware, killSwitch } from "./safety/index?.js";
+import { initializeSafetySystems, applyMandatoryMiddleware, globalErrorHandler as safetyErrorHandler, sanitizationMiddleware, killSwitch } from "./safety/index.js";
 
-import { securityMiddleware } from "./middleware/security?.js";
+import { securityMiddleware } from "./middleware/security.js";
 
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: { collect?: () => void; [k: string]: unknown } | null =
@@ -40,11 +40,11 @@ async function loadOptionalModules() {
   // Import all optional modules concurrently instead of 5 sequential awaits.
   const [metrics, alerting, capacity, realtime, workers] =
     await Promise?.allSettled([
-      import("./monitoring/metricsCollector?.js"),
-      import("./monitoring/alertingService?.js"),
-      import("./monitoring/capacityMonitor?.js"),
-      import("./realtime/index?.js"),
-      import("./workers/index?.js"),
+      import("./monitoring/metricsCollector.js"),
+      import("./monitoring/alertingService.js"),
+      import("./monitoring/capacityMonitor.js"),
+      import("./realtime/index.js"),
+      import("./workers/index.js"),
     ]);
   if (metrics?.status === "fulfilled")
     metricsCollector = metrics?.value.metricsCollector;
@@ -75,7 +75,7 @@ startupProbes?.runAllProbes().catch((err) => {
   logger?.warn({ err }, "[startup-probes] runAllProbes failed");
 });
 
-import("./lib/configValidator?.js")
+import("./lib/configValidator.js")
   .then(({ validateScaleConfig }) => {
     validateScaleConfig();
   })
@@ -107,8 +107,8 @@ const _httpServer = createServer(app);
 // If Node closes a keep-alive socket before the LB does, the LB sends a request on a dead socket
 // and returns a 502. 65 s keeps us safely above the LB window.
 // headersTimeout must be strictly greater than keepAliveTimeout.
-httpServer?.keepAliveTimeout = 65_000;
-httpServer?.headersTimeout = 66_000;
+httpServer.keepAliveTimeout = 65_000;
+httpServer.headersTimeout = 66_000;
 
 // VM Reserve: disable Nagle's algorithm on every accepted TCP socket.
 // setNoDelay(true) flushes each write immediately — eliminates up to 200 ms of
@@ -128,7 +128,7 @@ httpServer?.on("connection", (socket) => {
 {
   const __earlyPort = env?.PORT;
   httpServer?.listen(
-    { port: _earlyPort, host: "0?.0.0?.0", reusePort: true },
+    { port: _earlyPort, host: "0.0.0.0", reusePort: true },
     () =>
       log(
         `serving on port ${_earlyPort} (early listen — full init in progress)`,
@@ -164,7 +164,7 @@ try {
 app?.use(sanitizationMiddleware);
 
 // TikTok Developers Site Verification
-app?.get("/tiktok-developers-site-verification?.txt", (_req, res) => {
+app?.get("/tiktok-developers-site-verification.txt", (_req, res) => {
   res
     .type("text/plain")
     .send(
@@ -181,14 +181,14 @@ app?.get(
       );
   },
 );
-app?.get("/tiktokhnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx?.txt", (_req, res) => {
+app?.get("/tiktokhnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx.txt", (_req, res) => {
   res
     .type("text/plain")
     .send(
       "tiktok-developers-site-verification=hnfUpA9zyoJspWMdAIdZWXJzIvyo9MBx",
     );
 });
-app?.get("/tiktokShgx3KxJb3b1mCeV8AHEsINRNKf2pmH5?.txt", (_req, res) => {
+app?.get("/tiktokShgx3KxJb3b1mCeV8AHEsINRNKf2pmH5.txt", (_req, res) => {
   res
     .type("text/plain")
     .send(
@@ -197,15 +197,15 @@ app?.get("/tiktokShgx3KxJb3b1mCeV8AHEsINRNKf2pmH5?.txt", (_req, res) => {
 });
 
 // Responsible-disclosure endpoint — industry standard for 90M-user platforms.
-// https://securitytxt?.org/
-app?.get("/.well-known/security?.txt", (_req, res) => {
+// https://securitytxt.org/
+app?.get("/.well-known/security.txt", (_req, res) => {
   res
     .type("text/plain")
     .send(
       "Contact: mailto:security@max-booster?.com\n" +
-        "Expires: 2027-01-01T00:00:00?.000Z\n" +
+        "Expires: 2027-01-01T00:00:00.000Z\n" +
         "Preferred-Languages: en\n" +
-        "Policy: https://max-booster?.com/security-policy\n",
+        "Policy: https://max-booster.com/security-policy\n",
     );
 });
 
@@ -232,7 +232,7 @@ app?.use(
   express?.json({
     limit: "1mb",
     verify: (req, _res, buf) => {
-      req?.rawBody = buf;
+      req.rawBody = buf;
     },
   }),
 );
@@ -245,7 +245,7 @@ app?.use(
   express?.static(path?.join(process?.cwd(), "client", "public"), {
     maxAge: 0,
     setHeaders: (res, filePath) => {
-      if (filePath?.endsWith("sw?.js")) {
+      if (filePath?.endsWith("sw.js")) {
         res?.setHeader("Content-Type", "application/javascript; charset=utf-8");
         res?.setHeader("Service-Worker-Allowed", "/");
         res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -345,7 +345,7 @@ app?.use((req, res, next) => {
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
   const _originalResJson = res?.json;
-  res?.json = function (bodyJson, ...args) {
+  res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson?.apply(res, [bodyJson, ...args]);
   };
@@ -372,7 +372,7 @@ app?.use((req, res, next) => {
 // after boot.  During that window, any browser request to GET / (or any non-API
 // route) falls through with no handler and returns 404.
 //
-// This middleware fires BEFORE all API routes.  It serves dist/index?.html for
+// This middleware fires BEFORE all API routes.  It serves dist/index.html for
 // non-API GET requests during the startup window only.  Once Vite or
 // serveStatic registers its own catch-all (_spaHandlerReady = true), this
 // middleware calls next() immediately and is completely transparent.
@@ -390,7 +390,7 @@ const __spaFallbackIndexPath = path?.resolve(
   process?.cwd(),
   "dist",
   "public",
-  "index?.html",
+  "index.html",
 );
 
 // Lightweight boot-status endpoint — always available, no proxy/header issues.
@@ -451,7 +451,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     res?.setHeader("X-Boot-Fallback", "1");
     return res?.sendFile(_spaFallbackIndexPath);
   }
-  // In dev mode (no built index?.html) serve a minimal loading page so mobile
+  // In dev mode (no built index.html) serve a minimal loading page so mobile
   // browsers see something instead of a white screen during the boot window.
   res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res?.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -467,18 +467,18 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;
          background:#0f0f1a;color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:24px}
     .logo{width:80px;height:80px;border-radius:20px;margin-bottom:24px;
-          box-shadow:0 0 40px rgba(124,58,237,0?.4);display:block}
-    h1{font-size:1?.5rem;font-weight:700;margin-bottom:8px}
+          box-shadow:0 0 40px rgba(124,58,237,0.4);display:block}
+    h1{font-size:1.5rem;font-weight:700;margin-bottom:8px}
     p{color:#a0a0b8;font-size:.95rem;margin-bottom:32px}
     .bar{width:220px;height:4px;background:#1e1e35;border-radius:4px;overflow:hidden}
     .bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#4f46e5);border-radius:4px;
-              animation:slide 1?.6s ease-in-out infinite}
+              animation:slide 1.6s ease-in-out infinite}
     @keyframes slide{0%{width:0%;margin-left:0}50%{width:70%;margin-left:0}100%{width:0%;margin-left:100%}}
     .note{margin-top:24px;font-size:.75rem;color:#555}
   </style>
 </head>
 <body>
-  <img class="logo" src="/logo?.png" alt="Max Booster"/>
+  <img class="logo" src="/logo.png" alt="Max Booster"/>
   <h1>Max Booster</h1>
   <p>Initializing AI systems…</p>
   <div class="bar"><div class="bar-fill"></div></div>
@@ -521,15 +521,15 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     { distributedCache },
     prometheusModule,
   ] = await Promise?.all([
-    import("./routes?.js"),
-    import("./static?.js"),
+    import("./routes.js"),
+    import("./static.js"),
     import("express-session"),
-    import("./db?.js"),
-    import("./middleware/sessionConfig?.js"),
-    import("./services/stripeSetup?.js"),
-    import("./middleware/requestValidation?.js"),
-    import("./infrastructure/distributedCache?.js"),
-    import("./routes/prometheus?.js"),
+    import("./db.js"),
+    import("./middleware/sessionConfig.js"),
+    import("./services/stripeSetup.js"),
+    import("./middleware/requestValidation.js"),
+    import("./infrastructure/distributedCache.js"),
+    import("./routes/prometheus.js"),
   ]);
   const _prometheusRouter = (prometheusModule as { default?: unknown }).default;
   const { httpRequestDuration, httpRequestTotal } = prometheusModule as {
@@ -582,7 +582,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // and events from subsequent service startups.
   try {
     const { systemIntelligence } = await import(
-      "./services/systemIntelligence?.js"
+      "./services/systemIntelligence.js"
     );
     systemIntelligence?.initialize();
   } catch (e) {
@@ -595,7 +595,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // autonomous systems, BullMQ workers, and PDIM during their own startup
   try {
     const { chainErrorAutoFixer } = await import(
-      "./services/chainErrorAutoFixer?.js"
+      "./services/chainErrorAutoFixer.js"
     );
     chainErrorAutoFixer?.start();
   } catch (e) {
@@ -608,7 +608,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // The middleware (per-route 5xx rate tracker) always runs — it has no external I/O.
   try {
     const { platformAutoFixer, platformFixerMiddleware } = await import(
-      "./services/platformAutoFixer?.js"
+      "./services/platformAutoFixer.js"
     );
     if (isBgWorker) {
       platformAutoFixer?.start();
@@ -628,7 +628,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   setTimeout(async () => {
     try {
       const { permanentFixRegistry } = await import(
-        "./services/permanentFixRegistry?.js"
+        "./services/permanentFixRegistry.js"
       );
       await permanentFixRegistry?.loadPermanentOverrides();
     } catch (e) {
@@ -674,7 +674,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
   // Export session store for WebSocket authentication
   (
-    global as NodeJS?.Global & { __activeSessionStore?: unknown }
+    global as NodeJS.Global & { __activeSessionStore?: unknown }
   ).__activeSessionStore = activeSessionStore;
 
   // ========================================
@@ -694,7 +694,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // (see CSRF_EXEMPT_PATHS in server/middleware/csrf?.ts).
   try {
     const { csrfProtectionWithExemptions, generateCsrfToken } = await import(
-      "./middleware/csrf?.js"
+      "./middleware/csrf.js"
     );
     app?.use(generateCsrfToken);
     app?.use(csrfProtectionWithExemptions);
@@ -763,7 +763,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   try {
     if (typeof initializeRealtimeServer === "function") {
       // Pass the already-initialized session store to WebSocket for secure authentication
-      const { setSessionStore } = await import("./realtime/index?.js");
+      const { setSessionStore } = await import("./realtime/index.js");
       if (typeof setSessionStore === "function" && activeSessionStore) {
         setSessionStore(activeSessionStore);
       }
@@ -796,7 +796,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // and checks TXT propagation. Runs on every process (lightweight interval, not BullMQ).
   try {
     const { startDomainVerificationWorker } = await import(
-      "./workers/domainVerificationWorker?.js"
+      "./workers/domainVerificationWorker.js"
     );
     startDomainVerificationWorker();
     logger?.info("Domain verification worker started");
@@ -808,7 +808,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // Runs every 6 hours; first run is deferred 2 minutes post-startup.
   try {
     const { startDomainLifecycleJob } = await import(
-      "./services/domainLifecycleJob?.js"
+      "./services/domainLifecycleJob.js"
     );
     startDomainLifecycleJob();
     logger?.info("[domainVerify] Domain lifecycle job started");
@@ -820,16 +820,16 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // Domains registered through Max Booster are pre-authorized by subscription payment;
   // they should never require a TXT ownership verification step.
   try {
-    const { pool: bPool } = await import("./db?.js");
+    const { pool: bPool } = await import("./db.js");
     const { rowCount } = await bPool?.query(`
       UPDATE dns_zones z
          SET is_verified = true,
              status      = 'active',
              updated_at  = NOW()
         FROM claimed_domains cd
-       WHERE cd?.domain          = z?.domain
-         AND cd?.registrar_name  = 'maxbooster'
-         AND (z?.is_verified = false OR z?.status = 'pending')
+       WHERE cd.domain          = z?.domain
+         AND cd.registrar_name  = 'maxbooster'
+         AND (z.is_verified = false OR z.status = 'pending')
     `);
     if (rowCount && rowCount > 0) {
       logger?.info(
@@ -842,11 +842,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
   // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
   try {
-    const { tfWorkerPool } = await import("./lib/tensorflowWorkerPool?.js");
+    const { tfWorkerPool } = await import("./lib/tensorflowWorkerPool.js");
     await tfWorkerPool?.initialize();
     // Load all persisted models into worker threads so inference is immediately available
     try {
-      const { mlModelRegistry } = await import("./services/mlModelRegistry?.js");
+      const { mlModelRegistry } = await import("./services/mlModelRegistry.js");
       await tfWorkerPool?.loadAllModels(mlModelRegistry);
     } catch (modelErr) {
       logger?.warn(`[TFWorkerPool] Model preload skipped: ${modelErr?.message}`);
@@ -862,10 +862,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // independent so there is no reason to await them one at a time (~1s saved).
   const [demoAuthResult, rateLimiterResult, admissionResult, apiCacheResult] =
     await Promise?.allSettled([
-      import("./auth?.js"),
-      import("./middleware/scalableRateLimiter?.js"),
-      import("./middleware/admissionControl?.js"),
-      import("./middleware/apiCache?.js"),
+      import("./auth.js"),
+      import("./middleware/scalableRateLimiter.js"),
+      import("./middleware/admissionControl.js"),
+      import("./middleware/apiCache.js"),
     ]);
 
   // Apply each in the correct precedence order (import order above matches use order)
@@ -990,7 +990,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   });
 
   const { multiTenantRouter } = await import(
-    "./middleware/multiTenantRouter?.js"
+    "./middleware/multiTenantRouter.js"
   );
   app?.use(multiTenantRouter);
 
@@ -1020,7 +1020,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   await registerRoutes(httpServer, app);
   _routesReady = true;
   const { setRoutesReady: _setRoutesReady } = await import(
-    "./lib/bootState?.js"
+    "./lib/bootState.js"
   );
   _setRoutesReady();
   logger?.info(
@@ -1031,7 +1031,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // is logged at startup rather than on first route hit.
   try {
     const { mobilePushService } = await import(
-      "./services/mobilePushService?.js"
+      "./services/mobilePushService.js"
     );
     logger?.info(`📱 Mobile Push Service mode: ${mobilePushService?.getMode()}`);
   } catch (e) {
@@ -1042,7 +1042,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   }
   try {
     const { desktopPushService } = await import(
-      "./services/desktopPushService?.js"
+      "./services/desktopPushService.js"
     );
     logger?.info(
       `🖥️  Desktop Push Service ready: ${desktopPushService?.isReady()}`,
@@ -1057,7 +1057,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // Register subsystem health probes (DB, Redis, audit, automation) so
   // /api/ready can report on every dependency uniformly.
   try {
-    const { registerCoreProbes } = await import("./lib/healthRegistry?.js");
+    const { registerCoreProbes } = await import("./lib/healthRegistry.js");
     registerCoreProbes();
   } catch (err) {
     logger?.warn({ err }, "[Health] Failed to register core probes");
@@ -1066,17 +1066,17 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // Start retention background services
   try {
     const { reEngagementService } = await import(
-      "./services/reEngagementService?.js"
+      "./services/reEngagementService.js"
     );
     reEngagementService?.startDailyCron();
     logger?.info("[Retention] Re-engagement cron started");
 
     // ACME / Let's Encrypt renewal cron — no-ops cleanly when ACME_ENABLED!=true
-    const { startAcmeRenewalCron } = await import("./services/acmeClient?.js");
+    const { startAcmeRenewalCron } = await import("./services/acmeClient.js");
     startAcmeRenewalCron();
 
     const { recoverStaleProcessingBatches } = await import(
-      "./services/featureEventBuffer?.js"
+      "./services/featureEventBuffer.js"
     );
     recoverStaleProcessingBatches().catch((e) =>
       logger?.warn(
@@ -1086,7 +1086,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     );
 
     const { getRetentionQueue, startRetentionWorker } = await import(
-      "./lib/scaleJobQueue?.js"
+      "./lib/scaleJobQueue.js"
     );
     const _retentionQueue = getRetentionQueue();
     startRetentionWorker();
@@ -1137,7 +1137,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       async () => {
         try {
           const { advertisingDispatchService } = await import(
-            "./services/advertisingDispatchService?.js"
+            "./services/advertisingDispatchService.js"
           );
           await advertisingDispatchService?.collectAllActiveEngagement();
         } catch (e) {
@@ -1173,24 +1173,24 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
   // SEO routes must be registered before global error handler so their errors are caught
   try {
-    const _seoRoutes = (await import("./routes/seo?.js")).default;
+    const _seoRoutes = (await import("./routes/seo.js")).default;
     app?.use(seoRoutes);
   } catch (e) {
     logger?.warn(`⚠️ SEO routes not available: ${e?.message}`);
   }
 
   // ── Platform Subdomain Router ────────────────────────────────────────────────
-  // Handles requests to {label}.max-booster?.com — Max Booster's built-in
-  // storefront subdomain system.  Each artist can claim e?.g. beatsby?.max-booster?.com
+  // Handles requests to {label}.max-booster.com — Max Booster's built-in
+  // storefront subdomain system.  Each artist can claim e?.g. beatsby?.max-booster.com
   // and this middleware resolves the label → storefront slug and serves the SPA.
   //
   // Requires a wildcard DNS record at the registrar:
-  //   *.max-booster?.com  →  A/CNAME  →  this app's IP / deployed hostname
+  //   *.max-booster.com  →  A/CNAME  →  this app's IP / deployed hostname
   //
   // API + asset paths are passed through so the full app still works on the subdomain.
   app?.use(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const _BASE = process?.env.BASE_DOMAIN || "max-booster?.com";
+      const _BASE = process?.env.BASE_DOMAIN || "max-booster.com";
       const _host = req?.hostname ?? "";
 
       // Only intercept true subdomains of the platform domain (not the root itself)
@@ -1215,7 +1215,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       // Already on the /storefront/ path — SPA will render it, nothing to do
       if (p?.startsWith("/storefront/")) return next();
 
-      const { db: sDb } = await import("./db?.js");
+      const { db: sDb } = await import("./db.js");
       const { storefrontDomains: sDoms, storefronts: sStores } = await import(
         "@shared/schema"
       );
@@ -1282,11 +1282,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     "/s/:label",
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const { db: sDb } = await import("./db?.js");
+        const { db: sDb } = await import("./db.js");
         const { storefrontDomains: sDomains, storefronts: sStorefronts } =
           await import("@shared/schema");
         const { eq, and } = await import("drizzle-orm");
-        const _BASE = process?.env.BASE_DOMAIN || "max-booster?.com";
+        const _BASE = process?.env.BASE_DOMAIN || "max-booster.com";
         const _label = String(req?.params.label)
           .toLowerCase()
           .replace(/[^a-z0-9-]/g, "");
@@ -1332,7 +1332,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   if (isProductionEnv()) {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite?.js");
+    const { setupVite } = await import("./vite.js");
     await setupVite(httpServer, app);
   }
   // Real SPA handler is now registered — disable the boot-time fallback shim.
@@ -1358,7 +1358,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // Stagger the connect() across cluster workers so they don't all hammer
     // PDIM simultaneously at startup: worker N waits N × 1 500 ms before
     // connecting.  Worker 0 (BG) connects immediately; workers 1 and 2 wait
-    // 1?.5 s and 3 s respectively.  Total PDIM connection window ≤ 3 s instead
+    // 1.5 s and 3 s respectively.  Total PDIM connection window ≤ 3 s instead
     // of all workers colliding in the same 200 ms window and triggering 429s.
     const __pdimWorkerDelay =
       parseInt(process?.env.CLUSTER_WORKER_ID || "0", 10) * 1500;
@@ -1376,7 +1376,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       // has signalled an invalidation — equivalent to pub/sub but using PDIM key-polling
       // (PDIM stubs PUBLISH/SUBSCRIBE as no-ops; see pdimClient?.ts:1080-1084).
       try {
-        const { apiCache: _ac } = await import("./middleware/apiCache?.js");
+        const { apiCache: _ac } = await import("./middleware/apiCache.js");
         _ac?.startPoller();
       } catch (pollerErr: unknown) {
         logger?.warn(
@@ -1402,7 +1402,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 0b. Admin account seeding — idempotent, safe to run after listen
     try {
-      const { initializeAdmin } = await import("./init-admin?.js");
+      const { initializeAdmin } = await import("./init-admin.js");
       await initializeAdmin();
       logger?.info("✅ Admin account initialized");
     } catch (e) {
@@ -1412,7 +1412,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // 0c. Onboarding task seeding
     try {
       const { onboardingService } = await import(
-        "./services/onboardingService?.js"
+        "./services/onboardingService.js"
       );
       await onboardingService?.seedDefaultTasks();
       await onboardingService?.ensureAITasksExist();
@@ -1423,7 +1423,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // 0d. Hybrid Storage System (Replit hot + Pocket Dimension cold)
     try {
       const { hybridStorageService } = await import(
-        "./services/hybridStorageService?.js"
+        "./services/hybridStorageService.js"
       );
       await hybridStorageService?.initialize();
       logger?.info(
@@ -1457,7 +1457,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // 0e. Pocket Dimension Fabric (Distributed storage layer + Auto-cluster)
     try {
       const { initializeFabric, autoClusterManager } = await import(
-        "./pocket-dimension/fabric/index?.js"
+        "./pocket-dimension/fabric/index.js"
       );
       await initializeFabric();
       logger?.info("✅ [PocketFabric] Distributed fabric storage initialized");
@@ -1471,7 +1471,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 1. Autonomous Service (Core)
     try {
-      const _mod = await import("./services/autonomousService?.js");
+      const _mod = await import("./services/autonomousService.js");
       const _svc = mod?.autonomousService;
       if (svc && typeof svc?.getStatus === "function") {
         // Only start autonomous operations on the background worker (worker 0).
@@ -1511,7 +1511,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 2. Automation System
     try {
-      const _mod = await import("./automation-system?.js");
+      const _mod = await import("./automation-system.js");
       const _AutomationSystemClass = mod?.AutomationSystem ?? mod?.default;
       if (
         AutomationSystemClass &&
@@ -1536,7 +1536,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 3. Autonomous Updates Orchestrator
     try {
-      const _mod = await import("./autonomous-updates?.js");
+      const _mod = await import("./autonomous-updates.js");
       const _orchestrator =
         mod?.autonomousUpdates ?? mod?.AutonomousUpdatesOrchestrator;
       if (orchestrator) {
@@ -1567,12 +1567,12 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 4-9. Other autonomous modules — load in parallel then register with kill switch
     const _parallelMods = await Promise?.allSettled([
-      import("./autonomous-autopilot?.js"),
-      import("./autopilot-engine?.js"),
-      import("./services/autoPostingService?.js"),
-      import("./services/autoPostingServiceV2?.js"),
-      import("./services/autoPostGenerator?.js"),
-      import("./services/autopilotPublisher?.js"),
+      import("./autonomous-autopilot.js"),
+      import("./autopilot-engine.js"),
+      import("./services/autoPostingService.js"),
+      import("./services/autoPostingServiceV2.js"),
+      import("./services/autoPostGenerator.js"),
+      import("./services/autopilotPublisher.js"),
     ]);
 
     // 4. Autonomous Autopilot
@@ -1608,7 +1608,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       ).value;
       const _engine =
         mod?.autopilotEngine ??
-        (mod?.AutopilotEngine ? new mod?.AutopilotEngine() : null);
+        (mod?.AutopilotEngine ? new mod.AutopilotEngine() : null);
       if (engine) {
         logger?.info("✅ [Autonomy] Autopilot Engine loaded");
         killSwitch?.registerSystem("autopilot-engine", {
@@ -1723,7 +1723,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     logger?.info("🤖 AUTONOMOUS SYSTEMS READY");
 
     // Built-in authoritative DNS server for *.maxbooster?.replit.app
-    import("./services/dnsServer?.js")
+    import("./services/dnsServer.js")
       .then(({ startDNSServer }) => {
         startDNSServer().catch((e) =>
           logger?.warn("[DNS] Start error:", e?.message),
@@ -1736,7 +1736,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // and PDIM writes by the cluster worker count (seen as N identical
     // [MaxCoreSync] ✅ synced log lines in production at the same timestamp).
     if (isBgWorker) {
-      import("./services/baseModelTrainer?.js")
+      import("./services/baseModelTrainer.js")
         .then(({ runBaseModelTraining }) => {
           runBaseModelTraining().catch((e) => {
             logger?.warn(
@@ -1747,7 +1747,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         .catch(() => {});
 
       // MaxCore + PDIM connectivity probe, weight sync, and training feedback wiring
-      import("./services/maxcoreSync?.js")
+      import("./services/maxcoreSync.js")
         .then(({ initMaxCoreSync }) => {
           initMaxCoreSync().catch((e) =>
             logger?.warn("[MaxCoreSync] Init error:", e?.message),
@@ -1765,7 +1765,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // (~31 s total).  Both workers running it would double that to 10 calls with duplicate
     // results and redundant log noise.
     if (isBgWorker) {
-      import("./services/maxcoreScoreCalibrator?.js")
+      import("./services/maxcoreScoreCalibrator.js")
         .then(({ initScoreCalibrator }) => {
           initScoreCalibrator();
         })
@@ -1777,14 +1777,14 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     }
 
     // Diffusion self-training: starts 60s after boot so server is stable first.
-    // Runs on worker 0 only: spawning Python synthesizer?.py from multiple workers
+    // Runs on worker 0 only: spawning Python synthesizer.py from multiple workers
     // causes file-lock contention on meta?.json / memory?.json and doubles CPU load.
     // startBackgroundTraining() checks the MaxCore Diffusion Gateway on port 8008
     // first — if the Gateway is running, the local synthesizer is skipped (MaxCore
     // is the authoritative diffusion training source).
     if (isBgWorker) {
       setTimeout(() => {
-        import("./services/diffusionBackgroundTrainer?.js")
+        import("./services/diffusionBackgroundTrainer.js")
           .then(({ startBackgroundTraining }) => {
             startBackgroundTraining()
               .then((_result?: void) => {
@@ -1819,7 +1819,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // Both primary and replica pools are kept alive.
     try {
       const { pool: _keepPool, replicaPool: _replicaKeepPool } = await import(
-        "./db?.js"
+        "./db.js"
       );
       const __keepalive = setInterval(() => {
         _keepPool?.query("SELECT 1").catch(() => {});
@@ -1873,7 +1873,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   try {
     // 2. Close BullMQ workers — waits for the current job to finish then stops.
     //    Import is dynamic so this file compiles even if workers module is absent.
-    const { shutdownWorkers } = await import("./workers/index?.js");
+    const { shutdownWorkers } = await import("./workers/index.js");
     await Promise?.race([
       shutdownWorkers(),
       new Promise<void>((_, rej) =>
@@ -1889,7 +1889,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     // 3. Flush any debounced autopilot-coordinator PDIM persists so the last
     //    ≤ debounce-window of queue/insight mutations isn't lost on shutdown.
     const { autopilotCoordinatorService } = await import(
-      "./services/autopilotCoordinatorService?.js"
+      "./services/autopilotCoordinatorService.js"
     );
     await Promise?.race([
       autopilotCoordinatorService?.flushPendingPersists(),
@@ -1902,7 +1902,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
 
   try {
     // 4. Stop the built-in DNS server.
-    const { stopDNSServer } = await import("./services/dnsServer?.js");
+    const { stopDNSServer } = await import("./services/dnsServer.js");
     await stopDNSServer();
   } catch {
     /* non-critical */
@@ -1911,7 +1911,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   try {
     // 4. Stop the platform auto-fixer probe loop.
     const { platformAutoFixer } = await import(
-      "./services/platformAutoFixer?.js"
+      "./services/platformAutoFixer.js"
     );
     (platformAutoFixer as { stop?: () => void })?.stop?.();
     logger?.info("[Shutdown] PlatformAutoFixer stopped");
@@ -1921,7 +1921,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
 
   try {
     // 4. Close the database pool so in-flight queries complete before the process exits.
-    const { pool } = await import("./db?.js");
+    const { pool } = await import("./db.js");
     await pool?.end();
     logger?.info("[Shutdown] Database pool closed");
   } catch (err) {
@@ -1937,7 +1937,7 @@ process?.on("SIGINT", () => gracefulShutdown("SIGINT", 0));
 
 process?.on("uncaughtException", (error: Error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)
-  const _code = (error as NodeJS?.ErrnoException).code;
+  const _code = (error as NodeJS.ErrnoException).code;
   if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
     return;
   const _eMsg = error?.message ?? "";
@@ -1956,7 +1956,7 @@ process?.on("uncaughtException", (error: Error) => {
 
 process?.on("unhandledRejection", (reason: unknown) => {
   const _err = reason instanceof Error ? reason : new Error(String(reason));
-  const _code = (reason as NodeJS?.ErrnoException)?.code;
+  const _code = (reason as NodeJS.ErrnoException)?.code;
 
   // Non-fatal: known transient errors that the ChainFixer / circuit breaker
   // handle automatically.  Suppress them so they do not trigger a restart.

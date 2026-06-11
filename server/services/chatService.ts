@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { chatSessions, chatMessages } from "../../shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { randomUUID } from "crypto";
 
 interface CreateMessageInput {

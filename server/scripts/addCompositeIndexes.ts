@@ -15,8 +15,8 @@
  */
 
 import { sql } from "drizzle-orm";
-import { db } from "../db?.js";
-import { logger } from "../logger?.js";
+import { db } from "../db.js";
+import { logger } from "../logger.js";
 
 const COMPOSITE_INDEXES: Array<{
   name: string;

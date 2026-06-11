@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { vstPluginBridge } from "../services/vstPluginBridge";
 
 const _router = Router();
@@ -363,8 +363,8 @@ router?.get("/formats", requireAuth, async (_req, res) => {
       formats: [
         {
           id: "vst2",
-          name: "VST 2?.4",
-          description: "Steinberg VST 2?.4 plugin format",
+          name: "VST 2.4",
+          description: "Steinberg VST 2.4 plugin format",
           platforms: ["windows", "macos"],
           fileExtensions: [".dll", ".vst"],
         },

@@ -1,22 +1,22 @@
 import { Router, Request, Response } from "express";
-import { requireAuth, requireAuthOnly } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { unifiedAIController } from "../services/unifiedAIController?.js";
-import { storage } from "../storage?.js";
-import { notificationService } from "../services/notificationService?.js";
-import { pythonAIService } from "../services/pythonAIService?.js";
-import { MaxCoreAIClient } from "../services/maxcoreClient?.js";
-import { renderVideo as renderAdvancedVideo } from "../services/advancedVideoRendererService?.js";
+import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { unifiedAIController } from "../services/unifiedAIController.js";
+import { storage } from "../storage.js";
+import { notificationService } from "../services/notificationService.js";
+import { pythonAIService } from "../services/pythonAIService.js";
+import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { renderVideo as renderAdvancedVideo } from "../services/advancedVideoRendererService.js";
 import {
   storeUploadedFile,
   handleUploadError,
   createHardenedUpload,
-} from "../middleware/uploadHandler?.js";
-import { db } from "../db?.js";
+} from "../middleware/uploadHandler.js";
+import { db } from "../db.js";
 import { eq, desc, and, isNotNull } from "drizzle-orm";
 import { adCampaigns, adCreatives, systemSettings } from "@shared/schema";
-import { aiModelManager } from "../services/aiModelManager?.js";
-import { autopilotEngine } from "../autopilot-engine?.js";
+import { aiModelManager } from "../services/aiModelManager.js";
+import { autopilotEngine } from "../autopilot-engine.js";
 
 const _imageUpload = createHardenedUpload({
   maxFileSize: 10 * 1024 * 1024,
@@ -513,7 +513,7 @@ router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
         activeCampaigns: activeCampaigns?.length,
       },
       modelStatus: {
-        advertising: { trained: false, version: "1?.0.0" },
+        advertising: { trained: false, version: "1.0.0" },
       },
     });
   } catch (error) {
@@ -933,7 +933,7 @@ router?.get(
             )
           : 0;
 
-        const _isFatigued = (impressions > 10000 && ctr < 0?.5) || age > 60;
+        const _isFatigued = (impressions > 10000 && ctr < 0.5) || age > 60;
 
         const _item = {
           id: c?.id,
@@ -996,7 +996,7 @@ router?.get(
         const _withPerf = campaigns?.filter(
           (c) => (c?.performance as Record<string, unknown>)?.roas,
         );
-        if (!withPerf?.length) return 2?.5;
+        if (!withPerf?.length) return 2.5;
         return (
           withPerf?.reduce(
             (sum, c) =>
@@ -1010,7 +1010,7 @@ router?.get(
       const _daily = Array?.from({ length: 7 }, (_, i) => {
         const _date = new Date();
         date?.setDate(date?.getDate() + i + 1);
-        const _jitter = 0?.85 + Math?.random() * 0?.3;
+        const _jitter = 0.85 + Math?.random() * 0.3;
         const _spend = totalDailyBudget * jitter;
         return {
           date: date?.toISOString().split("T")[0],
@@ -1021,12 +1021,12 @@ router?.get(
       });
 
       const _weekly = Array?.from({ length: 4 }, (_, i) => {
-        const _spend = totalDailyBudget * 7 * (0?.9 + i * 0?.05);
+        const _spend = totalDailyBudget * 7 * (0.9 + i * 0.05);
         return { week: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
       });
 
       const _monthly = Array?.from({ length: 3 }, (_, i) => {
-        const _spend = totalDailyBudget * 30 * (0?.95 + i * 0?.03);
+        const _spend = totalDailyBudget * 30 * (0.95 + i * 0.03);
         return { month: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
       });
 
@@ -1091,11 +1091,11 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
         conversions: performance?.conversions || 5,
         spend: performance?.spend || 100,
         revenue: performance?.revenue || 150,
-        ctr: performance?.ctr || 0?.05,
-        cvr: performance?.cvr || 0?.1,
+        ctr: performance?.ctr || 0.05,
+        cvr: performance?.cvr || 0.1,
         cpc: performance?.cpc || 2,
         cpa: performance?.cpa || 20,
-        roas: performance?.roas || 1?.5,
+        roas: performance?.roas || 1.5,
       },
     };
 

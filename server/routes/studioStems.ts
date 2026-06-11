@@ -10,12 +10,12 @@
  */
 
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
-import { logger } from "../logger?.js";
-import { stemExportService } from "../services/stemExportService?.js";
-import { notificationService } from "../services/notificationService?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { stemExportService } from "../services/stemExportService.js";
+import { notificationService } from "../services/notificationService.js";
+import { db } from "../db.js";
 import { projects } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -350,7 +350,7 @@ router?.get(
           },
         ],
         sampleRates: [
-          { value: 44100, label: "44?.1 kHz (CD Quality)" },
+          { value: 44100, label: "44.1 kHz (CD Quality)" },
           { value: 48000, label: "48 kHz (Standard)" },
           { value: 96000, label: "96 kHz (High Resolution)" },
           { value: 192000, label: "192 kHz (Studio Reference)" },

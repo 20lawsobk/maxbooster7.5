@@ -10,10 +10,10 @@ import {
   hybridStorageService,
   StorageTier,
   StorageLocation,
-} from "../services/hybridStorageService?.js";
-import { createHardenedUpload } from "../middleware/uploadHandler?.js";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+} from "../services/hybridStorageService.js";
+import { createHardenedUpload } from "../middleware/uploadHandler.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const _router = Router();
 const _upload = createHardenedUpload({

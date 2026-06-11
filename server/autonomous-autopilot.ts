@@ -1,16 +1,16 @@
 import { EventEmitter } from "events";
 import { randomUUID } from "crypto";
-import { platformAPI } from "./platform-apis?.js";
-import { logger } from "./logger?.js";
+import { platformAPI } from "./platform-apis.js";
+import { logger } from "./logger.js";
 import {
   autopilotCoordinatorService,
   type AutopilotType,
-} from "./services/autopilotCoordinatorService?.js";
-import { hyperLearningEngine } from "./services/hyperLearningEngine?.js";
-import { updateSchedulePressure } from "./services/contentQualityPipeline?.js";
-import { advancedSocialAIService } from "./services/advancedSocialAIService?.js";
-import { autopilotLearningService } from "./services/autopilotLearningService?.js";
-import { evolutionRegistry } from "./services/evolutionRegistry?.js";
+} from "./services/autopilotCoordinatorService.js";
+import { hyperLearningEngine } from "./services/hyperLearningEngine.js";
+import { updateSchedulePressure } from "./services/contentQualityPipeline.js";
+import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
+import { autopilotLearningService } from "./services/autopilotLearningService.js";
+import { evolutionRegistry } from "./services/evolutionRegistry.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -51,9 +51,9 @@ interface AutonomousConfig {
 export class AutonomousAutopilot extends EventEmitter {
   private config: AutonomousConfig;
   private isRunning: boolean = false;
-  private contentGenerationInterval: NodeJS?.Timeout | null = null;
-  private performanceAnalysisInterval: NodeJS?.Timeout | null = null;
-  private adaptationInterval: NodeJS?.Timeout | null = null;
+  private contentGenerationInterval: NodeJS.Timeout | null = null;
+  private performanceAnalysisInterval: NodeJS.Timeout | null = null;
+  private adaptationInterval: NodeJS.Timeout | null = null;
   private platformPerformance: Map<string, any> = new Map();
   private static readonly DEFAULT_TOPICS = [
     "new release",
@@ -81,14 +81,14 @@ export class AutonomousAutopilot extends EventEmitter {
 
   constructor(userId: string, autopilotType: AutopilotType = "social") {
     super();
-    this?.userId = userId;
-    this?.autopilotType = autopilotType;
-    this?.config = this?.getDefaultConfig();
+    this.userId = userId;
+    this.autopilotType = autopilotType;
+    this.config = this?.getDefaultConfig();
     this?.initializeAutonomousLearning();
   }
 
   setAutopilotType(type: AutopilotType): void {
-    this?.autopilotType = type;
+    this.autopilotType = type;
   }
 
   getAutopilotType(): AutopilotType {
@@ -96,7 +96,7 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   setCoordinatorEnabled(enabled: boolean): void {
-    this?.coordinatorEnabled = enabled;
+    this.coordinatorEnabled = enabled;
   }
 
   private connectToCoordinator(): void {
@@ -269,12 +269,12 @@ export class AutonomousAutopilot extends EventEmitter {
     initialConfig?: Partial<AutonomousConfig>,
   ): Promise<void> {
     if (initialConfig) {
-      this?.config = { ...this?.config, ...initialConfig, enabled: true };
+      this.config = { ...this?.config, ...initialConfig, enabled: true };
     } else {
       this?.config.enabled = true;
     }
 
-    this?.isRunning = true;
+    this.isRunning = true;
 
     // Connect to coordinator for cross-autopilot awareness
     this?.connectToCoordinator();
@@ -296,22 +296,22 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   async stopAutonomousMode(): Promise<void> {
-    this?.isRunning = false;
+    this.isRunning = false;
     this?.config.enabled = false;
 
     if (this?.contentGenerationInterval) {
       clearTimeout(this?.contentGenerationInterval);
-      this?.contentGenerationInterval = null;
+      this.contentGenerationInterval = null;
     }
 
     if (this?.performanceAnalysisInterval) {
       clearInterval(this?.performanceAnalysisInterval);
-      this?.performanceAnalysisInterval = null;
+      this.performanceAnalysisInterval = null;
     }
 
     if (this?.adaptationInterval) {
       clearInterval(this?.adaptationInterval);
-      this?.adaptationInterval = null;
+      this.adaptationInterval = null;
     }
 
     // Disconnect from coordinator
@@ -354,12 +354,12 @@ export class AutonomousAutopilot extends EventEmitter {
     const _runLoop = async () => {
       await generateContent();
       if (!this?.isRunning) return;
-      this?.contentGenerationInterval = setTimeout(
+      this.contentGenerationInterval = setTimeout(
         runLoop,
         this?.calculateNextGenerationInterval(),
       );
     };
-    this?.contentGenerationInterval = setTimeout(runLoop, 5000); // Start in 5s
+    this.contentGenerationInterval = setTimeout(runLoop, 5000); // Start in 5s
   }
 
   private async shouldGenerateContentForPlatform(
@@ -391,7 +391,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // Caffeine Mode: under critical pressure generate on every check — no waiting
     // for the optimal window.  Like a student who has to submit something before
     // the exam starts, even if conditions aren't perfect.
-    if (pressure > 1?.5 && postsNeeded > 0) {
+    if (pressure > 1.5 && postsNeeded > 0) {
       logger?.warn(
         `⚡ [CaffeineMode] ${platform}: critical pressure (${pressure?.toFixed(2)}) — generating immediately`,
       );
@@ -422,7 +422,7 @@ export class AutonomousAutopilot extends EventEmitter {
     }
 
     // Under moderate pressure expand the acceptable posting window from ±1 h to ±2 h
-    const _window = pressure > 0?.5 ? 2 : 1;
+    const _window = pressure > 0.5 ? 2 : 1;
     return optimalHours?.some((hour) => Math?.abs(hour - currentHour) <= window);
   }
 
@@ -474,7 +474,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
       if (successfulPublish) {
         const _realPublishedAt = new Date();
-        savedContent?.status = "published";
+        savedContent.status = "published";
         (savedContent as Record<string, unknown>).publishedAt = realPublishedAt;
 
         // Seed performance history at PUBLISH time with topic + true publish time
@@ -550,7 +550,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
   // Autonomous Content Generation routed through MaxCore via Advanced Social AI.
   // Matches autopilot-engine's pipeline so both code paths produce the same
-  // GPT-5?.2 level, viral-scored, music-industry-tuned output and share the
+  // GPT-5.2 level, viral-scored, music-industry-tuned output and share the
   // same engagement-driven feedback loop.
   private async autonomousContentGeneration(params: {
     platform: string;
@@ -674,7 +674,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
   // Autonomous Performance Analysis
   private schedulePerformanceAnalysis(): void {
-    this?.performanceAnalysisInterval = setInterval(
+    this.performanceAnalysisInterval = setInterval(
       async () => {
         if (!this?.isRunning) return;
 
@@ -732,8 +732,8 @@ export class AutonomousAutopilot extends EventEmitter {
           (p) => p?.contentId === contentId,
         );
         if (existing) {
-          existing?.analytics = analytics;
-          existing?.analyzed = true;
+          existing.analytics = analytics;
+          existing.analyzed = true;
         } else {
           // Fallback: seed entry was evicted from the 200-cap window.
           this?.contentPerformanceHistory.push({
@@ -769,7 +769,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
   // Autonomous Learning and Adaptation
   private scheduleAdaptiveLearning(): void {
-    this?.adaptationInterval = setInterval(
+    this.adaptationInterval = setInterval(
       async () => {
         if (!this?.isRunning) return;
 
@@ -815,13 +815,13 @@ export class AutonomousAutopilot extends EventEmitter {
       const _avgEngagement =
         recentPerformance?.reduce((a, b) => a + b, 0) / (recentPerformance?.length || 1);
 
-      if (avgEngagement > 0?.05) {
+      if (avgEngagement > 0.05) {
         // High engagement
         this?.config.maxPostsPerDay = Math?.min(
           this?.config.maxPostsPerDay + 1,
           12,
         );
-      } else if (avgEngagement < 0?.01) {
+      } else if (avgEngagement < 0.01) {
         // Low engagement
         this?.config.maxPostsPerDay = Math?.max(
           this?.config.maxPostsPerDay - 1,
@@ -951,7 +951,7 @@ export class AutonomousAutopilot extends EventEmitter {
     };
 
     platformData?.totalPosts += 1;
-    platformData?.avgEngagement =
+    platformData.avgEngagement =
       (platformData?.avgEngagement * (platformData?.totalPosts - 1) +
         engagementRate) /
       platformData?.totalPosts;
@@ -1136,8 +1136,8 @@ export class AutonomousAutopilot extends EventEmitter {
     // High-performing topics score high on the first term; under-explored topics
     // score high on the second term. Result: zero wasted impressions, provably
     // maximum long-run engagement. Fully deterministic — no Math?.random().
-    // C = 0?.25 tuned for engagement-rate reward signals in the 0–1 range.
-    const _UCB1_C = 0?.25;
+    // C = 0.25 tuned for engagement-rate reward signals in the 0–1 range.
+    const _UCB1_C = 0.25;
     const _totalTrials =
       Array?.from(statsByTopic?.values()).reduce((s, v) => s + v?.n, 0) || 1;
 
@@ -1163,9 +1163,9 @@ export class AutonomousAutopilot extends EventEmitter {
    * Computes how many posts per remaining hour are needed to hit the daily
    * minimum for the given platform.
    *   0      = on track or ahead
-   *   0–0?.5  = mild lag
-   *   0?.5–1?.5= behind (moderate caffeine)
-   *   >1?.5   = critical (max caffeine — all-nighter mode)
+   *   0–0.5  = mild lag
+   *   0.5–1.5= behind (moderate caffeine)
+   *   >1.5   = critical (max caffeine — all-nighter mode)
    */
   private computeSchedulePressure(platform: string): number {
     const _today = new Date();
@@ -1175,7 +1175,7 @@ export class AutonomousAutopilot extends EventEmitter {
     ).length;
     const _now = new Date();
     const _hoursLeft = Math?.max(
-      0?.5,
+      0.5,
       24 - now?.getHours() - now?.getMinutes() / 60,
     );
     const _postsNeeded = Math?.max(0, this?.config.minPostsPerDay - postsToday);
@@ -1188,17 +1188,17 @@ export class AutonomousAutopilot extends EventEmitter {
    * flooding the interval scheduler with redundant updates.
    */
   private broadcastPressure(pressure: number): void {
-    const _tier = pressure > 1?.5 ? 3 : pressure > 0?.5 ? 2 : pressure > 0 ? 1 : 0;
+    const _tier = pressure > 1.5 ? 3 : pressure > 0.5 ? 2 : pressure > 0 ? 1 : 0;
     const _pTier =
-      this?._lastBroadcastPressure > 1?.5
+      this?._lastBroadcastPressure > 1.5
         ? 3
-        : this?._lastBroadcastPressure > 0?.5
+        : this?._lastBroadcastPressure > 0.5
           ? 2
           : this?._lastBroadcastPressure > 0
             ? 1
             : 0;
     if (tier === pTier) return;
-    this?._lastBroadcastPressure = pressure;
+    this._lastBroadcastPressure = pressure;
     updateSchedulePressure(pressure);
     hyperLearningEngine?.applyDeadlinePressure(pressure);
   }
@@ -1213,8 +1213,8 @@ export class AutonomousAutopilot extends EventEmitter {
 
     // Caffeine Mode overrides engagement-based timing when behind schedule
     const _pressure = this?._lastBroadcastPressure;
-    if (pressure > 1?.5) return caffeineModeInterval;
-    if (pressure > 0?.5) return minInterval;
+    if (pressure > 1.5) return caffeineModeInterval;
+    if (pressure > 0.5) return minInterval;
 
     if (this?.contentPerformanceHistory.length < 10) {
       return baseInterval; // Standard interval initially
@@ -1225,9 +1225,9 @@ export class AutonomousAutopilot extends EventEmitter {
         .slice(-10)
         .reduce((sum, post) => sum + post?.analytics.engagementRate, 0) / 10;
 
-    if (recentAvgEngagement > 0?.05) {
+    if (recentAvgEngagement > 0.05) {
       return minInterval; // Post more frequently if performing well
-    } else if (recentAvgEngagement < 0?.01) {
+    } else if (recentAvgEngagement < 0.01) {
       return maxInterval; // Post less frequently if performing poorly
     }
 
@@ -1277,7 +1277,7 @@ export class AutonomousAutopilot extends EventEmitter {
   async updateAutonomousConfig(
     updates: Partial<AutonomousConfig>,
   ): Promise<void> {
-    this?.config = { ...this?.config, ...updates };
+    this.config = { ...this?.config, ...updates };
     this?.emit("autonomousConfigUpdated", this?.config);
   }
 }

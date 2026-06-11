@@ -120,24 +120,24 @@ export const _useStudioLayoutStore = create<StudioLayoutState>()(
         set((state) => {
           const updates: Partial<StudioLayoutState> = { mode };
           if (mode === "mix") {
-            updates?.consolePanel = {
+            updates.consolePanel = {
               ...state?.consolePanel,
               visible: true,
               height: 500,
             };
-            updates?.launcherPanel = { ...state?.launcherPanel, visible: false };
+            updates.launcherPanel = { ...state?.launcherPanel, visible: false };
           } else if (mode === "launcher") {
-            updates?.launcherPanel = { ...state?.launcherPanel, visible: true };
+            updates.launcherPanel = { ...state?.launcherPanel, visible: true };
           } else if (mode === "arrange") {
-            updates?.consolePanel = {
+            updates.consolePanel = {
               ...state?.consolePanel,
               visible: true,
               height: 300,
             };
-            updates?.launcherPanel = { ...state?.launcherPanel, visible: false };
+            updates.launcherPanel = { ...state?.launcherPanel, visible: false };
           } else if (mode === "project") {
-            updates?.browserPanel = { ...state?.browserPanel, visible: false };
-            updates?.consolePanel = { ...state?.consolePanel, visible: true };
+            updates.browserPanel = { ...state?.browserPanel, visible: false };
+            updates.consolePanel = { ...state?.consolePanel, visible: true };
           }
           return updates;
         }),
@@ -180,7 +180,7 @@ export const _useStudioLayoutStore = create<StudioLayoutState>()(
       setChannelWidth: (width) => set({ channelWidth: width }),
 
       setZoomLevel: (level) =>
-        set({ zoomLevel: Math?.max(0?.1, Math?.min(10, level)) }),
+        set({ zoomLevel: Math?.max(0.1, Math?.min(10, level)) }),
 
       setScroll: (horizontal, vertical) =>
         set({

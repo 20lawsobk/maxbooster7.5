@@ -18,8 +18,8 @@
  * - Billing / Pro plans
  */
 
-import type { GeneratorContext } from "./contentTypeGenerators?.js";
-import type { SupportedPlatform } from "./platformFormatters?.js";
+import type { GeneratorContext } from "./contentTypeGenerators.js";
+import type { SupportedPlatform } from "./platformFormatters.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

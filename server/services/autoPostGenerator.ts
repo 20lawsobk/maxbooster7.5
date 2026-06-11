@@ -1,17 +1,17 @@
-import { storage } from "../storage?.js";
-import { logger } from "../logger?.js";
-import { aiModelManager } from "./aiModelManager?.js";
-import { autoPostingService, type PostContent } from "./autoPostingService?.js";
+import { storage } from "../storage.js";
+import { logger } from "../logger.js";
+import { aiModelManager } from "./aiModelManager.js";
+import { autoPostingService, type PostContent } from "./autoPostingService.js";
 import {
   contentQualityPipeline,
   type ContentVariant,
   type ContentScores,
 } from "./contentQualityPipeline";
-import { contentQualityGate } from "./contentQualityGate?.js";
+import { contentQualityGate } from "./contentQualityGate.js";
 import { dynamicTrendsService } from "./dynamicTrendsService";
 import { type TranslatedContent } from "./aiTranslationService";
-import { MaxCoreAIClient } from "./maxcoreClient?.js";
-import { veoMusicService } from "./veoMusicService?.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { veoMusicService } from "./veoMusicService.js";
 
 async function translateViaMaxCore(
   content: string,
@@ -58,14 +58,14 @@ async function translateViaMaxCore(
       headline: translatedHeadline,
       hashtags: translatedHashtags,
       culturalNotes: [],
-      confidence: 0?.9,
+      confidence: 0.9,
     });
   }
   return results;
 }
 
 /**
- * Auto-Post Generator Service v2?.0
+ * Auto-Post Generator Service v2.0
  * AI-optimized content generation with quality scoring, variant selection,
  * platform optimization, and multilingual support.
  * Integrates ContentQualityPipeline for 3-5x variant generation and scoring.
@@ -109,7 +109,7 @@ export interface GeneratedContent {
 
 class AutoPostGenerator {
   /**
-   * Get Advertising Autopilot AI v3?.0 for user (per-user isolated)
+   * Get Advertising Autopilot AI v3.0 for user (per-user isolated)
    * Uses aiModelManager to prevent cross-tenant data leakage.
    */
   private async getAdvertisingAI(userId: string) {
@@ -117,7 +117,7 @@ class AutoPostGenerator {
   }
 
   /**
-   * Generate high-quality content using ContentQualityPipeline v2?.0
+   * Generate high-quality content using ContentQualityPipeline v2.0
    * - Generates multiple variants with scoring
    * - Selects best variant based on quality metrics
    * - Includes platform optimization and hashtag optimization
@@ -581,7 +581,7 @@ class AutoPostGenerator {
   }
 
   /**
-   * Generate content AND auto-post using Advertising Autopilot AI v3?.0
+   * Generate content AND auto-post using Advertising Autopilot AI v3.0
    */
   async generateAndPostViral(
     userId: string,

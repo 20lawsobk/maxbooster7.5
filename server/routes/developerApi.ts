@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 import { apiKeyService } from "../services/apiKeyService";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _router = Router();
 
@@ -313,7 +313,7 @@ router?.get("/docs", async (_req: Request, res: Response) => {
   try {
     return res?.json({
       success: true,
-      version: "1?.0.0",
+      version: "1.0.0",
       baseUrl: "/api/v1",
       authentication: {
         type: "Bearer Token",
@@ -386,9 +386,9 @@ router?.get("/docs", async (_req: Request, res: Response) => {
         },
       ],
       examples: {
-        curl: `curl -H "Authorization: Bearer mb_live_..." https://your-domain?.com/api/v1/analytics/streams`,
+        curl: `curl -H "Authorization: Bearer mb_live_..." https://your-domain.com/api/v1/analytics/streams`,
         javascript: `
-fetch('https://your-domain?.com/api/v1/analytics/streams', {
+fetch('https://your-domain.com/api/v1/analytics/streams', {
   headers: {
     'Authorization': 'Bearer mb_live_...'
   }
@@ -404,7 +404,7 @@ headers = {
     'Authorization': 'Bearer mb_live_...'
 }
 
-response = requests?.get('https://your-domain?.com/api/v1/analytics/streams', headers=headers)
+response = requests?.get('https://your-domain.com/api/v1/analytics/streams', headers=headers)
 data = response?.json()
 print(data)
       `.trim(),

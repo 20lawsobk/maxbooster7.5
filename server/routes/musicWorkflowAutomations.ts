@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 import {
   musicWorkflowAutomationService,
   WORKFLOW_TEMPLATES,
-} from "../services/musicWorkflowAutomationService?.js";
+} from "../services/musicWorkflowAutomationService.js";
 
 const _router = Router();
 

@@ -6,17 +6,17 @@
  * with encryption, compression, and nested dimension support.
  */
 
-import { pocketManager, PocketDimension } from "../pocket-dimension/index?.js";
-import { db } from "../db?.js";
+import { pocketManager, PocketDimension } from "../pocket-dimension/index.js";
+import { db } from "../db.js";
 import {
   userStorage,
   userStorageFiles,
   type UserStorage,
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { createHash, randomBytes } from "crypto";
-import { env } from "../config/env?.js";
+import { env } from "../config/env.js";
 
 const _DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5GB default quota
 
@@ -54,7 +54,7 @@ export class UserPocketDimensionService {
 
   static getInstance(): UserPocketDimensionService {
     if (!UserPocketDimensionService?.instance) {
-      UserPocketDimensionService?.instance = new UserPocketDimensionService();
+      UserPocketDimensionService.instance = new UserPocketDimensionService();
     }
     return UserPocketDimensionService?.instance;
   }
@@ -84,7 +84,7 @@ export class UserPocketDimensionService {
         JSON?.stringify({
           createdAt: new Date().toISOString(),
           userId,
-          version: "1?.0.0",
+          version: "1.0.0",
         }),
       );
 
@@ -377,7 +377,7 @@ export class UserPocketDimensionService {
     // where two concurrent calls each read the same history and overwrite each other.
     const _release = await this?.acquireWriteLock(userId);
     try {
-      const _KEY = "ai-journey/generation-history?.json";
+      const _KEY = "ai-journey/generation-history.json";
       let history: unknown[] = [];
       try {
         const _raw = await pocket?.read(KEY);
@@ -409,7 +409,7 @@ export class UserPocketDimensionService {
     const _pocket = await this?.getUserPocket(userId);
     if (!pocket) return {};
     try {
-      const _raw = await pocket?.read("ai-journey/profile?.json");
+      const _raw = await pocket?.read("ai-journey/profile.json");
       return JSON?.parse(raw?.toString());
     } catch {
       return {};
@@ -431,7 +431,7 @@ export class UserPocketDimensionService {
         ...updates,
         updatedAt: new Date().toISOString(),
       };
-      await pocket?.write("ai-journey/profile?.json", JSON?.stringify(merged));
+      await pocket?.write("ai-journey/profile.json", JSON?.stringify(merged));
     } finally {
       release();
     }
@@ -444,7 +444,7 @@ export class UserPocketDimensionService {
     const _pocket = await this?.getUserPocket(userId);
     if (!pocket) return [];
     try {
-      const _raw = await pocket?.read("ai-journey/generation-history?.json");
+      const _raw = await pocket?.read("ai-journey/generation-history.json");
       const _history = JSON?.parse(raw?.toString()) as Record<string, unknown>[];
       return history?.slice(-limit);
     } catch {
@@ -454,13 +454,13 @@ export class UserPocketDimensionService {
 
   /**
    * Save a fine-tune delta for this user (personalisation weights offset).
-   * Stored as binary in ai-journey/fine-tune-delta?.bin — applied on top of
+   * Stored as binary in ai-journey/fine-tune-delta.bin — applied on top of
    * the base model weights that live on the D: drive Model Knowledge Server.
    */
   async saveFinetuneDelata(userId: string, deltaBytes: Buffer): Promise<void> {
     const _pocket = await this?.getUserPocket(userId);
     if (!pocket) return;
-    await pocket?.write("ai-journey/fine-tune-delta?.bin", deltaBytes);
+    await pocket?.write("ai-journey/fine-tune-delta.bin", deltaBytes);
     logger?.info(
       `[AIJourney] Saved fine-tune delta (${deltaBytes?.length} bytes) for user ${userId}`,
     );
@@ -470,7 +470,7 @@ export class UserPocketDimensionService {
     const _pocket = await this?.getUserPocket(userId);
     if (!pocket) return null;
     try {
-      return await pocket?.read("ai-journey/fine-tune-delta?.bin");
+      return await pocket?.read("ai-journey/fine-tune-delta.bin");
     } catch {
       return null;
     }

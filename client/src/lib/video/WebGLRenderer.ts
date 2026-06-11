@@ -95,14 +95,14 @@ export class WebGLRenderer {
   private maxTextureUnits: number = 0;
 
   constructor(options: WebGLRendererOptions) {
-    this?.width = options?.width;
-    this?.height = options?.height;
-    this?.isOffscreen = options?.useOffscreen ?? false;
+    this.width = options?.width;
+    this.height = options?.height;
+    this.isOffscreen = options?.useOffscreen ?? false;
 
     if (this?.isOffscreen && typeof OffscreenCanvas !== "undefined") {
-      this?.canvas = new OffscreenCanvas(this?.width, this?.height);
+      this.canvas = new OffscreenCanvas(this?.width, this?.height);
     } else {
-      this?.canvas = document?.createElement("canvas");
+      this.canvas = document?.createElement("canvas");
       this?.canvas.width = this?.width;
       this?.canvas.height = this?.height;
     }
@@ -119,9 +119,9 @@ export class WebGLRenderer {
     if (!gl) {
       throw new Error("WebGL2 is not supported in this browser");
     }
-    this?.gl = gl;
+    this.gl = gl;
 
-    this?.renderState = {
+    this.renderState = {
       currentProgram: null,
       currentFramebuffer: null,
       blendMode: "normal",
@@ -136,8 +136,8 @@ export class WebGLRenderer {
 
     this?.loadExtensions();
 
-    this?.maxTextureSize = gl?.getParameter(gl?.MAX_TEXTURE_SIZE);
-    this?.maxTextureUnits = gl?.getParameter(gl?.MAX_TEXTURE_IMAGE_UNITS);
+    this.maxTextureSize = gl?.getParameter(gl?.MAX_TEXTURE_SIZE);
+    this.maxTextureUnits = gl?.getParameter(gl?.MAX_TEXTURE_IMAGE_UNITS);
 
     gl?.viewport(0, 0, this?.width, this?.height);
     gl?.clearColor(0, 0, 0, 0);
@@ -155,7 +155,7 @@ export class WebGLRenderer {
     gl?.getExtension("OES_texture_float_linear");
     gl?.getExtension("EXT_float_blend");
 
-    this?.extensionsLoaded = true;
+    this.extensionsLoaded = true;
   }
 
   private createQuadBuffer(): void {
@@ -171,7 +171,7 @@ export class WebGLRenderer {
     gl?.bindBuffer(gl?.ARRAY_BUFFER, buffer);
     gl?.bufferData(gl?.ARRAY_BUFFER, vertices, gl?.STATIC_DRAW);
 
-    this?.quadBuffer = {
+    this.quadBuffer = {
       buffer,
       itemSize: 4,
       numItems: 4,
@@ -191,7 +191,7 @@ export class WebGLRenderer {
       
       void main() {
         v_texCoord = a_texCoord;
-        gl_Position = u_transform * vec4(a_position, 0?.0, 1?.0);
+        gl_Position = u_transform * vec4(a_position, 0.0, 1.0);
       }
     `;
 
@@ -216,7 +216,7 @@ export class WebGLRenderer {
       }
     `;
 
-    this?.defaultProgram = this?.createShaderProgram(
+    this.defaultProgram = this?.createShaderProgram(
       "default",
       vertexShaderSource,
       fragmentShaderSource,
@@ -623,7 +623,7 @@ export class WebGLRenderer {
     const _gl = this?.gl;
     gl?.bindBuffer(gl?.ARRAY_BUFFER, buffer?.buffer);
     gl?.bufferSubData(gl?.ARRAY_BUFFER, 0, data);
-    buffer?.numItems = data?.length / buffer?.itemSize;
+    buffer.numItems = data?.length / buffer?.itemSize;
   }
 
   clear(r: number = 0, g: number = 0, b: number = 0, a: number = 0): void {
@@ -749,8 +749,8 @@ export class WebGLRenderer {
   }
 
   resize(width: number, height: number): void {
-    this?.width = width;
-    this?.height = height;
+    this.width = width;
+    this.height = height;
 
     if (this?.canvas instanceof HTMLCanvasElement) {
       this?.canvas.width = width;
@@ -900,10 +900,10 @@ export class WebGLRenderer {
 
     if (this?.quadBuffer) {
       this?.gl.deleteBuffer(this?.quadBuffer.buffer);
-      this?.quadBuffer = null;
+      this.quadBuffer = null;
     }
 
-    this?.defaultProgram = null;
+    this.defaultProgram = null;
   }
 }
 

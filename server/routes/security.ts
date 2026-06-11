@@ -1,9 +1,9 @@
 import { Router, Request, Response, RequestHandler } from "express";
-import { require2FA } from "../middleware/auth?.js";
-import { db } from "../db?.js";
-import { users, sessions, securityThreats } from "../../shared/schema?.js";
+import { require2FA } from "../middleware/auth.js";
+import { db } from "../db.js";
+import { users, sessions, securityThreats } from "../../shared/schema.js";
 import { eq, desc, count, and, gte, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _router = Router();
 
@@ -106,7 +106,7 @@ router?.get("/metrics", async (_req: Request, res: Response) => {
     const _uptimeSeconds = Math?.floor((Date?.now() - processStartTime) / 1000);
     const _errorRate =
       totalThreats > 0 ? (totalThreats / Math?.max(1, totalLogins)) * 100 : 0;
-    const _requestsPerMinute = Math?.floor(activeSessions * 2?.5);
+    const _requestsPerMinute = Math?.floor(activeSessions * 2.5);
 
     let systemStatus: "healthy" | "degraded" | "critical" = "healthy";
     if (errorRate > 10 || blockedAttempts > 100) {

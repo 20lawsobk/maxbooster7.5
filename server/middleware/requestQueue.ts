@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import v8 from "v8";
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface QueuedRequest {
   id: string;
@@ -10,7 +10,7 @@ interface QueuedRequest {
   next: NextFunction;
   timestamp: number;
   priority: number;
-  timeout: NodeJS?.Timeout;
+  timeout: NodeJS.Timeout;
 }
 
 interface QueueConfig {
@@ -32,7 +32,7 @@ class RequestQueue {
   };
 
   constructor(config: Partial<QueueConfig> = {}) {
-    this?.config = {
+    this.config = {
       maxQueueSize: 100000,
       maxConcurrent: 5000,
       requestTimeout: 45000,
@@ -243,7 +243,7 @@ class RequestQueue {
           });
         }
       }
-      queue?.length = 0;
+      queue.length = 0;
     }
   }
 }
@@ -292,8 +292,8 @@ export const _clearRequestQueue = () => globalRequestQueue?.clear();
 
 export class LoadShedder {
   private shedding = false;
-  private threshold = 0?.9;
-  private recoveryThreshold = 0?.7;
+  private threshold = 0.9;
+  private recoveryThreshold = 0.7;
 
   constructor(private queue: RequestQueue = globalRequestQueue) {
     setInterval(() => this?.evaluate(), 5000);
@@ -315,14 +315,14 @@ export class LoadShedder {
     const _utilization = Math?.max(concurrencyUtil, heapUtil);
 
     if (!this?.shedding && utilization > this?.threshold) {
-      this?.shedding = true;
+      this.shedding = true;
       const _reason =
         concurrencyUtil >= heapUtil ? "concurrency" : "memory pressure";
       logger?.warn(
         `Load shedding ACTIVATED (${reason}) — util at ${(utilization * 100).toFixed(1)}%`,
       );
     } else if (this?.shedding && utilization < this?.recoveryThreshold) {
-      this?.shedding = false;
+      this.shedding = false;
       logger?.info(
         `Load shedding DEACTIVATED — util at ${(utilization * 100).toFixed(1)}%`,
       );
@@ -338,7 +338,7 @@ export class LoadShedder {
     if (req?.path.includes("/health") || req?.path.includes("/critical"))
       return false;
 
-    return Math?.random() > 0?.5;
+    return Math?.random() > 0.5;
   }
 
   middleware(): RequestHandler {

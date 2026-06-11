@@ -1,12 +1,12 @@
-import { requireUUIDParam } from "../middleware/requestValidation?.js";
+import { requireUUIDParam } from "../middleware/requestValidation.js";
 import { Router } from "express";
 import { db } from "../db";
 import { labelSubmissions, insertLabelSubmissionSchema } from "@shared/schema";
 import { and, eq, desc, count, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { queryCache, createCacheKey } from "../lib/queryCache?.js";
-import { parsePaginationParams } from "../middleware/pagination?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { queryCache, createCacheKey } from "../lib/queryCache.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
 import { z } from "zod";
 
 const _router = Router();
@@ -193,10 +193,10 @@ router?.patch(
         status,
         updatedAt: new Date(),
       };
-      if (responseNote !== undefined) setFields?.responseNote = responseNote;
-      if (responseAt !== undefined) setFields?.responseAt = new Date(responseAt);
+      if (responseNote !== undefined) setFields.responseNote = responseNote;
+      if (responseAt !== undefined) setFields.responseAt = new Date(responseAt);
       else if (["accepted", "rejected", "declined"].includes(status)) {
-        setFields?.responseAt = new Date();
+        setFields.responseAt = new Date();
       }
 
       const [item] = await db
@@ -250,8 +250,8 @@ router?.post(
         updatedAt: new Date(),
       };
       if (nextFollowUpAt !== undefined)
-        setFields?.followUpAt = new Date(nextFollowUpAt);
-      if (notes !== undefined) setFields?.notes = notes;
+        setFields.followUpAt = new Date(nextFollowUpAt);
+      if (notes !== undefined) setFields.notes = notes;
 
       const [item] = await db
         .update(labelSubmissions)

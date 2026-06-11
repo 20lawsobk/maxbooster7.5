@@ -13,13 +13,13 @@
  *      so MaxCore can consume them on its own schedule.
  */
 
-import { logger } from "../logger?.js";
-import { modelWeightStorage } from "./modelWeightStorage?.js";
-import { getPdimClient, isPdimConfigured } from "../lib/pdimClient?.js";
+import { logger } from "../logger.js";
+import { modelWeightStorage } from "./modelWeightStorage.js";
+import { getPdimClient, isPdimConfigured } from "../lib/pdimClient.js";
 import {
   invalidateCalibrationCache,
   runCalibration,
-} from "./maxcoreScoreCalibrator?.js";
+} from "./maxcoreScoreCalibrator.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -68,7 +68,7 @@ async function fetchMaxCore<T = any>(
       },
       signal: AbortSignal?.timeout(opts?.timeout ?? INFER_TIMEOUT),
     };
-    if (opts?.body !== undefined) init?.body = JSON?.stringify(opts?.body);
+    if (opts?.body !== undefined) init.body = JSON?.stringify(opts?.body);
     const _r = await timedFetch(`${url}${endpoint}`, init);
     if (!r?.ok) return { ok: false, data: null, status: r?.status };
     const _text = await r?.text().catch(() => null);
@@ -301,7 +301,7 @@ export interface TrainingFeedbackPayload {
 export async function pushTrainingFeedback(
   payload: TrainingFeedbackPayload,
 ): Promise<void> {
-  const _enriched = { ...payload, source_node: "maxbooster", version: "1?.0" };
+  const _enriched = { ...payload, source_node: "maxbooster", version: "1.0" };
 
   // HTTP push to training peer (with auth)
   const _peerIsPdim = PEER_NODE?.startsWith("pdim://");
@@ -381,7 +381,7 @@ export async function syncWeightsNow(): Promise<number> {
 // Service lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 
-let _syncTimer: NodeJS?.Timeout | null = null;
+let _syncTimer: NodeJS.Timeout | null = null;
 
 export async function initMaxCoreSync(): Promise<void> {
   // 1. Health probe (non-blocking — don't hold up server startup)

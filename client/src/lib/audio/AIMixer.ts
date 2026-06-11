@@ -15,9 +15,9 @@ export class AIMixer {
   private tracks: Map<string, TrackChannel> = new Map();
 
   constructor(context: AudioContext) {
-    this?.context = context;
-    this?.analyzer = new AIAnalyzer(context);
-    this?.masterBus = context?.createGain();
+    this.context = context;
+    this.analyzer = new AIAnalyzer(context);
+    this.masterBus = context?.createGain();
     this?.masterBus.connect(context?.destination);
   }
 
@@ -90,7 +90,7 @@ export class AIMixer {
 
       // Get frequency analysis
       const _tempSource = this?.context.createBufferSource();
-      tempSource?.buffer = buffer;
+      tempSource.buffer = buffer;
       const _freqData = this?.analyzer.getFrequencyData(tempSource);
 
       analysis?.set(trackId, {
@@ -278,8 +278,8 @@ export class AIMixer {
         // High dynamic range - needs compression
         compressor?.setThreshold(-18);
         compressor?.setRatio(4);
-        compressor?.setAttack(0?.01);
-        compressor?.setRelease(0?.1);
+        compressor?.setAttack(0.01);
+        compressor?.setRelease(0.1);
 
         result?.adjustments.push({
           trackId,
@@ -291,8 +291,8 @@ export class AIMixer {
         // Vocal compression
         compressor?.setThreshold(-12);
         compressor?.setRatio(3);
-        compressor?.setAttack(0?.005);
-        compressor?.setRelease(0?.05);
+        compressor?.setAttack(0.005);
+        compressor?.setRelease(0.05);
         compressor?.setKnee(6);
 
         result?.adjustments.push({
@@ -305,8 +305,8 @@ export class AIMixer {
         // Drum compression
         compressor?.setThreshold(-8);
         compressor?.setRatio(6);
-        compressor?.setAttack(0?.001);
-        compressor?.setRelease(0?.05);
+        compressor?.setAttack(0.001);
+        compressor?.setRelease(0.05);
 
         result?.adjustments.push({
           trackId,
@@ -328,8 +328,8 @@ export class AIMixer {
     // Center important elements
     const _centerElements = ["kick", "snare", "bass", "vocal"];
 
-    let panPosition = -0?.7; // Start from left
-    const _panIncrement = 1?.4 / (instruments?.size - centerElements?.length);
+    let panPosition = -0.7; // Start from left
+    const _panIncrement = 1.4 / (instruments?.size - centerElements?.length);
 
     for (const [trackId, instrument] of instruments) {
       const _channel = this?.tracks.get(trackId);
@@ -373,8 +373,8 @@ export class AIMixer {
       switch (instrument) {
         case "vocal":
           reverb?.setReverbType("plate");
-          reverb?.setMix(0?.15);
-          reverb?.setDecay(0?.4);
+          reverb?.setMix(0.15);
+          reverb?.setDecay(0.4);
           result?.adjustments.push({
             trackId,
             parameter: "reverb",
@@ -385,8 +385,8 @@ export class AIMixer {
 
         case "snare":
           reverb?.setReverbType("room");
-          reverb?.setMix(0?.2);
-          reverb?.setDecay(0?.3);
+          reverb?.setMix(0.2);
+          reverb?.setDecay(0.3);
           result?.adjustments.push({
             trackId,
             parameter: "reverb",
@@ -397,8 +397,8 @@ export class AIMixer {
 
         case "guitar":
           reverb?.setReverbType("hall");
-          reverb?.setMix(0?.1);
-          reverb?.setDecay(0?.5);
+          reverb?.setMix(0.1);
+          reverb?.setDecay(0.5);
           result?.adjustments.push({
             trackId,
             parameter: "reverb",
@@ -414,7 +414,7 @@ export class AIMixer {
           break;
 
         default:
-          reverb?.setMix(0?.05);
+          reverb?.setMix(0.05);
           break;
       }
     }
@@ -458,7 +458,7 @@ export class AIMixer {
     for (const channel of this?.tracks.values()) {
       channel?.reset();
     }
-    this?.masterBus.gain?.value = 1;
+    this?.masterBus.gain.value = 1;
   }
 
   /**
@@ -489,18 +489,18 @@ class TrackChannel {
   private buffer?: AudioBuffer;
 
   constructor(context: AudioContext, trackId: string) {
-    this?.context = context;
-    this?.trackId = trackId;
+    this.context = context;
+    this.trackId = trackId;
 
     // Create nodes
-    this?.input = context?.createGain();
-    this?.output = context?.createGain();
-    this?.panner = context?.createStereoPanner();
+    this.input = context?.createGain();
+    this.output = context?.createGain();
+    this.panner = context?.createStereoPanner();
 
     // Create effects
-    this?.eq = new EQPlugin(context);
-    this?.compressor = new CompressorPlugin(context);
-    this?.reverb = new ReverbPlugin(context);
+    this.eq = new EQPlugin(context);
+    this.compressor = new CompressorPlugin(context);
+    this.reverb = new ReverbPlugin(context);
 
     // Connect chain: input -> EQ -> Compressor -> Reverb -> Panner -> Output
     this?.input.connect(this?.eq.getInput());
@@ -516,11 +516,11 @@ class TrackChannel {
   }
 
   setGain(value: number): void {
-    this?.output.gain?.value = value;
+    this?.output.gain.value = value;
   }
 
   setPan(value: number): void {
-    this?.panner.pan?.value = value;
+    this?.panner.pan.value = value;
   }
 
   getEQ(): EQPlugin {
@@ -536,7 +536,7 @@ class TrackChannel {
   }
 
   setBuffer(buffer: AudioBuffer): void {
-    this?.buffer = buffer;
+    this.buffer = buffer;
   }
 
   async getBuffer(): Promise<AudioBuffer | undefined> {
@@ -544,8 +544,8 @@ class TrackChannel {
   }
 
   reset(): void {
-    this?.output.gain?.value = 1;
-    this?.panner.pan?.value = 0;
+    this?.output.gain.value = 1;
+    this?.panner.pan.value = 0;
     this?.eq.reset();
     this?.compressor.setParameters({ bypass: true });
     this?.reverb.setMix(0);

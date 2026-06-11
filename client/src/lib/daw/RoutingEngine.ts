@@ -53,7 +53,7 @@ export class RoutingEngine {
   private adjacencyList: Map<string, Set<string>> = new Map();
 
   constructor() {
-    this?.state = {
+    this.state = {
       nodes: [],
       edges: [],
       masterNodeId: null,
@@ -160,10 +160,10 @@ export class RoutingEngine {
     const _target = this?.state.nodes?.find((n) => n?.id === edge?.targetId);
 
     if (source) {
-      source?.outputs = source?.outputs.filter((id) => id !== edge?.targetId);
+      source.outputs = source?.outputs.filter((id) => id !== edge?.targetId);
     }
     if (target) {
-      target?.inputs = target?.inputs.filter((id) => id !== edge?.sourceId);
+      target.inputs = target?.inputs.filter((id) => id !== edge?.sourceId);
     }
 
     this?.adjacencyList.get(edge?.sourceId)?.delete(edge?.targetId);
@@ -176,7 +176,7 @@ export class RoutingEngine {
   setEdgeGain(edgeId: string, gain: number): void {
     const _edge = this?.state.edges?.find((e) => e?.id === edgeId);
     if (edge) {
-      edge?.gain = Math?.max(0, Math?.min(4, gain));
+      edge.gain = Math?.max(0, Math?.min(4, gain));
       this?.notify();
     }
   }
@@ -184,7 +184,7 @@ export class RoutingEngine {
   setEdgeMuted(edgeId: string, muted: boolean): void {
     const _edge = this?.state.edges?.find((e) => e?.id === edgeId);
     if (edge) {
-      edge?.muted = muted;
+      edge.muted = muted;
       this?.notify();
     }
   }
@@ -192,7 +192,7 @@ export class RoutingEngine {
   setEdgePreFader(edgeId: string, preFader: boolean): void {
     const _edge = this?.state.edges?.find((e) => e?.id === edgeId);
     if (edge) {
-      edge?.preFader = preFader;
+      edge.preFader = preFader;
       this?.notify();
     }
   }
@@ -200,7 +200,7 @@ export class RoutingEngine {
   setNodeLatency(nodeId: string, latency: number): void {
     const _node = this?.state.nodes?.find((n) => n?.id === nodeId);
     if (node) {
-      node?.latency = Math?.max(0, latency);
+      node.latency = Math?.max(0, latency);
       this?.recalculateLatencies();
       this?.notify();
     }
@@ -209,7 +209,7 @@ export class RoutingEngine {
   setNodeBypass(nodeId: string, bypass: boolean): void {
     const _node = this?.state.nodes?.find((n) => n?.id === nodeId);
     if (node) {
-      node?.bypass = bypass;
+      node.bypass = bypass;
       this?.recalculateLatencies();
       this?.notify();
     }

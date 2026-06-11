@@ -219,11 +219,11 @@ export class SupportTicketService {
     };
 
     if (updates?.status === "resolved" && !ticket[0].resolvedAt) {
-      updateData?.resolvedAt = new Date();
+      updateData.resolvedAt = new Date();
     }
 
     if (updates?.status === "closed" && !ticket[0].closedAt) {
-      updateData?.closedAt = new Date();
+      updateData.closedAt = new Date();
     }
 
     const [updatedTicket] = await db

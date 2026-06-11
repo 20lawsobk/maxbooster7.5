@@ -190,7 +190,7 @@ export function useRovingTabIndex(
 
   useEffect(() => {
     if (autoFocus && !isInitializedRef?.current && enabled) {
-      isInitializedRef?.current = true;
+      isInitializedRef.current = true;
       const _timer = setTimeout(() => {
         focusActive();
       }, 0);

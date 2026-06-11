@@ -98,7 +98,7 @@ export function useMultiTrackRecorder(
 
         const _source = context?.createMediaStreamSource(stream);
         const _analyser = context?.createAnalyser();
-        analyser?.fftSize = 256;
+        analyser.fftSize = 256;
 
         source?.connect(analyser);
         analyzerNodesRef?.current.set(trackId, analyser);
@@ -199,7 +199,7 @@ export function useMultiTrackRecorder(
 
           const audioChunks: Blob[] = [];
 
-          mediaRecorder?.ondataavailable = (event) => {
+          mediaRecorder.ondataavailable = (event) => {
             if (event?.data.size > 0) {
               audioChunks?.push(event?.data);
               newRecorders?.get(track?.id)!.audioChunks = audioChunks;
@@ -218,7 +218,7 @@ export function useMultiTrackRecorder(
           });
         }
 
-        sessionStartTimeRef?.current = Date?.now();
+        sessionStartTimeRef.current = Date?.now();
 
         setState((prev) => ({
           ...prev,
@@ -242,7 +242,7 @@ export function useMultiTrackRecorder(
           if (state?.isRecording) {
             const _duration = (Date?.now() - sessionStartTimeRef?.current) / 1000;
             setState((prev) => ({ ...prev, duration }));
-            animationFrameRef?.current = requestAnimationFrame(updateDuration);
+            animationFrameRef.current = requestAnimationFrame(updateDuration);
           }
         };
         updateDuration();

@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
 import { EventEmitter } from "events";
-import { logger } from "../logger?.js";
-import { notificationService } from "./notificationService?.js";
+import { logger } from "../logger.js";
+import { notificationService } from "./notificationService.js";
 import {
   getRedisClient,
   type RedisClientType,
-} from "../lib/redisConnectionFactory?.js";
+} from "../lib/redisConnectionFactory.js";
 
 // PDIM persistence — schedule queue + shared insights survive process restarts.
 // TTL keeps the dataset bounded for inactive users without an explicit purge.
@@ -74,7 +74,7 @@ class AutopilotCoordinatorService extends EventEmitter {
   private connectedAutopilots: Map<string, Set<AutopilotType>> = new Map();
   private lastSyncTimes: Map<string, Date> = new Map();
   private loadedFromPdim: Set<string> = new Set();
-  private pendingPersist: Map<string, NodeJS?.Timeout> = new Map();
+  private pendingPersist: Map<string, NodeJS.Timeout> = new Map();
 
   private static readonly MAX_CONNECTED_USERS = 20_000;
   private static readonly SYNC_STALE_MS = 4 * 60 * 60 * 1000; // 4 hours
@@ -418,13 +418,13 @@ class AutopilotCoordinatorService extends EventEmitter {
     const _post = schedule?.find((p) => p?.id === postId);
     if (!post) return null;
 
-    post?.status = status;
+    post.status = status;
     if (status === "posted") {
-      post?.postedAt = new Date();
-      if (postIdExternal) post?.postId = postIdExternal;
+      post.postedAt = new Date();
+      if (postIdExternal) post.postId = postIdExternal;
     }
     if (performance) {
-      post?.performance = performance;
+      post.performance = performance;
     }
 
     this?.schedulePersist(userId);
@@ -679,11 +679,11 @@ class AutopilotCoordinatorService extends EventEmitter {
 
     if (optimalTimes?.length === 0) {
       return [
-        { hour: 9, engagementScore: 0?.8 },
-        { hour: 12, engagementScore: 0?.9 },
-        { hour: 15, engagementScore: 0?.85 },
-        { hour: 18, engagementScore: 0?.95 },
-        { hour: 21, engagementScore: 0?.7 },
+        { hour: 9, engagementScore: 0.8 },
+        { hour: 12, engagementScore: 0.9 },
+        { hour: 15, engagementScore: 0.85 },
+        { hour: 18, engagementScore: 0.95 },
+        { hour: 21, engagementScore: 0.7 },
       ];
     }
 
@@ -730,7 +730,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     const _post = schedule?.find((p) => p?.id === postId);
     if (!post || post?.status !== "scheduled") return false;
 
-    post?.status = "cancelled";
+    post.status = "cancelled";
     this?.schedulePersist(userId);
     this?.emit("postCancelled", post);
     logger?.info(`Post cancelled: ${postId}`);

@@ -1,8 +1,8 @@
 import { Request, Response, Router } from "express";
 import os from "os";
-import { logger } from "../logger?.js";
-import { distributedCache } from "./distributedCache?.js";
-import { circuitBreakerRegistry } from "./circuitBreaker?.js";
+import { logger } from "../logger.js";
+import { distributedCache } from "./distributedCache.js";
+import { circuitBreakerRegistry } from "./circuitBreaker.js";
 
 interface ScalingMetrics {
   cpu: {
@@ -63,7 +63,7 @@ class AutoScalingManager {
   private currentReplicas: number = 1;
 
   private constructor() {
-    this?.config = {
+    this.config = {
       cpuThresholdUp: parseFloat(process?.env.SCALE_CPU_UP || "70"),
       cpuThresholdDown: parseFloat(process?.env.SCALE_CPU_DOWN || "30"),
       memoryThresholdUp: parseFloat(process?.env.SCALE_MEMORY_UP || "80"),
@@ -80,7 +80,7 @@ class AutoScalingManager {
 
   static getInstance(): AutoScalingManager {
     if (!AutoScalingManager?.instance) {
-      AutoScalingManager?.instance = new AutoScalingManager();
+      AutoScalingManager.instance = new AutoScalingManager();
     }
     return AutoScalingManager?.instance;
   }
@@ -260,7 +260,7 @@ class AutoScalingManager {
       const _metrics = this?.getMetrics();
       res?.json({
         kind: "ExternalMetricValueList",
-        apiVersion: "external?.metrics.k8s?.io/v1beta1",
+        apiVersion: "external?.metrics.k8s.io/v1beta1",
         items: [
           {
             metricName: "http_requests_per_second",
@@ -285,11 +285,11 @@ class AutoScalingManager {
   }
 
   setCurrentReplicas(count: number): void {
-    this?.currentReplicas = count;
+    this.currentReplicas = count;
   }
 
   recordScaleAction(): void {
-    this?.lastScaleAction = Date?.now();
+    this.lastScaleAction = Date?.now();
   }
 
   getConfig(): ScalingConfig {

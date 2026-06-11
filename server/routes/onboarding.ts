@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { onboardingService } from "../services/onboardingService?.js";
-import { db } from "../db?.js";
-import { users } from "../../shared/schema?.js";
+import { onboardingService } from "../services/onboardingService.js";
+import { db } from "../db.js";
+import { users } from "../../shared/schema.js";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const _router = Router();
 
@@ -105,7 +105,7 @@ router?.get("/status", async (_req, res) => {
     res?.json({
       status: "active",
       totalTasks: tasks?.length || 0,
-      version: "1?.0.0",
+      version: "1.0.0",
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching onboarding status:");
@@ -181,7 +181,7 @@ router?.post("/track-tutorial", requireAuth, async (req, res) => {
     };
 
     if (!tutorialData?.startedAt) {
-      tutorialData?.startedAt = new Date().toISOString();
+      tutorialData.startedAt = new Date().toISOString();
     }
 
     if (completed && !tutorialData?.completedSteps.includes(stepId)) {
@@ -243,8 +243,8 @@ router?.post("/skip-tutorial", requireAuth, async (req, res) => {
       startedAt: null,
     };
 
-    tutorialData?.skippedAt = new Date().toISOString();
-    tutorialData?.showAgainLater = showAgainLater || false;
+    tutorialData.skippedAt = new Date().toISOString();
+    tutorialData.showAgainLater = showAgainLater || false;
 
     tutorialProgress[tutorialId] = tutorialData;
 

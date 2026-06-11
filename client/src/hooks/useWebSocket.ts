@@ -45,18 +45,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       const _wsUrl = `${protocol}//${window?.location.host}/ws`;
 
       const _ws = new WebSocket(wsUrl);
-      wsRef?.current = ws;
+      wsRef.current = ws;
 
-      ws?.onopen = () => {
+      ws.onopen = () => {
         setIsConnected(true);
         setConnectionStatus("connected");
-        reconnectAttemptsRef?.current = 0;
+        reconnectAttemptsRef.current = 0;
         // Authentication is now handled server-side via session cookies
         // No need to send userId from client
         onConnect?.();
       };
 
-      ws?.onmessage = (event) => {
+      ws.onmessage = (event) => {
         try {
           const _message = JSON?.parse(event?.data);
           onMessage?.(message);
@@ -65,7 +65,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         }
       };
 
-      ws?.onclose = () => {
+      ws.onclose = () => {
         setIsConnected(false);
         setConnectionStatus("disconnected");
         onDisconnect?.();
@@ -73,13 +73,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         // Attempt to reconnect
         if (reconnectAttemptsRef?.current < maxReconnectAttempts) {
           reconnectAttemptsRef?.current++;
-          reconnectTimeoutRef?.current = setTimeout(() => {
+          reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, reconnectInterval);
         }
       };
 
-      ws?.onerror = (error) => {
+      ws.onerror = (error) => {
         setConnectionStatus("error");
         onError?.(error);
       };
@@ -91,12 +91,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const _disconnect = () => {
     if (reconnectTimeoutRef?.current) {
       clearTimeout(reconnectTimeoutRef?.current);
-      reconnectTimeoutRef?.current = null;
+      reconnectTimeoutRef.current = null;
     }
 
     if (wsRef?.current) {
       wsRef?.current.close();
-      wsRef?.current = null;
+      wsRef.current = null;
     }
   };
 

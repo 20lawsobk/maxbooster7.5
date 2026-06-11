@@ -9,7 +9,7 @@
  *                generateMelody → synthesizeToWAV). The text prompt embeds the
  *               trending signals so generation is biased toward what's hot.
  *   3. PRICE  — compute competitive price = median(recent published beats in
- *               same genre) × 0?.95 (5 % undercut). Falls back to $29?.99.
+ *               same genre) × 0.95 (5 % undercut). Falls back to $29.99.
  *   4. UPLOAD — insert a row into `beats` (admin-owned, published) and upload
  *               the WAV bytes to PDIM via storageService?.uploadFile.
  *   5. ADVERTISE — call autonomousService?.launchCampaign() with the beat as
@@ -24,12 +24,12 @@
  * bounded to [1 h, 24 h].
  *
  * Admin gating: hard-coded to user 31b06dba-b992-4da5-90ef-3dac95692716
- * (blawzmusic@gmail?.com). All admin endpoints sit behind requireAdmin.
+ * (blawzmusic@gmail.com). All admin endpoints sit behind requireAdmin.
  *
  * Paused by default — operator flips `enabled=true` via POST /api/admin/beat-money-loop/enable.
  */
 
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   beats,
   beatMoneyLoopState,
@@ -40,20 +40,20 @@ import {
   type BeatMoneyLoopCycle,
 } from "@shared/schema";
 import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   musicIndustryContextFilter,
   type MusicIndustryContext,
-} from "./musicIndustryContextFilter?.js";
+} from "./musicIndustryContextFilter.js";
 import {
   parseTextToParameters,
   generateChordProgression,
   generateMelody,
   synthesizeToWAV,
-} from "./musicGenerationService?.js";
-import { storageService } from "./storageService?.js";
-import { autonomousService } from "./autonomousService?.js";
-import { advertisingDispatchService } from "./advertisingDispatchService?.js";
+} from "./musicGenerationService.js";
+import { storageService } from "./storageService.js";
+import { autonomousService } from "./autonomousService.js";
+import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
 import fsPromises from "fs/promises";
 
@@ -65,8 +65,8 @@ const _MIN_CADENCE_MS = 60 * 60 * 1000; // 1 h
 const _MAX_CADENCE_MS = 24 * 60 * 60 * 1000; // 24 h
 const _DEFAULT_CADENCE_MS = 4 * 60 * 60 * 1000; // 4 h
 const _FAILURE_BACKOFF_CADENCE_MS = 12 * 60 * 60 * 1000; // 12 h after 2+ consecutive failures
-const _FALLBACK_PRICE = 29?.99;
-const _PRICE_UNDERCUT_FACTOR = 0?.95;
+const _FALLBACK_PRICE = 29.99;
+const _PRICE_UNDERCUT_FACTOR = 0.95;
  // ~ 8 bars at 120 BPM — short preview-grade beat
 
 const _TRENDING_GENRE_FALLBACK = "trap";
@@ -223,7 +223,7 @@ class BeatMoneyLoopService {
     if (this?._runningCycle) {
       throw new Error("A Beat Money Loop cycle is already in-flight");
     }
-    this?._runningCycle = true;
+    this._runningCycle = true;
     const _startedAt = Date?.now();
 
     // Create the cycle row first so failures anywhere have a row to attach to.
@@ -365,7 +365,7 @@ class BeatMoneyLoopService {
       });
       return { cycleId, status: "failed", durationMs, error: msg };
     } finally {
-      this?._runningCycle = false;
+      this._runningCycle = false;
     }
   }
 
@@ -423,7 +423,7 @@ class BeatMoneyLoopService {
     const _prompt = `${scan?.mood} ${scan?.genre} beat at ${scan?.tempo} bpm${styleText}`;
     const _params = parseTextToParameters(prompt);
     // Force tempo from scan (parseText might override)
-    params?.tempo = scan?.tempo;
+    params.tempo = scan?.tempo;
     const _chords = generateChordProgression(params);
     const _notes = generateMelody(params, chords);
     if (chords?.length === 0 || notes?.length === 0) {
@@ -441,8 +441,8 @@ class BeatMoneyLoopService {
   }
 
   /**
-   * Median price of the 50 most-recent published beats in the same genre × 0?.95.
-   * Falls back to $29?.99 if no comparable listings.
+   * Median price of the 50 most-recent published beats in the same genre × 0.95.
+   * Falls back to $29.99 if no comparable listings.
    */
   private async _competitivePrice(genre: string): Promise<number> {
     const _rows = await db
@@ -459,7 +459,7 @@ class BeatMoneyLoopService {
     if (sorted?.length === 0) return FALLBACK_PRICE;
     const _median = sorted[Math?.floor(sorted?.length / 2)];
     const _competitive = Math?.max(
-      9?.99,
+      9.99,
       +(median * PRICE_UNDERCUT_FACTOR).toFixed(2),
     );
     return competitive;
@@ -636,9 +636,9 @@ class BeatMoneyLoopService {
   /**
    * Compute next cadence based on industry confidence + outcome history.
    * - failed cycle and consecutiveFailures will be ≥2  → 12 h backoff
-   * - high confidence (≥0?.7)                          → 2 h
-   * - medium confidence (≥0?.5)                        → 4 h
-   * - low confidence (≥0?.3)                           → 6 h
+   * - high confidence (≥0.7)                          → 2 h
+   * - medium confidence (≥0.5)                        → 4 h
+   * - low confidence (≥0.3)                           → 6 h
    * - else                                            → 12 h
    * Clamped to [MIN_CADENCE_MS, MAX_CADENCE_MS].
    */
@@ -650,9 +650,9 @@ class BeatMoneyLoopService {
     if (failed) return FAILURE_BACKOFF_CADENCE_MS;
     if (!scan) return DEFAULT_CADENCE_MS;
     let ms: number;
-    if (scan?.confidence >= 0?.7) ms = 2 * 60 * 60 * 1000;
-    else if (scan?.confidence >= 0?.5) ms = 4 * 60 * 60 * 1000;
-    else if (scan?.confidence >= 0?.3) ms = 6 * 60 * 60 * 1000;
+    if (scan?.confidence >= 0.7) ms = 2 * 60 * 60 * 1000;
+    else if (scan?.confidence >= 0.5) ms = 4 * 60 * 60 * 1000;
+    else if (scan?.confidence >= 0.3) ms = 6 * 60 * 60 * 1000;
     else ms = 12 * 60 * 60 * 1000;
     return Math?.max(MIN_CADENCE_MS, Math?.min(MAX_CADENCE_MS, ms));
   }

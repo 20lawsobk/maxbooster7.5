@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
-import { storage } from "../storage?.js";
+import { logger } from "../logger.js";
+import { storage } from "../storage.js";
 
 export type ReleaseState =
   | "draft"
@@ -372,10 +372,10 @@ export class ReleaseWorkflowService {
       return { success: false, error: `Request already ${request?.status}` };
     }
 
-    request?.status = action === "approve" ? "approved" : "rejected";
-    request?.processedAt = new Date();
-    request?.processedBy = processedBy;
-    request?.notes = notes;
+    request.status = action === "approve" ? "approved" : "rejected";
+    request.processedAt = new Date();
+    request.processedBy = processedBy;
+    request.notes = notes;
 
     if (action === "approve") {
       const _transitionResult = await this?.transition(
@@ -389,7 +389,7 @@ export class ReleaseWorkflowService {
       );
 
       if (transitionResult?.success) {
-        request?.status = "completed";
+        request.status = "completed";
       }
     }
 
@@ -483,13 +483,13 @@ export class ReleaseWorkflowService {
       return { success: false, error: `Request already ${request?.status}` };
     }
 
-    request?.status = action === "approve" ? "approved" : "rejected";
-    request?.processedAt = new Date();
-    request?.processedBy = processedBy;
-    request?.notes = notes;
+    request.status = action === "approve" ? "approved" : "rejected";
+    request.processedAt = new Date();
+    request.processedBy = processedBy;
+    request.notes = notes;
 
     if (action === "approve") {
-      request?.status = "processing";
+      request.status = "processing";
 
       const _transitionResult = await this?.transition(
         request?.releaseId,
@@ -502,7 +502,7 @@ export class ReleaseWorkflowService {
       );
 
       if (transitionResult?.success) {
-        request?.status = "completed";
+        request.status = "completed";
       }
     } else {
       await this?.transition(request?.releaseId, processedBy, "live", {

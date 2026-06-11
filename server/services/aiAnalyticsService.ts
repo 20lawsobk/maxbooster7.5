@@ -197,7 +197,7 @@ export async function predictMetric(
   }
 
   let trend: "up" | "down" | "stable" = "stable";
-  if (Math?.abs(slope) > 0?.1) {
+  if (Math?.abs(slope) > 0.1) {
     trend = slope > 0 ? "up" : "down";
   }
 
@@ -249,9 +249,9 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
       COALESCE(SUM(CASE WHEN po?.published_at >= ${thirtyDaysAgo} AND po?.published_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_posts,
       COALESCE(SUM(CASE WHEN s?.last_activity >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_sessions
     FROM users u
-    LEFT JOIN projects p ON p?.user_id = u?.id
-    LEFT JOIN posts po ON po?.submitted_by = u?.id
-    LEFT JOIN sessions s ON s?.user_id = u?.id
+    LEFT JOIN projects p ON p.user_id = u?.id
+    LEFT JOIN posts po ON po.submitted_by = u?.id
+    LEFT JOIN sessions s ON s.user_id = u?.id
     WHERE COALESCE(u?.updated_at, u?.created_at) < ${sevenDaysAgo}
     GROUP BY u?.id, u?.username, u?.email, u?.updated_at, u?.created_at
     ORDER BY last_active ASC
@@ -278,20 +278,20 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
     let reason = "";
 
     if (recentActivityScore === 0 && daysSinceActive > 14) {
-      churnProbability = 0?.9;
+      churnProbability = 0.9;
       reason = "low_activity";
     } else if (recentProjects === 0 && daysSinceActive > 7) {
-      churnProbability = 0?.7;
+      churnProbability = 0.7;
       reason = "no_uploads";
     } else if (
       oldActivityScore > 0 &&
-      recentActivityScore < oldActivityScore * 0?.5
+      recentActivityScore < oldActivityScore * 0.5
     ) {
-      churnProbability = 0?.6;
+      churnProbability = 0.6;
       reason = "declining_engagement";
     }
 
-    if (churnProbability > 0?.5) {
+    if (churnProbability > 0.5) {
       atRiskUsers?.push({
         userId: row?.id as string,
         username: row?.username as string,
@@ -309,8 +309,8 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
     totalAtRisk: atRiskUsers?.length,
   };
 
-  _churnCache?.data = result;
-  _churnCache?.expiresAt = Date?.now() + CHURN_CACHE_TTL_MS;
+  _churnCache.data = result;
+  _churnCache.expiresAt = Date?.now() + CHURN_CACHE_TTL_MS;
 
   return result;
 }
@@ -368,7 +368,7 @@ export async function forecastRevenue(
       month: "short",
     });
 
-    const _confidence = Math?.max(0?.5, 1 - i * 0?.08);
+    const _confidence = Math?.max(0.5, 1 - i * 0.08);
 
     forecast?.push({
       month: monthName,
@@ -431,7 +431,7 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
         if (zScore > 2) {
           let severity: "low" | "medium" | "high" = "low";
           if (zScore > 3) severity = "high";
-          else if (zScore > 2?.5) severity = "medium";
+          else if (zScore > 2.5) severity = "medium";
 
           const _direction = value > mean ? "spike" : "drop";
           const _percentageDiff = ((value - mean) / (mean || 1)) * 100;
@@ -573,7 +573,7 @@ export async function generateInsights(): Promise<InsightsResponse> {
   const _weekdayCount = Number(weekdayProjects[0]?.count || 0);
   const _weekendCount = Number(weekendProjects[0]?.count || 0);
 
-  if (weekendCount > weekdayCount * 1?.3) {
+  if (weekendCount > weekdayCount * 1.3) {
     const _percentageHigher =
       ((weekendCount - weekdayCount) / weekdayCount) * 100;
     insights?.push({
@@ -881,7 +881,7 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   const _engagementRate = Number(analyticsData[0]?.engagementRate || 0);
 
   // Calculate active listeners (estimate: 20% of total streams are unique listeners)
-  const _activeListeners = Math?.round(totalStreams * 0?.2);
+  const _activeListeners = Math?.round(totalStreams * 0.2);
 
   // Platform distribution — real data from analytics table grouped by platform
   const _platformRows = await db

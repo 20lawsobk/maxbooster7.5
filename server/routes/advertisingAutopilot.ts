@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth?.js";
-import { storage } from "../storage?.js";
-import { logger } from "../logger?.js";
-import { aiModelManager } from "../services/aiModelManager?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { storage } from "../storage.js";
+import { logger } from "../logger.js";
+import { aiModelManager } from "../services/aiModelManager.js";
 import { db } from "../db";
 import { adCampaigns } from "@shared/schema";
 import { eq, count, gt, desc, and, isNotNull } from "drizzle-orm";
@@ -36,7 +36,7 @@ const _advertisingAutopilotConfigSchema = z?.object({
   optimalTimesOnly: z?.boolean().optional(),
   crossPlatformCampaigns: z?.boolean().optional(),
   engagementThreshold: z?.number().min(0).max(1).optional(),
-  minConfidenceThreshold: z?.number().min(0).max(1).default(0?.7),
+  minConfidenceThreshold: z?.number().min(0).max(1).default(0.7),
   autoAnalyzeBeforePosting: z?.boolean().default(true),
 });
 
@@ -51,7 +51,7 @@ router?.get("/status", requireAuth, async (req, res) => {
       .catch(() => null);
 
     let modelTrained = false,
-      modelVersion = "1?.0.0";
+      modelVersion = "1.0.0";
     let audienceSegments = 0,
       viralSuccessRate = 0,
       organicReachMultiplier = 1;
@@ -156,8 +156,8 @@ router?.get("/status", requireAuth, async (req, res) => {
         autoPublish: false,
         optimalTimesOnly: true,
         crossPlatformCampaigns: false,
-        engagementThreshold: 0?.02,
-        minConfidenceThreshold: 0?.7,
+        engagementThreshold: 0.02,
+        minConfidenceThreshold: 0.7,
         autoAnalyzeBeforePosting: true,
       },
       status: {
@@ -211,12 +211,12 @@ router?.post("/start", requireAuth, async (req, res) => {
         autoPublish: false,
         optimalTimesOnly: true,
         crossPlatformCampaigns: false,
-        engagementThreshold: 0?.02,
-        minConfidenceThreshold: 0?.7,
+        engagementThreshold: 0.02,
+        minConfidenceThreshold: 0.7,
         autoAnalyzeBeforePosting: true,
       };
     } else {
-      config?.enabled = true;
+      config.enabled = true;
     }
 
     await storage?.saveAdvertisingAutopilotConfig(userId, config);
@@ -241,7 +241,7 @@ router?.post("/stop", requireAuth, async (req, res) => {
 
     const _config = await storage?.getAdvertisingAutopilotConfig(userId);
     if (config) {
-      config?.enabled = false;
+      config.enabled = false;
       await storage?.saveAdvertisingAutopilotConfig(userId, config);
     }
 
@@ -350,7 +350,7 @@ router?.get("/performance", requireAuth, async (req, res) => {
     const _numCampaigns = activeCampaigns?.length;
 
     // Baseline: if artist had 0 campaigns, show neutral
-    const _multiplier = organicReachMultiplier || 1?.0;
+    const _multiplier = organicReachMultiplier || 1.0;
     const _pctBetter = Math?.round((multiplier - 1) * 100);
     // Each campaign is estimated to generate ~50k impressions/month organically
     const _estimatedMonthlyImpressions = numCampaigns * 50000;

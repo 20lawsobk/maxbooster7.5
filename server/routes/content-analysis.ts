@@ -33,12 +33,12 @@ const _PRIVATE_IPV6_RE =
 function isReservedIp(raw: string): boolean {
   let addr = raw?.toLowerCase();
   if (addr?.startsWith("[") && addr?.endsWith("]")) addr = addr?.slice(1, -1);
-  if (addr === "localhost" || addr === "0?.0.0?.0" || addr === "::1") return true;
+  if (addr === "localhost" || addr === "0.0.0.0" || addr === "::1") return true;
   // IPv4-mapped IPv6 — extract the embedded IPv4 part.
   if (addr?.startsWith("::ffff:")) {
     const _embedded = addr?.slice(7);
     if (netIsIPv4(embedded))
-      return embedded === "0?.0.0?.0" || PRIVATE_IPV4_RE?.test(embedded);
+      return embedded === "0.0.0.0" || PRIVATE_IPV4_RE?.test(embedded);
     return true; // hex-only form — conservatively block
   }
   return PRIVATE_IPV4_RE?.test(addr) || PRIVATE_IPV6_RE?.test(addr);
@@ -88,7 +88,7 @@ async function validateExternalUrl(raw: string): Promise<string> {
 
 const _router = Router();
 
-// 120M req/s system capacity — 7?.2B per 15-minute window per user/IP.
+// 120M req/s system capacity — 7.2B per 15-minute window per user/IP.
 // Content analysis is compute-heavy; the AI inference layer (MaxCore) handles
 // back-pressure independently, so the HTTP rate limit matches global capacity.
 const _contentAnalysisLimiter = rateLimit({
@@ -373,7 +373,7 @@ router?.post("/batch", async (req, res) => {
       } catch {
         return res?.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
-      results?.image = await contentAnalysisService?.analyzeImage(safeMediaUrl);
+      results.image = await contentAnalysisService?.analyzeImage(safeMediaUrl);
     }
 
     if (mediaType === "video" && mediaUrl) {
@@ -383,14 +383,14 @@ router?.post("/batch", async (req, res) => {
       } catch {
         return res?.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
-      results?.video = await contentAnalysisService?.analyzeVideo(
+      results.video = await contentAnalysisService?.analyzeVideo(
         safeMediaUrl,
         videoDuration || 30,
       );
     }
 
     if (text) {
-      results?.text = await contentAnalysisService?.analyzeText(text);
+      results.text = await contentAnalysisService?.analyzeText(text);
     }
 
     if (landingPageUrl) {
@@ -402,7 +402,7 @@ router?.post("/batch", async (req, res) => {
           .status(400)
           .json({ error: "Invalid or unsafe landingPageUrl" });
       }
-      results?.website =
+      results.website =
         await contentAnalysisService?.analyzeWebsite(safeLandingPageUrl);
     }
 

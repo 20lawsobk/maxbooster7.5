@@ -16,9 +16,9 @@
  */
 
 import { existsSync } from "fs";
-import { db } from "./db?.js";
+import { db } from "./db.js";
 import { sql } from "drizzle-orm";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 interface SelfTestResult {
   name: string;
@@ -89,7 +89,7 @@ class PostDeploySelfTest {
     const _startTime = Date?.now();
     try {
       const { getRedisClient } = await import(
-        "./lib/redisConnectionFactory?.js"
+        "./lib/redisConnectionFactory.js"
       );
       const _client = await getRedisClient();
 
@@ -193,7 +193,7 @@ class PostDeploySelfTest {
   async testFilePaths(): Promise<SelfTestResult> {
     const _startTime = Date?.now();
     try {
-      const _criticalPaths = ["dist/index?.js", "package?.json"];
+      const _criticalPaths = ["dist/index.js", "package.json"];
 
       const missing: string[] = [];
       for (const path of criticalPaths) {
@@ -225,7 +225,7 @@ class PostDeploySelfTest {
       return this?.lastReport!;
     }
 
-    this?.isRunning = true;
+    this.isRunning = true;
     const _runStartTime = Date?.now();
 
     logger?.info("🔬 Starting post-deploy self-test...");
@@ -261,7 +261,7 @@ class PostDeploySelfTest {
       recommendation = "healthy";
     }
 
-    this?.lastReport = {
+    this.lastReport = {
       runAt: new Date(),
       durationMs: Date?.now() - runStartTime,
       passed,
@@ -281,7 +281,7 @@ class PostDeploySelfTest {
       logger?.warn("❌ CRITICAL: Self-test recommends rollback!");
     }
 
-    this?.isRunning = false;
+    this.isRunning = false;
     return this?.lastReport;
   }
 
@@ -291,7 +291,7 @@ class PostDeploySelfTest {
   }
 
   // Schedule periodic self-tests (every 30 minutes)
-  startPeriodicTests(intervalMs = 30 * 60 * 1000): NodeJS?.Timeout {
+  startPeriodicTests(intervalMs = 30 * 60 * 1000): NodeJS.Timeout {
     // Run initial test after 60 seconds
     setTimeout(() => {
       this?.runAllTests().catch((err) => {

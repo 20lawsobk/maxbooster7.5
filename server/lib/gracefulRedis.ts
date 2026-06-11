@@ -5,8 +5,8 @@
  * All operations throw on failure — no silent degradation.
  */
 
-import { logger } from "../logger?.js";
-import { getPdimClient, isPdimConfigured } from "./pdimClient?.js";
+import { logger } from "../logger.js";
+import { getPdimClient, isPdimConfigured } from "./pdimClient.js";
 
 interface RedisClientWrapper {
   client: Record<string, unknown>;

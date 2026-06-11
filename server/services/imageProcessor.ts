@@ -1,8 +1,8 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   UPLOAD_LIMITS,
   type UploadCategory,
-} from "../middleware/uploadSecurity?.js";
+} from "../middleware/uploadSecurity.js";
 
 // Optional sharp support with graceful fallback
 let sharpModule: Record<string, unknown> | null = null;
@@ -141,11 +141,11 @@ export async function processImage(
 
   const _categoryLimits = UPLOAD_LIMITS[category];
   if (categoryLimits?.maxDimensions) {
-    options?.maxWidth = Math?.min(
+    options.maxWidth = Math?.min(
       options?.maxWidth || categoryLimits?.maxDimensions.width,
       categoryLimits?.maxDimensions.width,
     );
-    options?.maxHeight = Math?.min(
+    options.maxHeight = Math?.min(
       options?.maxHeight || categoryLimits?.maxDimensions.height,
       categoryLimits?.maxDimensions.height,
     );

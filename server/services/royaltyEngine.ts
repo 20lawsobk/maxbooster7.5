@@ -1,7 +1,7 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { royaltyStatements, recoupmentAccounts, splitContracts, dspRates, exchangeRates, revenueEvents, projectRoyaltySplits, platformRoyaltyRates, type RoyaltyStatement, type InsertRoyaltyStatement } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, isNull, or } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
 
 export type RoyaltyType =
@@ -155,8 +155,8 @@ export interface SplitBreakdown {
   payableAmount: number;
 }
 
-const _DEFAULT_PLATFORM_FEE_RATE = 0?.15;
-const _DEFAULT_DISTRIBUTION_FEE_RATE = 0?.09;
+const _DEFAULT_PLATFORM_FEE_RATE = 0.15;
+const _DEFAULT_DISTRIBUTION_FEE_RATE = 0.09;
 
 export const FEE_TIERS: Record<
   FeeTier,
@@ -168,8 +168,8 @@ export const FEE_TIERS: Record<
   }
 > = {
   free: {
-    platformFee: 0?.2,
-    distributionFee: 0?.15,
+    platformFee: 0.2,
+    distributionFee: 0.15,
     name: "Free",
     description: "Basic tier with standard fees",
   },
@@ -203,78 +203,78 @@ export const MECHANICAL_RATES: Record<
   string,
   { rate: number; type: "statutory" | "negotiated" }
 > = {
-  US: { rate: 0?.00091, type: "statutory" },
-  CA: { rate: 0?.00083, type: "statutory" },
-  GB: { rate: 0?.00085, type: "statutory" },
-  EU: { rate: 0?.00077, type: "statutory" },
-  AU: { rate: 0?.00072, type: "statutory" },
-  JP: { rate: 0?.00068, type: "statutory" },
-  default: { rate: 0?.00065, type: "negotiated" },
+  US: { rate: 0.00091, type: "statutory" },
+  CA: { rate: 0.00083, type: "statutory" },
+  GB: { rate: 0.00085, type: "statutory" },
+  EU: { rate: 0.00077, type: "statutory" },
+  AU: { rate: 0.00072, type: "statutory" },
+  JP: { rate: 0.00068, type: "statutory" },
+  default: { rate: 0.00065, type: "negotiated" },
 };
 
 export const PERFORMANCE_SPLITS: Record<
   string,
   { publisherShare: number; writerShare: number }
 > = {
-  ASCAP: { publisherShare: 0?.5, writerShare: 0?.5 },
-  BMI: { publisherShare: 0?.5, writerShare: 0?.5 },
-  SESAC: { publisherShare: 0?.5, writerShare: 0?.5 },
-  GMR: { publisherShare: 0?.5, writerShare: 0?.5 },
-  PRS: { publisherShare: 0?.5, writerShare: 0?.5 },
-  GEMA: { publisherShare: 0?.6, writerShare: 0?.4 },
-  SACEM: { publisherShare: 0?.5, writerShare: 0?.5 },
-  JASRAC: { publisherShare: 0?.5, writerShare: 0?.5 },
-  default: { publisherShare: 0?.5, writerShare: 0?.5 },
+  ASCAP: { publisherShare: 0.5, writerShare: 0.5 },
+  BMI: { publisherShare: 0.5, writerShare: 0.5 },
+  SESAC: { publisherShare: 0.5, writerShare: 0.5 },
+  GMR: { publisherShare: 0.5, writerShare: 0.5 },
+  PRS: { publisherShare: 0.5, writerShare: 0.5 },
+  GEMA: { publisherShare: 0.6, writerShare: 0.4 },
+  SACEM: { publisherShare: 0.5, writerShare: 0.5 },
+  JASRAC: { publisherShare: 0.5, writerShare: 0.5 },
+  default: { publisherShare: 0.5, writerShare: 0.5 },
 };
 
 const DSP_BASE_RATES: Record<string, number> = {
-  spotify: 0?.003,
-  apple_music: 0?.01,
-  youtube: 0?.00069,
-  youtube_music: 0?.002,
-  amazon_music: 0?.004,
-  tidal: 0?.01284,
-  deezer: 0?.0064,
-  pandora: 0?.00133,
-  soundcloud: 0?.0025,
-  tiktok: 0?.002,
-  facebook: 0?.002,
-  instagram: 0?.002,
-  default: 0?.003,
+  spotify: 0.003,
+  apple_music: 0.01,
+  youtube: 0.00069,
+  youtube_music: 0.002,
+  amazon_music: 0.004,
+  tidal: 0.01284,
+  deezer: 0.0064,
+  pandora: 0.00133,
+  soundcloud: 0.0025,
+  tiktok: 0.002,
+  facebook: 0.002,
+  instagram: 0.002,
+  default: 0.003,
 };
 
 const DSP_PREMIUM_MULTIPLIERS: Record<string, number> = {
-  spotify: 1?.5,
-  apple_music: 1?.3,
-  tidal: 1?.0,
-  amazon_music: 1?.4,
-  youtube_music: 1?.3,
-  deezer: 1?.2,
-  default: 1?.0,
+  spotify: 1.5,
+  apple_music: 1.3,
+  tidal: 1.0,
+  amazon_music: 1.4,
+  youtube_music: 1.3,
+  deezer: 1.2,
+  default: 1.0,
 };
 
 const TERRITORY_MULTIPLIERS: Record<string, number> = {
-  US: 1?.0,
-  GB: 0?.95,
-  CA: 0?.9,
-  AU: 0?.88,
-  DE: 0?.92,
-  FR: 0?.9,
-  JP: 0?.85,
-  BR: 0?.4,
-  IN: 0?.15,
-  MX: 0?.35,
-  ES: 0?.8,
-  IT: 0?.82,
-  NL: 0?.88,
-  SE: 0?.95,
-  NO: 0?.95,
-  DK: 0?.92,
-  FI: 0?.9,
-  KR: 0?.7,
-  ZA: 0?.3,
-  GLOBAL: 0?.75,
-  default: 0?.6,
+  US: 1.0,
+  GB: 0.95,
+  CA: 0.9,
+  AU: 0.88,
+  DE: 0.92,
+  FR: 0.9,
+  JP: 0.85,
+  BR: 0.4,
+  IN: 0.15,
+  MX: 0.35,
+  ES: 0.8,
+  IT: 0.82,
+  NL: 0.88,
+  SE: 0.95,
+  NO: 0.95,
+  DK: 0.92,
+  FI: 0.9,
+  KR: 0.7,
+  ZA: 0.3,
+  GLOBAL: 0.75,
+  default: 0.6,
 };
 
 export class RoyaltyEngine {
@@ -285,8 +285,8 @@ export class RoyaltyEngine {
     platformFeeRate: number = DEFAULT_PLATFORM_FEE_RATE,
     distributionFeeRate: number = DEFAULT_DISTRIBUTION_FEE_RATE,
   ) {
-    this?.platformFeeRate = platformFeeRate;
-    this?.distributionFeeRate = distributionFeeRate;
+    this.platformFeeRate = platformFeeRate;
+    this.distributionFeeRate = distributionFeeRate;
   }
 
   async calculateStream(
@@ -302,7 +302,7 @@ export class RoyaltyEngine {
     );
     // Fallback chain: time-effective custom rate → admin-editable DB rate → hardcoded default
     let baseRate: number;
-    let dbPremiumMultiplier: number = 1?.0;
+    let dbPremiumMultiplier: number = 1.0;
     if (customRate) {
       baseRate = customRate;
     } else {
@@ -318,8 +318,8 @@ export class RoyaltyEngine {
     const _territoryMultiplier =
       TERRITORY_MULTIPLIERS[stream?.territory] || TERRITORY_MULTIPLIERS?.default;
     const _premiumMultiplier = stream?.isUserCentric
-      ? dbPremiumMultiplier || DSP_PREMIUM_MULTIPLIERS[dspSlug] || 1?.0
-      : 1?.0;
+      ? dbPremiumMultiplier || DSP_PREMIUM_MULTIPLIERS[dspSlug] || 1.0
+      : 1.0;
 
     const _effectiveRate = baseRate * territoryMultiplier * premiumMultiplier;
     const _perStreamRate = effectiveRate;
@@ -349,7 +349,7 @@ export class RoyaltyEngine {
     const _mechanicalRate =
       MECHANICAL_RATES[stream?.territory] || MECHANICAL_RATES?.default;
     const _mechanicalShare = stream?.streams * mechanicalRate?.rate;
-    const _performanceShare = netRevenue * 0?.5;
+    const _performanceShare = netRevenue * 0.5;
 
     const royaltyType: RoyaltyType = stream?.royaltyType || "streaming";
 
@@ -374,7 +374,7 @@ export class RoyaltyEngine {
       calculationBreakdown: {
         baseRate,
         territoryMultiplier,
-        tierBonus: premiumMultiplier - 1?.0,
+        tierBonus: premiumMultiplier - 1.0,
         feeDeductions: platformFee + distributionFee,
         mechanicalShare,
         performanceShare,
@@ -386,7 +386,7 @@ export class RoyaltyEngine {
     isrcCode: string,
     territory: string,
     streams: number,
-    publisherPercentage: number = 0?.5,
+    publisherPercentage: number = 0.5,
   ): MechanicalRoyalty {
     const _mechanicalConfig =
       MECHANICAL_RATES[territory] || MECHANICAL_RATES?.default;
@@ -401,8 +401,8 @@ export class RoyaltyEngine {
       publisherShare,
       writerShare,
       totalMechanical,
-      hfaRate: territory === "US" ? 0?.00091 : undefined,
-      mriRate: territory === "US" ? 0?.00091 : undefined,
+      hfaRate: territory === "US" ? 0.00091 : undefined,
+      mriRate: territory === "US" ? 0.00091 : undefined,
     };
   }
 
@@ -436,7 +436,7 @@ export class RoyaltyEngine {
     termMonths: number = 12,
     exclusivity: boolean = false,
   ): SyncRoyalty {
-    const _exclusivityMultiplier = exclusivity ? 1?.5 : 1?.0;
+    const _exclusivityMultiplier = exclusivity ? 1.5 : 1.0;
     const _adjustedMasterFee = masterFee * exclusivityMultiplier;
     const _adjustedPublishingFee = publishingFee * exclusivityMultiplier;
 
@@ -898,7 +898,7 @@ export class RoyaltyEngine {
             premiumMultiplier: row?.premiumMultiplier,
           });
         }
-        this?._platformRatesCache = { data: map, expiresAt: now + 3600_000 };
+        this._platformRatesCache = { data: map, expiresAt: now + 3600_000 };
       } catch (err) {
         logger?.warn(
           { err: err },
@@ -912,7 +912,7 @@ export class RoyaltyEngine {
   }
 
   invalidatePlatformRatesCache() {
-    this?._platformRatesCache = null;
+    this._platformRatesCache = null;
   }
 
   private async getExchangeRate(

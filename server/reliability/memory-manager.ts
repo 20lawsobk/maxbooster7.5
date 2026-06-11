@@ -1,5 +1,5 @@
 import { EventEmitter } from "events";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface MemoryMetrics {
   heapUsed: number;
@@ -26,8 +26,8 @@ interface LeakDetection {
 class MemoryManager extends EventEmitter {
   private metrics: MemoryMetrics[] = [];
   private maxMetrics = 1440; // 24 hours at 1-minute intervals
-  private monitoringInterval: NodeJS?.Timeout | null = null;
-  private gcInterval: NodeJS?.Timeout | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
+  private gcInterval: NodeJS.Timeout | null = null;
 
   private thresholds: MemoryThresholds;
 
@@ -50,12 +50,12 @@ class MemoryManager extends EventEmitter {
 
     // Set sensible absolute minimums (MB converted to bytes)
     const _absoluteWarningMB = isProduction ? 768 : 1024; // 768MB prod, 1GB dev
-    const _absoluteCriticalMB = isProduction ? 1024 : 1536; // 1GB prod, 1?.5GB dev
+    const _absoluteCriticalMB = isProduction ? 1024 : 1536; // 1GB prod, 1.5GB dev
 
     const _warningThreshold = absoluteWarningMB * 1024 * 1024;
     const _criticalThreshold = absoluteCriticalMB * 1024 * 1024;
 
-    this?.thresholds = {
+    this.thresholds = {
       warning: warningThreshold,
       critical: criticalThreshold,
       forceGC: Math?.floor((warningThreshold + criticalThreshold) / 2),
@@ -80,7 +80,7 @@ class MemoryManager extends EventEmitter {
     }
 
     // Main monitoring loop
-    this?.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       this?.collectMetrics();
       this?.analyzeMemoryUsage();
       this?.detectMemoryLeaks();
@@ -88,7 +88,7 @@ class MemoryManager extends EventEmitter {
     }, intervalMs);
 
     // Garbage collection schedule (every 5 minutes)
-    this?.gcInterval = setInterval(
+    this.gcInterval = setInterval(
       () => {
         this?.scheduleGarbageCollection();
       },
@@ -101,12 +101,12 @@ class MemoryManager extends EventEmitter {
   stop(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
 
     if (this?.gcInterval) {
       clearInterval(this?.gcInterval);
-      this?.gcInterval = null;
+      this.gcInterval = null;
     }
 
     logger?.info("🛑 Memory manager stopped");
@@ -139,7 +139,7 @@ class MemoryManager extends EventEmitter {
 
     // Limit metrics array size
     if (this?.metrics.length > this?.maxMetrics) {
-      this?.metrics = this?.metrics.slice(0, this?.maxMetrics);
+      this.metrics = this?.metrics.slice(0, this?.maxMetrics);
     }
 
     // Update leak detection samples
@@ -274,7 +274,7 @@ class MemoryManager extends EventEmitter {
 
     // Clear old metrics beyond retention period
     if (this?.metrics.length > this?.maxMetrics) {
-      this?.metrics = this?.metrics.slice(0, this?.maxMetrics);
+      this.metrics = this?.metrics.slice(0, this?.maxMetrics);
     }
   }
 
@@ -350,7 +350,7 @@ class MemoryManager extends EventEmitter {
 
   // Configuration methods
   setThresholds(thresholds: Partial<MemoryThresholds>): void {
-    this?.thresholds = { ...this?.thresholds, ...thresholds };
+    this.thresholds = { ...this?.thresholds, ...thresholds };
     logger?.info("🔧 Memory thresholds updated:", {
       warningMB: Math?.round(this?.thresholds.warning / 1024 / 1024),
       criticalMB: Math?.round(this?.thresholds.critical / 1024 / 1024),

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 // ---- Zod schemas for boundary validation -------------------------------
 export const _MusicDataSchema = z
@@ -220,14 +220,14 @@ export class AIAdvertisingEngine {
     const _demandPrediction = await this?.predictDemandCycles(campaignData);
 
     return {
-      predictedCPM: baselinePerformance?.averageCPM * 0?.4, // 60% cost reduction
+      predictedCPM: baselinePerformance?.averageCPM * 0.4, // 60% cost reduction
       optimalBid: this?.calculateOptimalBid(
         baselinePerformance,
         competitorIntelligence,
       ),
       competitorAnalysis: competitorIntelligence,
       demandForecast: demandPrediction,
-      algorithmicAdvantage: 2?.3, // 230% performance improvement
+      algorithmicAdvantage: 2.3, // 230% performance improvement
     };
   }
 
@@ -257,10 +257,10 @@ export class AIAdvertisingEngine {
   async generateViralAmplification(_content: unknown): Promise<unknown> {
     return {
       viralityFactors: {
-        emotionalResonance: 0?.92,
-        shareabilityScore: 0?.88,
-        memePotential: 0?.85,
-        influencerAppeal: 0?.91,
+        emotionalResonance: 0.92,
+        shareabilityScore: 0.88,
+        memePotential: 0.85,
+        influencerAppeal: 0.91,
       },
       amplificationStrategies: [
         {
@@ -301,7 +301,7 @@ export class AIAdvertisingEngine {
         conversions: campaignConfig?.budget * 12, // 12 conversions per dollar (vs 3 industry average)
         streamIncrease: campaignConfig?.budget * 850, // 850 streams per dollar (vs 200 industry average)
         followerGrowth: campaignConfig?.budget * 25, // 25 followers per dollar (vs 8 industry average)
-        virality: 0?.15, // 15% chance of viral content (vs 0?.03% industry average)
+        virality: 0.15, // 15% chance of viral content (vs 0.03% industry average)
       },
       optimizationRecommendations: [
         {
@@ -337,15 +337,15 @@ export class AIAdvertisingEngine {
     return [
       {
         name: "Similar Artists Fans",
-        similarity: 0?.94,
+        similarity: 0.94,
         size: 2500000,
-        conversionProbability: 0?.18,
+        conversionProbability: 0.18,
       },
       {
         name: "Genre Enthusiasts",
-        similarity: 0?.87,
+        similarity: 0.87,
         size: 4200000,
-        conversionProbability: 0?.14,
+        conversionProbability: 0.14,
       },
     ];
   }
@@ -361,11 +361,11 @@ export class AIAdvertisingEngine {
 
   private async analyzeBaselinePerformance(): Promise<unknown> {
     return {
-      averageCPM: 3?.5,
-      averageCTR: 0?.024,
-      averageConversion: 0?.008,
+      averageCPM: 3.5,
+      averageCTR: 0.024,
+      averageConversion: 0.008,
       industryBenchmarks: {
-        music: { cpm: 4?.2, ctr: 0?.018, conversion: 0?.005 },
+        music: { cpm: 4.2, ctr: 0.018, conversion: 0.005 },
       },
     };
   }
@@ -393,7 +393,7 @@ export class AIAdvertisingEngine {
   }
 
   private calculateOptimalBid(baseline: unknown, _competition: unknown): number {
-    return baseline?.averageCPM * 0?.75; // Start 25% below market rate
+    return baseline?.averageCPM * 0.75; // Start 25% below market rate
   }
 
   private async generateDynamicHeadlines(
@@ -502,7 +502,7 @@ export class AIAdvertisingEngine {
     return {
       method: "Playlist Placement + Recommendation Hijacking",
       reach: "Organic video recommendations and playlist features",
-      cost: "$0 vs $0?.01-0?.30 per view on YouTube Ads",
+      cost: "$0 vs $0.01-0.30 per view on YouTube Ads",
       effectiveness: "600% better retention through organic discovery",
       technique:
         "AI optimizes for YouTube algorithm signals and playlist placement",
@@ -516,7 +516,7 @@ export class AIAdvertisingEngine {
     return {
       method: "Playlist Infiltration + Algorithm Optimization",
       reach: "Discover Weekly and Release Radar placement",
-      cost: "$0 vs $0?.006-0?.84 per stream on Spotify Ad Studio",
+      cost: "$0 vs $0.006-0.84 per stream on Spotify Ad Studio",
       effectiveness: "450% better stream retention through organic discovery",
       technique:
         "AI optimizes music metadata and listener behavior for algorithm favorability",
@@ -530,7 +530,7 @@ export class AIAdvertisingEngine {
     return {
       method: "Trend Hijacking + Community Building",
       reach: "Viral tweet amplification and trending topic domination",
-      cost: "$0 vs $0?.50-2?.00 per engagement on Twitter Ads",
+      cost: "$0 vs $0.50-2.00 per engagement on Twitter Ads",
       effectiveness:
         "350% better viral potential through organic community building",
       technique:
@@ -604,7 +604,7 @@ export class AIAdvertisingEngine {
           "Infinite content variations optimized for each platform",
         communitySeeding: "Strategic seeding in high-influence communities",
       },
-      guarantee: "15% viral success rate vs 0?.03% for traditional advertising",
+      guarantee: "15% viral success rate vs 0.03% for traditional advertising",
       impact: "One viral hit replaces years of traditional advertising spend",
     };
   }

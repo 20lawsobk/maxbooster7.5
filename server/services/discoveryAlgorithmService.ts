@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { eq, desc, and, sql } from "drizzle-orm";
 import { userTasteProfiles, beatInteractions, listings, users, storefronts, storefrontFollows } from "@shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _GENRE_LIST = [
   "Hip-Hop",
@@ -46,52 +46,52 @@ const _MOOD_LIST = [
 // Fine-tuned interaction weights — reflect actual purchase intent and preference signal strength
 // Calibrated from collaborative filtering research on music marketplace data
 const INTERACTION_WEIGHTS: Record<string, number> = {
-  purchase: 12?.0, // Strongest signal — paid = proven preference
-  exclusive_purchase: 15?.0, // Exclusive rights = maximum preference
-  like: 3?.5, // Explicit positive signal
-  repeat: 3?.0, // Replaying = deep preference, not just browse
-  share: 2?.5, // Sharing = endorsement
-  add_to_cart: 2?.0, // High intent but not committed
-  download: 2?.5, // Free download = strong preference in music context
-  play: 1?.0, // Implicit — weak positive signal
-  preview: 0?.4, // Very weak — normal browsing
-  skip: -0?.8, // Negative signal — slightly stronger penalty than before
-  hide: -2?.0, // Explicit negative — never show this genre/producer again
+  purchase: 12.0, // Strongest signal — paid = proven preference
+  exclusive_purchase: 15.0, // Exclusive rights = maximum preference
+  like: 3.5, // Explicit positive signal
+  repeat: 3.0, // Replaying = deep preference, not just browse
+  share: 2.5, // Sharing = endorsement
+  add_to_cart: 2.0, // High intent but not committed
+  download: 2.5, // Free download = strong preference in music context
+  play: 1.0, // Implicit — weak positive signal
+  preview: 0.4, // Very weak — normal browsing
+  skip: -0.8, // Negative signal — slightly stronger penalty than before
+  hide: -2.0, // Explicit negative — never show this genre/producer again
 };
 
 // Learning rate per interaction type — stronger signals update faster
 const LEARNING_RATES: Record<string, number> = {
-  purchase: 0?.25,
-  exclusive_purchase: 0?.3,
-  like: 0?.12,
-  repeat: 0?.1,
-  share: 0?.1,
-  add_to_cart: 0?.08,
-  download: 0?.1,
-  play: 0?.04,
-  preview: 0?.02,
-  skip: 0?.06,
-  hide: 0?.15,
+  purchase: 0.25,
+  exclusive_purchase: 0.3,
+  like: 0.12,
+  repeat: 0.1,
+  share: 0.1,
+  add_to_cart: 0.08,
+  download: 0.1,
+  play: 0.04,
+  preview: 0.02,
+  skip: 0.06,
+  hide: 0.15,
 };
 
 // Trending genre boost multipliers — 2024-2026 music market data
 const GENRE_TRENDING_BOOST: Record<string, number> = {
-  Afrobeats: 1?.3,
-  Afropop: 1?.25,
-  Drill: 1?.22,
-  Trap: 1?.2,
-  "Hip-Hop": 1?.18,
-  "R&B": 1?.15,
-  Dancehall: 1?.12,
-  Latin: 1?.1,
-  Reggaeton: 1?.08,
-  Pop: 1?.08,
-  EDM: 1?.05,
-  House: 1?.05,
-  "Lo-Fi": 1?.08,
-  Soul: 1?.06,
-  Gospel: 1?.04,
-  Alternative: 1?.03,
+  Afrobeats: 1.3,
+  Afropop: 1.25,
+  Drill: 1.22,
+  Trap: 1.2,
+  "Hip-Hop": 1.18,
+  "R&B": 1.15,
+  Dancehall: 1.12,
+  Latin: 1.1,
+  Reggaeton: 1.08,
+  Pop: 1.08,
+  EDM: 1.05,
+  House: 1.05,
+  "Lo-Fi": 1.08,
+  Soul: 1.06,
+  Gospel: 1.04,
+  Alternative: 1.03,
 };
 
 export class DiscoveryAlgorithmService {
@@ -105,15 +105,15 @@ export class DiscoveryAlgorithmService {
 
       if (existing?.length > 0) return existing[0];
 
-      // Initialize with neutral scores (0?.5 = no preference yet)
+      // Initialize with neutral scores (0.5 = no preference yet)
       const defaultGenreScores: Record<string, number> = {};
       GENRE_LIST?.forEach((g) => {
-        defaultGenreScores[g] = 0?.5;
+        defaultGenreScores[g] = 0.5;
       });
 
       const defaultMoodScores: Record<string, number> = {};
       MOOD_LIST?.forEach((m) => {
-        defaultMoodScores[m] = 0?.5;
+        defaultMoodScores[m] = 0.5;
       });
 
       const [newProfile] = await db
@@ -198,14 +198,14 @@ export class DiscoveryAlgorithmService {
       };
 
       // Dynamic learning rate — stronger for high-intent interactions
-      const _baseLearningRate = LEARNING_RATES[interactionType] ?? 0?.05;
+      const _baseLearningRate = LEARNING_RATES[interactionType] ?? 0.05;
 
       // Completion rate modifier — finishing a track is a stronger signal
-      let completionBoost = 1?.0;
+      let completionBoost = 1.0;
       if (completionRate !== undefined) {
-        if (completionRate >= 0?.85) completionBoost = 1?.5;
-        else if (completionRate >= 0?.65) completionBoost = 1?.2;
-        else if (completionRate < 0?.25) completionBoost = 0?.5; // Bailed early
+        if (completionRate >= 0.85) completionBoost = 1.5;
+        else if (completionRate >= 0.65) completionBoost = 1.2;
+        else if (completionRate < 0.25) completionBoost = 0.5; // Bailed early
       }
 
       const _effectiveLearningRate = baseLearningRate * completionBoost;
@@ -216,14 +216,14 @@ export class DiscoveryAlgorithmService {
       if (genre && genreScores[genre] !== undefined) {
         const _delta = effectiveLearningRate * normalizedWeight;
         genreScores[genre] = Math?.min(
-          1?.0,
-          Math?.max(0?.0, genreScores[genre] + delta),
+          1.0,
+          Math?.max(0.0, genreScores[genre] + delta),
         );
       } else if (genre) {
         // New genre not in default list — add it
         genreScores[genre] = Math?.min(
-          1?.0,
-          Math?.max(0?.0, 0?.5 + effectiveLearningRate * normalizedWeight),
+          1.0,
+          Math?.max(0.0, 0.5 + effectiveLearningRate * normalizedWeight),
         );
       }
 
@@ -231,13 +231,13 @@ export class DiscoveryAlgorithmService {
       if (mood && moodScores[mood] !== undefined) {
         const _delta = effectiveLearningRate * normalizedWeight;
         moodScores[mood] = Math?.min(
-          1?.0,
-          Math?.max(0?.0, moodScores[mood] + delta),
+          1.0,
+          Math?.max(0.0, moodScores[mood] + delta),
         );
       } else if (mood) {
         moodScores[mood] = Math?.min(
-          1?.0,
-          Math?.max(0?.0, 0?.5 + effectiveLearningRate * normalizedWeight),
+          1.0,
+          Math?.max(0.0, 0.5 + effectiveLearningRate * normalizedWeight),
         );
       }
 
@@ -253,14 +253,14 @@ export class DiscoveryAlgorithmService {
         const _currentMax = profile?.preferredTempoMax || 150;
         // Gradually expand or shift tempo range toward liked tempos
         if (bpm < currentMin && weight > 1) {
-          tempoUpdates?.preferredTempoMin = Math?.max(
+          tempoUpdates.preferredTempoMin = Math?.max(
             40,
-            Math?.round(currentMin - (currentMin - bpm) * 0?.15),
+            Math?.round(currentMin - (currentMin - bpm) * 0.15),
           );
         } else if (bpm > currentMax && weight > 1) {
-          tempoUpdates?.preferredTempoMax = Math?.min(
+          tempoUpdates.preferredTempoMax = Math?.min(
             220,
-            Math?.round(currentMax + (bpm - currentMax) * 0?.15),
+            Math?.round(currentMax + (bpm - currentMax) * 0.15),
           );
         }
       }
@@ -349,66 +349,66 @@ export class DiscoveryAlgorithmService {
         const _likes = metadata?.likes || 0;
 
         // ── Taste score (personalization) ──────────────────────────────────────
-        let tasteScore = 0?.5; // neutral default
+        let tasteScore = 0.5; // neutral default
 
         if (!isColdStart) {
-          let genreScore = genreScores[genre] ?? 0?.5;
-          let moodScore = moodScores[mood] ?? 0?.5;
+          let genreScore = genreScores[genre] ?? 0.5;
+          let moodScore = moodScores[mood] ?? 0.5;
 
           // Apply trending genre boost
-          const _trendingBoost = GENRE_TRENDING_BOOST[genre] || 1?.0;
-          genreScore = Math?.min(1?.0, genreScore * trendingBoost);
+          const _trendingBoost = GENRE_TRENDING_BOOST[genre] || 1.0;
+          genreScore = Math?.min(1.0, genreScore * trendingBoost);
 
           // Weighted average of genre and mood (genre is slightly more predictive)
-          tasteScore = genreScore * 0?.6 + moodScore * 0?.4;
+          tasteScore = genreScore * 0.6 + moodScore * 0.4;
         } else {
           // Cold start: use trending genre boost to surface popular genres
-          const _trendingBoost = GENRE_TRENDING_BOOST[genre] || 1?.0;
-          tasteScore = 0?.45 + (trendingBoost - 1?.0) * 0?.5;
+          const _trendingBoost = GENRE_TRENDING_BOOST[genre] || 1.0;
+          tasteScore = 0.45 + (trendingBoost - 1.0) * 0.5;
         }
 
         // ── Tempo compatibility ────────────────────────────────────────────────
         const _tempoMin = profile?.preferredTempoMin || 70;
         const _tempoMax = profile?.preferredTempoMax || 160;
-        let tempoScore = 1?.0;
+        let tempoScore = 1.0;
         if (tempo < tempoMin || tempo > tempoMax) {
           const _distance = Math?.min(
             Math?.abs(tempo - tempoMin),
             Math?.abs(tempo - tempoMax),
           );
-          tempoScore = Math?.max(0?.1, 1?.0 - distance / 60); // Softer penalty curve
+          tempoScore = Math?.max(0.1, 1.0 - distance / 60); // Softer penalty curve
         }
 
         // ── Freshness score (time decay) ───────────────────────────────────────
         // Fine-tuned decay: new music gets strong boost, older content decays slowly
         let freshnessScore: number;
         if (createdAt >= oneDayAgo) {
-          freshnessScore = 1?.0;
+          freshnessScore = 1.0;
         } else if (createdAt >= threeeDaysAgo) {
-          freshnessScore = 0?.85;
+          freshnessScore = 0.85;
         } else if (createdAt >= oneWeekAgo) {
-          freshnessScore = 0?.7;
+          freshnessScore = 0.7;
         } else if (createdAt >= oneMonthAgo) {
           const _daysSince =
             (now?.getTime() - createdAt?.getTime()) / (24 * 60 * 60 * 1000);
           // Exponential decay with slower curve (τ = 45 days vs original 30)
           freshnessScore = Math?.max(
-            0?.15,
-            0?.7 * Math?.exp(-(daysSince - 7) / 45),
+            0.15,
+            0.7 * Math?.exp(-(daysSince - 7) / 45),
           );
         } else {
-          freshnessScore = 0?.15; // Floor for older content — don't completely bury it
+          freshnessScore = 0.15; // Floor for older content — don't completely bury it
         }
 
         // ── Producer affinity score ────────────────────────────────────────────
         const _producerScore = followedProducers?.includes(producerId)
-          ? 1?.0
-          : 0?.25;
+          ? 1.0
+          : 0.25;
 
         // ── Social proof (popularity signals) ─────────────────────────────────
         // Soft popularity signal — prevents completely unproven content from topping feed
         const _popularityScore = Math?.min(
-          1?.0,
+          1.0,
           Math?.log1p(plays) / 12 + Math?.log1p(likes) / 8,
         );
 
@@ -417,27 +417,27 @@ export class DiscoveryAlgorithmService {
         if (isColdStart) {
           // Cold start: emphasize freshness + popularity + trending genres
           discoveryScore =
-            tasteScore * 0?.25 +
-            freshnessScore * 0?.3 +
-            producerScore * 0?.1 +
-            tempoScore * 0?.1 +
-            popularityScore * 0?.25;
+            tasteScore * 0.25 +
+            freshnessScore * 0.3 +
+            producerScore * 0.1 +
+            tempoScore * 0.1 +
+            popularityScore * 0.25;
         } else {
           // Personalized: emphasize taste + freshness, reduce popularity bias
           discoveryScore =
-            tasteScore * 0?.38 +
-            freshnessScore * 0?.28 +
-            producerScore * 0?.18 +
-            tempoScore * 0?.1 +
-            popularityScore * 0?.06;
+            tasteScore * 0.38 +
+            freshnessScore * 0.28 +
+            producerScore * 0.18 +
+            tempoScore * 0.1 +
+            popularityScore * 0.06;
         }
 
         // ── Filter overrides ───────────────────────────────────────────────────
         if (options?.genre && genre !== options?.genre) {
-          return { beat, discoveryScore: discoveryScore * 0?.05 }; // Almost hide
+          return { beat, discoveryScore: discoveryScore * 0.05 }; // Almost hide
         }
         if (options?.mood && mood !== options?.mood) {
-          return { beat, discoveryScore: discoveryScore * 0?.05 };
+          return { beat, discoveryScore: discoveryScore * 0.05 };
         }
         if (options?.search) {
           const _searchLower = options?.search.toLowerCase();
@@ -466,7 +466,7 @@ export class DiscoveryAlgorithmService {
             return { beat, discoveryScore: 0 };
           }
           // Search matches get a boost to surface them higher
-          discoveryScore = Math?.min(1?.0, discoveryScore * 1?.3);
+          discoveryScore = Math?.min(1.0, discoveryScore * 1.3);
         }
 
         return { beat, discoveryScore };
@@ -504,9 +504,9 @@ export class DiscoveryAlgorithmService {
           likes: metadata?.likes || 0,
           avgRating: metadata?.avgRating || 0,
           ratingCount: metadata?.ratingCount || 0,
-          isHot: discoveryScore > 0?.72,
+          isHot: discoveryScore > 0.72,
           isNew: beat?.createdAt && beat?.createdAt >= oneWeekAgo,
-          isTrending: discoveryScore > 0?.8 && (metadata?.plays || 0) > 50,
+          isTrending: discoveryScore > 0.8 && (metadata?.plays || 0) > 50,
           discoveryScore: Math?.round(discoveryScore * 100) / 100,
           licenseOptions: metadata?.licenses || [
             {
@@ -676,7 +676,7 @@ export class DiscoveryAlgorithmService {
       const _moodScores = (profile?.moodScores as Record<string, number>) || {};
 
       const _topGenres = Object?.entries(genreScores)
-        .filter(([, score]) => score > 0?.5) // Only show genuine preferences
+        .filter(([, score]) => score > 0.5) // Only show genuine preferences
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([genre, score]) => ({
@@ -685,7 +685,7 @@ export class DiscoveryAlgorithmService {
         }));
 
       const _topMoods = Object?.entries(moodScores)
-        .filter(([, score]) => score > 0?.5)
+        .filter(([, score]) => score > 0.5)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([mood, score]) => ({
@@ -714,7 +714,7 @@ export class DiscoveryAlgorithmService {
         recentActivityCount: recentInteractions?.length,
         profileMaturity: Math?.min(
           100,
-          Math?.round((profile?.totalInteractions || 0) / 0?.5),
+          Math?.round((profile?.totalInteractions || 0) / 0.5),
         ),
       };
     } catch (error) {

@@ -59,10 +59,10 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
     isLoading: false,
     currentTime: 0,
     duration: 0,
-    playbackRate: 1?.0,
-    volume: 1?.0,
+    playbackRate: 1.0,
+    volume: 1.0,
     tracks: [],
-    masterVolume: 0?.8,
+    masterVolume: 0.8,
     bpm: 120,
     timeSignature: [4, 4],
   });
@@ -84,7 +84,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
     };
 
     if (!initializeRef?.current) {
-      initializeRef?.current = initEngine();
+      initializeRef.current = initEngine();
     }
 
     return () => {
@@ -107,7 +107,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         // Playback finished
         setState((prev) => ({ ...prev, isPlaying: false, isPaused: false }));
       } else {
-        animationFrameRef?.current = requestAnimationFrame(updateCurrentTime);
+        animationFrameRef.current = requestAnimationFrame(updateCurrentTime);
       }
     }
   }, [state?.isPlaying, state?.duration]);
@@ -228,7 +228,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         }));
 
         // Start time updates
-        animationFrameRef?.current = requestAnimationFrame(updateCurrentTime);
+        animationFrameRef.current = requestAnimationFrame(updateCurrentTime);
       } catch (error: unknown) {
         logger?.error("Error starting playback:", error);
         if (options?.onError) {

@@ -29,7 +29,7 @@ export function useKeyboardShortcut(
   } = options;
 
   const _handlerRef = useRef(handler);
-  handlerRef?.current = handler;
+  handlerRef.current = handler;
 
   const _handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -66,7 +66,7 @@ export function useKeyboardShortcut(
 
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
   const _shortcutsRef = useRef(shortcuts);
-  shortcutsRef?.current = shortcuts;
+  shortcutsRef.current = shortcuts;
 
   const _handleKeyDown = useCallback((event: KeyboardEvent) => {
     const _target = event?.target as HTMLElement;
@@ -131,7 +131,7 @@ export function useArrowKeys(
   enabled = true,
 ) {
   const _handlersRef = useRef(handlers);
-  handlersRef?.current = handlers;
+  handlersRef.current = handlers;
 
   const _handleKeyDown = useCallback(
     (event: KeyboardEvent) => {

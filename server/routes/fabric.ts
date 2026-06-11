@@ -1,11 +1,11 @@
 import { Router, Request, Response } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import {
   fabricStorage,
   fabricNodeRegistry,
   autoClusterManager,
-} from "../pocket-dimension/fabric/index?.js";
-import { logger } from "../logger?.js";
+} from "../pocket-dimension/fabric/index.js";
+import { logger } from "../logger.js";
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; role?: string };
@@ -285,7 +285,7 @@ router?.get(
             utilizationPercent:
               n?.capacityBytes > 0
                 ? ((n?.usedBytes / n?.capacityBytes) * 100).toFixed(1)
-                : "0?.0",
+                : "0.0",
             usedBytes: n?.usedBytes,
             capacityBytes: n?.capacityBytes,
             lastHeartbeat: n?.lastHeartbeat,

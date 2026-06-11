@@ -1,6 +1,6 @@
 import sgMail from "@sendgrid/mail";
-import { logger } from "../logger?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
 
 interface AlertConfig {
   emailEnabled: boolean;
@@ -31,7 +31,7 @@ export class AlertingService {
   private alertCooldownMinutes = 15;
 
   constructor() {
-    this?.config = {
+    this.config = {
       emailEnabled: env?.SENDGRID_API_KEY ? true : false,
       webhookEnabled: process?.env.ALERT_WEBHOOK_URL ? true : false,
       emailRecipients: process?.env.ALERT_EMAIL_RECIPIENTS?.split(",") || [],
@@ -164,7 +164,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
 <html>
 <head>
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1?.6; color: #333; }
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .header { background: ${alert?.severity === "critical" ? "#dc2626" : alert?.severity === "warning" ? "#f59e0b" : "#3b82f6"}; color: white; padding: 20px; }
     .content { padding: 20px; }
     .metadata { background: #f3f4f6; padding: 15px; border-radius: 5px; margin-top: 15px; }

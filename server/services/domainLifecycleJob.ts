@@ -19,10 +19,10 @@
  *   - Renewal failure
  */
 
-import { pool } from "../db?.js";
-import { logger } from "../logger?.js";
-import { getRegistrarProvider } from "./registrar/index?.js";
-import { emitDomainEvent } from "./domainPolicyEngine?.js";
+import { pool } from "../db.js";
+import { logger } from "../logger.js";
+import { getRegistrarProvider } from "./registrar/index.js";
+import { emitDomainEvent } from "./domainPolicyEngine.js";
 
 const _GRACE_PERIOD_DAYS = 30;
 
@@ -189,8 +189,8 @@ async function _cleanUpExpiredZones(): Promise<void> {
   const { rows } = await pool?.query(
     `SELECT cd?.domain
      FROM claimed_domains cd
-     JOIN dns_zones dz ON dz?.domain = cd?.domain
-     WHERE cd?.status = 'expired'`,
+     JOIN dns_zones dz ON dz.domain = cd?.domain
+     WHERE cd.status = 'expired'`,
   );
 
   for (const row of rows) {
@@ -211,7 +211,7 @@ async function _cleanUpExpiredZones(): Promise<void> {
 
 // ── Scheduler integration ─────────────────────────────────────────────────────
 
-let _lifecycleTimer: NodeJS?.Timeout | null = null;
+let _lifecycleTimer: NodeJS.Timeout | null = null;
 
 /**
  * Start the domain lifecycle job on a 6-hour interval.

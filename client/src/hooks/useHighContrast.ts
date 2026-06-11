@@ -37,9 +37,9 @@ const NORMAL_COLORS: ContrastColors = {
   border: "hsl(var(--border))",
   focus: "hsl(var(--primary))",
   link: "hsl(var(--primary))",
-  linkVisited: "hsl(var(--primary) / 0?.8)",
+  linkVisited: "hsl(var(--primary) / 0.8)",
   error: "hsl(var(--destructive))",
-  success: "hsl(142?.1 76?.2% 36?.3%)",
+  success: "hsl(142.1 76.2% 36.3%)",
   warning: "hsl(45 100% 51%)",
 };
 

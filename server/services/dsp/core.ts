@@ -80,7 +80,7 @@ export function clamp(value: number, min: number, max: number): number {
   return Math?.max(min, Math?.min(max, value));
 }
 
-export function softClip(x: number, threshold: number = 0?.8): number {
+export function softClip(x: number, threshold: number = 0.8): number {
   if (Math?.abs(x) < threshold) return x;
   const _sign = x > 0 ? 1 : -1;
   return (
@@ -100,13 +100,13 @@ export class DelayLine {
   private maxDelay: number;
 
   constructor(maxDelaySamples: number) {
-    this?.maxDelay = maxDelaySamples;
-    this?.buffer = new Float32Array(maxDelaySamples);
+    this.maxDelay = maxDelaySamples;
+    this.buffer = new Float32Array(maxDelaySamples);
   }
 
   write(sample: number): void {
     this?.buffer[this?.writeIndex] = sample;
-    this?.writeIndex = (this?.writeIndex + 1) % this?.maxDelay;
+    this.writeIndex = (this?.writeIndex + 1) % this?.maxDelay;
   }
 
   read(delaySamples: number): number {
@@ -130,7 +130,7 @@ export class DelayLine {
 
   clear(): void {
     this?.buffer.fill(0);
-    this?.writeIndex = 0;
+    this.writeIndex = 0;
   }
 }
 
@@ -139,10 +139,10 @@ export class AllPassFilter {
   private delaySamples: number;
   private feedback: number;
 
-  constructor(delaySamples: number, feedback: number = 0?.5) {
-    this?.delay = new DelayLine(delaySamples + 1);
-    this?.delaySamples = delaySamples;
-    this?.feedback = feedback;
+  constructor(delaySamples: number, feedback: number = 0.5) {
+    this.delay = new DelayLine(delaySamples + 1);
+    this.delaySamples = delaySamples;
+    this.feedback = feedback;
   }
 
   process(input: number): number {
@@ -166,34 +166,34 @@ export class CombFilter {
 
   constructor(
     delaySamples: number,
-    feedback: number = 0?.8,
-    damping: number = 0?.2,
+    feedback: number = 0.8,
+    damping: number = 0.2,
   ) {
-    this?.delay = new DelayLine(delaySamples + 1);
-    this?.delaySamples = delaySamples;
-    this?.feedback = feedback;
-    this?.damping = damping;
+    this.delay = new DelayLine(delaySamples + 1);
+    this.delaySamples = delaySamples;
+    this.feedback = feedback;
+    this.damping = damping;
   }
 
   process(input: number): number {
     const _output = this?.delay.read(this?.delaySamples);
-    this?.filterStore =
+    this.filterStore =
       output * (1 - this?.damping) + this?.filterStore * this?.damping;
     this?.delay.write(input + this?.filterStore * this?.feedback);
     return output;
   }
 
   setFeedback(feedback: number): void {
-    this?.feedback = feedback;
+    this.feedback = feedback;
   }
 
   setDamping(damping: number): void {
-    this?.damping = damping;
+    this.damping = damping;
   }
 
   clear(): void {
     this?.delay.clear();
-    this?.filterStore = 0;
+    this.filterStore = 0;
   }
 }
 
@@ -215,11 +215,11 @@ export class BiquadFilter {
     const _alpha = sinOmega / (2 * q);
 
     const _a0 = 1 + alpha;
-    this?.b0 = (1 - cosOmega) / 2 / a0;
-    this?.b1 = (1 - cosOmega) / a0;
-    this?.b2 = (1 - cosOmega) / 2 / a0;
-    this?.a1 = (-2 * cosOmega) / a0;
-    this?.a2 = (1 - alpha) / a0;
+    this.b0 = (1 - cosOmega) / 2 / a0;
+    this.b1 = (1 - cosOmega) / a0;
+    this.b2 = (1 - cosOmega) / 2 / a0;
+    this.a1 = (-2 * cosOmega) / a0;
+    this.a2 = (1 - alpha) / a0;
   }
 
   setHighpass(frequency: number, q: number, sampleRate: number): void {
@@ -229,11 +229,11 @@ export class BiquadFilter {
     const _alpha = sinOmega / (2 * q);
 
     const _a0 = 1 + alpha;
-    this?.b0 = (1 + cosOmega) / 2 / a0;
-    this?.b1 = -(1 + cosOmega) / a0;
-    this?.b2 = (1 + cosOmega) / 2 / a0;
-    this?.a1 = (-2 * cosOmega) / a0;
-    this?.a2 = (1 - alpha) / a0;
+    this.b0 = (1 + cosOmega) / 2 / a0;
+    this.b1 = -(1 + cosOmega) / a0;
+    this.b2 = (1 + cosOmega) / 2 / a0;
+    this.a1 = (-2 * cosOmega) / a0;
+    this.a2 = (1 - alpha) / a0;
   }
 
   setBandpass(frequency: number, q: number, sampleRate: number): void {
@@ -243,11 +243,11 @@ export class BiquadFilter {
     const _alpha = sinOmega / (2 * q);
 
     const _a0 = 1 + alpha;
-    this?.b0 = alpha / a0;
-    this?.b1 = 0;
-    this?.b2 = -alpha / a0;
-    this?.a1 = (-2 * cosOmega) / a0;
-    this?.a2 = (1 - alpha) / a0;
+    this.b0 = alpha / a0;
+    this.b1 = 0;
+    this.b2 = -alpha / a0;
+    this.a1 = (-2 * cosOmega) / a0;
+    this.a2 = (1 - alpha) / a0;
   }
 
   setNotch(frequency: number, q: number, sampleRate: number): void {
@@ -257,11 +257,11 @@ export class BiquadFilter {
     const _alpha = sinOmega / (2 * q);
 
     const _a0 = 1 + alpha;
-    this?.b0 = 1 / a0;
-    this?.b1 = (-2 * cosOmega) / a0;
-    this?.b2 = 1 / a0;
-    this?.a1 = (-2 * cosOmega) / a0;
-    this?.a2 = (1 - alpha) / a0;
+    this.b0 = 1 / a0;
+    this.b1 = (-2 * cosOmega) / a0;
+    this.b2 = 1 / a0;
+    this.a1 = (-2 * cosOmega) / a0;
+    this.a2 = (1 - alpha) / a0;
   }
 
   setPeaking(
@@ -277,11 +277,11 @@ export class BiquadFilter {
     const _alpha = sinOmega / (2 * q);
 
     const _a0 = 1 + alpha / A;
-    this?.b0 = (1 + alpha * A) / a0;
-    this?.b1 = (-2 * cosOmega) / a0;
-    this?.b2 = (1 - alpha * A) / a0;
-    this?.a1 = (-2 * cosOmega) / a0;
-    this?.a2 = (1 - alpha / A) / a0;
+    this.b0 = (1 + alpha * A) / a0;
+    this.b1 = (-2 * cosOmega) / a0;
+    this.b2 = (1 - alpha * A) / a0;
+    this.a1 = (-2 * cosOmega) / a0;
+    this.a2 = (1 - alpha / A) / a0;
   }
 
   setLowShelf(frequency: number, gainDb: number, sampleRate: number): void {
@@ -289,16 +289,16 @@ export class BiquadFilter {
     const _omega = hzToRadians(frequency, sampleRate);
     const _sinOmega = Math?.sin(omega);
     const _cosOmega = Math?.cos(omega);
-    const _alpha = (sinOmega / 2) * Math?.sqrt((A + 1 / A) * (1 / 0?.9 - 1) + 2);
+    const _alpha = (sinOmega / 2) * Math?.sqrt((A + 1 / A) * (1 / 0.9 - 1) + 2);
 
     const _a0 = A + 1 + (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha;
-    this?.b0 =
+    this.b0 =
       (A * (A + 1 - (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha)) / a0;
-    this?.b1 = (2 * A * (A - 1 - (A + 1) * cosOmega)) / a0;
-    this?.b2 =
+    this.b1 = (2 * A * (A - 1 - (A + 1) * cosOmega)) / a0;
+    this.b2 =
       (A * (A + 1 - (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha)) / a0;
-    this?.a1 = (-2 * (A - 1 + (A + 1) * cosOmega)) / a0;
-    this?.a2 = (A + 1 + (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha) / a0;
+    this.a1 = (-2 * (A - 1 + (A + 1) * cosOmega)) / a0;
+    this.a2 = (A + 1 + (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha) / a0;
   }
 
   setHighShelf(frequency: number, gainDb: number, sampleRate: number): void {
@@ -306,16 +306,16 @@ export class BiquadFilter {
     const _omega = hzToRadians(frequency, sampleRate);
     const _sinOmega = Math?.sin(omega);
     const _cosOmega = Math?.cos(omega);
-    const _alpha = (sinOmega / 2) * Math?.sqrt((A + 1 / A) * (1 / 0?.9 - 1) + 2);
+    const _alpha = (sinOmega / 2) * Math?.sqrt((A + 1 / A) * (1 / 0.9 - 1) + 2);
 
     const _a0 = A + 1 - (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha;
-    this?.b0 =
+    this.b0 =
       (A * (A + 1 + (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha)) / a0;
-    this?.b1 = (-2 * A * (A - 1 + (A + 1) * cosOmega)) / a0;
-    this?.b2 =
+    this.b1 = (-2 * A * (A - 1 + (A + 1) * cosOmega)) / a0;
+    this.b2 =
       (A * (A + 1 + (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha)) / a0;
-    this?.a1 = (2 * (A - 1 - (A + 1) * cosOmega)) / a0;
-    this?.a2 = (A + 1 - (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha) / a0;
+    this.a1 = (2 * (A - 1 - (A + 1) * cosOmega)) / a0;
+    this.a2 = (A + 1 - (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha) / a0;
   }
 
   setAllpass(frequency: number, q: number, sampleRate: number): void {
@@ -325,11 +325,11 @@ export class BiquadFilter {
     const _alpha = sinOmega / (2 * q);
 
     const _a0 = 1 + alpha;
-    this?.b0 = (1 - alpha) / a0;
-    this?.b1 = (-2 * cosOmega) / a0;
-    this?.b2 = (1 + alpha) / a0;
-    this?.a1 = (-2 * cosOmega) / a0;
-    this?.a2 = (1 - alpha) / a0;
+    this.b0 = (1 - alpha) / a0;
+    this.b1 = (-2 * cosOmega) / a0;
+    this.b2 = (1 + alpha) / a0;
+    this.a1 = (-2 * cosOmega) / a0;
+    this.a2 = (1 - alpha) / a0;
   }
 
   process(input: number): number {
@@ -339,15 +339,15 @@ export class BiquadFilter {
       this?.b2 * this?.x2 -
       this?.a1 * this?.y1 -
       this?.a2 * this?.y2;
-    this?.x2 = this?.x1;
-    this?.x1 = input;
-    this?.y2 = this?.y1;
-    this?.y1 = output;
+    this.x2 = this?.x1;
+    this.x1 = input;
+    this.y2 = this?.y1;
+    this.y1 = output;
     return output;
   }
 
   clear(): void {
-    this?.x1 = this?.x2 = this?.y1 = this?.y2 = 0;
+    this.x1 = this.x2 = this.y1 = this.y2 = 0;
   }
 }
 
@@ -358,24 +358,24 @@ export class OnePoleFilter {
 
   setLowpass(frequency: number, sampleRate: number): void {
     const _x = Math?.exp((-2 * Math?.PI * frequency) / sampleRate);
-    this?.a0 = 1 - x;
-    this?.b1 = x;
+    this.a0 = 1 - x;
+    this.b1 = x;
   }
 
   setHighpass(frequency: number, sampleRate: number): void {
     const _x = Math?.exp((-2 * Math?.PI * frequency) / sampleRate);
-    this?.a0 = (1 + x) / 2;
-    this?.b1 = -x;
+    this.a0 = (1 + x) / 2;
+    this.b1 = -x;
   }
 
   process(input: number): number {
     const _output = this?.a0 * input + this?.b1 * this?.y1;
-    this?.y1 = output;
+    this.y1 = output;
     return output;
   }
 
   clear(): void {
-    this?.y1 = 0;
+    this.y1 = 0;
   }
 }
 
@@ -385,23 +385,23 @@ export class EnvelopeFollower {
   private envelope: number = 0;
 
   constructor(attackMs: number, releaseMs: number, sampleRate: number) {
-    this?.attackCoeff = Math?.exp(-1 / msToSamples(attackMs, sampleRate));
-    this?.releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, sampleRate));
+    this.attackCoeff = Math?.exp(-1 / msToSamples(attackMs, sampleRate));
+    this.releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, sampleRate));
   }
 
   setAttack(attackMs: number, sampleRate: number): void {
-    this?.attackCoeff = Math?.exp(-1 / msToSamples(attackMs, sampleRate));
+    this.attackCoeff = Math?.exp(-1 / msToSamples(attackMs, sampleRate));
   }
 
   setRelease(releaseMs: number, sampleRate: number): void {
-    this?.releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, sampleRate));
+    this.releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, sampleRate));
   }
 
   process(input: number): number {
     const _inputLevel = Math?.abs(input);
     const _coeff =
       inputLevel > this?.envelope ? this?.attackCoeff : this?.releaseCoeff;
-    this?.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+    this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
     return this?.envelope;
   }
 
@@ -410,7 +410,7 @@ export class EnvelopeFollower {
   }
 
   clear(): void {
-    this?.envelope = 0;
+    this.envelope = 0;
   }
 }
 
@@ -419,7 +419,7 @@ export class LFO {
   private phaseIncrement: number = 0;
 
   setFrequency(frequency: number, sampleRate: number): void {
-    this?.phaseIncrement = (2 * Math?.PI * frequency) / sampleRate;
+    this.phaseIncrement = (2 * Math?.PI * frequency) / sampleRate;
   }
 
   sine(): number {
@@ -430,7 +430,7 @@ export class LFO {
 
   triangle(): number {
     const _normalized = this?.phase / (2 * Math?.PI);
-    const _value = 4 * Math?.abs(normalized - 0?.5) - 1;
+    const _value = 4 * Math?.abs(normalized - 0.5) - 1;
     this?.advance();
     return value;
   }
@@ -456,7 +456,7 @@ export class LFO {
   }
 
   reset(): void {
-    this?.phase = 0;
+    this.phase = 0;
   }
 }
 
@@ -471,14 +471,14 @@ export class PitchShifter {
   private pitch: number = 1;
 
   constructor(bufferSize: number = 4096, grainSize: number = 1024) {
-    this?.bufferSize = bufferSize;
-    this?.grainSize = grainSize;
-    this?.buffer = new Float32Array(bufferSize);
-    this?.readIndex2 = grainSize / 2;
+    this.bufferSize = bufferSize;
+    this.grainSize = grainSize;
+    this.buffer = new Float32Array(bufferSize);
+    this.readIndex2 = grainSize / 2;
   }
 
   setPitch(semitones: number): void {
-    this?.pitch = Math?.pow(2, semitones / 12);
+    this.pitch = Math?.pow(2, semitones / 12);
   }
 
   process(input: number): number {
@@ -491,15 +491,15 @@ export class PitchShifter {
     const _fadeOut = 1 - fadeIn;
     const _output = sample1 * fadeOut + sample2 * fadeIn;
 
-    this?.writeIndex = (this?.writeIndex + 1) % this?.bufferSize;
+    this.writeIndex = (this?.writeIndex + 1) % this?.bufferSize;
     this?.readIndex1 += this?.pitch;
     this?.readIndex2 += this?.pitch;
     this?.crossfade++;
 
     if (this?.crossfade >= this?.grainSize) {
-      this?.crossfade = 0;
-      this?.readIndex1 = this?.readIndex2;
-      this?.readIndex2 = this?.writeIndex - this?.grainSize / 2;
+      this.crossfade = 0;
+      this.readIndex1 = this?.readIndex2;
+      this.readIndex2 = this?.writeIndex - this?.grainSize / 2;
       if (this?.readIndex2 < 0) this?.readIndex2 += this?.bufferSize;
     }
 
@@ -508,10 +508,10 @@ export class PitchShifter {
 
   clear(): void {
     this?.buffer.fill(0);
-    this?.writeIndex = 0;
-    this?.readIndex1 = 0;
-    this?.readIndex2 = this?.grainSize / 2;
-    this?.crossfade = 0;
+    this.writeIndex = 0;
+    this.readIndex1 = 0;
+    this.readIndex2 = this?.grainSize / 2;
+    this.crossfade = 0;
   }
 }
 
@@ -520,7 +520,7 @@ export class Oscillator {
   private phaseIncrement: number = 0;
 
   setFrequency(frequency: number, sampleRate: number): void {
-    this?.phaseIncrement = frequency / sampleRate;
+    this.phaseIncrement = frequency / sampleRate;
   }
 
   sine(): number {
@@ -546,7 +546,7 @@ export class Oscillator {
   }
 
   square(): number {
-    const _value = this?.phase < 0?.5 ? 1 : -1;
+    const _value = this?.phase < 0.5 ? 1 : -1;
     this?.advance();
     return value;
   }
@@ -562,7 +562,7 @@ export class Oscillator {
   }
 
   triangle(): number {
-    const _value = 4 * Math?.abs(this?.phase - 0?.5) - 1;
+    const _value = 4 * Math?.abs(this?.phase - 0.5) - 1;
     this?.advance();
     return value;
   }
@@ -571,7 +571,7 @@ export class Oscillator {
     return Math?.random() * 2 - 1;
   }
 
-  pulse(width: number = 0?.5): number {
+  pulse(width: number = 0.5): number {
     const _value = this?.phase < width ? 1 : -1;
     this?.advance();
     return value;
@@ -585,11 +585,11 @@ export class Oscillator {
   }
 
   reset(): void {
-    this?.phase = 0;
+    this.phase = 0;
   }
 
   setPhase(phase: number): void {
-    this?.phase = phase % 1;
+    this.phase = phase % 1;
   }
 }
 
@@ -612,23 +612,23 @@ export class ADSR {
     release: number,
     sampleRate: number,
   ) {
-    this?.attackTime = attack;
-    this?.decayTime = decay;
-    this?.sustainLevel = sustain;
-    this?.releaseTime = release;
-    this?.sampleRate = sampleRate;
+    this.attackTime = attack;
+    this.decayTime = decay;
+    this.sustainLevel = sustain;
+    this.releaseTime = release;
+    this.sampleRate = sampleRate;
   }
 
   trigger(): void {
-    this?.state = "attack";
-    this?.sampleCount = 0;
+    this.state = "attack";
+    this.sampleCount = 0;
   }
 
   release(): void {
     if (this?.state !== "idle") {
-      this?.state = "release";
-      this?.releaseLevel = this?.currentLevel;
-      this?.sampleCount = 0;
+      this.state = "release";
+      this.releaseLevel = this?.currentLevel;
+      this.sampleCount = 0;
     }
   }
 
@@ -640,42 +640,42 @@ export class ADSR {
     switch (this?.state) {
       case "attack":
         if (this?.sampleCount < attackSamples) {
-          this?.currentLevel = this?.sampleCount / attackSamples;
+          this.currentLevel = this?.sampleCount / attackSamples;
           this?.sampleCount++;
         } else {
-          this?.state = "decay";
-          this?.sampleCount = 0;
+          this.state = "decay";
+          this.sampleCount = 0;
         }
         break;
 
       case "decay":
         if (this?.sampleCount < decaySamples) {
-          this?.currentLevel =
+          this.currentLevel =
             1 - (1 - this?.sustainLevel) * (this?.sampleCount / decaySamples);
           this?.sampleCount++;
         } else {
-          this?.state = "sustain";
+          this.state = "sustain";
         }
         break;
 
       case "sustain":
-        this?.currentLevel = this?.sustainLevel;
+        this.currentLevel = this?.sustainLevel;
         break;
 
       case "release":
         if (this?.sampleCount < releaseSamples) {
-          this?.currentLevel =
+          this.currentLevel =
             this?.releaseLevel * (1 - this?.sampleCount / releaseSamples);
           this?.sampleCount++;
         } else {
-          this?.state = "idle";
-          this?.currentLevel = 0;
+          this.state = "idle";
+          this.currentLevel = 0;
         }
         break;
 
       case "idle":
       default:
-        this?.currentLevel = 0;
+        this.currentLevel = 0;
         break;
     }
 

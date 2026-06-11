@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 enum CircuitState {
   CLOSED = "CLOSED",
@@ -39,8 +39,8 @@ export class CircuitBreaker {
   private name: string;
 
   constructor(name: string, config: Partial<CircuitBreakerConfig> = {}) {
-    this?.name = name;
-    this?.config = {
+    this.name = name;
+    this.config = {
       failureThreshold: config?.failureThreshold || 5,
       successThreshold: config?.successThreshold || 2,
       timeout: config?.timeout || 30000,
@@ -57,7 +57,7 @@ export class CircuitBreaker {
 
     if (this?.state === CircuitState?.OPEN) {
       if (Date?.now() >= this?.nextAttempt) {
-        this?.state = CircuitState?.HALF_OPEN;
+        this.state = CircuitState?.HALF_OPEN;
         logger?.info(`Circuit breaker ${this?.name} entering HALF_OPEN state`);
       } else {
         if (fallback) {
@@ -100,14 +100,14 @@ export class CircuitBreaker {
 
   private onSuccess(): void {
     this?.totalSuccesses++;
-    this?.lastSuccessTime = Date?.now();
-    this?.failures = 0;
+    this.lastSuccessTime = Date?.now();
+    this.failures = 0;
 
     if (this?.state === CircuitState?.HALF_OPEN) {
       this?.successes++;
       if (this?.successes >= this?.config.successThreshold) {
-        this?.state = CircuitState?.CLOSED;
-        this?.successes = 0;
+        this.state = CircuitState?.CLOSED;
+        this.successes = 0;
         logger?.info(
           `Circuit breaker ${this?.name} CLOSED after successful recovery`,
         );
@@ -117,17 +117,17 @@ export class CircuitBreaker {
 
   private onFailure(): void {
     this?.totalFailures++;
-    this?.lastFailureTime = Date?.now();
+    this.lastFailureTime = Date?.now();
     this?.failures++;
-    this?.successes = 0;
+    this.successes = 0;
 
     if (this?.state === CircuitState?.HALF_OPEN) {
-      this?.state = CircuitState?.OPEN;
-      this?.nextAttempt = Date?.now() + this?.config.resetTimeout;
+      this.state = CircuitState?.OPEN;
+      this.nextAttempt = Date?.now() + this?.config.resetTimeout;
       logger?.warn(`Circuit breaker ${this?.name} OPEN after HALF_OPEN failure`);
     } else if (this?.failures >= this?.config.failureThreshold) {
-      this?.state = CircuitState?.OPEN;
-      this?.nextAttempt = Date?.now() + this?.config.resetTimeout;
+      this.state = CircuitState?.OPEN;
+      this.nextAttempt = Date?.now() + this?.config.resetTimeout;
       logger?.warn(
         `Circuit breaker ${this?.name} OPEN after ${this?.failures} failures`,
       );
@@ -152,10 +152,10 @@ export class CircuitBreaker {
   }
 
   reset(): void {
-    this?.state = CircuitState?.CLOSED;
-    this?.failures = 0;
-    this?.successes = 0;
-    this?.nextAttempt = 0;
+    this.state = CircuitState?.CLOSED;
+    this.failures = 0;
+    this.successes = 0;
+    this.nextAttempt = 0;
     logger?.info(`Circuit breaker ${this?.name} manually reset`);
   }
 
@@ -174,7 +174,7 @@ class CircuitBreakerRegistry {
 
   static getInstance(): CircuitBreakerRegistry {
     if (!CircuitBreakerRegistry?.instance) {
-      CircuitBreakerRegistry?.instance = new CircuitBreakerRegistry();
+      CircuitBreakerRegistry.instance = new CircuitBreakerRegistry();
     }
     return CircuitBreakerRegistry?.instance;
   }

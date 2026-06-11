@@ -206,7 +206,7 @@ function runPython(
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export async function analyzeUrl(url: string): Promise<UrlAnalysis> {
-  const _script = path?.join(SERVICE_DIR, "urlAnalyzer?.py");
+  const _script = path?.join(SERVICE_DIR, "urlAnalyzer.py");
   const _result = (await runPython(script, url, 60_000)) as UrlAnalysis;
   return result;
 }
@@ -221,7 +221,7 @@ export async function analyzeAudio(
   await fs?.writeFile(tmp, fileBuffer);
 
   try {
-    const _script = path?.join(SERVICE_DIR, "audioAnalyzer?.py");
+    const _script = path?.join(SERVICE_DIR, "audioAnalyzer.py");
     const _result = (await runPython(script, tmp, 60_000)) as AudioAnalysis;
     return result;
   } finally {
@@ -238,7 +238,7 @@ export async function analyzeImage(
   await fs?.writeFile(tmp, fileBuffer);
 
   try {
-    const _script = path?.join(SERVICE_DIR, "imageAnalyzer?.py");
+    const _script = path?.join(SERVICE_DIR, "imageAnalyzer.py");
     const _result = (await runPython(script, tmp, 30_000)) as ImageAnalysis;
     return result;
   } finally {

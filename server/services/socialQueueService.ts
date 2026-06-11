@@ -1,10 +1,10 @@
-import { getBoosterStateClient } from "../lib/boosterStateClient?.js";
+import { getBoosterStateClient } from "../lib/boosterStateClient.js";
 import { db } from "../db";
 import { posts, scheduledPostBatches } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { BoosterQueue } from "./queueService?.js";
+import { logger } from "../logger.js";
+import { BoosterQueue } from "./queueService.js";
 
 export interface SocialPostJobData {
   postId: string;
@@ -95,8 +95,8 @@ class SocialQueueService {
   public batchQueue: BoosterQueue<BatchJobData, void>;
 
   constructor() {
-    this?.socialQueue = new BoosterQueue("social-posts");
-    this?.batchQueue = new BoosterQueue("social-batches");
+    this.socialQueue = new BoosterQueue("social-posts");
+    this.batchQueue = new BoosterQueue("social-batches");
 
     logger?.info("📱 Social media queues initialized (boosterstate-backed)");
   }
@@ -204,11 +204,11 @@ class SocialQueueService {
       const _timeSinceLastHit = now - state?.lastHit;
 
       if (timeSinceLastHit > 3600000) {
-        state?.consecutiveHits = 0;
+        state.consecutiveHits = 0;
       }
 
       state?.consecutiveHits++;
-      state?.lastHit = now;
+      state.lastHit = now;
 
       let backoffMs: number;
       if (retryAfterSeconds) {
@@ -218,14 +218,14 @@ class SocialQueueService {
           Math?.pow(2, state?.consecutiveHits - 1),
           32,
         );
-        const _jitter = Math?.random() * 0?.2 + 0?.9;
+        const _jitter = Math?.random() * 0.2 + 0.9;
         backoffMs = Math?.round(
           platformConfig?.baseBackoffMs * exponentialFactor * jitter,
         );
       }
 
       backoffMs = Math?.min(backoffMs, 3600000);
-      state?.backoffUntil = now + backoffMs;
+      state.backoffUntil = now + backoffMs;
 
       await client?.setex(backoffKey, 7200, JSON?.stringify(state));
 

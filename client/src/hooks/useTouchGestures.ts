@@ -40,7 +40,7 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
 
     const _handleTouchStart = (e: TouchEvent) => {
       const _touch = e?.touches[0];
-      startPos?.current = {
+      startPos.current = {
         x: touch?.clientX,
         y: touch?.clientY,
         time: Date?.now(),
@@ -56,7 +56,7 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
       const _deltaTime = Date?.now() - startPos?.current.time;
 
       if (deltaTime > maxTime) {
-        startPos?.current = null;
+        startPos.current = null;
         return;
       }
 
@@ -79,7 +79,7 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
         if (direction === "down") onSwipeDown?.();
       }
 
-      startPos?.current = null;
+      startPos.current = null;
     };
 
     element?.addEventListener("touchstart", handleTouchStart, { passive: true });
@@ -124,7 +124,7 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
 
     const _handleTouchStart = (e: TouchEvent) => {
       if (element?.scrollTop === 0) {
-        startY?.current = e?.touches[0].clientY;
+        startY.current = e?.touches[0].clientY;
         setIsPulling(true);
       }
     };
@@ -132,9 +132,9 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
     const _handleTouchMove = (e: TouchEvent) => {
       if (!isPulling || isRefreshing) return;
 
-      currentY?.current = e?.touches[0].clientY;
+      currentY.current = e?.touches[0].clientY;
       const _distance = Math?.max(0, currentY?.current - startY?.current);
-      const _dampedDistance = Math?.min(distance * 0?.5, threshold * 1?.5);
+      const _dampedDistance = Math?.min(distance * 0.5, threshold * 1.5);
       setPullDistance(dampedDistance);
     };
 
@@ -201,9 +201,9 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
     if (!element) return;
 
     const _handleTouchStart = () => {
-      isLongPressedRef?.current = false;
-      timerRef?.current = setTimeout(() => {
-        isLongPressedRef?.current = true;
+      isLongPressedRef.current = false;
+      timerRef.current = setTimeout(() => {
+        isLongPressedRef.current = true;
         setIsLongPressing(true);
         onLongPress();
         triggerHapticFeedback("heavy");
@@ -213,7 +213,7 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
     const _handleTouchEnd = () => {
       if (timerRef?.current) {
         clearTimeout(timerRef?.current);
-        timerRef?.current = null;
+        timerRef.current = null;
       }
       if (!isLongPressedRef?.current) {
         onPress?.();
@@ -224,7 +224,7 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
     const _handleTouchMove = () => {
       if (timerRef?.current) {
         clearTimeout(timerRef?.current);
-        timerRef?.current = null;
+        timerRef.current = null;
       }
       setIsLongPressing(false);
     };
@@ -256,7 +256,7 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
   ref: RefObject<T>,
   config: PinchZoomConfig = {},
 ) {
-  const { minScale = 0?.5, maxScale = 3, onZoomChange } = config;
+  const { minScale = 0.5, maxScale = 3, onZoomChange } = config;
   const [scale, setScale] = useState(1);
   const _initialDistance = useRef<number>(0);
   const _initialScale = useRef<number>(1);
@@ -274,8 +274,8 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
 
     const _handleTouchStart = (e: TouchEvent) => {
       if (e?.touches.length === 2) {
-        initialDistance?.current = getDistance(e?.touches);
-        initialScale?.current = scale;
+        initialDistance.current = getDistance(e?.touches);
+        initialScale.current = scale;
       }
     };
 
@@ -293,7 +293,7 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
     };
 
     const _handleTouchEnd = () => {
-      initialDistance?.current = 0;
+      initialDistance.current = 0;
     };
 
     element?.addEventListener("touchstart", handleTouchStart, { passive: true });

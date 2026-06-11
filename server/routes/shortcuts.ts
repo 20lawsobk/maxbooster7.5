@@ -161,7 +161,7 @@ router?.get("/defaults", async (_req: Request, res: Response) => {
   try {
     return res?.json({
       shortcuts: DEFAULT_SHORTCUTS,
-      version: "1?.0.0",
+      version: "1.0.0",
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching default shortcuts:");

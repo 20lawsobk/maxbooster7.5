@@ -96,7 +96,7 @@ export {
   type AuditSeverity,
 } from "./auditLogger";
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 /**
  * Initialize all safety systems

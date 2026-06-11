@@ -8,13 +8,13 @@ import { randomBytes } from "crypto";
  * - Mean Time To Detect (MTTD): < 50ms P95
  * - Mean Time To Respond (MTTR): < 250ms P95
  * - Mean Time To Recover (MTTR2): < 500ms P95
- * - Total Healing Time: < 800ms (attacks need 7?.5s+ to cause damage)
+ * - Total Healing Time: < 800ms (attacks need 7.5s+ to cause damage)
  * - Healing Speed Ratio: 10x faster than attack progression
  */
 
 import { EventEmitter } from "events";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { securityThreats, ipBlacklist, notifications } from "@shared/schema";
 import { eq, gte } from "drizzle-orm";
 
@@ -236,7 +236,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
   public static getInstance(): SelfHealingSecurityEngine {
     if (!SelfHealingSecurityEngine?.instance) {
-      SelfHealingSecurityEngine?.instance = new SelfHealingSecurityEngine();
+      SelfHealingSecurityEngine.instance = new SelfHealingSecurityEngine();
     }
     return SelfHealingSecurityEngine?.instance;
   }
@@ -250,7 +250,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     this?.startHealingLoop();
     this?.startMetricsCollection();
 
-    this?.isRunning = true;
+    this.isRunning = true;
 
     logger?.info("🛡️  Self-Healing Security Engine ACTIVE");
     logger?.info(
@@ -297,7 +297,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
     const _sourceIp = fullEvent?.source.ip;
     if (
-      sourceIp === "127?.0.0?.1" ||
+      sourceIp === "127.0.0.1" ||
       sourceIp === "::1" ||
       sourceIp === "localhost" ||
       (typeof sourceIp === "string" && sourceIp?.startsWith("10."))
@@ -336,13 +336,13 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const _content = JSON?.stringify(payload);
 
     // Reset lastIndex for global regex patterns before testing
-    this?.threatPatterns.sqlInjection?.lastIndex = 0;
-    this?.threatPatterns.xss?.lastIndex = 0;
-    this?.threatPatterns.pathTraversal?.lastIndex = 0;
-    this?.threatPatterns.commandInjection?.lastIndex = 0;
-    this?.threatPatterns.ldapInjection?.lastIndex = 0;
-    this?.threatPatterns.xxeInjection?.lastIndex = 0;
-    this?.threatPatterns.nosqlInjection?.lastIndex = 0;
+    this?.threatPatterns.sqlInjection.lastIndex = 0;
+    this?.threatPatterns.xss.lastIndex = 0;
+    this?.threatPatterns.pathTraversal.lastIndex = 0;
+    this?.threatPatterns.commandInjection.lastIndex = 0;
+    this?.threatPatterns.ldapInjection.lastIndex = 0;
+    this?.threatPatterns.xxeInjection.lastIndex = 0;
+    this?.threatPatterns.nosqlInjection.lastIndex = 0;
 
     if (this?.threatPatterns.sqlInjection?.test(content)) return true;
     if (this?.threatPatterns.xss?.test(content)) return true;
@@ -365,7 +365,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const _detectionTime = Date?.now() - startTime;
     this?.metrics.detectionLatency?.push(detectionTime);
 
-    if (assessment?.threatLevel > 0?.5) {
+    if (assessment?.threatLevel > 0.5) {
       const _responseStartTime = Date?.now();
       await this?.respondToThreat(assessment);
       const _responseTime = Date?.now() - responseStartTime;
@@ -394,65 +394,65 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     let threatType = "unknown";
 
     // Reset lastIndex for global regex patterns
-    this?.threatPatterns.sqlInjection?.lastIndex = 0;
-    this?.threatPatterns.xss?.lastIndex = 0;
-    this?.threatPatterns.pathTraversal?.lastIndex = 0;
-    this?.threatPatterns.commandInjection?.lastIndex = 0;
-    this?.threatPatterns.ldapInjection?.lastIndex = 0;
-    this?.threatPatterns.xxeInjection?.lastIndex = 0;
-    this?.threatPatterns.nosqlInjection?.lastIndex = 0;
+    this?.threatPatterns.sqlInjection.lastIndex = 0;
+    this?.threatPatterns.xss.lastIndex = 0;
+    this?.threatPatterns.pathTraversal.lastIndex = 0;
+    this?.threatPatterns.commandInjection.lastIndex = 0;
+    this?.threatPatterns.ldapInjection.lastIndex = 0;
+    this?.threatPatterns.xxeInjection.lastIndex = 0;
+    this?.threatPatterns.nosqlInjection.lastIndex = 0;
 
     if (this?.threatPatterns.sqlInjection?.test(content)) {
       indicators?.push("SQL injection pattern detected");
-      threatLevel = Math?.max(threatLevel, 0?.95);
+      threatLevel = Math?.max(threatLevel, 0.95);
       threatType = "sql_injection";
     }
 
     if (this?.threatPatterns.xss?.test(content)) {
       indicators?.push("XSS pattern detected");
-      threatLevel = Math?.max(threatLevel, 0?.9);
+      threatLevel = Math?.max(threatLevel, 0.9);
       threatType = threatType === "unknown" ? "xss" : threatType;
     }
 
     if (this?.threatPatterns.pathTraversal?.test(content)) {
       indicators?.push("Path traversal attempt");
-      threatLevel = Math?.max(threatLevel, 0?.85);
+      threatLevel = Math?.max(threatLevel, 0.85);
       threatType = threatType === "unknown" ? "path_traversal" : threatType;
     }
 
     if (this?.threatPatterns.commandInjection?.test(content)) {
       indicators?.push("Command injection pattern");
-      threatLevel = Math?.max(threatLevel, 0?.95);
+      threatLevel = Math?.max(threatLevel, 0.95);
       threatType = threatType === "unknown" ? "command_injection" : threatType;
     }
 
     if (this?.threatPatterns.ldapInjection?.test(content)) {
       indicators?.push("LDAP injection pattern detected");
-      threatLevel = Math?.max(threatLevel, 0?.9);
+      threatLevel = Math?.max(threatLevel, 0.9);
       threatType = threatType === "unknown" ? "ldap_injection" : threatType;
     }
 
     if (this?.threatPatterns.xxeInjection?.test(content)) {
       indicators?.push("XXE/XML injection pattern detected");
-      threatLevel = Math?.max(threatLevel, 0?.95);
+      threatLevel = Math?.max(threatLevel, 0.95);
       threatType = threatType === "unknown" ? "xxe_injection" : threatType;
     }
 
     if (this?.threatPatterns.nosqlInjection?.test(content)) {
       indicators?.push("NoSQL injection pattern detected");
-      threatLevel = Math?.max(threatLevel, 0?.9);
+      threatLevel = Math?.max(threatLevel, 0.9);
       threatType = threatType === "unknown" ? "nosql_injection" : threatType;
     }
 
     const _rateScore = this?.checkRateLimit(event?.source.ip);
-    if (rateScore > 0?.5) {
+    if (rateScore > 0.5) {
       indicators?.push(`High request rate (score: ${rateScore?.toFixed(2)})`);
-      threatLevel = Math?.max(threatLevel, rateScore * 0?.8);
+      threatLevel = Math?.max(threatLevel, rateScore * 0.8);
       threatType = threatType === "unknown" ? "rate_abuse" : threatType;
     }
 
     const _ipScore = this?.updateIpThreatScore(event?.source.ip, threatLevel);
-    if (ipScore > 0?.7) {
+    if (ipScore > 0.7) {
       indicators?.push(`Suspicious IP history (score: ${ipScore?.toFixed(2)})`);
       threatLevel = Math?.max(threatLevel, ipScore);
     }
@@ -463,12 +463,12 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       detectionTime: Date?.now() - event?.timestamp,
       threatLevel,
       threatType,
-      confidence: Math?.min(1, threatLevel + 0?.1),
+      confidence: Math?.min(1, threatLevel + 0.1),
       indicators,
       recommendedActions: this?.determineActions(threatLevel, threatType),
     };
 
-    if (threatLevel > 0?.5) {
+    if (threatLevel > 0.5) {
       this?.metrics.threatsDetected++;
       this?.threatAssessments.set(assessment?.id, assessment);
       this?.emit("threat_detected", assessment);
@@ -487,9 +487,9 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     };
 
     if (now > state?.resetTime) {
-      state?.count = 1;
-      state?.resetTime = now + windowMs;
-      state?.blocked = false;
+      state.count = 1;
+      state.resetTime = now + windowMs;
+      state.blocked = false;
     } else {
       state?.count++;
     }
@@ -510,11 +510,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
     // Faster decay for low-threat events (legitimate users recover quickly)
     // Slower decay for high-threat events (attackers stay flagged longer)
-    const _decayHalfLife = currentThreat > 0?.7 ? 600000 : 120000;
+    const _decayHalfLife = currentThreat > 0.7 ? 600000 : 120000;
     const _decay = Math?.exp(-(now - existing?.lastUpdate) / decayHalfLife);
 
     // Lower accumulation weight for marginal threats (reduces false positives)
-    const _accumulationWeight = currentThreat > 0?.5 ? 0?.3 : 0?.08;
+    const _accumulationWeight = currentThreat > 0.5 ? 0.3 : 0.08;
     const _newScore = Math?.min(
       1,
       existing?.score * decay + currentThreat * accumulationWeight,
@@ -533,14 +533,14 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     const actions: string[] = [];
 
     // Higher thresholds reduce false positives for legitimate heavy users
-    if (threatLevel >= 0?.95) {
+    if (threatLevel >= 0.95) {
       actions?.push("block_ip");
       actions?.push("session_kill");
       actions?.push("alert");
-    } else if (threatLevel >= 0?.85) {
+    } else if (threatLevel >= 0.85) {
       actions?.push("rate_limit");
       actions?.push("alert");
-    } else if (threatLevel >= 0?.7) {
+    } else if (threatLevel >= 0.7) {
       actions?.push("rate_limit");
     }
 
@@ -581,11 +581,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       actions?.map(async (action) => {
         try {
           await this?.executeAction(action, assessment);
-          action?.status = "completed";
-          action?.endTime = Date?.now();
+          action.status = "completed";
+          action.endTime = Date?.now();
         } catch (error) {
-          action?.status = "failed";
-          action?.endTime = Date?.now();
+          action.status = "failed";
+          action.endTime = Date?.now();
           action?.details.error = String(error);
           logger?.warn({ err: error }, `Healing action ${action?.type} failed:`);
         }
@@ -615,7 +615,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         if (evt) {
           const _state = this?.rateLimitState.get(evt?.source.ip);
           if (state) {
-            state?.blocked = true;
+            state.blocked = true;
             this?.rateLimitState.set(evt?.source.ip, state);
             action?.details.rateLimitedIp = evt?.source.ip;
           }
@@ -656,7 +656,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     }
 
     if (
-      ipAddress === "127?.0.0?.1" ||
+      ipAddress === "127.0.0.1" ||
       ipAddress === "::1" ||
       ipAddress === "localhost" ||
       ipAddress?.startsWith("10.")
@@ -667,11 +667,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     this?.blockedIps.add(ipAddress);
 
     const _durationMs =
-      severity >= 0?.9
+      severity >= 0.9
         ? 24 * 60 * 60 * 1000
-        : severity >= 0?.7
+        : severity >= 0.7
           ? 2 * 60 * 60 * 1000
-          : severity >= 0?.5
+          : severity >= 0.5
             ? 30 * 60 * 1000
             : 5 * 60 * 1000;
 
@@ -680,7 +680,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         ip: ipAddress,
         reason,
         severity:
-          severity >= 0?.9 ? "critical" : severity >= 0?.7 ? "high" : "medium",
+          severity >= 0.9 ? "critical" : severity >= 0.7 ? "high" : "medium",
         expiresAt: new Date(Date?.now() + durationMs),
       });
 
@@ -715,11 +715,11 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       await db?.insert(securityThreats).values({
         threatType: assessment?.threatType,
         severity:
-          assessment?.threatLevel >= 0?.9
+          assessment?.threatLevel >= 0.9
             ? "critical"
-            : assessment?.threatLevel >= 0?.7
+            : assessment?.threatLevel >= 0.7
               ? "high"
-              : assessment?.threatLevel >= 0?.5
+              : assessment?.threatLevel >= 0.5
                 ? "medium"
                 : "low",
         status: "resolved",
@@ -765,7 +765,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       }
 
       for (const [ip, score] of this?.ipThreatScores.entries()) {
-        if (now - score?.lastUpdate > 3600000 && score?.score < 0?.1) {
+        if (now - score?.lastUpdate > 3600000 && score?.score < 0.1) {
           this?.ipThreatScores.delete(ip);
         }
       }
@@ -890,7 +890,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   }
 
   public stop(): void {
-    this?.isRunning = false;
+    this.isRunning = false;
     logger?.info("🛡️  Self-Healing Security Engine stopped");
   }
 }

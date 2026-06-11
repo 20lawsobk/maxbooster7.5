@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface LUFSAnalysis {
   integratedLoudness: number;
@@ -50,7 +50,7 @@ export class AudioNormalizationService {
 
   static getInstance(): AudioNormalizationService {
     if (!AudioNormalizationService?.instance) {
-      AudioNormalizationService?.instance = new AudioNormalizationService();
+      AudioNormalizationService.instance = new AudioNormalizationService();
     }
     return AudioNormalizationService?.instance;
   }
@@ -60,8 +60,8 @@ export class AudioNormalizationService {
     sampleRate: number,
     channels: number = 2,
   ): LUFSAnalysis {
-    const _blockSize = Math?.floor(sampleRate * 0?.4);
-    const _hopSize = Math?.floor(sampleRate * 0?.1);
+    const _blockSize = Math?.floor(sampleRate * 0.4);
+    const _hopSize = Math?.floor(sampleRate * 0.1);
     const _samplesPerChannel = Math?.floor(samples?.length / channels);
 
     const _leftChannel = new Float32Array(samplesPerChannel);
@@ -86,7 +86,7 @@ export class AudioNormalizationService {
       const _leftMean = this?.meanSquare(leftBlock);
       const _rightMean = this?.meanSquare(rightBlock);
 
-      const _blockLoudness = -0?.691 + 10 * Math?.log10(leftMean + rightMean);
+      const _blockLoudness = -0.691 + 10 * Math?.log10(leftMean + rightMean);
       momentaryLoudness?.push(blockLoudness);
     }
 
@@ -104,7 +104,7 @@ export class AudioNormalizationService {
       const _leftMean = this?.meanSquare(leftBlock);
       const _rightMean = this?.meanSquare(rightBlock);
 
-      const _blockLoudness = -0?.691 + 10 * Math?.log10(leftMean + rightMean);
+      const _blockLoudness = -0.691 + 10 * Math?.log10(leftMean + rightMean);
       shortTermLoudness?.push(blockLoudness);
     }
 
@@ -184,7 +184,7 @@ export class AudioNormalizationService {
         truePeakBefore: analysis?.truePeak,
         truePeakAfter: normalizedAnalysis?.truePeak,
         clippingPrevented,
-        normalizationApplied: Math?.abs(gainDb) > 0?.1,
+        normalizationApplied: Math?.abs(gainDb) > 0.1,
       },
     };
   }
@@ -211,7 +211,7 @@ export class AudioNormalizationService {
   ): Float32Array {
     const _result = new Float32Array(samples?.length);
     const _fc = 1500;
-    const _Q = 0?.707;
+    const _Q = 0.707;
     const _K = Math?.tan((Math?.PI * fc) / sampleRate);
     const _norm = 1 / (1 + K / Q + K * K);
     const _a0 = K * K * norm;
@@ -259,13 +259,13 @@ export class AudioNormalizationService {
 
     const _sorted = [...shortTermValues].sort((a, b) => a - b);
     const _gated = sorted?.filter(
-      (v) => v > sorted[Math?.floor(sorted?.length * 0?.1)],
+      (v) => v > sorted[Math?.floor(sorted?.length * 0.1)],
     );
 
     if (gated?.length < 2) return 0;
 
-    const _low = gated[Math?.floor(gated?.length * 0?.1)];
-    const _high = gated[Math?.floor(gated?.length * 0?.95)];
+    const _low = gated[Math?.floor(gated?.length * 0.1)];
+    const _high = gated[Math?.floor(gated?.length * 0.95)];
 
     return high - low;
   }
@@ -287,7 +287,7 @@ export class AudioNormalizationService {
       }
     }
 
-    return maxPeak || 0?.0001;
+    return maxPeak || 0.0001;
   }
 
   private calculateSamplePeak(samples: Float32Array): number {
@@ -296,7 +296,7 @@ export class AudioNormalizationService {
       const _abs = Math?.abs(samples[i]);
       if (abs > max) max = abs;
     }
-    return max || 0?.0001;
+    return max || 0.0001;
   }
 }
 

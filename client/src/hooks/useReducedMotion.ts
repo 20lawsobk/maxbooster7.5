@@ -125,7 +125,7 @@ export function getReducedMotionStyles(
 export function getAlternativeTransition(
   prefersReducedMotion: boolean,
   normalTransition: string,
-  reducedTransition: string = "opacity 0?.01s",
+  reducedTransition: string = "opacity 0.01s",
 ): string {
   return prefersReducedMotion ? reducedTransition : normalTransition;
 }

@@ -4,7 +4,7 @@ import { join } from "path";
 import { tmpdir } from "os";
 import archiver from "archiver";
 import { create } from "xmlbuilder2";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -64,10 +64,10 @@ export class DDEXPackageService {
     const _messageId = this?.generateMessageId(release?.id);
     const _releaseId = `REL${release?.id.replace(/-/g, "").substring(0, 12).toUpperCase()}`;
 
-    const _doc = create({ version: "1?.0", encoding: "UTF-8" }).ele(
+    const _doc = create({ version: "1.0", encoding: "UTF-8" }).ele(
       "ernm:NewReleaseMessage",
       {
-        "xmlns:ernm": "http://ddex?.net/xml/ern/43",
+        "xmlns:ernm": "http://ddex.net/xml/ern/43",
         "xmlns:xs": "http://www?.w3.org/2001/XMLSchema-instance",
         MessageSchemaVersionId: this?.MESSAGE_SCHEMA_VERSION,
         LanguageAndScriptCode: "en",
@@ -208,7 +208,7 @@ export class DDEXPackageService {
       technicalDetails
         .ele("File")
         .ele("FileName")
-        .txt("cover?.jpg")
+        .txt("cover.jpg")
         .up()
         .ele("FilePath")
         .txt(release?.coverArtPath)
@@ -413,7 +413,7 @@ export class DDEXPackageService {
         archive?.pipe(output);
 
         // Add XML file
-        archive?.append(xml, { name: "release?.xml" });
+        archive?.append(xml, { name: "release.xml" });
 
         // Add audio files (local paths only — remote URLs already resolved above)
         for (const track of resolvedTracks) {
@@ -426,7 +426,7 @@ export class DDEXPackageService {
 
         // Add cover art
         if (release?.coverArtPath && !release?.coverArtPath.startsWith("http")) {
-          archive?.file(release?.coverArtPath, { name: "cover?.jpg" });
+          archive?.file(release?.coverArtPath, { name: "cover.jpg" });
         }
 
         archive?.finalize();

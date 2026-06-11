@@ -42,7 +42,7 @@ export function useUndoable<T, Args extends unknown[]>(
         throw new Error("Action already in progress");
       }
 
-      isExecutingRef?.current = true;
+      isExecutingRef.current = true;
 
       try {
         const metadata: ActionMetadata = {
@@ -84,7 +84,7 @@ export function useUndoable<T, Args extends unknown[]>(
 
         return await executeAction(action);
       } finally {
-        isExecutingRef?.current = false;
+        isExecutingRef.current = false;
       }
     },
     [executeAction, executeFn, undoFn, redoFn, options],
@@ -125,8 +125,8 @@ export function useUndoableWithState<T, S>(
       metadata,
       execute: async () => {
         const { result, newState } = await executeFn(previousState);
-        stateRef?.current = { previous: previousState, current: newState };
-        metadata?.newState = newState;
+        stateRef.current = { previous: previousState, current: newState };
+        metadata.newState = newState;
         return result;
       },
       undo: async () => {
@@ -138,7 +138,7 @@ export function useUndoableWithState<T, S>(
         const { result, newState } = await executeFn(
           stateRef?.current?.previous || previousState,
         );
-        stateRef?.current = {
+        stateRef.current = {
           previous: stateRef?.current?.previous || previousState,
           current: newState,
         };

@@ -2,18 +2,18 @@ import type { Server as HttpServer, IncomingMessage } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { parse as parseUrl } from "url";
 import { parse as parseCookie } from "cookie";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   initRedisPubSub,
   registerHandlers,
   publishUserNotification,
   publishBroadcast,
-} from "./redisPubSub?.js";
+} from "./redisPubSub.js";
 
 export {
   studioCollabServer,
   StudioCollabServer,
-} from "./studioCollabServer?.js";
+} from "./studioCollabServer.js";
 export {
   presenceManager,
   PresenceManager,
@@ -22,7 +22,7 @@ export {
   type SelectionState,
   type PresenceStatus,
   type CollaboratorInfo,
-} from "./presenceManager?.js";
+} from "./presenceManager.js";
 
 // General notification WebSocket server
 let notificationWss: WebSocketServer | null = null;
@@ -110,7 +110,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
           `[WS] Global connection limit reached (${MAX_GLOBAL_WS_CONNECTIONS}) — rejecting upgrade`,
         );
         socket?.write(
-          "HTTP/1?.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n",
+          "HTTP/1.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n",
         );
         socket?.destroy();
         return;
@@ -127,7 +127,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
             `[WS] Per-user connection limit reached for user ${userId} (${MAX_WS_CONNECTIONS_PER_USER} max)`,
           );
           socket?.write(
-            "HTTP/1?.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n",
+            "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n",
           );
           socket?.destroy();
           return;
@@ -143,8 +143,8 @@ function initializeNotificationServer(httpServer: HttpServer): void {
 
           // Set authenticated user from server-side session validation
           if (userId) {
-            ws?.userId = userId;
-            ws?.isAuthenticated = true;
+            ws.userId = userId;
+            ws.isAuthenticated = true;
 
             if (!userConnections?.has(userId)) {
               userConnections?.set(userId, new Set());
@@ -293,7 +293,7 @@ export async function initializeRealtimeServer(
     registerHandlers(deliverLocalUserNotification, deliverLocalBroadcast);
     await initRedisPubSub();
 
-    const { studioCollabServer } = await import("./studioCollabServer?.js");
+    const { studioCollabServer } = await import("./studioCollabServer.js");
 
     // Initialize the collaboration server with the HTTP server for WebSocket upgrades
     if (
@@ -308,7 +308,7 @@ export async function initializeRealtimeServer(
     }
 
     // Initialize presence manager
-    const { presenceManager } = await import("./presenceManager?.js");
+    const { presenceManager } = await import("./presenceManager.js");
     if (presenceManager) {
       logger?.info("Presence manager ready");
     }

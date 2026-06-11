@@ -26,10 +26,10 @@
 import { existsSync } from "fs";
 import { readFile as fsReadFile } from "fs/promises";
 import { createHash } from "crypto";
-import { logger } from "../logger?.js";
-import { hybridStorageService } from "./hybridStorageService?.js";
-import { getPdimClient, isPdimConfigured } from "../lib/pdimClient?.js";
-import type { BeatAnalysis } from "./beatSyncService?.js";
+import { logger } from "../logger.js";
+import { hybridStorageService } from "./hybridStorageService.js";
+import { getPdimClient, isPdimConfigured } from "../lib/pdimClient.js";
+import type { BeatAnalysis } from "./beatSyncService.js";
 
 // ── CONSTANTS ─────────────────────────────────────────────────────────────────
 const _PDIM_KEY_PREFIX = "pdim_media";

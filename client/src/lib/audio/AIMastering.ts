@@ -27,26 +27,26 @@ export class AIMastering {
   private targetLUFS: number = -14; // Streaming standard
 
   constructor(context: AudioContext) {
-    this?.context = context;
-    this?.analyzer = new AIAnalyzer(context);
+    this.context = context;
+    this.analyzer = new AIAnalyzer(context);
 
     // Create nodes
-    this?.input = context?.createGain();
-    this?.output = context?.createGain();
-    this?.makeupGain = context?.createGain();
+    this.input = context?.createGain();
+    this.output = context?.createGain();
+    this.makeupGain = context?.createGain();
 
     // Create processing
-    this?.eq = new EQPlugin(context);
-    this?.multibandCompressors = new MultibandCompressor(context);
-    this?.stereoEnhancer = new StereoEnhancer(context);
+    this.eq = new EQPlugin(context);
+    this.multibandCompressors = new MultibandCompressor(context);
+    this.stereoEnhancer = new StereoEnhancer(context);
 
     // Create limiter
-    this?.limiter = context?.createDynamicsCompressor();
-    this?.limiter.threshold?.value = -0?.5;
-    this?.limiter.knee?.value = 0;
-    this?.limiter.ratio?.value = 20;
-    this?.limiter.attack?.value = 0?.001;
-    this?.limiter.release?.value = 0?.01;
+    this.limiter = context?.createDynamicsCompressor();
+    this?.limiter.threshold.value = -0.5;
+    this?.limiter.knee.value = 0;
+    this?.limiter.ratio.value = 20;
+    this?.limiter.attack.value = 0.001;
+    this?.limiter.release.value = 0.01;
 
     // Connect chain
     this?.connectChain();
@@ -137,7 +137,7 @@ export class AIMastering {
       );
     }
 
-    this?.currentLUFS = lufs;
+    this.currentLUFS = lufs;
 
     return {
       lufs,
@@ -174,11 +174,11 @@ export class AIMastering {
 
     if (analysis?.dynamicRange < 6) {
       // Over-compressed - enhance transients
-      this?.eq.setBand(4, 3000, 1?.5); // Presence
+      this?.eq.setBand(4, 3000, 1.5); // Presence
       result?.adjustments.push({
         type: "eq",
         description: "Enhanced transients",
-        value: "+1?.5dB @ 3kHz",
+        value: "+1.5dB @ 3kHz",
       });
     }
 
@@ -208,32 +208,32 @@ export class AIMastering {
       this?.multibandCompressors.setBand(0, {
         threshold: -15,
         ratio: 2,
-        attack: 0?.01,
-        release: 0?.1,
+        attack: 0.01,
+        release: 0.1,
       });
 
       // Low-mid band (200-800 Hz) - Body
       this?.multibandCompressors.setBand(1, {
         threshold: -12,
-        ratio: 1?.5,
-        attack: 0?.005,
-        release: 0?.05,
+        ratio: 1.5,
+        attack: 0.005,
+        release: 0.05,
       });
 
       // High-mid band (800-4k Hz) - Presence
       this?.multibandCompressors.setBand(2, {
         threshold: -10,
-        ratio: 1?.5,
-        attack: 0?.003,
-        release: 0?.03,
+        ratio: 1.5,
+        attack: 0.003,
+        release: 0.03,
       });
 
       // High band (4k-20k Hz) - Brilliance
       this?.multibandCompressors.setBand(3, {
         threshold: -8,
-        ratio: 1?.2,
-        attack: 0?.001,
-        release: 0?.01,
+        ratio: 1.2,
+        attack: 0.001,
+        release: 0.01,
       });
 
       result?.adjustments.push({
@@ -243,10 +243,10 @@ export class AIMastering {
       });
     } else {
       // Already compressed - use very gentle settings
-      this?.multibandCompressors.setBand(0, { threshold: -6, ratio: 1?.1 });
-      this?.multibandCompressors.setBand(1, { threshold: -6, ratio: 1?.1 });
-      this?.multibandCompressors.setBand(2, { threshold: -6, ratio: 1?.1 });
-      this?.multibandCompressors.setBand(3, { threshold: -6, ratio: 1?.1 });
+      this?.multibandCompressors.setBand(0, { threshold: -6, ratio: 1.1 });
+      this?.multibandCompressors.setBand(1, { threshold: -6, ratio: 1.1 });
+      this?.multibandCompressors.setBand(2, { threshold: -6, ratio: 1.1 });
+      this?.multibandCompressors.setBand(3, { threshold: -6, ratio: 1.1 });
 
       result?.adjustments.push({
         type: "multiband",
@@ -264,8 +264,8 @@ export class AIMastering {
     result: MasteringResult,
   ): void {
     // Only enhance if not already wide
-    if (analysis?.stereoWidth < 0?.5) {
-      this?.stereoEnhancer.setWidth(1?.2); // 120% width
+    if (analysis?.stereoWidth < 0.5) {
+      this?.stereoEnhancer.setWidth(1.2); // 120% width
       this?.stereoEnhancer.setBassMonoFrequency(120); // Mono below 120Hz
 
       result?.adjustments.push({
@@ -273,9 +273,9 @@ export class AIMastering {
         description: "Enhanced stereo width",
         value: "120% width, bass mono below 120Hz",
       });
-    } else if (analysis?.stereoWidth > 0?.8) {
+    } else if (analysis?.stereoWidth > 0.8) {
       // Too wide - narrow slightly
-      this?.stereoEnhancer.setWidth(0?.9);
+      this?.stereoEnhancer.setWidth(0.9);
       result?.adjustments.push({
         type: "stereo",
         description: "Narrowed excessive width",
@@ -284,7 +284,7 @@ export class AIMastering {
     }
 
     // Fix stereo balance if needed
-    if (Math?.abs(analysis?.stereoBalance) > 0?.1) {
+    if (Math?.abs(analysis?.stereoBalance) > 0.1) {
       this?.stereoEnhancer.setBalance(-analysis?.stereoBalance);
       result?.adjustments.push({
         type: "stereo",
@@ -332,11 +332,11 @@ export class AIMastering {
    */
   private applyPeakLimiting(result: MasteringResult): void {
     // True peak limiting at -1 dBFS
-    this?.limiter.threshold?.value = -1;
-    this?.limiter.ratio?.value = 30;
-    this?.limiter.knee?.value = 0;
-    this?.limiter.attack?.value = 0?.0001; // Very fast attack
-    this?.limiter.release?.value = 0?.005; // Fast release
+    this?.limiter.threshold.value = -1;
+    this?.limiter.ratio.value = 30;
+    this?.limiter.knee.value = 0;
+    this?.limiter.attack.value = 0.0001; // Very fast attack
+    this?.limiter.release.value = 0.005; // Fast release
 
     result?.adjustments.push({
       type: "limiting",
@@ -371,7 +371,7 @@ export class AIMastering {
       );
     }
 
-    if (result?.metrics.stereoWidth < 0?.3) {
+    if (result?.metrics.stereoWidth < 0.3) {
       result?.recommendations.push("Mix could benefit from wider stereo image");
     }
 
@@ -419,7 +419,7 @@ export class AIMastering {
       custom: customLUFS || -14,
     };
 
-    this?.targetLUFS = platformTargets[platform];
+    this.targetLUFS = platformTargets[platform];
   }
 
   /**
@@ -427,11 +427,11 @@ export class AIMastering {
    */
   setBypass(bypass: boolean): void {
     if (bypass) {
-      this?.makeupGain.gain?.value = 1;
+      this?.makeupGain.gain.value = 1;
       this?.eq.setBypass(true);
       this?.multibandCompressors.setBypass(true);
       this?.stereoEnhancer.setBypass(true);
-      this?.limiter.ratio?.value = 1;
+      this?.limiter.ratio.value = 1;
     } else {
       this?.connectChain();
     }
@@ -444,9 +444,9 @@ export class AIMastering {
     this?.eq.reset();
     this?.multibandCompressors.reset();
     this?.stereoEnhancer.reset();
-    this?.makeupGain.gain?.value = 1;
-    this?.limiter.threshold?.value = -0?.5;
-    this?.targetLUFS = -14;
+    this?.makeupGain.gain.value = 1;
+    this?.limiter.threshold.value = -0.5;
+    this.targetLUFS = -14;
   }
 
   /**
@@ -475,9 +475,9 @@ class MultibandCompressor {
   private bypassed: boolean = false;
 
   constructor(context: AudioContext) {
-    this?.context = context;
-    this?.input = context?.createGain();
-    this?.output = context?.createGain();
+    this.context = context;
+    this.input = context?.createGain();
+    this.output = context?.createGain();
 
     // Create 4 frequency bands
     const _frequencies = [200, 800, 4000]; // Crossover frequencies
@@ -510,7 +510,7 @@ class MultibandCompressor {
   }
 
   setBypass(bypass: boolean): void {
-    this?.bypassed = bypass;
+    this.bypassed = bypass;
     this?.bands.forEach((band) => band?.setBypass(bypass));
   }
 
@@ -537,21 +537,21 @@ class CompressorBand {
   private compressor: DynamicsCompressorNode;
 
   constructor(context: AudioContext, lowFreq: number, highFreq: number) {
-    this?.context = context;
-    this?.input = context?.createGain();
-    this?.output = context?.createGain();
+    this.context = context;
+    this.input = context?.createGain();
+    this.output = context?.createGain();
 
     // Create bandpass filters
-    this?.lowFilter = context?.createBiquadFilter();
+    this.lowFilter = context?.createBiquadFilter();
     this?.lowFilter.type = lowFreq > 0 ? "highpass" : "lowshelf";
-    this?.lowFilter.frequency?.value = Math?.max(20, lowFreq);
+    this?.lowFilter.frequency.value = Math?.max(20, lowFreq);
 
-    this?.highFilter = context?.createBiquadFilter();
+    this.highFilter = context?.createBiquadFilter();
     this?.highFilter.type = highFreq < 20000 ? "lowpass" : "highshelf";
-    this?.highFilter.frequency?.value = Math?.min(20000, highFreq);
+    this?.highFilter.frequency.value = Math?.min(20000, highFreq);
 
     // Create compressor
-    this?.compressor = context?.createDynamicsCompressor();
+    this.compressor = context?.createDynamicsCompressor();
 
     // Connect chain
     this?.input.connect(this?.lowFilter);
@@ -570,27 +570,27 @@ class CompressorBand {
 
   setSettings(settings: unknown): void {
     if (settings?.threshold)
-      this?.compressor.threshold?.value = settings?.threshold;
-    if (settings?.ratio) this?.compressor.ratio?.value = settings?.ratio;
-    if (settings?.attack) this?.compressor.attack?.value = settings?.attack;
-    if (settings?.release) this?.compressor.release?.value = settings?.release;
-    if (settings?.knee) this?.compressor.knee?.value = settings?.knee || 2?.4;
+      this?.compressor.threshold.value = settings?.threshold;
+    if (settings?.ratio) this?.compressor.ratio.value = settings?.ratio;
+    if (settings?.attack) this?.compressor.attack.value = settings?.attack;
+    if (settings?.release) this?.compressor.release.value = settings?.release;
+    if (settings?.knee) this?.compressor.knee.value = settings?.knee || 2.4;
   }
 
   setBypass(bypass: boolean): void {
     if (bypass) {
-      this?.compressor.ratio?.value = 1;
+      this?.compressor.ratio.value = 1;
     } else {
-      this?.compressor.ratio?.value = 2;
+      this?.compressor.ratio.value = 2;
     }
   }
 
   reset(): void {
-    this?.compressor.threshold?.value = -24;
-    this?.compressor.ratio?.value = 2;
-    this?.compressor.attack?.value = 0?.003;
-    this?.compressor.release?.value = 0?.1;
-    this?.compressor.knee?.value = 2?.4;
+    this?.compressor.threshold.value = -24;
+    this?.compressor.ratio.value = 2;
+    this?.compressor.attack.value = 0.003;
+    this?.compressor.release.value = 0.1;
+    this?.compressor.knee.value = 2.4;
   }
 
   destroy(): void {
@@ -618,20 +618,20 @@ class StereoEnhancer {
   private bypassed: boolean = false;
 
   constructor(context: AudioContext) {
-    this?.context = context;
-    this?.input = context?.createGain();
-    this?.output = context?.createGain();
+    this.context = context;
+    this.input = context?.createGain();
+    this.output = context?.createGain();
 
     // Create M/S processing
-    this?.splitter = context?.createChannelSplitter(2);
-    this?.merger = context?.createChannelMerger(2);
-    this?.midGain = context?.createGain();
-    this?.sideGain = context?.createGain();
+    this.splitter = context?.createChannelSplitter(2);
+    this.merger = context?.createChannelMerger(2);
+    this.midGain = context?.createGain();
+    this.sideGain = context?.createGain();
 
     // Bass mono filter
-    this?.monoFilter = context?.createBiquadFilter();
+    this.monoFilter = context?.createBiquadFilter();
     this?.monoFilter.type = "highpass";
-    this?.monoFilter.frequency?.value = 100;
+    this?.monoFilter.frequency.value = 100;
 
     // Connect M/S matrix
     this?.input.connect(this?.splitter);
@@ -670,14 +670,14 @@ class StereoEnhancer {
   }
 
   setWidth(width: number): void {
-    this?.width = Math?.max(0, Math?.min(2, width));
+    this.width = Math?.max(0, Math?.min(2, width));
     // Width = 1 is normal, < 1 is narrower, > 1 is wider
-    this?.midGain.gain?.value = 2 - this?.width;
-    this?.sideGain.gain?.value = this?.width;
+    this?.midGain.gain.value = 2 - this?.width;
+    this?.sideGain.gain.value = this?.width;
   }
 
   setBassMonoFrequency(freq: number): void {
-    this?.monoFilter.frequency?.value = Math?.max(20, Math?.min(500, freq));
+    this?.monoFilter.frequency.value = Math?.max(20, Math?.min(500, freq));
   }
 
   setBalance(_balance: number): void {
@@ -686,7 +686,7 @@ class StereoEnhancer {
   }
 
   setBypass(bypass: boolean): void {
-    this?.bypassed = bypass;
+    this.bypassed = bypass;
     if (bypass) {
       this?.setWidth(1);
     }

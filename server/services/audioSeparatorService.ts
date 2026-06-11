@@ -19,16 +19,16 @@ import fsPromises from "fs/promises";
 import os from "os";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { listings, listingStems, listingLicenseTiers } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { storageService } from "./storageService?.js";
-import { logger } from "../logger?.js";
+import { storageService } from "./storageService.js";
+import { logger } from "../logger.js";
 
 const _execFileAsync = promisify(execFile);
 
 const _LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
-const _PYTHON_SCRIPT = path?.resolve("./server/services/audioSeparator?.py");
+const _PYTHON_SCRIPT = path?.resolve("./server/services/audioSeparator.py");
 
 /** Resolve the on-disk path of a storage key. */
 function localFilePath(key: string): string {
@@ -161,8 +161,8 @@ export async function processUploadedBeat(
         "beats-mp3",
         "audio/mpeg",
       );
-      result?.mp3Key = key;
-      result?.mp3Url = url;
+      result.mp3Key = key;
+      result.mp3Url = url;
       logger?.info(`[AudioSeparator] MP3 stored: ${key}`);
     }
 
@@ -209,8 +209,8 @@ export async function processUploadedBeat(
         );
       }
 
-      result?.stemUrls = stemUrls;
-      result?.stemsAvailable = stemInserts?.length > 0;
+      result.stemUrls = stemUrls;
+      result.stemsAvailable = stemInserts?.length > 0;
     }
 
     // ── Update listings row ────────────────────────────────────────────────
@@ -232,7 +232,7 @@ export async function processUploadedBeat(
 
     const updatePayload: Record<string, unknown> = { metadata: updatedMeta };
     if (result?.mp3Url) {
-      updatePayload?.previewUrl = result?.mp3Url;
+      updatePayload.previewUrl = result?.mp3Url;
     }
 
     await db
@@ -254,7 +254,7 @@ export async function processUploadedBeat(
         const _existingUrls = (tier?.audioUrls as Record<string, string>) ?? {};
         const newUrls: Record<string, string> = { ...existingUrls };
 
-        if (result?.mp3Url) newUrls?.mp3 = result?.mp3Url;
+        if (result?.mp3Url) newUrls.mp3 = result?.mp3Url;
 
         if (
           result?.stemsAvailable &&

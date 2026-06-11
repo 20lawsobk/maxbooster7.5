@@ -1,7 +1,7 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { recoupmentAccounts, royaltyStatements, type RecoupmentAccount, type InsertRecoupmentAccount } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
 
 export interface AdvanceInput {
@@ -403,7 +403,7 @@ export class RecoupmentService {
       (sum, split) => sum + split?.percentage,
       0,
     );
-    if (Math?.abs(totalPercentage - 100) > 0?.01) {
+    if (Math?.abs(totalPercentage - 100) > 0.01) {
       throw new Error(
         `Post-recoupment splits must total 100%, got ${totalPercentage}%`,
       );

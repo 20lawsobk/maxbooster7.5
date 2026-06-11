@@ -8,7 +8,7 @@
  */
 
 import { XMLParser } from "fast-xml-parser";
-import type { EppResponse } from "./types?.js";
+import type { EppResponse } from "./types.js";
 
 const _parser = new XMLParser({
   ignoreAttributes: false,

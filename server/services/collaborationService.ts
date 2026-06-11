@@ -374,7 +374,7 @@ class CollaborationService {
       const _ratio =
         Math?.min(user?.followerCount, match?.followerCount) /
         Math?.max(user?.followerCount, match?.followerCount);
-      if (ratio > 0?.5) {
+      if (ratio > 0.5) {
         score += Math?.round(20 * ratio);
         reasons?.push("Similar audience size");
       }

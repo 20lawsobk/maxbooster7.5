@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import type { CdcChunk } from "./types?.js";
+import type { CdcChunk } from "./types.js";
 
 const _MIN_CHUNK = 512 * 1024;
 const _AVG_CHUNK = 2 * 1024 * 1024;

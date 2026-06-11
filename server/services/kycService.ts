@@ -1,8 +1,8 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { kycVerifications, kycDocuments, users, type KYCVerification, type KYCDocument } from "@shared/schema";
 import { eq, desc, or } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { emailService } from "./emailService?.js";
+import { logger } from "../logger.js";
+import { emailService } from "./emailService.js";
 
 export type KYCType = "individual" | "business";
 export type KYCStatus =
@@ -228,7 +228,7 @@ const SUPPORT_CONTACT: SupportContact = {
 const _FILE_SIZE_LIMITS = {
   minBytes: 10 * 1024,
   maxBytes: 10 * 1024 * 1024,
-  minMB: 0?.01,
+  minMB: 0.01,
   maxMB: 10,
 };
 

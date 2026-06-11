@@ -4,11 +4,11 @@ import { db, dbRead } from "../db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { notifications, users } from "../../shared/schema";
 import { requireAuth } from "../middleware/auth";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
-import { webPushService } from "../services/webPushService?.js";
-import { buildSilentPayload } from "../services/pushNotificationTypes?.js";
-import { requireUUIDParam } from "../middleware/requestValidation?.js";
+import { webPushService } from "../services/webPushService.js";
+import { buildSilentPayload } from "../services/pushNotificationTypes.js";
+import { requireUUIDParam } from "../middleware/requestValidation.js";
 
 const _router = Router();
 
@@ -496,7 +496,7 @@ router?.post("/sms/verify", async (req: Request, res: Response) => {
         to: phoneNumber,
         channel: "sms",
       };
-      if (templateSid) params?.templateSid = templateSid;
+      if (templateSid) params.templateSid = templateSid;
       await client?.verify.v2
         .services(verifyServiceSid)
         .verifications?.create(params);
@@ -703,7 +703,7 @@ router?.post("/test", async (req: Request, res: Response) => {
     }
 
     const { notificationDispatcher } = await import(
-      "../services/notificationDispatcher?.js"
+      "../services/notificationDispatcher.js"
     );
     const _pushResult = await notificationDispatcher?.sendTestToUser(req?.user.id);
 
@@ -731,13 +731,13 @@ router?.get("/push/status", async (req: Request, res: Response) => {
   if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
   try {
     const { notificationDispatcher } = await import(
-      "../services/notificationDispatcher?.js"
+      "../services/notificationDispatcher.js"
     );
     const { desktopPushService } = await import(
-      "../services/desktopPushService?.js"
+      "../services/desktopPushService.js"
     );
     const { mobilePushService } = await import(
-      "../services/mobilePushService?.js"
+      "../services/mobilePushService.js"
     );
 
     const [breakdown, mobileStatus, serviceStatus] = await Promise?.all([
@@ -771,7 +771,7 @@ router?.post("/mobile-tokens", async (req: Request, res: Response) => {
     }
 
     const { mobilePushService } = await import(
-      "../services/mobilePushService?.js"
+      "../services/mobilePushService.js"
     );
     await mobilePushService?.registerToken(
       req?.user.id,
@@ -802,7 +802,7 @@ router?.delete("/mobile-tokens", async (req: Request, res: Response) => {
   try {
     const { token } = req?.body;
     const { mobilePushService } = await import(
-      "../services/mobilePushService?.js"
+      "../services/mobilePushService.js"
     );
 
     if (token) {
@@ -833,7 +833,7 @@ router?.get("/mobile-tokens", async (req: Request, res: Response) => {
   if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
   try {
     const { mobilePushService } = await import(
-      "../services/mobilePushService?.js"
+      "../services/mobilePushService.js"
     );
     const _status = await mobilePushService?.getUserTokenStatus(req?.user.id);
     return res?.json(status);

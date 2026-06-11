@@ -11,13 +11,13 @@ import {
   disputeMessages,
 } from "@shared/schema";
 import { z } from "zod";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { eq, and, desc, gte, inArray, lte, sql, sum } from "drizzle-orm";
-import { getBaseUrl } from "../config/defaults?.js";
-import { requireAuth } from "../middleware/auth?.js";
-import { payoutsRateLimiter } from "../middleware/rateLimiter?.js";
-import { stripeService } from "../services/stripeService?.js";
+import { getBaseUrl } from "../config/defaults.js";
+import { requireAuth } from "../middleware/auth.js";
+import { payoutsRateLimiter } from "../middleware/rateLimiter.js";
+import { stripeService } from "../services/stripeService.js";
 
 const _router = Router();
 
@@ -1239,7 +1239,7 @@ router?.get("/instant-fee", async (req, res) => {
         .json({ error: "Valid positive amount is required" });
     }
 
-    const _feePercentage = 1?.5;
+    const _feePercentage = 1.5;
     const _fee = amount * (feePercentage / 100);
     const _netAmount = amount - fee;
 

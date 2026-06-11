@@ -20,7 +20,7 @@ export class PluginHost {
   private chains: Map<string, PluginChain> = new Map();
 
   constructor(context: AudioContext) {
-    this?.context = context;
+    this.context = context;
   }
 
   /**
@@ -255,10 +255,10 @@ export class PluginChain {
   private plugins: BasePlugin[] = [];
 
   constructor(context: AudioContext, trackId: string) {
-    this?.context = context;
-    this?.trackId = trackId;
-    this?.input = context?.createGain();
-    this?.output = context?.createGain();
+    this.context = context;
+    this.trackId = trackId;
+    this.input = context?.createGain();
+    this.output = context?.createGain();
     this?.input.connect(this?.output);
   }
 
@@ -381,7 +381,7 @@ export class PluginChain {
     for (const plugin of this?.plugins) {
       plugin?.destroy();
     }
-    this?.plugins = [];
+    this.plugins = [];
 
     // Recreate plugins from state
     // Would need plugin factory here
@@ -395,7 +395,7 @@ export class PluginChain {
     for (const plugin of this?.plugins) {
       plugin?.destroy();
     }
-    this?.plugins = [];
+    this.plugins = [];
     this?.input.disconnect();
     this?.output.disconnect();
   }

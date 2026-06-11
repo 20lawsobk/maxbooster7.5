@@ -5,7 +5,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { isProductionEnv } from "./lib/envHelpers?.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 import { db } from "./db";
 import {
   ipBlacklist,
@@ -16,8 +16,8 @@ import {
   explanationLogs,
 } from "@shared/schema";
 import { eq, and, gte, or, sql } from "drizzle-orm";
-import { logger } from "./logger?.js";
-import { env } from "./config/env?.js";
+import { logger } from "./logger.js";
+import { env } from "./config/env.js";
 
 // Local type definitions for schema items that may not be exported
 interface SecurityBehaviorProfile {
@@ -84,8 +84,8 @@ export class SelfHealingSecuritySystem {
   };
 
   private constructor() {
-    this?.anomalyDetector = new AnomalyDetector();
-    this?.autoHealer = new AutoHealer();
+    this.anomalyDetector = new AnomalyDetector();
+    this.autoHealer = new AutoHealer();
     this?.initializeSecurityRules();
     this?.initializeAIModels();
     this?.startSecurityMonitoring();
@@ -143,14 +143,14 @@ export class SelfHealingSecuritySystem {
 
   public static getInstance(): SelfHealingSecuritySystem {
     if (!SelfHealingSecuritySystem?.instance) {
-      SelfHealingSecuritySystem?.instance = new SelfHealingSecuritySystem();
+      SelfHealingSecuritySystem.instance = new SelfHealingSecuritySystem();
     }
     return SelfHealingSecuritySystem?.instance;
   }
 
   // Initialize comprehensive security rules
   private initializeSecurityRules(): void {
-    this?.securityRules = [
+    this.securityRules = [
       // SQL Injection Protection
       {
         id: "sql-injection",
@@ -535,7 +535,7 @@ export class SelfHealingSecuritySystem {
 
       // Clean old threats from the database (keep last 1000)
       if (this?.recentThreats.length > 1000) {
-        this?.recentThreats = this?.recentThreats.slice(-1000);
+        this.recentThreats = this?.recentThreats.slice(-1000);
       }
 
       // Update security metrics
@@ -622,7 +622,7 @@ export class SelfHealingSecuritySystem {
   private async checkMemoryIntegrity(): Promise<void> {
     try {
       const { stdout } = await execAsync(
-        "free -m | grep Mem | awk '{print $3/$2 * 100?.0}'",
+        "free -m | grep Mem | awk '{print $3/$2 * 100.0}'",
       );
       const _memoryUsage = parseFloat(stdout?.trim());
 
@@ -759,9 +759,9 @@ export class SelfHealingSecuritySystem {
       }
 
       // Mark healing as successful
-      healingProcess?.status = "completed";
-      healingProcess?.success = true;
-      healingProcess?.endTime = Date?.now();
+      healingProcess.status = "completed";
+      healingProcess.success = true;
+      healingProcess.endTime = Date?.now();
 
       this?.securityMetrics.threatsHealed++;
       this?.securityMetrics.activeThreats--;
@@ -773,8 +773,8 @@ export class SelfHealingSecuritySystem {
       logger?.warn({ err: error }, `❌ HEALING FAILED: ${threatInfo?.type}`);
       const _healingProcess = this?.healingProcesses.get(threatId);
       if (healingProcess) {
-        healingProcess?.status = "failed";
-        healingProcess?.endTime = Date?.now();
+        healingProcess.status = "failed";
+        healingProcess.endTime = Date?.now();
       }
     }
   }
@@ -889,7 +889,7 @@ export class SelfHealingSecuritySystem {
     const _currentLoad =
       process?.memoryUsage().heapUsed / process?.memoryUsage().heapTotal;
 
-    if (currentLoad > 0?.8) {
+    if (currentLoad > 0.8) {
       logger?.info(
         "⚠️ High memory usage detected, requesting resource scaling...",
       );
@@ -923,8 +923,8 @@ export class SelfHealingSecuritySystem {
     };
 
     ipInfo?.requestCount++;
-    ipInfo?.lastRequest = Date?.now();
-    ipInfo?.threatLevel = severity;
+    ipInfo.lastRequest = Date?.now();
+    ipInfo.threatLevel = severity;
 
     this?.ipTracker.set(ipAddress, ipInfo);
 
@@ -1061,7 +1061,7 @@ export class SelfHealingSecuritySystem {
     severity: string,
     permanent: boolean = false,
   ): Promise<void> {
-    if (!ipAddress || ipAddress === "::1" || ipAddress === "127?.0.0?.1") return;
+    if (!ipAddress || ipAddress === "::1" || ipAddress === "127.0.0.1") return;
 
     try {
       const _severityKey =
@@ -1186,7 +1186,7 @@ export class SelfHealingSecuritySystem {
   }
 
   public setRequestContext(req: Request): void {
-    this?.currentRequestContext = {
+    this.currentRequestContext = {
       ipAddress:
         (req?.headers["x-forwarded-for"] as string)?.split(",")[0] ||
         req?.socket.remoteAddress ||
@@ -1200,7 +1200,7 @@ export class SelfHealingSecuritySystem {
   }
 
   public async isIpBlacklisted(ipAddress: string): Promise<boolean> {
-    if (!ipAddress || ipAddress === "::1" || ipAddress === "127?.0.0?.1")
+    if (!ipAddress || ipAddress === "::1" || ipAddress === "127.0.0.1")
       return false;
 
     try {
@@ -1257,8 +1257,8 @@ export class SelfHealingSecuritySystem {
           Date?.now() - process?.startTime > 30000
         ) {
           // Timeout healing process
-          process?.status = "timeout";
-          process?.endTime = Date?.now();
+          process.status = "timeout";
+          process.endTime = Date?.now();
         }
       },
     );
@@ -1441,7 +1441,7 @@ export class SelfHealingSecuritySystem {
           riskLevel,
           deviations,
         },
-        confidenceScore: profile?.baselineEstablished ? 0?.85 : 0?.5,
+        confidenceScore: profile?.baselineEstablished ? 0.85 : 0.5,
         executionTimeMs: Date?.now() - startTime,
         success: true,
       });
@@ -1464,7 +1464,7 @@ export class SelfHealingSecuritySystem {
               login_time_deviation: deviations?.some((d) =>
                 d?.includes("Unusual login time"),
               )
-                ? 0?.6
+                ? 0.6
                 : 0,
               new_device:
                 !profile ||
@@ -1472,10 +1472,10 @@ export class SelfHealingSecuritySystem {
                   (d) => d?.userAgent === currentDevice,
                 )
                   ? 0
-                  : 0?.4,
+                  : 0.4,
             },
             humanReadable: `User risk score: ${riskScore}/100. Deviations: ${deviations?.join(", ")}`,
-            confidence: 0?.85,
+            confidence: 0.85,
           });
         }
       }
@@ -1545,31 +1545,31 @@ export class SelfHealingSecuritySystem {
 
       // Time of day anomaly (working hours = normal, night = suspicious)
       const _timeScore =
-        features?.timeOfDay >= 2 && features?.timeOfDay <= 5 ? 0?.3 : 0;
+        features?.timeOfDay >= 2 && features?.timeOfDay <= 5 ? 0.3 : 0;
       anomalyScore += timeScore;
-      featureImportance?.time_of_day = timeScore;
+      featureImportance.time_of_day = timeScore;
 
       // Frequency anomaly (high frequency = suspicious)
       const _freqScore =
-        features?.frequency > 10 ? 0?.4 : features?.frequency > 5 ? 0?.2 : 0;
+        features?.frequency > 10 ? 0.4 : features?.frequency > 5 ? 0.2 : 0;
       anomalyScore += freqScore;
-      featureImportance?.frequency = freqScore;
+      featureImportance.frequency = freqScore;
 
       // Action type risk (sensitive actions = higher weight)
       const _sensitiveActions = ["delete", "admin", "export", "payment"];
       const _actionScore = sensitiveActions?.some((a) =>
         actionType?.toLowerCase().includes(a),
       )
-        ? 0?.3
+        ? 0.3
         : 0;
       anomalyScore += actionScore;
-      featureImportance?.action_type = actionScore;
+      featureImportance.action_type = actionScore;
 
       // Normalize score to 0-1
       anomalyScore = Math?.min(1, anomalyScore);
 
-      const _isAnomaly = anomalyScore > 0?.5;
-      const _autoBlocked = anomalyScore > 0?.85;
+      const _isAnomaly = anomalyScore > 0.5;
+      const _autoBlocked = anomalyScore > 0.85;
 
       // Generate explanation
       const _explanation =
@@ -1587,15 +1587,15 @@ export class SelfHealingSecuritySystem {
           features,
           anomalyScore,
           anomalyType:
-            timeScore > 0?.2
+            timeScore > 0.2
               ? "time_based"
-              : freqScore > 0?.2
+              : freqScore > 0.2
                 ? "frequency_based"
                 : "pattern_based",
           explanation,
           featureImportance,
           autoBlocked,
-          modelVersion: "v1?.0",
+          modelVersion: "v1.0",
         });
       }
 
@@ -1611,7 +1611,7 @@ export class SelfHealingSecuritySystem {
           anomalyScore,
           autoBlocked,
         },
-        confidenceScore: 0?.9,
+        confidenceScore: 0.9,
         executionTimeMs: Date?.now() - startTime,
         success: true,
       });
@@ -1677,7 +1677,7 @@ export class SelfHealingSecuritySystem {
       const _obfuscationDetected = obfuscationPatterns?.some((pattern) => {
         if (pattern?.test(payloadStr)) {
           signatures?.push(`Obfuscation: ${pattern?.toString()}`);
-          patternScore += 0?.2;
+          patternScore += 0.2;
           return true;
         }
         return false;
@@ -1685,13 +1685,13 @@ export class SelfHealingSecuritySystem {
 
       // Check for suspicious patterns
       const _suspiciousPatterns = [
-        { pattern: /<script/gi, name: "script_injection", score: 0?.3 },
-        { pattern: /union\s+select/gi, name: "sql_injection", score: 0?.4 },
-        { pattern: /\.\.\/|\.\.\\+/g, name: "path_traversal", score: 0?.35 },
+        { pattern: /<script/gi, name: "script_injection", score: 0.3 },
+        { pattern: /union\s+select/gi, name: "sql_injection", score: 0.4 },
+        { pattern: /\.\.\/|\.\.\\+/g, name: "path_traversal", score: 0.35 },
         {
           pattern: /cmd\.exe|\/bin\/bash|powershell/gi,
           name: "command_injection",
-          score: 0?.5,
+          score: 0.5,
         },
       ];
 
@@ -1707,9 +1707,9 @@ export class SelfHealingSecuritySystem {
       let threatLevel: "none" | "low" | "medium" | "high" | "critical";
 
       if (patternScore === 0) threatLevel = "none";
-      else if (patternScore < 0?.3) threatLevel = "low";
-      else if (patternScore < 0?.6) threatLevel = "medium";
-      else if (patternScore < 0?.85) threatLevel = "high";
+      else if (patternScore < 0.3) threatLevel = "low";
+      else if (patternScore < 0.6) threatLevel = "medium";
+      else if (patternScore < 0.85) threatLevel = "high";
       else threatLevel = "critical";
 
       const _shouldBlock = threatLevel === "critical" || threatLevel === "high";
@@ -1739,7 +1739,7 @@ export class SelfHealingSecuritySystem {
               ? "monitor"
               : "alert",
           patternMatchScore: patternScore,
-          modelVersion: "v1?.0",
+          modelVersion: "v1.0",
         });
       }
 
@@ -1754,7 +1754,7 @@ export class SelfHealingSecuritySystem {
           signatures,
           patternScore,
         },
-        confidenceScore: 0?.8,
+        confidenceScore: 0.8,
         executionTimeMs: Date?.now() - startTime,
         success: true,
       });
@@ -1909,7 +1909,7 @@ export class SelfHealingSecuritySystem {
           vulnerabilitiesFound,
           totalTests: tests?.length,
         },
-        confidenceScore: 0?.95,
+        confidenceScore: 0.95,
         executionTimeMs: Date?.now() - startTime,
         success: true,
       });
@@ -2384,7 +2384,7 @@ export const _securityHeadersMiddleware = helmet({
 
 // CORS middleware
 export const _corsMiddleware = cors({
-  origin: isProductionEnv() ? ["https://maxbooster?.com"] : true,
+  origin: isProductionEnv() ? ["https://maxbooster.com"] : true,
   credentials: true,
   optionsSuccessStatus: 200,
 });

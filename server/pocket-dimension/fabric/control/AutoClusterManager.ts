@@ -1,10 +1,10 @@
-import type { NodeRegistry } from "../infra/NodeRegistry?.js";
-import type { ChunkIndex } from "../infra/ChunkIndex?.js";
-import type { PlacementStrategy } from "./PlacementStrategy?.js";
-import type { ChunkStore } from "../storage/ChunkStore?.js";
-import type { NodeId, FabricStorageNode } from "../types?.js";
-import { Rebalancer } from "./Rebalancer?.js";
-import { logger } from "../../../logger?.js";
+import type { NodeRegistry } from "../infra/NodeRegistry.js";
+import type { ChunkIndex } from "../infra/ChunkIndex.js";
+import type { PlacementStrategy } from "./PlacementStrategy.js";
+import type { ChunkStore } from "../storage/ChunkStore.js";
+import type { NodeId, FabricStorageNode } from "../types.js";
+import { Rebalancer } from "./Rebalancer.js";
+import { logger } from "../../../logger.js";
 
 export interface ClusterRules {
   minNodes: number;
@@ -30,9 +30,9 @@ export interface ClusterRules {
 export const DEFAULT_RULES: ClusterRules = {
   minNodes: 3,
   maxNodes: 500,
-  utilizationHighWatermark: 0?.7,
-  utilizationLowWatermark: 0?.4,
-  utilizationPerNodeHighWatermark: 0?.8,
+  utilizationHighWatermark: 0.7,
+  utilizationLowWatermark: 0.4,
+  utilizationPerNodeHighWatermark: 0.8,
   healthCheckStaleMs: 10 * 60 * 1000,
   cooldownMs: 10 * 60 * 1000,
   scaleDownCooldownMs: 30 * 60 * 1000,
@@ -40,7 +40,7 @@ export const DEFAULT_RULES: ClusterRules = {
   capacityBytesPerNode: 100 * 1024 * 1024 * 1024,
   velocitySampleWindowMs: 60 * 60 * 1000,
   maxSpawnPerEvent: 5,
-  emaAlpha: 0?.3,
+  emaAlpha: 0.3,
 };
 
 type SpawnReason =
@@ -74,7 +74,7 @@ interface ScaleEvent {
 
 export class AutoClusterManager {
   private running = false;
-  private intervalId: NodeJS?.Timeout | null = null;
+  private intervalId: NodeJS.Timeout | null = null;
   private lastSpawnAt: Date | null = null;
   private lastScaleDownAt: Date | null = null;
   private rebalancer: Rebalancer;
@@ -99,7 +99,7 @@ export class AutoClusterManager {
     ) => void,
     private rules: ClusterRules = DEFAULT_RULES,
   ) {
-    this?.rebalancer = new Rebalancer(
+    this.rebalancer = new Rebalancer(
       nodeRegistry,
       chunkIndex,
       placement,
@@ -109,8 +109,8 @@ export class AutoClusterManager {
 
   start(): void {
     if (this?.running) return;
-    this?.running = true;
-    this?.intervalId = setInterval(
+    this.running = true;
+    this.intervalId = setInterval(
       () =>
         this?.evaluate().catch((e) =>
           logger?.warn({ err: e }, "[AutoCluster] Evaluation error:"),
@@ -130,10 +130,10 @@ export class AutoClusterManager {
   }
 
   stop(): void {
-    this?.running = false;
+    this.running = false;
     if (this?.intervalId) {
       clearInterval(this?.intervalId);
-      this?.intervalId = null;
+      this.intervalId = null;
     }
     logger?.info("[AutoCluster] Stopped");
   }
@@ -233,7 +233,7 @@ export class AutoClusterManager {
         });
 
         const { PocketDimensionChunkStore } = await import(
-          "../storage/PocketDimensionChunkStore?.js"
+          "../storage/PocketDimensionChunkStore.js"
         );
         const _store = new PocketDimensionChunkStore(pocketName);
         this?.onNodeSpawned(node?.id, pocketName, store);
@@ -256,7 +256,7 @@ export class AutoClusterManager {
           nodesBefore: pdNodes?.length + totalSpawned,
           nodesAfter: pdNodes?.length + totalSpawned + spawned?.length,
         });
-        this?.lastSpawnAt = new Date();
+        this.lastSpawnAt = new Date();
         totalSpawned += spawned?.length;
         reasons?.push(`↑${trigger?.reason} → [${spawned?.join(", ")}]`);
 
@@ -271,7 +271,7 @@ export class AutoClusterManager {
     }
 
     if (avgUtil < this?.rules.utilizationHighWatermark) {
-      this?.thresholdFirstCrossedAt = null;
+      this.thresholdFirstCrossedAt = null;
     }
 
     if (
@@ -363,7 +363,7 @@ export class AutoClusterManager {
     const _util =
       candidate?.capacityBytes > 0
         ? ((candidate?.usedBytes / candidate?.capacityBytes) * 100).toFixed(1)
-        : "0?.0";
+        : "0.0";
 
     logger?.info(
       `[AutoCluster] ScaleDown: util=${(avgUtil * 100).toFixed(1)}% ≤ ${(this?.rules.utilizationLowWatermark * 100).toFixed(0)}% ` +
@@ -387,7 +387,7 @@ export class AutoClusterManager {
       nodesAfter: pdNodes?.length - 1,
     });
 
-    this?.lastScaleDownAt = new Date(now);
+    this.lastScaleDownAt = new Date(now);
     return [pocketName];
   }
 
@@ -416,7 +416,7 @@ export class AutoClusterManager {
 
     if (avgUtil >= this?.rules.utilizationHighWatermark) {
       if (this?.thresholdFirstCrossedAt === null) {
-        this?.thresholdFirstCrossedAt = now;
+        this.thresholdFirstCrossedAt = now;
         logger?.info(
           `[AutoCluster] High-watermark crossed at ${(avgUtil * 100).toFixed(1)}%`,
         );
@@ -495,10 +495,10 @@ export class AutoClusterManager {
 
   private updateEma(rawVelocity: number): void {
     if (!this?.emaInitialized) {
-      this?.emaVelocity = rawVelocity;
-      this?.emaInitialized = true;
+      this.emaVelocity = rawVelocity;
+      this.emaInitialized = true;
     } else {
-      this?.emaVelocity =
+      this.emaVelocity =
         this?.rules.emaAlpha * rawVelocity +
         (1 - this?.rules.emaAlpha) * this?.emaVelocity;
     }
@@ -640,7 +640,7 @@ export class AutoClusterManager {
                     (latest?.totalUsedBytes / latest?.totalCapacityBytes) *
                     100
                   ).toFixed(1)
-                : "0?.0",
+                : "0.0",
           }
         : null,
       rules: this?.rules,

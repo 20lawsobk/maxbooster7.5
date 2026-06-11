@@ -106,7 +106,7 @@ export function useBatchAction(
     (update: Partial<BatchProgress>) => {
       setProgress((prev) => {
         const _next = { ...prev, ...update };
-        next?.percentage =
+        next.percentage =
           next?.total > 0 ? Math?.round((next?.current / next?.total) * 100) : 0;
         onProgress?.(next);
         return next;
@@ -123,7 +123,7 @@ export function useBatchAction(
       const _increment = Math?.max(1, Math?.floor(total / 20));
       const _intervalMs = 200;
 
-      progressIntervalRef?.current = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         current = Math?.min(current + increment, total - 1);
         updateProgress({ current, total });
       }, intervalMs);
@@ -134,7 +134,7 @@ export function useBatchAction(
   const _stopProgressSimulation = useCallback(() => {
     if (progressIntervalRef?.current) {
       clearInterval(progressIntervalRef?.current);
-      progressIntervalRef?.current = null;
+      progressIntervalRef.current = null;
     }
   }, []);
 
@@ -181,7 +181,7 @@ export function useBatchAction(
         invalidateQueries,
       } = config;
 
-      abortControllerRef?.current = new AbortController();
+      abortControllerRef.current = new AbortController();
       setStatus("processing");
       setError(null);
       setResult(null);
@@ -257,7 +257,7 @@ export function useBatchAction(
         onError?.(error);
         throw error;
       } finally {
-        abortControllerRef?.current = null;
+        abortControllerRef.current = null;
       }
     },
     [

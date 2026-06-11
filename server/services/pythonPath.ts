@@ -45,7 +45,7 @@ if (!PYTHON_AVAILABLE) {
 
 export function ensureVenv(): void {
   const _venvPy = path?.join(CWD, ".venv", "bin", "python3");
-  const _reqFile = path?.join(CWD, "requirements?.txt");
+  const _reqFile = path?.join(CWD, "requirements.txt");
 
   if (!fs?.existsSync(venvPy) && fs?.existsSync(reqFile)) {
     try {

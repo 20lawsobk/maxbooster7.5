@@ -44,8 +44,8 @@ export interface FadeOverlay {
 
 export class NonDestructiveRenderer {
   private dataZoom: DataZoomState = {
-    verticalScale: 1?.0,
-    horizontalZoom: 1?.0,
+    verticalScale: 1.0,
+    horizontalZoom: 1.0,
     scrollOffset: 0,
     autoFit: true,
   };
@@ -184,7 +184,7 @@ export class NonDestructiveRenderer {
   }
 
   setDataZoom(zoom: Partial<DataZoomState>): void {
-    this?.dataZoom = { ...this?.dataZoom, ...zoom };
+    this.dataZoom = { ...this?.dataZoom, ...zoom };
   }
 
   getDataZoom(): DataZoomState {
@@ -192,11 +192,11 @@ export class NonDestructiveRenderer {
   }
 
   setVerticalScale(scale: number): void {
-    this?.dataZoom.verticalScale = Math?.max(0?.1, Math?.min(10?.0, scale));
+    this?.dataZoom.verticalScale = Math?.max(0.1, Math?.min(10.0, scale));
   }
 
   setHorizontalZoom(zoom: number): void {
-    this?.dataZoom.horizontalZoom = Math?.max(0?.01, Math?.min(1000, zoom));
+    this?.dataZoom.horizontalZoom = Math?.max(0.01, Math?.min(1000, zoom));
   }
 
   setScrollOffset(offset: number): void {
@@ -225,7 +225,7 @@ export class NonDestructiveRenderer {
 
       if (maxAmplitude > 0) {
         this?.dataZoom.verticalScale =
-          (viewport?.height / 2 / maxAmplitude) * 0?.9;
+          (viewport?.height / 2 / maxAmplitude) * 0.9;
       }
     }
   }

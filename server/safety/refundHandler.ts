@@ -8,8 +8,8 @@
 import Stripe from "stripe";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
-import { env } from "../config/env?.js";
-import { logger } from "../logger?.js";
+import { env } from "../config/env.js";
+import { logger } from "../logger.js";
 import { registerWebhookHandler } from "./stripeWebhookSecurity";
 
 interface RefundRecord {
@@ -312,7 +312,7 @@ export function registerRefundWebhookHandlers(): void {
     const _refund = event?.data.object as Stripe?.Refund;
     const _existingRecord = refundRecords?.get(refund?.id);
     if (existingRecord) {
-      existingRecord?.status =
+      existingRecord.status =
         refund?.status === "succeeded"
           ? "succeeded"
           : refund?.status === "failed"
@@ -320,7 +320,7 @@ export function registerRefundWebhookHandlers(): void {
             : refund?.status === "canceled"
               ? "canceled"
               : "pending";
-      existingRecord?.processedAt = new Date();
+      existingRecord.processedAt = new Date();
       await persistRefundRecord(existingRecord);
     }
     return { success: true, message: "Refund updated" };
@@ -337,8 +337,8 @@ export function registerRefundWebhookHandlers(): void {
     const _dispute = event?.data.object as Stripe?.Dispute;
     const _existing = chargebackRecords?.get(dispute?.id);
     if (existing) {
-      existing?.status = dispute?.status;
-      existing?.updatedAt = new Date();
+      existing.status = dispute?.status;
+      existing.updatedAt = new Date();
       await persistChargebackRecord(existing);
     }
     return { success: true, message: "Dispute updated" };
@@ -348,8 +348,8 @@ export function registerRefundWebhookHandlers(): void {
     const _dispute = event?.data.object as Stripe?.Dispute;
     const _existing = chargebackRecords?.get(dispute?.id);
     if (existing) {
-      existing?.status = dispute?.status;
-      existing?.updatedAt = new Date();
+      existing.status = dispute?.status;
+      existing.updatedAt = new Date();
       await persistChargebackRecord(existing);
 
       logger?.info(

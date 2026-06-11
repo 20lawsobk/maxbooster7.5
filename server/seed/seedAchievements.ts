@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { achievements } from "../../shared/schema";
 import { count, inArray } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _defaultAchievements = [
   {
@@ -207,7 +207,7 @@ export async function seedAchievements() {
 
 const _isMainModule =
   process?.argv[1] &&
-  (process?.argv[1].endsWith("seedAchievements?.ts") ||
+  (process?.argv[1].endsWith("seedAchievements.ts") ||
     process?.argv[1].includes("seedAchievements"));
 
 if (isMainModule) {

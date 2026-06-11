@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
-import { aiModels, aiModelVersions } from "../../shared/schema?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
+import { aiModels, aiModelVersions } from "../../shared/schema.js";
 import { eq, and } from "drizzle-orm";
 import {
   unifiedAIController,
@@ -12,9 +12,9 @@ import {
   type AdOptimizationOptions,
   type EngagementPredictionOptions,
   type ForecastOptions,
-} from "../services/unifiedAIController?.js";
-import { aiRateLimiter } from "../middleware/rateLimiter?.js";
-import { notificationService } from "../services/notificationService?.js";
+} from "../services/unifiedAIController.js";
+import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import { notificationService } from "../services/notificationService.js";
 
 const _router = Router();
 
@@ -163,7 +163,7 @@ router?.post(
         type,
         seedIds,
         limit: limit ?? 20,
-        hybridWeight: hybridWeight ?? 0?.5,
+        hybridWeight: hybridWeight ?? 0.5,
       };
 
       const _result = await unifiedAIController?.getRecommendations(options);
@@ -213,15 +213,15 @@ router?.post(
       }
 
       const _defaultMetrics = {
-        ctr: 0?.02,
-        cvr: 0?.05,
-        roas: 1?.5,
+        ctr: 0.02,
+        cvr: 0.05,
+        roas: 1.5,
         spend: 0,
         revenue: 0,
         impressions: 0,
         clicks: 0,
         conversions: 0,
-        cpc: 0?.5,
+        cpc: 0.5,
         cpa: 10,
       };
       const _defaultTargeting = {
@@ -327,7 +327,7 @@ router?.post(
       if (action === "viral_potential" && result?.data && req?.user?.id) {
         const score: number =
           (result?.data as Record<string, unknown>).overallScore ?? 0;
-        if (score >= 0?.75) {
+        if (score >= 0.75) {
           const _pct = Math?.round(score * 100);
           const _platformLabel =
             platform?.charAt(0).toUpperCase() + platform?.slice(1);
@@ -898,7 +898,7 @@ router?.get(
 );
 
 // ── MaxCore Diffusion / Training Time Simulator status endpoints ──────────────
-// Port 8008 (api_server_v4?.py) is the primary content generation gateway.
+// Port 8008 (api_server_v4.py) is the primary content generation gateway.
 // These routes expose its training state and simulator progress to the frontend.
 
 const _DIT24_BASE = `http://localhost:${process?.env.VIDEO_DIFFUSION_PORT ?? 8008}`;

@@ -100,7 +100,7 @@ function calculatePadding(width: number): number {
 }
 
 function calculateFontSizes(width: number) {
-  const _scale = Math?.max(0?.85, Math?.min(1?.15, width / 1200));
+  const _scale = Math?.max(0.85, Math?.min(1.15, width / 1200));
 
   return {
     xs: `${Math?.round(10 * scale)}px`,

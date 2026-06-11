@@ -1,6 +1,6 @@
 import { storage } from "../storage";
-import { logger } from "../logger?.js";
-import { createGracefulRedisClient } from "../lib/gracefulRedis?.js";
+import { logger } from "../logger.js";
+import { createGracefulRedisClient } from "../lib/gracefulRedis.js";
 
 interface SubmissionResult {
   dispatchId: string;

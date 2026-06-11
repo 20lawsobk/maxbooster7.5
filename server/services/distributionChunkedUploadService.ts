@@ -2,8 +2,8 @@ import { storage } from "../storage";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as crypto from "crypto";
-import { storageService } from "./storageService?.js";
-import { logger } from "../logger?.js";
+import { storageService } from "./storageService.js";
+import { logger } from "../logger.js";
 
 const _CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
 const _TEMP_DIR = path?.join(process?.cwd(), "tmp", "uploads", "sessions");

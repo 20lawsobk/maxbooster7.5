@@ -85,14 +85,14 @@ export class ApiError extends Error {
 
   constructor(structured: StructuredApiError) {
     super(structured?.message);
-    this?.name = "ApiError";
-    this?.code = structured?.code;
-    this?.status = structured?.status;
-    this?.retryAfter = structured?.retryAfter;
-    this?.retryable = structured?.retryable;
-    this?.userMessage = structured?.userMessage;
-    this?.details = structured?.details;
-    this?.suggestions = structured?.suggestions;
+    this.name = "ApiError";
+    this.code = structured?.code;
+    this.status = structured?.status;
+    this.retryAfter = structured?.retryAfter;
+    this.retryable = structured?.retryable;
+    this.userMessage = structured?.userMessage;
+    this.details = structured?.details;
+    this.suggestions = structured?.suggestions;
   }
 
   static fromResponse(res: Response, body: string): ApiError {
@@ -472,8 +472,8 @@ export async function uploadWithProgress(
   return new Promise((resolve, reject) => {
     const _xhr = new XMLHttpRequest();
     xhr?.open("POST", url);
-    xhr?.withCredentials = true;
-    xhr?.timeout = timeoutMs;
+    xhr.withCredentials = true;
+    xhr.timeout = timeoutMs;
 
     // Include the CSRF double-submit token (POST is a mutating method)
     const _csrfToken = getCsrfTokenFromCookie();

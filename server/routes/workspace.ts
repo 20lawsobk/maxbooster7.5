@@ -11,8 +11,8 @@ import {
   type SAMLMetadata,
   type OIDCMetadata,
 } from "../services/ssoService";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
 import { workspaceMembers } from "@shared/schema";
 import { eq, and } from "drizzle-orm";

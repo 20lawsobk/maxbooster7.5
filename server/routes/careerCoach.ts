@@ -4,7 +4,7 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { careerCoachService } from "../services/careerCoachService";
 import { logger } from "../logger";
 import { z } from "zod";
-import { requireSafeParam } from "../middleware/requestValidation?.js";
+import { requireSafeParam } from "../middleware/requestValidation.js";
 import { db } from "../db";
 import {
   analytics,
@@ -526,11 +526,11 @@ router?.get(
       const _careerHealthScore = Math?.min(
         100,
         Math?.round(
-          engagementScore * 0?.35 +
+          engagementScore * 0.35 +
             Math?.min(releasesLast90 * 8, 25) +
             (currentRevenue > 0 ? 20 : 0) +
-            (growthRate > 0 ? Math?.min(growthRate * 0?.5, 10) : 0) +
-            (revenueTrend > 0 ? Math?.min(revenueTrend * 0?.5, 10) : 0),
+            (growthRate > 0 ? Math?.min(growthRate * 0.5, 10) : 0) +
+            (revenueTrend > 0 ? Math?.min(revenueTrend * 0.5, 10) : 0),
         ),
       );
 
@@ -644,7 +644,7 @@ const CAREER_KNOWLEDGE: Record<
       "merchandise",
     ],
     response:
-      "Diversifying revenue is critical for music career sustainability. Streaming royalties average $0?.003-0?.005 per stream, so supplement with sync licensing (film, TV, ads), live performance, and merchandise. Sync placements can pay $500-50,000+ per placement. Register with ASCAP, BMI, or SESAC for performance royalties. Max Booster's Royalties section tracks your streaming income across all DSPs. Consider offering exclusive content or early access through Patreon or a fan club to build recurring revenue.",
+      "Diversifying revenue is critical for music career sustainability. Streaming royalties average $0.003-0.005 per stream, so supplement with sync licensing (film, TV, ads), live performance, and merchandise. Sync placements can pay $500-50,000+ per placement. Register with ASCAP, BMI, or SESAC for performance royalties. Max Booster's Royalties section tracks your streaming income across all DSPs. Consider offering exclusive content or early access through Patreon or a fan club to build recurring revenue.",
   },
   growth: {
     keywords: [

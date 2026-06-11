@@ -1,7 +1,7 @@
 import { randomBytes, timingSafeEqual } from "crypto";
 import { RequestHandler, Request, Response, NextFunction } from "express";
-import { logger } from "../logger?.js";
-import { isProductionEnv } from "../lib/envHelpers?.js";
+import { logger } from "../logger.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 export const _CSRF_COOKIE = "csrf-token";
 export const _CSRF_HEADER = "x-csrf-token";

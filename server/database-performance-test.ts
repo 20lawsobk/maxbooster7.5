@@ -2,7 +2,7 @@ import { db } from "../db";
 import { sql } from "drizzle-orm";
 import { projects, analytics, releases, earnings } from "../../shared/schema";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 interface PerformanceMetric {
   testName: string;

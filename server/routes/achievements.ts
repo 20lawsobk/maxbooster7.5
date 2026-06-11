@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
 import { achievementService } from "../services/achievementService";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
-import { requireSafeParam } from "../middleware/requestValidation?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
+import { requireSafeParam } from "../middleware/requestValidation.js";
 
 const _router = Router();
 

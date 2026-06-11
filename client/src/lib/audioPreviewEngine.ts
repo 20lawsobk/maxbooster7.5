@@ -109,9 +109,9 @@ export const _useAudioPreviewStore = create<
   currentBeatId: null,
   currentTime: 0,
   duration: 0,
-  playbackRate: 1?.0,
+  playbackRate: 1.0,
   pitchShift: 0,
-  volume: 0?.8,
+  volume: 0.8,
   originalBpm: 120,
   targetBpm: 120,
   originalKey: "C",
@@ -168,7 +168,7 @@ export const _useAudioPreviewStore = create<
         targetBpm: originalBpm,
         originalKey,
         targetKey: originalKey,
-        playbackRate: 1?.0,
+        playbackRate: 1.0,
         pitchShift: 0,
         isLoading: false,
       });
@@ -189,11 +189,11 @@ export const _useAudioPreviewStore = create<
     }
 
     const _sourceNode = audioContext?.createBufferSource();
-    sourceNode?.buffer = currentBuffer;
+    sourceNode.buffer = currentBuffer;
     sourceNode?.playbackRate.value = playbackRate;
     sourceNode?.connect(gainNode);
 
-    sourceNode?.onended = () => {
+    sourceNode.onended = () => {
       set({ isPlaying: false, sourceNode: null, currentTime: 0 });
     };
 
@@ -239,7 +239,7 @@ export const _useAudioPreviewStore = create<
 
   setPlaybackRate: (rate: number) => {
     const { sourceNode, isPlaying } = get();
-    const _clampedRate = Math?.max(0?.5, Math?.min(2?.0, rate));
+    const _clampedRate = Math?.max(0.5, Math?.min(2.0, rate));
 
     if (sourceNode && isPlaying) {
       sourceNode?.playbackRate.value = clampedRate;

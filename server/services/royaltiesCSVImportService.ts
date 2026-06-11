@@ -1,11 +1,11 @@
 import crypto from "crypto";
 import { parse } from "csv-parse/sync";
-import { storage } from "../storage?.js";
+import { storage } from "../storage.js";
 import type { InsertRevenueEvent } from "@shared/schema";
-import { queueService } from "./queueService?.js";
-import type { CSVImportJobData, CSVImportResult } from "./queueService?.js";
-import { storageService } from "./storageService?.js";
-import { logger } from "../logger?.js";
+import { queueService } from "./queueService.js";
+import type { CSVImportJobData, CSVImportResult } from "./queueService.js";
+import { storageService } from "./storageService.js";
+import { logger } from "../logger.js";
 
 export interface JobResponse {
   jobId: string;
@@ -157,7 +157,7 @@ export class RoyaltiesCSVImportService {
         const _mapped = this?.mapColumns(row, mapping);
 
         if (mapped?.occurredAt && typeof mapped?.occurredAt === "string") {
-          mapped?.occurredAt = new Date(mapped?.occurredAt);
+          mapped.occurredAt = new Date(mapped?.occurredAt);
         }
 
         const _validation = this?.validateRow(mapped);
@@ -230,7 +230,7 @@ export class RoyaltiesCSVImportService {
       const _mapped = this?.mapColumns(row, mapping);
 
       if (mapped?.occurredAt && typeof mapped?.occurredAt === "string") {
-        mapped?.occurredAt = new Date(mapped?.occurredAt);
+        mapped.occurredAt = new Date(mapped?.occurredAt);
       }
 
       const _validation = this?.validateRow(mapped);

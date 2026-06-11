@@ -8,11 +8,11 @@
  * in-progress auctions and surface them in the DNS Hub UI.
  */
 
-import { db } from "../../db?.js";
+import { db } from "../../db.js";
 import { hnsAuctions } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { logger } from "../../logger?.js";
-import { HnsClient, buildMaxBoosterNSRecords } from "./HnsClient?.js";
+import { logger } from "../../logger.js";
+import { HnsClient, buildMaxBoosterNSRecords } from "./HnsClient.js";
 
 export type AuctionState =
   | "pending_open"

@@ -48,18 +48,18 @@ function isReservedIp(raw: string): boolean {
   // IPv4-mapped IPv6: ::ffff:<IPv4> — extract and re-check the IPv4 part.
   if (addr?.startsWith("::ffff:")) {
     const _embedded = addr?.slice(7);
-    // It could be dotted-decimal (::ffff:127?.0.0?.1) or condensed hex
+    // It could be dotted-decimal (::ffff:127.0.0.1) or condensed hex
     // (::ffff:7f00:1).  If it looks like a valid dotted IPv4, check that.
     // Otherwise treat the whole address as suspicious / private to be safe.
     if (netIsIPv4(embedded)) {
-      return embedded === "0?.0.0?.0" || PRIVATE_IPV4_RE?.test(embedded);
+      return embedded === "0.0.0.0" || PRIVATE_IPV4_RE?.test(embedded);
     }
     // Hex-only form — conservatively block it since we cannot safely
     // decode arbitrary hex quads inline.
     return true;
   }
 
-  if (addr === "localhost" || addr === "0?.0.0?.0") return true;
+  if (addr === "localhost" || addr === "0.0.0.0") return true;
   if (PRIVATE_IPV4_RE?.test(addr)) return true;
   if (PRIVATE_IPV6_RE?.test(addr)) return true;
   return false;
@@ -85,7 +85,7 @@ const safeDnsLookup: LookupFunction = (hostname, _options, callback) => {
         const _ssrfErr = Object?.assign(
           new Error(`SSRF blocked: ${entry?.address} is a reserved address`),
           { code: "ECONNREFUSED" },
-        ) as NodeJS?.ErrnoException;
+        ) as NodeJS.ErrnoException;
         callback(ssrfErr, "", entry?.family);
         return;
       }
@@ -357,7 +357,7 @@ export class ContentAnalysisService {
   private async ensureInitialized(): Promise<void> {
     if (this?.ready) return;
     if (!this?.initializationPromise) {
-      this?.initializationPromise = this?.initializeModels();
+      this.initializationPromise = this?.initializeModels();
     }
     await this?.initializationPromise;
   }
@@ -367,7 +367,7 @@ export class ContentAnalysisService {
    */
   private async initializeModels(): Promise<void> {
     if (this?.modelsInitialized) {
-      this?.ready = true;
+      this.ready = true;
       return;
     }
 
@@ -377,25 +377,25 @@ export class ContentAnalysisService {
       logger?.info(
         "[ContentAnalysis] Skipping model initialization - TensorFlow not available",
       );
-      this?.modelsInitialized = true;
-      this?.ready = true;
+      this.modelsInitialized = true;
+      this.ready = true;
       return;
     }
 
     try {
-      this?.imageClassificationModel = this?.buildImageClassificationModel();
-      this?.faceDetectionModel = this?.buildFaceDetectionModel();
-      this?.textDetectionModel = this?.buildTextDetectionModel();
-      this?.modelsInitialized = true;
-      this?.ready = true;
+      this.imageClassificationModel = this?.buildImageClassificationModel();
+      this.faceDetectionModel = this?.buildFaceDetectionModel();
+      this.textDetectionModel = this?.buildTextDetectionModel();
+      this.modelsInitialized = true;
+      this.ready = true;
       logger?.info("[ContentAnalysis] Custom models initialized successfully");
     } catch (error) {
       logger?.warn(
         { err: error },
         "[ContentAnalysis] Model initialization error:",
       );
-      this?.modelsInitialized = true;
-      this?.ready = true;
+      this.modelsInitialized = true;
+      this.ready = true;
     }
   }
 
@@ -422,7 +422,7 @@ export class ContentAnalysisService {
         tf?.layers.maxPooling2d({ poolSize: 2 }),
         tf?.layers.flatten(),
         tf?.layers.dense({ units: 128, activation: "relu" }),
-        tf?.layers.dropout({ rate: 0?.5 }),
+        tf?.layers.dropout({ rate: 0.5 }),
         tf?.layers.dense({ units: 10, activation: "softmax" }),
       ],
     });
@@ -550,7 +550,7 @@ export class ContentAnalysisService {
           scene: visualFeatures?.scene,
         },
         branding: {
-          hasLogo: textAnalysis?.hasText && composition?.complexity > 0?.6,
+          hasLogo: textAnalysis?.hasText && composition?.complexity > 0.6,
           brandingStrength: visualFeatures?.brandingStrength,
           professionalQuality: visualFeatures?.professionalQuality,
         },
@@ -568,7 +568,7 @@ export class ContentAnalysisService {
           ),
         },
         vibe: this?.calculateVibe(colors, composition, visualFeatures),
-        confidence: 0?.85,
+        confidence: 0.85,
       };
 
       return result;
@@ -749,7 +749,7 @@ export class ContentAnalysisService {
       return {
         layout: "centered",
         visualWeight: "balanced",
-        complexity: 0?.6,
+        complexity: 0.6,
       };
     }
 
@@ -797,8 +797,8 @@ export class ContentAnalysisService {
 
       let layout: "centered" | "rule-of-thirds" | "symmetric" | "dynamic" =
         "centered";
-      if (centerDensity > maxDensity * 0?.8) layout = "centered";
-      else if (Math?.abs(regionDensities[0][0] - regionDensities[2][2]) < 0?.1)
+      if (centerDensity > maxDensity * 0.8) layout = "centered";
+      else if (Math?.abs(regionDensities[0][0] - regionDensities[2][2]) < 0.1)
         layout = "symmetric";
       else if (
         regionDensities[1][0] > avgDensity ||
@@ -835,10 +835,10 @@ export class ContentAnalysisService {
         | "heavy-bottom"
         | "left"
         | "right" = "balanced";
-      if (topHalf > bottomHalf * 1?.3) visualWeight = "heavy-top";
-      else if (bottomHalf > topHalf * 1?.3) visualWeight = "heavy-bottom";
-      else if (leftHalf > rightHalf * 1?.3) visualWeight = "left";
-      else if (rightHalf > leftHalf * 1?.3) visualWeight = "right";
+      if (topHalf > bottomHalf * 1.3) visualWeight = "heavy-top";
+      else if (bottomHalf > topHalf * 1.3) visualWeight = "heavy-bottom";
+      else if (leftHalf > rightHalf * 1.3) visualWeight = "left";
+      else if (rightHalf > leftHalf * 1.3) visualWeight = "right";
 
       // Calculate complexity (edge density)
       const _complexity = Math?.min(1, avgDensity * 2);
@@ -849,7 +849,7 @@ export class ContentAnalysisService {
       return {
         layout: "centered",
         visualWeight: "balanced",
-        complexity: 0?.6,
+        complexity: 0.6,
       };
     }
   }
@@ -878,7 +878,7 @@ export class ContentAnalysisService {
 
       const _imageTensor = tf
         .tensor3d(new Uint8Array(processed), [224, 224, 3])
-        .div(255?.0)
+        .div(255.0)
         .expandDims(0);
 
       const _prediction = this?.faceDetectionModel.predict(imageTensor) as Record<
@@ -890,7 +890,7 @@ export class ContentAnalysisService {
       imageTensor?.dispose();
       prediction?.dispose();
 
-      const _hasFaces = hasFacesProbability > 0?.5;
+      const _hasFaces = hasFacesProbability > 0.5;
       const _count = hasFaces ? Math?.ceil(hasFacesProbability * 2) : 0;
 
       return { hasFaces, count };
@@ -931,12 +931,12 @@ export class ContentAnalysisService {
       }
 
       const _textDensity = textPixels / processed?.length;
-      const _hasText = textDensity > 0?.1;
+      const _hasText = textDensity > 0.1;
 
       let amount: "none" | "minimal" | "moderate" | "heavy" = "none";
-      if (textDensity > 0?.3) amount = "heavy";
-      else if (textDensity > 0?.2) amount = "moderate";
-      else if (textDensity > 0?.1) amount = "minimal";
+      if (textDensity > 0.3) amount = "heavy";
+      else if (textDensity > 0.2) amount = "moderate";
+      else if (textDensity > 0.1) amount = "minimal";
 
       return { hasText, amount };
     } catch (error) {
@@ -961,8 +961,8 @@ export class ContentAnalysisService {
         mainSubject: "content",
         objects: [],
         scene: "unknown",
-        brandingStrength: 0?.5,
-        professionalQuality: 0?.7,
+        brandingStrength: 0.5,
+        professionalQuality: 0.7,
       };
     }
 
@@ -971,7 +971,7 @@ export class ContentAnalysisService {
       const _metadata = await sharpInstance(imageBuffer).metadata();
 
       const _professionalQuality = Math?.min(1, (metadata?.width || 1000) / 1000);
-      const _brandingStrength = (metadata?.density || 72) > 100 ? 0?.8 : 0?.5;
+      const _brandingStrength = (metadata?.density || 72) > 100 ? 0.8 : 0.5;
 
       return {
         mainSubject: "promotional content",
@@ -986,8 +986,8 @@ export class ContentAnalysisService {
         mainSubject: "content",
         objects: [],
         scene: "unknown",
-        brandingStrength: 0?.5,
-        professionalQuality: 0?.7,
+        brandingStrength: 0.5,
+        professionalQuality: 0.7,
       };
     }
   }
@@ -1000,16 +1000,16 @@ export class ContentAnalysisService {
     composition: Record<string, unknown>,
     faces: Record<string, unknown>,
   ): number {
-    let score = 0?.5;
+    let score = 0.5;
 
     // Vibrant colors grab more attention
-    if (colors?.mood === "vibrant") score += 0?.2;
+    if (colors?.mood === "vibrant") score += 0.2;
 
     // Faces are highly attention-grabbing
-    if (faces?.hasFaces) score += 0?.2;
+    if (faces?.hasFaces) score += 0.2;
 
     // Dynamic composition is more engaging
-    if (composition?.layout === "dynamic") score += 0?.1;
+    if (composition?.layout === "dynamic") score += 0.1;
 
     return Math?.min(1, score);
   }
@@ -1034,11 +1034,11 @@ export class ContentAnalysisService {
     composition: Record<string, unknown>,
     features: Record<string, unknown>,
   ): number {
-    let score = 0?.5;
+    let score = 0.5;
 
-    if (colors?.mood === "vibrant") score += 0?.15;
-    if (composition?.complexity > 0?.6) score += 0?.15;
-    if (features?.professionalQuality > 0?.8) score += 0?.2;
+    if (colors?.mood === "vibrant") score += 0.15;
+    if (composition?.complexity > 0.6) score += 0.15;
+    if (features?.professionalQuality > 0.8) score += 0.2;
 
     return Math?.min(1, score);
   }
@@ -1057,9 +1057,9 @@ export class ContentAnalysisService {
     else if (colors?.mood === "dark") vibes?.push("moody", "dramatic");
     else if (colors?.mood === "light") vibes?.push("airy", "fresh");
 
-    if (features?.professionalQuality > 0?.8) vibes?.push("professional");
+    if (features?.professionalQuality > 0.8) vibes?.push("professional");
     if (composition?.layout === "symmetric") vibes?.push("balanced");
-    if (composition?.complexity > 0?.7) vibes?.push("complex", "detailed");
+    if (composition?.complexity > 0.7) vibes?.push("complex", "detailed");
 
     return vibes?.slice(0, 5);
   }
@@ -1093,8 +1093,8 @@ export class ContentAnalysisService {
         audio: {
           hasMusic: true,
           hasSpeech: duration > 10,
-          musicEnergy: duration < 30 ? 0?.8 : 0?.6,
-          audioQuality: 0?.8,
+          musicEnergy: duration < 30 ? 0.8 : 0.6,
+          audioQuality: 0.8,
         },
         visual: {
           colors: {
@@ -1102,15 +1102,15 @@ export class ContentAnalysisService {
             palette: ["#FF6B6B", "#4ECDC4", "#45B7D1"],
             mood: "vibrant",
           },
-          quality: 0?.85,
+          quality: 0.85,
           lighting: "bright",
         },
         engagement: {
-          hookStrength: duration < 60 ? 0?.8 : 0?.6,
+          hookStrength: duration < 60 ? 0.8 : 0.6,
           retention: {
-            first5Seconds: 0?.9,
-            first30Seconds: 0?.7,
-            overall: 0?.6,
+            first5Seconds: 0.9,
+            first30Seconds: 0.7,
+            overall: 0.6,
           },
           callToActionPresence: duration > 15,
         },
@@ -1120,8 +1120,8 @@ export class ContentAnalysisService {
           peoplePresent: duration > 5,
           brandingVisible: duration > 10,
         },
-        viralPotential: duration < 60 ? 0?.7 : 0?.5,
-        confidence: 0?.75,
+        viralPotential: duration < 60 ? 0.7 : 0.5,
+        confidence: 0.75,
       };
 
       return result;
@@ -1150,26 +1150,26 @@ export class ContentAnalysisService {
           key: metadata?.key || "C",
           mode: metadata?.mode || "major",
           genre: metadata?.genre || ["pop", "electronic"],
-          energy: metadata?.energy || 0?.7,
-          danceability: metadata?.danceability || 0?.8,
-          valence: metadata?.valence || 0?.6,
-          acousticness: metadata?.acousticness || 0?.3,
+          energy: metadata?.energy || 0.7,
+          danceability: metadata?.danceability || 0.8,
+          valence: metadata?.valence || 0.6,
+          acousticness: metadata?.acousticness || 0.3,
         },
         production: {
-          quality: 0?.85,
+          quality: 0.85,
           mastered: true,
           dynamicRange: 8,
-          clarity: 0?.9,
+          clarity: 0.9,
         },
         vocals: {
           present: true,
-          prominence: 0?.7,
+          prominence: 0.7,
           language: "en",
           deliveryStyle: "melodic",
         },
         mood: ["energetic", "uplifting", "catchy"],
-        marketability: 0?.75,
-        confidence: 0?.8,
+        marketability: 0.75,
+        confidence: 0.8,
       };
 
       return result;
@@ -1192,7 +1192,7 @@ export class ContentAnalysisService {
         maxRedirects: 0,
         ...SAFE_AXIOS_AGENTS,
         headers: {
-          "User-Agent": "Mozilla/5?.0 (compatible; MaxBooster/1?.0)",
+          "User-Agent": "Mozilla/5.0 (compatible; MaxBooster/1.0)",
         },
       });
 
@@ -1281,20 +1281,20 @@ export class ContentAnalysisService {
         layout: isSinglePage ? "single-page" : "multi-section",
         colors,
         colorScheme: "complementary",
-        visualHierarchy: ctaCount > 0 ? 0?.8 : 0?.6,
+        visualHierarchy: ctaCount > 0 ? 0.8 : 0.6,
       },
       content: {
         headline,
         valueProposition: "AI-powered tools for independent artists",
         ctaCount,
-        ctaClarity: ctaCount > 0 ? 0?.8 : 0?.4,
+        ctaClarity: ctaCount > 0 ? 0.8 : 0.4,
         socialProof,
         trustSignals,
       },
       ux: {
         loadSpeed: "fast",
         mobileOptimized,
-        navigationClarity: isSinglePage ? 0?.9 : 0?.7,
+        navigationClarity: isSinglePage ? 0.9 : 0.7,
         frictionPoints: [],
       },
       conversion: {
@@ -1303,17 +1303,17 @@ export class ContentAnalysisService {
         scarcity,
         guarantees: html?.toLowerCase().includes("guarantee"),
         conversionOptimization:
-          (ctaCount > 0 ? 0?.3 : 0) +
-          (socialProof ? 0?.2 : 0) +
-          (urgency ? 0?.1 : 0) +
-          0?.4,
+          (ctaCount > 0 ? 0.3 : 0) +
+          (socialProof ? 0.2 : 0) +
+          (urgency ? 0.1 : 0) +
+          0.4,
       },
       branding: {
         consistent: true,
         professional: html?.includes("logo") || html?.includes("brand"),
-        memorable: 0?.7,
+        memorable: 0.7,
       },
-      confidence: 0?.75,
+      confidence: 0.75,
     };
   }
 
@@ -1405,7 +1405,7 @@ export class ContentAnalysisService {
           sentiment: "positive",
           emotion: ["excited", "enthusiastic"],
           formality: text?.includes("!") ? "casual" : "professional",
-          energy: (text?.match(/!+/g) || []).length > 0 ? 0?.8 : 0?.5,
+          energy: (text?.match(/!+/g) || []).length > 0 ? 0.8 : 0.5,
         },
         content: {
           mainTopics: [],
@@ -1413,7 +1413,7 @@ export class ContentAnalysisService {
           hashtagsUsed: hashtags,
           mentionsUsed: mentions,
           hasCallToAction,
-          callToActionStrength: hasCallToAction ? 0?.7 : 0?.2,
+          callToActionStrength: hasCallToAction ? 0.7 : 0.2,
         },
         engagement: {
           questionEngagement: text?.includes("?"),
@@ -1421,14 +1421,14 @@ export class ContentAnalysisService {
             text?.toLowerCase().includes("you") ||
             text?.toLowerCase().includes("your"),
           storytelling: sentences?.length > 3,
-          viralPotential: hashtags?.length > 2 && text?.includes("!") ? 0?.7 : 0?.4,
+          viralPotential: hashtags?.length > 2 && text?.includes("!") ? 0.7 : 0.4,
         },
         quality: {
           clarity: readability / 100,
-          authenticity: text?.length > 50 ? 0?.7 : 0?.5,
-          persuasiveness: hasCallToAction ? 0?.7 : 0?.4,
+          authenticity: text?.length > 50 ? 0.7 : 0.5,
+          persuasiveness: hasCallToAction ? 0.7 : 0.4,
         },
-        confidence: 0?.8,
+        confidence: 0.8,
       };
 
       return result;
@@ -1448,7 +1448,7 @@ export class ContentAnalysisService {
       composition: {
         layout: "centered",
         visualWeight: "balanced",
-        complexity: 0?.6,
+        complexity: 0.6,
       },
       content: {
         hasFaces: false,
@@ -1461,16 +1461,16 @@ export class ContentAnalysisService {
       },
       branding: {
         hasLogo: true,
-        brandingStrength: 0?.7,
-        professionalQuality: 0?.8,
+        brandingStrength: 0.7,
+        professionalQuality: 0.8,
       },
       engagement: {
-        attentionGrabbing: 0?.7,
+        attentionGrabbing: 0.7,
         emotionalImpact: "medium",
-        shareability: 0?.6,
+        shareability: 0.6,
       },
       vibe: ["professional", "modern", "creative"],
-      confidence: 0?.5,
+      confidence: 0.5,
     };
   }
 
@@ -1480,13 +1480,13 @@ export class ContentAnalysisService {
         layout: "single-page",
         colors: ["#1DB954", "#191414"],
         colorScheme: "complementary",
-        visualHierarchy: 0?.7,
+        visualHierarchy: 0.7,
       },
       content: {
         headline: "Boost Your Music Career",
         valueProposition: "AI-powered tools for independent artists",
         ctaCount: 2,
-        ctaClarity: 0?.8,
+        ctaClarity: 0.8,
         socialProof: html?.includes("testimonial") || html?.includes("review"),
         trustSignals: ["secure", "trusted"],
       },
@@ -1494,7 +1494,7 @@ export class ContentAnalysisService {
         loadSpeed: "fast",
         mobileOptimized:
           html?.includes("viewport") || html?.includes("responsive"),
-        navigationClarity: 0?.7,
+        navigationClarity: 0.7,
         frictionPoints: [],
       },
       conversion: {
@@ -1506,14 +1506,14 @@ export class ContentAnalysisService {
           html?.toLowerCase().includes("spots") ||
           html?.toLowerCase().includes("exclusive"),
         guarantees: html?.toLowerCase().includes("guarantee"),
-        conversionOptimization: 0?.7,
+        conversionOptimization: 0.7,
       },
       branding: {
         consistent: true,
         professional: true,
-        memorable: 0?.7,
+        memorable: 0.7,
       },
-      confidence: 0?.6,
+      confidence: 0.6,
     };
   }
 }

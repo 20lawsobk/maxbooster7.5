@@ -1,9 +1,9 @@
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   getRedisClient,
   RedisClientType,
-} from "../lib/redisConnectionFactory?.js";
+} from "../lib/redisConnectionFactory.js";
 
 export interface ContentData {
   id?: string;
@@ -283,71 +283,71 @@ class ViralScoringService {
   // Each weight reflects how much that factor influences reach for MUSIC artists specifically
   private readonly platformWeights: Record<string, Record<string, number>> = {
     tiktok: {
-      hook: 0?.28, // Watch time starts here — critical
-      audio: 0?.24, // Audio/music is king on TikTok
-      trend: 0?.22, // Sound/trend participation huge boost
-      engagement: 0?.15, // Comments/shares in first hour
-      hashtags: 0?.11, // Lower than most think
+      hook: 0.28, // Watch time starts here — critical
+      audio: 0.24, // Audio/music is king on TikTok
+      trend: 0.22, // Sound/trend participation huge boost
+      engagement: 0.15, // Comments/shares in first hour
+      hashtags: 0.11, // Lower than most think
     },
     instagram: {
-      visual: 0?.28, // Aesthetic/quality drives saves
-      hashtags: 0?.18, // Still matters for Reels discovery
-      hook: 0?.22, // First frame critical for Reels
-      engagement: 0?.18, // Saves are weighted most by IG
-      trend: 0?.14, // Audio trend participation
+      visual: 0.28, // Aesthetic/quality drives saves
+      hashtags: 0.18, // Still matters for Reels discovery
+      hook: 0.22, // First frame critical for Reels
+      engagement: 0.18, // Saves are weighted most by IG
+      trend: 0.14, // Audio trend participation
     },
     youtube: {
-      hook: 0?.3, // CTR from thumbnail/title + hook
-      content: 0?.25, // Watch time / retention curve
-      seo: 0?.2, // Title/description keywords
-      engagement: 0?.15, // Likes + comments velocity
-      trend: 0?.1, // Trending topic relevance
+      hook: 0.3, // CTR from thumbnail/title + hook
+      content: 0.25, // Watch time / retention curve
+      seo: 0.2, // Title/description keywords
+      engagement: 0.15, // Likes + comments velocity
+      trend: 0.1, // Trending topic relevance
     },
     twitter: {
-      hook: 0?.35, // First tweet must stop the scroll
-      trend: 0?.25, // Trending topics / X algorithm boost
-      engagement: 0?.22, // Quote tweets > RTs > likes
-      hashtags: 0?.1, // X: almost meaningless now
-      timing: 0?.08, // Recency matters on Twitter
+      hook: 0.35, // First tweet must stop the scroll
+      trend: 0.25, // Trending topics / X algorithm boost
+      engagement: 0.22, // Quote tweets > RTs > likes
+      hashtags: 0.1, // X: almost meaningless now
+      timing: 0.08, // Recency matters on Twitter
     },
     facebook: {
-      visual: 0?.28,
-      engagement: 0?.25,
-      hook: 0?.22,
-      trend: 0?.15,
-      hashtags: 0?.1,
+      visual: 0.28,
+      engagement: 0.25,
+      hook: 0.22,
+      trend: 0.15,
+      hashtags: 0.1,
     },
     linkedin: {
-      hook: 0?.3,
-      engagement: 0?.28,
-      content: 0?.22,
-      trend: 0?.12,
-      hashtags: 0?.08,
+      hook: 0.3,
+      engagement: 0.28,
+      content: 0.22,
+      trend: 0.12,
+      hashtags: 0.08,
     },
   };
 
   // Music genre viral potential — hip-hop/trap/afrobeats lead in 2024-2026
   private readonly genreViralMultipliers: Record<string, number> = {
-    "hip-hop": 1?.3,
-    trap: 1?.28,
-    afrobeats: 1?.32,
-    afropop: 1?.28,
-    drill: 1?.25,
-    "r&b": 1?.22,
-    rnb: 1?.22,
-    pop: 1?.2,
-    electronic: 1?.15,
-    edm: 1?.12,
-    dancehall: 1?.18,
-    reggaeton: 1?.18,
-    latin: 1?.16,
-    soul: 1?.1,
-    jazz: 1?.05,
-    rock: 1?.08,
-    country: 1?.1,
-    classical: 0?.9,
-    "lo-fi": 1?.12,
-    ambient: 0?.95,
+    "hip-hop": 1.3,
+    trap: 1.28,
+    afrobeats: 1.32,
+    afropop: 1.28,
+    drill: 1.25,
+    "r&b": 1.22,
+    rnb: 1.22,
+    pop: 1.2,
+    electronic: 1.15,
+    edm: 1.12,
+    dancehall: 1.18,
+    reggaeton: 1.18,
+    latin: 1.16,
+    soul: 1.1,
+    jazz: 1.05,
+    rock: 1.08,
+    country: 1.1,
+    classical: 0.9,
+    "lo-fi": 1.12,
+    ambient: 0.95,
   };
 
   // Optimal video durations per platform (seconds) — fine-tuned
@@ -374,7 +374,7 @@ class ViralScoringService {
 
   private async initializeTrends(): Promise<void> {
     // Fine-tuned trend scores for music artist content — reflect 2024-2026 virality data
-    this?.trendingTopics = [
+    this.trendingTopics = [
       {
         topic: "new release",
         score: 95,
@@ -486,70 +486,70 @@ class ViralScoringService {
         hashtags: ["#songwriter", "#writingprocess", "#songwriting", "#lyrics"],
       },
     ];
-    this?.lastTrendUpdate = new Date();
+    this.lastTrendUpdate = new Date();
     logger?.info("✅ Viral scoring trends initialized");
   }
 
   private async initializeViralPatterns(): Promise<void> {
     // Fine-tuned viral content structures — ordered by empirical success rate
-    this?.viralPatterns = [
+    this.viralPatterns = [
       {
         pattern: "trend-participation",
-        weight: 0?.95,
+        weight: 0.95,
         platforms: ["tiktok", "instagram"],
         examples: ["Using trending sounds/challenges before peak"],
       },
       {
         pattern: "hook-story-cta",
-        weight: 0?.92,
+        weight: 0.92,
         platforms: ["tiktok", "instagram", "youtube"],
         examples: ["3-second hook → relatable story → clear CTA"],
       },
       {
         pattern: "before-after",
-        weight: 0?.9,
+        weight: 0.9,
         platforms: ["instagram", "youtube", "tiktok"],
         examples: ["Career/music before vs after transformation"],
       },
       {
         pattern: "emotional-journey",
-        weight: 0?.89,
+        weight: 0.89,
         platforms: ["instagram", "youtube"],
         examples: ["Struggle to success narrative with music"],
       },
       {
         pattern: "controversy-opinion",
-        weight: 0?.87,
+        weight: 0.87,
         platforms: ["twitter", "youtube"],
         examples: ["Hot take on music industry, labels, streaming pay"],
       },
       {
         pattern: "tutorial-quick",
-        weight: 0?.85,
+        weight: 0.85,
         platforms: ["tiktok", "youtube"],
         examples: ["Quick how-to: mixing, promotion, getting placements"],
       },
       {
         pattern: "raw-authentic",
-        weight: 0?.88,
+        weight: 0.88,
         platforms: ["tiktok", "instagram"],
         examples: ["Unfiltered studio moments, failed takes, real talk"],
       },
       {
         pattern: "collab-reveal",
-        weight: 0?.83,
+        weight: 0.83,
         platforms: ["tiktok", "instagram", "youtube"],
         examples: ["Surprise collab drop or feature reveal"],
       },
       {
         pattern: "challenge-creation",
-        weight: 0?.8,
+        weight: 0.8,
         platforms: ["tiktok"],
         examples: ["Original dance/lyric challenge around a single"],
       },
       {
         pattern: "value-thread",
-        weight: 0?.82,
+        weight: 0.82,
         platforms: ["twitter", "linkedin"],
         examples: ["10 things I learned after 1M streams"],
       },
@@ -748,7 +748,7 @@ class ViralScoringService {
     }
 
     // Diminishing returns on trigger stacking
-    if (triggersFound >= 1) score += Math?.min(35, totalWeight * 1?.5);
+    if (triggersFound >= 1) score += Math?.min(35, totalWeight * 1.5);
     if (triggersFound >= 3) score += 8; // Bonus for emotional density
     if (triggersFound >= 5) score += 5; // Slight additional bonus
 
@@ -789,7 +789,7 @@ class ViralScoringService {
 
     // ── Emotional Arc Detection (+15 max) ──────────────────────────────────────
     // Hook → Context → Tension → Resolution arc in body dramatically boosts
-    // watch/read time (research: 2?.8x higher completion rate vs flat content)
+    // watch/read time (research: 2.8x higher completion rate vs flat content)
     const _hasTension =
       /almost (quit|gave up|didn't)|wasn't sure|hard (to|day|time|stretch)|darkest|second?.guess|going to walk away/i?.test(
         lowerCaption,
@@ -832,9 +832,9 @@ class ViralScoringService {
       ).length;
 
       if (matchCount === topicWords?.length) {
-        score += trend?.score * 0?.28; // Full topic match
+        score += trend?.score * 0.28; // Full topic match
       } else if (matchCount >= Math?.ceil(topicWords?.length / 2)) {
-        score += trend?.score * 0?.14; // Partial match
+        score += trend?.score * 0.14; // Partial match
       }
 
       // Hashtag matching — exact match bonus
@@ -846,7 +846,7 @@ class ViralScoringService {
               h?.replace("#", "") === trendHashtag?.replace("#", ""),
           )
         ) {
-          score += trend?.score * 0?.12;
+          score += trend?.score * 0.12;
           break; // Only count once per trend
         }
       }
@@ -855,7 +855,7 @@ class ViralScoringService {
     // Genre-based viral potential multiplier
     if (content?.musicGenre) {
       const _genreKey = content?.musicGenre.toLowerCase();
-      const _genreMultiplier = this?.genreViralMultipliers[genreKey] || 1?.0;
+      const _genreMultiplier = this?.genreViralMultipliers[genreKey] || 1.0;
       score *= genreMultiplier;
     }
 
@@ -1001,9 +1001,9 @@ class ViralScoringService {
           );
           const _peakBonus = Math?.round(15 * (1 - distFromPeak / maxDist));
           score += Math?.max(5, peakBonus);
-        } else if (content?.duration < optimal?.min * 0?.7) {
+        } else if (content?.duration < optimal?.min * 0.7) {
           score -= 10; // Too short for meaningful content
-        } else if (content?.duration > optimal?.max * 1?.5) {
+        } else if (content?.duration > optimal?.max * 1.5) {
           score -= 8; // Too long risks drop-off
         }
       }
@@ -1024,7 +1024,7 @@ class ViralScoringService {
     if (content?.musicGenre) {
       const _genreKey = content?.musicGenre.toLowerCase();
       const _genreBonus =
-        ((this?.genreViralMultipliers[genreKey] || 1?.0) - 1?.0) * 30;
+        ((this?.genreViralMultipliers[genreKey] || 1.0) - 1.0) * 30;
       score += Math?.max(10, genreBonus + 10); // Minimum 10 bonus for any genre
     }
 
@@ -1054,11 +1054,11 @@ class ViralScoringService {
   ): ViralScore["platformScores"] {
     const _calculateForPlatform = (platform: string): number => {
       const _weights = this?.platformWeights[platform] || {
-        hook: 0?.25,
-        trend: 0?.2,
-        engagement: 0?.2,
-        hashtags: 0?.15,
-        visual: 0?.2,
+        hook: 0.25,
+        trend: 0.2,
+        engagement: 0.2,
+        hashtags: 0.15,
+        visual: 0.2,
       };
 
       let score = 0;
@@ -1149,38 +1149,38 @@ class ViralScoringService {
     content: ContentData,
   ): number {
     const _weights = this?.platformWeights[platform] || {
-      hook: 0?.22,
-      trend: 0?.18,
-      engagement: 0?.18,
-      hashtags: 0?.14,
-      visual: 0?.14,
-      audio: 0?.14,
+      hook: 0.22,
+      trend: 0.18,
+      engagement: 0.18,
+      hashtags: 0.14,
+      visual: 0.14,
+      audio: 0.14,
     };
 
     let score = 0;
-    score += factors?.hookStrength * (weights?.hook || 0?.22);
-    score += factors?.emotionalResonance * (weights?.engagement || 0?.18);
-    score += factors?.trendAlignment * (weights?.trend || 0?.18);
-    score += factors?.hashtagOptimization * (weights?.hashtags || 0?.14);
-    score += factors?.visualAppeal * (weights?.visual || 0?.14);
-    score += factors?.audioQuality * (weights?.audio || 0?.14);
+    score += factors?.hookStrength * (weights?.hook || 0.22);
+    score += factors?.emotionalResonance * (weights?.engagement || 0.18);
+    score += factors?.trendAlignment * (weights?.trend || 0.18);
+    score += factors?.hashtagOptimization * (weights?.hashtags || 0.14);
+    score += factors?.visualAppeal * (weights?.visual || 0.14);
+    score += factors?.audioQuality * (weights?.audio || 0.14);
 
     // ── Specificity bonus (subtle adjustment — rewards concrete content) ──────
     const _specificity = this?.scoreSpecificity(content?.caption);
-    const _specificityBonus = (specificity - 50) * 0?.06; // ±3 points max
+    const _specificityBonus = (specificity - 50) * 0.06; // ±3 points max
     score += specificityBonus;
 
     // ── Content formula detection bonus ───────────────────────────────────────
     const _lowerCaption = content?.caption.toLowerCase();
-    if (/nobody (told|talks|shows)/i?.test(lowerCaption)) score += 2?.5; // Curiosity gap
+    if (/nobody (told|talks|shows)/i?.test(lowerCaption)) score += 2.5; // Curiosity gap
     if (/from .+ to|before.*after|used to.*now/i?.test(lowerCaption)) score += 2; // Before/after
     if (/pov:|tell me why|not me /i?.test(lowerCaption)) score += 2; // Relatable moment
 
     // ── Genre multiplier applied to final score (subtle — avoids inflation) ──
     if (content?.musicGenre) {
       const _multiplier =
-        this?.genreViralMultipliers[content?.musicGenre.toLowerCase()] || 1?.0;
-      score *= 1 + (multiplier - 1) * 0?.3; // 30% of genre boost applied to overall
+        this?.genreViralMultipliers[content?.musicGenre.toLowerCase()] || 1.0;
+      score *= 1 + (multiplier - 1) * 0.3; // 30% of genre boost applied to overall
     }
 
     return Math?.min(100, Math?.max(0, Math?.round(score)));
@@ -1190,26 +1190,26 @@ class ViralScoringService {
     content: ContentData,
     factors: ViralScore["factors"],
   ): number {
-    let confidence = 0?.45;
+    let confidence = 0.45;
 
     // Data completeness boosts confidence
-    if (content?.caption && content?.caption.length > 80) confidence += 0?.12;
-    else if (content?.caption && content?.caption.length > 30) confidence += 0?.06;
-    if (content?.hashtags.length >= 3) confidence += 0?.1;
-    if (content?.mediaUrl) confidence += 0?.1;
-    if (content?.targetAudience) confidence += 0?.08;
-    if (content?.musicGenre) confidence += 0?.07;
-    if (content?.duration) confidence += 0?.05;
-    if (content?.scheduledTime) confidence += 0?.05;
+    if (content?.caption && content?.caption.length > 80) confidence += 0.12;
+    else if (content?.caption && content?.caption.length > 30) confidence += 0.06;
+    if (content?.hashtags.length >= 3) confidence += 0.1;
+    if (content?.mediaUrl) confidence += 0.1;
+    if (content?.targetAudience) confidence += 0.08;
+    if (content?.musicGenre) confidence += 0.07;
+    if (content?.duration) confidence += 0.05;
+    if (content?.scheduledTime) confidence += 0.05;
 
     // High average factor score increases confidence
     const _avgFactor =
       Object?.values(factors).reduce((a, b) => a + b, 0) /
       Object?.values(factors).length;
-    if (avgFactor > 70) confidence += 0?.1;
-    else if (avgFactor > 55) confidence += 0?.06;
+    if (avgFactor > 70) confidence += 0.1;
+    else if (avgFactor > 55) confidence += 0.06;
 
-    return Math?.min(0?.98, confidence);
+    return Math?.min(0.98, confidence);
   }
 
   private predictEngagement(
@@ -1235,23 +1235,23 @@ class ViralScoringService {
     // Score multiplier: exponential at high scores (viral threshold)
     let scoreMultiplier = overallScore / 50;
     if (overallScore >= 85)
-      scoreMultiplier *= 2?.5; // Viral zone: exponential growth
+      scoreMultiplier *= 2.5; // Viral zone: exponential growth
     else if (overallScore >= 75)
-      scoreMultiplier *= 1?.6; // High-performing
+      scoreMultiplier *= 1.6; // High-performing
     else if (overallScore >= 65)
-      scoreMultiplier *= 1?.2; // Good
-    else if (overallScore < 40) scoreMultiplier *= 0?.5; // Underperforming
+      scoreMultiplier *= 1.2; // Good
+    else if (overallScore < 40) scoreMultiplier *= 0.5; // Underperforming
 
     // Genre multiplier on predictions
     if (content?.musicGenre) {
       const _genreBoost =
-        this?.genreViralMultipliers[content?.musicGenre.toLowerCase()] || 1?.0;
+        this?.genreViralMultipliers[content?.musicGenre.toLowerCase()] || 1.0;
       scoreMultiplier *= genreBoost;
     }
 
     // Variance widens at higher scores (viral content is harder to predict)
     const _variance =
-      overallScore >= 80 ? 0?.5 : overallScore >= 60 ? 0?.35 : 0?.25;
+      overallScore >= 80 ? 0.5 : overallScore >= 60 ? 0.35 : 0.25;
 
     return {
       likes: {
@@ -1365,7 +1365,7 @@ class ViralScoringService {
         suggestion:
           "Rewrite your opening to maximize curiosity gap or emotional investment",
         expectedImpact:
-          18 + Math?.round((75 - score?.factors.hookStrength) * 0?.35),
+          18 + Math?.round((75 - score?.factors.hookStrength) * 0.35),
         implementation:
           'Best formats: "The #1 mistake..." | "Nobody tells you..." | "How I went from X to Y..." | "POV: you..."',
       });
@@ -1378,7 +1378,7 @@ class ViralScoringService {
         priority: score?.factors.hashtagOptimization < 45 ? "high" : "medium",
         suggestion: "Restructure hashtag strategy for better discoverability",
         expectedImpact:
-          12 + Math?.round((75 - score?.factors.hashtagOptimization) * 0?.22),
+          12 + Math?.round((75 - score?.factors.hashtagOptimization) * 0.22),
         implementation:
           "Formula: 1-2 mega tags (#fyp/#viral) + 3-5 niche music tags + 1-2 community tags",
       });
@@ -1468,21 +1468,21 @@ class ViralScoringService {
     const _sortedVariants = [...scoredVariants].sort(
       (a, b) => b?.score.overall - a?.score.overall,
     );
-    comparison?.winner = sortedVariants[0].id;
+    comparison.winner = sortedVariants[0].id;
 
     const _topScore = sortedVariants[0].score?.overall;
     const _secondScore = sortedVariants[1]?.score?.overall || 0;
     const _scoreDifference = topScore - secondScore;
 
     if (scoreDifference < 8 && sortedVariants?.length > 1) {
-      comparison?.abTestRecommendation = {
+      comparison.abTestRecommendation = {
         shouldTest: true,
         testDuration: 48, // 48h gives statistically significant data
         sampleSize: 500, // 500 views per variant minimum
       };
-      comparison?.reasoning = `Variants are statistically close (${topScore} vs ${secondScore}). A/B test recommended — post both within 2 hours and compare 48h metrics.`;
+      comparison.reasoning = `Variants are statistically close (${topScore} vs ${secondScore}). A/B test recommended — post both within 2 hours and compare 48h metrics.`;
     } else {
-      comparison?.reasoning = `Variant ${comparison?.winner} has a clear advantage (+${scoreDifference} points). The stronger hook and ${sortedVariants[0].score?.factors.hookStrength > 70 ? "emotional resonance" : "trend alignment"} are the deciding factors.`;
+      comparison.reasoning = `Variant ${comparison?.winner} has a clear advantage (+${scoreDifference} points). The stronger hook and ${sortedVariants[0].score?.factors.hookStrength > 70 ? "emotional resonance" : "trend alignment"} are the deciding factors.`;
     }
 
     return comparison;

@@ -99,18 +99,18 @@ export function useBatchProgress(
   const _stopTimers = useCallback(() => {
     if (timerRef?.current) {
       clearInterval(timerRef?.current);
-      timerRef?.current = null;
+      timerRef.current = null;
     }
     if (pollingRef?.current) {
       clearInterval(pollingRef?.current);
-      pollingRef?.current = null;
+      pollingRef.current = null;
     }
   }, []);
 
   const _startElapsedTimer = useCallback(() => {
     if (timerRef?.current) return;
 
-    timerRef?.current = setInterval(() => {
+    timerRef.current = setInterval(() => {
       if (startTimeRef?.current) {
         const _elapsed = Date?.now() - startTimeRef?.current;
         setState((prev) => ({ ...prev, elapsedTime: elapsed }));
@@ -132,7 +132,7 @@ export function useBatchProgress(
   const _start = useCallback(
     (total: number, newJobId?: string) => {
       stopTimers();
-      startTimeRef?.current = Date?.now();
+      startTimeRef.current = Date?.now();
 
       const newState: BatchProgressState = {
         ...defaultState,
@@ -232,7 +232,7 @@ export function useBatchProgress(
 
   const _reset = useCallback(() => {
     stopTimers();
-    startTimeRef?.current = null;
+    startTimeRef.current = null;
     setJobId(undefined);
     setState(defaultState);
   }, [stopTimers]);
@@ -240,7 +240,7 @@ export function useBatchProgress(
   useEffect(() => {
     if (!jobId || state?.status !== "processing") return;
 
-    pollingRef?.current = setInterval(async () => {
+    pollingRef.current = setInterval(async () => {
       try {
         const _response = await apiRequest(
           "GET",
@@ -270,7 +270,7 @@ export function useBatchProgress(
     return () => {
       if (pollingRef?.current) {
         clearInterval(pollingRef?.current);
-        pollingRef?.current = null;
+        pollingRef.current = null;
       }
     };
   }, [jobId, state?.status, pollingInterval, stopTimers, update, onError]);
@@ -403,7 +403,7 @@ export function useSequentialBatchProgress<T>(
   const _processAll = useCallback(async () => {
     if (items?.length === 0) return;
 
-    abortRef?.current = false;
+    abortRef.current = false;
     progress?.start(items?.length);
 
     for (let i = 0; i < items?.length; i++) {
@@ -426,7 +426,7 @@ export function useSequentialBatchProgress<T>(
   }, [items, processItem, progress]);
 
   const _abort = useCallback(() => {
-    abortRef?.current = true;
+    abortRef.current = true;
     progress?.cancel();
   }, [progress]);
 

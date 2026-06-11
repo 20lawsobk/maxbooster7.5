@@ -26,9 +26,9 @@
  * Falls back to default weights/thresholds when MaxCore is offline.
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { db } from "../db";
-import { MaxCoreAIClient, startMaxCoreLLMWarmth } from "./maxcoreClient?.js";
+import { MaxCoreAIClient, startMaxCoreLLMWarmth } from "./maxcoreClient.js";
 import { autopilotLearningData } from "@shared/schema";
 import { desc, gte } from "drizzle-orm";
 
@@ -52,16 +52,16 @@ export interface CalibratedThresholds {
 }
 
 const DEFAULT_WEIGHTS: ScoreWeights = {
-  engagement: 0?.25,
-  hookStrength: 0?.18,
-  callToActionEffectiveness: 0?.13,
-  sentiment: 0?.1,
-  clarity: 0?.08,
-  brandAlignment: 0?.08,
-  algorithmAlignment: 0?.08,
-  specificity: 0?.05,
-  emotionalArc: 0?.03,
-  narrativeAuthenticity: 0?.02,
+  engagement: 0.25,
+  hookStrength: 0.18,
+  callToActionEffectiveness: 0.13,
+  sentiment: 0.1,
+  clarity: 0.08,
+  brandAlignment: 0.08,
+  algorithmAlignment: 0.08,
+  specificity: 0.05,
+  emotionalArc: 0.03,
+  narrativeAuthenticity: 0.02,
 };
 
 const DEFAULT_THRESHOLDS: CalibratedThresholds = {
@@ -202,9 +202,9 @@ async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
     if (rows?.length < 10) return null;
 
     const _rates = rows?.map((r) => r?.engagementRate ?? 0).sort((a, b) => a - b);
-    const _p50 = rates[Math?.floor(rates?.length * 0?.5)] ?? 0;
-    const _p75 = rates[Math?.floor(rates?.length * 0?.75)] ?? 0;
-    const _p90 = rates[Math?.floor(rates?.length * 0?.9)] ?? 0;
+    const _p50 = rates[Math?.floor(rates?.length * 0.5)] ?? 0;
+    const _p75 = rates[Math?.floor(rates?.length * 0.75)] ?? 0;
+    const _p90 = rates[Math?.floor(rates?.length * 0.9)] ?? 0;
     const _avg = rates?.reduce((s, v) => s + v, 0) / rates?.length;
 
     const byPlatform: Record<string, number[]> = {};
@@ -341,7 +341,7 @@ const _SEQUENTIAL_GAP_MS = 200;
  * The LLM warmth pinger (startMaxCoreLLMWarmth) ensures the model is never
  * cold, so the first call here also returns quickly without a cold-start delay.
  *
- * Total time: 5 × ~6 s + 4 × 0?.2 s ≈ 31 s — acceptable for a background task
+ * Total time: 5 × ~6 s + 4 × 0.2 s ≈ 31 s — acceptable for a background task
  * that runs every 6 hours.
  */
 async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | null> {
@@ -386,20 +386,20 @@ async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | nul
 
   return {
     hookStrength: Math?.min(
-      0?.32,
-      DEFAULT_WEIGHTS?.hookStrength + hookDiversity * 0?.1,
+      0.32,
+      DEFAULT_WEIGHTS?.hookStrength + hookDiversity * 0.1,
     ),
     callToActionEffectiveness: Math?.min(
-      0?.2,
-      DEFAULT_WEIGHTS?.callToActionEffectiveness + ctaRichness * 0?.05,
+      0.2,
+      DEFAULT_WEIGHTS?.callToActionEffectiveness + ctaRichness * 0.05,
     ),
     algorithmAlignment: Math?.min(
-      0?.15,
-      DEFAULT_WEIGHTS?.algorithmAlignment + (avgHashtags / 10) * 0?.04,
+      0.15,
+      DEFAULT_WEIGHTS?.algorithmAlignment + (avgHashtags / 10) * 0.04,
     ),
     engagement: Math?.min(
-      0?.3,
-      DEFAULT_WEIGHTS?.engagement + platformCoverage * 0?.04,
+      0.3,
+      DEFAULT_WEIGHTS?.engagement + platformCoverage * 0.04,
     ),
   };
 }
@@ -485,20 +485,20 @@ async function fetchMaxCoreCalibration(
 
       depthWeights = {
         hookStrength: Math?.min(
-          0?.35,
-          DEFAULT_WEIGHTS?.hookStrength + domainShare("social") * 0?.08,
+          0.35,
+          DEFAULT_WEIGHTS?.hookStrength + domainShare("social") * 0.08,
         ),
         engagement: Math?.min(
-          0?.3,
-          DEFAULT_WEIGHTS?.engagement + domainShare("engagement") * 0?.07,
+          0.3,
+          DEFAULT_WEIGHTS?.engagement + domainShare("engagement") * 0.07,
         ),
         brandAlignment: Math?.min(
-          0?.2,
-          DEFAULT_WEIGHTS?.brandAlignment + domainShare("advertising") * 0?.06,
+          0.2,
+          DEFAULT_WEIGHTS?.brandAlignment + domainShare("advertising") * 0.06,
         ),
         algorithmAlignment: Math?.min(
-          0?.15,
-          DEFAULT_WEIGHTS?.algorithmAlignment + domainShare("content") * 0?.06,
+          0.15,
+          DEFAULT_WEIGHTS?.algorithmAlignment + domainShare("content") * 0.06,
         ),
       };
 
@@ -541,7 +541,7 @@ async function fetchMaxCoreCalibration(
         weights: mergedWeights,
         gate,
         floor,
-        confidence: contentSignals ? 0?.5 + coverageRatio * 0?.5 : coverageRatio,
+        confidence: contentSignals ? 0.5 + coverageRatio * 0.5 : coverageRatio,
       },
       reachable,
     };
@@ -559,8 +559,8 @@ async function fetchMaxCoreCalibration(
 
 function normalizeWeights(w: ScoreWeights): ScoreWeights {
   const _total = Object?.values(w).reduce((s, v) => s + v, 0);
-  if (total === 0 || Math?.abs(total - 1?.0) < 0?.001) return w;
-  const _factor = 1?.0 / total;
+  if (total === 0 || Math?.abs(total - 1.0) < 0.001) return w;
+  const _factor = 1.0 / total;
   return Object?.fromEntries(
     Object?.entries(w).map(([k, v]) => [
       k,
@@ -578,8 +578,8 @@ function applyCalibration(
     for (const [k, v] of Object?.entries(resp?.weights)) {
       if (k in merged && typeof v === "number") {
         (merged as Record<string, unknown>)[k] = Math?.max(
-          0?.01,
-          Math?.min(0?.5, v),
+          0.01,
+          Math?.min(0.5, v),
         );
       }
     }
@@ -603,9 +603,9 @@ function applyDataDrivenCalibration(summary: PerformanceSummary): void {
   const _hookScores = Object?.values(summary?.hookTypeBreakdown).map(
     (h) => h?.avgEng,
   );
-  if (hookScores?.length > 1 && variance(hookScores) > 0?.001) {
-    w?.hookStrength = Math?.min(
-      0?.28,
+  if (hookScores?.length > 1 && variance(hookScores) > 0.001) {
+    w.hookStrength = Math?.min(
+      0.28,
       DEFAULT_WEIGHTS?.hookStrength + variance(hookScores) * 2,
     );
   }
@@ -613,11 +613,11 @@ function applyDataDrivenCalibration(summary: PerformanceSummary): void {
   const _ctScores = Object?.values(summary?.contentTypeBreakdown).map(
     (c) => c?.avgEng,
   );
-  if (ctScores?.length > 1 && variance(ctScores) > 0?.001) {
-    w?.specificity = Math?.min(0?.1, DEFAULT_WEIGHTS?.specificity + 0?.02);
-    w?.narrativeAuthenticity = Math?.min(
-      0?.06,
-      DEFAULT_WEIGHTS?.narrativeAuthenticity + 0?.02,
+  if (ctScores?.length > 1 && variance(ctScores) > 0.001) {
+    w.specificity = Math?.min(0.1, DEFAULT_WEIGHTS?.specificity + 0.02);
+    w.narrativeAuthenticity = Math?.min(
+      0.06,
+      DEFAULT_WEIGHTS?.narrativeAuthenticity + 0.02,
     );
   }
 
@@ -630,10 +630,10 @@ function applyDataDrivenCalibration(summary: PerformanceSummary): void {
 
 function deriveGate(summary: PerformanceSummary): number {
   const _p75 = summary?.percentileP75;
-  if (p75 > 0?.05) return 87;
-  if (p75 > 0?.02) return 84;
-  if (p75 > 0?.01) return 81;
-  if (p75 > 0?.005) return 78;
+  if (p75 > 0.05) return 87;
+  if (p75 > 0.02) return 84;
+  if (p75 > 0.01) return 81;
+  if (p75 > 0.005) return 78;
   return 75;
 }
 

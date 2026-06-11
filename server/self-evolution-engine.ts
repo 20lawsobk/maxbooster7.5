@@ -19,16 +19,16 @@
 
 import { EventEmitter } from "events";
 import http from "http";
-import { logger } from "./logger?.js";
-import { storage } from "./storage?.js";
-import { customAI } from "./custom-ai-engine?.js";
-import { industryMonitor } from "./services/industryMonitorService?.js";
-import { storageService } from "./services/storageService?.js";
+import { logger } from "./logger.js";
+import { storage } from "./storage.js";
+import { customAI } from "./custom-ai-engine.js";
+import { industryMonitor } from "./services/industryMonitorService.js";
+import { storageService } from "./services/storageService.js";
 import {
   evolutionRegistry,
   type EnhancementCategory,
-} from "./services/evolutionRegistry?.js";
-import { isProductionEnv } from "./lib/envHelpers?.js";
+} from "./services/evolutionRegistry.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 interface IndustryChange {
   id: string;
@@ -1404,7 +1404,7 @@ const _MAX_BOOSTER_ADVANTAGES = new Map<string, AdvantageEntry>([
 export class SelfEvolutionEngine extends EventEmitter {
   private isRunning: boolean = false;
   private isCycleRunning: boolean = false;
-  private monitoringInterval: NodeJS?.Timeout | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
   private upgradeQueue: CodeUpgrade[] = [];
   private industryChanges: IndustryChange[] = [];
   private seenChangeIds: Set<string> = new Set();
@@ -1425,7 +1425,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   private readonly MAX_CHANGES_IN_MEMORY = 500;
   private readonly MAX_UPGRADES_IN_MEMORY = 200;
   private readonly MAX_SEEN_IDS = 2000;
-  private readonly STATE_KEY = "evolution-state/state?.json";
+  private readonly STATE_KEY = "evolution-state/state.json";
 
   constructor() {
     super();
@@ -1469,7 +1469,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     if (this?.seenChangeIds.size > this?.MAX_SEEN_IDS) {
       const _arr = Array?.from(this?.seenChangeIds);
       const _keep = arr?.slice(arr?.length - (this?.MAX_SEEN_IDS - 500));
-      this?.seenChangeIds = new Set(keep);
+      this.seenChangeIds = new Set(keep);
       logger?.info(
         `🧬 Pruned seenChangeIds to ${this?.seenChangeIds.size} entries`,
       );
@@ -1573,7 +1573,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   private async initializeIndustryKnowledge(): Promise<void> {
-    this?.platformStandards = [
+    this.platformStandards = [
       {
         platform: "Spotify",
         standardType: "loudness",
@@ -1612,7 +1612,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       {
         platform: "Spotify",
         standardType: "audio_format",
-        currentRequirement: "FLAC/WAV 16-24bit 44?.1-192kHz",
+        currentRequirement: "FLAC/WAV 16-24bit 44.1-192kHz",
         maxBoosterCompliant: true,
         autoFixAvailable: true,
       },
@@ -1626,7 +1626,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       {
         platform: "Instagram",
         standardType: "api_version",
-        currentRequirement: "Graph API v18?.0",
+        currentRequirement: "Graph API v18.0",
         maxBoosterCompliant: true,
         autoFixAvailable: true,
       },
@@ -1650,7 +1650,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       return;
     }
 
-    this?.isRunning = true;
+    this.isRunning = true;
 
     logger?.info("🚀 Self-Evolution Engine ACTIVATED");
     logger?.info(
@@ -1661,7 +1661,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       logger?.warn({ err: e }, "Initial evolution cycle error:"),
     );
 
-    this?.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       this?.runEvolutionCycle().catch((e) =>
         logger?.warn({ err: e }, "Scheduled evolution cycle error:"),
       );
@@ -1672,11 +1672,11 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   async stop(): Promise<void> {
     if (!this?.isRunning) return;
-    this?.isRunning = false;
+    this.isRunning = false;
 
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
 
     logger?.info("🛑 Self-Evolution Engine stopped");
@@ -1689,7 +1689,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       return;
     }
 
-    this?.isCycleRunning = true;
+    this.isCycleRunning = true;
     const _cycleId = `evolution_${Date?.now()}`;
     logger?.info(`🧬 Starting evolution cycle: ${cycleId}`);
 
@@ -1725,7 +1725,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       logger?.info(`   💻 Generated ${upgrades?.length} code upgrades`);
       this?.upgradeQueue.push(...upgrades);
       if (this?.upgradeQueue.length > this?.MAX_UPGRADES_IN_MEMORY) {
-        this?.upgradeQueue = this?.upgradeQueue.slice(
+        this.upgradeQueue = this?.upgradeQueue.slice(
           -this?.MAX_UPGRADES_IN_MEMORY,
         );
       }
@@ -1746,7 +1746,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       // Phase 7: Learn from results and improve
       await this?.learnFromCycle(cycleId);
 
-      this?.lastCycleError = null;
+      this.lastCycleError = null;
       logger?.info(
         `✅ Evolution cycle ${cycleId} completed successfully (total: ${this?.totalCyclesRun + 1})`,
       );
@@ -1756,17 +1756,17 @@ export class SelfEvolutionEngine extends EventEmitter {
         upgrades: deployedCount,
       });
     } catch (error) {
-      this?.lastCycleError = (error as Error).message || String(error);
+      this.lastCycleError = (error as Error).message || String(error);
       logger?.warn({ err: error }, `❌ Evolution cycle ${cycleId} failed:`);
       this?.emit("cycleFailed", { cycleId, error });
     } finally {
-      this?.lastCycleAt = new Date();
+      this.lastCycleAt = new Date();
       this?.totalCyclesRun++;
       this?.pruneSeenIds();
       this?.saveStateToDisk().catch((e) =>
         logger?.warn({ err: e }, "Could not save state:"),
       );
-      this?.isCycleRunning = false;
+      this.isCycleRunning = false;
     }
   }
 
@@ -1792,7 +1792,7 @@ export class SelfEvolutionEngine extends EventEmitter {
    *   score = (Σ pts) / (totalFeatures × 3) × 100
    */
   private async assessCompetitiveLeadership(): Promise<IndustryChange[]> {
-    this?.lastCompetitiveScan = new Date();
+    this.lastCompetitiveScan = new Date();
     const gaps: IndustryChange[] = [];
 
     let totalPoints = 0;
@@ -1891,7 +1891,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     // ── 3. Score: 100 = surpassed on everything, 0 = missing everything ─────
     const _rawScore =
       maxPoints > 0 ? Math?.round((totalPoints / maxPoints) * 100) : 0;
-    this?.competitivePositionScore = Math?.min(100, rawScore);
+    this.competitivePositionScore = Math?.min(100, rawScore);
 
     logger?.info(
       `[SelfEvolution] Competitive scan — score: ${this?.competitivePositionScore}/100` +
@@ -1916,9 +1916,9 @@ export class SelfEvolutionEngine extends EventEmitter {
     }
 
     // Persist for getStatus()
-    this?.lastSurpassedCount = surpassedCount;
-    this?.lastParityCount = parityCount;
-    this?.lastMissingCount = missingCount;
+    this.lastSurpassedCount = surpassedCount;
+    this.lastParityCount = parityCount;
+    this.lastMissingCount = missingCount;
 
     return gaps;
   }
@@ -2002,7 +2002,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     for (const c of newChanges) this?.seenChangeIds.add(c?.id);
     this?.industryChanges.push(...newChanges);
     if (this?.industryChanges.length > this?.MAX_CHANGES_IN_MEMORY) {
-      this?.industryChanges = this?.industryChanges.slice(
+      this.industryChanges = this?.industryChanges.slice(
         -this?.MAX_CHANGES_IN_MEMORY,
       );
     }
@@ -2131,7 +2131,7 @@ export class SelfEvolutionEngine extends EventEmitter {
           optimalHours: high ? [11, 14, 17, 19, 21] : [12, 18, 20],
           engagementTargeting: high ? "high" : "standard",
         };
-        if (platform) payload?.platform = platform;
+        if (platform) payload.platform = platform;
         return payload;
       }
       case "content_optimization": {
@@ -2142,7 +2142,7 @@ export class SelfEvolutionEngine extends EventEmitter {
           visualPriority: true,
           variantCount: high ? 5 : 3,
         };
-        if (platform) payload?.platform = platform;
+        if (platform) payload.platform = platform;
         return payload;
       }
       case "distribution_config":
@@ -2206,11 +2206,11 @@ export class SelfEvolutionEngine extends EventEmitter {
     const validated: CodeUpgrade[] = [];
 
     for (const upgrade of upgrades) {
-      upgrade?.status = "testing";
+      upgrade.status = "testing";
 
       if (!upgrade?.enhancementCategory || !upgrade?.enhancementPayload) {
-        upgrade?.status = "failed";
-        upgrade?.notAppliedReason = "no enhancement payload generated";
+        upgrade.status = "failed";
+        upgrade.notAppliedReason = "no enhancement payload generated";
         logger?.warn(
           `   ❌ Validation failed for: ${upgrade?.id} - no enhancement payload`,
         );
@@ -2222,8 +2222,8 @@ export class SelfEvolutionEngine extends EventEmitter {
         upgrade?.enhancementPayload,
       );
       if (!clean?.ok) {
-        upgrade?.status = "failed";
-        upgrade?.notAppliedReason = clean?.reason;
+        upgrade.status = "failed";
+        upgrade.notAppliedReason = clean?.reason;
         logger?.warn(
           `   ❌ Validation failed for: ${upgrade?.id} - ${clean?.reason}`,
         );
@@ -2231,7 +2231,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       }
 
       // Persist the sanitized payload so what we apply == what we validated.
-      upgrade?.enhancementPayload = clean?.payload;
+      upgrade.enhancementPayload = clean?.payload;
       validated?.push(upgrade);
       logger?.info(
         `   ✅ Validated enhancement for: ${upgrade?.id} (${upgrade?.enhancementCategory})`,
@@ -2258,11 +2258,11 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     for (const upgrade of upgrades) {
       try {
-        upgrade?.status = "deploying";
+        upgrade.status = "deploying";
 
         if (!upgrade?.enhancementCategory || !upgrade?.enhancementPayload) {
-          upgrade?.status = "failed";
-          upgrade?.notAppliedReason = "no enhancement payload to apply";
+          upgrade.status = "failed";
+          upgrade.notAppliedReason = "no enhancement payload to apply";
           continue;
         }
 
@@ -2281,10 +2281,10 @@ export class SelfEvolutionEngine extends EventEmitter {
         if (!result?.consumed) {
           // Stored in the registry, but no live subsystem reads this category
           // yet — be honest: this is NOT an applied behavior change.
-          upgrade?.status = "deployed";
-          upgrade?.deployedAt = new Date();
-          upgrade?.applied = false;
-          upgrade?.notAppliedReason = `category "${upgrade?.enhancementCategory}" has no wired runtime consumer yet`;
+          upgrade.status = "deployed";
+          upgrade.deployedAt = new Date();
+          upgrade.applied = false;
+          upgrade.notAppliedReason = `category "${upgrade?.enhancementCategory}" has no wired runtime consumer yet`;
           logger?.info(
             `   📋 Recorded (advisory, not applied): ${upgrade?.id} (${upgrade?.enhancementCategory})`,
           );
@@ -2293,8 +2293,8 @@ export class SelfEvolutionEngine extends EventEmitter {
         }
 
         if (!result?.applied) {
-          upgrade?.status = "failed";
-          upgrade?.notAppliedReason =
+          upgrade.status = "failed";
+          upgrade.notAppliedReason =
             result?.reason || "registry rejected payload";
           logger?.warn(
             `   ❌ Apply rejected for ${upgrade?.id}: ${upgrade?.notAppliedReason}`,
@@ -2302,9 +2302,9 @@ export class SelfEvolutionEngine extends EventEmitter {
           continue;
         }
 
-        upgrade?.status = "deployed";
-        upgrade?.deployedAt = new Date();
-        upgrade?.applied = true;
+        upgrade.status = "deployed";
+        upgrade.deployedAt = new Date();
+        upgrade.applied = true;
         appliedCount++;
         logger?.info(
           `   ✅ Applied (live): ${upgrade?.id} → registry[${upgrade?.enhancementCategory}]`,
@@ -2320,8 +2320,8 @@ export class SelfEvolutionEngine extends EventEmitter {
           category: upgrade?.enhancementCategory,
         });
       } catch (error) {
-        upgrade?.status = "failed";
-        upgrade?.notAppliedReason = (error as Error).message;
+        upgrade.status = "failed";
+        upgrade.notAppliedReason = (error as Error).message;
         logger?.warn({ err: error }, `   ❌ Failed to apply ${upgrade?.id}:`);
       }
     }
@@ -2368,7 +2368,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       const _start = Date?.now();
 
       const _responseTime = await new Promise<number>((resolve, reject) => {
-        const _req = http?.get(`http://127?.0.0?.1:${port}/api/health`, (res) => {
+        const _req = http?.get(`http://127.0.0.1:${port}/api/health`, (res) => {
           res?.resume();
           res?.on("end", () => resolve(Date?.now() - start));
         });
@@ -2385,7 +2385,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         logger?.warn(
           `⚠️ Post-deployment health check slow: ${responseTime}ms — analyzing rollback need`,
         );
-        await this?.analyzeRollbackNeed({ ...metrics, errorRate: 0?.02 });
+        await this?.analyzeRollbackNeed({ ...metrics, errorRate: 0.02 });
       } else {
         logger?.info(`   💚 Health check passed: ${responseTime}ms`);
       }
@@ -2393,7 +2393,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       logger?.warn(
         `⚠️ Health check failed (${(e as Error).message}) — analyzing rollback need`,
       );
-      await this?.analyzeRollbackNeed({ errorRate: 0?.1, responseTime: 9999 });
+      await this?.analyzeRollbackNeed({ errorRate: 0.1, responseTime: 9999 });
     }
   }
 
@@ -2401,7 +2401,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     metrics: Record<string, number>,
   ): Promise<void> {
     const _needsRollback =
-      metrics?.errorRate > 0?.05 || metrics?.responseTime > 3000;
+      metrics?.errorRate > 0.05 || metrics?.responseTime > 3000;
 
     if (needsRollback) {
       logger?.warn(
@@ -2455,7 +2455,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       (u) => u?.status === "failed",
     ).length;
     const _total = appliedCount + failedCount;
-    const _successRate = total > 0 ? appliedCount / total : 1?.0;
+    const _successRate = total > 0 ? appliedCount / total : 1.0;
     const _deployedCount = appliedCount;
 
     // Count how many of this cycle's applied upgrades addressed competitive gaps
@@ -2469,7 +2469,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     if (competitorGapsClosedThisCycle > 0) {
       this?.competitiveGapsAddressed += competitorGapsClosedThisCycle;
       // Each closed gap nudges the score up (capped at 100)
-      this?.competitivePositionScore = Math?.min(
+      this.competitivePositionScore = Math?.min(
         100,
         this?.competitivePositionScore + competitorGapsClosedThisCycle,
       );
@@ -2486,7 +2486,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       `   📊 Competitive leadership summary: score=${this?.competitivePositionScore}/100 | gaps_detected=${this?.competitiveGapsDetected} | gaps_addressed=${this?.competitiveGapsAddressed} | competitor_signals=${competitorChanges}`,
     );
 
-    if (successRate > 0?.9) {
+    if (successRate > 0.9) {
       customAI?.recordPerformance("self_evolution", {
         cycleId,
         successRate,
@@ -2509,22 +2509,22 @@ export class SelfEvolutionEngine extends EventEmitter {
   private async identifyTargetFiles(change: IndustryChange): Promise<string[]> {
     const moduleFileMap: Record<string, string[]> = {
       studio: [
-        "server/services/aiMusicService?.ts",
-        "server/services/studioService?.ts",
+        "server/services/aiMusicService.ts",
+        "server/services/studioService.ts",
       ],
-      distribution: ["server/services/distributionService?.ts"],
+      distribution: ["server/services/distributionService.ts"],
       social: [
-        "server/services/aiContentService?.ts",
-        "server/autonomous-autopilot?.ts",
+        "server/services/aiContentService.ts",
+        "server/autonomous-autopilot.ts",
       ],
-      advertising: ["server/services/advertisingAIService?.ts"],
-      marketplace: ["server/services/marketplaceService?.ts"],
+      advertising: ["server/services/advertisingAIService.ts"],
+      marketplace: ["server/services/marketplaceService.ts"],
       analytics: [
-        "server/services/aiAnalyticsService?.ts",
-        "server/services/aiInsightsEngine?.ts",
+        "server/services/aiAnalyticsService.ts",
+        "server/services/aiInsightsEngine.ts",
       ],
-      security: ["server/security-system?.ts", "server/audit-system?.ts"],
-      monetization: ["server/services/paymentService?.ts"],
+      security: ["server/security-system.ts", "server/audit-system.ts"],
+      monetization: ["server/services/paymentService.ts"],
     };
 
     const files: string[] = [];
@@ -2593,7 +2593,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
     const _now = Date?.now();
-    const _expectedIntervalMs = this?.MONITORING_INTERVAL_MS * 1?.5;
+    const _expectedIntervalMs = this?.MONITORING_INTERVAL_MS * 1.5;
     const _intervalHealthy =
       !this?.isRunning || !this?.lastCycleAt
         ? true

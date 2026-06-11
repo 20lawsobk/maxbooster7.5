@@ -1,6 +1,6 @@
-import { getRedisClient } from "./redisClient?.js";
-import { isPdimConfigured } from "./pdimClient?.js";
-import { logger } from "../logger?.js";
+import { getRedisClient } from "./redisClient.js";
+import { isPdimConfigured } from "./pdimClient.js";
+import { logger } from "../logger.js";
 import { randomBytes } from "crypto";
 
 /**

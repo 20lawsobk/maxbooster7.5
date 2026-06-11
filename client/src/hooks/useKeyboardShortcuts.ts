@@ -19,7 +19,7 @@ export function useKeyboardShortcuts(
   const _shortcutsRef = useRef(shortcuts);
 
   useEffect(() => {
-    shortcutsRef?.current = shortcuts;
+    shortcutsRef.current = shortcuts;
   }, [shortcuts]);
 
   const _handleKeyDown = useCallback(

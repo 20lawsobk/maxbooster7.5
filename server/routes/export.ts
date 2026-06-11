@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { db } from "../db";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { randomBytes } from "crypto";
 import { z } from "zod";
-import { getBaseUrl } from "../config/defaults?.js";
+import { getBaseUrl } from "../config/defaults.js";
 import { shareLinks as shareLinksTable } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -171,13 +171,13 @@ function simulateExportProgress(jobId: string): void {
 
     if (stageIndex < stages?.length) {
       const _stage = stages[stageIndex];
-      currentJob?.progress = stage?.progress;
-      currentJob?.stage = stage?.name;
-      currentJob?.status = stage?.progress === 100 ? "complete" : "processing";
+      currentJob.progress = stage?.progress;
+      currentJob.stage = stage?.name;
+      currentJob.status = stage?.progress === 100 ? "complete" : "processing";
 
       if (stage?.progress === 100) {
-        currentJob?.completedTime = new Date();
-        currentJob?.downloadUrl = `/api/export/download/${jobId}`;
+        currentJob.completedTime = new Date();
+        currentJob.downloadUrl = `/api/export/download/${jobId}`;
         const _trackCount = currentJob?.tracks?.length || 1;
         const _durationSec = currentJob?.duration || 180;
         const _qualityMultiplier =
@@ -186,7 +186,7 @@ function simulateExportProgress(jobId: string): void {
             : currentJob?.format === "flac"
               ? 88200
               : 20000;
-        currentJob?.fileSize = Math?.floor(
+        currentJob.fileSize = Math?.floor(
           trackCount * durationSec * qualityMultiplier,
         );
 
@@ -265,8 +265,8 @@ router?.post(
       setTimeout(() => {
         const _currentJob = exportJobs?.get(jobId);
         if (currentJob) {
-          currentJob?.status = "preparing";
-          currentJob?.stage = "Preparing export...";
+          currentJob.status = "preparing";
+          currentJob.stage = "Preparing export...";
           simulateExportProgress(jobId);
         }
       }, 500);
@@ -353,7 +353,7 @@ router?.post(
         return res?.status(400).json({ error: "Cannot cancel completed job" });
       }
 
-      job?.status = "cancelled";
+      job.status = "cancelled";
       res?.json({ success: true });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error cancelling export job:");
@@ -384,16 +384,16 @@ router?.post(
         return res?.status(400).json({ error: "Can only retry failed jobs" });
       }
 
-      job?.status = "queued";
-      job?.progress = 0;
-      job?.error = undefined;
+      job.status = "queued";
+      job.progress = 0;
+      job.error = undefined;
       job?.retryCount++;
-      job?.startTime = new Date();
+      job.startTime = new Date();
 
       setTimeout(() => {
         const _currentJob = exportJobs?.get(jobId);
         if (currentJob) {
-          currentJob?.status = "preparing";
+          currentJob.status = "preparing";
           simulateExportProgress(jobId);
         }
       }, 500);
@@ -452,7 +452,7 @@ router?.post("/data", requireAuth, async (req: Request, res: Response) => {
     setTimeout(() => {
       const _currentJob = exportJobs?.get(jobId);
       if (currentJob) {
-        currentJob?.status = "preparing";
+        currentJob.status = "preparing";
         simulateExportProgress(jobId);
       }
     }, 500);
@@ -805,12 +805,12 @@ router?.patch(
 
       const patch: Record<string, unknown> = {};
       if (updates?.expiresAt !== undefined)
-        patch?.expiresAt = updates?.expiresAt
+        patch.expiresAt = updates?.expiresAt
           ? new Date(updates?.expiresAt)
           : null;
       if (updates?.maxDownloads !== undefined)
-        patch?.maxDownloads = updates?.maxDownloads;
-      if (updates?.isActive !== undefined) patch?.isActive = updates?.isActive;
+        patch.maxDownloads = updates?.maxDownloads;
+      if (updates?.isActive !== undefined) patch.isActive = updates?.isActive;
 
       const [updated] = await db
         .update(shareLinksTable)
@@ -919,7 +919,7 @@ router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
       setTimeout(() => {
         const _currentJob = exportJobs?.get(job?.id);
         if (currentJob && currentJob?.status === "queued") {
-          currentJob?.status = "preparing";
+          currentJob.status = "preparing";
           simulateExportProgress(job?.id);
         }
       }, delay);
@@ -968,7 +968,7 @@ router?.post("/analytics", requireAuth, async (req: Request, res: Response) => {
     setTimeout(() => {
       const _currentJob = exportJobs?.get(jobId);
       if (currentJob) {
-        currentJob?.status = "preparing";
+        currentJob.status = "preparing";
         simulateExportProgress(jobId);
       }
     }, 500);
@@ -1065,7 +1065,7 @@ router?.post(
       setTimeout(() => {
         const _currentJob = exportJobs?.get(jobId);
         if (currentJob) {
-          currentJob?.status = "preparing";
+          currentJob.status = "preparing";
           simulateExportProgress(jobId);
         }
       }, 500);
@@ -1166,7 +1166,7 @@ router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
     setTimeout(() => {
       const _currentJob = exportJobs?.get(jobId);
       if (currentJob) {
-        currentJob?.status = "preparing";
+        currentJob.status = "preparing";
         simulateExportProgress(jobId);
       }
     }, 500);
@@ -1260,7 +1260,7 @@ router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
     setTimeout(() => {
       const _currentJob = exportJobs?.get(jobId);
       if (currentJob) {
-        currentJob?.status = "preparing";
+        currentJob.status = "preparing";
         simulateExportProgress(jobId);
       }
     }, 500);
@@ -1385,7 +1385,7 @@ router?.post(
         },
         cd: {
           normalize: true,
-          normalizeTarget: -0?.3,
+          normalizeTarget: -0.3,
           dither: true,
           ditherType: "noise-shaped",
         },
@@ -1393,7 +1393,7 @@ router?.post(
           normalize: true,
           normalizeTarget: -3,
           limiter: true,
-          limiterCeiling: -0?.5,
+          limiterCeiling: -0.5,
         },
         broadcast: {
           normalize: true,
@@ -1433,7 +1433,7 @@ router?.post(
       setTimeout(() => {
         const _currentJob = exportJobs?.get(jobId);
         if (currentJob) {
-          currentJob?.status = "preparing";
+          currentJob.status = "preparing";
           simulateExportProgress(jobId);
         }
       }, 500);
@@ -1521,7 +1521,7 @@ router?.post(
       setTimeout(() => {
         const _currentJob = exportJobs?.get(jobId);
         if (currentJob) {
-          currentJob?.status = "preparing";
+          currentJob.status = "preparing";
           simulateExportProgress(jobId);
         }
       }, 500);

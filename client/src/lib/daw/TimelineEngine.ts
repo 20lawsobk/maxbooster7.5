@@ -61,21 +61,21 @@ export class TimelineEngine {
   private listeners: Set<() => void> = new Set();
 
   constructor(transport: TransportEngine) {
-    this?.transport = transport;
-    this?.state = {
+    this.transport = transport;
+    this.state = {
       events: [],
       markers: [],
       regions: [],
       quantize: {
         enabled: true,
-        value: 0?.25,
+        value: 0.25,
         strength: 1,
         swing: 0,
         swingAmount: 0,
       },
       editMode: "slip",
       snapToGrid: true,
-      gridDivision: 0?.25,
+      gridDivision: 0.25,
       zoom: 1,
       scrollBeat: 0,
       selectedEventIds: [],
@@ -143,7 +143,7 @@ export class TimelineEngine {
     const _gridValue = this?.state.quantize?.value;
     const _beatInGrid = (beat / gridValue) % 2;
 
-    if (beatInGrid >= 0?.5 && beatInGrid < 1?.5) {
+    if (beatInGrid >= 0.5 && beatInGrid < 1.5) {
       return (
         this?.state.quantize?.swingAmount *
         gridValue *
@@ -164,7 +164,7 @@ export class TimelineEngine {
     const newEvent: TimelineEvent = { ...event, id };
 
     if (this?.state.snapToGrid) {
-      newEvent?.startBeat = this?.snapToGrid(newEvent?.startBeat);
+      newEvent.startBeat = this?.snapToGrid(newEvent?.startBeat);
     }
 
     this?.state.events?.push(newEvent);
@@ -213,8 +213,8 @@ export class TimelineEngine {
       this?.rippleMove(oldTrackId, oldStartBeat, newStartBeat - oldStartBeat);
     }
 
-    event?.startBeat = Math?.max(0, newStartBeat);
-    if (newTrackId) event?.trackId = newTrackId;
+    event.startBeat = Math?.max(0, newStartBeat);
+    if (newTrackId) event.trackId = newTrackId;
 
     this?.sortEvents();
     this?.notify();
@@ -239,10 +239,10 @@ export class TimelineEngine {
     if (fromStart) {
       const _endBeat = event?.startBeat + event?.durationBeats;
       const _newStartBeat = endBeat - newDurationBeats;
-      event?.startBeat = Math?.max(0, newStartBeat);
+      event.startBeat = Math?.max(0, newStartBeat);
     }
 
-    event?.durationBeats = newDurationBeats;
+    event.durationBeats = newDurationBeats;
     this?.notify();
     return true;
   }
@@ -261,7 +261,7 @@ export class TimelineEngine {
     const _leftDuration = splitBeat - event?.startBeat;
     const _rightDuration = eventEnd - splitBeat;
 
-    event?.durationBeats = leftDuration;
+    event.durationBeats = leftDuration;
 
     const _rightId = this?.addEvent({
       ...event,
@@ -285,7 +285,7 @@ export class TimelineEngine {
     );
     for (const event of trackEvents) {
       if (!event?.locked) {
-        event?.startBeat = Math?.max(0, event?.startBeat + deltaBeat);
+        event.startBeat = Math?.max(0, event?.startBeat + deltaBeat);
       }
     }
   }
@@ -300,7 +300,7 @@ export class TimelineEngine {
     );
     for (const event of trackEvents) {
       if (!event?.locked) {
-        event?.startBeat = Math?.max(0, event?.startBeat - durationBeats);
+        event.startBeat = Math?.max(0, event?.startBeat - durationBeats);
       }
     }
   }
@@ -374,7 +374,7 @@ export class TimelineEngine {
   lockEvent(eventId: string): void {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (event) {
-      event?.locked = true;
+      event.locked = true;
       this?.notify();
     }
   }
@@ -382,7 +382,7 @@ export class TimelineEngine {
   unlockEvent(eventId: string): void {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (event) {
-      event?.locked = false;
+      event.locked = false;
       this?.notify();
     }
   }
@@ -392,7 +392,7 @@ export class TimelineEngine {
     const _newMarker = { ...marker, id };
 
     if (this?.state.snapToGrid) {
-      newMarker?.beat = this?.snapToGrid(newMarker?.beat);
+      newMarker.beat = this?.snapToGrid(newMarker?.beat);
     }
 
     this?.state.markers?.push(newMarker);
@@ -414,8 +414,8 @@ export class TimelineEngine {
     const _newRegion = { ...region, id };
 
     if (this?.state.snapToGrid) {
-      newRegion?.startBeat = this?.snapToGrid(newRegion?.startBeat);
-      newRegion?.endBeat = this?.snapToGrid(newRegion?.endBeat);
+      newRegion.startBeat = this?.snapToGrid(newRegion?.startBeat);
+      newRegion.endBeat = this?.snapToGrid(newRegion?.endBeat);
     }
 
     this?.state.regions?.push(newRegion);
@@ -447,12 +447,12 @@ export class TimelineEngine {
   }
 
   setGridDivision(division: number): void {
-    this?.state.gridDivision = Math?.max(0?.0625, Math?.min(4, division));
+    this?.state.gridDivision = Math?.max(0.0625, Math?.min(4, division));
     this?.notify();
   }
 
   setZoom(zoom: number): void {
-    this?.state.zoom = Math?.max(0?.1, Math?.min(10, zoom));
+    this?.state.zoom = Math?.max(0.1, Math?.min(10, zoom));
     this?.notify();
   }
 
@@ -482,7 +482,7 @@ export class TimelineEngine {
   }
 
   deserialize(state: TimelineEngineState): void {
-    this?.state = structuredClone(state);
+    this.state = structuredClone(state);
     this?.notify();
   }
 }

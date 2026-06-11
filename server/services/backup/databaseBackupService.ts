@@ -1,9 +1,9 @@
 import { spawn } from "child_process";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 import cron from "node-cron";
 import fsPromises from "fs/promises";
-import { storageService } from "../storageService?.js";
-import { env } from "../../config/env?.js";
+import { storageService } from "../storageService.js";
+import { env } from "../../config/env.js";
 
 const _BACKUP_PREFIX = "database-backups";
 const _BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index?.json`;
@@ -56,7 +56,7 @@ export class DatabaseBackupService {
     }
 
     this?.scheduleBackups();
-    this?.isInitialized = true;
+    this.isInitialized = true;
 
     logger?.info(
       "✅ Database Backup Service initialized (Pocket Dimension storage)",
@@ -68,7 +68,7 @@ export class DatabaseBackupService {
   }
 
   private scheduleBackups() {
-    this?.backupSchedule = cron?.schedule("0 2 * * *", async () => {
+    this.backupSchedule = cron?.schedule("0 2 * * *", async () => {
       logger?.info("🔄 Starting scheduled database backup...");
       try {
         await this?.createBackup();
@@ -124,7 +124,7 @@ export class DatabaseBackupService {
       writeStream?.on("error", (err) => fail(err));
 
       // Absorb EPIPE on pgDump stdout in case writeStream closes early
-      pgDump?.stdout.on("error", (e: NodeJS?.ErrnoException) => {
+      pgDump?.stdout.on("error", (e: NodeJS.ErrnoException) => {
         if (e?.code !== "EPIPE" && e?.code !== "ECONNRESET") fail(e);
       });
 

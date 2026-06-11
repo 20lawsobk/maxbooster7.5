@@ -59,7 +59,7 @@ export function useFeatureUsageTracking() {
           currentSession?.current.endTime - currentSession?.current.startTime;
       }
 
-      currentSession?.current = {
+      currentSession.current = {
         feature,
         startTime: Date?.now(),
       };

@@ -1,5 +1,5 @@
-import { logger } from "../logger?.js";
-import { metricsCollector } from "./metricsCollector?.js";
+import { logger } from "../logger.js";
+import { metricsCollector } from "./metricsCollector.js";
 import fs from "fs/promises";
 import path from "path";
 

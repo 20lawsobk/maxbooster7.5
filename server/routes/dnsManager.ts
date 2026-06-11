@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { pool } from "../db?.js";
+import { pool } from "../db.js";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _router = Router();
 
-const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster?.com";
-const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34?.68.76?.67";
+const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
+const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34.68.76.67";
 const _NS1 = process?.env.NS1 || `ns1.${BASE_DOMAIN}`;
 const _NS2 = process?.env.NS2 || `ns2.${BASE_DOMAIN}`;
 
@@ -21,7 +21,7 @@ async function getUserDomainUsage(
   userId: string,
 ): Promise<{ zones: number; claimed: number; total: number }> {
   // Count DISTINCT domain names across both sources so the same domain
-  // (e?.g. max-booster?.com appearing in both dns_zones and storefront_domains)
+  // (e?.g. max-booster.com appearing in both dns_zones and storefront_domains)
   // is only counted once.
   const _uniqueResult = await pool?.query(
     `SELECT COUNT(DISTINCT domain)::int AS n FROM (
@@ -29,8 +29,8 @@ async function getUserDomainUsage(
        UNION
        SELECT sd?.domain
        FROM storefront_domains sd
-       JOIN storefronts s ON s?.id = sd?.storefront_id
-       WHERE s?.user_id = $1 AND sd?.type = 'platform_subdomain'
+       JOIN storefronts s ON s.id = sd?.storefront_id
+       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
      ) combined`,
     [userId],
   );
@@ -347,11 +347,11 @@ router?.post("/zones/:zoneId/verify", async (req, res) => {
     let txtResolved = false;
 
     const _DOH_ENDPOINTS = [
-      `https://cloudflare-dns?.com/dns-query?name=${encodeURIComponent(zone?.domain)}&type=NS`,
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(zone?.domain)}&type=NS`,
       `https://dns?.google/resolve?name=${encodeURIComponent(zone?.domain)}&type=NS`,
     ];
     const _TXT_ENDPOINTS = [
-      `https://cloudflare-dns?.com/dns-query?name=${encodeURIComponent(zone?.domain)}&type=TXT`,
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(zone?.domain)}&type=TXT`,
       `https://dns?.google/resolve?name=${encodeURIComponent(zone?.domain)}&type=TXT`,
     ];
 
@@ -707,8 +707,8 @@ router?.get("/zones/:zoneId/storefront-link", async (req, res) => {
     const _linkResult = await pool?.query(
       `SELECT sd?.storefront_id, sd?.status, s?.name, s?.slug
        FROM storefront_domains sd
-       JOIN storefronts s ON s?.id = sd?.storefront_id
-       WHERE sd?.domain = $1 AND sd?.type = 'custom_domain' AND s?.user_id = $2
+       JOIN storefronts s ON s.id = sd?.storefront_id
+       WHERE sd.domain = $1 AND sd.type = 'custom_domain' AND s.user_id = $2
        LIMIT 1`,
       [zone?.domain, userId],
     );
@@ -932,7 +932,7 @@ router?.get("/zones/:zoneId/export", async (req, res) => {
     }
 
     const _zoneText = lines?.join("\n") + "\n";
-    const _filename = `${zone?.domain.replace(/\./g, "_")}_zone?.txt`;
+    const _filename = `${zone?.domain.replace(/\./g, "_")}_zone.txt`;
 
     res?.json({
       zoneText,

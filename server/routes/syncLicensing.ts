@@ -4,7 +4,7 @@ import { db } from "../db";
 import { syncSubmissions } from "@shared/schema";
 import { eq, and, desc, count, sql } from "drizzle-orm";
 import { z } from "zod";
-import { parsePaginationParams } from "../middleware/pagination?.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
 
 const _router = Router();
 
@@ -157,9 +157,9 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       status,
       updatedAt: new Date(),
     };
-    if (licensedTo !== undefined) setFields?.licensedTo = licensedTo;
-    if (licenseFee !== undefined) setFields?.licenseFee = licenseFee;
-    if (status === "licensed") setFields?.licensedAt = new Date();
+    if (licensedTo !== undefined) setFields.licensedTo = licensedTo;
+    if (licenseFee !== undefined) setFields.licenseFee = licenseFee;
+    if (status === "licensed") setFields.licensedAt = new Date();
 
     const [updated] = await db
       .update(syncSubmissions)

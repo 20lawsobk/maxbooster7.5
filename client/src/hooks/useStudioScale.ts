@@ -25,7 +25,7 @@ export function useStudioScale() {
       for (const entry of entries) {
         const _width = entry?.contentRect.width;
         const _raw = width / DESIGN_BASELINE;
-        setScale(Math?.min(1, Math?.max(0?.5, raw)));
+        setScale(Math?.min(1, Math?.max(0.5, raw)));
       }
     });
 

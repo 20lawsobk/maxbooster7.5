@@ -31,12 +31,12 @@ export function useFocusReturn(
   const _isActiveRef = useRef(isActive);
 
   useEffect(() => {
-    isActiveRef?.current = isActive;
+    isActiveRef.current = isActive;
   }, [isActive]);
 
   useEffect(() => {
     if (autoSave && isActive) {
-      previousFocusRef?.current = document?.activeElement as HTMLElement | null;
+      previousFocusRef.current = document?.activeElement as HTMLElement | null;
       onSave?.(previousFocusRef?.current);
     }
   }, [autoSave, isActive, onSave]);
@@ -58,7 +58,7 @@ export function useFocusReturn(
   }, [autoRestore, onRestore]);
 
   const _saveFocus = useCallback(() => {
-    previousFocusRef?.current = document?.activeElement as HTMLElement | null;
+    previousFocusRef.current = document?.activeElement as HTMLElement | null;
     onSave?.(previousFocusRef?.current);
   }, [onSave]);
 
@@ -98,7 +98,7 @@ export function useFocusReturn(
   }, []);
 
   const _clearSavedFocus = useCallback(() => {
-    previousFocusRef?.current = null;
+    previousFocusRef.current = null;
   }, []);
 
   return {

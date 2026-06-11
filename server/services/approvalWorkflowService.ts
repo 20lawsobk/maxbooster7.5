@@ -11,7 +11,7 @@ import {
   type InsertApprovalWorkflow,
 } from "@shared/schema";
 import { eq, and, desc, sql, or, lte } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { notificationService } from "./notificationService";
 
 export type ApprovalTrigger =

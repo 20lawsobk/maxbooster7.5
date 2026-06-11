@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { dspProviders } from "@shared/schema";
 import { sql, count } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export const _DISTRIBUTION_PLATFORMS = [
   // =====================================================
@@ -32,7 +32,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "apple-music",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.music.apple?.com/v1",
+      apiBase: "https://api?.music.apple.com/v1",
       authType: "JWT",
       deliveryMethod: "api",
       processingTime: "1-3 days",
@@ -51,7 +51,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "itunes",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.music.apple?.com/v1",
+      apiBase: "https://api?.music.apple.com/v1",
       authType: "JWT",
       deliveryMethod: "api",
       processingTime: "1-3 days",
@@ -184,7 +184,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "napster",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.napster.com/v2?.2",
+      apiBase: "https://api?.napster.com/v2.2",
       authType: "API_Key",
       deliveryMethod: "api",
       processingTime: "5-10 days",
@@ -246,7 +246,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "bandcamp",
     isActive: true,
     metadata: {
-      apiBase: "https://bandcamp?.com/api",
+      apiBase: "https://bandcamp.com/api",
       authType: "OAuth2",
       deliveryMethod: "direct_upload",
       processingTime: "1-3 days",
@@ -327,7 +327,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "netease-cloud-music",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.music.163?.com/api",
+      apiBase: "https://api?.music.163.com/api",
       authType: "API_Key",
       deliveryMethod: "api",
       processingTime: "7-14 days",
@@ -526,7 +526,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "kkbox",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.kkbox.com/v1?.1",
+      apiBase: "https://api?.kkbox.com/v1.1",
       authType: "OAuth2",
       deliveryMethod: "api",
       processingTime: "5-10 days",
@@ -564,7 +564,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "flo",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.music-flo?.com/v1",
+      apiBase: "https://api?.music-flo.com/v1",
       authType: "API_Key",
       deliveryMethod: "api",
       processingTime: "7-14 days",
@@ -604,7 +604,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "yandex-music",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.music.yandex?.net/v1",
+      apiBase: "https://api?.music.yandex.net/v1",
       authType: "OAuth2",
       deliveryMethod: "api",
       processingTime: "7-14 days",
@@ -705,7 +705,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "meta-library",
     isActive: true,
     metadata: {
-      apiBase: "https://graph?.facebook.com/v18?.0",
+      apiBase: "https://graph?.facebook.com/v18.0",
       authType: "OAuth2",
       deliveryMethod: "api",
       processingTime: "3-7 days",
@@ -725,7 +725,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "instagram",
     isActive: true,
     metadata: {
-      apiBase: "https://graph?.facebook.com/v18?.0",
+      apiBase: "https://graph?.facebook.com/v18.0",
       authType: "OAuth2",
       deliveryMethod: "api",
       processingTime: "3-7 days",
@@ -744,7 +744,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "facebook",
     isActive: true,
     metadata: {
-      apiBase: "https://graph?.facebook.com/v18?.0",
+      apiBase: "https://graph?.facebook.com/v18.0",
       authType: "OAuth2",
       deliveryMethod: "api",
       processingTime: "3-7 days",
@@ -942,7 +942,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "7digital",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.7digital.com/1?.2",
+      apiBase: "https://api?.7digital.com/1.2",
       authType: "OAuth1",
       deliveryMethod: "api",
       processingTime: "5-10 days",
@@ -1106,7 +1106,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "wesing",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.wesing.qq?.com/v1",
+      apiBase: "https://api?.wesing.qq.com/v1",
       authType: "API_Key",
       deliveryMethod: "api",
       processingTime: "7-14 days",
@@ -1126,7 +1126,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "ultimate-music",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.ultimatemusic.qq?.com/v1",
+      apiBase: "https://api?.ultimatemusic.qq.com/v1",
       authType: "API_Key",
       deliveryMethod: "api",
       processingTime: "7-14 days",
@@ -1165,7 +1165,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "tencent-video",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.v.qq?.com/v1",
+      apiBase: "https://api?.v.qq.com/v1",
       authType: "API_Key",
       deliveryMethod: "api",
       processingTime: "7-14 days",
@@ -1206,7 +1206,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "siri",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.music.apple?.com/v1",
+      apiBase: "https://api?.music.apple.com/v1",
       authType: "JWT",
       deliveryMethod: "api",
       processingTime: "1-3 days",
@@ -1308,7 +1308,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "vibe",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.vibe.naver?.com/v1",
+      apiBase: "https://api?.vibe.naver.com/v1",
       authType: "OAuth2",
       deliveryMethod: "api",
       processingTime: "7-14 days",
@@ -1705,7 +1705,7 @@ export const _DISTRIBUTION_PLATFORMS = [
     slug: "apple-fitness-plus",
     isActive: true,
     metadata: {
-      apiBase: "https://api?.music.apple?.com/fitness/v1",
+      apiBase: "https://api?.music.apple.com/fitness/v1",
       authType: "JWT",
       deliveryMethod: "api",
       processingTime: "7-14 days",

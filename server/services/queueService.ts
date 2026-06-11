@@ -1,6 +1,6 @@
 import { Queue, QueueOptions } from "bullmq";
-import { newBullMQRedisConnection } from "../lib/redisClient?.js";
-import { logger } from "../logger?.js";
+import { newBullMQRedisConnection } from "../lib/redisClient.js";
+import { logger } from "../logger.js";
 
 export interface AudioConvertJobData {
   userId: string;
@@ -106,8 +106,8 @@ export class BoosterQueue<TData = any, TResult = any> {
   public readonly name: string;
 
   constructor(name: string) {
-    this?.name = name;
-    this?.queue = new Queue<TData, TResult>(name, makeQueueOptions());
+    this.name = name;
+    this.queue = new Queue<TData, TResult>(name, makeQueueOptions());
   }
 
   async add(
@@ -144,10 +144,10 @@ class QueueService {
 
   constructor() {
     const _opts = makeQueueOptions();
-    this?.audioQueue = new Queue("audio", opts);
-    this?.csvQueue = new Queue("csv", opts);
-    this?.analyticsQueue = new Queue("analytics", opts);
-    this?.emailQueue = new Queue("email", opts);
+    this.audioQueue = new Queue("audio", opts);
+    this.csvQueue = new Queue("csv", opts);
+    this.analyticsQueue = new Queue("analytics", opts);
+    this.emailQueue = new Queue("email", opts);
     logger?.info(
       "📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)",
     );

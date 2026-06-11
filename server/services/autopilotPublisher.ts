@@ -1,21 +1,21 @@
 import cron from "node-cron";
 import { eq, and, desc } from "drizzle-orm";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   storefronts,
   listings,
   listingLicenseTiers,
-} from "../../shared/schema?.js";
-import { storage } from "../storage?.js";
-import { logger } from "../logger?.js";
-import { storefrontService } from "./storefrontService?.js";
-import { aiModelManager } from "./aiModelManager?.js";
-import { autoPostingServiceV2 } from "./autoPostingServiceV2?.js";
-import type { PostContent } from "./autoPostingServiceV2?.js";
-import { aiContentService } from "./aiContentService?.js";
-import { advancedSocialAIService } from "./advancedSocialAIService?.js";
-import { contentQualityGate } from "./contentQualityGate?.js";
-import { autopilotLearningService } from "./autopilotLearningService?.js";
+} from "../../shared/schema.js";
+import { storage } from "../storage.js";
+import { logger } from "../logger.js";
+import { storefrontService } from "./storefrontService.js";
+import { aiModelManager } from "./aiModelManager.js";
+import { autoPostingServiceV2 } from "./autoPostingServiceV2.js";
+import type { PostContent } from "./autoPostingServiceV2.js";
+import { aiContentService } from "./aiContentService.js";
+import { advancedSocialAIService } from "./advancedSocialAIService.js";
+import { contentQualityGate } from "./contentQualityGate.js";
+import { autopilotLearningService } from "./autopilotLearningService.js";
 
 /**
  * Automated Autopilot Publisher
@@ -91,13 +91,13 @@ class AutopilotPublisher {
   }
 
   private startScheduler(): void {
-    this?.cronJob = cron?.schedule("*/15 * * * *", async () => {
+    this.cronJob = cron?.schedule("*/15 * * * *", async () => {
       // Skip cycles that land while BullMQ repeatable-job registration is still
       // running.  Registration holds the LuaExecutor slot for ~50 s per job and
       // causes PDIM back-pressure that makes MaxCore infer calls time out.
       // The next cron tick (15 min later) will fire normally.
       try {
-        const { isLuaRegistrationMode } = await import("../lib/luaExecutor?.js");
+        const { isLuaRegistrationMode } = await import("../lib/luaExecutor.js");
         if (isLuaRegistrationMode()) {
           logger?.info(
             "⏰ Autopilot cycle deferred — BullMQ job registration in progress",
@@ -116,7 +116,7 @@ class AutopilotPublisher {
   public stopScheduler(): void {
     if (this?.cronJob) {
       this?.cronJob.stop();
-      this?.cronJob = null;
+      this.cronJob = null;
       logger?.info("⏹️ Autopilot scheduler stopped");
     }
   }
@@ -131,8 +131,8 @@ class AutopilotPublisher {
     }
 
     try {
-      this?.isRunning = true;
-      this?.lastRun = new Date();
+      this.isRunning = true;
+      this.lastRun = new Date();
       logger?.info("🚀 Starting automated autopilot publishing cycle");
 
       // Get all users with autopilot enabled
@@ -173,7 +173,7 @@ class AutopilotPublisher {
       logger?.warn({ err: error }, "Error in autopilot publishing cycle:");
       return [];
     } finally {
-      this?.isRunning = false;
+      this.isRunning = false;
     }
   }
 
@@ -211,7 +211,7 @@ class AutopilotPublisher {
       // CRITICAL: Media generation failures must abort scheduling
       if (config?.platforms && config?.platforms.length > 0) {
         const _socialResult = await this?.publishSocialContent(config);
-        result?.socialPosts = socialResult?.posts;
+        result.socialPosts = socialResult?.posts;
         if (socialResult?.error) {
           // Non-critical errors (like low confidence) are recorded but not thrown
           if (
@@ -229,7 +229,7 @@ class AutopilotPublisher {
       // Advertising Autopilot - errors propagate upward, not silently logged
       // CRITICAL: Media generation failures must abort campaign creation
       const _adResult = await this?.publishAdvertisingCampaigns(config);
-      result?.adCampaigns = adResult?.campaigns;
+      result.adCampaigns = adResult?.campaigns;
       if (adResult?.error) {
         // Non-critical errors (like low confidence) are recorded but not thrown
         if (
@@ -291,7 +291,7 @@ class AutopilotPublisher {
     beatContext: string;
     promotionContext: string;
   }> {
-    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster?.com";
+    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster.com";
     const _defaultUrl = `https://${baseDomain}`;
 
     try {
@@ -605,7 +605,7 @@ class AutopilotPublisher {
 
       // Normalise score (0-100) to confidence fraction (0-1) for threshold check
       const _confidence = advancedContent?.scoring.overall / 100;
-      const _minThreshold = config?.minConfidenceThreshold || 0?.7;
+      const _minThreshold = config?.minConfidenceThreshold || 0.7;
 
       if (confidence < minThreshold) {
         logger?.info(
@@ -797,7 +797,7 @@ class AutopilotPublisher {
       // Check confidence threshold for auto-publish
       const _confidence =
         bestCampaign?.confidence || bestCampaign?.predictedROI || 0;
-      const _minThreshold = config?.minConfidenceThreshold || 0?.7;
+      const _minThreshold = config?.minConfidenceThreshold || 0.7;
 
       if (confidence < minThreshold) {
         logger?.info(

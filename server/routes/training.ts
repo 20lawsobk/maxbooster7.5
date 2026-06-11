@@ -1,13 +1,13 @@
 import { Router, Request, Response } from "express";
-import { requireAdmin } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
-import { syncWeightsNow } from "../services/maxcoreSync?.js";
+import { requireAdmin } from "../middleware/auth.js";
+import { logger } from "../logger.js";
+import { syncWeightsNow } from "../services/maxcoreSync.js";
 
 const _router = Router();
 
 const _PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
 const _AI_URL =
-  process?.env.AI_MODEL_SERVICE_URL || `http://127?.0.0?.1:${PYTHON_AI_PORT}`;
+  process?.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const _TRAIN_TIMEOUT = 60_000;
 const _LONG_TIMEOUT = 3_600_000;
 

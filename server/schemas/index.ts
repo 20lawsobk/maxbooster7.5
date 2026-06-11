@@ -402,7 +402,7 @@ export const _createRoyaltySplitSchema = z
           userId: z?.string().optional(),
           email: z?.string().email().optional(),
           name: z?.string().min(1).max(255),
-          percentage: z?.number().min(0?.01).max(100),
+          percentage: z?.number().min(0.01).max(100),
           role: z?.string().max(100).optional(),
         }),
       )
@@ -414,7 +414,7 @@ export const _createRoyaltySplitSchema = z
         (sum, split) => sum + split?.percentage,
         0,
       );
-      return Math?.abs(totalPercentage - 100) < 0?.01;
+      return Math?.abs(totalPercentage - 100) < 0.01;
     },
     {
       message: "Split percentages must total 100%",

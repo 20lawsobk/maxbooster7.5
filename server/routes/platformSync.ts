@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 import {
   registerDevice,
   unregisterDevice,
@@ -15,7 +15,7 @@ import {
   getSyncStatus,
   getUpdateRolloutStatus,
   type PlatformType,
-} from "../services/crossPlatformSyncService?.js";
+} from "../services/crossPlatformSyncService.js";
 
 const _router = Router();
 

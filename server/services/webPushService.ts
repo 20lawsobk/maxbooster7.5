@@ -2,8 +2,8 @@ import webpush from "web-push";
 import { db } from "../db";
 import { pushSubscriptions } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import type { RichPushPayload } from "./pushNotificationTypes?.js";
+import { logger } from "../logger.js";
+import type { RichPushPayload } from "./pushNotificationTypes.js";
 
 export interface PushPayload {
   title: string;
@@ -41,7 +41,7 @@ class WebPushService {
 
     try {
       webpush?.setVapidDetails(subject, publicKey, privateKey);
-      this?.initialized = true;
+      this.initialized = true;
       logger?.info("Web Push service initialized with VAPID keys");
     } catch (error) {
       logger?.warn({ err: error }, "Failed to initialize Web Push:");
@@ -189,8 +189,8 @@ class WebPushService {
       title: payload?.title,
       body: payload?.body,
       url: payload?.url || "/",
-      icon: payload?.icon || "/icons/icon-192x192?.png",
-      badge: payload?.badge || "/icons/icon-72x72?.png",
+      icon: payload?.icon || "/icons/icon-192x192.png",
+      badge: payload?.badge || "/icons/icon-72x72.png",
       tag: payload?.tag,
       actions: payload?.actions || [
         { action: "open", title: "Open" },

@@ -1,7 +1,7 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { auditLogs, type AuditLog } from "@shared/schema";
 import { eq, and, lt, desc, sql, gte } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import cron from "node-cron";
 import crypto from "crypto";
 
@@ -43,13 +43,13 @@ export class AuditLoggerService {
 
   public static getInstance(): AuditLoggerService {
     if (!AuditLoggerService?.instance) {
-      AuditLoggerService?.instance = new AuditLoggerService();
+      AuditLoggerService.instance = new AuditLoggerService();
     }
     return AuditLoggerService?.instance;
   }
 
   public initialize(): void {
-    this?.archivalCronJob = cron?.schedule(
+    this.archivalCronJob = cron?.schedule(
       "0 3 * * *",
       async () => {
         await this?.archiveOldLogs();
@@ -109,7 +109,7 @@ export class AuditLoggerService {
         })
         .returning();
 
-      this?.lastHash = hash;
+      this.lastHash = hash;
 
       if (entry?.riskLevel === "high" || entry?.riskLevel === "critical") {
         logger?.warn(`🔒 High-risk audit event: ${entry?.action}`, {

@@ -1,5 +1,5 @@
 import { storage } from "../storage";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 /**
  * Advertisement Kill/Pivot Rules Service
@@ -182,11 +182,11 @@ export class AdvertisingRulesService {
     // Organic performance learnings
     if (metrics?.engagement && variant?.predictedEngagement) {
       const _performanceRatio = metrics?.engagement / variant?.predictedEngagement;
-      if (performanceRatio < 0?.5) {
+      if (performanceRatio < 0.5) {
         learnings?.push(
           `Organic engagement ${Math?.round((1 - performanceRatio) * 100)}% below prediction - content may not resonate with audience`,
         );
-      } else if (performanceRatio > 1?.5) {
+      } else if (performanceRatio > 1.5) {
         learnings?.push(
           `Organic engagement ${Math?.round((performanceRatio - 1) * 100)}% above prediction - high-performing content, allocate more reach to similar posts`,
         );
@@ -299,15 +299,15 @@ export class AdvertisingRulesService {
    */
   private estimateAdSpendEquivalent(reach: number, platform: string): number {
     const cpm: Record<string, number> = {
-      facebook: 12?.0,
-      instagram: 9?.0,
-      twitter: 6?.5,
-      linkedin: 33?.0,
-      tiktok: 10?.0,
-      youtube: 20?.0,
+      facebook: 12.0,
+      instagram: 9.0,
+      twitter: 6.5,
+      linkedin: 33.0,
+      tiktok: 10.0,
+      youtube: 20.0,
     };
 
-    const _platformCPM = cpm[platform] || 10?.0;
+    const _platformCPM = cpm[platform] || 10.0;
     return Math?.round((reach / 1000) * platformCPM);
   }
 

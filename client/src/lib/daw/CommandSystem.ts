@@ -44,7 +44,7 @@ export class CommandHistory {
       }
     }
 
-    this?.future = [];
+    this.future = [];
     this?.notify();
   }
 
@@ -69,13 +69,13 @@ export class CommandHistory {
   }
 
   startBatch(): void {
-    this?.isBatching = true;
-    this?.batchCommands = [];
+    this.isBatching = true;
+    this.batchCommands = [];
   }
 
   endBatch(batchId: string): void {
     if (!this?.isBatching || this?.batchCommands.length === 0) {
-      this?.isBatching = false;
+      this.isBatching = false;
       return;
     }
 
@@ -85,9 +85,9 @@ export class CommandHistory {
       this?.past.shift();
     }
 
-    this?.future = [];
-    this?.isBatching = false;
-    this?.batchCommands = [];
+    this.future = [];
+    this.isBatching = false;
+    this.batchCommands = [];
     this?.notify();
   }
 
@@ -95,8 +95,8 @@ export class CommandHistory {
     for (let i = this?.batchCommands.length - 1; i >= 0; i--) {
       this?.batchCommands[i].undo();
     }
-    this?.isBatching = false;
-    this?.batchCommands = [];
+    this.isBatching = false;
+    this.batchCommands = [];
     this?.notify();
   }
 
@@ -109,8 +109,8 @@ export class CommandHistory {
   }
 
   clear(): void {
-    this?.past = [];
-    this?.future = [];
+    this.past = [];
+    this.future = [];
     this?.notify();
   }
 
@@ -141,7 +141,7 @@ export class BatchCommand implements Command {
     id: string,
     private commands: Command[],
   ) {
-    this?.id = id;
+    this.id = id;
   }
 
   execute(): void {

@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { smartDefaultsService } from "../services/smartDefaultsService";
 import { personalizationService } from "../services/personalizationService";
 import { logger } from "../logger";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const _router = Router();
 

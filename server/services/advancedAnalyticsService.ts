@@ -15,7 +15,7 @@ import {
   InsertGlobalRanking,
 } from "@shared/schema";
 import { eq, and, desc, asc, sql, gte, lte, lt } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type Platform =
   | "spotify"
@@ -535,12 +535,12 @@ class AdvancedAnalyticsService {
     const _shazamPlatform = platformData?.find((p) => p?.platform === "shazam");
     const _shazamScore = Math?.min(
       100,
-      (shazamPlatform?.streams || 0) / 500 + streamingScore * 0?.3,
+      (shazamPlatform?.streams || 0) / 500 + streamingScore * 0.3,
     );
     const _radioPlatform = platformData?.find((p) => p?.platform === "radio");
     const _radioScore = Math?.min(
       100,
-      (radioPlatform?.streams || 0) / 200 + socialScore * 0?.4,
+      (radioPlatform?.streams || 0) / 200 + socialScore * 0.4,
     );
     const _currentStreams = analyticsData?.totalStreams || 0;
     const _prevStreams = prevAnalyticsData?.totalStreams || 0;
@@ -552,16 +552,16 @@ class AdvancedAnalyticsService {
           : 0;
     const _viralScore = Math?.min(
       100,
-      Math?.max(0, streamingScore * 0?.5 + Math?.max(0, growthRate) * 1?.5),
+      Math?.max(0, streamingScore * 0.5 + Math?.max(0, growthRate) * 1.5),
     );
 
     const _maxScore =
-      streamingScore * 0?.3 +
-      socialScore * 0?.15 +
-      playlistScore * 0?.2 +
-      shazamScore * 0?.15 +
-      radioScore * 0?.1 +
-      viralScore * 0?.1;
+      streamingScore * 0.3 +
+      socialScore * 0.15 +
+      playlistScore * 0.2 +
+      shazamScore * 0.15 +
+      radioScore * 0.1 +
+      viralScore * 0.1;
 
     const platformScores: Record<string, number> = {};
     platformData?.forEach((p) => {
@@ -782,20 +782,20 @@ class AdvancedAnalyticsService {
     );
     const _syncPotentialScore = Math?.min(
       100,
-      growthScore * 0?.4 + engagementScore * 0?.3 + 20,
+      growthScore * 0.4 + engagementScore * 0.3 + 20,
     );
 
     const _overallScore =
-      growthScore * 0?.25 +
-      engagementScore * 0?.2 +
-      viralityScore * 0?.15 +
-      audienceQualityScore * 0?.15 +
-      playlistPotentialScore * 0?.15 +
-      syncPotentialScore * 0?.1;
+      growthScore * 0.25 +
+      engagementScore * 0.2 +
+      viralityScore * 0.15 +
+      audienceQualityScore * 0.15 +
+      playlistPotentialScore * 0.15 +
+      syncPotentialScore * 0.1;
 
     const _signingPotentialScore = Math?.min(
       100,
-      overallScore * (growthRate > 20 ? 1?.2 : growthRate > 0 ? 1?.0 : 0?.8),
+      overallScore * (growthRate > 20 ? 1.2 : growthRate > 0 ? 1.0 : 0.8),
     );
 
     let growthTrajectory: ArDiscoveryResult["growthTrajectory"];
@@ -819,7 +819,7 @@ class AdvancedAnalyticsService {
       monthlyListeners,
       monthlyListenersGrowth: growthRate,
       followerCount,
-      followerGrowth: growthRate * 0?.8,
+      followerGrowth: growthRate * 0.8,
       growthTrajectory,
       topMarkets: [
         { country: "US", percentage: 35 },
@@ -833,13 +833,13 @@ class AdvancedAnalyticsService {
           ? [
               {
                 title: "Latest Release",
-                streams: Math?.round(currentStreams * 0?.6),
+                streams: Math?.round(currentStreams * 0.6),
                 growth: growthRate,
               },
               {
                 title: "Previous Release",
-                streams: Math?.round(prevStreams * 0?.5),
-                growth: growthRate * 0?.6,
+                streams: Math?.round(prevStreams * 0.5),
+                growth: growthRate * 0.6,
               },
             ]
           : [],
@@ -917,8 +917,8 @@ class AdvancedAnalyticsService {
 
         const _match = lowerQuery?.match(/top\s+(\d+)/);
         const _limitN = match ? parseInt(match[1]) : 5;
-        entities?.limit = limitN;
-        entities?.locationType = lowerQuery?.includes("cities")
+        entities.limit = limitN;
+        entities.locationType = lowerQuery?.includes("cities")
           ? "cities"
           : "countries";
 
@@ -969,7 +969,7 @@ class AdvancedAnalyticsService {
         if (lowerQuery?.includes("apple"))
           requestedPlatforms?.push("apple_music");
         if (lowerQuery?.includes("youtube")) requestedPlatforms?.push("youtube");
-        entities?.platforms = requestedPlatforms;
+        entities.platforms = requestedPlatforms;
 
         const _platformRows = await db
           .select({
@@ -1047,7 +1047,7 @@ class AdvancedAnalyticsService {
           const _n = parseInt(timeMatch[1]);
           const _unit = timeMatch[2];
           daysBack = unit === "week" ? n * 7 : unit === "month" ? n * 30 : n;
-          entities?.timeframe = `${n} ${unit}${n > 1 ? "s" : ""}`;
+          entities.timeframe = `${n} ${unit}${n > 1 ? "s" : ""}`;
         }
         const _periodStart = new Date(
           now?.getTime() - daysBack * 24 * 60 * 60 * 1000,
@@ -1302,7 +1302,7 @@ class AdvancedAnalyticsService {
       (sum, d) => sum + Number(d?.streams || 0),
       0,
     );
-    yoyComparisons?.streams = {
+    yoyComparisons.streams = {
       current: currentStreams,
       previous: previousStreams,
       change:
@@ -1319,7 +1319,7 @@ class AdvancedAnalyticsService {
       (sum, d) => sum + (d?.revenue || 0),
       0,
     );
-    yoyComparisons?.revenue = {
+    yoyComparisons.revenue = {
       current: currentRevenue,
       previous: previousRevenue,
       change:

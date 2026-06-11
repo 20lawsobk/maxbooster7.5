@@ -1,15 +1,15 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db?.js";
-import { userStorage, userStorageFiles } from "../../shared/schema?.js";
+import { db } from "../db.js";
+import { userStorage, userStorageFiles } from "../../shared/schema.js";
 import { eq, and, desc, sql, isNull, isNotNull } from "drizzle-orm";
-import { storageService } from "../services/storageService?.js";
-import { createHardenedUpload } from "../middleware/uploadHandler?.js";
+import { storageService } from "../services/storageService.js";
+import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import crypto from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   requireUUIDParam,
   requireSafeParam,
-} from "../middleware/requestValidation?.js";
+} from "../middleware/requestValidation.js";
 
 const _PERMANENT_DELETE_DAYS = 30;
 

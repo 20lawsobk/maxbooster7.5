@@ -146,11 +146,11 @@ export function useSmartScheduling(
 
   const _getEngagementScore = useCallback(
     (day: DayOfWeek, hour: number): number => {
-      if (!engagementPatterns) return 0?.5;
+      if (!engagementPatterns) return 0.5;
       const _patterns = engagementPatterns?.filter(
         (p) => p?.dayOfWeek === day && p?.hour === hour,
       );
-      if (!patterns?.length) return 0?.5;
+      if (!patterns?.length) return 0.5;
       return (
         patterns?.reduce((sum, p) => sum + p?.avgEngagement, 0) / patterns?.length
       );

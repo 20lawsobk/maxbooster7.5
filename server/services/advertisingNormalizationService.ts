@@ -1,5 +1,5 @@
 import type { AdCreative } from "@shared/schema";
-import { getRedisClient } from "../lib/redisConnectionFactory?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
 /**
  * Advertisement Content Normalization Service
@@ -38,13 +38,13 @@ export class AdvertisingNormalizationService {
     facebook: {
       textMax: 125, // Short text performs best organically
       hashtagMax: 30,
-      imageRatio: [1?.91, 1, 4 / 5],
+      imageRatio: [1.91, 1, 4 / 5],
       optimalLength: 80, // Engagement sweet spot
     },
     instagram: {
       textMax: 2200,
       hashtagMax: 30,
-      imageRatio: [1?.91, 1, 4 / 5],
+      imageRatio: [1.91, 1, 4 / 5],
       optimalLength: 138, // Research-backed engagement length
     },
     twitter: {
@@ -56,7 +56,7 @@ export class AdvertisingNormalizationService {
     linkedin: {
       textMax: 3000,
       hashtagMax: 5,
-      imageRatio: [1?.91, 1],
+      imageRatio: [1.91, 1],
       optimalLength: 150, // Professional engagement length
     },
     tiktok: {
@@ -334,7 +334,7 @@ export class AdvertisingNormalizationService {
     // Check for excessive caps
     const _capsRatio =
       (text?.match(/[A-Z]/g) || []).length / Math?.max(text?.length, 1);
-    if (capsRatio > 0?.5) return true;
+    if (capsRatio > 0.5) return true;
 
     // Check for excessive exclamation marks
     const _exclamationCount = (text?.match(/!/g) || []).length;

@@ -31,11 +31,11 @@ import { eq } from "drizzle-orm";
 import { logger } from "../logger";
 import { executeStripeOperation } from "../services/externalServices";
 import { billingRateLimiter } from "../middleware/rateLimiter";
-import { requireAuth } from "../middleware/auth?.js";
-import { notificationService } from "../services/notificationService?.js";
-import { stripeService } from "../services/stripeService?.js";
-import { instantPayoutService } from "../services/instantPayoutService?.js";
-import { env } from "../config/env?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { notificationService } from "../services/notificationService.js";
+import { stripeService } from "../services/stripeService.js";
+import { instantPayoutService } from "../services/instantPayoutService.js";
+import { env } from "../config/env.js";
 
 const _router = Router();
 
@@ -361,7 +361,7 @@ router?.post(
       const _userId = req?.user!.id;
       const _customerId = await getOrCreateStripeCustomer(req?.user);
       const _appUrl =
-        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster?.com";
+        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster.com";
 
       const priceMap: Record<
         string,
@@ -1091,8 +1091,8 @@ router?.post(
         customer: customerId,
         mode: "setup",
         payment_method_types: ["card"],
-        success_url: `${process?.env.APP_URL || "https://max-booster?.com"}/settings?payment=updated`,
-        cancel_url: `${process?.env.APP_URL || "https://max-booster?.com"}/settings?payment=canceled`,
+        success_url: `${process?.env.APP_URL || "https://max-booster.com"}/settings?payment=updated`,
+        cancel_url: `${process?.env.APP_URL || "https://max-booster.com"}/settings?payment=canceled`,
         metadata: { userId },
       });
 
@@ -1129,7 +1129,7 @@ router?.post(
 
       const _portalSession = await stripe?.billingPortal.sessions?.create({
         customer: user?.stripeCustomerId,
-        return_url: `${process?.env.APP_URL || "https://max-booster?.com"}/settings`,
+        return_url: `${process?.env.APP_URL || "https://max-booster.com"}/settings`,
       });
 
       res?.json({ url: portalSession?.url });
@@ -1859,14 +1859,14 @@ router?.post(
         const evidenceSubmission: Stripe?.DisputeUpdateParams.Evidence = {};
 
         if (evidence?.customer_name)
-          evidenceSubmission?.customer_name = evidence?.customer_name;
+          evidenceSubmission.customer_name = evidence?.customer_name;
         if (evidence?.customer_email_address)
-          evidenceSubmission?.customer_email_address =
+          evidenceSubmission.customer_email_address =
             evidence?.customer_email_address;
         if (evidence?.product_description)
-          evidenceSubmission?.product_description = evidence?.product_description;
+          evidenceSubmission.product_description = evidence?.product_description;
         if (evidence?.uncategorized_text)
-          evidenceSubmission?.uncategorized_text = evidence?.uncategorized_text;
+          evidenceSubmission.uncategorized_text = evidence?.uncategorized_text;
 
         await stripe?.disputes.update(disputeId, {
           evidence: evidenceSubmission,
@@ -2169,13 +2169,13 @@ router?.get(
       }
 
       try {
-        const invoiceParams: Stripe?.InvoiceListParams = {
+        const invoiceParams: Stripe.InvoiceListParams = {
           customer: user?.stripeCustomerId,
           limit: Math?.min(Number(limit), 100),
         };
 
         if (status && typeof status === "string") {
-          invoiceParams?.status = status as Stripe?.InvoiceListParams.Status;
+          invoiceParams.status = status as Stripe?.InvoiceListParams.Status;
         }
 
         const _invoices = await stripe?.invoices.list(invoiceParams);

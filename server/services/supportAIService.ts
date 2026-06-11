@@ -1,6 +1,6 @@
 import { knowledgeBaseService } from "./knowledgeBaseService";
 import { supportTicketService } from "./supportTicketService";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface SupportQuery {
   question: string;
@@ -114,7 +114,7 @@ export class SupportAIService {
       "marketplace fees",
       {
         answer:
-          "Everything is included in your Max Booster subscription — no hidden fees or top-ups:\n\n**All-Inclusive Subscription:**\n- No platform fees on marketplace sales\n- No distribution fees\n- No feature top-ups\n- You keep 100% of your revenue\n\n**Payment Processing:**\n- Standard Stripe fees: 2?.9% + $0?.30 per transaction\n- Instant payouts available\n\n**Example:** If you sell a beat for $50:\n- Platform fee: $0 (included in subscription)\n- Stripe processing: ~$1?.75\n- Net to you: ~$48?.25\n\n**What's Included:**\n- Distribution to 150+ platforms\n- Beat marketplace & licensing\n- AI studio, social media autopilot\n- Custom storefront (yourname?.maxbooster.app)\n- All current and future features",
+          "Everything is included in your Max Booster subscription — no hidden fees or top-ups:\n\n**All-Inclusive Subscription:**\n- No platform fees on marketplace sales\n- No distribution fees\n- No feature top-ups\n- You keep 100% of your revenue\n\n**Payment Processing:**\n- Standard Stripe fees: 2.9% + $0.30 per transaction\n- Instant payouts available\n\n**Example:** If you sell a beat for $50:\n- Platform fee: $0 (included in subscription)\n- Stripe processing: ~$1.75\n- Net to you: ~$48.25\n\n**What's Included:**\n- Distribution to 150+ platforms\n- Beat marketplace & licensing\n- AI studio, social media autopilot\n- Custom storefront (yourname?.maxbooster.app)\n- All current and future features",
         category: "marketplace",
       },
     ],
@@ -170,7 +170,7 @@ export class SupportAIService {
       "subscription plans",
       {
         answer:
-          "Max Booster offers 3 subscription tiers:\n\n**Free:**\n- Limited features\n- 1 release per year\n- Basic analytics\n\n**Pro ($9?.99/month):**\n- Unlimited releases\n- All AI tools\n- Advanced analytics\n- Priority support\n- All features unlocked\n\n**Lifetime ($299 one-time):**\n- Everything in Pro\n- Lifetime access (never pay again)\n- Early access to new features\n- VIP support\n\n**You keep 100% of royalties on ALL plans!**",
+          "Max Booster offers 3 subscription tiers:\n\n**Free:**\n- Limited features\n- 1 release per year\n- Basic analytics\n\n**Pro ($9.99/month):**\n- Unlimited releases\n- All AI tools\n- Advanced analytics\n- Priority support\n- All features unlocked\n\n**Lifetime ($299 one-time):**\n- Everything in Pro\n- Lifetime access (never pay again)\n- Early access to new features\n- VIP support\n\n**You keep 100% of royalties on ALL plans!**",
         category: "billing",
       },
     ],
@@ -230,7 +230,7 @@ export class SupportAIService {
       const _articles = await this?.findRelevantArticles(normalizedQuestion);
       return {
         answer: directAnswer?.answer,
-        confidence: 0?.95,
+        confidence: 0.95,
         suggestedArticles: articles,
         shouldEscalate: false,
         category: directAnswer?.category,
@@ -249,7 +249,7 @@ export class SupportAIService {
 
       return {
         answer: `Based on our knowledge base:\n\n${snippet}\n\nFor more details, please check the full article: "${topArticle?.title}"`,
-        confidence: 0?.75,
+        confidence: 0.75,
         suggestedArticles: articles,
         shouldEscalate: false,
         category: topArticle?.category,
@@ -257,11 +257,11 @@ export class SupportAIService {
     }
 
     const _complexityScore = this?.analyzeComplexity(query?.question);
-    if (complexityScore > 0?.7) {
+    if (complexityScore > 0.7) {
       return {
         answer:
           "This seems like a complex question that would benefit from human support. I've escalated this to our support team who will provide a detailed response. In the meantime, you might find these articles helpful:",
-        confidence: 0?.4,
+        confidence: 0.4,
         suggestedArticles: await knowledgeBaseService?.getPopularArticles(3),
         shouldEscalate: true,
       };
@@ -271,7 +271,7 @@ export class SupportAIService {
       const _aiGeneratedAnswer = await this?.generateAIAnswer(query?.question);
       return {
         answer: aiGeneratedAnswer,
-        confidence: 0?.6,
+        confidence: 0.6,
         suggestedArticles: articles,
         shouldEscalate: false,
       };
@@ -280,7 +280,7 @@ export class SupportAIService {
       return {
         answer:
           "I apologize, but I'm having trouble understanding your question. Our support team can help! Would you like to create a support ticket or try rephrasing your question?",
-        confidence: 0?.3,
+        confidence: 0.3,
         suggestedArticles: [],
         shouldEscalate: true,
       };
@@ -293,7 +293,7 @@ export class SupportAIService {
     for (const [key, value] of this?.commonQuestions) {
       if (
         question?.includes(key) ||
-        this?.calculateSimilarity(question, key) > 0?.7
+        this?.calculateSimilarity(question, key) > 0.7
       ) {
         return value;
       }
@@ -403,7 +403,7 @@ export class SupportAIService {
   }
 
   private async generateAIAnswer(question: string): Promise<string> {
-    const { MaxCoreAIClient } = await import("./maxcoreClient?.js");
+    const { MaxCoreAIClient } = await import("./maxcoreClient.js");
     const _mc = await MaxCoreAIClient?.infer<unknown>("/api/generate/content", {
       topic: question,
       platform: "support",

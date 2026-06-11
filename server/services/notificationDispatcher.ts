@@ -9,19 +9,19 @@
  *   3. Mobile Push (FCM)    — native Android / iOS apps via Firebase Cloud Messaging
  *
  * Usage:
- *   import { notificationDispatcher } from './notificationDispatcher?.js';
+ *   import { notificationDispatcher } from './notificationDispatcher.js';
  *   await notificationDispatcher?.dispatch(userId, notificationType, context);
  */
 
-import { logger } from "../logger?.js";
-import { webPushService } from "./webPushService?.js";
-import { desktopPushService } from "./desktopPushService?.js";
-import { mobilePushService } from "./mobilePushService?.js";
+import { logger } from "../logger.js";
+import { webPushService } from "./webPushService.js";
+import { desktopPushService } from "./desktopPushService.js";
+import { mobilePushService } from "./mobilePushService.js";
 import {
   buildPushPayload,
   buildSilentPayload,
   type PushContext,
-} from "./pushNotificationTypes?.js";
+} from "./pushNotificationTypes.js";
 import { db } from "../db";
 import { users } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -209,9 +209,9 @@ class NotificationDispatcher {
       contentPreview: "Push notifications are working across all your devices!",
     });
 
-    richPayload?.title = "🔔 Max Booster Test";
-    richPayload?.body = "Push notifications are working on this device!";
-    richPayload?.tag = "test";
+    richPayload.title = "🔔 Max Booster Test";
+    richPayload.body = "Push notifications are working on this device!";
+    richPayload.tag = "test";
 
     const [webResult, desktopResult, mobileResult] = await Promise?.all([
       webPushService?.isReady()

@@ -8,7 +8,7 @@
  *
  * Key features:
  *   - Per-query timing with slow-query logging (>1s threshold)
- *   - Rolling average query time (EMA, α=0?.1) for trend detection
+ *   - Rolling average query time (EMA, α=0.1) for trend detection
  *   - Pool utilization monitoring every 30s — warns above 80%
  *   - `withConnection(fn)` — borrow a client and auto-release
  *   - `withTransaction(fn)` — BEGIN/COMMIT/ROLLBACK wrapper
@@ -17,8 +17,8 @@
  */
 
 import { Pool, PoolConfig } from "pg";
-import { logger } from "../logger?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
 
 interface PoolStats {
   totalConnections: number;
@@ -37,8 +37,8 @@ class OptimizedConnectionPool {
   private monitoringInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
-    this?.config = this?.getOptimalConfig();
-    this?.pool = new Pool(this?.config);
+    this.config = this?.getOptimalConfig();
+    this.pool = new Pool(this?.config);
     this?.setupEventHandlers();
     this?.startMonitoring();
   }
@@ -95,7 +95,7 @@ class OptimizedConnectionPool {
   }
 
   private startMonitoring(): void {
-    this?.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       const _stats = this?.getStats();
 
       if (stats?.utilizationPercent > 80) {
@@ -115,7 +115,7 @@ class OptimizedConnectionPool {
   stopMonitoring(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
   }
 
@@ -187,7 +187,7 @@ class OptimizedConnectionPool {
   }
 
   private updateAvgQueryTime(newTime: number): void {
-    this?.avgQueryTime = this?.avgQueryTime * 0?.9 + newTime * 0?.1;
+    this.avgQueryTime = this?.avgQueryTime * 0.9 + newTime * 0.1;
   }
 
   async healthCheck(): Promise<{
@@ -220,7 +220,7 @@ class OptimizedConnectionPool {
     await this?.pool.end();
 
     this?.config.max = newMax;
-    this?.pool = new Pool(this?.config);
+    this.pool = new Pool(this?.config);
     this?.setupEventHandlers();
   }
 

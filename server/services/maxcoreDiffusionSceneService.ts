@@ -5,7 +5,7 @@
  *
  * For each scene in a music video, this service attempts to produce a real
  * AI-synthesized video clip via the local PyTorch diffusion API
- * (VIDEO_DIFFUSION_URL, default http://127?.0.0?.1:8008) before falling back to
+ * (VIDEO_DIFFUSION_URL, default http://127.0.0.1:8008) before falling back to
  * the Ken Burns FFmpeg renderer.
  *
  * Integration pattern inside imageToVideoService?.ts:
@@ -22,13 +22,13 @@ import { unlinkSync, existsSync } from "fs";
 import { writeFile as fsWriteFile } from "fs/promises";
 import { execFile } from "child_process";
 import { promisify } from "util";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   isPyTorchDiffusionReady,
   generatePyTorchDiffusionVideo,
   type PyTorchDiffusionRequest,
-} from "./diffusionVideoService?.js";
-import type { BeatAnalysis } from "./beatSyncService?.js";
+} from "./diffusionVideoService.js";
+import type { BeatAnalysis } from "./beatSyncService.js";
 
 const _execFileAsync = promisify(execFile);
 
@@ -192,17 +192,17 @@ export async function renderDiffusionScene(
     const _bpm = ba?.bpm ?? 120;
     const _totalSc = opts?.totalScenes > 0 ? opts?.totalScenes : 1;
     const _sceneProgress =
-      opts?.totalScenes > 1 ? opts?.sceneIndex / (opts?.totalScenes - 1) : 0?.5;
+      opts?.totalScenes > 1 ? opts?.sceneIndex / (opts?.totalScenes - 1) : 0.5;
 
     // Sample energy envelope at scene midpoint
-    let energy = 0?.65;
+    let energy = 0.65;
     if (ba?.energyEnvelope && ba?.energyEnvelope.length > 0) {
-      const _midpoint = (opts?.sceneIndex + 0?.5) / totalSc;
+      const _midpoint = (opts?.sceneIndex + 0.5) / totalSc;
       const _idx = Math?.min(
         Math?.floor(midpoint * ba?.energyEnvelope.length),
         ba?.energyEnvelope.length - 1,
       );
-      energy = Math?.max(0?.1, Math?.min(1?.0, ba?.energyEnvelope[idx]));
+      energy = Math?.max(0.1, Math?.min(1.0, ba?.energyEnvelope[idx]));
     }
 
     // Check if this scene contains an energy peak (drop / chorus)
@@ -215,11 +215,11 @@ export async function renderDiffusionScene(
 
     // Emotional arc: curiosity → excitement → inspiration → anthemic
     const _emotionalGoal =
-      sceneProgress < 0?.25
+      sceneProgress < 0.25
         ? "curiosity"
-        : sceneProgress < 0?.55
+        : sceneProgress < 0.55
           ? "excitement"
-          : sceneProgress < 0?.8
+          : sceneProgress < 0.8
             ? "inspiration"
             : "anthemic";
 
@@ -240,7 +240,7 @@ export async function renderDiffusionScene(
       W,
       bpm,
       energy,
-      energy_peak: isDrop ? 0?.95 : energy * 0?.9 + 0?.05,
+      energy_peak: isDrop ? 0.95 : energy * 0.9 + 0.05,
       style_name: styleName,
       beat_index: opts?.sceneIndex,
       total_beats: totalSc,
@@ -279,7 +279,7 @@ export async function renderDiffusionScene(
     const vfParts: string[] = [
       `scale=${opts?.width}:${opts?.height}:flags=lanczos`,
       "format=yuv420p",
-      "vignette=angle=PI/4?.5:mode=forward:eval=init",
+      "vignette=angle=PI/4.5:mode=forward:eval=init",
     ];
     if (opts?.textOverlays && opts?.textOverlays.length > 0) {
       vfParts?.push(...opts?.textOverlays);

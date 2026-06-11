@@ -2,10 +2,10 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { storage } from "../storage";
 import type { InsertJWTToken, InsertRefreshToken } from "@shared/schema";
-import { logger } from "../logger?.js";
-import { sessionTracking } from "./sessionTrackingService?.js";
-import { env } from "../config/env?.js";
-import { isProductionEnv } from "../lib/envHelpers?.js";
+import { logger } from "../logger.js";
+import { sessionTracking } from "./sessionTrackingService.js";
+import { env } from "../config/env.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 // SESSION_SECRET is REQUIRED in every environment (prod, staging, dev, test).
 // We never fall back to a deterministic value — that would let any attacker

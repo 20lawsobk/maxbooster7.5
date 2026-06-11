@@ -19,14 +19,14 @@ import {
 } from "@shared/schema";
 import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
-import { requireAuth, requireAuthOnly } from "../middleware/auth?.js";
-import { aiRateLimiter } from "../middleware/rateLimiter?.js";
-import { notificationService } from "../services/notificationService?.js";
+import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
+import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import { notificationService } from "../services/notificationService.js";
 import {
   audioUpload,
   artworkUpload,
   mediaUpload,
-} from "../middleware/uploadHandler?.js";
+} from "../middleware/uploadHandler.js";
 import {
   analyzeUrl,
   analyzeAudio,
@@ -34,93 +34,93 @@ import {
   urlToContentSeed,
   audioToContentSeed,
   imageToContentSeed,
-} from "../services/mediaAnalyzerService?.js";
+} from "../services/mediaAnalyzerService.js";
 import {
   getVisualSpec,
   type SupportedPlatform as ContentSupportedPlatform,
   ALL_PLATFORMS as CONTENT_ALL_PLATFORMS,
-} from "../services/contentPipeline/platformFormatters?.js";
+} from "../services/contentPipeline/platformFormatters.js";
 
 // ── Lazy-loaded AI/TF-heavy services ──────────────────────────────────────────
 // These are only imported on first use inside route handlers — NOT at module
 // load time — so route registration never fails due to missing TF native libs.
 let _unifiedAIController:
-  | typeof import("../services/unifiedAIController?.js").unifiedAIController
+  | typeof import("../services/unifiedAIController.js").unifiedAIController
   | null = null;
 let _contentQualityPipeline:
-  | typeof import("../services/contentQualityPipeline?.js").contentQualityPipeline
+  | typeof import("../services/contentQualityPipeline.js").contentQualityPipeline
   | null = null;
 let _competitorBenchmarkService:
-  | typeof import("../services/competitorBenchmarkService?.js").competitorBenchmarkService
+  | typeof import("../services/competitorBenchmarkService.js").competitorBenchmarkService
   | null = null;
 let _pythonAIService:
-  | typeof import("../services/pythonAIService?.js").pythonAIService
+  | typeof import("../services/pythonAIService.js").pythonAIService
   | null = null;
 let _veoMusicService:
-  | typeof import("../services/veoMusicService?.js").veoMusicService
+  | typeof import("../services/veoMusicService.js").veoMusicService
   | null = null;
 let _renderAdvancedVideo:
-  | typeof import("../services/advancedVideoRendererService?.js").renderVideo
+  | typeof import("../services/advancedVideoRendererService.js").renderVideo
   | null = null;
 let _maxcoreVideoUrlStore:
-  | typeof import("../services/advancedVideoRendererService?.js").maxcoreVideoUrlStore
+  | typeof import("../services/advancedVideoRendererService.js").maxcoreVideoUrlStore
   | null = null;
 let _voiceSynthService:
-  | typeof import("../services/voiceSynthesisService?.js")
+  | typeof import("../services/voiceSynthesisService.js")
   | null = null;
-let _beatSyncService: typeof import("../services/beatSyncService?.js") | null =
+let _beatSyncService: typeof import("../services/beatSyncService.js") | null =
   null;
 let _imageToVideoService:
-  | typeof import("../services/imageToVideoService?.js")
+  | typeof import("../services/imageToVideoService.js")
   | null = null;
 
 async function getVoiceSynthService() {
   if (!_voiceSynthService)
-    _voiceSynthService = await import("../services/voiceSynthesisService?.js");
+    _voiceSynthService = await import("../services/voiceSynthesisService.js");
   return _voiceSynthService!;
 }
 async function getBeatSyncService() {
   if (!_beatSyncService)
-    _beatSyncService = await import("../services/beatSyncService?.js");
+    _beatSyncService = await import("../services/beatSyncService.js");
   return _beatSyncService!;
 }
 async function getImageToVideoService() {
   if (!_imageToVideoService)
-    _imageToVideoService = await import("../services/imageToVideoService?.js");
+    _imageToVideoService = await import("../services/imageToVideoService.js");
   return _imageToVideoService!;
 }
 
 async function getUnifiedAI() {
   if (!_unifiedAIController) {
-    const _m = await import("../services/unifiedAIController?.js");
+    const _m = await import("../services/unifiedAIController.js");
     _unifiedAIController = m?.unifiedAIController;
   }
   return _unifiedAIController!;
 }
 async function getCompetitorBenchmark() {
   if (!_competitorBenchmarkService) {
-    const _m = await import("../services/competitorBenchmarkService?.js");
+    const _m = await import("../services/competitorBenchmarkService.js");
     _competitorBenchmarkService = m?.competitorBenchmarkService;
   }
   return _competitorBenchmarkService!;
 }
 async function getPythonAI() {
   if (!_pythonAIService) {
-    const _m = await import("../services/pythonAIService?.js");
+    const _m = await import("../services/pythonAIService.js");
     _pythonAIService = m?.pythonAIService;
   }
   return _pythonAIService!;
 }
 async function getVeoMusic() {
   if (!_veoMusicService) {
-    const _m = await import("../services/veoMusicService?.js");
+    const _m = await import("../services/veoMusicService.js");
     _veoMusicService = m?.veoMusicService;
   }
   return _veoMusicService!;
 }
 async function getRenderAdvancedVideo() {
   if (!_renderAdvancedVideo) {
-    const _m = await import("../services/advancedVideoRendererService?.js");
+    const _m = await import("../services/advancedVideoRendererService.js");
     _renderAdvancedVideo = m?.renderVideo;
     _maxcoreVideoUrlStore = m?.maxcoreVideoUrlStore;
   }
@@ -128,7 +128,7 @@ async function getRenderAdvancedVideo() {
 }
 async function getMaxcoreVideoUrlStore() {
   if (!_maxcoreVideoUrlStore) {
-    const _m = await import("../services/advancedVideoRendererService?.js");
+    const _m = await import("../services/advancedVideoRendererService.js");
     _renderAdvancedVideo = m?.renderVideo;
     _maxcoreVideoUrlStore = m?.maxcoreVideoUrlStore;
   }
@@ -461,12 +461,12 @@ router?.put(
       }
 
       const updates: Record<string, unknown> = {};
-      if (platform !== undefined) updates?.platform = platform;
-      if (content !== undefined) updates?.content = content;
-      if (mediaUrls !== undefined) updates?.mediaUrls = mediaUrls;
-      if (status !== undefined) updates?.status = status;
+      if (platform !== undefined) updates.platform = platform;
+      if (content !== undefined) updates.content = content;
+      if (mediaUrls !== undefined) updates.mediaUrls = mediaUrls;
+      if (status !== undefined) updates.status = status;
       if (scheduledAt !== undefined)
-        updates?.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+        updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
 
       const [updated] = await db
         .update(posts)
@@ -526,11 +526,11 @@ router?.patch(
       }
 
       const dbUpdates: Record<string, unknown> = {};
-      if (updates?.status !== undefined) dbUpdates?.status = updates?.status;
-      if (updates?.platform !== undefined) dbUpdates?.platform = updates?.platform;
-      if (updates?.content !== undefined) dbUpdates?.content = updates?.content;
+      if (updates?.status !== undefined) dbUpdates.status = updates?.status;
+      if (updates?.platform !== undefined) dbUpdates.platform = updates?.platform;
+      if (updates?.content !== undefined) dbUpdates.content = updates?.content;
       if (updates?.scheduledAt !== undefined) {
-        dbUpdates?.scheduledAt = updates?.scheduledAt
+        dbUpdates.scheduledAt = updates?.scheduledAt
           ? new Date(updates?.scheduledAt)
           : null;
       }
@@ -1121,15 +1121,15 @@ router?.get(
       const _trending = rawTags?.map((tag, i) => {
         const _base = hashVolume(tag, 15000);
         const _timeFactor =
-          Math?.sin((dayOfYear + i) * 0?.3 + hourOfDay * 0?.1) * 0?.15;
+          Math?.sin((dayOfYear + i) * 0.3 + hourOfDay * 0.1) * 0.15;
         const _volume = Math?.round(base * (1 + timeFactor));
         return {
           hashtag: tag?.startsWith("#") ? tag : `#${tag}`,
           posts: volume,
           trend:
-            timeFactor > 0?.05
+            timeFactor > 0.05
               ? "up"
-              : timeFactor < -0?.05
+              : timeFactor < -0.05
                 ? "down"
                 : ("stable" as string),
           category: guessCategory(tag),
@@ -2226,17 +2226,17 @@ function assertSafeExternalUrl(raw: string): void {
   const _h = parsed?.hostname.toLowerCase().replace(/^\[|\]$/g, ""); // strip IPv6 brackets
   const _blocked = [
     /^localhost$/i,
-    /^127\./, // 127?.0.0?.0/8  loopback
+    /^127\./, // 127.0.0.0/8  loopback
     /^0\.0\.0\.0$/,
     /^::1$/,
     /^fc00:/i,
     /^fd/i, // IPv6 unique-local
     /^fe80:/i, // IPv6 link-local
-    /^10\./, // 10?.0.0?.0/8   private
-    /^172\.(1[6-9]|2\d|3[01])\./, // 172?.16.0?.0/12 private
-    /^192\.168\./, // 192?.168.0?.0/16 private
-    /^169\.254\./, // 169?.254.0?.0/16 link-local + AWS/GCP metadata
-    /^100\.64\./, // 100?.64.0?.0/10 CGNAT
+    /^10\./, // 10.0.0.0/8   private
+    /^172\.(1[6-9]|2\d|3[01])\./, // 172.16.0.0/12 private
+    /^192\.168\./, // 192.168.0.0/16 private
+    /^169\.254\./, // 169.254.0.0/16 link-local + AWS/GCP metadata
+    /^100\.64\./, // 100.64.0.0/10 CGNAT
     /^198\.51\.100\./, // TEST-NET-2
     /^203\.0\.113\./, // TEST-NET-3
     /metadata\.google\.internal$/i,
@@ -2283,7 +2283,7 @@ router?.post(
       // Use the rich Python URL analyzer for full metadata extraction.
       // If the analyzer fails (network error, SSL issue, bot-block) we fall back
       // to a minimal stub so MaxCore can still generate relevant content from the URL.
-      let analysis: import("../services/mediaAnalyzerService?.js").UrlAnalysis;
+      let analysis: import("../services/mediaAnalyzerService.js").UrlAnalysis;
       try {
         analysis = await analyzeUrl(url?.trim());
       } catch (analyzeErr) {
@@ -2994,7 +2994,7 @@ router?.post(
               );
               // Convert domain to a readable product/platform name:
               //   "maxbooster?.replit.app" → "MaxBooster"
-              //   "my-beats?.com"          → "My Beats"
+              //   "my-beats.com"          → "My Beats"
               const _platformName = urlDomain
                 .split(".")[0]
                 .replace(/-/g, " ")
@@ -3941,13 +3941,13 @@ router?.post(
         content_type: "website",
       };
 
-      if (brand_notes) campaignRequest?.brand_notes = brand_notes;
+      if (brand_notes) campaignRequest.brand_notes = brand_notes;
       else if (description)
-        campaignRequest?.brand_notes = description?.slice(0, 300);
+        campaignRequest.brand_notes = description?.slice(0, 300);
 
-      if (campaign_notes) campaignRequest?.campaign_notes = campaign_notes;
-      if (artworkUrl) campaignRequest?.artwork_url = artworkUrl;
-      if (keywords?.length > 0) campaignRequest?.keywords = keywords;
+      if (campaign_notes) campaignRequest.campaign_notes = campaign_notes;
+      if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
+      if (keywords?.length > 0) campaignRequest.keywords = keywords;
 
       const _result = await (
         await getVeoMusic()
@@ -4069,10 +4069,10 @@ router?.post(
         content_type: isMusic ? "music" : "website",
       };
 
-      if (brand_notes) campaignRequest?.brand_notes = brand_notes;
-      if (campaign_notes) campaignRequest?.campaign_notes = campaign_notes;
-      if (artworkUrl) campaignRequest?.artwork_url = artworkUrl;
-      if (category) campaignRequest?.genre = category;
+      if (brand_notes) campaignRequest.brand_notes = brand_notes;
+      if (campaign_notes) campaignRequest.campaign_notes = campaign_notes;
+      if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
+      if (category) campaignRequest.genre = category;
 
       const _result = await (
         await getVeoMusic()
@@ -4635,7 +4635,7 @@ router?.post(
       let pdimMeta: Record<string, unknown> | null = null;
       try {
         const { storeVoiceFile } = await import(
-          "../services/pdimMediaStorageService?.js"
+          "../services/pdimMediaStorageService.js"
         );
         pdimMeta = await storeVoiceFile(userId, result?.outputPath!, {
           profileUsed: result?.profileUsed || profileId || "smooth_narrator",
@@ -4745,7 +4745,7 @@ router?.post(
       let cacheHit = false;
       try {
         const { getCachedBeatAnalysis, cacheBeatAnalysis } = await import(
-          "../services/pdimMediaStorageService?.js"
+          "../services/pdimMediaStorageService.js"
         );
         const _cached = await getCachedBeatAnalysis(file?.path);
         if (cached) {
@@ -4919,12 +4919,12 @@ router?.post(
         let pdimVideoMeta: Record<string, unknown> | null = null;
         try {
           const { storeMusicVideo } = await import(
-            "../services/pdimMediaStorageService?.js"
+            "../services/pdimMediaStorageService.js"
           );
           const _videoFilePath = `${process?.cwd()}/uploads/videos/${result?.filename}`;
           pdimVideoMeta = await storeMusicVideo(userId, videoFilePath, result);
           if (pdimVideoMeta) {
-            result?.pdim = {
+            result.pdim = {
               key: pdimVideoMeta?.pdimKey,
               compressedSize: pdimVideoMeta?.compressedSize,
               tier: pdimVideoMeta?.tier,

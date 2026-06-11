@@ -5,13 +5,13 @@ import {
   insertSongwritingSessionSchema,
 } from "@shared/schema";
 import { and, eq, desc, count, sql, ilike, or } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 import { z } from "zod";
-import { parsePaginationParams } from "../middleware/pagination?.js";
-import { queryCache, createCacheKey } from "../lib/queryCache?.js";
-import { unifiedAIController } from "../services/unifiedAIController?.js";
-import { musicIndustryContextFilter } from "../services/musicIndustryContextFilter?.js";
+import { parsePaginationParams } from "../middleware/pagination.js";
+import { queryCache, createCacheKey } from "../lib/queryCache.js";
+import { unifiedAIController } from "../services/unifiedAIController.js";
+import { musicIndustryContextFilter } from "../services/musicIndustryContextFilter.js";
 
 const _router = Router();
 const _CACHE_TTL = 120;

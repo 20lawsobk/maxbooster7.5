@@ -1,11 +1,11 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { db } from "../db";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
-import { advancedSocialAIService, type AdvancedContentRequest } from "./advancedSocialAIService?.js";
-import { MaxCoreAIClient } from "./unifiedAIController?.js";
-import { platformAlgorithmOptimizer } from "./platformAlgorithmOptimizer?.js";
-import { getCalibratedWeights } from "./maxcoreScoreCalibrator?.js";
+import { advancedSocialAIService, type AdvancedContentRequest } from "./advancedSocialAIService.js";
+import { MaxCoreAIClient } from "./unifiedAIController.js";
+import { platformAlgorithmOptimizer } from "./platformAlgorithmOptimizer.js";
+import { getCalibratedWeights } from "./maxcoreScoreCalibrator.js";
 
 // ── Veo Quality Gate Calibration ─────────────────────────────────────────────
 // Google's Veo model produces content that consistently scores ~90–95 on this
@@ -35,9 +35,9 @@ const _VEO_DEFAULT_VARIANTS = 30;
 // Tracks how far behind schedule the autonomous autopilot is.
 // pressure = postsStillNeeded / hoursRemaining
 //   0       → on track / ahead of schedule  (normal mode)
-//   0–0?.5   → mild lag                      (gate floor −4 pts, wider posting window)
-//   0?.5–1?.5 → behind                        (gate floor −7 pts, accelerated learning)
-//   > 1?.5   → CAFFEINE MODE (critical)      (gate floor −10 pts, max acceleration)
+//   0–0.5   → mild lag                      (gate floor −4 pts, wider posting window)
+//   0.5–1.5 → behind                        (gate floor −7 pts, accelerated learning)
+//   > 1.5   → CAFFEINE MODE (critical)      (gate floor −10 pts, max acceleration)
 //
 // The gate THRESHOLD lowers under pressure so the system can still publish, but
 // urgency-themed content simultaneously scores HIGHER — meaning only posts that
@@ -48,12 +48,12 @@ let _currentPressure = 0;
 
 export function updateSchedulePressure(pressure: number): void {
   _currentPressure = Math?.max(0, pressure);
-  if (pressure > 1?.5) {
+  if (pressure > 1.5) {
     logger?.warn(
       `⚡ [CaffeineMode] CRITICAL schedule pressure: ${pressure?.toFixed(2)} posts/hr needed` +
         ` — quality gate + urgency scoring adapting`,
     );
-  } else if (pressure > 0?.5) {
+  } else if (pressure > 0.5) {
     logger?.info(
       `☕ [CaffeineMode] Moderate schedule pressure: ${pressure?.toFixed(2)} posts/hr` +
         ` — gate relaxing, urgency content boosted`,
@@ -79,8 +79,8 @@ export function getCurrentPressure(): number {
  */
 function pressureAdjustedMinScore(baseMin: number): number {
   if (_currentPressure <= 0) return baseMin;
-  if (_currentPressure > 1?.5) return Math?.max(VEO_PRESSURE_FLOOR, baseMin - 10); // critical: floor 65
-  if (_currentPressure > 0?.5) return Math?.max(68, baseMin - 7); // moderate: floor 68
+  if (_currentPressure > 1.5) return Math?.max(VEO_PRESSURE_FLOOR, baseMin - 10); // critical: floor 65
+  if (_currentPressure > 0.5) return Math?.max(68, baseMin - 7); // moderate: floor 68
   return Math?.max(71, baseMin - 4); // mild:     floor 71
 }
 
@@ -370,11 +370,11 @@ const PSYCHOLOGICAL_TRIGGER_LAYERS: Record<
 // ─── RELEASE PHASE URGENCY MODIFIERS ──────────────────────────────────────────
 // Engagement prediction multipliers based on release timing
 const RELEASE_PHASE_MULTIPLIERS: Record<string, number> = {
-  "pre-release": 1?.08, // Anticipation builds organic reach
-  launch: 1?.22, // First 24h: highest algorithmic push window
-  "first-week": 1?.15, // Playlist/chart window still open
-  sustain: 1?.0, // Standard baseline
-  milestone: 1?.12, // Celebration posts get strong re-share
+  "pre-release": 1.08, // Anticipation builds organic reach
+  launch: 1.22, // First 24h: highest algorithmic push window
+  "first-week": 1.15, // Playlist/chart window still open
+  sustain: 1.0, // Standard baseline
+  milestone: 1.12, // Celebration posts get strong re-share
 };
 
 // ─── SELF-IDENTIFICATION PHRASES ──────────────────────────────────────────────
@@ -466,7 +466,7 @@ class ContentQualityPipeline {
     if (_failAcc?.count > 0) {
       let inRegistration = false;
       try {
-        const { isLuaRegistrationMode } = await import("../lib/luaExecutor?.js");
+        const { isLuaRegistrationMode } = await import("../lib/luaExecutor.js");
         inRegistration = isLuaRegistrationMode();
       } catch {
         /* non-fatal */
@@ -588,7 +588,7 @@ class ContentQualityPipeline {
         const _advErrMsg = (err as Error)?.message ?? String(err);
         if (_failAcc) {
           _failAcc?.count++;
-          if (!_failAcc?.reason) _failAcc?.reason = advErrMsg;
+          if (!_failAcc?.reason) _failAcc.reason = advErrMsg;
         } else {
           logger?.info(
             `[ContentQuality] MaxCore used local fallback for variant ${index}: ${advErrMsg}`,
@@ -608,7 +608,7 @@ class ContentQualityPipeline {
             GENRE_VIRAL_HOOKS,
             EMOTIONAL_TRIGGER_PATTERNS,
           } = await import(
-            "../../shared/ml/training/musicIndustryTrainingData?.js"
+            "../../shared/ml/training/musicIndustryTrainingData.js"
           );
 
           // Deterministic seed: same user + strategy + index → same pick every
@@ -1388,15 +1388,15 @@ class ContentQualityPipeline {
 
     // ── Release phase multiplier ───────────────────────────────────────────
     const _phaseMultiplier =
-      RELEASE_PHASE_MULTIPLIERS[context?.releasePhase || "sustain"] || 1?.0;
+      RELEASE_PHASE_MULTIPLIERS[context?.releasePhase || "sustain"] || 1.0;
     score *= phaseMultiplier;
 
     // ── Objective multiplier ───────────────────────────────────────────────
     const objectiveMultipliers: Record<string, number> = {
-      awareness: 0?.92,
-      engagement: 1?.12,
-      conversions: 0?.88,
-      viral: 1?.2,
+      awareness: 0.92,
+      engagement: 1.12,
+      conversions: 0.88,
+      viral: 1.2,
     };
     score *= objectiveMultipliers[context?.objective] || 1;
 
@@ -1689,10 +1689,10 @@ class ContentQualityPipeline {
     // With a 30-variant base, extras are 20% / 33% / 50% more to meaningfully
     // increase the quality hit probability without doubling compute.
     const _pressureExtra =
-      _currentPressure > 1?.5
-        ? Math?.ceil(variantCount * 0?.5) // critical: +50 % (e?.g. 30 → 45)
-        : _currentPressure > 0?.5
-          ? Math?.ceil(variantCount * 0?.33) // moderate: +33 % (e?.g. 30 → 40)
+      _currentPressure > 1.5
+        ? Math?.ceil(variantCount * 0.5) // critical: +50 % (e?.g. 30 → 45)
+        : _currentPressure > 0.5
+          ? Math?.ceil(variantCount * 0.33) // moderate: +33 % (e?.g. 30 → 40)
           : 0;
     const _variants = await this?.generateVariants(
       context,
@@ -1726,7 +1726,7 @@ class ContentQualityPipeline {
             });
             if (result?.score !== undefined) {
               const _mcScore = Math?.min(100, Math?.max(0, result?.score));
-              const _blended = variant?.scores.overall * 0?.65 + mcScore * 0?.35;
+              const _blended = variant?.scores.overall * 0.65 + mcScore * 0.35;
               logger?.debug(
                 `[MaxCore] Scored variant ${variant?.id}: local=${variant?.scores.overall?.toFixed(1)} ` +
                   `maxcore=${mcScore?.toFixed(1)} blended=${blended?.toFixed(1)}`,
@@ -1755,7 +1755,7 @@ class ContentQualityPipeline {
   }
 
   /**
-   * Generate content using Advanced Social AI (GPT-5?.2 Level)
+   * Generate content using Advanced Social AI (GPT-5.2 Level)
    * Provides deep semantic understanding, viral pattern analysis,
    * and multi-dimensional content scoring
    */
@@ -1862,7 +1862,7 @@ class ContentQualityPipeline {
       const _selected = variants[0] || null;
 
       logger?.info(
-        `[AdvancedAI] Generated ${variants?.length} variants with GPT-5?.2 level AI, best score: ${selected?.scores?.overall.toFixed(1)}`,
+        `[AdvancedAI] Generated ${variants?.length} variants with GPT-5.2 level AI, best score: ${selected?.scores?.overall.toFixed(1)}`,
       );
 
       return {

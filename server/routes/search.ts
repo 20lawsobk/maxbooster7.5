@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { eq, ilike, or, and, desc, count, gte, lte, asc, sum, inArray } from "drizzle-orm";
-import { users, projects, beats, releases, analytics, socialCampaigns, searchHistory, filterPresets } from "../../shared/schema?.js";
-import { logger } from "../logger?.js";
+import { users, projects, beats, releases, analytics, socialCampaigns, searchHistory, filterPresets } from "../../shared/schema.js";
+import { logger } from "../logger.js";
 
 const _router = Router();
 
@@ -79,7 +79,7 @@ function levenshteinDistance(a: string, b: string): number {
   return matrix[b?.length][a?.length];
 }
 
-function fuzzyMatch(query: string, target: string, threshold = 0?.3): boolean {
+function fuzzyMatch(query: string, target: string, threshold = 0.3): boolean {
   const _normalizedQuery = query?.toLowerCase().trim();
   const _normalizedTarget = target?.toLowerCase().trim();
 
@@ -384,11 +384,11 @@ router?.get("/unified", async (req: Request, res: Response) => {
       searchPromises?.push(
         searchBeats(q, filters, numLimit, numOffset)
           .then((r) => {
-            results?.beats = r;
+            results.beats = r;
           })
           .catch((error) => {
             logger?.warn({ err: error }, "Error searching beats:");
-            results?.beats = { items: [], total: 0 };
+            results.beats = { items: [], total: 0 };
           }),
       );
     }
@@ -397,11 +397,11 @@ router?.get("/unified", async (req: Request, res: Response) => {
       searchPromises?.push(
         searchUsers(q, numLimit, numOffset)
           .then((r) => {
-            results?.users = r;
+            results.users = r;
           })
           .catch((error) => {
             logger?.warn({ err: error }, "Error searching users:");
-            results?.users = { items: [], total: 0 };
+            results.users = { items: [], total: 0 };
           }),
       );
     }
@@ -410,11 +410,11 @@ router?.get("/unified", async (req: Request, res: Response) => {
       searchPromises?.push(
         searchProjects(q, userId, numLimit, numOffset)
           .then((r) => {
-            results?.projects = r;
+            results.projects = r;
           })
           .catch((error) => {
             logger?.warn({ err: error }, "Error searching projects:");
-            results?.projects = { items: [], total: 0 };
+            results.projects = { items: [], total: 0 };
           }),
       );
     }
@@ -423,11 +423,11 @@ router?.get("/unified", async (req: Request, res: Response) => {
       searchPromises?.push(
         searchReleases(q, numLimit, numOffset)
           .then((r) => {
-            results?.releases = r;
+            results.releases = r;
           })
           .catch((error) => {
             logger?.warn({ err: error }, "Error searching releases:");
-            results?.releases = { items: [], total: 0 };
+            results.releases = { items: [], total: 0 };
           }),
       );
     }
@@ -1342,7 +1342,7 @@ router?.get("/analytics/search", async (req: Request, res: Response) => {
         > = {};
 
         if (metrics?.includes("streams")) {
-          metricsResult?.streams = {
+          metricsResult.streams = {
             current: currentStreams,
             previous: previousStreams,
             change: calculateChange(currentStreams, previousStreams),
@@ -1350,7 +1350,7 @@ router?.get("/analytics/search", async (req: Request, res: Response) => {
         }
 
         if (metrics?.includes("downloads")) {
-          metricsResult?.downloads = {
+          metricsResult.downloads = {
             current: 0,
             previous: 0,
             change: 0,
@@ -1358,7 +1358,7 @@ router?.get("/analytics/search", async (req: Request, res: Response) => {
         }
 
         if (metrics?.includes("revenue")) {
-          metricsResult?.revenue = {
+          metricsResult.revenue = {
             current: currentRevenue,
             previous: previousRevenue,
             change: calculateChange(currentRevenue, previousRevenue),
@@ -1366,7 +1366,7 @@ router?.get("/analytics/search", async (req: Request, res: Response) => {
         }
 
         if (metrics?.includes("listeners")) {
-          metricsResult?.listeners = {
+          metricsResult.listeners = {
             current: currentListeners,
             previous: previousListeners,
             change: calculateChange(currentListeners, previousListeners),

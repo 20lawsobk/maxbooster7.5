@@ -194,61 +194,61 @@ const PLATFORM_DATA: Record<
   spotify: {
     audienceAge: [16, 45],
     engagement: "high",
-    growth: 0?.85,
+    growth: 0.85,
     effort: "medium",
   },
   apple_music: {
     audienceAge: [18, 50],
     engagement: "medium",
-    growth: 0?.75,
+    growth: 0.75,
     effort: "low",
   },
   youtube: {
     audienceAge: [13, 55],
     engagement: "high",
-    growth: 0?.9,
+    growth: 0.9,
     effort: "high",
   },
   tiktok: {
     audienceAge: [13, 30],
     engagement: "very_high",
-    growth: 0?.95,
+    growth: 0.95,
     effort: "high",
   },
   instagram: {
     audienceAge: [16, 40],
     engagement: "high",
-    growth: 0?.8,
+    growth: 0.8,
     effort: "medium",
   },
   soundcloud: {
     audienceAge: [16, 35],
     engagement: "medium",
-    growth: 0?.6,
+    growth: 0.6,
     effort: "low",
   },
   bandcamp: {
     audienceAge: [20, 45],
     engagement: "low",
-    growth: 0?.5,
+    growth: 0.5,
     effort: "low",
   },
   facebook: {
     audienceAge: [25, 55],
     engagement: "medium",
-    growth: 0?.5,
+    growth: 0.5,
     effort: "medium",
   },
   twitter: {
     audienceAge: [18, 45],
     engagement: "medium",
-    growth: 0?.6,
+    growth: 0.6,
     effort: "medium",
   },
   linkedin: {
     audienceAge: [25, 55],
     engagement: "low",
-    growth: 0?.4,
+    growth: 0.4,
     effort: "low",
   },
 };
@@ -297,7 +297,7 @@ class SmartDefaultsEngine {
       category: "studio",
       key: "defaultBPM",
       value: genreTemplate?.defaultBPM,
-      confidence: 0?.85,
+      confidence: 0.85,
       reasoning: `Based on ${genreTemplate?.genre} genre conventions`,
     });
 
@@ -305,7 +305,7 @@ class SmartDefaultsEngine {
       category: "studio",
       key: "defaultKey",
       value: genreTemplate?.defaultKey,
-      confidence: 0?.8,
+      confidence: 0.8,
       reasoning: `Common key for ${genreTemplate?.genre} music`,
     });
 
@@ -313,7 +313,7 @@ class SmartDefaultsEngine {
       category: "content",
       key: "postingFrequency",
       value: genreTemplate?.postingFrequency,
-      confidence: 0?.75,
+      confidence: 0.75,
       reasoning: `Optimal frequency for ${genreTemplate?.genre} audience engagement`,
     });
 
@@ -321,7 +321,7 @@ class SmartDefaultsEngine {
       category: "branding",
       key: "colorPalette",
       value: genreTemplate?.colorPalette,
-      confidence: 0?.7,
+      confidence: 0.7,
       reasoning: `Colors associated with ${genreTemplate?.genre} aesthetics`,
     });
 
@@ -351,7 +351,7 @@ class SmartDefaultsEngine {
           category: "strategy",
           key: "focusArea",
           value: "audience_building",
-          confidence: 0?.9,
+          confidence: 0.9,
           reasoning:
             "Early-stage artists should focus on building their initial fanbase",
         });
@@ -359,7 +359,7 @@ class SmartDefaultsEngine {
           category: "content",
           key: "quantity_vs_quality",
           value: "balanced",
-          confidence: 0?.85,
+          confidence: 0.85,
           reasoning:
             "New artists benefit from consistent presence while developing quality",
         });
@@ -369,7 +369,7 @@ class SmartDefaultsEngine {
           category: "strategy",
           key: "focusArea",
           value: "engagement_deepening",
-          confidence: 0?.85,
+          confidence: 0.85,
           reasoning:
             "Growing artists should deepen connections with existing fans",
         });
@@ -379,7 +379,7 @@ class SmartDefaultsEngine {
           category: "strategy",
           key: "focusArea",
           value: "monetization",
-          confidence: 0?.85,
+          confidence: 0.85,
           reasoning: "Established artists can focus on revenue optimization",
         });
         break;
@@ -388,7 +388,7 @@ class SmartDefaultsEngine {
           category: "strategy",
           key: "focusArea",
           value: "scaling",
-          confidence: 0?.9,
+          confidence: 0.9,
           reasoning: "Professional artists should focus on scaling operations",
         });
         break;
@@ -424,7 +424,7 @@ class SmartDefaultsEngine {
             times,
             platform,
             reason: `Peak engagement times for ${platform} in ${timezone}`,
-            engagementScore: 0?.75 + Math?.random() * 0?.2,
+            engagementScore: 0.75 + Math?.random() * 0.2,
           });
         }
       }
@@ -462,9 +462,9 @@ class SmartDefaultsEngine {
         preferences?.contentPreferences.platforms?.includes(platform);
 
         let priority: "primary" | "secondary" | "emerging";
-        if (isGenreSuggested && ageOverlap > 0?.6) {
+        if (isGenreSuggested && ageOverlap > 0.6) {
           priority = "primary";
-        } else if (ageOverlap > 0?.4 || data?.growth > 0?.8) {
+        } else if (ageOverlap > 0.4 || data?.growth > 0.8) {
           priority = "secondary";
         } else {
           priority = "emerging";
@@ -473,7 +473,7 @@ class SmartDefaultsEngine {
         let reason = "";
         if (isGenreSuggested) {
           reason = `Popular for ${genreTemplate?.genre} artists`;
-        } else if (data?.growth > 0?.85) {
+        } else if (data?.growth > 0.85) {
           reason = "High growth platform with emerging opportunities";
         } else {
           reason = `Matches your target audience age (${audienceAge[0]}-${audienceAge[1]})`;
@@ -521,7 +521,7 @@ class SmartDefaultsEngine {
       const _primaryGenre = genres[0];
       const _template = this?.getGenreTemplate(primaryGenre);
 
-      basePreferences?.genres = genres;
+      basePreferences.genres = genres;
       basePreferences?.studioPreferences.defaultBPM = template?.defaultBPM;
       basePreferences?.studioPreferences.defaultKey = template?.defaultKey;
       basePreferences?.contentPreferences.platforms =

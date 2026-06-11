@@ -127,7 +127,7 @@ export function useStudioController({
         }
         return;
       }
-      audioEngineRef?.current = AudioEngine?.getInstance();
+      audioEngineRef.current = AudioEngine?.getInstance();
     } catch (error) {
       logger?.error("Failed to get AudioEngine instance:", error);
       if (onError) {
@@ -156,9 +156,9 @@ export function useStudioController({
       const _updateTime = () => {
         const _engineTime = audioEngineRef?.current?.getCurrentTime() || 0;
         setStoreCurrentTime(engineTime);
-        animationFrameRef?.current = requestAnimationFrame(updateTime);
+        animationFrameRef.current = requestAnimationFrame(updateTime);
       };
-      animationFrameRef?.current = requestAnimationFrame(updateTime);
+      animationFrameRef.current = requestAnimationFrame(updateTime);
     } else {
       if (animationFrameRef?.current) {
         cancelAnimationFrame(animationFrameRef?.current);
@@ -182,7 +182,7 @@ export function useStudioController({
       const _updateMeters = () => {
         const _engine = audioEngineRef?.current;
         if (!engine) {
-          meterAnimationRef?.current = requestAnimationFrame(updateMeters);
+          meterAnimationRef.current = requestAnimationFrame(updateMeters);
           return;
         }
 
@@ -204,9 +204,9 @@ export function useStudioController({
           : 0;
         setMasterMeterLevels([safeMaster, safeMaster]);
 
-        meterAnimationRef?.current = requestAnimationFrame(updateMeters);
+        meterAnimationRef.current = requestAnimationFrame(updateMeters);
       };
-      meterAnimationRef?.current = requestAnimationFrame(updateMeters);
+      meterAnimationRef.current = requestAnimationFrame(updateMeters);
     } else {
       if (meterAnimationRef?.current) {
         cancelAnimationFrame(meterAnimationRef?.current);
@@ -512,7 +512,7 @@ export function useStudioController({
 
       // Initialize audio engine if needed
       if (!audioEngineRef?.current) {
-        audioEngineRef?.current = AudioEngine?.getInstance();
+        audioEngineRef.current = AudioEngine?.getInstance();
       }
 
       // Load audio clip data for tracks (defer audio engine track creation until play)

@@ -18,24 +18,24 @@
  * succeeds — source label 'MaxCoreAI' on every response.
  */
 
-import { logger } from "../logger?.js";
-import { MLModelRegistry } from "./mlModelRegistry?.js";
-import { storage } from "../storage?.js";
-import { musicIndustryContextFilter } from "./musicIndustryContextFilter?.js";
-import { AIService } from "./aiService?.js";
-import * as aiAnalyticsService from "./aiAnalyticsService?.js";
+import { logger } from "../logger.js";
+import { MLModelRegistry } from "./mlModelRegistry.js";
+import { storage } from "../storage.js";
+import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
+import { AIService } from "./aiService.js";
+import * as aiAnalyticsService from "./aiAnalyticsService.js";
 import {
   ContentGenerator,
   type GenerationOptions,
   type CaptionResult,
-} from "../../shared/ml/nlp/ContentGenerator?.js";
-import { MaxCoreAIClient } from "./maxcoreClient?.js";
-export { MaxCoreAIClient } from "./maxcoreClient?.js";
+} from "../../shared/ml/nlp/ContentGenerator.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+export { MaxCoreAIClient } from "./maxcoreClient.js";
 import {
   SentimentAnalyzer,
   type FullAnalysisResult,
   type SentimentResult,
-} from "../../shared/ml/nlp/SentimentAnalyzer?.js";
+} from "../../shared/ml/nlp/SentimentAnalyzer.js";
 import {
   RecommendationEngine,
   type RecommendationResult,
@@ -43,7 +43,7 @@ import {
   type TrackData,
   type ArtistData,
   type UserInteraction,
-} from "../../shared/ml/models/RecommendationEngine?.js";
+} from "../../shared/ml/models/RecommendationEngine.js";
 import {
   AdOptimizationEngine,
   type Campaign,
@@ -51,15 +51,15 @@ import {
   type BudgetOptimizationResult,
   type CreativePrediction,
   type ROIForecast,
-} from "../../shared/ml/models/AdOptimizationEngine?.js";
-import { SocialAutopilotEngine, type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from "../../shared/ml/models/SocialAutopilotEngine?.js";
+} from "../../shared/ml/models/AdOptimizationEngine.js";
+import { SocialAutopilotEngine, type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from "../../shared/ml/models/SocialAutopilotEngine.js";
 import {
   AdvancedTimeSeriesModel,
   type MetricType,
   type PredictionHorizon,
   type ForecastResult,
-} from "../../shared/ml/models/AdvancedTimeSeriesModel?.js";
-import { evolutionRegistry } from "./evolutionRegistry?.js";
+} from "../../shared/ml/models/AdvancedTimeSeriesModel.js";
+import { evolutionRegistry } from "./evolutionRegistry.js";
 
 // ============================================================================
 // SELF-EVOLUTION POSTING-OPTIMIZATION → MANUAL GENERATION
@@ -207,7 +207,7 @@ export interface UnifiedAIResult<T> {
 // MAXCORE AI CLIENT — calls the trained model server (Priority 1)
 // ============================================================================
 // MaxCoreAIClient is defined in ./maxcoreClient?.ts (TF-free) and re-exported
-// above via: export { MaxCoreAIClient } from './maxcoreClient?.js'
+// above via: export { MaxCoreAIClient } from './maxcoreClient.js'
 // ============================================================================
 
 export class UnifiedAIController {
@@ -228,18 +228,18 @@ export class UnifiedAIController {
   private healthCache: AIHealthStatus | null = null;
 
   private constructor() {
-    this?.modelRegistry = MLModelRegistry?.getInstance();
-    this?.aiService = new AIService();
-    this?.contentGenerator = new ContentGenerator();
-    this?.sentimentAnalyzer = new SentimentAnalyzer();
-    this?.recommendationEngine = new RecommendationEngine();
-    this?.adOptimizationEngine = new AdOptimizationEngine();
-    this?.socialAutopilotEngine = new SocialAutopilotEngine();
+    this.modelRegistry = MLModelRegistry?.getInstance();
+    this.aiService = new AIService();
+    this.contentGenerator = new ContentGenerator();
+    this.sentimentAnalyzer = new SentimentAnalyzer();
+    this.recommendationEngine = new RecommendationEngine();
+    this.adOptimizationEngine = new AdOptimizationEngine();
+    this.socialAutopilotEngine = new SocialAutopilotEngine();
   }
 
   public static getInstance(): UnifiedAIController {
     if (!UnifiedAIController?.instance) {
-      UnifiedAIController?.instance = new UnifiedAIController();
+      UnifiedAIController.instance = new UnifiedAIController();
     }
     return UnifiedAIController?.instance;
   }
@@ -255,7 +255,7 @@ export class UnifiedAIController {
       return this?.initializationPromise;
     }
 
-    this?.initializationPromise = this?.performInitialization();
+    this.initializationPromise = this?.performInitialization();
     await this?.initializationPromise;
   }
 
@@ -284,7 +284,7 @@ export class UnifiedAIController {
 
       this?.initializeTimeSeriesModels();
 
-      this?.initialized = true;
+      this.initialized = true;
       const _duration = Date?.now() - startTime;
       logger?.info(`✅ Unified AI Controller initialized in ${duration}ms`);
     } catch (error) {
@@ -353,7 +353,7 @@ export class UnifiedAIController {
       contentType?: ContentGenerationOptions["contentType"];
       objective?: "engagement";
     } = {};
-    if (callerContentType) result?.contentType = callerContentType;
+    if (callerContentType) result.contentType = callerContentType;
     try {
       const _key = platform?.toLowerCase();
       const _posting = key
@@ -362,7 +362,7 @@ export class UnifiedAIController {
       if (!posting) return result;
 
       if (posting?.engagementTargeting === "high") {
-        result?.objective = "engagement";
+        result.objective = "engagement";
       }
 
       if (!callerContentType && Array?.isArray(posting?.contentFormatPriority)) {
@@ -372,7 +372,7 @@ export class UnifiedAIController {
               ? CONTENT_FORMAT_TO_TYPE[fmt?.toLowerCase()]
               : undefined;
           if (mapped) {
-            result?.contentType = mapped;
+            result.contentType = mapped;
             break;
           }
         }
@@ -533,31 +533,31 @@ export class UnifiedAIController {
       // dedicated `instruction` field AND prepend it in extra_context so MaxCore
       // receives it through both channels regardless of API version.
       if (options?.extraContext) {
-        mcPayload?.instruction = options?.extraContext;
-        mcPayload?.prompt = options?.extraContext;
+        mcPayload.instruction = options?.extraContext;
+        mcPayload.prompt = options?.extraContext;
       }
       // Artist bio / context
-      if (ctx?.artistBio) mcPayload?.artist_context = ctx?.artistBio;
+      if (ctx?.artistBio) mcPayload.artist_context = ctx?.artistBio;
       // Content guidance
       if (ctx?.contentThemes?.length)
-        mcPayload?.content_themes = ctx?.contentThemes;
-      if (ctx?.avoidTopics?.length) mcPayload?.avoid_topics = ctx?.avoidTopics;
+        mcPayload.content_themes = ctx?.contentThemes;
+      if (ctx?.avoidTopics?.length) mcPayload.avoid_topics = ctx?.avoidTopics;
       if (ctx?.recentPostSnippets?.length)
-        mcPayload?.recent_post_snippets = ctx?.recentPostSnippets;
+        mcPayload.recent_post_snippets = ctx?.recentPostSnippets;
       // Effective content_type / objective — caller-pinned contentType (or the
       // Self-Evolution contentFormatPriority bias when unpinned) and the
       // engagementTargeting='high' objective are forwarded so MaxCore actually
       // shapes the post around them. Without this the knob would silently no-op.
-      if (effectiveContentType) mcPayload?.content_type = effectiveContentType;
-      if (effectiveObjective) mcPayload?.objective = effectiveObjective;
+      if (effectiveContentType) mcPayload.content_type = effectiveContentType;
+      if (effectiveObjective) mcPayload.objective = effectiveObjective;
       // Release / project metadata
-      if (options?.album) mcPayload?.album = options?.album;
-      if (options?.releaseDate) mcPayload?.release_date = options?.releaseDate;
-      if (options?.label) mcPayload?.label = options?.label;
-      if (options?.tracklist?.length) mcPayload?.tracklist = options?.tracklist;
+      if (options?.album) mcPayload.album = options?.album;
+      if (options?.releaseDate) mcPayload.release_date = options?.releaseDate;
+      if (options?.label) mcPayload.label = options?.label;
+      if (options?.tracklist?.length) mcPayload.tracklist = options?.tracklist;
       // extra_context: user instruction FIRST (already placed first in extraParts),
       // followed by supporting metadata. Never truncated — MaxCore needs the full text.
-      if (combinedExtra) mcPayload?.extra_context = combinedExtra;
+      if (combinedExtra) mcPayload.extra_context = combinedExtra;
 
       logger?.debug(
         `[UnifiedAI] MaxCore payload topic="${enrichedTopic?.slice(0, 60)}" instruction="${(options?.extraContext ?? "").slice(0, 80)}"`,
@@ -609,7 +609,7 @@ export class UnifiedAIController {
             caption,
             hashtags: enrichedHashtags?.length ? enrichedHashtags : mcHashtags,
             tone: options?.tone || "energetic",
-            toneMatch: mc?.confidence || 0?.95,
+            toneMatch: mc?.confidence || 0.95,
             platform: mappedPlatform,
             charCount: caption?.length,
             hook: mc?.hook,
@@ -618,7 +618,7 @@ export class UnifiedAIController {
           } as CaptionResult,
           processingTimeMs: Date?.now() - startTime,
           source: "MaxCoreAI",
-          confidence: mc?.confidence || 0?.95,
+          confidence: mc?.confidence || 0.95,
         };
       }
 
@@ -683,7 +683,7 @@ export class UnifiedAIController {
           data: { content: parts },
           processingTimeMs: Date?.now() - startTime,
           source: "MaxCoreAI",
-          confidence: mc?.confidence || 0?.95,
+          confidence: mc?.confidence || 0.95,
         };
       }
       // MaxCore returned no content — transient.
@@ -748,7 +748,7 @@ export class UnifiedAIController {
               data: mc as FullAnalysisResult,
               processingTimeMs: Date?.now() - startTime,
               source: "MaxCoreAI",
-              confidence: mc?.confidence || 0?.92,
+              confidence: mc?.confidence || 0.92,
             };
           }
         } catch (mcErr) {
@@ -819,7 +819,7 @@ export class UnifiedAIController {
             options?.userId,
             options?.seedIds || [],
             options?.limit || 20,
-            options?.hybridWeight || 0?.5,
+            options?.hybridWeight || 0.5,
           );
           break;
         case "artists":
@@ -920,7 +920,7 @@ export class UnifiedAIController {
               data: mc,
               processingTimeMs: Date?.now() - startTime,
               source: "MaxCoreAI",
-              confidence: mc?.confidence || 0?.9,
+              confidence: mc?.confidence || 0.9,
             };
           }
         } catch (mcErr) {
@@ -976,7 +976,7 @@ export class UnifiedAIController {
           throw new Error(`Unknown ad optimization action: ${options?.action}`);
       }
 
-      const _confidence = "confidence" in result ? result?.confidence : 0?.75;
+      const _confidence = "confidence" in result ? result?.confidence : 0.75;
 
       return {
         success: true,
@@ -1058,7 +1058,7 @@ export class UnifiedAIController {
               data: mc,
               processingTimeMs: Date?.now() - startTime,
               source: "MaxCoreAI",
-              confidence: mc?.confidence || 0?.9,
+              confidence: mc?.confidence || 0.9,
             };
           }
         } catch (mcErr) {
@@ -1112,7 +1112,7 @@ export class UnifiedAIController {
           );
       }
 
-      const _confidence = "confidence" in result ? result?.confidence : 0?.7;
+      const _confidence = "confidence" in result ? result?.confidence : 0.7;
 
       return {
         success: true,
@@ -1186,7 +1186,7 @@ export class UnifiedAIController {
         await model?.train(inputs, labels, {
           epochs: 50,
           batchSize: 16,
-          validationSplit: 0?.2,
+          validationSplit: 0.2,
         });
         inputs?.dispose();
         labels?.dispose();
@@ -1361,13 +1361,13 @@ export class UnifiedAIController {
     const _totalCount = Object?.keys(services).length;
 
     let overall: "healthy" | "degraded" | "unhealthy" = "healthy";
-    if (healthyCount < totalCount * 0?.5) {
+    if (healthyCount < totalCount * 0.5) {
       overall = "unhealthy";
     } else if (healthyCount < totalCount) {
       overall = "degraded";
     }
 
-    this?.healthCache = {
+    this.healthCache = {
       overall,
       lastChecked: now,
       services,
@@ -1378,7 +1378,7 @@ export class UnifiedAIController {
       },
     };
 
-    this?.lastHealthCheck = now;
+    this.lastHealthCheck = now;
     return this?.healthCache;
   }
 
@@ -1550,7 +1550,7 @@ export class UnifiedAIController {
             username: account?.username || account?.profileName || "user",
             followers: account?.followers || account?.metrics?.followers || 0,
             engagementRate:
-              account?.engagementRate || account?.metrics?.engagementRate || 0?.03,
+              account?.engagementRate || account?.metrics?.engagementRate || 0.03,
             isActive: account?.isActive !== false,
           }));
         }
@@ -1563,7 +1563,7 @@ export class UnifiedAIController {
             platform: "instagram",
             username: "demo",
             followers: 5000,
-            engagementRate: 0?.05,
+            engagementRate: 0.05,
             isActive: true,
           },
           {
@@ -1571,7 +1571,7 @@ export class UnifiedAIController {
             platform: "twitter",
             username: "demo",
             followers: 3000,
-            engagementRate: 0?.03,
+            engagementRate: 0.03,
             isActive: true,
           },
           {
@@ -1579,7 +1579,7 @@ export class UnifiedAIController {
             platform: "tiktok",
             username: "demo",
             followers: 10000,
-            engagementRate: 0?.08,
+            engagementRate: 0.08,
             isActive: true,
           },
         ];

@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import { randomBytes } from "crypto";
-import { getRedisClient } from "../lib/redisConnectionFactory?.js";
-import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
 // Robust production detection: NODE_ENV may not be set correctly on some
 // hosting environments. REPLIT_DEPLOYMENT is always set by Replit autoscale,
@@ -92,7 +92,7 @@ interface SlidingWindowResult {
   total: number;
 }
 
-const _DEGRADED_RATE_FRACTION = 0?.25;
+const _DEGRADED_RATE_FRACTION = 0.25;
 const _DEGRADED_MAX_KEYS = 10_000;
 
 class InMemoryDegradedRateLimiter {
@@ -155,7 +155,7 @@ class InMemoryDegradedRateLimiter {
       if (fresh?.length === 0) this?.store.delete(key);
       else this?.store.set(key, fresh);
     }
-    this?.lastPrune = now;
+    this.lastPrune = now;
   }
 }
 
@@ -366,10 +366,10 @@ export const loginRateLimiter: RequestHandler = async (
   const _ip = getClientIP(req);
 
   if (
-    ip === "127?.0.0?.1" ||
+    ip === "127.0.0.1" ||
     ip === "::1" ||
-    ip === "::ffff:127?.0.0?.1" ||
-    ip?.startsWith("10?.82.") ||
+    ip === "::ffff:127.0.0.1" ||
+    ip?.startsWith("10.82.") ||
     ip?.startsWith("10.")
   ) {
     next();
@@ -403,10 +403,10 @@ export const registerRateLimiter: RequestHandler = async (
   const _ip = getClientIP(req);
 
   if (
-    ip === "127?.0.0?.1" ||
+    ip === "127.0.0.1" ||
     ip === "::1" ||
-    ip === "::ffff:127?.0.0?.1" ||
-    ip?.startsWith("10?.82.") ||
+    ip === "::ffff:127.0.0.1" ||
+    ip?.startsWith("10.82.") ||
     ip?.startsWith("10.")
   ) {
     next();

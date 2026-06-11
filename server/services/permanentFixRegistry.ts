@@ -23,7 +23,7 @@
  * AIMD state is remembered — PDIM never resets to a cold 600ms on restart.
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // ── Escalation mapping ────────────────────────────────────────────────────────
 
@@ -78,17 +78,17 @@ const ESCALATION_MAP: Record<string, EscalationTarget> = {
   },
   memory_pressure: {
     key: "heapWarnRatio",
-    delta: -0?.02,
-    min: 0?.65,
-    max: 0?.8,
+    delta: -0.02,
+    min: 0.65,
+    max: 0.8,
     label: "Heap warn ratio",
     threshold: 3, // GC fires earlier after only 3 memory pressure events
   },
   oom_error: {
     key: "heapPatchRatio",
-    delta: -0?.02,
-    min: 0?.82,
-    max: 0?.92,
+    delta: -0.02,
+    min: 0.82,
+    max: 0.92,
     label: "Heap patch ratio (critical threshold)",
     threshold: 2, // OOM is catastrophic — escalate after just 2
   },
@@ -133,8 +133,8 @@ interface Overrides {
 const DEFAULTS: Overrides = {
   pdimGapFloorMs: 1, // PDIM rated for 120M req/s — no artificial floor
   luaWaitMs: 55_000,
-  heapWarnRatio: 0?.8,
-  heapPatchRatio: 0?.92,
+  heapWarnRatio: 0.8,
+  heapPatchRatio: 0.92,
 };
 
 // ── Registry ─────────────────────────────────────────────────────────────────
@@ -162,24 +162,24 @@ class PermanentFixRegistry {
     | null = null;
 
   private _loaded = false;
-  private _aimdPersistTimer: NodeJS?.Timeout | null = null;
-  private _deEscalationTimer: NodeJS?.Timeout | null = null;
+  private _aimdPersistTimer: NodeJS.Timeout | null = null;
+  private _deEscalationTimer: NodeJS.Timeout | null = null;
 
   // ── PDIM wiring ─────────────────────────────────────────────────────────────
 
   private async _tryConnectPdim(): Promise<void> {
     try {
-      const { getPdimClient } = await import("../lib/pdimClient?.js");
+      const { getPdimClient } = await import("../lib/pdimClient.js");
       const _client = getPdimClient();
-      this?._pdimGet = (k) =>
+      this._pdimGet = (k) =>
         (client as Record<string, unknown>).get(k).catch(() => null);
-      this?._pdimSet = async (k, v) => {
+      this._pdimSet = async (k, v) => {
         await (client as Record<string, unknown>).set(k, v).catch(() => {});
       };
-      this?._pdimLpush = async (k, v) => {
+      this._pdimLpush = async (k, v) => {
         await (client as Record<string, unknown>).lpush(k, v).catch(() => {});
       };
-      this?._pdimLtrim = async (k, s, e) => {
+      this._pdimLtrim = async (k, s, e) => {
         await (client as Record<string, unknown>)
           .ltrim(k, s, e)
           .catch(() => {});
@@ -193,7 +193,7 @@ class PermanentFixRegistry {
 
   async loadPermanentOverrides(): Promise<void> {
     if (this?._loaded) return;
-    this?._loaded = true;
+    this._loaded = true;
 
     await this?._tryConnectPdim();
 
@@ -259,9 +259,9 @@ class PermanentFixRegistry {
         }
       }
       if (rawEscalations)
-        this?._escalationsAllTime = parseInt(rawEscalations, 10) || 0;
+        this._escalationsAllTime = parseInt(rawEscalations, 10) || 0;
       if (rawDeEscalations)
-        this?._deEscalationsAllTime = parseInt(rawDeEscalations, 10) || 0;
+        this._deEscalationsAllTime = parseInt(rawDeEscalations, 10) || 0;
 
       // Apply loaded overrides to live modules
       if (changed) {
@@ -291,7 +291,7 @@ class PermanentFixRegistry {
         const _saved = parseInt(rawAimdGap, 10);
         if (!isNaN(saved) && saved > this?._overrides.pdimGapFloorMs) {
           try {
-            const { setPdimAdaptiveGap } = await import("../lib/pdimClient?.js");
+            const { setPdimAdaptiveGap } = await import("../lib/pdimClient.js");
             if (typeof setPdimAdaptiveGap === "function") {
               const _capped = Math?.min(saved, _AIMD_RESTORE_CAP_MS);
               setPdimAdaptiveGap(capped);
@@ -321,7 +321,7 @@ class PermanentFixRegistry {
 
   private _startAimdPersistTimer(): void {
     if (this?._aimdPersistTimer) return;
-    this?._aimdPersistTimer = setInterval(() => {
+    this._aimdPersistTimer = setInterval(() => {
       this?._persistAimdGap().catch(() => {});
     }, AIMD_PERSIST_INTERVAL_MS);
     (this?._aimdPersistTimer as Record<string, unknown>).unref?.();
@@ -331,7 +331,7 @@ class PermanentFixRegistry {
     const _set = this?._pdimSet;
     if (!set) return;
     try {
-      const { getPdimAdaptiveGapMs } = await import("../lib/pdimClient?.js");
+      const { getPdimAdaptiveGapMs } = await import("../lib/pdimClient.js");
       const _gap = getPdimAdaptiveGapMs?.();
       if (typeof gap === "number" && gap > 0) {
         await set(`${PFR}aimd_gap_ms`, String(gap));
@@ -351,7 +351,7 @@ class PermanentFixRegistry {
 
   private _scheduleDeEscalationCheck(): void {
     if (this?._deEscalationTimer) return;
-    this?._deEscalationTimer = setTimeout(async () => {
+    this._deEscalationTimer = setTimeout(async () => {
       await this?._runDeEscalationCheck();
     }, DEESCALATION_WINDOW_MS);
     (this?._deEscalationTimer as Record<string, unknown>).unref?.();
@@ -383,7 +383,7 @@ class PermanentFixRegistry {
       if (!isElevated) continue;
 
       // Cautious reduction: 50% of delta (in the de-escalation direction)
-      const _step = target?.delta * -0?.5; // opposite direction of escalation
+      const _step = target?.delta * -0.5; // opposite direction of escalation
       const _rawNew = current + step;
       const _newValue =
         target?.delta > 0
@@ -447,14 +447,14 @@ class PermanentFixRegistry {
 
   private async _applyOverridesToModules(): Promise<void> {
     try {
-      const { setPdimGapFloor } = await import("../lib/pdimClient?.js");
+      const { setPdimGapFloor } = await import("../lib/pdimClient.js");
       setPdimGapFloor(this?._overrides.pdimGapFloorMs);
     } catch {
       /* module not available yet */
     }
 
     try {
-      const { setLuaScriptTimeout } = await import("../lib/luaExecutor?.js");
+      const { setLuaScriptTimeout } = await import("../lib/luaExecutor.js");
       setLuaScriptTimeout(this?._overrides.luaWaitMs);
     } catch {
       /* module not available yet */

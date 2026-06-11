@@ -5,9 +5,9 @@
 // Suppress noisy Node?.js process warnings that are informational-only
 const __origEmit = process?.emit.bind(process);
 // @ts-ignore — override to filter 'warning' events
-process?.emit = function (event: string, ...args: unknown[]): boolean {
+process.emit = function (event: string, ...args: unknown[]): boolean {
   if (event === "warning") {
-    const _w = args[0] as NodeJS?.ErrnoException;
+    const _w = args[0] as NodeJS.ErrnoException;
     const _msg = w?.message ?? "";
     // pg SSL-mode alias advisory: 'prefer'/'require'/'verify-ca' → 'verify-full'
     // This is expected behaviour in Replit's managed PG environment.
@@ -19,7 +19,7 @@ process?.emit = function (event: string, ...args: unknown[]): boolean {
 
 // ── stderr stream interceptor ─────────────────────────────────────────────────
 //
-// Node?.js's worker-thread message-passing machinery writes bare "Error: Error:"
+// Node.js's worker-thread message-passing machinery writes bare "Error: Error:"
 // stack traces directly to process?.stderr when a rejected Promise propagates
 // through the MessagePort callback before BullMQ's async .catch() attaches.
 // These always originate from PDIM 500/502 responses during cold-start and are
@@ -34,7 +34,7 @@ let _stderrPartial = "";
 const __origStderrWrite = (process?.stderr.write as Function).bind(
   process?.stderr,
 );
-(process?.stderr as NodeJS?.WriteStream).write = function (
+(process?.stderr as NodeJS.WriteStream).write = function (
   chunk: Uint8Array | string,
   encodingOrCb?: BufferEncoding | ((err?: Error | null) => void),
   cb?: (err?: Error | null) => void,
@@ -51,9 +51,9 @@ const __origStderrWrite = (process?.stderr.write as Function).bind(
   const _isColdStartNoise =
     /PDIM HTTP 5\d\d/.test(combined) ||
     combined?.includes("stack traceback:") ||
-    combined?.includes("luaExecutor?.ts") ||
+    combined?.includes("luaExecutor.ts") ||
     // Production bundle path — esbuild compiles luaExecutor into dist/index?.mjs
-    combined?.includes("dist/index?.mjs");
+    combined?.includes("dist/index.mjs");
   if (isColdStartNoise) {
     _stderrPartial = "";
     const _done = typeof encodingOrCb === "function" ? encodingOrCb : cb;
@@ -80,7 +80,7 @@ const __origStderrWrite = (process?.stderr.write as Function).bind(
 const _originalConsoleError = console?.error;
 
 // Filter for localhost Redis errors (these are non-critical when main Redis is working)
-console?.error = (...args: unknown[]) => {
+console.error = (...args: unknown[]) => {
   // Convert args to string for pattern matching
   const _argsStr = args
     .map((a) => {
@@ -94,14 +94,14 @@ console?.error = (...args: unknown[]) => {
   if (
     /PDIM HTTP 5\d\d/.test(argsStr) ||
     argsStr?.includes("stack traceback:") ||
-    argsStr?.includes("luaExecutor?.ts") ||
-    argsStr?.includes("dist/index?.mjs")
+    argsStr?.includes("luaExecutor.ts") ||
+    argsStr?.includes("dist/index.mjs")
   )
     return;
 
-  // Check for localhost Redis connection errors (127?.0.0?.1:6379)
+  // Check for localhost Redis connection errors (127.0.0.1:6379)
   const _isLocalhostRedisError =
-    argsStr?.includes("127?.0.0?.1:6379") ||
+    argsStr?.includes("127.0.0.1:6379") ||
     argsStr?.includes("localhost:6379") ||
     (argsStr?.includes("ECONNREFUSED") && argsStr?.includes("6379"));
 

@@ -16,13 +16,13 @@ import { spawnSync, spawn } from "child_process";
   // Ensure production env vars are set regardless of how the process was launched.
   // Use computed keys so esbuild's "define" substitution doesn't turn the assignments
   // into a no-op literal assignment (e?.g. "production" = ...).
-  const __env = process?.env as Record<string, string | undefined>;
+  const __env = process.env as Record<string, string | undefined>;
   _env["NODE_ENV"] = _env["NODE_ENV"] || "production";
   _env["UV_THREADPOOL_SIZE"] = _env["UV_THREADPOOL_SIZE"] || "8";
   _env["TF_NUM_INTEROP_THREADS"] = _env["TF_NUM_INTEROP_THREADS"] || "2";
   _env["TF_NUM_INTRAOP_THREADS"] = _env["TF_NUM_INTRAOP_THREADS"] || "2";
 
-  // Check portable release binary first (build artifact placed by build?.sh),
+  // Check portable release binary first (build artifact placed by build.sh),
   // then fall back to the dev-workspace debug binary.
   const _binCandidates = [
     path?.join(process?.cwd(), "bin", "boosterstate"),
@@ -63,7 +63,7 @@ import { spawnSync, spawn } from "child_process";
     killSignal: "SIGKILL" as Record<string, unknown>,
   });
   const _isEnoent =
-    probe?.error && (probe?.error as NodeJS?.ErrnoException).code === "ENOENT";
+    probe?.error && (probe?.error as NodeJS.ErrnoException).code === "ENOENT";
   if (isEnoent) {
     console?.warn(
       "[Cluster] boosterstate binary cannot execute on this host " +
@@ -175,7 +175,7 @@ const _DISABLE_CLUSTER = process?.env.DISABLE_CLUSTER === "true";
 if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // Single-process mode: IDE dev environment, DISABLE_CLUSTER=true, or non-deployment run.
   // Use dynamic import — index?.mjs is ESM and cannot be loaded with require().
-  const _appEntry = path?.join(__dirname, "index?.mjs");
+  const _appEntry = path?.join(__dirname, "index.mjs");
   import(appEntry).catch((err: unknown) => {
     console?.error("[Cluster] Failed to load server entry:", err);
     process?.exit(1);
@@ -216,7 +216,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   //   timeouts and false-positive replica evictions under load.
   //
   // MEMORY GUARD:
-  //   Each worker carries a 4 GiB V8 heap + ~0?.5 GiB native overhead
+  //   Each worker carries a 4 GiB V8 heap + ~0.5 GiB native overhead
   //   (libuv thread pool, TensorFlow?.js, ioredis, BullMQ).  The memory
   //   limit floor ensures we never fork more workers than RAM can safely
   //   hold, preventing the OOM killer from wiping mid-request workers.
@@ -245,7 +245,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
 
   // Deployed workers get the full 4 GiB heap; dev gets 3 GiB to avoid OOM
   // on smaller dev containers that share RAM with the IDE and sidecars.
-  const _memPerWorkerGB = isDeployment ? 4?.5 : 6?.0;
+  const _memPerWorkerGB = isDeployment ? 4.5 : 6.0;
 
   // V8 heap cap applied to each forked worker (MiB).
   // Workers do NOT inherit the primary's --max-old-space-size CLI flag —
@@ -278,7 +278,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
         })()
       : Math?.min(cpuLimit, memLimit);
 
-  const _workerScript = path?.join(__dirname, "index?.mjs");
+  const _workerScript = path?.join(__dirname, "index.mjs");
 
   // Pass heap size to every worker — workers do NOT inherit the primary's CLI flag.
   // execArgv is propagated to each forked child process by Node?.js cluster module.
@@ -340,7 +340,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     }
   });
   primaryHealthServer?.listen(
-    { port: primaryPort, host: "0?.0.0?.0", reusePort: true },
+    { port: primaryPort, host: "0.0.0.0", reusePort: true },
     () => {
       console?.log(
         `[Cluster] Primary health server on :${primaryPort} (pid=${process?.pid}) — workers starting`,

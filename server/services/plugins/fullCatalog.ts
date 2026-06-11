@@ -2,9 +2,9 @@ import {
   BUILT_IN_INSTRUMENTS,
   BUILT_IN_EFFECTS,
   type PluginDefinition,
-} from "./definitions?.js";
-import MB_PLUGINS from "./mbCatalog?.js";
-import { enrichAll } from "./pluginEnrichment?.js";
+} from "./definitions.js";
+import MB_PLUGINS from "./mbCatalog.js";
+import { enrichAll } from "./pluginEnrichment.js";
 
 const _mbIds = new Set(MB_PLUGINS?.map((p: PluginDefinition) => p?.id));
 

@@ -7,27 +7,27 @@
  * Usage:
  *   const _sess = new EppSession(config);
  *   await sess?.ensureConnected();
- *   const _avail = await sess?.checkAvailability('example?.com');
+ *   const _avail = await sess?.checkAvailability('example.com');
  *   await sess?.close();
  */
 
-import { EppClient } from "./EppClient?.js";
-import { EppCommands } from "./EppCommands?.js";
-import { EppParser } from "./EppParser?.js";
-import type { EppConfig, EppResponse } from "./types?.js";
-import { logger } from "../../logger?.js";
+import { EppClient } from "./EppClient.js";
+import { EppCommands } from "./EppCommands.js";
+import { EppParser } from "./EppParser.js";
+import type { EppConfig, EppResponse } from "./types.js";
+import { logger } from "../../logger.js";
 
-export { EppClient } from "./EppClient?.js";
-export { EppCommands } from "./EppCommands?.js";
-export { EppParser } from "./EppParser?.js";
-export type { EppConfig, EppResponse, EppSessionState } from "./types?.js";
+export { EppClient } from "./EppClient.js";
+export { EppCommands } from "./EppCommands.js";
+export { EppParser } from "./EppParser.js";
+export type { EppConfig, EppResponse, EppSessionState } from "./types.js";
 
 export class EppSession {
   private client: EppClient;
   private loggedIn: boolean = false;
 
   constructor(private readonly config: EppConfig) {
-    this?.client = new EppClient(config);
+    this.client = new EppClient(config);
   }
 
   // ── TRID ────────────────────────────────────────────────────────────────────
@@ -60,7 +60,7 @@ export class EppSession {
       if (resp?.code !== 1000) {
         throw new Error(`[EPP] Login failed: ${resp?.msg} (code ${resp?.code})`);
       }
-      this?.loggedIn = true;
+      this.loggedIn = true;
       logger?.info("[EPP] Logged in successfully");
     }
   }
@@ -73,7 +73,7 @@ export class EppSession {
       } catch {
         /* ignore logout errors */
       }
-      this?.loggedIn = false;
+      this.loggedIn = false;
     }
     this?.client.disconnect();
   }
@@ -94,7 +94,7 @@ export class EppSession {
       return await this?._send(xml);
     } catch (err) {
       // Mark session as dead so next call reconnects
-      this?.loggedIn = false;
+      this.loggedIn = false;
       throw err;
     }
   }

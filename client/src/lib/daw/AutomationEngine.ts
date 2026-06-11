@@ -70,12 +70,12 @@ export class AutomationEngine {
   private touchTimeouts: Map<string, number> = new Map();
 
   constructor(transport: TransportEngine) {
-    this?.transport = transport;
-    this?.state = {
+    this.transport = transport;
+    this.state = {
       lanes: [],
       clips: [],
       globalMode: "read",
-      touchThreshold: 0?.01,
+      touchThreshold: 0.01,
       touchReleaseTime: 200,
       writeResolution: 10,
       selectedLaneIds: [],
@@ -127,7 +127,7 @@ export class AutomationEngine {
   setLaneMode(laneId: string, mode: AutomationMode): void {
     const _lane = this?.state.lanes?.find((l) => l?.id === laneId);
     if (lane) {
-      lane?.mode = mode;
+      lane.mode = mode;
       this?.notify();
     }
   }
@@ -135,7 +135,7 @@ export class AutomationEngine {
   setGlobalMode(mode: AutomationMode): void {
     this?.state.globalMode = mode;
     for (const lane of this?.state.lanes) {
-      lane?.mode = mode;
+      lane.mode = mode;
     }
     this?.notify();
   }
@@ -143,7 +143,7 @@ export class AutomationEngine {
   armLane(laneId: string, armed: boolean): void {
     const _lane = this?.state.lanes?.find((l) => l?.id === laneId);
     if (lane) {
-      lane?.armed = armed;
+      lane.armed = armed;
       this?.notify();
     }
   }
@@ -166,7 +166,7 @@ export class AutomationEngine {
     const point: AutomationPoint = { id, time, value: clampedValue, curve };
 
     const _existingIndex = lane?.points.findIndex(
-      (p) => Math?.abs(p?.time - time) < 0?.001,
+      (p) => Math?.abs(p?.time - time) < 0.001,
     );
     if (existingIndex !== -1) {
       lane?.points[existingIndex] = point;
@@ -201,8 +201,8 @@ export class AutomationEngine {
 
     const _point = lane?.points.find((p) => p?.id === pointId);
     if (point) {
-      point?.time = Math?.max(0, newTime);
-      point?.value = Math?.max(lane?.minValue, Math?.min(lane?.maxValue, newValue));
+      point.time = Math?.max(0, newTime);
+      point.value = Math?.max(lane?.minValue, Math?.min(lane?.maxValue, newValue));
       lane?.points.sort((a, b) => a?.time - b?.time);
       this?.notify();
     }
@@ -219,8 +219,8 @@ export class AutomationEngine {
 
     const _point = lane?.points.find((p) => p?.id === pointId);
     if (point) {
-      point?.curve = curve;
-      if (tension !== undefined) point?.tension = tension;
+      point.curve = curve;
+      if (tension !== undefined) point.tension = tension;
       this?.notify();
     }
   }
@@ -277,12 +277,12 @@ export class AutomationEngine {
         return p1?.value + range * (1 - Math?.pow(1 - t, 2));
 
       case "s-curve": {
-        const _s = t < 0?.5 ? 2 * t * t : 1 - Math?.pow(-2 * t + 2, 2) / 2;
+        const _s = t < 0.5 ? 2 * t * t : 1 - Math?.pow(-2 * t + 2, 2) / 2;
         return p1?.value + range * s;
       }
 
       case "bezier": {
-        const _tension = p1?.tension ?? 0?.5;
+        const _tension = p1?.tension ?? 0.5;
         const _b =
           3 * tension * t * (1 - t) * (1 - t) +
           3 * tension * t * t * (1 - t) +
@@ -366,7 +366,7 @@ export class AutomationEngine {
 
     for (const point of reduced) {
       const _existingIndex = lane?.points.findIndex(
-        (p) => Math?.abs(p?.time - point?.time) < 0?.001,
+        (p) => Math?.abs(p?.time - point?.time) < 0.001,
       );
       if (existingIndex !== -1) {
         lane?.points[existingIndex] = point;
@@ -393,7 +393,7 @@ export class AutomationEngine {
 
   private reducePoints(
     points: AutomationPoint[],
-    tolerance: number = 0?.01,
+    tolerance: number = 0.01,
   ): AutomationPoint[] {
     if (points?.length <= 2) return points;
 
@@ -469,7 +469,7 @@ export class AutomationEngine {
     const _lane = this?.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
-    lane?.points = lane?.points.filter(
+    lane.points = lane?.points.filter(
       (p) => p?.time < startTime || p?.time > endTime,
     );
     this?.notify();
@@ -518,7 +518,7 @@ export class AutomationEngine {
   }
 
   deserialize(state: AutomationEngineState): void {
-    this?.state = structuredClone(state);
+    this.state = structuredClone(state);
     this?.notify();
   }
 }

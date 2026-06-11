@@ -2,13 +2,13 @@ import { Request, Response, NextFunction } from "express";
 import {
   getBoosterStateClient,
   BoosterStateClient,
-} from "./lib/boosterStateClient?.js";
+} from "./lib/boosterStateClient.js";
 import { promisify } from "util";
 import { exec } from "child_process";
 import cluster from "cluster";
 import * as os from "os";
-import { logger } from "./logger?.js";
-import { isProductionEnv } from "./lib/envHelpers?.js";
+import { logger } from "./logger.js";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 const _execAsync = promisify(exec);
 
@@ -27,10 +27,10 @@ export class ScalabilitySystem {
   private isOptimized: boolean = false;
 
   private constructor() {
-    this?.loadBalancer = new LoadBalancer();
-    this?.performanceMonitor = new PerformanceMonitor();
-    this?.autoScaler = new AutoScaler();
-    this?.metrics = {
+    this.loadBalancer = new LoadBalancer();
+    this.performanceMonitor = new PerformanceMonitor();
+    this.autoScaler = new AutoScaler();
+    this.metrics = {
       totalRequests: 0,
       averageResponseTime: 0,
       cacheHitRate: 0,
@@ -48,15 +48,15 @@ export class ScalabilitySystem {
 
   public static getInstance(): ScalabilitySystem {
     if (!ScalabilitySystem?.instance) {
-      ScalabilitySystem?.instance = new ScalabilitySystem();
+      ScalabilitySystem.instance = new ScalabilitySystem();
     }
     return ScalabilitySystem?.instance;
   }
 
   // Initialize scalability system
   private async initializeSystem(): Promise<void> {
-    this?.client = await getBoosterStateClient();
-    this?.cacheManager = new CacheManager(this?.client);
+    this.client = await getBoosterStateClient();
+    this.cacheManager = new CacheManager(this?.client);
     logger?.info("✅ BoosterState connected for caching");
 
     this?.startPerformanceMonitoring();
@@ -190,7 +190,7 @@ export class ScalabilitySystem {
   private async getMemoryUsage(): Promise<number> {
     try {
       const { stdout } = await execAsync(
-        "free | grep Mem | awk '{printf \"%.2f\", $3/$2 * 100?.0}'",
+        "free | grep Mem | awk '{printf \"%.2f\", $3/$2 * 100.0}'",
       );
       return parseFloat(stdout?.trim()) || 0;
     } catch (error: unknown) {
@@ -336,7 +336,7 @@ export class ScalabilitySystem {
     // Ensure stateless, distributed, and resilient architecture
     // Add recommendations for geo-redundancy, sharding, CDN, and failover
     this?.metrics.lastOptimization = Date?.now();
-    this?.isOptimized = true;
+    this.isOptimized = true;
 
     logger?.info("✅ System optimization for 80B users completed");
   }
@@ -412,9 +412,9 @@ export class ScalabilitySystem {
     const { cpuUsage, memoryUsage, cacheHitRate, errorRate } = this?.metrics;
 
     let score = 100;
-    score -= cpuUsage * 0?.5; // -0?.5 points per CPU %
-    score -= memoryUsage * 0?.3; // -0?.3 points per memory %
-    score += cacheHitRate * 0?.2; // +0?.2 points per cache hit %
+    score -= cpuUsage * 0.5; // -0.5 points per CPU %
+    score -= memoryUsage * 0.3; // -0.3 points per memory %
+    score += cacheHitRate * 0.2; // +0.2 points per cache hit %
     score -= errorRate * 2; // -2 points per error %
 
     this?.metrics.optimizationScore = Math?.max(0, Math?.min(100, score));
@@ -474,7 +474,7 @@ export class ScalabilitySystem {
         const _originalSend = res?.send;
         const _client = this?.client;
 
-        res?.send = function (data) {
+        res.send = function (data) {
           if (res?.statusCode === 200) {
             client?.setex(
               cacheKey,
@@ -536,7 +536,7 @@ class LoadBalancer {
     if (this?.servers.length === 0) return null;
 
     const _server = this?.servers[this?.currentIndex];
-    this?.currentIndex = (this?.currentIndex + 1) % this?.servers.length;
+    this.currentIndex = (this?.currentIndex + 1) % this?.servers.length;
 
     return server;
   }
@@ -549,7 +549,7 @@ class CacheManager {
 
   constructor(client?: BoosterStateClient) {
     if (!client) throw new Error("CacheManager requires a BoosterStateClient");
-    this?.client = client;
+    this.client = client;
   }
 
   async get(key: string): Promise<string | null> {

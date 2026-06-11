@@ -6,7 +6,7 @@ import {
   ListenerCohort,
 } from "@shared/schema";
 import { eq, and, gte, lte, desc, sql, lt } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type DSPPlatform =
   | "spotify"
@@ -291,15 +291,15 @@ class CohortAnalyticsService {
     // Derive risk predictions from actual cohort retention curves (no random fabrication)
     const predictions: ChurnPrediction[] = cohorts?.map((c) => {
       const _churnProb = Math?.min(
-        0?.99,
-        Math?.max(0?.01, c?.predictedChurn || avgChurn),
+        0.99,
+        Math?.max(0.01, c?.predictedChurn || avgChurn),
       );
       const riskLevel: "low" | "medium" | "high" | "critical" =
-        churnProb < 0?.2
+        churnProb < 0.2
           ? "low"
-          : churnProb < 0?.4
+          : churnProb < 0.4
             ? "medium"
-            : churnProb < 0?.7
+            : churnProb < 0.7
               ? "high"
               : "critical";
       // Estimate inactivity from day30 vs day7 retention drop
@@ -381,10 +381,10 @@ class CohortAnalyticsService {
     }[] = [
       {
         tier: "casual",
-        count: Math?.floor(totalListeners * 0?.4),
+        count: Math?.floor(totalListeners * 0.4),
         percentage: 40,
         avgStreams: 2,
-        avgRevenue: 0?.008,
+        avgRevenue: 0.008,
         characteristics: [
           "1-3 streams per month",
           "Playlist-discovered",
@@ -393,10 +393,10 @@ class CohortAnalyticsService {
       },
       {
         tier: "engaged",
-        count: Math?.floor(totalListeners * 0?.3),
+        count: Math?.floor(totalListeners * 0.3),
         percentage: 30,
         avgStreams: 8,
-        avgRevenue: 0?.032,
+        avgRevenue: 0.032,
         characteristics: [
           "4-10 streams per month",
           "Regular listeners",
@@ -405,10 +405,10 @@ class CohortAnalyticsService {
       },
       {
         tier: "fan",
-        count: Math?.floor(totalListeners * 0?.18),
+        count: Math?.floor(totalListeners * 0.18),
         percentage: 18,
         avgStreams: 25,
-        avgRevenue: 0?.1,
+        avgRevenue: 0.1,
         characteristics: [
           "11-30 streams per month",
           "Library adds",
@@ -417,10 +417,10 @@ class CohortAnalyticsService {
       },
       {
         tier: "superfan",
-        count: Math?.floor(totalListeners * 0?.09),
+        count: Math?.floor(totalListeners * 0.09),
         percentage: 9,
         avgStreams: 60,
-        avgRevenue: 0?.24,
+        avgRevenue: 0.24,
         characteristics: [
           "30+ streams per month",
           "High engagement",
@@ -429,10 +429,10 @@ class CohortAnalyticsService {
       },
       {
         tier: "advocate",
-        count: Math?.floor(totalListeners * 0?.03),
+        count: Math?.floor(totalListeners * 0.03),
         percentage: 3,
         avgStreams: 150,
-        avgRevenue: 0?.6,
+        avgRevenue: 0.6,
         characteristics: [
           "Daily listening",
           "Merch buyers",
@@ -565,12 +565,12 @@ class CohortAnalyticsService {
 
       // Derive retention using industry-standard drop-off curves if no listener-level data
       // Day1: ~70%, Day7: ~50%, Day30: ~35%, Day90: ~20% (Spotify-published benchmarks)
-      const _baseRetention = 0?.7;
-      const _predictedChurn = 1 - baseRetention * 0?.5; // ~65% 90-day churn (industry avg)
+      const _baseRetention = 0.7;
+      const _predictedChurn = 1 - baseRetention * 0.5; // ~65% 90-day churn (industry avg)
       const _ltv =
         totalRevenue > 0 && initialSize > 0
           ? totalRevenue / initialSize
-          : avgStreamsPerUser * 0?.004; // $0?.004/stream est
+          : avgStreamsPerUser * 0.004; // $0.004/stream est
 
       const _loyaltyTier =
         avgStreamsPerUser > 20
@@ -595,9 +595,9 @@ class CohortAnalyticsService {
         platform,
         initialSize,
         day1Retained: Math?.floor(initialSize * baseRetention),
-        day7Retained: Math?.floor(initialSize * baseRetention * 0?.7),
-        day30Retained: Math?.floor(initialSize * baseRetention * 0?.5),
-        day90Retained: Math?.floor(initialSize * baseRetention * 0?.3),
+        day7Retained: Math?.floor(initialSize * baseRetention * 0.7),
+        day30Retained: Math?.floor(initialSize * baseRetention * 0.5),
+        day90Retained: Math?.floor(initialSize * baseRetention * 0.3),
         totalStreams,
         avgStreamsPerUser: Math?.round(avgStreamsPerUser * 10) / 10,
         totalRevenue: String(Math?.round(totalRevenue * 100) / 100),
@@ -621,10 +621,10 @@ class CohortAnalyticsService {
     initialSize: number,
     retention: RetentionData,
   ): { tier: LoyaltyTier; count: number; percentage: number }[] {
-    const _advocatePercent = retention?.day90 * 0?.03;
-    const _superfanPercent = retention?.day90 * 0?.09;
-    const _fanPercent = retention?.day30 * 0?.18;
-    const _engagedPercent = retention?.day7 * 0?.3;
+    const _advocatePercent = retention?.day90 * 0.03;
+    const _superfanPercent = retention?.day90 * 0.09;
+    const _fanPercent = retention?.day30 * 0.18;
+    const _engagedPercent = retention?.day7 * 0.3;
     const _casualPercent =
       100 - advocatePercent - superfanPercent - fanPercent - engagedPercent;
 

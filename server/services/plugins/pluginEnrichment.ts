@@ -30,8 +30,8 @@ import type {
   PluginParameter,
   EffectType,
   InstrumentType,
-} from "./definitions?.js";
-import { GENRE_IDS, type Genre } from "./genres?.js";
+} from "./definitions.js";
+import { GENRE_IDS, type Genre } from "./genres.js";
 
 // ---------------------------------------------------------------------------
 // Reference parameter sets per plugin TYPE
@@ -140,8 +140,8 @@ const _eqBands = (count: number): PluginParameter[] => {
         "Hz",
       ),
     );
-    out?.push(f(`band${n}Gain`, `Band ${n} Gain`, 0, -24, 24, "dB", 0?.1));
-    out?.push(f(`band${n}Q`, `Band ${n} Q`, 0?.7, 0?.1, 24, "", 0?.01));
+    out?.push(f(`band${n}Gain`, `Band ${n} Gain`, 0, -24, 24, "dB", 0.1));
+    out?.push(f(`band${n}Q`, `Band ${n} Q`, 0.7, 0.1, 24, "", 0.01));
   }
   return out;
 };
@@ -166,7 +166,7 @@ const _eqBands = (count: number): PluginParameter[] => {
     out?.push(b(`band${n}Bypass`, `Band ${n} Bypass`, false));
     out?.push(f(`band${n}Threshold`, `Band ${n} Threshold`, -18, -60, 0, "dB"));
     out?.push(f(`band${n}Ratio`, `Band ${n} Ratio`, 2, 1, 20));
-    out?.push(f(`band${n}Attack`, `Band ${n} Attack`, 10, 0?.1, 200, "ms"));
+    out?.push(f(`band${n}Attack`, `Band ${n} Attack`, 10, 0.1, 200, "ms"));
     out?.push(f(`band${n}Release`, `Band ${n} Release`, 100, 1, 2000, "ms"));
     out?.push(f(`band${n}Knee`, `Band ${n} Knee`, 6, 0, 24, "dB"));
     out?.push(f(`band${n}Makeup`, `Band ${n} Makeup`, 0, -12, 24, "dB"));
@@ -215,7 +215,7 @@ const REFERENCE: Partial<
   compressor: () => [
     f("threshold", "Threshold", -18, -60, 0, "dB"),
     f("ratio", "Ratio", 4, 1, 20),
-    f("attack", "Attack", 10, 0?.01, 200, "ms"),
+    f("attack", "Attack", 10, 0.01, 200, "ms"),
     f("release", "Release", 100, 1, 2000, "ms"),
     f("knee", "Knee", 6, 0, 30, "dB"),
     f("makeup", "Makeup Gain", 0, -12, 24, "dB"),
@@ -240,7 +240,7 @@ const REFERENCE: Partial<
   // Limiters
   limiter: () => [
     f("threshold", "Threshold", -1, -30, 0, "dB"),
-    f("ceiling", "Output Ceiling", -0?.1, -3, 0, "dB"),
+    f("ceiling", "Output Ceiling", -0.1, -3, 0, "dB"),
     f("release", "Release", 50, 1, 1000, "ms"),
     f("lookahead", "Lookahead", 5, 0, 30, "ms"),
     c("character", "Character", "transparent", [
@@ -263,7 +263,7 @@ const REFERENCE: Partial<
   ],
   maximizer: () => [
     f("threshold", "Threshold", -6, -30, 0, "dB"),
-    f("ceiling", "Output Ceiling", -0?.1, -3, 0, "dB"),
+    f("ceiling", "Output Ceiling", -0.1, -3, 0, "dB"),
     f("release", "Release", 50, 1, 1000, "ms"),
     f("character", "Character", 0, 0, 100, "%"),
     c("algorithm", "Algorithm", "IRC-III", [
@@ -281,7 +281,7 @@ const REFERENCE: Partial<
   gate: () => [
     f("threshold", "Threshold", -40, -90, 0, "dB"),
     f("range", "Range", -60, -90, 0, "dB"),
-    f("attack", "Attack", 1, 0?.01, 100, "ms"),
+    f("attack", "Attack", 1, 0.01, 100, "ms"),
     f("hold", "Hold", 10, 0, 500, "ms"),
     f("release", "Release", 100, 1, 2000, "ms"),
     f("hysteresis", "Hysteresis", 6, 0, 24, "dB"),
@@ -293,7 +293,7 @@ const REFERENCE: Partial<
   expander: () => [
     f("threshold", "Threshold", -30, -90, 0, "dB"),
     f("ratio", "Ratio", 2, 1, 20),
-    f("attack", "Attack", 2, 0?.01, 100, "ms"),
+    f("attack", "Attack", 2, 0.01, 100, "ms"),
     f("release", "Release", 100, 1, 2000, "ms"),
     f("knee", "Knee", 3, 0, 24, "dB"),
     f("range", "Range", -40, -90, 0, "dB"),
@@ -304,10 +304,10 @@ const REFERENCE: Partial<
     f("threshold", "Threshold", -24, -60, 0, "dB"),
     f("frequency", "Frequency", 6500, 1000, 16000, "Hz"),
     f("range", "Range", -12, -30, 0, "dB"),
-    f("q", "Q / Width", 1?.5, 0?.1, 10),
+    f("q", "Q / Width", 1.5, 0.1, 10),
     c("mode", "Mode", "split", ["wide-band", "split", "mid-side"]),
     b("listen", "Listen", false),
-    f("attack", "Attack", 1, 0?.01, 50, "ms"),
+    f("attack", "Attack", 1, 0.01, 50, "ms"),
     f("release", "Release", 30, 1, 500, "ms"),
     c("character", "Character", "modern", [
       "modern",
@@ -346,10 +346,10 @@ const REFERENCE: Partial<
   reverb: () => [
     f("predelay", "Pre-Delay", 20, 0, 500, "ms"),
     f("size", "Size", 50, 0, 100, "%"),
-    f("decay", "Decay Time", 2?.0, 0?.1, 30, "s"),
+    f("decay", "Decay Time", 2.0, 0.1, 30, "s"),
     f("density", "Density", 70, 0, 100, "%"),
     f("diffusion", "Diffusion", 70, 0, 100, "%"),
-    f("modRate", "Modulation Rate", 1?.0, 0?.1, 10, "Hz"),
+    f("modRate", "Modulation Rate", 1.0, 0.1, 10, "Hz"),
     f("modDepth", "Modulation Depth", 20, 0, 100, "%"),
     f("lowDamp", "Low Damping", 50, 0, 100, "%"),
     f("highDamp", "High Damping", 50, 0, 100, "%"),
@@ -371,19 +371,19 @@ const REFERENCE: Partial<
   ],
   plate: () => [
     f("predelay", "Pre-Delay", 10, 0, 500, "ms"),
-    f("decay", "Decay Time", 1?.8, 0?.1, 10, "s"),
+    f("decay", "Decay Time", 1.8, 0.1, 10, "s"),
     f("size", "Plate Size", 60, 0, 100, "%"),
     f("damping", "Damping", 50, 0, 100, "%"),
     f("lowCut", "Low Cut", 100, 20, 1000, "Hz"),
     f("highCut", "High Cut", 10000, 1000, 22000, "Hz"),
-    f("modRate", "Modulation Rate", 1?.4, 0?.1, 10, "Hz"),
+    f("modRate", "Modulation Rate", 1.4, 0.1, 10, "Hz"),
     f("modDepth", "Modulation Depth", 10, 0, 100, "%"),
     f("width", "Stereo Width", 100, 0, 200, "%"),
     f("mix", "Mix", 25, 0, 100, "%"),
   ],
   hall: () => [
     f("predelay", "Pre-Delay", 40, 0, 500, "ms"),
-    f("decay", "Decay Time", 2?.8, 0?.1, 30, "s"),
+    f("decay", "Decay Time", 2.8, 0.1, 30, "s"),
     f("size", "Hall Size", 80, 0, 100, "%"),
     f("diffusion", "Diffusion", 80, 0, 100, "%"),
     f("lowDamp", "Low Damping", 30, 0, 100, "%"),
@@ -395,7 +395,7 @@ const REFERENCE: Partial<
     f("mix", "Mix", 25, 0, 100, "%"),
   ],
   spring: () => [
-    f("decay", "Decay Time", 1?.5, 0?.1, 5, "s"),
+    f("decay", "Decay Time", 1.5, 0.1, 5, "s"),
     f("tension", "Tension", 50, 0, 100, "%"),
     i("springs", "Springs", 3, 1, 6),
     f("boing", "Boing", 30, 0, 100, "%"),
@@ -406,7 +406,7 @@ const REFERENCE: Partial<
   ],
   shimmer: () => [
     f("predelay", "Pre-Delay", 30, 0, 500, "ms"),
-    f("decay", "Decay Time", 4?.0, 0?.5, 30, "s"),
+    f("decay", "Decay Time", 4.0, 0.5, 30, "s"),
     f("size", "Size", 80, 0, 100, "%"),
     f("shimmer", "Shimmer Amount", 50, 0, 100, "%"),
     i("pitch1", "Voice 1 Pitch", 12, -24, 24, "st"),
@@ -419,7 +419,7 @@ const REFERENCE: Partial<
   ambient: () => [
     f("predelay", "Pre-Delay", 0, 0, 200, "ms"),
     f("size", "Room Size", 40, 0, 100, "%"),
-    f("decay", "Decay Time", 0?.8, 0?.05, 5, "s"),
+    f("decay", "Decay Time", 0.8, 0.05, 5, "s"),
     f("density", "Density", 80, 0, 100, "%"),
     f("width", "Stereo Width", 120, 0, 200, "%"),
     f("lowCut", "Low Cut", 200, 20, 1000, "Hz"),
@@ -428,7 +428,7 @@ const REFERENCE: Partial<
   ],
   chamber: () => [
     f("predelay", "Pre-Delay", 15, 0, 500, "ms"),
-    f("decay", "Decay Time", 1?.4, 0?.1, 10, "s"),
+    f("decay", "Decay Time", 1.4, 0.1, 10, "s"),
     f("size", "Chamber Size", 60, 0, 100, "%"),
     f("diffusion", "Diffusion", 75, 0, 100, "%"),
     f("lowCut", "Low Cut", 100, 20, 1000, "Hz"),
@@ -488,7 +488,7 @@ const REFERENCE: Partial<
     f("flutter", "Flutter", 0, 0, 100, "%"),
     f("lowCut", "Low Cut", 100, 20, 1000, "Hz"),
     f("highCut", "High Cut", 8000, 1000, 22000, "Hz"),
-    f("modRate", "Modulation Rate", 0?.5, 0?.01, 10, "Hz"),
+    f("modRate", "Modulation Rate", 0.5, 0.01, 10, "Hz"),
     f("modDepth", "Modulation Depth", 10, 0, 100, "%"),
     f("ducking", "Ducking", 0, 0, 100, "%"),
     f("width", "Stereo Width", 100, 0, 200, "%"),
@@ -497,7 +497,7 @@ const REFERENCE: Partial<
 
   // ---------------- Modulation ----------------
   chorus: () => [
-    f("rate", "Rate", 0?.5, 0?.01, 20, "Hz"),
+    f("rate", "Rate", 0.5, 0.01, 20, "Hz"),
     f("depth", "Depth", 30, 0, 100, "%"),
     f("delay", "Delay", 15, 1, 50, "ms"),
     f("feedback", "Feedback", 0, -100, 100, "%"),
@@ -515,7 +515,7 @@ const REFERENCE: Partial<
     f("mix", "Mix", 50, 0, 100, "%"),
   ],
   phaser: () => [
-    f("rate", "Rate", 0?.5, 0?.01, 20, "Hz"),
+    f("rate", "Rate", 0.5, 0.01, 20, "Hz"),
     f("depth", "Depth", 60, 0, 100, "%"),
     f("feedback", "Feedback", 50, 0, 100, "%"),
     i("stages", "Stages", 4, 2, 12),
@@ -525,16 +525,16 @@ const REFERENCE: Partial<
     f("mix", "Mix", 50, 0, 100, "%"),
   ],
   flanger: () => [
-    f("rate", "Rate", 0?.3, 0?.01, 20, "Hz"),
+    f("rate", "Rate", 0.3, 0.01, 20, "Hz"),
     f("depth", "Depth", 50, 0, 100, "%"),
-    f("delay", "Delay", 3, 0?.1, 20, "ms"),
+    f("delay", "Delay", 3, 0.1, 20, "ms"),
     f("feedback", "Feedback", 60, -100, 100, "%"),
     f("spread", "Stereo Spread", 100, 0, 200, "%"),
     c("mode", "Mode", "classic", ["classic", "thru-zero", "tape"]),
     f("mix", "Mix", 50, 0, 100, "%"),
   ],
   tremolo: () => [
-    f("rate", "Rate", 4, 0?.1, 20, "Hz"),
+    f("rate", "Rate", 4, 0.1, 20, "Hz"),
     f("depth", "Depth", 50, 0, 100, "%"),
     c("shape", "LFO Shape", "sine", [
       "sine",
@@ -548,7 +548,7 @@ const REFERENCE: Partial<
     f("mix", "Mix", 100, 0, 100, "%"),
   ],
   "auto-pan": () => [
-    f("rate", "Rate", 1, 0?.01, 20, "Hz"),
+    f("rate", "Rate", 1, 0.01, 20, "Hz"),
     f("depth", "Depth", 100, 0, 100, "%"),
     c("shape", "LFO Shape", "sine", [
       "sine",
@@ -562,8 +562,8 @@ const REFERENCE: Partial<
   ],
   rotary: () => [
     c("speed", "Speed", "slow", ["stop", "slow", "fast"]),
-    f("slowRate", "Slow Rate", 0?.8, 0?.1, 5, "Hz"),
-    f("fastRate", "Fast Rate", 6?.5, 1, 15, "Hz"),
+    f("slowRate", "Slow Rate", 0.8, 0.1, 5, "Hz"),
+    f("fastRate", "Fast Rate", 6.5, 1, 15, "Hz"),
     f("accel", "Acceleration", 50, 0, 100, "%"),
     f("decel", "Deceleration", 50, 0, 100, "%"),
     f("drive", "Tube Drive", 30, 0, 100, "%"),
@@ -571,7 +571,7 @@ const REFERENCE: Partial<
     f("mix", "Mix", 100, 0, 100, "%"),
   ],
   ensemble: () => [
-    f("rate", "Rate", 0?.5, 0?.01, 10, "Hz"),
+    f("rate", "Rate", 0.5, 0.01, 10, "Hz"),
     f("depth", "Depth", 50, 0, 100, "%"),
     i("voices", "Voices", 3, 2, 8),
     f("spread", "Stereo Spread", 100, 0, 200, "%"),
@@ -579,7 +579,7 @@ const REFERENCE: Partial<
     f("mix", "Mix", 50, 0, 100, "%"),
   ],
   vibrato: () => [
-    f("rate", "Rate", 5, 0?.1, 20, "Hz"),
+    f("rate", "Rate", 5, 0.1, 20, "Hz"),
     f("depth", "Depth", 30, 0, 100, "cents"),
     c("shape", "Shape", "sine", ["sine", "triangle"]),
   ],
@@ -631,7 +631,7 @@ const REFERENCE: Partial<
     f("flutter", "Flutter", 10, 0, 100, "%"),
     f("hiss", "Hiss", 0, 0, 100, "%"),
     f("crosstalk", "Crosstalk", 20, 0, 100, "%"),
-    c("speed", "Tape Speed", "15ips", ["3?.75ips", "7?.5ips", "15ips", "30ips"]),
+    c("speed", "Tape Speed", "15ips", ["3.75ips", "7.5ips", "15ips", "30ips"]),
     c("formula", "Tape Formula", "modern", ["vintage", "modern", "lo-fi"]),
     f("mix", "Mix", 100, 0, 100, "%"),
   ],
@@ -681,7 +681,7 @@ const REFERENCE: Partial<
   ],
   filter: () => [
     f("cutoff", "Cutoff", 1000, 20, 22000, "Hz"),
-    f("resonance", "Resonance", 0?.5, 0, 1),
+    f("resonance", "Resonance", 0.5, 0, 1),
     c("mode", "Mode", "low-pass", [
       "low-pass",
       "high-pass",
@@ -691,14 +691,14 @@ const REFERENCE: Partial<
     ]),
     i("slope", "Slope", 24, 6, 96, "dB/oct"),
     f("drive", "Drive", 0, 0, 100, "%"),
-    f("lfoRate", "LFO Rate", 1, 0?.01, 20, "Hz"),
+    f("lfoRate", "LFO Rate", 1, 0.01, 20, "Hz"),
     f("lfoDepth", "LFO Depth", 0, 0, 100, "%"),
     f("envFollow", "Env Follow", 0, 0, 100, "%"),
     f("mix", "Mix", 100, 0, 100, "%"),
   ],
   notch: () => [
     f("frequency", "Frequency", 1000, 20, 22000, "Hz"),
-    f("q", "Q", 12, 0?.1, 100),
+    f("q", "Q", 12, 0.1, 100),
     f("depth", "Depth", -48, -96, 0, "dB"),
     b("autoDetect", "Auto Detect Hum", false),
   ],
@@ -836,7 +836,7 @@ const REFERENCE: Partial<
     f("threshold", "Threshold", -40, -90, 0, "dB"),
     f("reduction", "Reduction", 12, 0, 60, "dB"),
     f("frequency", "Frequency", 1000, 20, 22000, "Hz"),
-    f("q", "Q", 1, 0?.1, 100),
+    f("q", "Q", 1, 0.1, 100),
     c("mode", "Mode", "denoise", [
       "denoise",
       "declick",
@@ -1020,7 +1020,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       dnb: {
         threshold: -8,
         ratio: 8,
-        attack: 0?.5,
+        attack: 0.5,
         release: 30,
         character: "fet",
         mix: 100,
@@ -1029,7 +1029,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       dubstep: {
         threshold: -8,
         ratio: 8,
-        attack: 0?.3,
+        attack: 0.3,
         release: 30,
         character: "fet",
         mix: 100,
@@ -1045,7 +1045,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       },
       "classical-orchestral": {
         threshold: -24,
-        ratio: 1?.5,
+        ratio: 1.5,
         attack: 30,
         release: 500,
         character: "tube",
@@ -1058,7 +1058,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
   limiter: fillForAll(
     {
       threshold: -1,
-      ceiling: -0?.3,
+      ceiling: -0.3,
       release: 50,
       lookahead: 5,
       character: "transparent",
@@ -1067,96 +1067,96 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
     {
       "hip-hop": {
         threshold: -6,
-        ceiling: -0?.8,
+        ceiling: -0.8,
         release: 30,
         character: "aggressive",
       },
       trap: {
         threshold: -8,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 20,
         character: "aggressive",
       },
-      lofi: { threshold: -3, ceiling: -1?.0, release: 80, character: "vintage" },
-      rnb: { threshold: -4, ceiling: -1?.0, release: 60, character: "modern" },
-      pop: { threshold: -7, ceiling: -1?.0, release: 40, character: "modern" },
-      rock: { threshold: -5, ceiling: -1?.0, release: 50, character: "modern" },
+      lofi: { threshold: -3, ceiling: -1.0, release: 80, character: "vintage" },
+      rnb: { threshold: -4, ceiling: -1.0, release: 60, character: "modern" },
+      pop: { threshold: -7, ceiling: -1.0, release: 40, character: "modern" },
+      rock: { threshold: -5, ceiling: -1.0, release: 50, character: "modern" },
       metal: {
         threshold: -8,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 30,
         character: "aggressive",
       },
       indie: {
         threshold: -4,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 60,
         character: "vintage",
       },
       country: {
         threshold: -3,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 80,
         character: "vintage",
       },
       jazz: {
         threshold: -2,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 100,
         character: "transparent",
       },
       "funk-soul": {
         threshold: -4,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 50,
         character: "vintage",
       },
       reggae: {
         threshold: -4,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 70,
         character: "vintage",
       },
-      latin: { threshold: -5, ceiling: -1?.0, release: 50, character: "modern" },
+      latin: { threshold: -5, ceiling: -1.0, release: 50, character: "modern" },
       afrobeats: {
         threshold: -6,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 40,
         character: "modern",
       },
       "edm-house": {
         threshold: -8,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 20,
         character: "modern",
       },
       techno: {
         threshold: -7,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 25,
         character: "modern",
       },
       dnb: {
         threshold: -8,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 15,
         character: "aggressive",
       },
       dubstep: {
         threshold: -9,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 15,
         character: "aggressive",
       },
       "ambient-cinematic": {
         threshold: -1,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 200,
         character: "transparent",
       },
       "classical-orchestral": {
         threshold: -1,
-        ceiling: -1?.0,
+        ceiling: -1.0,
         release: 300,
         character: "transparent",
       },
@@ -1170,7 +1170,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       band1Type: "high-pass",
       band1Freq: 30,
       band1Gain: 0,
-      band1Q: 0?.7,
+      band1Q: 0.7,
       band5On: true,
       band5Type: "high-shelf",
       band5Freq: 12000,
@@ -1186,7 +1186,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
         band3Type: "bell",
         band3Freq: 200,
         band3Gain: -2,
-        band3Q: 1?.2,
+        band3Q: 1.2,
       },
       trap: {
         band1Freq: 25,
@@ -1195,12 +1195,12 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
         band3Type: "bell",
         band3Freq: 250,
         band3Gain: -3,
-        band3Q: 1?.5,
+        band3Q: 1.5,
       },
       lofi: { band1Freq: 80, band5Gain: -4, band5Freq: 8000 },
       rnb: {
         band1Freq: 35,
-        band5Gain: 2?.5,
+        band5Gain: 2.5,
         band4On: true,
         band4Type: "bell",
         band4Freq: 3000,
@@ -1238,7 +1238,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
         band4On: true,
         band4Type: "bell",
         band4Freq: 5000,
-        band4Gain: 1?.5,
+        band4Gain: 1.5,
       },
       jazz: { band1Freq: 30, band5Gain: 1 },
       "funk-soul": {
@@ -1247,7 +1247,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
         band4On: true,
         band4Type: "bell",
         band4Freq: 3500,
-        band4Gain: 1?.5,
+        band4Gain: 1.5,
       },
       reggae: {
         band1Freq: 30,
@@ -1301,7 +1301,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
     {
       predelay: 20,
       size: 50,
-      decay: 2?.0,
+      decay: 2.0,
       density: 70,
       lowDamp: 50,
       highDamp: 50,
@@ -1311,39 +1311,39 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       algorithm: "hall",
     },
     {
-      "hip-hop": { algorithm: "plate", decay: 1?.6, predelay: 25, mix: 15 },
-      trap: { algorithm: "plate", decay: 1?.2, predelay: 20, mix: 10 },
+      "hip-hop": { algorithm: "plate", decay: 1.6, predelay: 25, mix: 15 },
+      trap: { algorithm: "plate", decay: 1.2, predelay: 20, mix: 10 },
       lofi: {
         algorithm: "spring",
-        decay: 1?.4,
+        decay: 1.4,
         predelay: 10,
         mix: 30,
         highDamp: 70,
       },
-      rnb: { algorithm: "plate", decay: 1?.8, predelay: 30, mix: 22 },
-      pop: { algorithm: "plate", decay: 1?.6, predelay: 25, mix: 18 },
-      rock: { algorithm: "plate", decay: 1?.8, predelay: 20, mix: 20 },
-      metal: { algorithm: "room", decay: 1?.0, predelay: 15, mix: 12 },
-      indie: { algorithm: "plate", decay: 2?.2, predelay: 25, mix: 25 },
-      country: { algorithm: "plate", decay: 1?.8, predelay: 25, mix: 22 },
-      jazz: { algorithm: "hall", decay: 2?.4, predelay: 30, mix: 22 },
-      "funk-soul": { algorithm: "plate", decay: 1?.6, predelay: 20, mix: 18 },
-      reggae: { algorithm: "spring", decay: 2?.0, predelay: 15, mix: 25 },
-      latin: { algorithm: "plate", decay: 1?.8, predelay: 25, mix: 22 },
-      afrobeats: { algorithm: "plate", decay: 1?.6, predelay: 20, mix: 18 },
-      "edm-house": { algorithm: "hall", decay: 2?.6, predelay: 30, mix: 20 },
-      techno: { algorithm: "hall", decay: 3?.0, predelay: 25, mix: 18 },
-      dnb: { algorithm: "plate", decay: 1?.4, predelay: 15, mix: 15 },
-      dubstep: { algorithm: "plate", decay: 1?.2, predelay: 15, mix: 12 },
+      rnb: { algorithm: "plate", decay: 1.8, predelay: 30, mix: 22 },
+      pop: { algorithm: "plate", decay: 1.6, predelay: 25, mix: 18 },
+      rock: { algorithm: "plate", decay: 1.8, predelay: 20, mix: 20 },
+      metal: { algorithm: "room", decay: 1.0, predelay: 15, mix: 12 },
+      indie: { algorithm: "plate", decay: 2.2, predelay: 25, mix: 25 },
+      country: { algorithm: "plate", decay: 1.8, predelay: 25, mix: 22 },
+      jazz: { algorithm: "hall", decay: 2.4, predelay: 30, mix: 22 },
+      "funk-soul": { algorithm: "plate", decay: 1.6, predelay: 20, mix: 18 },
+      reggae: { algorithm: "spring", decay: 2.0, predelay: 15, mix: 25 },
+      latin: { algorithm: "plate", decay: 1.8, predelay: 25, mix: 22 },
+      afrobeats: { algorithm: "plate", decay: 1.6, predelay: 20, mix: 18 },
+      "edm-house": { algorithm: "hall", decay: 2.6, predelay: 30, mix: 20 },
+      techno: { algorithm: "hall", decay: 3.0, predelay: 25, mix: 18 },
+      dnb: { algorithm: "plate", decay: 1.4, predelay: 15, mix: 15 },
+      dubstep: { algorithm: "plate", decay: 1.2, predelay: 15, mix: 12 },
       "ambient-cinematic": {
         algorithm: "shimmer",
-        decay: 8?.0,
+        decay: 8.0,
         predelay: 40,
         mix: 45,
       },
       "classical-orchestral": {
         algorithm: "hall",
-        decay: 3?.2,
+        decay: 3.2,
         predelay: 35,
         mix: 28,
       },
@@ -1523,7 +1523,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       "hip-hop": {
         threshold: -32,
         range: -40,
-        attack: 0?.5,
+        attack: 0.5,
         hold: 5,
         release: 60,
         scHpf: 100,
@@ -1531,7 +1531,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       trap: {
         threshold: -28,
         range: -50,
-        attack: 0?.3,
+        attack: 0.3,
         hold: 3,
         release: 40,
         scHpf: 150,
@@ -1540,7 +1540,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       metal: {
         threshold: -30,
         range: -60,
-        attack: 0?.3,
+        attack: 0.3,
         hold: 5,
         release: 80,
         scHpf: 100,
@@ -1548,16 +1548,16 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       "edm-house": {
         threshold: -36,
         range: -50,
-        attack: 0?.5,
+        attack: 0.5,
         hold: 5,
         release: 60,
       },
-      techno: { threshold: -36, range: -50, attack: 0?.5, hold: 5, release: 50 },
-      dnb: { threshold: -34, range: -60, attack: 0?.2, hold: 3, release: 40 },
+      techno: { threshold: -36, range: -50, attack: 0.5, hold: 5, release: 50 },
+      dnb: { threshold: -34, range: -60, attack: 0.2, hold: 3, release: 40 },
       dubstep: {
         threshold: -34,
         range: -60,
-        attack: 0?.2,
+        attack: 0.2,
         hold: 3,
         release: 40,
       },
@@ -1578,7 +1578,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       threshold: -24,
       frequency: 6500,
       range: -8,
-      q: 1?.5,
+      q: 1.5,
       mode: "split",
       character: "modern",
     },
@@ -1646,7 +1646,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
   // ---- Chorus ----
   chorus: fillForAll(
     {
-      rate: 0?.5,
+      rate: 0.5,
       depth: 30,
       delay: 15,
       feedback: 0,
@@ -1656,16 +1656,16 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       mix: 50,
     },
     {
-      lofi: { rate: 0?.3, depth: 40, mode: "vintage", mix: 60 },
-      rnb: { rate: 0?.4, depth: 35, mode: "dimension", mix: 50 },
-      pop: { rate: 0?.6, depth: 30, mode: "classic", mix: 45 },
-      rock: { rate: 0?.5, depth: 35, mode: "vintage", mix: 50 },
-      indie: { rate: 0?.4, depth: 40, mode: "vintage", mix: 55 },
-      country: { rate: 0?.5, depth: 30, mode: "classic", mix: 40 },
-      jazz: { rate: 0?.3, depth: 20, mode: "ensemble", mix: 35 },
-      "funk-soul": { rate: 0?.6, depth: 30, mode: "classic", mix: 45 },
-      "edm-house": { rate: 0?.7, depth: 25, mode: "tri-chorus", mix: 40 },
-      "ambient-cinematic": { rate: 0?.25, depth: 50, mode: "ensemble", mix: 60 },
+      lofi: { rate: 0.3, depth: 40, mode: "vintage", mix: 60 },
+      rnb: { rate: 0.4, depth: 35, mode: "dimension", mix: 50 },
+      pop: { rate: 0.6, depth: 30, mode: "classic", mix: 45 },
+      rock: { rate: 0.5, depth: 35, mode: "vintage", mix: 50 },
+      indie: { rate: 0.4, depth: 40, mode: "vintage", mix: 55 },
+      country: { rate: 0.5, depth: 30, mode: "classic", mix: 40 },
+      jazz: { rate: 0.3, depth: 20, mode: "ensemble", mix: 35 },
+      "funk-soul": { rate: 0.6, depth: 30, mode: "classic", mix: 45 },
+      "edm-house": { rate: 0.7, depth: 25, mode: "tri-chorus", mix: 40 },
+      "ambient-cinematic": { rate: 0.25, depth: 50, mode: "ensemble", mix: 60 },
     },
   ),
 
@@ -1706,7 +1706,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
         wow: 40,
         flutter: 35,
         hiss: 25,
-        speed: "7?.5ips",
+        speed: "7.5ips",
         formula: "vintage",
       },
       "hip-hop": {
@@ -1746,7 +1746,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
         wow: 25,
         flutter: 20,
         hiss: 15,
-        speed: "7?.5ips",
+        speed: "7.5ips",
         formula: "vintage",
       },
       "ambient-cinematic": {
@@ -1775,7 +1775,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       "hip-hop": { width: 110, sideGain: 1, lowMonoFreq: 120 },
       trap: { width: 120, sideGain: 2, lowMonoFreq: 140 },
       "edm-house": { width: 130, sideGain: 2, lowMonoFreq: 120 },
-      techno: { width: 125, sideGain: 1?.5, lowMonoFreq: 120 },
+      techno: { width: 125, sideGain: 1.5, lowMonoFreq: 120 },
       dnb: { width: 130, sideGain: 2, lowMonoFreq: 140 },
       dubstep: { width: 140, sideGain: 3, lowMonoFreq: 150 },
       pop: { width: 110, sideGain: 1, lowMonoFreq: 100 },
@@ -1796,7 +1796,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
   plate: fillForAll(
     {
       predelay: 10,
-      decay: 1?.8,
+      decay: 1.8,
       size: 60,
       damping: 50,
       lowCut: 100,
@@ -1804,14 +1804,14 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       mix: 25,
     },
     {
-      "hip-hop": { decay: 1?.4, predelay: 20, mix: 18 },
-      trap: { decay: 1?.0, predelay: 15, mix: 12 },
-      rnb: { decay: 1?.8, predelay: 25, mix: 22 },
-      pop: { decay: 1?.6, predelay: 25, mix: 20 },
-      rock: { decay: 1?.8, predelay: 20, mix: 22 },
-      indie: { decay: 2?.2, predelay: 25, mix: 28 },
-      jazz: { decay: 2?.4, predelay: 30, mix: 22 },
-      country: { decay: 1?.8, predelay: 25, mix: 22 },
+      "hip-hop": { decay: 1.4, predelay: 20, mix: 18 },
+      trap: { decay: 1.0, predelay: 15, mix: 12 },
+      rnb: { decay: 1.8, predelay: 25, mix: 22 },
+      pop: { decay: 1.6, predelay: 25, mix: 20 },
+      rock: { decay: 1.8, predelay: 20, mix: 22 },
+      indie: { decay: 2.2, predelay: 25, mix: 28 },
+      jazz: { decay: 2.4, predelay: 30, mix: 22 },
+      country: { decay: 1.8, predelay: 25, mix: 22 },
     },
   ),
 
@@ -1819,7 +1819,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
   hall: fillForAll(
     {
       predelay: 40,
-      decay: 2?.8,
+      decay: 2.8,
       size: 80,
       diffusion: 80,
       lowDamp: 30,
@@ -1829,18 +1829,18 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
       mix: 25,
     },
     {
-      "classical-orchestral": { decay: 3?.2, size: 90, predelay: 35, mix: 28 },
-      jazz: { decay: 2?.4, size: 75, predelay: 30, mix: 22 },
-      "ambient-cinematic": { decay: 6?.0, size: 95, predelay: 40, mix: 40 },
-      pop: { decay: 2?.0, size: 60, predelay: 25, mix: 18 },
-      rock: { decay: 2?.2, size: 70, predelay: 25, mix: 20 },
-      "edm-house": { decay: 2?.8, size: 80, predelay: 30, mix: 22 },
+      "classical-orchestral": { decay: 3.2, size: 90, predelay: 35, mix: 28 },
+      jazz: { decay: 2.4, size: 75, predelay: 30, mix: 22 },
+      "ambient-cinematic": { decay: 6.0, size: 95, predelay: 40, mix: 40 },
+      pop: { decay: 2.0, size: 60, predelay: 25, mix: 18 },
+      rock: { decay: 2.2, size: 70, predelay: 25, mix: 20 },
+      "edm-house": { decay: 2.8, size: 80, predelay: 30, mix: 22 },
     },
   ),
 
   // ---- Spring / Shimmer / Ambient / Chamber: keep base, no per-genre divergence (use defaults) ----
   spring: fillForAll(
-    { decay: 1?.5, tension: 50, springs: 3, boing: 30, tone: 50, mix: 30 },
+    { decay: 1.5, tension: 50, springs: 3, boing: 30, tone: 50, mix: 30 },
     {
       reggae: { boing: 60, mix: 40 },
       lofi: { boing: 40, mix: 35 },
@@ -1849,7 +1849,7 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
   ),
   shimmer: fillForAll(
     {
-      decay: 4?.0,
+      decay: 4.0,
       size: 80,
       shimmer: 50,
       pitch1: 12,
@@ -1867,43 +1867,43 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
 
   // ---- Filter (auto-filter etc.) ----
   filter: fillForAll(
-    { cutoff: 1000, resonance: 0?.5, mode: "low-pass", slope: 24, mix: 100 },
+    { cutoff: 1000, resonance: 0.5, mode: "low-pass", slope: 24, mix: 100 },
     {
       "edm-house": {
         cutoff: 2500,
-        resonance: 0?.6,
+        resonance: 0.6,
         mode: "low-pass",
-        lfoRate: 0?.5,
+        lfoRate: 0.5,
         lfoDepth: 50,
       },
       techno: {
         cutoff: 1800,
-        resonance: 0?.7,
+        resonance: 0.7,
         mode: "low-pass",
-        lfoRate: 0?.25,
+        lfoRate: 0.25,
         lfoDepth: 60,
       },
       dnb: {
         cutoff: 3000,
-        resonance: 0?.6,
+        resonance: 0.6,
         mode: "band-pass",
         lfoRate: 1,
         lfoDepth: 40,
       },
       dubstep: {
         cutoff: 1500,
-        resonance: 0?.8,
+        resonance: 0.8,
         mode: "low-pass",
-        lfoRate: 0?.5,
+        lfoRate: 0.5,
         lfoDepth: 70,
       },
       "funk-soul": {
         cutoff: 2000,
-        resonance: 0?.6,
+        resonance: 0.6,
         mode: "band-pass",
         envFollow: 60,
       },
-      lofi: { cutoff: 6000, resonance: 0?.2, mode: "low-pass" },
+      lofi: { cutoff: 6000, resonance: 0.2, mode: "low-pass" },
     },
   ),
 };

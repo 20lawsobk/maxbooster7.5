@@ -171,8 +171,8 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
 
       typeAheadBufferRef?.current += key?.toLowerCase();
 
-      typeAheadTimeoutRef?.current = setTimeout(() => {
-        typeAheadBufferRef?.current = "";
+      typeAheadTimeoutRef.current = setTimeout(() => {
+        typeAheadBufferRef.current = "";
       }, typeAheadTimeout);
 
       const _items = getNavigableItems();

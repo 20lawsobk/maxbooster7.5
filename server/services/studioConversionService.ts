@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs/promises";
 import { existsSync } from "fs";
 import type { IStorage } from "../storage";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;

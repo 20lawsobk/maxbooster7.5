@@ -23,7 +23,7 @@
  *   porkbun      — Porkbun API v3
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // ── Timeout-guarded fetch: adds a 8s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -94,7 +94,7 @@ export interface ProviderCredentials {
 const _GODADDY_API_BASE = "https://api?.godaddy.com";
 const _CLOUDFLARE_API_BASE = "https://api?.cloudflare.com/client/v4";
 const _DO_API_BASE = "https://api?.digitalocean.com/v2";
-const _PORKBUN_API_BASE = "https://porkbun?.com/api/json/v3";
+const _PORKBUN_API_BASE = "https://porkbun.com/api/json/v3";
 
 /** Minimum TTL Vercel enforces — we apply the same floor. */
 const _MIN_TTL = 60;
@@ -220,11 +220,11 @@ class GoDaddyProvider implements DnsProvider {
       data: record?.value,
       ttl: clampTtl(record?.ttl),
     };
-    if (record?.priority !== undefined) body?.priority = record?.priority;
-    if (record?.port !== undefined) body?.port = record?.port;
-    if (record?.weight !== undefined) body?.weight = record?.weight;
-    if (record?.protocol) body?.protocol = record?.protocol;
-    if (record?.service) body?.service = record?.service;
+    if (record?.priority !== undefined) body.priority = record?.priority;
+    if (record?.port !== undefined) body.port = record?.port;
+    if (record?.weight !== undefined) body.weight = record?.weight;
+    if (record?.protocol) body.protocol = record?.protocol;
+    if (record?.service) body.service = record?.service;
 
     const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records`,
@@ -270,9 +270,9 @@ class GoDaddyProvider implements DnsProvider {
       data: record?.value,
       ttl: clampTtl(record?.ttl),
     };
-    if (record?.priority !== undefined) body?.priority = record?.priority;
-    if (record?.port !== undefined) body?.port = record?.port;
-    if (record?.weight !== undefined) body?.weight = record?.weight;
+    if (record?.priority !== undefined) body.priority = record?.priority;
+    if (record?.port !== undefined) body.port = record?.port;
+    if (record?.weight !== undefined) body.weight = record?.weight;
 
     const _resp = await fetchWithRetry(
       `${GODADDY_API_BASE}/v1/domains/${rootDomain}/records/${originalType}/${originalName}`,
@@ -328,11 +328,11 @@ class GoDaddyProvider implements DnsProvider {
         data: r?.value,
         ttl: clampTtl(r?.ttl),
       };
-      if (r?.priority !== undefined) rec?.priority = r?.priority;
-      if (r?.port !== undefined) rec?.port = r?.port;
-      if (r?.weight !== undefined) rec?.weight = r?.weight;
-      if (r?.protocol) rec?.protocol = r?.protocol;
-      if (r?.service) rec?.service = r?.service;
+      if (r?.priority !== undefined) rec.priority = r?.priority;
+      if (r?.port !== undefined) rec.port = r?.port;
+      if (r?.weight !== undefined) rec.weight = r?.weight;
+      if (r?.protocol) rec.protocol = r?.protocol;
+      if (r?.service) rec.service = r?.service;
       return rec;
     });
     const _resp = await fetchWithRetry(
@@ -436,7 +436,7 @@ class CloudflareProvider implements DnsProvider {
       content: record?.value,
       ttl: clampTtl(record?.ttl),
     };
-    if (record?.priority !== undefined) body?.priority = record?.priority;
+    if (record?.priority !== undefined) body.priority = record?.priority;
     const _resp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records`,
       {
@@ -476,7 +476,7 @@ class CloudflareProvider implements DnsProvider {
       content: record?.value,
       ttl: clampTtl(record?.ttl),
     };
-    if (record?.priority !== undefined) body?.priority = record?.priority;
+    if (record?.priority !== undefined) body.priority = record?.priority;
     const _resp = await fetchWithRetry(
       `${CLOUDFLARE_API_BASE}/zones/${zoneId}/dns_records/${recordId}`,
       {
@@ -567,7 +567,7 @@ class NamecheapProvider implements DnsProvider {
    * apiSecret = Namecheap username (stored in apiSecret field for UI simplicity)
    */
   private baseParams(creds: ProviderCredentials): string {
-    const _ip = process?.env.SERVER_PUBLIC_IP || "0?.0.0?.0";
+    const _ip = process?.env.SERVER_PUBLIC_IP || "0.0.0.0";
     return `ApiUser=${creds?.apiSecret}&ApiKey=${creds?.apiKey}&UserName=${creds?.apiSecret}&ClientIp=${ip}`;
   }
 
@@ -793,9 +793,9 @@ class DigitalOceanProvider implements DnsProvider {
       data: record?.value,
       ttl: clampTtl(record?.ttl),
     };
-    if (record?.priority !== undefined) body?.priority = record?.priority;
-    if (record?.port !== undefined) body?.port = record?.port;
-    if (record?.weight !== undefined) body?.weight = record?.weight;
+    if (record?.priority !== undefined) body.priority = record?.priority;
+    if (record?.port !== undefined) body.port = record?.port;
+    if (record?.weight !== undefined) body.weight = record?.weight;
     const _resp = await fetchWithRetry(
       `${DO_API_BASE}/domains/${zone}/records`,
       {
@@ -858,7 +858,7 @@ class DigitalOceanProvider implements DnsProvider {
       data: record?.value,
       ttl: clampTtl(record?.ttl),
     };
-    if (record?.priority !== undefined) body?.priority = record?.priority;
+    if (record?.priority !== undefined) body.priority = record?.priority;
     const _resp = await fetchWithRetry(
       `${DO_API_BASE}/domains/${zone}/records/${id}`,
       {
@@ -1205,7 +1205,7 @@ class Route53Provider implements DnsProvider {
     credentials: ProviderCredentials,
   ): Promise<void> {
     const _url = `https://route53?.amazonaws.com/2013-04-01/hostedzone/${zoneId}/rrset`;
-    const _body = `<?xml version="1?.0" encoding="UTF-8"?>
+    const _body = `<?xml version="1.0" encoding="UTF-8"?>
 <ChangeResourceRecordSetsRequest xmlns="https://route53?.amazonaws.com/doc/2013-04-01/">
   <ChangeBatch><Changes>${xml}</Changes></ChangeBatch>
 </ChangeResourceRecordSetsRequest>`;
@@ -1478,7 +1478,7 @@ export function validateDnsRecord(record: DnsRecord): string | null {
     case "CAA": {
       const _caaPattern = /^\d+ (issue|issuewild|iodef) ".+"$/;
       if (!caaPattern?.test(record?.value)) {
-        return 'CAA value must be: <flags> <tag> "<value>" e?.g. 0 issue "letsencrypt?.org"';
+        return 'CAA value must be: <flags> <tag> "<value>" e?.g. 0 issue "letsencrypt.org"';
       }
       break;
     }
@@ -1512,18 +1512,18 @@ export function validateDnsRecord(record: DnsRecord): string | null {
  */
 export function buildCaaRecords(_domain: string): DnsRecord[] {
   return [
-    { type: "CAA", name: "@", value: '0 issue "letsencrypt?.org"', ttl: 3600 },
+    { type: "CAA", name: "@", value: '0 issue "letsencrypt.org"', ttl: 3600 },
     { type: "CAA", name: "@", value: '0 issue "pki?.goog"', ttl: 3600 },
     {
       type: "CAA",
       name: "@",
-      value: '0 issuewild "letsencrypt?.org"',
+      value: '0 issuewild "letsencrypt.org"',
       ttl: 3600,
     },
     {
       type: "CAA",
       name: "@",
-      value: '0 iodef "mailto:admin@max-booster?.com"',
+      value: '0 iodef "mailto:admin@max-booster.com"',
       ttl: 3600,
     },
   ];

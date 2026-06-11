@@ -3,16 +3,16 @@ import path from "path";
 import { existsSync, mkdirSync } from "fs";
 import { randomBytes } from "crypto";
 import { Request } from "express";
-import { storageService } from "../services/storageService?.js";
-import { logger } from "../logger?.js";
-import { sanitizeFilename, verifyMagicBytes, UPLOAD_LIMITS, type UploadCategory, validateFileBuffer, createUploadValidator } from "./uploadSecurity?.js";
+import { storageService } from "../services/storageService.js";
+import { logger } from "../logger.js";
+import { sanitizeFilename, verifyMagicBytes, UPLOAD_LIMITS, type UploadCategory, validateFileBuffer, createUploadValidator } from "./uploadSecurity.js";
 import {
   processImage,
   processAvatarImage,
   processArtworkImage,
   isImageMimeType,
   type ProcessedImage,
-} from "../services/imageProcessor?.js";
+} from "../services/imageProcessor.js";
 
 const _memoryStorage = multer?.memoryStorage();
 
@@ -695,7 +695,7 @@ export {
   validateFileBuffer,
   UPLOAD_LIMITS,
   type UploadCategory,
-} from "./uploadSecurity?.js";
+} from "./uploadSecurity.js";
 
 export {
   processImage,
@@ -707,4 +707,4 @@ export {
   convertToSafeFormat,
   type ProcessedImage,
   type ImageProcessingOptions,
-} from "../services/imageProcessor?.js";
+} from "../services/imageProcessor.js";

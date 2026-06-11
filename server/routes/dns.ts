@@ -2,13 +2,13 @@ import { Router, raw as expressRaw } from "express";
 import { db, pool } from "../db";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   processQuery,
   getDNSInfo,
   getQueryCount,
   type DohQueryResult,
-} from "../services/dnsServer?.js";
+} from "../services/dnsServer.js";
 import {
   dnsRecordCache,
   dnsTemplates,
@@ -87,12 +87,12 @@ function domainBelongsToStorefront(
 }
 
 // ── DNS-over-HTTPS (DoH) — RFC 8484 ──────────────────────────────────────────
-// Called by the VPS proxy (ns1/ns2?.max-booster?.com via AdGuard dnsproxy).
+// Called by the VPS proxy (ns1/ns2?.max-booster.com via AdGuard dnsproxy).
 // Accepts DNS wire-format queries, returns DNS wire-format responses.
 // No authentication — DNS queries are public by design.
 
 /**
- * RFC 8484 §5?.1 — Set Cache-Control on DoH responses.
+ * RFC 8484 §5.1 — Set Cache-Control on DoH responses.
  *
  * NOERROR with answers → max-age = min TTL of all answer/authority RRs
  * NOERROR with no answers (NODATA) → max-age = SOA minimum (we use 60 s floor)
@@ -131,15 +131,15 @@ router?.get("/health", (_req, res) => {
     region: process?.env.REGION_NAME || "default",
     uptime: process?.uptime(),
     queryCount: getQueryCount(),
-    version: process?.env.npm_package_version || "1?.0.0",
+    version: process?.env.npm_package_version || "1.0.0",
   });
 });
 
 /**
  * POST /api/dns/resolve  — Max Booster Public Recursive Resolver (Build 2)
  * RFC 8484 DNS-over-HTTPS endpoint backed by the full iterative resolver.
- * Resolves ANY domain from root — not just max-booster?.com zones.
- * This is what makes the platform a full public DNS resolver (like 8?.8.8?.8).
+ * Resolves ANY domain from root — not just max-booster.com zones.
+ * This is what makes the platform a full public DNS resolver (like 8.8.8.8).
  *
  * No authentication required — DNS is a public protocol.
  * Rate-limited at the global rate limiter level.
@@ -160,7 +160,7 @@ router?.post(
       }
 
       // Forward to the authoritative DoH endpoint which now has the recursive resolver
-      const _result = await processQuery(body, "0?.0.0?.0");
+      const _result = await processQuery(body, "0.0.0.0");
 
       const _cacheHeader = dohCacheControl(result);
       res
@@ -179,12 +179,12 @@ router?.post(
  * GET /api/dns/resolver/status — Public resolver cache + stats
  */
 router?.get("/resolver/status", (_req, res) => {
-  import("../services/recursiveResolver?.js")
+  import("../services/recursiveResolver.js")
     .then(({ getCacheStats }) => {
       res?.json({
         ok: true,
         cache: getCacheStats(),
-        version: "1?.0.0",
+        version: "1.0.0",
         type: "iterative-from-root",
         roots: 13,
       });
@@ -245,7 +245,7 @@ router?.get("/query", async (req, res) => {
     const _dnsParam = req?.query.dns as string;
     if (!dnsParam) return res?.status(400).send("Missing ?dns= parameter");
 
-    // RFC 8484 §4?.1 — base64url (RFC 4648 §5), padding is optional
+    // RFC 8484 §4.1 — base64url (RFC 4648 §5), padding is optional
     const _padded = dnsParam?.replace(/-/g, "+").replace(/_/g, "/");
     const _body = Buffer?.from(padded, "base64");
     if (body?.length < 12)
@@ -1013,10 +1013,10 @@ router?.post("/provision-wildcard", async (req, res) => {
     return res?.status(403).json({ error: "Admin required" });
   }
   try {
-    const { provisionCertificate } = await import("../services/acmeClient?.js");
+    const { provisionCertificate } = await import("../services/acmeClient.js");
     const [wildcardResult, rootResult] = await Promise?.all([
-      provisionCertificate("*.max-booster?.com"),
-      provisionCertificate("max-booster?.com"),
+      provisionCertificate("*.max-booster.com"),
+      provisionCertificate("max-booster.com"),
     ]);
     res?.json({ ok: true, wildcard: wildcardResult, root: rootResult });
   } catch (err) {
@@ -1045,9 +1045,9 @@ router?.post("/activate-persist-validation", async (req, res) => {
   }
   try {
     const { activateAcmePersistValidation } = await import(
-      "../services/acmeClient?.js"
+      "../services/acmeClient.js"
     );
-    const _result = await activateAcmePersistValidation("max-booster?.com");
+    const _result = await activateAcmePersistValidation("max-booster.com");
     res?.json({ ok: true, ...result });
   } catch (err) {
     logger?.error({ err }, "[dns] activate-persist-validation error");

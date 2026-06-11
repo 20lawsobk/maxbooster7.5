@@ -5,8 +5,8 @@ import Stripe from "stripe";
 import { listingLicenseTiers, type ListingLicenseTier } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
-import { logger } from "../logger?.js";
-import { getBaseUrl } from "../config/defaults?.js";
+import { logger } from "../logger.js";
+import { getBaseUrl } from "../config/defaults.js";
 
 // Initialize Stripe
 const _stripe = process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
@@ -52,7 +52,7 @@ export interface BeatLicense {
 export const DEFAULT_LICENSE_TEMPLATES: Record<string, BeatLicense> = {
   basic: {
     type: "basic",
-    price: 29?.99,
+    price: 29.99,
     features: [
       "MP3 Download",
       "Non-exclusive rights",
@@ -70,7 +70,7 @@ export const DEFAULT_LICENSE_TEMPLATES: Record<string, BeatLicense> = {
   },
   premium: {
     type: "premium",
-    price: 99?.99,
+    price: 99.99,
     features: [
       "WAV + MP3 Download",
       "Non-exclusive rights",
@@ -89,7 +89,7 @@ export const DEFAULT_LICENSE_TEMPLATES: Record<string, BeatLicense> = {
   },
   unlimited: {
     type: "unlimited",
-    price: 199?.99,
+    price: 199.99,
     features: [
       "WAV + MP3 + Stems",
       "Non-exclusive rights",
@@ -108,7 +108,7 @@ export const DEFAULT_LICENSE_TEMPLATES: Record<string, BeatLicense> = {
   },
   exclusive: {
     type: "exclusive",
-    price: 999?.99,
+    price: 999.99,
     features: [
       "Full ownership transfer",
       "All source files + Stems",
@@ -1043,18 +1043,18 @@ export class MarketplaceService {
       }
 
       const updateData: Record<string, unknown> = {};
-      if (data?.title !== undefined) updateData?.title = data?.title;
+      if (data?.title !== undefined) updateData.title = data?.title;
       if (data?.description !== undefined)
-        updateData?.description = data?.description;
+        updateData.description = data?.description;
       if (data?.price !== undefined)
-        updateData?.priceCents = Math?.round(data?.price * 100);
-      if (data?.genre !== undefined) updateData?.category = data?.genre;
-      if (data?.audioUrl !== undefined) updateData?.audioUrl = data?.audioUrl;
+        updateData.priceCents = Math?.round(data?.price * 100);
+      if (data?.genre !== undefined) updateData.category = data?.genre;
+      if (data?.audioUrl !== undefined) updateData.audioUrl = data?.audioUrl;
       if (data?.artworkUrl !== undefined)
-        updateData?.artworkUrl = data?.artworkUrl;
+        updateData.artworkUrl = data?.artworkUrl;
 
       const _existingMetadata = (listing?.metadata as ListingMetadata) || {};
-      updateData?.metadata = {
+      updateData.metadata = {
         ...existingMetadata,
         genre: data?.genre ?? existingMetadata?.genre,
         mood: data?.mood ?? existingMetadata?.mood,

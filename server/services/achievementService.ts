@@ -9,7 +9,7 @@ import {
   type UserAchievement,
   type UserStreak,
 } from "../../shared/schema";
-import { notificationService } from "./notificationService?.js";
+import { notificationService } from "./notificationService.js";
 
 export interface AchievementRequirement {
   type: string;

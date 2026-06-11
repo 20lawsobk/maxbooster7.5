@@ -67,34 +67,34 @@ interface CampaignConfig {
  */
 const _PAID_AD_BENCHMARKS = {
   facebook: {
-    cpm: 12?.0, // Cost per 1000 impressions
+    cpm: 12.0, // Cost per 1000 impressions
     reach_per_100: 10000, // $100 = 10,000 impressions
-    engagement_rate: 0?.015, // 1?.5%
-    click_rate: 0?.009, // 0?.9%
+    engagement_rate: 0.015, // 1.5%
+    click_rate: 0.009, // 0.9%
   },
   instagram: {
-    cpm: 9?.0,
+    cpm: 9.0,
     reach_per_100: 12500, // $100 = 12,500 impressions
-    engagement_rate: 0?.02, // 2?.0%
-    click_rate: 0?.012, // 1?.2%
+    engagement_rate: 0.02, // 2.0%
+    click_rate: 0.012, // 1.2%
   },
   tiktok: {
-    cpm: 10?.0,
+    cpm: 10.0,
     reach_per_100: 7500, // $100 = 7,500 impressions
-    engagement_rate: 0?.025, // 2?.5%
-    click_rate: 0?.015, // 1?.5%
+    engagement_rate: 0.025, // 2.5%
+    click_rate: 0.015, // 1.5%
   },
   twitter: {
-    cpm: 6?.5,
+    cpm: 6.5,
     reach_per_100: 10000, // $100 = 10,000 impressions
-    engagement_rate: 0?.012, // 1?.2%
-    click_rate: 0?.008, // 0?.8%
+    engagement_rate: 0.012, // 1.2%
+    click_rate: 0.008, // 0.8%
   },
   linkedin: {
-    cpm: 33?.0,
+    cpm: 33.0,
     reach_per_100: 5000, // $100 = 5,000 impressions (expensive!)
-    engagement_rate: 0?.01, // 1?.0%
-    click_rate: 0?.007, // 0?.7%
+    engagement_rate: 0.01, // 1.0%
+    click_rate: 0.007, // 0.7%
   },
 };
 
@@ -105,43 +105,43 @@ const _PAID_AD_BENCHMARKS = {
 const _AI_BOOSTER_ORGANIC = {
   facebook: {
     baseline_reach: 500, // Organic reach to followers
-    engagement_rate: 0?.064, // 6?.4% organic engagement (4x paid)
-    viral_coefficient: 1?.3, // Each share reaches 1?.3 new people
-    algorithm_boost: 1?.4, // Organic content favored 40% more
-    share_rate: 0?.024, // 2?.4% share rate
-    optimal_timing_boost: 1?.25, // 25% boost with optimal timing
+    engagement_rate: 0.064, // 6.4% organic engagement (4x paid)
+    viral_coefficient: 1.3, // Each share reaches 1.3 new people
+    algorithm_boost: 1.4, // Organic content favored 40% more
+    share_rate: 0.024, // 2.4% share rate
+    optimal_timing_boost: 1.25, // 25% boost with optimal timing
   },
   instagram: {
     baseline_reach: 800,
-    engagement_rate: 0?.085, // 8?.5% organic engagement (4x paid)
-    viral_coefficient: 1?.5,
-    algorithm_boost: 1?.6,
-    share_rate: 0?.03,
-    optimal_timing_boost: 1?.3,
+    engagement_rate: 0.085, // 8.5% organic engagement (4x paid)
+    viral_coefficient: 1.5,
+    algorithm_boost: 1.6,
+    share_rate: 0.03,
+    optimal_timing_boost: 1.3,
   },
   tiktok: {
     baseline_reach: 1200, // Highest organic reach potential
-    engagement_rate: 0?.174, // 17?.4% organic engagement (7x paid!)
-    viral_coefficient: 2?.1, // High viral potential
-    algorithm_boost: 2?.0, // Algorithm loves organic content
-    share_rate: 0?.065, // 6?.5% share rate
-    optimal_timing_boost: 1?.4,
+    engagement_rate: 0.174, // 17.4% organic engagement (7x paid!)
+    viral_coefficient: 2.1, // High viral potential
+    algorithm_boost: 2.0, // Algorithm loves organic content
+    share_rate: 0.065, // 6.5% share rate
+    optimal_timing_boost: 1.4,
   },
   twitter: {
     baseline_reach: 400,
-    engagement_rate: 0?.034, // 3?.4% organic engagement (3x paid)
-    viral_coefficient: 1?.4,
-    algorithm_boost: 1?.3,
-    share_rate: 0?.028,
-    optimal_timing_boost: 1?.2,
+    engagement_rate: 0.034, // 3.4% organic engagement (3x paid)
+    viral_coefficient: 1.4,
+    algorithm_boost: 1.3,
+    share_rate: 0.028,
+    optimal_timing_boost: 1.2,
   },
   linkedin: {
     baseline_reach: 300,
-    engagement_rate: 0?.02, // 2?.0% organic engagement (2x paid)
-    viral_coefficient: 1?.2,
-    algorithm_boost: 1?.25,
-    share_rate: 0?.015,
-    optimal_timing_boost: 1?.15,
+    engagement_rate: 0.02, // 2.0% organic engagement (2x paid)
+    viral_coefficient: 1.2,
+    algorithm_boost: 1.25,
+    share_rate: 0.015,
+    optimal_timing_boost: 1.15,
   },
 };
 
@@ -154,13 +154,13 @@ function getAudienceSizeMultiplier(size: string): {
 } {
   switch (size) {
     case "small":
-      return { followerCount: 1000, multiplier: 1?.0 };
+      return { followerCount: 1000, multiplier: 1.0 };
     case "medium":
-      return { followerCount: 10000, multiplier: 1?.5 }; // Better engagement with medium audience
+      return { followerCount: 10000, multiplier: 1.5 }; // Better engagement with medium audience
     case "large":
-      return { followerCount: 100000, multiplier: 2?.0 }; // Network effects kick in
+      return { followerCount: 100000, multiplier: 2.0 }; // Network effects kick in
     default:
-      return { followerCount: 1000, multiplier: 1?.0 };
+      return { followerCount: 1000, multiplier: 1.0 };
   }
 }
 
@@ -169,10 +169,10 @@ function getAudienceSizeMultiplier(size: string): {
  */
 function getContentQualityMultiplier(quality: number): number {
   // AI Booster creates 85-100 quality content
-  if (quality >= 90) return 1?.8; // Exceptional content
-  if (quality >= 80) return 1?.5; // High quality
-  if (quality >= 70) return 1?.2; // Good quality
-  return 1?.0; // Average
+  if (quality >= 90) return 1.8; // Exceptional content
+  if (quality >= 80) return 1.5; // High quality
+  if (quality >= 70) return 1.2; // Good quality
+  return 1.0; // Average
 }
 
 /**
@@ -184,9 +184,9 @@ function calculateViralCoefficient(
   audienceSize: number,
   crossPlatformBoost: number,
 ): number {
-  const _qualityBonus = (contentQuality / 100) * 0?.5;
-  const _networkBonus = Math?.log10(audienceSize) * 0?.2;
-  const _crossPlatformBonus = crossPlatformBoost * 0?.3;
+  const _qualityBonus = (contentQuality / 100) * 0.5;
+  const _networkBonus = Math?.log10(audienceSize) * 0.2;
+  const _crossPlatformBonus = crossPlatformBoost * 0.3;
 
   return baseCoefficient + qualityBonus + networkBonus + crossPlatformBonus;
 }
@@ -240,7 +240,7 @@ function simulateAIBoosterOrganic(
   Math?.sqrt(campaign?.duration); // Compounding effects over time
 
   // Cross-platform synergy: posting on multiple platforms creates amplification
-  const _crossPlatformBoost = 1 + (campaign?.platforms.length - 1) * 0?.15;
+  const _crossPlatformBoost = 1 + (campaign?.platforms.length - 1) * 0.15;
 
   let totalReach = 0;
   let totalEngagement = 0;
@@ -277,7 +277,7 @@ function simulateAIBoosterOrganic(
 
     const _totalPlatformReach = optimizedReach + viralReach;
     const _engagement = totalPlatformReach * organic?.engagement_rate;
-    const _clicks = engagement * 0?.4; // 40% of engagement = clicks
+    const _clicks = engagement * 0.4; // 40% of engagement = clicks
     const _shares = totalPlatformReach * organic?.share_rate;
 
     // Calculate cost savings (what they would have paid for this reach)
@@ -359,7 +359,7 @@ export async function simulateAdBooster(
       campaignType: campaign?.type,
       audienceSize: campaign?.audienceSize,
       duration: `${campaign?.duration} days`,
-      confidence: 0?.87, // 87% confidence based on organic performance research
+      confidence: 0.87, // 87% confidence based on organic performance research
     },
   };
 }
@@ -489,7 +489,7 @@ export async function runComprehensiveSimulation(): Promise<{
     amplifications?.reduce((a, b) => a + b, 0) / amplifications?.length;
   const _minAmplification = Math?.min(...amplifications);
   const _maxAmplification = Math?.max(...amplifications);
-  const _allScenariosPass = amplifications?.every((amp) => amp >= 2?.0);
+  const _allScenariosPass = amplifications?.every((amp) => amp >= 2.0);
 
   const _totalCostSavings = scenarios?.reduce((sum, s) => {
     const _savings = parseFloat(s?.comparison.costSavings?.replace("$", ""));
@@ -546,7 +546,7 @@ export function generateSimulationReport(
     report += `- Cross-Platform Synergy: ${scenario?.aiBoosterOrganic.crossPlatformSynergy}x\n\n`;
 
     report += `**Amplification Analysis:**\n`;
-    report += `- 🚀 **Amplification Factor: ${scenario?.amplificationFactor}x** (${scenario?.amplificationFactor >= 2?.0 ? "✅ PASS" : "❌ FAIL"})\n`;
+    report += `- 🚀 **Amplification Factor: ${scenario?.amplificationFactor}x** (${scenario?.amplificationFactor >= 2.0 ? "✅ PASS" : "❌ FAIL"})\n`;
     report += `- Reach Increase: ${scenario?.comparison.reachIncrease}\n`;
     report += `- Engagement Increase: ${scenario?.comparison.engagementIncrease}\n`;
     report += `- Cost Savings: ${scenario?.comparison.costSavings}\n`;
@@ -563,9 +563,9 @@ export function generateSimulationReport(
 
   report += "## Statistical Analysis\n\n";
   report += `### Verification Checklist\n\n`;
-  report += `- [${results?.summary.allScenariosPass ? "x" : " "}] All scenarios achieve ≥ 2?.0x amplification factor (100%+ boost)\n`;
-  report += `- [${results?.summary.minAmplification >= 2?.0 ? "x" : " "}] Minimum amplification meets threshold: ${results?.summary.minAmplification}x\n`;
-  report += `- [${results?.summary.averageAmplification >= 2?.5 ? "x" : " "}] Average amplification exceeds 2?.5x: ${results?.summary.averageAmplification}x\n`;
+  report += `- [${results?.summary.allScenariosPass ? "x" : " "}] All scenarios achieve ≥ 2.0x amplification factor (100%+ boost)\n`;
+  report += `- [${results?.summary.minAmplification >= 2.0 ? "x" : " "}] Minimum amplification meets threshold: ${results?.summary.minAmplification}x\n`;
+  report += `- [${results?.summary.averageAmplification >= 2.5 ? "x" : " "}] Average amplification exceeds 2.5x: ${results?.summary.averageAmplification}x\n`;
   report += `- [x] Short-term scenarios verified (1 week)\n`;
   report += `- [x] Long-term scenarios verified (30 days)\n`;
   report += `- [x] Multiple campaign types tested\n`;
@@ -592,12 +592,12 @@ export function generateSimulationReport(
     report += `- Creates compounding viral effects over time\n\n`;
     report += `**The simulation confirms Max Booster's AI Booster outperforms traditional paid advertising by 100%+ while costing $0.**\n`;
   } else {
-    report += `⚠️ **WARNING**: Some scenarios did not achieve 2?.0x amplification threshold.\n`;
+    report += `⚠️ **WARNING**: Some scenarios did not achieve 2.0x amplification threshold.\n`;
   }
 
   report += "\n---\n\n";
   report += `*Simulation Date: ${new Date().toISOString()}*\n`;
-  report += `*Model Version: AI Booster v2?.0*\n`;
+  report += `*Model Version: AI Booster v2.0*\n`;
   report += `*Confidence Level: 87% (based on organic social media performance research)*\n`;
 
   return report;

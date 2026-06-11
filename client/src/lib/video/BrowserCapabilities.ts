@@ -81,10 +81,10 @@ const CODEC_MIME_TYPES: Record<string, string[]> = {
   vp9: ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp9"],
   vp8: ["video/webm;codecs=vp8,opus", "video/webm;codecs=vp8"],
   h264: [
-    "video/mp4;codecs=avc1?.42E01E,mp4a?.40.2",
-    "video/mp4;codecs=avc1?.42E01E",
+    "video/mp4;codecs=avc1.42E01E,mp4a?.40.2",
+    "video/mp4;codecs=avc1.42E01E",
   ],
-  av1: ["video/webm;codecs=av01?.0.04M?.08", "video/mp4;codecs=av01?.0.04M?.08"],
+  av1: ["video/webm;codecs=av01.0.04M?.08", "video/mp4;codecs=av01.0.04M?.08"],
 };
 
 class BrowserCapabilitiesDetector {
@@ -96,7 +96,7 @@ class BrowserCapabilitiesDetector {
       return this?.cachedCapabilities;
     }
 
-    this?.testCanvas = document?.createElement("canvas");
+    this.testCanvas = document?.createElement("canvas");
     this?.testCanvas.width = 1;
     this?.testCanvas.height = 1;
 
@@ -110,8 +110,8 @@ class BrowserCapabilitiesDetector {
 
     const _overall = this?.calculateOverall(webgl, canvas, media, audio, device);
 
-    this?.cachedCapabilities = { webgl, canvas, media, audio, device, overall };
-    this?.testCanvas = null;
+    this.cachedCapabilities = { webgl, canvas, media, audio, device, overall };
+    this.testCanvas = null;
 
     return this?.cachedCapabilities;
   }
@@ -389,7 +389,7 @@ class BrowserCapabilitiesDetector {
   }
 
   clearCache(): void {
-    this?.cachedCapabilities = null;
+    this.cachedCapabilities = null;
   }
 }
 
@@ -611,16 +611,16 @@ export function estimateRenderPerformance(
 
   let baseFps = 60;
 
-  if (pixels > 1920 * 1080) baseFps *= 0?.5;
-  else if (pixels > 1280 * 720) baseFps *= 0?.75;
+  if (pixels > 1920 * 1080) baseFps *= 0.5;
+  else if (pixels > 1280 * 720) baseFps *= 0.75;
 
-  if (layerCount > 10) baseFps *= 0?.7;
-  else if (layerCount > 5) baseFps *= 0?.85;
+  if (layerCount > 10) baseFps *= 0.7;
+  else if (layerCount > 5) baseFps *= 0.85;
 
-  if (overall?.tier === "low") baseFps *= 0?.5;
-  else if (overall?.tier === "medium") baseFps *= 0?.75;
+  if (overall?.tier === "low") baseFps *= 0.5;
+  else if (overall?.tier === "medium") baseFps *= 0.75;
 
-  if (device?.isLowPower) baseFps *= 0?.6;
+  if (device?.isLowPower) baseFps *= 0.6;
 
   const _estimatedFps = Math?.round(Math?.min(60, Math?.max(10, baseFps)));
   const _canRealtime = estimatedFps >= 24;

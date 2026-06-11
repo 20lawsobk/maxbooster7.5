@@ -203,8 +203,8 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "engagement_boost",
     area: "engagement",
     priority: 2,
-    trigger: (s) => s?.avgEngagementRate < 0?.04 && s?.totalStreams > 500,
-    severity: (s) => (s?.avgEngagementRate < 0?.02 ? "high" : "medium"),
+    trigger: (s) => s?.avgEngagementRate < 0.04 && s?.totalStreams > 500,
+    severity: (s) => (s?.avgEngagementRate < 0.02 ? "high" : "medium"),
     title: () =>
       "Your save rate is low — boost it to unlock algorithmic playlists",
     description: () =>
@@ -226,7 +226,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     type: "content_optimization",
     area: "content_cadence",
     priority: 2,
-    trigger: (s) => s?.socialAccounts.length >= 1 && s?.avgEngagementRate < 0?.08,
+    trigger: (s) => s?.socialAccounts.length >= 1 && s?.avgEngagementRate < 0.08,
     severity: () => "medium",
     title: () => "Post consistently — the algorithm rewards daily activity",
     description: () =>
@@ -261,7 +261,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
       "Use Max Booster's AI to write captions that complement your BTS visual",
     ],
     expectedImpact:
-      "BTS content averages 2?.3× more saves and comments than promotional posts",
+      "BTS content averages 2.3× more saves and comments than promotional posts",
     timeframe: "Immediate — post this week",
   },
 
@@ -357,13 +357,13 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     title: () =>
       "Diversify beyond streaming — beats, merch, and sync can 10× your revenue",
     description: () =>
-      "Streaming revenue alone averages $0?.003–0?.005 per stream. At 5,000 streams/month, that's $15–25. Adding beat sales, merchandise, or sync licensing can realistically generate $500–2,000/month from the same fanbase.",
+      "Streaming revenue alone averages $0.003–0.005 per stream. At 5,000 streams/month, that's $15–25. Adding beat sales, merchandise, or sync licensing can realistically generate $500–2,000/month from the same fanbase.",
     actionUrl: "/marketplace",
     steps: [
       "List your instrumentals on Max Booster's Beat Marketplace — set non-exclusive licenses at $30–75",
       "Create 3 merchandise items using print-on-demand (no upfront inventory cost)",
       "Submit your music for sync licensing — TV, YouTube, and podcast placements pay $50–500+ per placement",
-      "Offer a fan subscription tier through Max Booster for exclusive content at $4?.99/month",
+      "Offer a fan subscription tier through Max Booster for exclusive content at $4.99/month",
     ],
     expectedImpact:
       "Artists with 3+ revenue streams earn 5–10× more than streaming-only artists",
@@ -1071,7 +1071,7 @@ class CareerCoachService {
         title: "Increase Monthly Streams",
         description:
           "Grow your monthly streaming numbers through consistent releases and promotion",
-        targetValue: Math?.max(Math?.round(snapshot?.totalStreams * 1?.5), 10000),
+        targetValue: Math?.max(Math?.round(snapshot?.totalStreams * 1.5), 10000),
         unit: "streams",
         deadlineDays: 30,
         reasoning: `Based on your current ${snapshot?.totalStreams.toLocaleString()} streams, a 50% growth target is ambitious but achievable with focused playlist pitching and a new release.`,
@@ -1080,7 +1080,7 @@ class CareerCoachService {
         goalType: "followers",
         title: "Grow Your Fanbase",
         description: "Build your follower count across all connected platforms",
-        targetValue: Math?.max(Math?.round(snapshot?.totalFollowers * 1?.25), 1000),
+        targetValue: Math?.max(Math?.round(snapshot?.totalFollowers * 1.25), 1000),
         unit: "followers",
         deadlineDays: 60,
         reasoning: `Growing your fanbase by 25% from ${snapshot?.totalFollowers.toLocaleString()} over 2 months aligns with industry growth rates. Focus on collaborations and consistent posting.`,
@@ -1101,7 +1101,7 @@ class CareerCoachService {
         title: "Boost Save & Engagement Rate",
         description:
           "Increase the save-to-stream ratio to unlock algorithmic playlist placements",
-        targetValue: Math?.max(snapshot?.avgEngagementRate * 2, 0?.05),
+        targetValue: Math?.max(snapshot?.avgEngagementRate * 2, 0.05),
         unit: "rate",
         deadlineDays: 30,
         reasoning:

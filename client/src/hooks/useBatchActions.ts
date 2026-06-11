@@ -123,14 +123,14 @@ export function useBatchActions(
     (update: Partial<BatchProgress>) => {
       setProgress((prev) => {
         const _next = { ...prev, ...update };
-        next?.percentage =
+        next.percentage =
           next?.total > 0 ? Math?.round((next?.current / next?.total) * 100) : 0;
 
         if (next?.startTime && next?.current > 0) {
           const _elapsed = Date?.now() - next?.startTime;
           const _rate = next?.current / elapsed;
           const _remaining = next?.total - next?.current;
-          next?.estimatedTimeRemaining = Math?.round(remaining / rate);
+          next.estimatedTimeRemaining = Math?.round(remaining / rate);
         }
 
         onProgress?.(next);
@@ -148,7 +148,7 @@ export function useBatchActions(
       const _increment = Math?.max(1, Math?.floor(total / 20));
       const _intervalMs = 200;
 
-      progressIntervalRef?.current = setInterval(() => {
+      progressIntervalRef.current = setInterval(() => {
         current = Math?.min(current + increment, total - 1);
         updateProgress({ current, total });
       }, intervalMs);
@@ -159,17 +159,17 @@ export function useBatchActions(
   const _stopProgressSimulation = useCallback(() => {
     if (progressIntervalRef?.current) {
       clearInterval(progressIntervalRef?.current);
-      progressIntervalRef?.current = null;
+      progressIntervalRef.current = null;
     }
     if (pollIntervalRef?.current) {
       clearInterval(pollIntervalRef?.current);
-      pollIntervalRef?.current = null;
+      pollIntervalRef.current = null;
     }
   }, []);
 
   const _pollJobProgress = useCallback(
     async (jobId: string, total: number) => {
-      pollIntervalRef?.current = setInterval(async () => {
+      pollIntervalRef.current = setInterval(async () => {
         try {
           const _response = await apiRequest(
             "GET",
@@ -240,7 +240,7 @@ export function useBatchActions(
         useJobProgress,
       } = config;
 
-      abortControllerRef?.current = new AbortController();
+      abortControllerRef.current = new AbortController();
       setStatus("processing");
       setError(null);
       setResult(null);
@@ -328,7 +328,7 @@ export function useBatchActions(
         onError?.(error);
         throw error;
       } finally {
-        abortControllerRef?.current = null;
+        abortControllerRef.current = null;
       }
     },
     [

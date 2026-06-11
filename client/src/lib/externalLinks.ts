@@ -63,9 +63,9 @@ export function openExternalLink(
   // In PWA standalone mode, window?.open may behave differently
   // Using anchor element click is more reliable
   const _anchor = document?.createElement("a");
-  anchor?.href = sanitized;
-  anchor?.target = target;
-  anchor?.rel = rel;
+  anchor.href = sanitized;
+  anchor.target = target;
+  anchor.rel = rel;
   anchor?.style.display = "none";
   document?.body.appendChild(anchor);
   anchor?.click();

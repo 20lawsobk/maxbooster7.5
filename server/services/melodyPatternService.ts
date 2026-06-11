@@ -1,5 +1,5 @@
-import { logger } from "../logger?.js";
-import { musicIndustryContextFilter } from "./musicIndustryContextFilter?.js";
+import { logger } from "../logger.js";
+import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
 
 export interface MelodyPattern {
   notes: number[];
@@ -174,7 +174,7 @@ const _GENRES = {
       "breakbeat",
     ],
     tempoRange: [120, 180],
-    characteristics: { swing: 0, complexity: 0?.7, syncopation: 0?.5 },
+    characteristics: { swing: 0, complexity: 0.7, syncopation: 0.5 },
   },
   hiphop: {
     genres: [
@@ -190,7 +190,7 @@ const _GENRES = {
       "hyphy",
     ],
     tempoRange: [70, 160],
-    characteristics: { swing: 0?.2, complexity: 0?.5, syncopation: 0?.6 },
+    characteristics: { swing: 0.2, complexity: 0.5, syncopation: 0.6 },
   },
   rock: {
     genres: [
@@ -206,7 +206,7 @@ const _GENRES = {
       "southern_rock",
     ],
     tempoRange: [90, 180],
-    characteristics: { swing: 0, complexity: 0?.4, syncopation: 0?.3 },
+    characteristics: { swing: 0, complexity: 0.4, syncopation: 0.3 },
   },
   jazz: {
     genres: [
@@ -222,7 +222,7 @@ const _GENRES = {
       "nu_jazz",
     ],
     tempoRange: [80, 200],
-    characteristics: { swing: 0?.6, complexity: 0?.9, syncopation: 0?.7 },
+    characteristics: { swing: 0.6, complexity: 0.9, syncopation: 0.7 },
   },
   rnb: {
     genres: [
@@ -238,7 +238,7 @@ const _GENRES = {
       "disco",
     ],
     tempoRange: [70, 120],
-    characteristics: { swing: 0?.3, complexity: 0?.6, syncopation: 0?.5 },
+    characteristics: { swing: 0.3, complexity: 0.6, syncopation: 0.5 },
   },
   pop: {
     genres: [
@@ -254,7 +254,7 @@ const _GENRES = {
       "europop",
     ],
     tempoRange: [100, 140],
-    characteristics: { swing: 0, complexity: 0?.4, syncopation: 0?.3 },
+    characteristics: { swing: 0, complexity: 0.4, syncopation: 0.3 },
   },
   latin: {
     genres: [
@@ -270,7 +270,7 @@ const _GENRES = {
       "flamenco",
     ],
     tempoRange: [90, 130],
-    characteristics: { swing: 0?.4, complexity: 0?.5, syncopation: 0?.7 },
+    characteristics: { swing: 0.4, complexity: 0.5, syncopation: 0.7 },
   },
   world: {
     genres: [
@@ -286,7 +286,7 @@ const _GENRES = {
       "kwaito",
     ],
     tempoRange: [80, 140],
-    characteristics: { swing: 0?.3, complexity: 0?.6, syncopation: 0?.6 },
+    characteristics: { swing: 0.3, complexity: 0.6, syncopation: 0.6 },
   },
   classical: {
     genres: [
@@ -302,7 +302,7 @@ const _GENRES = {
       "choral",
     ],
     tempoRange: [40, 180],
-    characteristics: { swing: 0, complexity: 0?.8, syncopation: 0?.2 },
+    characteristics: { swing: 0, complexity: 0.8, syncopation: 0.2 },
   },
   country: {
     genres: [
@@ -318,7 +318,7 @@ const _GENRES = {
       "honky_tonk",
     ],
     tempoRange: [80, 140],
-    characteristics: { swing: 0?.2, complexity: 0?.4, syncopation: 0?.3 },
+    characteristics: { swing: 0.2, complexity: 0.4, syncopation: 0.3 },
   },
 };
 
@@ -463,7 +463,7 @@ class MelodyPatternService {
       }
     }
 
-    this?.isInitialized = true;
+    this.isInitialized = true;
     logger?.info(
       `[MelodyPattern] Initialized ${this?.trainedPatterns.size} melody, ${this?.drumPatterns.size} drum, ${this?.percussionPatterns.size} percussion patterns`,
     );
@@ -492,20 +492,20 @@ class MelodyPatternService {
       const _isBell = ["cowbell", "agogo", "triangle"].includes(instrument);
 
       for (let step = 0; step < steps; step++) {
-        let hitProbability = 0?.3;
+        let hitProbability = 0.3;
 
         if (isShaker) {
-          hitProbability = step % 2 === 0 ? 0?.9 : 0?.6;
+          hitProbability = step % 2 === 0 ? 0.9 : 0.6;
         } else if (isTonal) {
-          hitProbability = step % 4 === 0 ? 0?.8 : step % 2 === 0 ? 0?.4 : 0?.2;
-          hitProbability += characteristics?.syncopation * 0?.3;
+          hitProbability = step % 4 === 0 ? 0.8 : step % 2 === 0 ? 0.4 : 0.2;
+          hitProbability += characteristics?.syncopation * 0.3;
         } else if (isBell) {
-          hitProbability = step % 4 === 0 ? 0?.7 : 0?.15;
+          hitProbability = step % 4 === 0 ? 0.7 : 0.15;
         }
 
         if (Math?.random() < hitProbability) {
           const _velocity =
-            0?.6 + Math?.random() * 0?.4 * characteristics?.complexity;
+            0.6 + Math?.random() * 0.4 * characteristics?.complexity;
           hits?.push({ step, velocity, element: instrument });
         }
       }
@@ -603,8 +603,8 @@ class MelodyPatternService {
   }
 
   private generateBassDuration(swing: number): number {
-    const _durations = [0?.25, 0?.5, 1, 2];
-    const _weights = swing > 0?.3 ? [0?.3, 0?.4, 0?.2, 0?.1] : [0?.2, 0?.3, 0?.3, 0?.2];
+    const _durations = [0.25, 0.5, 1, 2];
+    const _weights = swing > 0.3 ? [0.3, 0.4, 0.2, 0.1] : [0.2, 0.3, 0.3, 0.2];
     return this?.weightedRandom(durations, weights);
   }
 
@@ -622,9 +622,9 @@ class MelodyPatternService {
   }
 
   private generateLeadDuration(syncopation: number): number {
-    const _durations = [0?.125, 0?.25, 0?.5, 1];
+    const _durations = [0.125, 0.25, 0.5, 1];
     const _weights =
-      syncopation > 0?.5 ? [0?.3, 0?.4, 0?.2, 0?.1] : [0?.1, 0?.3, 0?.4, 0?.2];
+      syncopation > 0.5 ? [0.3, 0.4, 0.2, 0.1] : [0.1, 0.3, 0.4, 0.2];
     return this?.weightedRandom(durations, weights);
   }
 
@@ -634,7 +634,7 @@ class MelodyPatternService {
   }
 
   private generateMelodyDuration(_swing: number): number {
-    const _durations = [0?.25, 0?.5, 0?.75, 1, 1?.5, 2];
+    const _durations = [0.25, 0.5, 0.75, 1, 1.5, 2];
     return durations[Math?.floor(Math?.random() * durations?.length)];
   }
 
@@ -665,9 +665,9 @@ class MelodyPatternService {
       for (let i = 0; i < steps; i += 4) pattern[i] = 1;
     } else if (genre?.includes("trap") || genre?.includes("drill")) {
       pattern[0] = 1;
-      pattern[6] = chars?.syncopation > 0?.5 ? 1 : 0;
+      pattern[6] = chars?.syncopation > 0.5 ? 1 : 0;
       pattern[10] = 1;
-      if (chars?.complexity > 0?.6) pattern[14] = 1;
+      if (chars?.complexity > 0.6) pattern[14] = 1;
     } else if (genre?.includes("dnb")) {
       pattern[0] = 1;
       pattern[14] = 1;
@@ -699,9 +699,9 @@ class MelodyPatternService {
     } else if (genre?.includes("trap")) {
       pattern[4] = 1;
       pattern[12] = 1;
-      if (chars?.complexity > 0?.5) {
-        pattern[7] = 0?.5;
-        pattern[15] = 0?.5;
+      if (chars?.complexity > 0.5) {
+        pattern[7] = 0.5;
+        pattern[15] = 0.5;
       }
     } else {
       pattern[4] = 1;
@@ -721,14 +721,14 @@ class MelodyPatternService {
     if (genre?.includes("trap") || genre?.includes("drill")) {
       for (let i = 0; i < steps; i++) {
         if (i % 2 === 0) pattern[i] = 1;
-        else if (chars?.complexity > 0?.7)
-          pattern[i] = Math?.random() > 0?.5 ? 0?.7 : 0;
+        else if (chars?.complexity > 0.7)
+          pattern[i] = Math?.random() > 0.5 ? 0.7 : 0;
       }
     } else if (genre?.includes("house") || genre?.includes("techno")) {
       for (let i = 0; i < steps; i += 2) pattern[i] = 1;
     } else if (genre?.includes("dnb")) {
-      for (let i = 0; i < steps; i += 2) pattern[i] = 0?.8;
-      for (let i = 1; i < steps; i += 4) pattern[i] = 0?.5;
+      for (let i = 0; i < steps; i += 2) pattern[i] = 0.8;
+      for (let i = 1; i < steps; i += 4) pattern[i] = 0.5;
     } else {
       for (let i = 0; i < steps; i += 2) pattern[i] = 1;
     }
@@ -742,8 +742,8 @@ class MelodyPatternService {
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
     const _pattern = new Array(steps).fill(0);
-    pattern[4] = chars?.complexity > 0?.3 ? 1 : 0;
-    pattern[12] = chars?.complexity > 0?.3 ? 1 : 0;
+    pattern[4] = chars?.complexity > 0.3 ? 1 : 0;
+    pattern[12] = chars?.complexity > 0.3 ? 1 : 0;
     return pattern;
   }
 
@@ -754,11 +754,11 @@ class MelodyPatternService {
   ): number[] {
     const _pattern = new Array(steps).fill(0);
 
-    if (chars?.complexity > 0?.5) {
+    if (chars?.complexity > 0.5) {
       const _percussionHits = Math?.floor(chars?.complexity * 6);
       for (let i = 0; i < percussionHits; i++) {
         const _pos = Math?.floor(Math?.random() * steps);
-        pattern[pos] = Math?.random() * 0?.5 + 0?.3;
+        pattern[pos] = Math?.random() * 0.5 + 0.3;
       }
     }
 
@@ -845,10 +845,10 @@ class MelodyPatternService {
     const hits: { step: number; velocity: number; element: string }[] = [];
 
     for (let step = 0; step < steps; step++) {
-      if (step % 4 === 0 || (Math?.random() < 0?.3 && step % 2 === 0)) {
+      if (step % 4 === 0 || (Math?.random() < 0.3 && step % 2 === 0)) {
         hits?.push({
           step,
-          velocity: 0?.7 + Math?.random() * 0?.3,
+          velocity: 0.7 + Math?.random() * 0.3,
           element: params?.instrument || "congas",
         });
       }
@@ -887,7 +887,7 @@ class MelodyPatternService {
 
     for (let i = 0; i < noteCount; i++) {
       notes?.push(scaleNotes[Math?.floor(Math?.random() * scaleNotes?.length)]);
-      durations?.push([0?.25, 0?.5, 1][Math?.floor(Math?.random() * 3)]);
+      durations?.push([0.25, 0.5, 1][Math?.floor(Math?.random() * 3)]);
       velocities?.push(70 + Math?.floor(Math?.random() * 30));
     }
 
@@ -921,7 +921,7 @@ class MelodyPatternService {
     });
 
     const _transformedVelocities = pattern?.velocities.map((v) => {
-      const _humanized = v + (Math?.random() - 0?.5) * params?.humanize * 20;
+      const _humanized = v + (Math?.random() - 0.5) * params?.humanize * 20;
       return Math?.max(1, Math?.min(127, Math?.round(humanized)));
     });
 
@@ -938,7 +938,7 @@ class MelodyPatternService {
   ): DrumPattern {
     const _humanizeVelocity = (v: number) => {
       if (v === 0) return 0;
-      const _variation = (Math?.random() - 0?.5) * humanize * 0?.3;
+      const _variation = (Math?.random() - 0.5) * humanize * 0.3;
       return Math?.max(0, Math?.min(1, v + variation));
     };
 

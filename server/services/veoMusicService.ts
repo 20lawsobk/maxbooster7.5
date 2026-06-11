@@ -1,8 +1,8 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
 const _AI_MODEL_URL =
-  process?.env.AI_MODEL_SERVICE_URL || `http://127?.0.0?.1:${PYTHON_AI_PORT}`;
+  process?.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const _VEO_TIMEOUT_MS = 180_000; // raised: full Veo campaign generation and multi-platform video rendering
 
 const __INTERNAL_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
@@ -93,7 +93,7 @@ class VeoMusicService {
 
   static getInstance(): VeoMusicService {
     if (!VeoMusicService?.instance) {
-      VeoMusicService?.instance = new VeoMusicService();
+      VeoMusicService.instance = new VeoMusicService();
     }
     return VeoMusicService?.instance;
   }

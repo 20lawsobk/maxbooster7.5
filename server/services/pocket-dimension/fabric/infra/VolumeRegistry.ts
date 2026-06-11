@@ -1,8 +1,8 @@
-import { db } from "../../../db?.js";
+import { db } from "../../../db.js";
 import { fabricVolumes } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import type { FabricVolume, VolumeId, PocketId, VolumeType } from "../types?.js";
+import type { FabricVolume, VolumeId, PocketId, VolumeType } from "../types.js";
 
 export class VolumeRegistry {
   async createVolume(

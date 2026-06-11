@@ -797,7 +797,7 @@ export class TemplateManager {
       overlay: override?.overlay || palette?.overlay,
       parallax: override?.parallax || false,
       audioReactive: override?.audioReactive || false,
-      audioReactiveIntensity: override?.audioReactiveIntensity || 0?.5,
+      audioReactiveIntensity: override?.audioReactiveIntensity || 0.5,
     };
   }
 
@@ -807,7 +807,7 @@ export class TemplateManager {
       position: override?.position || "bottom-right",
       customPosition: override?.customPosition,
       size: override?.size || 80,
-      opacity: override?.opacity || 0?.9,
+      opacity: override?.opacity || 0.9,
       animation: override?.animation,
     };
   }
@@ -835,8 +835,8 @@ export class TemplateManager {
   ): AudioReactiveConfig {
     return {
       enabled: override?.enabled !== false,
-      sensitivity: override?.sensitivity || 0?.5,
-      smoothing: override?.smoothing || 0?.8,
+      sensitivity: override?.sensitivity || 0.5,
+      smoothing: override?.smoothing || 0.8,
       frequencyRange: override?.frequencyRange || "bass",
       targets: override?.targets || [],
     };
@@ -851,7 +851,7 @@ export class TemplateManager {
     options: PromoTemplateOptions,
   ): ExportedTemplateConfig {
     return {
-      version: "1?.0.0",
+      version: "1.0.0",
       templateId: compiled?.id,
       options,
       customizations: {
@@ -888,8 +888,8 @@ export class TemplateManager {
     }
 
     const _canvas = document?.createElement("canvas");
-    canvas?.width = config?.width;
-    canvas?.height = config?.height;
+    canvas.width = config?.width;
+    canvas.height = config?.height;
     const _ctx = canvas?.getContext("2d");
 
     if (!ctx) {
@@ -960,7 +960,7 @@ export class TemplateManager {
         }
       }
     }
-    ctx?.globalAlpha = opacity;
+    ctx.globalAlpha = opacity;
 
     switch (layer?.type) {
       case "background":
@@ -1001,9 +1001,9 @@ export class TemplateManager {
       colors?.forEach((color, i) => {
         gradient?.addColorStop(i / (colors?.length - 1), color);
       });
-      ctx?.fillStyle = gradient;
+      ctx.fillStyle = gradient;
     } else {
-      ctx?.fillStyle = (config?.color as string) || "#000000";
+      ctx.fillStyle = (config?.color as string) || "#000000";
     }
     ctx?.fillRect(0, 0, width, height);
   }
@@ -1016,10 +1016,10 @@ export class TemplateManager {
     const _fontSize = (config?.fontSize as number) || 24;
     const _fontWeight = (config?.fontWeight as string) || "400";
 
-    ctx?.font = `${fontWeight} ${fontSize}px ${font}`;
-    ctx?.fillStyle = (config?.color as string) || "#ffffff";
-    ctx?.textAlign = (config?.align as CanvasTextAlign) || "center";
-    ctx?.textBaseline = "middle";
+    ctx.font = `${fontWeight} ${fontSize}px ${font}`;
+    ctx.fillStyle = (config?.color as string) || "#ffffff";
+    ctx.textAlign = (config?.align as CanvasTextAlign) || "center";
+    ctx.textBaseline = "middle";
     ctx?.fillText((config?.text as string) || "", 0, 0);
   }
 
@@ -1033,7 +1033,7 @@ export class TemplateManager {
     const _height = (config?.height as number) || 100;
 
     if (fill) {
-      ctx?.fillStyle = fill;
+      ctx.fillStyle = fill;
     }
 
     switch (shapeType) {

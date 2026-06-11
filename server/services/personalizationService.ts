@@ -543,7 +543,7 @@ class PersonalizationService {
           type: "action",
           pattern: `Frequently uses "${target}"`,
           frequency: count,
-          confidence: Math?.min(count / interactions?.length, 0?.95),
+          confidence: Math?.min(count / interactions?.length, 0.95),
           lastOccurred: new Date(),
         });
       }
@@ -560,7 +560,7 @@ class PersonalizationService {
           type: "navigation",
           pattern: `Frequently visits ${path}`,
           frequency: count,
-          confidence: Math?.min(count / interactions?.length, 0?.9),
+          confidence: Math?.min(count / interactions?.length, 0.9),
           lastOccurred: new Date(),
         });
       }
@@ -591,9 +591,9 @@ class PersonalizationService {
 
     const _state =
       this?.userLearningState.get(userId) || this?.getDefaultLearningState();
-    state?.patternCount = patterns?.length;
-    state?.lastAnalysis = new Date();
-    state?.confidenceLevel =
+    state.patternCount = patterns?.length;
+    state.lastAnalysis = new Date();
+    state.confidenceLevel =
       patterns?.reduce((acc, p) => acc + p?.confidence, 0) /
       Math?.max(patterns?.length, 1);
     this?.userLearningState.set(userId, state);
@@ -610,7 +610,7 @@ class PersonalizationService {
     const insights: LearningInsight[] = [];
 
     for (const pattern of patterns) {
-      if (pattern?.confidence > 0?.6) {
+      if (pattern?.confidence > 0.6) {
         let insight: LearningInsight | null = null;
 
         if (pattern?.type === "action" && pattern?.frequency >= 5) {
@@ -679,7 +679,7 @@ class PersonalizationService {
     const _insight = insights?.find((i) => i?.id === insightId);
 
     if (insight) {
-      insight?.applied = true;
+      insight.applied = true;
       this?.userInsights.set(userId, insights);
 
       const _state =
@@ -742,9 +742,9 @@ class PersonalizationService {
       );
 
       let trendDirection: "up" | "down" | "stable" = "stable";
-      if (recentInteractions?.length > olderInteractions?.length * 1?.2) {
+      if (recentInteractions?.length > olderInteractions?.length * 1.2) {
         trendDirection = "up";
-      } else if (recentInteractions?.length < olderInteractions?.length * 0?.8) {
+      } else if (recentInteractions?.length < olderInteractions?.length * 0.8) {
         trendDirection = "down";
       }
 
@@ -769,7 +769,7 @@ class PersonalizationService {
 
     if (updates?.isVisible !== undefined) {
       if (updates?.isVisible) {
-        prefs?.hiddenFeatures = prefs?.hiddenFeatures.filter(
+        prefs.hiddenFeatures = prefs?.hiddenFeatures.filter(
           (f) => f !== featureId,
         );
       } else if (!prefs?.hiddenFeatures.includes(featureId)) {

@@ -8,7 +8,7 @@
  * module (e?.g. advancedVideoRendererService) without pulling in native bindings.
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _MC_AI_URL = process?.env.AI_SERVER_URL || "";
 const _MC_AI_KEY = process?.env.AI_SERVER_KEY || "";
@@ -62,15 +62,15 @@ export class MaxCoreAIClient {
           redirect: "manual", // treat 3xx as unavailable — Replit proxy redirects when sleeping
         })
           .then((r) => {
-            MaxCoreAIClient?._remoteAvailable =
+            MaxCoreAIClient._remoteAvailable =
               r?.ok && MaxCoreAIClient?.isJson(r);
             if (MaxCoreAIClient?._remoteAvailable)
               logger?.info("[MaxCoreAI] Remote server is online ✅");
           })
           .catch(() => {
-            MaxCoreAIClient?._remoteAvailable = false;
+            MaxCoreAIClient._remoteAvailable = false;
           });
-        MaxCoreAIClient?._lastCheck = now;
+        MaxCoreAIClient._lastCheck = now;
       }
     }
     return true;
@@ -181,8 +181,8 @@ export class MaxCoreAIClient {
 
       if (r?.ok && MaxCoreAIClient?.isJson(r)) {
         const _data = await r?.json();
-        MaxCoreAIClient?._remoteAvailable = true;
-        MaxCoreAIClient?._lastCheck = Date?.now();
+        MaxCoreAIClient._remoteAvailable = true;
+        MaxCoreAIClient._lastCheck = Date?.now();
         MaxCoreAIClient?._endpointSuppressed.delete(path);
         logger?.debug(`[MaxCoreAI] generate ${path} → success`);
         return data as T;
@@ -255,7 +255,7 @@ export class MaxCoreAIClient {
       if (r?.ok && MaxCoreAIClient?.isJson(r)) {
         const _data = await r?.json();
         logger?.debug(`[MaxCoreAI] infer ${path} → success`);
-        MaxCoreAIClient?._remoteAvailable = true;
+        MaxCoreAIClient._remoteAvailable = true;
         MaxCoreAIClient?._endpointSuppressed.delete(path);
         return data as T;
       }
@@ -312,8 +312,8 @@ export function startMaxCoreLLMWarmth(): void {
     })
       .then((r) => {
         if (r?.ok && MaxCoreAIClient?.isJson(r)) {
-          MaxCoreAIClient?._remoteAvailable = true;
-          MaxCoreAIClient?._lastCheck = Date?.now();
+          MaxCoreAIClient._remoteAvailable = true;
+          MaxCoreAIClient._lastCheck = Date?.now();
         }
       })
       .catch(() => {});

@@ -20,13 +20,13 @@ export interface UseShortcutOptions {
 export function useShortcut(
   options: UseShortcutOptions,
   handler: () => void,
-  deps: React?.DependencyList = [],
+  deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
   const _idRef = useRef(`shortcut-${Math?.random().toString(36).substr(2, 9)}`);
   const _handlerRef = useRef(handler);
 
-  handlerRef?.current = handler;
+  handlerRef.current = handler;
 
   useEffect(() => {
     if (options?.enabled === false) return;
@@ -63,7 +63,7 @@ export function useShortcut(
 
 export function useShortcuts_Multiple(
   shortcuts: Array<UseShortcutOptions & { handler: () => void }>,
-  deps: React?.DependencyList = [],
+  deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
   const _idsRef = useRef<string[]>([]);
@@ -93,11 +93,11 @@ export function useShortcuts_Multiple(
       registerShortcut(shortcut);
     });
 
-    idsRef?.current = newIds;
+    idsRef.current = newIds;
 
     return () => {
       newIds?.forEach((id) => unregisterShortcut(id));
-      idsRef?.current = [];
+      idsRef.current = [];
     };
   }, [shortcuts?.length, registerShortcut, unregisterShortcut, ...deps]);
 

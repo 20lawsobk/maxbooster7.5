@@ -19,7 +19,7 @@ export class AppError extends Error {
     public context?: ErrorContext,
   ) {
     super(message);
-    this?.name = "AppError";
+    this.name = "AppError";
   }
 }
 

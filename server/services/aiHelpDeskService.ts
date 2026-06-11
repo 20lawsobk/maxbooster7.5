@@ -46,7 +46,7 @@ const _KNOWLEDGE_BASE = {
       timeline:
         "Distribution typically takes 24-72 hours for most platforms. Spotify and Apple Music are usually the fastest. We recommend scheduling releases at least 2 weeks in advance for editorial playlist consideration.",
       requirements:
-        "You'll need: High-quality audio (WAV or FLAC, 16-bit/44?.1kHz minimum), artwork (3000x3000 pixels, JPG or PNG), and complete metadata including ISRC codes (we can generate these for you).",
+        "You'll need: High-quality audio (WAV or FLAC, 16-bit/44.1kHz minimum), artwork (3000x3000 pixels, JPG or PNG), and complete metadata including ISRC codes (we can generate these for you).",
     },
   },
   royalties: {
@@ -167,7 +167,7 @@ class AIHelpDeskService {
   getConversation(sessionId: string, userId?: number): ConversationContext {
     const _existing = this?.conversations.get(sessionId);
     if (existing) {
-      existing?.lastAccessedAt = Date?.now();
+      existing.lastAccessedAt = Date?.now();
       return existing;
     }
     this?._evictOldestIfFull();
@@ -442,7 +442,7 @@ What would you like to know more about?`,
   endConversation(sessionId: string): void {
     const _context = this?.conversations.get(sessionId);
     if (context) {
-      context?.resolved = true;
+      context.resolved = true;
     }
   }
 

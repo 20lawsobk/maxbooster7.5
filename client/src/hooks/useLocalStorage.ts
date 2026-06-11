@@ -34,7 +34,7 @@ export function useLocalStorage<T>(
   });
 
   const _keyRef = useRef(key);
-  keyRef?.current = key;
+  keyRef.current = key;
 
   const _setValue = useCallback(
     (value: SetValue<T>) => {
@@ -142,7 +142,7 @@ export function useSessionStorage<T>(
   });
 
   const _keyRef = useRef(key);
-  keyRef?.current = key;
+  keyRef.current = key;
 
   const _setValue = useCallback(
     (value: SetValue<T>) => {

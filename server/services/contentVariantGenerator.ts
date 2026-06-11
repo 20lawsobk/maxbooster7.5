@@ -1,11 +1,11 @@
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   getRedisClient,
   RedisClientType,
-} from "../lib/redisConnectionFactory?.js";
+} from "../lib/redisConnectionFactory.js";
 
-import { MaxCoreAIClient } from "./maxcoreClient?.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 function seededIndex(seed: string, len: number): number {
   let h = 0x811c9dc5;
@@ -609,7 +609,7 @@ class ContentVariantGeneratorService {
     const _shareRate =
       metrics?.engagement > 0 ? (metrics?.shares / metrics?.engagement) * 100 : 0;
 
-    return engagementRate * 0?.4 + shareRate * 0?.3 + metrics?.conversionRate * 30;
+    return engagementRate * 0.4 + shareRate * 0.3 + metrics?.conversionRate * 30;
   }
 
   private identifyChanges(original: string, variant: string): string[] {

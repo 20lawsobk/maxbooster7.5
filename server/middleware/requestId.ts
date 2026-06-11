@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 import {
   requestContext,
   RequestContextData,
-} from "../services/requestContext?.js";
+} from "../services/requestContext.js";
 
 export const _REQUEST_ID_HEADER = "X-Request-ID";
 
@@ -28,8 +28,8 @@ export function requestIdMiddleware(
 
   const _startTime = Date?.now();
 
-  req?.requestId = requestId;
-  req?.startTime = startTime;
+  req.requestId = requestId;
+  req.startTime = startTime;
 
   res?.setHeader(REQUEST_ID_HEADER, requestId);
   res?.setHeader("X-Correlation-ID", requestId);

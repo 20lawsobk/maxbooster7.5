@@ -1,6 +1,6 @@
 import { Router, raw } from "express";
-import { emailTrackingService } from "../../services/emailTrackingService?.js";
-import { logger } from "../../logger?.js";
+import { emailTrackingService } from "../../services/emailTrackingService.js";
+import { logger } from "../../logger.js";
 
 const _router = Router();
 

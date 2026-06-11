@@ -1,6 +1,6 @@
-import { storage } from "../storage?.js";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { storage } from "../storage.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { socialAccounts, systemSettings } from "@shared/schema";
 import { gte, lte, and, eq, isNotNull } from "drizzle-orm";
 import axios from "axios";
@@ -13,7 +13,7 @@ const _ENCRYPTION_KEY_SETTING = "social_oauth_encryption_key";
 
 // Get base domain for OAuth redirects - always use production URL for consistency
 const _getOAuthDomain = () =>
-  process?.env.DOMAIN || process?.env.APP_URL || "https://max-booster?.com";
+  process?.env.DOMAIN || process?.env.APP_URL || "https://max-booster.com";
 
 /**
  * Social OAuth Service
@@ -27,7 +27,7 @@ const _getOAuthDomain = () =>
  */
 export class SocialOAuthService {
   private oauthConfigs: Map<string, OAuthConfig> = new Map();
-  private tokenRefreshInterval: NodeJS?.Timeout | null = null;
+  private tokenRefreshInterval: NodeJS.Timeout | null = null;
   private revokedTokenCache: Set<string> = new Set();
   private _encryptionKey: string | null = null;
 
@@ -49,7 +49,7 @@ export class SocialOAuthService {
    */
   private async initializeEncryptionKey(): Promise<void> {
     if (process?.env.TOKEN_ENCRYPTION_KEY) {
-      this?._encryptionKey = process?.env.TOKEN_ENCRYPTION_KEY;
+      this._encryptionKey = process?.env.TOKEN_ENCRYPTION_KEY;
       logger?.info("[SocialOAuth] Using TOKEN_ENCRYPTION_KEY from environment");
       return;
     }
@@ -62,7 +62,7 @@ export class SocialOAuthService {
         .limit(1);
 
       if (rows?.length > 0 && rows[0].value) {
-        this?._encryptionKey = rows[0].value as string;
+        this._encryptionKey = rows[0].value as string;
         logger?.info("[SocialOAuth] Loaded persistent encryption key from DB");
         return;
       }
@@ -78,7 +78,7 @@ export class SocialOAuthService {
             "AES-256-GCM key for social OAuth token encryption — do not delete",
         })
         .onConflictDoNothing();
-      this?._encryptionKey = newKey;
+      this._encryptionKey = newKey;
       logger?.warn(
         "[SocialOAuth] Generated and persisted new TOKEN_ENCRYPTION_KEY to DB. Set TOKEN_ENCRYPTION_KEY env var for explicit control.",
       );
@@ -88,7 +88,7 @@ export class SocialOAuthService {
         (e as Error).message,
       );
       if (!this?._encryptionKey) {
-        this?._encryptionKey = crypto?.randomBytes(32).toString("hex");
+        this._encryptionKey = crypto?.randomBytes(32).toString("hex");
       }
     }
   }
@@ -161,7 +161,7 @@ export class SocialOAuthService {
       clearInterval(this?.tokenRefreshInterval);
     }
 
-    this?.tokenRefreshInterval = setInterval(async () => {
+    this.tokenRefreshInterval = setInterval(async () => {
       try {
         await this?.checkAndRefreshExpiringTokens();
       } catch {
@@ -399,8 +399,8 @@ export class SocialOAuthService {
         process?.env.FACEBOOK_APP_SECRET ||
         process?.env.FACEBOOK_CLIENT_SECRET ||
         "",
-      authUrl: "https://www?.facebook.com/v19?.0/dialog/oauth",
-      tokenUrl: "https://graph?.facebook.com/v19?.0/oauth/access_token",
+      authUrl: "https://www?.facebook.com/v19.0/dialog/oauth",
+      tokenUrl: "https://graph?.facebook.com/v19.0/oauth/access_token",
       scopes: [
         "public_profile",
         "email",
@@ -422,7 +422,7 @@ export class SocialOAuthService {
         process?.env.TWITTER_CLIENT_SECRET ||
         process?.env.TWITTER_API_SECRET ||
         "",
-      authUrl: "https://twitter?.com/i/oauth2/authorize",
+      authUrl: "https://twitter.com/i/oauth2/authorize",
       tokenUrl: "https://api?.x.com/2/oauth2/token",
       scopes: [
         "tweet?.read",
@@ -493,7 +493,7 @@ export class SocialOAuthService {
       clientId: process?.env.THREADS_APP_ID || process?.env.FACEBOOK_APP_ID || "",
       clientSecret:
         process?.env.THREADS_APP_SECRET || process?.env.FACEBOOK_APP_SECRET || "",
-      authUrl: "https://threads?.net/oauth/authorize",
+      authUrl: "https://threads.net/oauth/authorize",
       tokenUrl: "https://graph?.threads.net/oauth/access_token",
       scopes: [
         "threads_basic",
@@ -687,7 +687,7 @@ export class SocialOAuthService {
         ).toString("base64");
         headers["Authorization"] = `Basic ${credentials}`;
       } else {
-        refreshParams?.client_secret = config?.clientSecret;
+        refreshParams.client_secret = config?.clientSecret;
       }
 
       const _response = await axios?.post(

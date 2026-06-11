@@ -1,5 +1,5 @@
 import type { MailDataRequired } from "@sendgrid/mail";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface EmailLog {
   timestamp: Date;

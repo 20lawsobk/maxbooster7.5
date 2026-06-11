@@ -36,14 +36,14 @@
  *   - audioFile, label, copyrightOwner, lyrics
  */
 
-import { logger } from "../logger?.js";
-import { labelGridService } from "./labelgrid-service?.js";
+import { logger } from "../logger.js";
+import { labelGridService } from "./labelgrid-service.js";
 import type {
   LabelGridCatalogRelease,
   LabelGridCatalogTrack,
-} from "./labelgrid-service?.js";
-import type { ScannedRelease } from "./distributionDataTransferService?.js";
-import { DISTRIBUTION_PLATFORMS } from "../seed/distributionPlatforms?.js";
+} from "./labelgrid-service.js";
+import type { ScannedRelease } from "./distributionDataTransferService.js";
+import { DISTRIBUTION_PLATFORMS } from "../seed/distributionPlatforms.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -393,13 +393,13 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
     // Collect alternate versions of this specific release.
     if (
       isAlternateVersion(album?.title) &&
-      titleSimilarity(album?.title, ctx?.lgTitle) >= 0?.5
+      titleSimilarity(album?.title, ctx?.lgTitle) >= 0.5
     ) {
       alternateVersions?.push(album?.title);
     }
   }
 
-  if (!bestAlbum || bestScore < 0?.6) {
+  if (!bestAlbum || bestScore < 0.6) {
     result?.discrepancies.push(`Release "${ctx?.lgTitle}" not found on Deezer`);
     return {
       validation: result,
@@ -410,10 +410,10 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
     };
   }
 
-  result?.found = true;
-  result?.platformReleaseId = String(bestAlbum?.id);
-  result?.titleMatch = titleMatch(bestAlbum?.title, ctx?.lgTitle);
-  result?.alternateVersions = alternateVersions;
+  result.found = true;
+  result.platformReleaseId = String(bestAlbum?.id);
+  result.titleMatch = titleMatch(bestAlbum?.title, ctx?.lgTitle);
+  result.alternateVersions = alternateVersions;
 
   if (!result?.titleMatch) {
     result?.discrepancies.push(
@@ -440,7 +440,7 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
   if (ctx?.lgReleaseDate && detail?.release_date) {
     const _lgYear = ctx?.lgReleaseDate.slice(0, 4);
     const _dzYear = detail?.release_date.slice(0, 4);
-    result?.releaseDateMatch = lgYear === dzYear;
+    result.releaseDateMatch = lgYear === dzYear;
     if (!result?.releaseDateMatch) {
       result?.discrepancies.push(
         `Release date mismatch: LabelGrid=${ctx?.lgReleaseDate} Deezer=${detail?.release_date}`,
@@ -450,7 +450,7 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
 
   // Track-count check.
   if (detail?.nb_tracks != null) {
-    result?.trackCountMatch = detail?.nb_tracks === ctx?.lgTrackCount;
+    result.trackCountMatch = detail?.nb_tracks === ctx?.lgTrackCount;
     if (!result?.trackCountMatch) {
       result?.discrepancies.push(
         `Track count mismatch: LabelGrid=${ctx?.lgTrackCount} Deezer=${detail?.nb_tracks}`,
@@ -540,23 +540,23 @@ async function validateOnAppleMusic(ctx: AppleMusicValidationContext): Promise<{
     }
     if (
       isAlternateVersion(album?.collectionName) &&
-      titleSimilarity(album?.collectionName, ctx?.lgTitle) >= 0?.5
+      titleSimilarity(album?.collectionName, ctx?.lgTitle) >= 0.5
     ) {
       alternateVersions?.push(album?.collectionName);
     }
   }
 
-  if (!bestAlbum || bestScore < 0?.6) {
+  if (!bestAlbum || bestScore < 0.6) {
     result?.discrepancies.push(
       `Release "${ctx?.lgTitle}" not found on Apple Music`,
     );
     return { validation: result, artwork, genre, alternateVersions };
   }
 
-  result?.found = true;
-  result?.platformReleaseId = String(bestAlbum?.collectionId);
-  result?.titleMatch = titleMatch(bestAlbum?.collectionName, ctx?.lgTitle);
-  result?.alternateVersions = alternateVersions;
+  result.found = true;
+  result.platformReleaseId = String(bestAlbum?.collectionId);
+  result.titleMatch = titleMatch(bestAlbum?.collectionName, ctx?.lgTitle);
+  result.alternateVersions = alternateVersions;
 
   if (!result?.titleMatch) {
     result?.discrepancies.push(
@@ -568,7 +568,7 @@ async function validateOnAppleMusic(ctx: AppleMusicValidationContext): Promise<{
   if (ctx?.lgReleaseDate && bestAlbum?.releaseDate) {
     const _lgYear = ctx?.lgReleaseDate.slice(0, 4);
     const _amYear = bestAlbum?.releaseDate.slice(0, 4);
-    result?.releaseDateMatch = lgYear === amYear;
+    result.releaseDateMatch = lgYear === amYear;
     if (!result?.releaseDateMatch) {
       result?.discrepancies.push(
         `Release date mismatch: LabelGrid=${ctx?.lgReleaseDate} AppleMusic=${bestAlbum?.releaseDate.slice(0, 10)}`,
@@ -578,7 +578,7 @@ async function validateOnAppleMusic(ctx: AppleMusicValidationContext): Promise<{
 
   // Track-count check.
   if (bestAlbum?.trackCount != null) {
-    result?.trackCountMatch = bestAlbum?.trackCount === ctx?.lgTrackCount;
+    result.trackCountMatch = bestAlbum?.trackCount === ctx?.lgTrackCount;
     if (!result?.trackCountMatch) {
       result?.discrepancies.push(
         `Track count mismatch: LabelGrid=${ctx?.lgTrackCount} AppleMusic=${bestAlbum?.trackCount}`,
@@ -632,7 +632,7 @@ async function hydrateLabelGridRelease(
   let artwork = lgRelease?.coverUrl
     ? lgRelease?.coverUrl.replace(
         /\/\d+x\d+[a-z]{2}\.(jpg|png)$/i,
-        "/600x600bb?.jpg",
+        "/600x600bb.jpg",
       )
     : null;
   let genre = lgRelease?.genre ?? null;
@@ -818,7 +818,7 @@ async function buildFromLinkedProfiles(
 ): Promise<MigrationRelease[]> {
   // Lazy-import to avoid circular deps at module load time.
   const { distributionDataTransferService } = await import(
-    "./distributionDataTransferService?.js"
+    "./distributionDataTransferService.js"
   );
 
   const _linkedProfiles =
@@ -878,11 +878,11 @@ async function buildFromLinkedProfiles(
       // Merge: prefer the entry with more track data.
       const merged: ScannedRelease = { ...existing };
       if ((r?.tracks?.length ?? 0) > (existing?.tracks?.length ?? 0)) {
-        merged?.tracks = r?.tracks;
+        merged.tracks = r?.tracks;
       }
-      if (!merged?.upc && r?.upc) merged?.upc = r?.upc;
-      if (!merged?.genre && r?.genre) merged?.genre = r?.genre;
-      if (!merged?.coverUrl && r?.coverUrl) merged?.coverUrl = r?.coverUrl;
+      if (!merged?.upc && r?.upc) merged.upc = r?.upc;
+      if (!merged?.genre && r?.genre) merged.genre = r?.genre;
+      if (!merged?.coverUrl && r?.coverUrl) merged.coverUrl = r?.coverUrl;
       // Keep the platform with more data as the canonical source label.
       seen?.set(key, merged);
     }
@@ -951,7 +951,7 @@ async function buildFromLinkedProfiles(
 
     // Carry the source platform's direct link through to the export.
     if (r?.platformUrl) {
-      migrated?.platformUrl = r?.platformUrl;
+      migrated.platformUrl = r?.platformUrl;
     }
 
     releases?.push(migrated);

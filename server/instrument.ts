@@ -17,8 +17,8 @@
  */
 
 import { createRequire } from "module";
-import { logger } from "./logger?.js";
-import { env } from "./config/env?.js";
+import { logger } from "./logger.js";
+import { env } from "./config/env.js";
 
 const _isProduction =
   process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
@@ -41,8 +41,8 @@ try {
   Sentry = _moduleRequire("@sentry/node") as SentryModule;
   Sentry?.init({
     dsn: isProduction ? dsn : undefined,
-    tracesSampleRate: isProduction ? 0?.2 : 0,
-    profilesSampleRate: isProduction ? 0?.05 : 0,
+    tracesSampleRate: isProduction ? 0.2 : 0,
+    profilesSampleRate: isProduction ? 0.05 : 0,
     environment: process?.env.NODE_ENV || "development",
     beforeSend(event) {
       if (!isProduction) return null;
@@ -73,7 +73,7 @@ const _SILENT_MSG =
   /\[LuaExecutor\] PDIM circuit OPEN|PDIM circuit OPEN.*skipping Worker|Circuit OPEN.*skipping/i;
 
 process?.on("uncaughtException", (err) => {
-  const _code = (err as NodeJS?.ErrnoException).code;
+  const _code = (err as NodeJS.ErrnoException).code;
 
   // Non-fatal stream/pipe errors — log as warn and continue.
   if (code && NON_FATAL_CODES?.has(code)) {
@@ -105,7 +105,7 @@ process?.on("uncaughtException", (err) => {
 
 process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
   const _err = reason instanceof Error ? reason : new Error(String(reason));
-  const _code = (reason as NodeJS?.ErrnoException)?.code;
+  const _code = (reason as NodeJS.ErrnoException)?.code;
 
   // Completely silent: circuit-open rejections are already owned by the
   // circuit breaker's own rate-limited logging — duplicating them here

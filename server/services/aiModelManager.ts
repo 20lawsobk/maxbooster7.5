@@ -1,12 +1,12 @@
-import { storage } from "../storage?.js";
-import { logger } from "../logger?.js";
-import { SocialMediaAutopilotAI } from "../../shared/ml/models/SocialMediaAutopilotAI?.js";
-import { AdvertisingAutopilotAI_v3 } from "../../shared/ml/models/AdvertisingAutopilotAI_v3?.js";
-import { aiModelTelemetry } from "../monitoring/aiModelTelemetry?.js";
+import { storage } from "../storage.js";
+import { logger } from "../logger.js";
+import { SocialMediaAutopilotAI } from "../../shared/ml/models/SocialMediaAutopilotAI.js";
+import { AdvertisingAutopilotAI_v3 } from "../../shared/ml/models/AdvertisingAutopilotAI_v3.js";
+import { aiModelTelemetry } from "../monitoring/aiModelTelemetry.js";
 import {
   loadSocialBaseState,
   loadAdvertisingBaseState,
-} from "./baseModelTrainer?.js";
+} from "./baseModelTrainer.js";
 
 /**
  * AI Model Manager
@@ -41,7 +41,7 @@ class AIModelManager {
   private readonly MAX_ADVERTISING_MODELS = 50; // Keep 50 advertising models in memory
 
   // Eviction check interval
-  private evictionInterval: NodeJS?.Timeout | null = null;
+  private evictionInterval: NodeJS.Timeout | null = null;
 
   constructor() {
     // Start periodic eviction of stale models
@@ -59,7 +59,7 @@ class AIModelManager {
     // Check cache first
     const _cached = this?.socialModels.get(userId);
     if (cached) {
-      cached?.lastAccessed = new Date();
+      cached.lastAccessed = new Date();
       logger?.debug(`Using cached Social AI model for user ${userId}`);
 
       // Record cache hit
@@ -170,7 +170,7 @@ class AIModelManager {
   }
 
   /**
-   * Get or create Advertising Autopilot AI v3?.0 for a specific user
+   * Get or create Advertising Autopilot AI v3.0 for a specific user
    * CRITICAL: Per-user isolation prevents cross-tenant data leakage
    */
   async getAdvertisingAutopilot(
@@ -181,7 +181,7 @@ class AIModelManager {
     // Check cache first
     const _cached = this?.advertisingModels.get(userId);
     if (cached) {
-      cached?.lastAccessed = new Date();
+      cached.lastAccessed = new Date();
       logger?.debug(`Using cached Advertising AI model for user ${userId}`);
 
       // Record cache hit
@@ -470,7 +470,7 @@ class AIModelManager {
    * Evicts models not accessed in last 30 minutes
    */
   private startEvictionScheduler() {
-    this?.evictionInterval = setInterval(
+    this.evictionInterval = setInterval(
       () => {
         const _now = new Date();
         const _thirtyMinutesAgo = new Date(now?.getTime() - 30 * 60 * 1000);
@@ -524,14 +524,14 @@ class AIModelManager {
   ): Promise<unknown> {
     try {
       const weights: Record<string, unknown> = {
-        version: "1?.0",
+        version: "1.0",
         timestamp: new Date().toISOString(),
       };
 
       if (model?.getWeights && typeof model?.getWeights === "function") {
         const _tensorWeights = await model?.getWeights();
         if (tensorWeights && Array?.isArray(tensorWeights)) {
-          weights?.tensors = await Promise?.all(
+          weights.tensors = await Promise?.all(
             tensorWeights?.map(async (tensor: Record<string, unknown>) => ({
               shape: tensor?.shape,
               dtype: tensor?.dtype,
@@ -542,11 +542,11 @@ class AIModelManager {
       }
 
       if (model?.serializeState && typeof model?.serializeState === "function") {
-        weights?.modelState = model?.serializeState();
+        weights.modelState = model?.serializeState();
       }
 
       if (model?.getConfig && typeof model?.getConfig === "function") {
-        weights?.config = model?.getConfig();
+        weights.config = model?.getConfig();
       }
 
       return weights;
@@ -556,7 +556,7 @@ class AIModelManager {
         "Could not extract full model weights, using fallback:",
       );
       return {
-        version: "1?.0",
+        version: "1.0",
         timestamp: new Date().toISOString(),
         modelState: model?.serializeState ? model?.serializeState() : null,
       };

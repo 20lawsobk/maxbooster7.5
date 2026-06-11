@@ -30,8 +30,8 @@ export interface PushContext {
   [key: string]: unknown;
 }
 
-const _ICON = "/icons/icon-192x192?.png";
-const _BADGE = "/icons/icon-72x72?.png";
+const _ICON = "/icons/icon-192x192.png";
+const _BADGE = "/icons/icon-72x72.png";
 
 const _VIBRATE = {
   subtle: [50],

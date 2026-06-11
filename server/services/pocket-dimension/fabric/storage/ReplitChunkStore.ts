@@ -1,6 +1,6 @@
-import type { ChunkStore } from "./ChunkStore?.js";
-import type { ChunkId } from "../types?.js";
-import { logger } from "../../../logger?.js";
+import type { ChunkStore } from "./ChunkStore.js";
+import type { ChunkId } from "../types.js";
+import { logger } from "../../../logger.js";
 
 const _CHUNK_PREFIX = "fabric-chunks/";
 
@@ -12,7 +12,7 @@ export class ReplitChunkStore implements ChunkStore {
     let sidecarAvailable = false;
     try {
       const _probe = await fetch(
-        "http://127?.0.0?.1:1106/object-storage/default-bucket",
+        "http://127.0.0.1:1106/object-storage/default-bucket",
         {
           signal: AbortSignal?.timeout(600),
         },
@@ -31,7 +31,7 @@ export class ReplitChunkStore implements ChunkStore {
       const _bucketId =
         process?.env.REPLIT_BUCKET_ID ||
         process?.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
-      this?.client = new Client(bucketId ? { bucketId } : undefined);
+      this.client = new Client(bucketId ? { bucketId } : undefined);
       return this?.client;
     } catch (err) {
       throw new Error(`Replit Object Storage not available: ${err}`);

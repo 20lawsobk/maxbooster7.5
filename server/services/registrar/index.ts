@@ -12,10 +12,10 @@
  *   "epp"                  — External EPP registrar (Verisign OT&E, etc.)
  */
 
-import { MaxBoosterRegistrarProvider } from "./MaxBoosterRegistrarProvider?.js";
-import { EppRegistrarProvider } from "./EppRegistrarProvider?.js";
-import type { RegistrarProvider } from "./types?.js";
-import { logger } from "../../logger?.js";
+import { MaxBoosterRegistrarProvider } from "./MaxBoosterRegistrarProvider.js";
+import { EppRegistrarProvider } from "./EppRegistrarProvider.js";
+import type { RegistrarProvider } from "./types.js";
+import { logger } from "../../logger.js";
 
 export type { RegistrarProvider };
 export type {
@@ -30,10 +30,10 @@ export type {
   DomainPrice,
   DomainLifecycleState,
   DomainEventType,
-} from "./types?.js";
+} from "./types.js";
 
-export { MaxBoosterRegistrarProvider } from "./MaxBoosterRegistrarProvider?.js";
-export { buildRdapResponse } from "./MaxBoosterRegistrarProvider?.js";
+export { MaxBoosterRegistrarProvider } from "./MaxBoosterRegistrarProvider.js";
+export { buildRdapResponse } from "./MaxBoosterRegistrarProvider.js";
 
 // ── Singleton ──────────────────────────────────────────────────────────────
 

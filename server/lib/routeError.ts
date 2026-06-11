@@ -12,7 +12,7 @@
  *   (ERROR is never used here — reserved for catastrophic data corruption only)
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 type HttpError = Error & {
   status?: number;

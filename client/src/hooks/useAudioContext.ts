@@ -114,15 +114,15 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
 
     const _fftSize = 2048;
 
-    leftAnalyserRef?.current = sharedAudioContext?.createAnalyser();
+    leftAnalyserRef.current = sharedAudioContext?.createAnalyser();
     leftAnalyserRef?.current.fftSize = fftSize;
-    leftAnalyserRef?.current.smoothingTimeConstant = 0?.8;
+    leftAnalyserRef?.current.smoothingTimeConstant = 0.8;
 
-    rightAnalyserRef?.current = sharedAudioContext?.createAnalyser();
+    rightAnalyserRef.current = sharedAudioContext?.createAnalyser();
     rightAnalyserRef?.current.fftSize = fftSize;
-    rightAnalyserRef?.current.smoothingTimeConstant = 0?.8;
+    rightAnalyserRef?.current.smoothingTimeConstant = 0.8;
 
-    splitterRef?.current = sharedAudioContext?.createChannelSplitter(2);
+    splitterRef.current = sharedAudioContext?.createChannelSplitter(2);
 
     sourceNode?.connect(splitterRef?.current);
     splitterRef?.current.connect(leftAnalyserRef?.current, 0);
@@ -153,8 +153,8 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
         leftSum += leftBuffer[i] * leftBuffer[i];
         rightSum += rightBuffer[i] * rightBuffer[i];
 
-        if (leftAbs >= 0?.99) leftClip = true;
-        if (rightAbs >= 0?.99) rightClip = true;
+        if (leftAbs >= 0.99) leftClip = true;
+        if (rightAbs >= 0.99) rightClip = true;
       }
 
       const _leftRMS = Math?.sqrt(leftSum / fftSize);
@@ -181,7 +181,7 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
 
       const _monoRMS = (leftRMS + rightRMS) / 2;
       const _lufsInstant =
-        -0?.691 + 10 * Math?.log10(Math?.max(monoRMS * monoRMS, 1e-10));
+        -0.691 + 10 * Math?.log10(Math?.max(monoRMS * monoRMS, 1e-10));
 
       lufsWindowRef?.current.push(lufsInstant);
       if (lufsWindowRef?.current.length > 30) {
@@ -200,7 +200,7 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
         lufs: Math?.max(-60, Math?.min(0, lufsAvg)),
       });
 
-      animationFrameRef?.current = requestAnimationFrame(analyze);
+      animationFrameRef.current = requestAnimationFrame(analyze);
     };
 
     analyze();
@@ -353,8 +353,8 @@ export function useAudioContext() {
       const _context = new AudioContextClass();
       const _analyser = context?.createAnalyser();
 
-      analyser?.fftSize = 2048;
-      analyser?.smoothingTimeConstant = 0?.8;
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.8;
 
       const _frequencyData = new Uint8Array(analyser?.frequencyBinCount);
 
@@ -381,7 +381,7 @@ export function useAudioContext() {
 
     const _oscillator = state?.context.createOscillator();
     oscillator?.frequency.setValueAtTime(frequency, state?.context.currentTime);
-    oscillator?.type = type;
+    oscillator.type = type;
 
     return oscillator;
   };
@@ -403,7 +403,7 @@ export function useAudioContext() {
     if (!state?.context) return null;
 
     const _filter = state?.context.createBiquadFilter();
-    filter?.type = type;
+    filter.type = type;
     filter?.frequency.setValueAtTime(frequency, state?.context.currentTime);
     filter?.Q.setValueAtTime(Q, state?.context.currentTime);
 
@@ -428,7 +428,7 @@ export function useAudioContext() {
       try {
         const _audioBuffer =
           await state?.context.decodeAudioData(impulseResponse);
-        convolver?.buffer = audioBuffer;
+        convolver.buffer = audioBuffer;
       } catch (error: unknown) {
         logger?.error("Failed to decode impulse response:", error);
       }
@@ -458,7 +458,7 @@ export function useAudioContext() {
     const _analyze = () => {
       state?.analyser!.getByteFrequencyData(state?.frequencyData!);
       callback?.(state?.frequencyData!);
-      animationFrameRef?.current = requestAnimationFrame(analyze);
+      animationFrameRef.current = requestAnimationFrame(analyze);
     };
 
     analyze();

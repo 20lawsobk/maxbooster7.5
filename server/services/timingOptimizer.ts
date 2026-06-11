@@ -1,9 +1,9 @@
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   getRedisClient,
   RedisClientType,
-} from "../lib/redisConnectionFactory?.js";
+} from "../lib/redisConnectionFactory.js";
 
 export interface OptimalTiming {
   platform: string;
@@ -71,40 +71,40 @@ class TimingOptimizerService {
         // TikTok: highest engagement 6-9PM local; music discovery spikes on weekends
         // Source: TikTok Creator Academy + Hootsuite 2024 data
         hourlyMultipliers: {
-          0: 0?.5,
-          1: 0?.35,
-          2: 0?.25,
-          3: 0?.2,
-          4: 0?.25,
-          5: 0?.4,
-          6: 0?.6,
-          7: 0?.75,
-          8: 0?.85,
-          9: 0?.95,
-          10: 1?.0,
-          11: 1?.1,
-          12: 1?.25,
-          13: 1?.15,
-          14: 1?.05,
-          15: 1?.05,
-          16: 1?.15,
-          17: 1?.3,
-          18: 1?.45,
-          19: 1?.6,
-          20: 1?.65,
-          21: 1?.55,
-          22: 1?.3,
-          23: 0?.9,
+          0: 0.5,
+          1: 0.35,
+          2: 0.25,
+          3: 0.2,
+          4: 0.25,
+          5: 0.4,
+          6: 0.6,
+          7: 0.75,
+          8: 0.85,
+          9: 0.95,
+          10: 1.0,
+          11: 1.1,
+          12: 1.25,
+          13: 1.15,
+          14: 1.05,
+          15: 1.05,
+          16: 1.15,
+          17: 1.3,
+          18: 1.45,
+          19: 1.6,
+          20: 1.65,
+          21: 1.55,
+          22: 1.3,
+          23: 0.9,
         },
         // TikTok: Sunday and Saturday dominate; Monday is lowest (back-to-work effect)
         dayMultipliers: {
-          0: 1?.3, // Sunday — highest engagement day for music
-          1: 0?.88, // Monday — lowest
-          2: 0?.94, // Tuesday
-          3: 1?.02, // Wednesday
-          4: 1?.12, // Thursday — ramp begins
-          5: 1?.2, // Friday — pre-weekend spike
-          6: 1?.35, // Saturday — peak overall
+          0: 1.3, // Sunday — highest engagement day for music
+          1: 0.88, // Monday — lowest
+          2: 0.94, // Tuesday
+          3: 1.02, // Wednesday
+          4: 1.12, // Thursday — ramp begins
+          5: 1.2, // Friday — pre-weekend spike
+          6: 1.35, // Saturday — peak overall
         },
         optimalWindows: [
           { day: 0, startHour: 11, endHour: 14, score: 91 }, // Sunday lunch
@@ -120,39 +120,39 @@ class TimingOptimizerService {
         // Instagram: lunch window strongest (12-2PM) + early morning (6-9AM) for stories
         // Reels peak: Tuesday-Friday; carousels perform well Mon-Wed
         hourlyMultipliers: {
-          0: 0?.35,
-          1: 0?.22,
-          2: 0?.15,
-          3: 0?.12,
-          4: 0?.18,
-          5: 0?.38,
-          6: 0?.62,
-          7: 0?.85,
-          8: 0?.95,
-          9: 1?.05,
-          10: 1?.12,
-          11: 1?.25,
-          12: 1?.38,
-          13: 1?.3,
-          14: 1?.15,
-          15: 1?.05,
-          16: 1?.08,
-          17: 1?.2,
-          18: 1?.3,
-          19: 1?.35,
-          20: 1?.28,
-          21: 1?.15,
-          22: 0?.95,
-          23: 0?.55,
+          0: 0.35,
+          1: 0.22,
+          2: 0.15,
+          3: 0.12,
+          4: 0.18,
+          5: 0.38,
+          6: 0.62,
+          7: 0.85,
+          8: 0.95,
+          9: 1.05,
+          10: 1.12,
+          11: 1.25,
+          12: 1.38,
+          13: 1.3,
+          14: 1.15,
+          15: 1.05,
+          16: 1.08,
+          17: 1.2,
+          18: 1.3,
+          19: 1.35,
+          20: 1.28,
+          21: 1.15,
+          22: 0.95,
+          23: 0.55,
         },
         dayMultipliers: {
-          0: 1?.08, // Sunday — lifestyle/music content works
-          1: 1?.0, // Monday
-          2: 1?.1, // Tuesday — Reels spike
-          3: 1?.15, // Wednesday — peak mid-week
-          4: 1?.1, // Thursday
-          5: 1?.05, // Friday
-          6: 1?.12, // Saturday — brunch crowd
+          0: 1.08, // Sunday — lifestyle/music content works
+          1: 1.0, // Monday
+          2: 1.1, // Tuesday — Reels spike
+          3: 1.15, // Wednesday — peak mid-week
+          4: 1.1, // Thursday
+          5: 1.05, // Friday
+          6: 1.12, // Saturday — brunch crowd
         },
         optimalWindows: [
           { day: 1, startHour: 11, endHour: 14, score: 87 }, // Monday lunch
@@ -167,39 +167,39 @@ class TimingOptimizerService {
         // YouTube: afternoon/evening dominates; longer consumption = late-night viable
         // Music videos: Friday releases spike; tutorials peak Mon-Wed afternoon
         hourlyMultipliers: {
-          0: 0?.45,
-          1: 0?.32,
-          2: 0?.22,
-          3: 0?.18,
-          4: 0?.22,
-          5: 0?.38,
-          6: 0?.5,
-          7: 0?.6,
-          8: 0?.68,
-          9: 0?.78,
-          10: 0?.9,
-          11: 1?.0,
-          12: 1?.1,
-          13: 1?.15,
-          14: 1?.25,
-          15: 1?.38,
-          16: 1?.42,
-          17: 1?.5,
-          18: 1?.52,
-          19: 1?.58,
-          20: 1?.55,
-          21: 1?.45,
-          22: 1?.25,
-          23: 0?.85,
+          0: 0.45,
+          1: 0.32,
+          2: 0.22,
+          3: 0.18,
+          4: 0.22,
+          5: 0.38,
+          6: 0.5,
+          7: 0.6,
+          8: 0.68,
+          9: 0.78,
+          10: 0.9,
+          11: 1.0,
+          12: 1.1,
+          13: 1.15,
+          14: 1.25,
+          15: 1.38,
+          16: 1.42,
+          17: 1.5,
+          18: 1.52,
+          19: 1.58,
+          20: 1.55,
+          21: 1.45,
+          22: 1.25,
+          23: 0.85,
         },
         dayMultipliers: {
-          0: 1?.25, // Sunday — binge watching day
-          1: 0?.82, // Monday — low
-          2: 0?.88, // Tuesday
-          3: 0?.95, // Wednesday
-          4: 1?.05, // Thursday
-          5: 1?.15, // Friday — music video drops here
-          6: 1?.28, // Saturday — highest overall
+          0: 1.25, // Sunday — binge watching day
+          1: 0.82, // Monday — low
+          2: 0.88, // Tuesday
+          3: 0.95, // Wednesday
+          4: 1.05, // Thursday
+          5: 1.15, // Friday — music video drops here
+          6: 1.28, // Saturday — highest overall
         },
         optimalWindows: [
           { day: 4, startHour: 14, endHour: 17, score: 90 }, // Thursday afternoon
@@ -215,39 +215,39 @@ class TimingOptimizerService {
         // Twitter/X: lunch and commute times peak; breaking news bias boosts Tue-Thu
         // Music artists: best window is 9AM-12PM weekdays for algorithm reach
         hourlyMultipliers: {
-          0: 0?.35,
-          1: 0?.22,
-          2: 0?.15,
-          3: 0?.12,
-          4: 0?.18,
-          5: 0?.32,
-          6: 0?.52,
-          7: 0?.75,
-          8: 0?.92,
-          9: 1?.18,
-          10: 1?.3,
-          11: 1?.32,
-          12: 1?.4,
-          13: 1?.28,
-          14: 1?.15,
-          15: 1?.05,
-          16: 1?.08,
-          17: 1?.18,
-          18: 1?.22,
-          19: 1?.18,
-          20: 1?.1,
-          21: 1?.0,
-          22: 0?.82,
-          23: 0?.52,
+          0: 0.35,
+          1: 0.22,
+          2: 0.15,
+          3: 0.12,
+          4: 0.18,
+          5: 0.32,
+          6: 0.52,
+          7: 0.75,
+          8: 0.92,
+          9: 1.18,
+          10: 1.3,
+          11: 1.32,
+          12: 1.4,
+          13: 1.28,
+          14: 1.15,
+          15: 1.05,
+          16: 1.08,
+          17: 1.18,
+          18: 1.22,
+          19: 1.18,
+          20: 1.1,
+          21: 1.0,
+          22: 0.82,
+          23: 0.52,
         },
         dayMultipliers: {
-          0: 0?.8, // Sunday — Twitter audience offline
-          1: 1?.1, // Monday — back-to-work conversations
-          2: 1?.18, // Tuesday — peak weekday
-          3: 1?.25, // Wednesday — highest engagement day
-          4: 1?.2, // Thursday
-          5: 1?.05, // Friday
-          6: 0?.85, // Saturday
+          0: 0.8, // Sunday — Twitter audience offline
+          1: 1.1, // Monday — back-to-work conversations
+          2: 1.18, // Tuesday — peak weekday
+          3: 1.25, // Wednesday — highest engagement day
+          4: 1.2, // Thursday
+          5: 1.05, // Friday
+          6: 0.85, // Saturday
         },
         optimalWindows: [
           { day: 1, startHour: 9, endHour: 12, score: 88 }, // Monday morning
@@ -262,39 +262,39 @@ class TimingOptimizerService {
         // Facebook: older demographic (25-45) so business hours + evening
         // Music content does well on Friday/Saturday; organic reach lowest Mon-Tue
         hourlyMultipliers: {
-          0: 0?.32,
-          1: 0?.2,
-          2: 0?.15,
-          3: 0?.1,
-          4: 0?.15,
-          5: 0?.28,
-          6: 0?.48,
-          7: 0?.68,
-          8: 0?.82,
-          9: 0?.98,
-          10: 1?.1,
-          11: 1?.18,
-          12: 1?.25,
-          13: 1?.2,
-          14: 1?.15,
-          15: 1?.1,
-          16: 1?.08,
-          17: 1?.12,
-          18: 1?.18,
-          19: 1?.22,
-          20: 1?.18,
-          21: 1?.1,
-          22: 0?.85,
-          23: 0?.52,
+          0: 0.32,
+          1: 0.2,
+          2: 0.15,
+          3: 0.1,
+          4: 0.15,
+          5: 0.28,
+          6: 0.48,
+          7: 0.68,
+          8: 0.82,
+          9: 0.98,
+          10: 1.1,
+          11: 1.18,
+          12: 1.25,
+          13: 1.2,
+          14: 1.15,
+          15: 1.1,
+          16: 1.08,
+          17: 1.12,
+          18: 1.18,
+          19: 1.22,
+          20: 1.18,
+          21: 1.1,
+          22: 0.85,
+          23: 0.52,
         },
         dayMultipliers: {
-          0: 1?.02,
-          1: 0?.92,
-          2: 0?.98,
-          3: 1?.12,
-          4: 1?.18,
-          5: 1?.08,
-          6: 1?.05,
+          0: 1.02,
+          1: 0.92,
+          2: 0.98,
+          3: 1.12,
+          4: 1.18,
+          5: 1.08,
+          6: 1.05,
         },
         optimalWindows: [
           { day: 3, startHour: 12, endHour: 15, score: 90 }, // Wednesday lunch
@@ -307,39 +307,39 @@ class TimingOptimizerService {
         // LinkedIn: strictly business hours; Tue-Thu peak; weekends near-zero
         // Music artists using LinkedIn for industry networking: focus on B2B hours
         hourlyMultipliers: {
-          0: 0?.08,
-          1: 0?.04,
-          2: 0?.02,
-          3: 0?.02,
-          4: 0?.04,
-          5: 0?.18,
-          6: 0?.48,
-          7: 0?.82,
-          8: 1?.28,
-          9: 1?.52,
-          10: 1?.58,
-          11: 1?.5,
-          12: 1?.38,
-          13: 1?.28,
-          14: 1?.18,
-          15: 1?.05,
-          16: 0?.95,
-          17: 0?.82,
-          18: 0?.62,
-          19: 0?.42,
-          20: 0?.28,
-          21: 0?.18,
-          22: 0?.12,
-          23: 0?.08,
+          0: 0.08,
+          1: 0.04,
+          2: 0.02,
+          3: 0.02,
+          4: 0.04,
+          5: 0.18,
+          6: 0.48,
+          7: 0.82,
+          8: 1.28,
+          9: 1.52,
+          10: 1.58,
+          11: 1.5,
+          12: 1.38,
+          13: 1.28,
+          14: 1.18,
+          15: 1.05,
+          16: 0.95,
+          17: 0.82,
+          18: 0.62,
+          19: 0.42,
+          20: 0.28,
+          21: 0.18,
+          22: 0.12,
+          23: 0.08,
         },
         dayMultipliers: {
-          0: 0?.35, // Sunday — near-dead
-          1: 1?.22, // Monday — professionals catch up
-          2: 1?.38, // Tuesday — peak day
-          3: 1?.42, // Wednesday — highest engagement
-          4: 1?.35, // Thursday
-          5: 1?.02, // Friday — winding down
-          6: 0?.4, // Saturday — minimal
+          0: 0.35, // Sunday — near-dead
+          1: 1.22, // Monday — professionals catch up
+          2: 1.38, // Tuesday — peak day
+          3: 1.42, // Wednesday — highest engagement
+          4: 1.35, // Thursday
+          5: 1.02, // Friday — winding down
+          6: 0.4, // Saturday — minimal
         },
         optimalWindows: [
           { day: 1, startHour: 8, endHour: 9, score: 88 }, // Monday early AM
@@ -356,39 +356,39 @@ class TimingOptimizerService {
       // Hourly multipliers reflect when listeners are most active on platform.
       spotify: {
         hourlyMultipliers: {
-          0: 0?.4,
-          1: 0?.28,
-          2: 0?.2,
-          3: 0?.15,
-          4: 0?.2,
-          5: 0?.38,
-          6: 0?.55,
-          7: 0?.72,
-          8: 0?.85,
-          9: 0?.95,
-          10: 1?.05,
-          11: 1?.12,
-          12: 1?.2,
-          13: 1?.18,
-          14: 1?.15,
-          15: 1?.2,
-          16: 1?.3,
-          17: 1?.45,
-          18: 1?.55,
-          19: 1?.62,
-          20: 1?.6,
-          21: 1?.48,
-          22: 1?.25,
-          23: 0?.82,
+          0: 0.4,
+          1: 0.28,
+          2: 0.2,
+          3: 0.15,
+          4: 0.2,
+          5: 0.38,
+          6: 0.55,
+          7: 0.72,
+          8: 0.85,
+          9: 0.95,
+          10: 1.05,
+          11: 1.12,
+          12: 1.2,
+          13: 1.18,
+          14: 1.15,
+          15: 1.2,
+          16: 1.3,
+          17: 1.45,
+          18: 1.55,
+          19: 1.62,
+          20: 1.6,
+          21: 1.48,
+          22: 1.25,
+          23: 0.82,
         },
         dayMultipliers: {
-          0: 1?.1, // Sunday — heavy listening day
-          1: 0?.88, // Monday — editorial submission deadline (pitch by now)
-          2: 0?.9, // Tuesday — editorial submission deadline (last day to pitch)
-          3: 0?.95, // Wednesday
-          4: 1?.05, // Thursday — pre-release anticipation builds
-          5: 1?.5, // Friday — New Music Friday; highest new release traffic
-          6: 1?.25, // Saturday — continued NMF listening; discovery continues
+          0: 1.1, // Sunday — heavy listening day
+          1: 0.88, // Monday — editorial submission deadline (pitch by now)
+          2: 0.9, // Tuesday — editorial submission deadline (last day to pitch)
+          3: 0.95, // Wednesday
+          4: 1.05, // Thursday — pre-release anticipation builds
+          5: 1.5, // Friday — New Music Friday; highest new release traffic
+          6: 1.25, // Saturday — continued NMF listening; discovery continues
         },
         optimalWindows: [
           { day: 5, startHour: 0, endHour: 6, score: 98 }, // Friday midnight — Release goes live; NMF boost
@@ -403,39 +403,39 @@ class TimingOptimizerService {
       // New Music Friday is also the primary release window
       apple_music: {
         hourlyMultipliers: {
-          0: 0?.38,
-          1: 0?.25,
-          2: 0?.18,
-          3: 0?.12,
-          4: 0?.18,
-          5: 0?.35,
-          6: 0?.52,
-          7: 0?.7,
-          8: 0?.82,
-          9: 0?.92,
-          10: 1?.02,
-          11: 1?.1,
-          12: 1?.18,
-          13: 1?.15,
-          14: 1?.12,
-          15: 1?.18,
-          16: 1?.28,
-          17: 1?.42,
-          18: 1?.52,
-          19: 1?.58,
-          20: 1?.55,
-          21: 1?.42,
-          22: 1?.2,
-          23: 0?.78,
+          0: 0.38,
+          1: 0.25,
+          2: 0.18,
+          3: 0.12,
+          4: 0.18,
+          5: 0.35,
+          6: 0.52,
+          7: 0.7,
+          8: 0.82,
+          9: 0.92,
+          10: 1.02,
+          11: 1.1,
+          12: 1.18,
+          13: 1.15,
+          14: 1.12,
+          15: 1.18,
+          16: 1.28,
+          17: 1.42,
+          18: 1.52,
+          19: 1.58,
+          20: 1.55,
+          21: 1.42,
+          22: 1.2,
+          23: 0.78,
         },
         dayMultipliers: {
-          0: 1?.08,
-          1: 0?.9,
-          2: 0?.9,
-          3: 0?.95,
-          4: 1?.02,
-          5: 1?.48,
-          6: 1?.22,
+          0: 1.08,
+          1: 0.9,
+          2: 0.9,
+          3: 0.95,
+          4: 1.02,
+          5: 1.48,
+          6: 1.22,
         },
         optimalWindows: [
           { day: 5, startHour: 0, endHour: 6, score: 97 }, // Friday midnight — release live
@@ -449,39 +449,39 @@ class TimingOptimizerService {
       // Community is night-owl musicians and fans; peak hours are later than other platforms
       soundcloud: {
         hourlyMultipliers: {
-          0: 0?.75,
-          1: 0?.55,
-          2: 0?.38,
-          3: 0?.25,
-          4: 0?.22,
-          5: 0?.28,
-          6: 0?.38,
-          7: 0?.48,
-          8: 0?.55,
-          9: 0?.62,
-          10: 0?.72,
-          11: 0?.82,
-          12: 0?.92,
-          13: 0?.95,
-          14: 1?.0,
-          15: 1?.05,
-          16: 1?.12,
-          17: 1?.2,
-          18: 1?.3,
-          19: 1?.42,
-          20: 1?.52,
-          21: 1?.58,
-          22: 1?.48,
-          23: 1?.12,
+          0: 0.75,
+          1: 0.55,
+          2: 0.38,
+          3: 0.25,
+          4: 0.22,
+          5: 0.28,
+          6: 0.38,
+          7: 0.48,
+          8: 0.55,
+          9: 0.62,
+          10: 0.72,
+          11: 0.82,
+          12: 0.92,
+          13: 0.95,
+          14: 1.0,
+          15: 1.05,
+          16: 1.12,
+          17: 1.2,
+          18: 1.3,
+          19: 1.42,
+          20: 1.52,
+          21: 1.58,
+          22: 1.48,
+          23: 1.12,
         },
         dayMultipliers: {
-          0: 1?.2, // Sunday — highest discovery day
-          1: 0?.88, // Monday
-          2: 0?.92, // Tuesday
-          3: 0?.98, // Wednesday
-          4: 1?.08, // Thursday
-          5: 1?.25, // Friday — second highest; music community active
-          6: 1?.3, // Saturday — peak day overall
+          0: 1.2, // Sunday — highest discovery day
+          1: 0.88, // Monday
+          2: 0.92, // Tuesday
+          3: 0.98, // Wednesday
+          4: 1.08, // Thursday
+          5: 1.25, // Friday — second highest; music community active
+          6: 1.3, // Saturday — peak day overall
         },
         optimalWindows: [
           { day: 5, startHour: 20, endHour: 23, score: 92 }, // Friday late evening
@@ -522,7 +522,7 @@ class TimingOptimizerService {
     "Africa/Johannesburg": 2,
     "Asia/Dubai": 4,
     "Asia/Karachi": 5,
-    "Asia/Kolkata": 5?.5,
+    "Asia/Kolkata": 5.5,
     "Asia/Dhaka": 6,
     "Asia/Bangkok": 7,
     "Asia/Jakarta": 7,
@@ -552,7 +552,7 @@ class TimingOptimizerService {
     try {
       const _now = new Date();
       // Use Intl to format in the target timezone, extracting the GMT offset
-      const _formatter = new Intl?.DateTimeFormat("en-US", {
+      const _formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
         hour: "numeric",
         hour12: false,
@@ -627,8 +627,8 @@ class TimingOptimizerService {
         // Adjust for timezone: content posted at local `hour` = UTC `hour - tzOffset`
         const _utcHour = (((hour - tzOffset) % 24) + 24) % 24;
         const _hourMultiplier =
-          platformData?.hourlyMultipliers[Math?.round(utcHour)] ?? 1?.0;
-        const _dayMultiplier = platformData?.dayMultipliers[day] ?? 1?.0;
+          platformData?.hourlyMultipliers[Math?.round(utcHour)] ?? 1.0;
+        const _dayMultiplier = platformData?.dayMultipliers[day] ?? 1.0;
 
         // Base score from multipliers
         const _baseScore = hourMultiplier * dayMultiplier * 52;
@@ -637,7 +637,7 @@ class TimingOptimizerService {
         const _windowMatch = platformData?.optimalWindows.find(
           (w) => w?.day === day && hour >= w?.startHour && hour <= w?.endHour,
         );
-        const _windowBonus = windowMatch ? (windowMatch?.score - 70) * 0?.5 : 0;
+        const _windowBonus = windowMatch ? (windowMatch?.score - 70) * 0.5 : 0;
 
         // Competition penalty — smarter than flat penalty
         const _competitionPenalty = this?.estimateCompetition(
@@ -645,7 +645,7 @@ class TimingOptimizerService {
           hour,
           platform,
         );
-        const _competitionScore = baseScore - competitionPenalty * 3?.5;
+        const _competitionScore = baseScore - competitionPenalty * 3.5;
 
         const _finalScore = Math?.min(
           100,
@@ -762,13 +762,13 @@ class TimingOptimizerService {
       const _platformData =
         this?.platformEngagement[platform] || this?.platformEngagement.instagram;
       for (let h = 0; h < 24; h++) {
-        const _jitter = 0?.9 + Math?.random() * 0?.2; // ±10% noise
+        const _jitter = 0.9 + Math?.random() * 0.2; // ±10% noise
         engagementByHour[h] = [
           platformData?.hourlyMultipliers[h] * 100 * jitter,
         ];
       }
       for (let d = 0; d < 7; d++) {
-        const _jitter = 0?.9 + Math?.random() * 0?.2;
+        const _jitter = 0.9 + Math?.random() * 0.2;
         engagementByDay[d] = [platformData?.dayMultipliers[d] * 100 * jitter];
       }
     }
@@ -873,8 +873,8 @@ class TimingOptimizerService {
           this?.platformEngagement[platform] ||
           this?.platformEngagement.instagram;
         const _baseEngagement =
-          (platformData?.hourlyMultipliers[hour] || 0?.5) *
-          (platformData?.dayMultipliers[day] || 1?.0);
+          (platformData?.hourlyMultipliers[hour] || 0.5) *
+          (platformData?.dayMultipliers[day] || 1.0);
         const _opportunity = Math?.min(95, Math?.round(baseEngagement * 65));
 
         optimalGaps?.push({ dayOfWeek: day, hour, opportunity });

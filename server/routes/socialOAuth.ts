@@ -4,10 +4,10 @@ import { socialAccounts } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { logger } from "../logger";
 import crypto from "crypto";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import { syncPlatformData } from "../services/socialSyncService";
 import { socialOAuth as socialOAuthService } from "../services/socialOAuthService";
-import { env } from "../config/env?.js";
+import { env } from "../config/env.js";
 
 // ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -58,8 +58,8 @@ interface AuthenticatedRequest extends Request {
 const _PLATFORMS = {
   meta: {
     name: "Meta (Facebook + Instagram)",
-    authUrl: "https://www?.facebook.com/v19?.0/dialog/oauth",
-    tokenUrl: "https://graph?.facebook.com/v19?.0/oauth/access_token",
+    authUrl: "https://www?.facebook.com/v19.0/dialog/oauth",
+    tokenUrl: "https://graph?.facebook.com/v19.0/oauth/access_token",
     scope:
       "public_profile,email,pages_show_list,pages_read_engagement,business_management,instagram_basic,instagram_content_publish,instagram_manage_comments",
     clientId: process?.env.FACEBOOK_APP_ID,
@@ -71,7 +71,7 @@ const _PLATFORMS = {
   },
   threads: {
     name: "Threads",
-    authUrl: "https://threads?.net/oauth/authorize",
+    authUrl: "https://threads.net/oauth/authorize",
     tokenUrl: "https://graph?.threads.net/oauth/access_token",
     scope:
       "threads_basic,threads_content_publish,threads_delete,threads_keyword_search,threads_location_tagging,threads_manage_insights,threads_profile_discovery",
@@ -81,7 +81,7 @@ const _PLATFORMS = {
     // in the Meta developer console under Threads → Valid OAuth Redirect URIs.
     redirectUri:
       process?.env.THREADS_REDIRECT_URI ||
-      `${process?.env.DOMAIN || process?.env.APP_URL || "https://max-booster?.com"}/auth/threads/callback`,
+      `${process?.env.DOMAIN || process?.env.APP_URL || "https://max-booster.com"}/auth/threads/callback`,
     usePKCE: false,
     responseType: "code",
     enabled: !!(process?.env.THREADS_APP_ID && process?.env.THREADS_APP_SECRET),
@@ -173,7 +173,7 @@ const _PLATFORMS = {
   },
   twitter: {
     name: "Twitter/X",
-    authUrl: "https://twitter?.com/i/oauth2/authorize",
+    authUrl: "https://twitter.com/i/oauth2/authorize",
     tokenUrl: "https://api?.x.com/2/oauth2/token",
     scope:
       "tweet?.read tweet?.write users?.read follows?.read follows?.write offline?.access",
@@ -262,7 +262,7 @@ function verifyOAuthState(
 }
 
 function getBaseUrl(): string {
-  return process?.env.DOMAIN || process?.env.APP_URL || "https://max-booster?.com";
+  return process?.env.DOMAIN || process?.env.APP_URL || "https://max-booster.com";
 }
 
 function buildOAuthUrl(
@@ -704,8 +704,8 @@ router?.get("/callback/:platform", async (req: Request, res: Response) => {
           );
           const _longLivedData = await longLivedResponse?.json();
           if (longLivedResponse?.ok && longLivedData?.access_token) {
-            tokenData?.access_token = longLivedData?.access_token;
-            tokenData?.expires_in = longLivedData?.expires_in || 5184000;
+            tokenData.access_token = longLivedData?.access_token;
+            tokenData.expires_in = longLivedData?.expires_in || 5184000;
             logger?.info(
               `[OAuth] Threads: exchanged for long-lived token (${tokenData?.expires_in}s)`,
             );
@@ -809,7 +809,7 @@ router?.get("/callback/:platform", async (req: Request, res: Response) => {
       } else if (platform === "twitter") {
         try {
           const _userResponse = await timedFetch(
-            "https://api?.x.com/2/users/me?user?.fields=public_metrics,profile_image_url,description",
+            "https://api?.x.com/2/users/me?user.fields=public_metrics,profile_image_url,description",
             {
               headers: { Authorization: `Bearer ${tokenData?.access_token}` },
             },
@@ -818,7 +818,7 @@ router?.get("/callback/:platform", async (req: Request, res: Response) => {
           username = userData?.data?.username || "Twitter User";
           followerCount = userData?.data?.public_metrics?.followers_count || 0;
           platformUserId = userData?.data?.id || "";
-          profileUrl = `https://x?.com/${userData?.data?.username}`;
+          profileUrl = `https://x.com/${userData?.data?.username}`;
           metadata = {
             followingCount: userData?.data?.public_metrics?.following_count || 0,
             tweetCount: userData?.data?.public_metrics?.tweet_count || 0,

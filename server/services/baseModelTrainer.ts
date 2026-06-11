@@ -1,14 +1,14 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   SocialMediaAutopilotAI,
   type SocialPost,
-} from "../../shared/ml/models/SocialMediaAutopilotAI?.js";
+} from "../../shared/ml/models/SocialMediaAutopilotAI.js";
 import {
   AdvertisingAutopilotAI_v3,
   type OrganicCampaign,
-} from "../../shared/ml/models/AdvertisingAutopilotAI_v3?.js";
-import { ORGANIC_AS_ADS_PATTERNS, PAID_AD_BENCHMARKS, ENGAGEMENT_PREDICTION_FEATURES, GENRE_VIRAL_HOOKS, PLATFORM_CONTENT_SCRIPTS, CALL_TO_ACTION_LIBRARY, EMOTIONAL_TRIGGER_PATTERNS, VIDEO_CONTENT_TRAINING_PACK, getHashtagsForGenre } from "../../shared/ml/training/musicIndustryTrainingData?.js";
-import { modelWeightStorage } from "./modelWeightStorage?.js";
+} from "../../shared/ml/models/AdvertisingAutopilotAI_v3.js";
+import { ORGANIC_AS_ADS_PATTERNS, PAID_AD_BENCHMARKS, ENGAGEMENT_PREDICTION_FEATURES, GENRE_VIRAL_HOOKS, PLATFORM_CONTENT_SCRIPTS, CALL_TO_ACTION_LIBRARY, EMOTIONAL_TRIGGER_PATTERNS, VIDEO_CONTENT_TRAINING_PACK, getHashtagsForGenre } from "../../shared/ml/training/musicIndustryTrainingData.js";
+import { modelWeightStorage } from "./modelWeightStorage.js";
 
 const _PLATFORMS = ["instagram", "tiktok", "twitter", "youtube", "facebook"];
 const MEDIA_TYPES: Array<"text" | "image" | "video" | "carousel"> = [
@@ -40,7 +40,7 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const _platform = pick(PLATFORMS);
     const _mediaType = pick(MEDIA_TYPES);
     const _peakHours = temporalFactors?.hourOfDay.peakHours;
-    const _isPeak = Math?.random() > 0?.4;
+    const _isPeak = Math?.random() > 0.4;
     const _hour = isPeak ? pick(peakHours) : randInt(0, 23);
     const _postedAt = new Date(Date?.now() - randInt(0, 90) * 24 * 3600 * 1000);
     postedAt?.setHours(hour);
@@ -52,9 +52,9 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const _emojiCount = randInt(0, 5);
     const _mentionCount = randInt(0, 3);
     const _contentLength = randInt(60, 280);
-    const _hasCallToAction = Math?.random() > 0?.4;
+    const _hasCallToAction = Math?.random() > 0.4;
 
-    const _isNewRelease = Math?.random() > 0?.7;
+    const _isNewRelease = Math?.random() > 0.7;
     const _mediaMultiplier =
       mediaType === "video"
         ? contentFactors?.mediaPresence.videoMultiplier
@@ -64,15 +64,15 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const _releaseMultiplier = isNewRelease
       ? musicFactors?.newRelease.multiplier
       : 1;
-    const _peakMultiplier = isPeak ? 1?.6 : 0?.7;
+    const _peakMultiplier = isPeak ? 1.6 : 0.7;
 
     const _baseEngagement = rand(200, 5000);
     const _engagement = Math?.round(
       baseEngagement * mediaMultiplier * releaseMultiplier * peakMultiplier,
     );
     const _reach = Math?.round(engagement * rand(8, 25));
-    const _likes = Math?.round(engagement * rand(0?.6, 0?.8));
-    const _comments = Math?.round(engagement * rand(0?.1, 0?.2));
+    const _likes = Math?.round(engagement * rand(0.6, 0.8));
+    const _comments = Math?.round(engagement * rand(0.1, 0.2));
     const _shares = engagement - likes - comments;
 
     posts?.push({
@@ -111,18 +111,18 @@ function makeSyntheticCampaigns(count: number): OrganicCampaign[] {
       hourOfDay >= 10 && hourOfDay <= 20 && dayOfWeek >= 2 && dayOfWeek <= 5;
 
     const _impressions = randInt(500, 50000);
-    const _reach = Math?.round(impressions * rand(0?.6, 0?.9));
-    const _organicReach = Math?.round(reach * rand(0?.7, 1));
-    const _likes = Math?.round(impressions * rand(0?.02, 0?.12));
-    const _comments = Math?.round(impressions * rand(0?.005, 0?.03));
-    const _shares = Math?.round(impressions * rand(0?.001, 0?.02));
-    const _saves = Math?.round(impressions * rand(0?.005, 0?.04));
+    const _reach = Math?.round(impressions * rand(0.6, 0.9));
+    const _organicReach = Math?.round(reach * rand(0.7, 1));
+    const _likes = Math?.round(impressions * rand(0.02, 0.12));
+    const _comments = Math?.round(impressions * rand(0.005, 0.03));
+    const _shares = Math?.round(impressions * rand(0.001, 0.02));
+    const _saves = Math?.round(impressions * rand(0.005, 0.04));
     const _engagement = likes + comments + shares + saves;
-    const _clicks = Math?.round(impressions * rand(0?.01, 0?.05));
-    const _conversions = Math?.round(clicks * rand(0?.02, 0?.15));
+    const _clicks = Math?.round(impressions * rand(0.01, 0.05));
+    const _conversions = Math?.round(clicks * rand(0.02, 0.15));
     const _engagementRate = engagement / Math?.max(impressions, 1);
     const _viralCoefficient = shares / Math?.max(impressions, 1);
-    const _wentViral = viralCoefficient > 0?.01;
+    const _wentViral = viralCoefficient > 0.01;
 
     campaigns?.push({
       campaignId: `synth_campaign_${i}`,
@@ -154,19 +154,19 @@ function makeSyntheticCampaigns(count: number): OrganicCampaign[] {
         conversions,
         engagementRate,
         viralCoefficient,
-        authenticityScore: rand(0?.6, 1),
+        authenticityScore: rand(0.6, 1),
       },
       algorithms: {
         engagementVelocity: engagement / 24,
         algorithmicBoost: rand(1, 4),
-        decayRate: rand(0?.05, 0?.3),
+        decayRate: rand(0.05, 0.3),
         peakEngagementTime: randInt(2, 12),
       },
       audience: {
         segmentIds: [`seg_${randInt(0, 5)}`],
         demographicsReached: {
-          "18-24": rand(0?.3, 0?.6),
-          "25-34": rand(0?.2, 0?.4),
+          "18-24": rand(0.3, 0.6),
+          "25-34": rand(0.2, 0.4),
         },
         influencersEngaged: [],
         networkPropagation: rand(1, 3),
@@ -216,33 +216,33 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
     const _isOptimalTime = true; // organic-as-ads always posts at optimal time
 
     // Organic-as-ads has high algorithmicBoost because content is engineered to trigger it
-    const _algoBoost = rand(2?.5, 9?.5);
+    const _algoBoost = rand(2.5, 9.5);
 
     // Algorithm-triggered impressions: organic reach * boost
     const _baseReach = randInt(800, 15000);
     const _boostedReach = Math?.round(baseReach * algoBoost);
-    const _impressions = Math?.round(boostedReach * rand(1?.1, 1?.6));
+    const _impressions = Math?.round(boostedReach * rand(1.1, 1.6));
     const _organicReach = boostedReach; // 100% organic — no paid promotion
     const _reach = organicReach;
 
     // High save/share rates are what trigger the algorithm (these are the "spend")
-    const _saves = Math?.round(impressions * rand(0?.04, 0?.12)); // above Explore threshold
-    const _shares = Math?.round(impressions * rand(0?.02, 0?.06)); // above viral threshold
-    const _likes = Math?.round(impressions * rand(0?.05, 0?.18));
-    const _comments = Math?.round(impressions * rand(0?.01, 0?.04));
+    const _saves = Math?.round(impressions * rand(0.04, 0.12)); // above Explore threshold
+    const _shares = Math?.round(impressions * rand(0.02, 0.06)); // above viral threshold
+    const _likes = Math?.round(impressions * rand(0.05, 0.18));
+    const _comments = Math?.round(impressions * rand(0.01, 0.04));
     const _engagement = likes + comments + shares + saves;
-    const _clicks = Math?.round(impressions * rand(0?.03, 0?.08));
+    const _clicks = Math?.round(impressions * rand(0.03, 0.08));
     const _engagementRate = engagement / Math?.max(impressions, 1);
 
     // Viral coefficient: shares/impressions — higher than paid because content spreads authentically
     const _viralCoefficient = shares / Math?.max(impressions, 1);
-    const _wentViral = viralCoefficient > 0?.015;
+    const _wentViral = viralCoefficient > 0.015;
 
     // Conversions: organic converts better (higher trust) than paid
     const _organicCVR =
       PAID_AD_BENCHMARKS?.performanceVsOrganic.conversionComparison?.organicCVR;
     const _conversions = Math?.round(
-      clicks * rand(organicCVR * 0?.7, organicCVR * 1?.4),
+      clicks * rand(organicCVR * 0.7, organicCVR * 1.4),
     );
 
     // Funnel stage determines content type and CTA pattern
@@ -255,10 +255,10 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
           : "Discover";
 
     // Engagement velocity (engagement in first 24h / 24) — high velocity = algo trigger
-    const _engagementVelocity = (engagement * rand(0?.7, 0?.95)) / 24;
+    const _engagementVelocity = (engagement * rand(0.7, 0.95)) / 24;
 
     // Network propagation > 2 means content spread beyond immediate followers
-    const _networkPropagation = rand(1?.8, 4?.5);
+    const _networkPropagation = rand(1.8, 4.5);
 
     campaigns?.push({
       campaignId: `organic_ads_${i}_${funnelStage}`,
@@ -296,19 +296,19 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
         conversions,
         engagementRate,
         viralCoefficient,
-        authenticityScore: rand(0?.82, 1?.0), // organic scores higher authenticity than paid
+        authenticityScore: rand(0.82, 1.0), // organic scores higher authenticity than paid
       },
       algorithms: {
         engagementVelocity,
         algorithmicBoost: algoBoost,
-        decayRate: rand(0?.03, 0?.18), // organic decays slower — saves/bookmarks extend reach
+        decayRate: rand(0.03, 0.18), // organic decays slower — saves/bookmarks extend reach
         peakEngagementTime: randInt(4, 18),
       },
       audience: {
         segmentIds: [`organic_seg_${randInt(0, 7)}`],
         demographicsReached: {
-          "18-24": rand(0?.35, 0?.65),
-          "25-34": rand(0?.2, 0?.4),
+          "18-24": rand(0.35, 0.65),
+          "25-34": rand(0.2, 0.4),
         },
         influencersEngaged: [],
         networkPropagation,
@@ -356,7 +356,7 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
   const _tiktokBenchmarks = PAID_AD_BENCHMARKS?.platformMetrics.tiktok_ads;
 
   for (let i = 0; i < count; i++) {
-    const _isPrimarilyInstagram = Math?.random() > 0?.4;
+    const _isPrimarilyInstagram = Math?.random() > 0.4;
     const _campaignType = pick(campaignTypes);
     const _mediaType = pick(mediaMix);
     const _hourOfDay = randInt(8, 22);
@@ -384,7 +384,7 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
           instaBenchmarks?.frequencyOptimal.max,
         ),
     );
-    const _organicReach = Math?.round(reach * rand(0?.05, 0?.2)); // paid campaigns get minimal organic lift
+    const _organicReach = Math?.round(reach * rand(0.05, 0.2)); // paid campaigns get minimal organic lift
 
     // CTR from benchmarks
     const _avgCTR =
@@ -393,17 +393,17 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
         : mediaType === "carousel"
           ? instaBenchmarks?.avgCTR.carousel
           : instaBenchmarks?.avgCTR.image;
-    const _clicks = Math?.round(impressions * (avgCTR + rand(-0?.01, 0?.01)));
+    const _clicks = Math?.round(impressions * (avgCTR + rand(-0.01, 0.01)));
 
     // CVR from benchmarks — paid audience is colder than organic
     const _avgCVR = instaBenchmarks?.avgCVR.coldAudience;
-    const _conversions = Math?.round(clicks * rand(avgCVR * 0?.5, avgCVR * 1?.5));
+    const _conversions = Math?.round(clicks * rand(avgCVR * 0.5, avgCVR * 1.5));
 
     // Engagement metrics — paid gets lower authentic engagement
-    const _likes = Math?.round(impressions * rand(0?.01, 0?.06));
-    const _comments = Math?.round(impressions * rand(0?.002, 0?.015));
-    const _shares = Math?.round(impressions * rand(0?.001, 0?.008)); // paid rarely goes viral organically
-    const _saves = Math?.round(impressions * rand(0?.002, 0?.02));
+    const _likes = Math?.round(impressions * rand(0.01, 0.06));
+    const _comments = Math?.round(impressions * rand(0.002, 0.015));
+    const _shares = Math?.round(impressions * rand(0.001, 0.008)); // paid rarely goes viral organically
+    const _saves = Math?.round(impressions * rand(0.002, 0.02));
     const _engagement = likes + comments + shares + saves;
     const _engagementRate = engagement / Math?.max(impressions, 1);
     const _viralCoefficient = shares / Math?.max(impressions, 1);
@@ -438,25 +438,25 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
         conversions,
         engagementRate,
         viralCoefficient,
-        authenticityScore: rand(0?.25, 0?.55), // paid engagement is less authentic
+        authenticityScore: rand(0.25, 0.55), // paid engagement is less authentic
       },
       algorithms: {
         engagementVelocity: engagement / 24,
-        algorithmicBoost: rand(1?.0, 1?.4), // paid ads get minimal organic amplification
-        decayRate: rand(0?.18, 0?.45), // paid content decays fast when budget stops
+        algorithmicBoost: rand(1.0, 1.4), // paid ads get minimal organic amplification
+        decayRate: rand(0.18, 0.45), // paid content decays fast when budget stops
         peakEngagementTime: randInt(1, 6),
       },
       audience: {
         segmentIds: [`paid_cold_${randInt(0, 4)}`],
         demographicsReached: {
-          "18-24": rand(0?.25, 0?.5),
-          "25-34": rand(0?.25, 0?.45),
+          "18-24": rand(0.25, 0.5),
+          "25-34": rand(0.25, 0.45),
         },
         influencersEngaged: [],
-        networkPropagation: rand(1?.0, 1?.5), // paid rarely propagates beyond targeted audience
+        networkPropagation: rand(1.0, 1.5), // paid rarely propagates beyond targeted audience
       },
       objective,
-      wentViral: viralCoefficient > 0?.01,
+      wentViral: viralCoefficient > 0.01,
     });
   }
 
@@ -542,7 +542,7 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
       ...generalCampaigns,
       ...organicAsAdsCampaigns,
       ...paidAdCampaigns,
-    ].sort(() => Math?.random() - 0?.5);
+    ].sort(() => Math?.random() - 0.5);
 
     logger?.info(
       `[BaseTrainer] Training Advertising Autopilot on ${allCampaigns?.length} total campaigns across 3 datasets...`,
@@ -562,7 +562,7 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
     const _state = model?.serializeMetadata ? model?.serializeMetadata() : null;
     await modelWeightStorage?.save("advertising_base", {
       trainedAt: new Date().toISOString(),
-      version: "2?.0",
+      version: "2.0",
       datasets: {
         generalCampaigns: 200,
         organicAsAdsCampaigns: 250,
@@ -574,7 +574,7 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
     });
 
     logger?.info(
-      "[BaseTrainer] Advertising base weights v2?.0 saved to storage bubble — organic-as-ads + paid benchmarks trained",
+      "[BaseTrainer] Advertising base weights v2.0 saved to storage bubble — organic-as-ads + paid benchmarks trained",
     );
     return true;
   } catch (err) {
@@ -592,7 +592,7 @@ async function trainMusicGenerator(): Promise<boolean> {
       "[BaseTrainer] Music generator uses embedded theory data — loading genre taxonomy and BPM ranges...",
     );
     const { AdvancedMusicAI } = await import(
-      "../../shared/ml/audio/AdvancedMusicAI?.js"
+      "../../shared/ml/audio/AdvancedMusicAI.js"
     );
     new AdvancedMusicAI();
     logger?.info(
@@ -812,7 +812,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
       totalScriptSamples;
 
     const _fineTuneWeights = {
-      version: "3?.0-public-datasets",
+      version: "3.0-public-datasets",
       trainedAt: new Date().toISOString(),
       dataSources: {
         youtubeEightM: {
@@ -826,7 +826,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
           type: "audio_engagement_boosts",
         },
         harmonySet: {
-          url: "https://arxiv?.org/html/2502?.12489v2",
+          url: "https://arxiv.org/html/2502.12489v2",
           samples: Object?.keys(harmonyLift).length,
           type: "video_music_alignment_2025",
         },
@@ -841,7 +841,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
           type: "cc_licensed_genre_tags",
         },
         harrisonDataset: {
-          url: "https://github?.com/minstone/HARRISON-Dataset",
+          url: "https://github.com/minstone/HARRISON-Dataset",
           samples: totalHookSamples,
           type: "hashtag_hook_patterns",
         },
@@ -933,7 +933,7 @@ export async function runBaseModelTraining(): Promise<void> {
   // are initialised with MaxCore intelligence wherever possible.
   let maxcoreSynced = 0;
   try {
-    const { syncWeightsNow } = await import("./maxcoreSync?.js");
+    const { syncWeightsNow } = await import("./maxcoreSync.js");
     logger?.info(
       "[BaseTrainer] Requesting weights from MaxCore (primary source)…",
     );
@@ -1021,7 +1021,7 @@ async function trainCreativePlannerBase(): Promise<boolean> {
       return true;
     }
     const { CreativePlannerModel } = await import(
-      "../../shared/ml/models/CreativePlannerModel?.js"
+      "../../shared/ml/models/CreativePlannerModel.js"
     );
     logger?.info(
       "[BaseTrainer] Training CreativePlannerModel (500 synthetic briefs)...",
@@ -1034,7 +1034,7 @@ async function trainCreativePlannerBase(): Promise<boolean> {
     await model?.train(inputs, labels, {
       epochs: 40,
       batchSize: 32,
-      validationSplit: 0?.15,
+      validationSplit: 0.15,
       verbose: false,
       earlyStopping: true,
     });
@@ -1062,7 +1062,7 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
       return true;
     }
     const { BeatSyncAlignmentModel } = await import(
-      "../../shared/ml/models/BeatSyncAlignmentModel?.js"
+      "../../shared/ml/models/BeatSyncAlignmentModel.js"
     );
     logger?.info(
       "[BaseTrainer] Training BeatSyncAlignmentModel (600 synthetic beat sequences)...",
@@ -1075,7 +1075,7 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
     await model?.train(inputs, labels, {
       epochs: 50,
       batchSize: 32,
-      validationSplit: 0?.15,
+      validationSplit: 0.15,
       verbose: false,
       earlyStopping: true,
     });
@@ -1103,7 +1103,7 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
       return true;
     }
     const { VideoCreativeScorer } = await import(
-      "../../shared/ml/models/VideoCreativeScorer?.js"
+      "../../shared/ml/models/VideoCreativeScorer.js"
     );
     logger?.info(
       "[BaseTrainer] Training VideoCreativeScorer (800 synthetic creative packages)...",
@@ -1116,7 +1116,7 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
     await model?.train(inputs, labels, {
       epochs: 60,
       batchSize: 32,
-      validationSplit: 0?.15,
+      validationSplit: 0.15,
       verbose: false,
       earlyStopping: true,
     });
@@ -1144,7 +1144,7 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
       return true;
     }
     const { KeyframeStyleSelector } = await import(
-      "../../shared/ml/models/KeyframeStyleSelector?.js"
+      "../../shared/ml/models/KeyframeStyleSelector.js"
     );
     logger?.info(
       "[BaseTrainer] Training KeyframeStyleSelector (700 synthetic keyframe–style pairs)...",
@@ -1157,7 +1157,7 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
     await model?.train(inputs, labels, {
       epochs: 50,
       batchSize: 32,
-      validationSplit: 0?.15,
+      validationSplit: 0.15,
       verbose: false,
       earlyStopping: true,
     });

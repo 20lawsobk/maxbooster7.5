@@ -190,8 +190,8 @@ export function useFeatureUsage() {
           });
         }
       }
-      activeFeature?.current = featureId;
-      featureStartTime?.current = Date?.now();
+      activeFeature.current = featureId;
+      featureStartTime.current = Date?.now();
       trackFeatureMutation?.mutate({ feature: featureId });
     },
     [trackFeatureMutation],
@@ -204,8 +204,8 @@ export function useFeatureUsage() {
         if (duration > 1000) {
           trackFeatureMutation?.mutate({ feature: featureId, duration });
         }
-        activeFeature?.current = null;
-        featureStartTime?.current = 0;
+        activeFeature.current = null;
+        featureStartTime.current = 0;
       }
     },
     [trackFeatureMutation],

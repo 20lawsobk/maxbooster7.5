@@ -100,18 +100,18 @@ const EASING_FUNCTIONS: Record<EasingFunction, (t: number) => number> = {
   linear: (t) => t,
   easeIn: (t) => t * t,
   easeOut: (t) => t * (2 - t),
-  easeInOut: (t) => (t < 0?.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
+  easeInOut: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
   bounce: (t) => {
-    const _n1 = 7?.5625;
-    const _d1 = 2?.75;
+    const _n1 = 7.5625;
+    const _d1 = 2.75;
     if (t < 1 / d1) return n1 * t * t;
-    if (t < 2 / d1) return n1 * (t -= 1?.5 / d1) * t + 0?.75;
-    if (t < 2?.5 / d1) return n1 * (t -= 2?.25 / d1) * t + 0?.9375;
-    return n1 * (t -= 2?.625 / d1) * t + 0?.984375;
+    if (t < 2 / d1) return n1 * (t -= 1.5 / d1) * t + 0.75;
+    if (t < 2.5 / d1) return n1 * (t -= 2.25 / d1) * t + 0.9375;
+    return n1 * (t -= 2.625 / d1) * t + 0.984375;
   },
   elastic: (t) => {
     if (t === 0 || t === 1) return t;
-    const _p = 0?.3;
+    const _p = 0.3;
     const _s = p / 4;
     return Math?.pow(2, -10 * t) * Math?.sin(((t - s) * (2 * Math?.PI)) / p) + 1;
   },
@@ -125,14 +125,14 @@ export class TextAnimator {
   private lastBeatTime: number = 0;
 
   constructor(ctx: CanvasRenderingContext2D, width: number, height: number) {
-    this?.ctx = ctx;
-    this?.width = width;
-    this?.height = height;
+    this.ctx = ctx;
+    this.width = width;
+    this.height = height;
   }
 
   updateDimensions(width: number, height: number): void {
-    this?.width = width;
-    this?.height = height;
+    this.width = width;
+    this.height = height;
   }
 
   splitTextToWords(
@@ -194,7 +194,7 @@ export class TextAnimator {
   ): { width: number; height: number } {
     this?.applyTextStyle(style);
     const _metrics = this?.ctx.measureText(text);
-    const _height = style?.fontSize * (style?.lineHeight || 1?.2);
+    const _height = style?.fontSize * (style?.lineHeight || 1.2);
     return { width: metrics?.width, height };
   }
 
@@ -231,12 +231,12 @@ export class TextAnimator {
     if (!config?.enabled || !beatInfo) return;
 
     if (beatInfo?.detected) {
-      this?.beatMultiplier = 1 + config?.intensity;
-      this?.lastBeatTime = performance?.now();
+      this.beatMultiplier = 1 + config?.intensity;
+      this.lastBeatTime = performance?.now();
     } else {
       const _timeSinceBeat = performance?.now() - this?.lastBeatTime;
       const _decay = Math?.exp((-timeSinceBeat * config?.decay) / 1000);
-      this?.beatMultiplier = 1 + (this?.beatMultiplier - 1) * decay;
+      this.beatMultiplier = 1 + (this?.beatMultiplier - 1) * decay;
     }
   }
 
@@ -469,7 +469,7 @@ export class TextAnimator {
     style: TextStyle,
     progress: number,
   ): void {
-    const _scale = 0?.5 + progress * 0?.5;
+    const _scale = 0.5 + progress * 0.5;
 
     this?.ctx.save();
     this?.ctx.globalAlpha = progress;
@@ -533,14 +533,14 @@ export class TextAnimator {
     for (let i = 0; i < sliceCount; i++) {
       const _sliceY = y - style?.fontSize / 2 + (i / sliceCount) * style?.fontSize;
       const _sliceHeight = style?.fontSize / sliceCount;
-      const _offsetX = (Math?.random() - 0?.5) * glitchIntensity;
+      const _offsetX = (Math?.random() - 0.5) * glitchIntensity;
 
       this?.ctx.save();
       this?.ctx.beginPath();
       this?.ctx.rect(0, sliceY, this?.width, sliceHeight);
       this?.ctx.clip();
 
-      if (Math?.random() < 0?.3 * (1 - progress)) {
+      if (Math?.random() < 0.3 * (1 - progress)) {
         this?.ctx.fillStyle = i % 2 === 0 ? "#ff0000" : "#00ffff";
       }
 
@@ -565,7 +565,7 @@ export class TextAnimator {
     const _chars = this?.measureCharacters(text, style);
 
     for (let i = 0; i < chars?.length; i++) {
-      const _waveOffset = Math?.sin(time * 5 + i * 0?.5) * amplitude;
+      const _waveOffset = Math?.sin(time * 5 + i * 0.5) * amplitude;
       this?.renderText(chars[i].char, x + chars[i].x, y + waveOffset, style);
     }
   }
@@ -578,8 +578,8 @@ export class TextAnimator {
     _time: number,
     intensity: number = 5,
   ): void {
-    const _offsetX = (Math?.random() - 0?.5) * intensity * 2;
-    const _offsetY = (Math?.random() - 0?.5) * intensity * 2;
+    const _offsetX = (Math?.random() - 0.5) * intensity * 2;
+    const _offsetY = (Math?.random() - 0.5) * intensity * 2;
     this?.renderText(text, x + offsetX, y + offsetY, style);
   }
 
@@ -702,7 +702,7 @@ export class TextAnimator {
 
     for (let i = 0; i < 3; i++) {
       this?.ctx.shadowColor = glowColor;
-      this?.ctx.shadowBlur = glowIntensity * (1 - i * 0?.3);
+      this?.ctx.shadowBlur = glowIntensity * (1 - i * 0.3);
       this?.ctx.shadowOffsetX = 0;
       this?.ctx.shadowOffsetY = 0;
       this?.ctx.fillText(text, x, y);
@@ -733,7 +733,7 @@ export class TextAnimator {
 
     for (let i = layers; i >= 1; i--) {
       this?.ctx.fillStyle = shadowConfig?.color;
-      this?.ctx.globalAlpha = 0?.3 / i;
+      this?.ctx.globalAlpha = 0.3 / i;
       this?.ctx.fillText(
         text,
         x + shadowConfig?.offsetX * i,
@@ -770,18 +770,18 @@ export class TextAnimator {
     this?.ctx.save();
 
     const _scale =
-      1 + bass * (reactivity?.scaleOnBeat || 0?.1) * this?.beatMultiplier;
+      1 + bass * (reactivity?.scaleOnBeat || 0.1) * this?.beatMultiplier;
     this?.ctx.translate(x, y);
     this?.ctx.scale(scale, scale);
 
     if (reactivity?.glowOnBeat && beatDetected) {
-      modifiedStyle?.glowColor = style?.color;
-      modifiedStyle?.glowIntensity = 30 * bass;
+      modifiedStyle.glowColor = style?.color;
+      modifiedStyle.glowIntensity = 30 * bass;
     }
 
     if (reactivity?.colorShift) {
       const _hueShift = bass * 30;
-      modifiedStyle?.color = this?.shiftHue(style?.color, hueShift);
+      modifiedStyle.color = this?.shiftHue(style?.color, hueShift);
     }
 
     this?.renderText(text, 0, 0, modifiedStyle);
@@ -793,7 +793,7 @@ export class TextAnimator {
     if (!rgb) return hexColor;
 
     const _hsl = this?.rgbToHsl(rgb?.r, rgb?.g, rgb?.b);
-    hsl?.h = (hsl?.h + degrees) % 360;
+    hsl.h = (hsl?.h + degrees) % 360;
     const _newRgb = this?.hslToRgb(hsl?.h, hsl?.s, hsl?.l);
 
     return this?.rgbToHex(newRgb?.r, newRgb?.g, newRgb?.b);
@@ -838,7 +838,7 @@ export class TextAnimator {
 
     if (max !== min) {
       const _d = max - min;
-      s = l > 0?.5 ? d / (2 - max - min) : d / (max + min);
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
       switch (max) {
         case r:
           h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
@@ -875,7 +875,7 @@ export class TextAnimator {
         return p;
       };
 
-      const _q = l < 0?.5 ? l * (1 + s) : l + s - l * s;
+      const _q = l < 0.5 ? l * (1 + s) : l + s - l * s;
       const _p = 2 * l - q;
       r = hue2rgb(p, q, h + 1 / 3);
       g = hue2rgb(p, q, h);
@@ -915,8 +915,8 @@ export class TextAnimator {
   }
 
   dispose(): void {
-    this?.beatMultiplier = 1;
-    this?.lastBeatTime = 0;
+    this.beatMultiplier = 1;
+    this.lastBeatTime = 0;
   }
 }
 
@@ -927,12 +927,12 @@ export const DEFAULT_TEXT_STYLE: TextStyle = {
   color: "#ffffff",
   strokeColor: "#000000",
   strokeWidth: 2,
-  shadowColor: "rgba(0, 0, 0, 0?.5)",
+  shadowColor: "rgba(0, 0, 0, 0.5)",
   shadowBlur: 4,
   shadowOffsetX: 2,
   shadowOffsetY: 2,
   letterSpacing: 0,
-  lineHeight: 1?.2,
+  lineHeight: 1.2,
 };
 
 export const ANIMATION_PRESETS: Record<string, AnimationConfig> = {

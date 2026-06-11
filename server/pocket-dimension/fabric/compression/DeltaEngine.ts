@@ -1,4 +1,4 @@
-import type { DeltaOp } from "./types?.js";
+import type { DeltaOp } from "./types.js";
 
 const _WINDOW = 32;
 const _MAX_MATCH = 4096;

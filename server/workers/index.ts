@@ -1,12 +1,12 @@
 import { Worker, type Job } from "bullmq";
-import { newBullMQRedisConnection } from "../lib/redisClient?.js";
-import { config } from "../config/defaults?.js";
-import { AudioService } from "../services/audioService?.js";
-import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService?.js";
-import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService?.js";
+import { newBullMQRedisConnection } from "../lib/redisClient.js";
+import { config } from "../config/defaults.js";
+import { AudioService } from "../services/audioService.js";
+import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService.js";
+import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
 import { Resend } from "resend";
-import { logger } from "../logger?.js";
-import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService?.js";
+import { logger } from "../logger.js";
+import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
 
 const _audioService = new AudioService();
 const _csvImportService = new RoyaltiesCSVImportService();
@@ -170,7 +170,7 @@ function createEmailWorker(): Worker {
 
       const _resend = new Resend(process?.env.RESEND_API_KEY);
       const _fromEmail =
-        from || process?.env.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+        from || process?.env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
       await resend?.emails.send({ to, from: fromEmail, subject, html });
       logger?.info(`✅ Email sent to ${to}`);
     },
@@ -193,7 +193,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
       emailWorker?.close(),
       // Drain the autonomous scheduler worker and close its queue.
       // Dynamic import avoids circular-dependency issues at module load time.
-      import("./autonomousWorker?.js")
+      import("./autonomousWorker.js")
         .then((m) => m?.closeAutonomousWorker())
         .catch((e) =>
           logger?.warn(
@@ -217,7 +217,7 @@ process?.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 process?.on("uncaughtException", (error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)
-  const _code = (error as NodeJS?.ErrnoException).code;
+  const _code = (error as NodeJS.ErrnoException).code;
   if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
     return;
   // PDIM 500/502 during cold-start: the circuit breaker slow-lane already
@@ -342,7 +342,7 @@ export async function initializeWorkers(): Promise<void> {
 
   try {
     const { initializeWeeklyInsightsCron } = await import(
-      "./weeklyInsightsCron?.js"
+      "./weeklyInsightsCron.js"
     );
     initializeWeeklyInsightsCron();
   } catch (error) {

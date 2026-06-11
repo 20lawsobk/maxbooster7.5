@@ -14,8 +14,8 @@ import axios from "axios";
 import { storage } from "../storage";
 import type { Release } from "@shared/schema";
 import { labelSettings } from "@shared/schema";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { randomInt } from "crypto";
 
@@ -70,7 +70,7 @@ export class LabelGridService {
     // Support both JWT token (preferred) and API key/secret authentication
     const _apiToken = process?.env.LABELGRID_API_TOKEN;
 
-    this?.config = {
+    this.config = {
       apiKey: process?.env.LABELGRID_API_KEY || "",
       apiSecret: process?.env.LABELGRID_API_SECRET || "",
       webhookUrl: process?.env.LABELGRID_WEBHOOK_URL,
@@ -80,13 +80,13 @@ export class LabelGridService {
 
     // If JWT token is provided, use it directly (no authentication needed)
     if (apiToken) {
-      this?.authToken = apiToken;
+      this.authToken = apiToken;
       logger?.info(
         "[LABELGRID] Using pre-configured JWT token for authentication",
       );
     }
 
-    this?.apiBaseUrl =
+    this.apiBaseUrl =
       this?.config.environment === "production"
         ? "https://api?.labelgrid.com/v1"
         : "https://sandbox-api?.labelgrid.com/v1";
@@ -116,7 +116,7 @@ export class LabelGridService {
         apiSecret: this?.config.apiSecret,
       });
 
-      this?.authToken = response?.data.token;
+      this.authToken = response?.data.token;
       logger?.info("[LABELGRID] Authentication successful via API key/secret");
     } catch (error) {
       logger?.warn(
@@ -618,8 +618,8 @@ export class LabelGridService {
 
     // 2. Mirror to dsp_analytics so the analytics dashboard shows revenue/streams
     try {
-      const { db } = await import("../db?.js");
-      const { dspAnalytics } = await import("../../shared/schema?.js");
+      const { db } = await import("../db.js");
+      const { dspAnalytics } = await import("../../shared/schema.js");
       const _release = await storage?.getReleaseByDistributionId(releaseId);
       await db?.insert(dspAnalytics).values({
         userId: release?.userId ?? null,

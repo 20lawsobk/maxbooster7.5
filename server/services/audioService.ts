@@ -5,16 +5,16 @@ import fsPromises from "fs/promises";
 import wavefilePkg from "wavefile";
 const _WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
-import { storageService } from "./storageService?.js";
+import { storageService } from "./storageService.js";
 import os from "os";
-import { queueService } from "./queueService?.js";
+import { queueService } from "./queueService.js";
 import type {
   AudioConvertJobData,
   AudioMixJobData,
   AudioJobResult,
-} from "./queueService?.js";
-import { logger } from "../logger?.js";
-import { AUDIO_FORMATS, SAMPLE_RATES, BIT_DEPTHS, FFMPEG_CODECS, validateAudioConfig, type AudioFormat, type SampleRate, type BitDepth } from "../../shared/audioConstants?.js";
+} from "./queueService.js";
+import { logger } from "../logger.js";
+import { AUDIO_FORMATS, SAMPLE_RATES, BIT_DEPTHS, FFMPEG_CODECS, validateAudioConfig, type AudioFormat, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -246,7 +246,7 @@ export class AudioService {
 
       // Read WAV file and extract samples
       const _wavBuffer = await fsPromises?.readFile(tempWavPath);
-      const _wav = new WaveFile?.WaveFile(wavBuffer);
+      const _wav = new WaveFile.WaveFile(wavBuffer);
 
       // Get samples and downsample for visualization
       const _samplesData = wav?.getSamples(true) as Record<string, unknown>;
@@ -649,7 +649,7 @@ export class AudioService {
       // Compute a basic chromagram: for each sample, map its energy to a pitch class
       // using zero-crossing rate as a proxy for dominant frequency.
       // We process the signal in overlapping 50 ms frames.
-      const _frameSize = Math?.max(1, Math?.floor(sampleRate * 0?.05));
+      const _frameSize = Math?.max(1, Math?.floor(sampleRate * 0.05));
       const _hopSize = Math?.floor(frameSize / 2);
       const _A4 = 440;
       const _A4_MIDI = 69;
@@ -667,7 +667,7 @@ export class AudioService {
           rms += waveformData[i] * waveformData[i];
         }
         rms = Math?.sqrt(rms / frameSize);
-        if (rms < 0?.001) continue; // Skip silent frames
+        if (rms < 0.001) continue; // Skip silent frames
 
         // ZCR → approximate frequency
         const _freq = (zcr / 2) * (sampleRate / frameSize);
@@ -687,10 +687,10 @@ export class AudioService {
 
       // 2. Krumhansl-Kessler key profiles
       const _majorProfile = [
-        6?.35, 2?.23, 3?.48, 2?.33, 4?.38, 4?.09, 2?.52, 5?.19, 2?.39, 3?.66, 2?.29, 2?.88,
+        6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88,
       ];
       const _minorProfile = [
-        6?.33, 2?.68, 3?.52, 5?.38, 2?.6, 3?.53, 2?.54, 4?.75, 3?.98, 2?.69, 3?.34, 3?.17,
+        6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17,
       ];
       const _keyNames = [
         "C",
@@ -759,8 +759,8 @@ export class AudioService {
 
   private detectOnsets(waveformData: number[], sampleRate: number): number[] {
     const onsets: number[] = [];
-    const _windowSize = Math?.floor(sampleRate * 0?.02); // 20ms window
-    const _threshold = 0?.1;
+    const _windowSize = Math?.floor(sampleRate * 0.02); // 20ms window
+    const _threshold = 0.1;
 
     for (let i = windowSize; i < waveformData?.length - windowSize; i++) {
       const _current = Math?.abs(waveformData[i]);
@@ -788,10 +788,10 @@ export class AudioService {
 
       logger?.info(`Analyzed tempo for ${filePath}: ${bpm} BPM`);
 
-      return { bpm, confidence: 0?.85 };
+      return { bpm, confidence: 0.85 };
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error analyzing audio tempo:");
-      return { bpm: 120, confidence: 0?.5 };
+      return { bpm: 120, confidence: 0.5 };
     }
   }
 
@@ -809,11 +809,11 @@ export class AudioService {
 
       const _keyProfiles = {
         major: [
-          6?.35, 2?.23, 3?.48, 2?.33, 4?.38, 4?.09, 2?.52, 5?.19, 2?.39, 3?.66, 2?.29,
-          2?.88,
+          6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29,
+          2.88,
         ],
         minor: [
-          6?.33, 2?.68, 3?.52, 5?.38, 2?.6, 3?.53, 2?.54, 4?.75, 3?.98, 2?.69, 3?.34, 3?.17,
+          6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17,
         ],
       };
 
@@ -860,8 +860,8 @@ export class AudioService {
       }
 
       const _confidence = Math?.min(
-        0?.95,
-        Math?.max(0?.5, (bestCorrelation + 1) / 2),
+        0.95,
+        Math?.max(0.5, (bestCorrelation + 1) / 2),
       );
 
       logger?.info(
@@ -871,7 +871,7 @@ export class AudioService {
       return { key: bestKey, scale: bestScale, confidence };
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error detecting audio key:");
-      return { key: "C", scale: "Major", confidence: 0?.5 };
+      return { key: "C", scale: "Major", confidence: 0.5 };
     }
   }
 
@@ -964,18 +964,18 @@ export class AudioService {
             );
             break;
           case "reverb":
-            const _roomSize = effect?.settings?.roomSize || 0?.5;
-            const _damping = effect?.settings?.damping || 0?.5;
-            const _wetLevel = effect?.settings?.wetLevel || 0?.3;
+            const _roomSize = effect?.settings?.roomSize || 0.5;
+            const _damping = effect?.settings?.damping || 0.5;
+            const _wetLevel = effect?.settings?.wetLevel || 0.3;
             audioFilters?.push(
-              `aecho=0?.8:${wetLevel}:${Math?.floor(roomSize * 100)}:${damping}`,
+              `aecho=0.8:${wetLevel}:${Math?.floor(roomSize * 100)}:${damping}`,
             );
             break;
           case "delay":
             const _delayTime = effect?.settings?.time || 500;
-            const _feedback = effect?.settings?.feedback || 0?.3;
+            const _feedback = effect?.settings?.feedback || 0.3;
             audioFilters?.push(
-              `adelay=${delayTime}|${delayTime},aecho=0?.8:${feedback}:${delayTime}:0?.5`,
+              `adelay=${delayTime}|${delayTime},aecho=0.8:${feedback}:${delayTime}:0.5`,
             );
             break;
           case "normalize":
@@ -1039,7 +1039,7 @@ export class AudioService {
   ): Promise<JobResponse> {
     const _tracksData = tracks?.map((track) => ({
       storageKey: track?.filePath || track?.storageKey,
-      volume: track?.volume || 1?.0,
+      volume: track?.volume || 1.0,
     }));
 
     const _job = await queueService?.addAudioJob("mix", {
@@ -1122,7 +1122,7 @@ export class AudioService {
             command?.input(track?.filePath);
 
             // Apply volume/gain if specified (track?.volume should be 0-1, convert to dB)
-            if (track?.volume !== undefined && track?.volume !== 1?.0) {
+            if (track?.volume !== undefined && track?.volume !== 1.0) {
               const _gainDb = 20 * Math?.log10(track?.volume);
               command?.complexFilter([
                 `[${index}:a]volume=${gainDb}dB[a${index}]`,
@@ -1228,7 +1228,7 @@ export class AudioService {
       );
 
       if (masteringSettings?.stereoWidth) {
-        const _width = masteringSettings?.stereoWidth || 1?.0;
+        const _width = masteringSettings?.stereoWidth || 1.0;
         audioFilters?.push(`stereotools=mlev=${width}:slev=${width}`);
       }
 

@@ -7,7 +7,7 @@
  * When the remote is unavailable, callers receive null/empty (no fallback).
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface MaxCoreInferRequest {
   platform?: string;
@@ -57,7 +57,7 @@ export async function maxcoreLocalInfer(
 export function maxcoreLocalHealth() {
   return {
     status: "ok",
-    version: "3?.0.0",
+    version: "3.0.0",
     source: "remote-only",
     engine: "MaxCoreAI-remote",
     uptime: process?.uptime(),

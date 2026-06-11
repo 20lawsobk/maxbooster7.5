@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _router = Router();
 
 const _GITHUB_OWNER = "20lawsobk";
-const _GITHUB_REPO = "maxbooster7?.5";
+const _GITHUB_REPO = "maxbooster7.5";
 const _CACHE_TTL_MS = 5 * 60 * 1000;
 
 interface ReleaseAsset {
@@ -59,7 +59,7 @@ function classifyAsset(asset: {
   if (name?.endsWith(".appimage"))
     return { platform: "linux", type: "appimage" } as const;
   if (name?.endsWith(".deb")) return { platform: "linux", type: "deb" } as const;
-  if (name?.endsWith(".tar?.gz") || name?.endsWith(".tgz"))
+  if (name?.endsWith(".tar.gz") || name?.endsWith(".tgz"))
     return { platform: "linux", type: "tarball" } as const;
   if (name?.endsWith(".apk"))
     return { platform: "android", type: "apk" } as const;
@@ -173,7 +173,7 @@ router?.get("/latest", async (_req, res) => {
       return res?.json({
         available: false,
         message: "No releases found",
-        fallbackUrl: `https://github?.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
+        fallbackUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
       });
     }
 
@@ -201,9 +201,9 @@ router?.get("/latest", async (_req, res) => {
       });
     }
 
-    if (release?.platforms.mac?.dmg || release?.platforms.mac?.zip) {
+    if (release?.platforms.mac?.dmg || release?.platforms.mac.zip) {
       const _primary = release?.platforms.mac?.dmg || release?.platforms.mac?.zip;
-      const _fallback = release?.platforms.mac?.zip || release?.platforms.mac?.dmg;
+      const _fallback = release?.platforms.mac.zip || release?.platforms.mac?.dmg;
       desktopDownloads?.push({
         platform: "macOS",
         downloadUrl: primary!.browser_download_url,
@@ -253,7 +253,7 @@ router?.get("/latest", async (_req, res) => {
           ...(tarball
             ? [
                 {
-                  label: "tar?.gz Archive",
+                  label: "tar.gz Archive",
                   url: tarball?.browser_download_url,
                   name: tarball?.name,
                   size: formatSize(tarball?.size),
@@ -290,7 +290,7 @@ router?.get("/latest", async (_req, res) => {
       version: release?.version,
       publishedAt: release?.published_at,
       releasesPageUrl: release?.html_url,
-      allReleasesUrl: `https://github?.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
+      allReleasesUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
       desktop: desktopDownloads,
       mobile: mobileDownloads,
     });
@@ -299,7 +299,7 @@ router?.get("/latest", async (_req, res) => {
     res?.status(500).json({
       available: false,
       error: "Failed to fetch release information",
-      fallbackUrl: `https://github?.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
+      fallbackUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
     });
   }
 });

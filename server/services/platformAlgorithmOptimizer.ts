@@ -47,7 +47,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -947,10 +947,10 @@ export class PlatformAlgorithmOptimizer {
 
     // Weighted composite — primary signal matters most
     const _score = clamp(
-      primarySignal * 0?.4 +
-        hookStrength * 0?.25 +
-        ctaAlignment * 0?.2 +
-        structureScore * 0?.15,
+      primarySignal * 0.4 +
+        hookStrength * 0.25 +
+        ctaAlignment * 0.2 +
+        structureScore * 0.15,
     );
 
     return {

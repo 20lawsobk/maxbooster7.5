@@ -1,5 +1,5 @@
-import { logger } from "../../logger?.js";
-import { EppSession } from "../epp/index?.js";
+import { logger } from "../../logger.js";
+import { EppSession } from "../epp/index.js";
 import { createHash } from "crypto";
 import type {
   RegistrarProvider,
@@ -10,7 +10,7 @@ import type {
   DomainInfo,
   TransferParams,
   TransferResult,
-} from "./types?.js";
+} from "./types.js";
 
 // ── Config check ──────────────────────────────────────────────────────────────
 
@@ -46,7 +46,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
 
   private async getSession(): Promise<EppSession> {
     if (!this?.session) {
-      this?.session = new EppSession(getEppConfig());
+      this.session = new EppSession(getEppConfig());
     }
     return this?.session;
   }

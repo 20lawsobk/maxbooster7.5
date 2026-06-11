@@ -6,7 +6,7 @@ import {
   releaseScheduledActions,
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type ReleaseStatus =
   | "draft"

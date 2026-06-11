@@ -1,8 +1,8 @@
 import { randomBytes } from "crypto";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { autopilotCrossInsights, AutopilotCrossInsight, socialPatternAggregates, organicAssets, organicChannels } from "@shared/schema";
 import { eq, desc, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface TopHook {
   hookType: string;
@@ -401,7 +401,7 @@ class BridgeInsightsService {
       }
 
       for (const channel of insights?.topChannels) {
-        if (channel?.efficiencyScore > 0?.5) {
+        if (channel?.efficiencyScore > 0.5) {
           if (channel?.channelType === "community") {
             recommendedTones?.push("conversational", "engaging");
           } else if (channel?.channelType === "creator") {

@@ -11,7 +11,7 @@ import {
 } from "./autonomousUpgradeSimulation";
 import fs from "fs";
 import path from "path";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 async function main() {
   logger?.info(
@@ -110,7 +110,7 @@ async function main() {
     // Save to AUTONOMOUS_UPGRADE_VERIFICATION?.md
     const _reportPath = path?.join(
       process?.cwd(),
-      "AUTONOMOUS_UPGRADE_VERIFICATION?.md",
+      "AUTONOMOUS_UPGRADE_VERIFICATION.md",
     );
     fs?.writeFileSync(reportPath, report);
     logger?.info(`✅ Report saved to: ${reportPath}\n`);

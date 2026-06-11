@@ -5,8 +5,8 @@ import * as path from "path";
 import * as fsPromises from "fs/promises";
 import { parseFile } from "music-metadata";
 import * as wav from "node-wav";
-import FFT from "fft?.js";
-import { logger } from "../logger?.js";
+import FFT from "fft.js";
+import { logger } from "../logger.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -364,7 +364,7 @@ export class AIMusicService {
       "preset_retrieval",
       { genre },
       preset,
-      1?.0,
+      1.0,
       5,
     );
 
@@ -392,8 +392,8 @@ export class AIMusicService {
         preset?.mixSettings,
         normalizedIntensity,
       );
-      appliedSettings?.genrePreset = preset?.displayName;
-      appliedSettings?.presetIntensity = intensity;
+      appliedSettings.genrePreset = preset?.displayName;
+      appliedSettings.presetIntensity = intensity;
 
       const _suggestions = await this?.generateMixSuggestions({
         genre,
@@ -466,7 +466,7 @@ export class AIMusicService {
           intensity,
         },
         { appliedSettings, suggestions, outputFilePath },
-        0?.95,
+        0.95,
         processingTime,
       );
 
@@ -526,14 +526,14 @@ export class AIMusicService {
 
     filters?.push(...eqBands);
 
-    const _ratio = Math?.max(1?.5, Math?.min(20, settings?.compression.ratio));
+    const _ratio = Math?.max(1.5, Math?.min(20, settings?.compression.ratio));
     const _threshold = Math?.max(
       -60,
       Math?.min(0, settings?.compression.threshold),
     );
-    const _attack = Math?.max(0?.01, Math?.min(2000, settings?.compression.attack));
+    const _attack = Math?.max(0.01, Math?.min(2000, settings?.compression.attack));
     const _release = Math?.max(
-      0?.01,
+      0.01,
       Math?.min(9000, settings?.compression.release),
     );
 
@@ -541,9 +541,9 @@ export class AIMusicService {
       `acompressor=threshold=${threshold}dB:ratio=${ratio}:attack=${attack}:release=${release}:makeup=${settings?.compression.makeupGain}`,
     );
 
-    if (settings?.stereoImaging.width !== 1?.0) {
+    if (settings?.stereoImaging.width !== 1.0) {
       const _width = Math?.max(0, Math?.min(2, settings?.stereoImaging.width));
-      filters?.push(`stereotools=mlev=${width}:mwid=1?.0`);
+      filters?.push(`stereotools=mlev=${width}:mwid=1.0`);
     }
 
     return new Promise((resolve, reject) => {
@@ -583,7 +583,7 @@ export class AIMusicService {
         bufferSize: audioBuffer?.length,
       },
       analysis,
-      0?.92,
+      0.92,
       processingTime,
     );
 
@@ -613,33 +613,33 @@ export class AIMusicService {
         category: "loudness",
         suggestion: `Increase master loudness to ${referenceProfile?.loudnessMetrics.integrated?.toFixed(1)} LUFS`,
         reasoning: `Reference track has higher integrated loudness. Increase by ${Math?.abs(referenceProfile?.loudnessMetrics.integrated + 14).toFixed(1)}dB to match`,
-        confidence: 0?.88,
+        confidence: 0.88,
         parameters: { targetLUFS: referenceProfile?.loudnessMetrics.integrated },
         priority: "high",
-        estimatedImpact: 8?.5,
+        estimatedImpact: 8.5,
       });
-      adjustments?.loudness = referenceProfile?.loudnessMetrics.integrated;
+      adjustments.loudness = referenceProfile?.loudnessMetrics.integrated;
     }
 
-    if (referenceProfile?.frequencyBalance.treble > 0?.7) {
-      const _boostAmount = (referenceProfile?.frequencyBalance.treble - 0?.7) * 3;
+    if (referenceProfile?.frequencyBalance.treble > 0.7) {
+      const _boostAmount = (referenceProfile?.frequencyBalance.treble - 0.7) * 3;
       suggestions?.push({
         id: randomBytes(8).toString("hex"),
         category: "eq",
         suggestion: `Increase highs by +${boostAmount?.toFixed(1)}dB at 8kHz`,
         reasoning: `Reference has ${(referenceProfile?.frequencyBalance.treble * 100).toFixed(0)}% more high-frequency content. Boosting to match brilliance`,
-        confidence: 0?.85,
+        confidence: 0.85,
         parameters: { frequency: 8000, gain: boostAmount },
         priority: "medium",
-        estimatedImpact: 7?.2,
+        estimatedImpact: 7.2,
       });
-      adjustments?.highShelf = { frequency: 8000, gain: boostAmount };
+      adjustments.highShelf = { frequency: 8000, gain: boostAmount };
       currentEffects?.eq.highGain += boostAmount;
     }
 
-    if (referenceProfile?.stereoWidth > 1?.0) {
+    if (referenceProfile?.stereoWidth > 1.0) {
       const _widthIncrease = (
-        (referenceProfile?.stereoWidth - 1?.0) *
+        (referenceProfile?.stereoWidth - 1.0) *
         100
       ).toFixed(0);
       suggestions?.push({
@@ -647,28 +647,28 @@ export class AIMusicService {
         category: "stereo",
         suggestion: `Add +${widthIncrease}% stereo width`,
         reasoning: `Reference track has wider stereo image (${(referenceProfile?.stereoWidth * 100).toFixed(0)}%). Expanding to match spatial depth`,
-        confidence: 0?.82,
+        confidence: 0.82,
         parameters: { width: referenceProfile?.stereoWidth },
         priority: "medium",
-        estimatedImpact: 6?.8,
+        estimatedImpact: 6.8,
       });
-      adjustments?.stereoWidth = referenceProfile?.stereoWidth;
+      adjustments.stereoWidth = referenceProfile?.stereoWidth;
       currentEffects?.stereoImaging.width = referenceProfile?.stereoWidth;
     }
 
-    if (referenceProfile?.frequencyBalance.bass > 0?.75) {
+    if (referenceProfile?.frequencyBalance.bass > 0.75) {
       suggestions?.push({
         id: randomBytes(8).toString("hex"),
         category: "eq",
-        suggestion: `Boost low-end by +2?.5dB at 80Hz`,
+        suggestion: `Boost low-end by +2.5dB at 80Hz`,
         reasoning: `Reference has strong bass presence (${(referenceProfile?.frequencyBalance.bass * 100).toFixed(0)}%). Adding punch and weight`,
-        confidence: 0?.9,
-        parameters: { frequency: 80, gain: 2?.5 },
+        confidence: 0.9,
+        parameters: { frequency: 80, gain: 2.5 },
         priority: "high",
-        estimatedImpact: 8?.0,
+        estimatedImpact: 8.0,
       });
-      adjustments?.bassBoost = { frequency: 80, gain: 2?.5 };
-      currentEffects?.eq.lowGain += 2?.5;
+      adjustments.bassBoost = { frequency: 80, gain: 2.5 };
+      currentEffects?.eq.lowGain += 2.5;
     }
 
     if (track) {
@@ -682,7 +682,7 @@ export class AIMusicService {
     const _processingTime = Date?.now() - startTime;
     const _confidenceScore =
       suggestions?.reduce((sum, s) => sum + s?.confidence, 0) /
-        suggestions?.length || 0?.8;
+        suggestions?.length || 0.8;
 
     await this?.logInference(
       this?.AI_MODELS.REFERENCE_MATCHER,
@@ -758,10 +758,10 @@ export class AIMusicService {
 
               const _data = JSON?.parse(jsonMatch[0]);
 
-              const _integrated = parseFloat(data?.input_i) || -23?.0;
-              const _truePeak = parseFloat(data?.input_tp) || -3?.0;
-              const _loudnessRange = parseFloat(data?.input_lra) || 7?.0;
-              parseFloat(data?.input_thresh) || -33?.0;
+              const _integrated = parseFloat(data?.input_i) || -23.0;
+              const _truePeak = parseFloat(data?.input_tp) || -3.0;
+              const _loudnessRange = parseFloat(data?.input_lra) || 7.0;
+              parseFloat(data?.input_thresh) || -33.0;
 
               const _audioData = this?.bufferToFloat32Array(audioBuffer);
               const _dynamicRange = this?.calculateDynamicRange(audioData);
@@ -795,7 +795,7 @@ export class AIMusicService {
           bufferSize: audioBuffer?.length,
         },
         metrics,
-        0?.98,
+        0.98,
         processingTime,
       );
 
@@ -847,10 +847,10 @@ export class AIMusicService {
           category: "loudness",
           suggestion: `Apply ${requiredGain >= 0 ? "+" : ""}${requiredGain?.toFixed(1)}dB gain to reach ${targetLUFS} LUFS`,
           reasoning: `Current integrated loudness is ${currentLoudness?.toFixed(1)} LUFS. Target is ${targetLUFS} LUFS.`,
-          confidence: 0?.95,
+          confidence: 0.95,
           parameters: { gain: requiredGain, targetLUFS },
           priority: "critical",
-          estimatedImpact: 9?.5,
+          estimatedImpact: 9.5,
         },
       ];
 
@@ -860,9 +860,9 @@ export class AIMusicService {
           category: "compression",
           suggestion: `Consider compression before gain adjustment`,
           reasoning: `Large gain adjustment (${Math?.abs(requiredGain).toFixed(1)}dB) may cause clipping. Apply compression first.`,
-          confidence: 0?.88,
+          confidence: 0.88,
           priority: "high",
-          estimatedImpact: 8?.0,
+          estimatedImpact: 8.0,
         });
       }
 
@@ -930,7 +930,7 @@ export class AIMusicService {
           finalLoudness: targetLUFS,
           outputFilePath,
         },
-        0?.95,
+        0.95,
         processingTime,
       );
 
@@ -962,7 +962,7 @@ export class AIMusicService {
     return new Promise((resolve, reject) => {
       ffmpeg(inputPath)
         .audioFilters([
-          `loudnorm=I=${targetLUFS}:TP=-1?.5:LRA=11:measured_I=${measuredLUFS}:measured_LRA=11:measured_TP=-2?.0:measured_thresh=-33?.0:linear=true`,
+          `loudnorm=I=${targetLUFS}:TP=-1.5:LRA=11:measured_I=${measuredLUFS}:measured_LRA=11:measured_TP=-2.0:measured_thresh=-33.0:linear=true`,
         ])
         .toFormat("wav")
         .on("error", (err) => {
@@ -990,10 +990,10 @@ export class AIMusicService {
         suggestion: "Added +3dB at 80Hz because bass lacked punch",
         reasoning:
           "Hip-hop requires strong sub-bass presence. Boosting 80Hz adds weight without muddiness.",
-        confidence: 0?.92,
+        confidence: 0.92,
         parameters: { frequency: 80, gain: 3 },
         priority: "high",
-        estimatedImpact: 8?.5,
+        estimatedImpact: 8.5,
       });
 
       suggestions?.push({
@@ -1002,10 +1002,10 @@ export class AIMusicService {
         suggestion: "Applied compression (4:1) to control vocal dynamics",
         reasoning:
           "Vocals need consistent presence in hip-hop mix. 4:1 ratio maintains energy while controlling peaks.",
-        confidence: 0?.89,
+        confidence: 0.89,
         parameters: { ratio: 4, threshold: -15, attack: 5, release: 80 },
         priority: "high",
-        estimatedImpact: 7?.8,
+        estimatedImpact: 7.8,
       });
     }
 
@@ -1016,10 +1016,10 @@ export class AIMusicService {
         suggestion: "Increased stereo width by 25% for pads and synths",
         reasoning:
           "Electronic music benefits from wide stereo image. Keeping bass centered while expanding highs.",
-        confidence: 0?.87,
-        parameters: { width: 1?.25, bassMonoFreq: 150 },
+        confidence: 0.87,
+        parameters: { width: 1.25, bassMonoFreq: 150 },
         priority: "medium",
-        estimatedImpact: 7?.5,
+        estimatedImpact: 7.5,
       });
 
       suggestions?.push({
@@ -1028,23 +1028,23 @@ export class AIMusicService {
         suggestion: "Added sidechain compression (4:1) for pumping effect",
         reasoning:
           "Sidechain compression creates rhythmic pumping essential to EDM/house genres.",
-        confidence: 0?.91,
+        confidence: 0.91,
         parameters: { ratio: 4, attack: 10, release: 150 },
         priority: "high",
-        estimatedImpact: 8?.2,
+        estimatedImpact: 8.2,
       });
     }
 
-    if (energy && energy > 0?.8) {
+    if (energy && energy > 0.8) {
       suggestions?.push({
         id: randomBytes(8).toString("hex"),
         category: "compression",
         suggestion: "Applied parallel compression for extra punch",
         reasoning: `High energy track (${(energy * 100).toFixed(0)}%) needs controlled dynamics with maximum impact.`,
-        confidence: 0?.85,
+        confidence: 0.85,
         parameters: { blend: 40, ratio: 8, threshold: -20 },
         priority: "medium",
-        estimatedImpact: 7?.0,
+        estimatedImpact: 7.0,
       });
     }
 
@@ -1054,9 +1054,9 @@ export class AIMusicService {
         category: "general",
         suggestion: `Applied ${preset} preset at ${(intensity || 1) * 100}% intensity`,
         reasoning: `Genre-optimized settings for ${genre}. Professional preset tailored for this musical style.`,
-        confidence: 0?.94,
+        confidence: 0.94,
         priority: "high",
-        estimatedImpact: 9?.0,
+        estimatedImpact: 9.0,
       });
     }
 
@@ -1088,21 +1088,21 @@ export class AIMusicService {
             makeupGain: 4,
           },
           effects: {
-            reverb: { wetness: 0?.15, roomSize: 0?.4, damping: 0?.5 },
-            delay: { time: 0?.25, feedback: 0?.2, wetness: 0?.1 },
-            chorus: { rate: 0?.3, depth: 0?.2, wetness: 0?.05 },
-            saturation: { drive: 0?.5, warmth: 0?.6 },
+            reverb: { wetness: 0.15, roomSize: 0.4, damping: 0.5 },
+            delay: { time: 0.25, feedback: 0.2, wetness: 0.1 },
+            chorus: { rate: 0.3, depth: 0.2, wetness: 0.05 },
+            saturation: { drive: 0.5, warmth: 0.6 },
           },
-          stereoImaging: { width: 1?.0, bassMonoFreq: 150 },
+          stereoImaging: { width: 1.0, bassMonoFreq: 150 },
         },
         masterSettings: this?.getMasteringPresetForGenre("hip_hop"),
         characteristics: {
-          bassEmphasis: 0?.95,
-          vocalClarity: 0?.9,
-          stereoWidth: 0?.65,
-          brightness: 0?.75,
-          warmth: 0?.8,
-          punch: 0?.95,
+          bassEmphasis: 0.95,
+          vocalClarity: 0.9,
+          stereoWidth: 0.65,
+          brightness: 0.75,
+          warmth: 0.8,
+          punch: 0.95,
         },
       },
       {
@@ -1128,21 +1128,21 @@ export class AIMusicService {
             makeupGain: 3,
           },
           effects: {
-            reverb: { wetness: 0?.25, roomSize: 0?.6, damping: 0?.3 },
-            delay: { time: 0?.375, feedback: 0?.35, wetness: 0?.2 },
-            chorus: { rate: 0?.6, depth: 0?.4, wetness: 0?.15 },
-            saturation: { drive: 0?.4, warmth: 0?.4 },
+            reverb: { wetness: 0.25, roomSize: 0.6, damping: 0.3 },
+            delay: { time: 0.375, feedback: 0.35, wetness: 0.2 },
+            chorus: { rate: 0.6, depth: 0.4, wetness: 0.15 },
+            saturation: { drive: 0.4, warmth: 0.4 },
           },
-          stereoImaging: { width: 1?.3, bassMonoFreq: 120 },
+          stereoImaging: { width: 1.3, bassMonoFreq: 120 },
         },
         masterSettings: this?.getMasteringPresetForGenre("edm"),
         characteristics: {
-          bassEmphasis: 0?.9,
-          vocalClarity: 0?.7,
-          stereoWidth: 0?.95,
-          brightness: 0?.9,
-          warmth: 0?.6,
-          punch: 0?.9,
+          bassEmphasis: 0.9,
+          vocalClarity: 0.7,
+          stereoWidth: 0.95,
+          brightness: 0.9,
+          warmth: 0.6,
+          punch: 0.9,
         },
       },
       {
@@ -1162,27 +1162,27 @@ export class AIMusicService {
           },
           compression: {
             threshold: -14,
-            ratio: 3?.5,
+            ratio: 3.5,
             attack: 15,
             release: 120,
             makeupGain: 3,
           },
           effects: {
-            reverb: { wetness: 0?.18, roomSize: 0?.5, damping: 0?.4 },
-            delay: { time: 0?.33, feedback: 0?.25, wetness: 0?.12 },
-            chorus: { rate: 0?.4, depth: 0?.25, wetness: 0?.08 },
-            saturation: { drive: 0?.6, warmth: 0?.7 },
+            reverb: { wetness: 0.18, roomSize: 0.5, damping: 0.4 },
+            delay: { time: 0.33, feedback: 0.25, wetness: 0.12 },
+            chorus: { rate: 0.4, depth: 0.25, wetness: 0.08 },
+            saturation: { drive: 0.6, warmth: 0.7 },
           },
-          stereoImaging: { width: 1?.15, bassMonoFreq: 140 },
+          stereoImaging: { width: 1.15, bassMonoFreq: 140 },
         },
         masterSettings: this?.getMasteringPresetForGenre("rock"),
         characteristics: {
-          bassEmphasis: 0?.75,
-          vocalClarity: 0?.85,
-          stereoWidth: 0?.8,
-          brightness: 0?.7,
-          warmth: 0?.85,
-          punch: 0?.85,
+          bassEmphasis: 0.75,
+          vocalClarity: 0.85,
+          stereoWidth: 0.8,
+          brightness: 0.7,
+          warmth: 0.85,
+          punch: 0.85,
         },
       },
       {
@@ -1205,24 +1205,24 @@ export class AIMusicService {
             ratio: 4,
             attack: 12,
             release: 90,
-            makeupGain: 3?.5,
+            makeupGain: 3.5,
           },
           effects: {
-            reverb: { wetness: 0?.2, roomSize: 0?.45, damping: 0?.35 },
-            delay: { time: 0?.3, feedback: 0?.28, wetness: 0?.15 },
-            chorus: { rate: 0?.5, depth: 0?.3, wetness: 0?.12 },
-            saturation: { drive: 0?.35, warmth: 0?.5 },
+            reverb: { wetness: 0.2, roomSize: 0.45, damping: 0.35 },
+            delay: { time: 0.3, feedback: 0.28, wetness: 0.15 },
+            chorus: { rate: 0.5, depth: 0.3, wetness: 0.12 },
+            saturation: { drive: 0.35, warmth: 0.5 },
           },
-          stereoImaging: { width: 1?.2, bassMonoFreq: 130 },
+          stereoImaging: { width: 1.2, bassMonoFreq: 130 },
         },
         masterSettings: this?.getMasteringPresetForGenre("pop"),
         characteristics: {
-          bassEmphasis: 0?.7,
-          vocalClarity: 0?.95,
-          stereoWidth: 0?.8,
-          brightness: 0?.9,
-          warmth: 0?.7,
-          punch: 0?.8,
+          bassEmphasis: 0.7,
+          vocalClarity: 0.95,
+          stereoWidth: 0.8,
+          brightness: 0.9,
+          warmth: 0.7,
+          punch: 0.8,
         },
       },
       {
@@ -1248,21 +1248,21 @@ export class AIMusicService {
             makeupGain: 4,
           },
           effects: {
-            reverb: { wetness: 0?.22, roomSize: 0?.48, damping: 0?.45 },
-            delay: { time: 0?.28, feedback: 0?.22, wetness: 0?.13 },
-            chorus: { rate: 0?.35, depth: 0?.28, wetness: 0?.1 },
-            saturation: { drive: 0?.4, warmth: 0?.65 },
+            reverb: { wetness: 0.22, roomSize: 0.48, damping: 0.45 },
+            delay: { time: 0.28, feedback: 0.22, wetness: 0.13 },
+            chorus: { rate: 0.35, depth: 0.28, wetness: 0.1 },
+            saturation: { drive: 0.4, warmth: 0.65 },
           },
-          stereoImaging: { width: 1?.1, bassMonoFreq: 135 },
+          stereoImaging: { width: 1.1, bassMonoFreq: 135 },
         },
         masterSettings: this?.getMasteringPresetForGenre("rnb"),
         characteristics: {
-          bassEmphasis: 0?.8,
-          vocalClarity: 0?.92,
-          stereoWidth: 0?.75,
-          brightness: 0?.75,
-          warmth: 0?.88,
-          punch: 0?.75,
+          bassEmphasis: 0.8,
+          vocalClarity: 0.92,
+          stereoWidth: 0.75,
+          brightness: 0.75,
+          warmth: 0.88,
+          punch: 0.75,
         },
       },
       {
@@ -1273,10 +1273,10 @@ export class AIMusicService {
         mixSettings: {
           eq: {
             lowGain: 1,
-            lowMidGain: 0?.5,
+            lowMidGain: 0.5,
             midGain: 0,
-            highMidGain: 0?.5,
-            highGain: 1?.5,
+            highMidGain: 0.5,
+            highGain: 1.5,
             lowCut: 25,
             highCut: 19000,
           },
@@ -1288,21 +1288,21 @@ export class AIMusicService {
             makeupGain: 2,
           },
           effects: {
-            reverb: { wetness: 0?.28, roomSize: 0?.65, damping: 0?.3 },
-            delay: { time: 0?.35, feedback: 0?.18, wetness: 0?.08 },
-            chorus: { rate: 0?.25, depth: 0?.15, wetness: 0?.05 },
-            saturation: { drive: 0?.2, warmth: 0?.5 },
+            reverb: { wetness: 0.28, roomSize: 0.65, damping: 0.3 },
+            delay: { time: 0.35, feedback: 0.18, wetness: 0.08 },
+            chorus: { rate: 0.25, depth: 0.15, wetness: 0.05 },
+            saturation: { drive: 0.2, warmth: 0.5 },
           },
-          stereoImaging: { width: 1?.05, bassMonoFreq: 100 },
+          stereoImaging: { width: 1.05, bassMonoFreq: 100 },
         },
         masterSettings: this?.getMasteringPresetForGenre("jazz"),
         characteristics: {
-          bassEmphasis: 0?.6,
-          vocalClarity: 0?.7,
-          stereoWidth: 0?.85,
-          brightness: 0?.8,
-          warmth: 0?.75,
-          punch: 0?.5,
+          bassEmphasis: 0.6,
+          vocalClarity: 0.7,
+          stereoWidth: 0.85,
+          brightness: 0.8,
+          warmth: 0.75,
+          punch: 0.5,
         },
       },
       {
@@ -1312,37 +1312,37 @@ export class AIMusicService {
         targetLoudness: -18,
         mixSettings: {
           eq: {
-            lowGain: 0?.5,
+            lowGain: 0.5,
             lowMidGain: 0,
             midGain: 0,
-            highMidGain: 0?.5,
+            highMidGain: 0.5,
             highGain: 1,
             lowCut: 20,
             highCut: 20000,
           },
           compression: {
             threshold: -20,
-            ratio: 1?.5,
+            ratio: 1.5,
             attack: 30,
             release: 180,
             makeupGain: 1,
           },
           effects: {
-            reverb: { wetness: 0?.32, roomSize: 0?.75, damping: 0?.25 },
-            delay: { time: 0?.4, feedback: 0?.15, wetness: 0?.05 },
-            chorus: { rate: 0?.2, depth: 0?.1, wetness: 0?.03 },
-            saturation: { drive: 0?.1, warmth: 0?.4 },
+            reverb: { wetness: 0.32, roomSize: 0.75, damping: 0.25 },
+            delay: { time: 0.4, feedback: 0.15, wetness: 0.05 },
+            chorus: { rate: 0.2, depth: 0.1, wetness: 0.03 },
+            saturation: { drive: 0.1, warmth: 0.4 },
           },
-          stereoImaging: { width: 1?.0, bassMonoFreq: 80 },
+          stereoImaging: { width: 1.0, bassMonoFreq: 80 },
         },
         masterSettings: this?.getMasteringPresetForGenre("classical"),
         characteristics: {
-          bassEmphasis: 0?.55,
-          vocalClarity: 0?.65,
-          stereoWidth: 0?.95,
-          brightness: 0?.85,
-          warmth: 0?.7,
-          punch: 0?.4,
+          bassEmphasis: 0.55,
+          vocalClarity: 0.65,
+          stereoWidth: 0.95,
+          brightness: 0.85,
+          warmth: 0.7,
+          punch: 0.4,
         },
       },
       {
@@ -1352,10 +1352,10 @@ export class AIMusicService {
         targetLoudness: -13,
         mixSettings: {
           eq: {
-            lowGain: 1?.5,
-            lowMidGain: 0?.5,
+            lowGain: 1.5,
+            lowMidGain: 0.5,
             midGain: 1,
-            highMidGain: 1?.5,
+            highMidGain: 1.5,
             highGain: 2,
             lowCut: 32,
             highCut: 17000,
@@ -1368,21 +1368,21 @@ export class AIMusicService {
             makeupGain: 3,
           },
           effects: {
-            reverb: { wetness: 0?.16, roomSize: 0?.42, damping: 0?.4 },
-            delay: { time: 0?.32, feedback: 0?.24, wetness: 0?.11 },
-            chorus: { rate: 0?.38, depth: 0?.22, wetness: 0?.07 },
-            saturation: { drive: 0?.45, warmth: 0?.68 },
+            reverb: { wetness: 0.16, roomSize: 0.42, damping: 0.4 },
+            delay: { time: 0.32, feedback: 0.24, wetness: 0.11 },
+            chorus: { rate: 0.38, depth: 0.22, wetness: 0.07 },
+            saturation: { drive: 0.45, warmth: 0.68 },
           },
-          stereoImaging: { width: 1?.08, bassMonoFreq: 125 },
+          stereoImaging: { width: 1.08, bassMonoFreq: 125 },
         },
         masterSettings: this?.getMasteringPresetForGenre("country"),
         characteristics: {
-          bassEmphasis: 0?.65,
-          vocalClarity: 0?.88,
-          stereoWidth: 0?.72,
-          brightness: 0?.78,
-          warmth: 0?.82,
-          punch: 0?.7,
+          bassEmphasis: 0.65,
+          vocalClarity: 0.88,
+          stereoWidth: 0.72,
+          brightness: 0.78,
+          warmth: 0.82,
+          punch: 0.7,
         },
       },
       {
@@ -1392,9 +1392,9 @@ export class AIMusicService {
         targetLoudness: -8,
         mixSettings: {
           eq: {
-            lowGain: 2?.5,
+            lowGain: 2.5,
             lowMidGain: 0,
-            midGain: -0?.5,
+            midGain: -0.5,
             highMidGain: 2,
             highGain: 3,
             lowCut: 35,
@@ -1405,24 +1405,24 @@ export class AIMusicService {
             ratio: 6,
             attack: 8,
             release: 95,
-            makeupGain: 4?.5,
+            makeupGain: 4.5,
           },
           effects: {
-            reverb: { wetness: 0?.12, roomSize: 0?.38, damping: 0?.55 },
-            delay: { time: 0?.27, feedback: 0?.2, wetness: 0?.09 },
-            chorus: { rate: 0?.32, depth: 0?.18, wetness: 0?.06 },
-            saturation: { drive: 0?.75, warmth: 0?.65 },
+            reverb: { wetness: 0.12, roomSize: 0.38, damping: 0.55 },
+            delay: { time: 0.27, feedback: 0.2, wetness: 0.09 },
+            chorus: { rate: 0.32, depth: 0.18, wetness: 0.06 },
+            saturation: { drive: 0.75, warmth: 0.65 },
           },
-          stereoImaging: { width: 1?.25, bassMonoFreq: 160 },
+          stereoImaging: { width: 1.25, bassMonoFreq: 160 },
         },
         masterSettings: this?.getMasteringPresetForGenre("metal"),
         characteristics: {
-          bassEmphasis: 0?.88,
-          vocalClarity: 0?.75,
-          stereoWidth: 0?.85,
-          brightness: 0?.85,
-          warmth: 0?.65,
-          punch: 0?.98,
+          bassEmphasis: 0.88,
+          vocalClarity: 0.75,
+          stereoWidth: 0.85,
+          brightness: 0.85,
+          warmth: 0.65,
+          punch: 0.98,
         },
       },
       {
@@ -1432,11 +1432,11 @@ export class AIMusicService {
         targetLoudness: -12,
         mixSettings: {
           eq: {
-            lowGain: 4?.5,
-            lowMidGain: 0?.5,
+            lowGain: 4.5,
+            lowMidGain: 0.5,
             midGain: 0,
             highMidGain: 1,
-            highGain: 1?.5,
+            highGain: 1.5,
             lowCut: 28,
             highCut: 16000,
           },
@@ -1445,24 +1445,24 @@ export class AIMusicService {
             ratio: 4,
             attack: 20,
             release: 130,
-            makeupGain: 3?.5,
+            makeupGain: 3.5,
           },
           effects: {
-            reverb: { wetness: 0?.24, roomSize: 0?.52, damping: 0?.42 },
-            delay: { time: 0?.38, feedback: 0?.32, wetness: 0?.18 },
-            chorus: { rate: 0?.42, depth: 0?.32, wetness: 0?.11 },
-            saturation: { drive: 0?.38, warmth: 0?.58 },
+            reverb: { wetness: 0.24, roomSize: 0.52, damping: 0.42 },
+            delay: { time: 0.38, feedback: 0.32, wetness: 0.18 },
+            chorus: { rate: 0.42, depth: 0.32, wetness: 0.11 },
+            saturation: { drive: 0.38, warmth: 0.58 },
           },
-          stereoImaging: { width: 1?.12, bassMonoFreq: 145 },
+          stereoImaging: { width: 1.12, bassMonoFreq: 145 },
         },
         masterSettings: this?.getMasteringPresetForGenre("reggae"),
         characteristics: {
-          bassEmphasis: 0?.95,
-          vocalClarity: 0?.78,
-          stereoWidth: 0?.75,
-          brightness: 0?.68,
-          warmth: 0?.75,
-          punch: 0?.72,
+          bassEmphasis: 0.95,
+          vocalClarity: 0.78,
+          stereoWidth: 0.75,
+          brightness: 0.68,
+          warmth: 0.75,
+          punch: 0.72,
         },
       },
       {
@@ -1473,10 +1473,10 @@ export class AIMusicService {
         mixSettings: {
           eq: {
             lowGain: 3,
-            lowMidGain: 0?.5,
+            lowMidGain: 0.5,
             midGain: 1,
             highMidGain: 2,
-            highGain: 2?.5,
+            highGain: 2.5,
             lowCut: 30,
             highCut: 17500,
           },
@@ -1485,24 +1485,24 @@ export class AIMusicService {
             ratio: 4,
             attack: 12,
             release: 100,
-            makeupGain: 3?.5,
+            makeupGain: 3.5,
           },
           effects: {
-            reverb: { wetness: 0?.19, roomSize: 0?.46, damping: 0?.38 },
-            delay: { time: 0?.29, feedback: 0?.26, wetness: 0?.13 },
-            chorus: { rate: 0?.48, depth: 0?.28, wetness: 0?.1 },
-            saturation: { drive: 0?.42, warmth: 0?.56 },
+            reverb: { wetness: 0.19, roomSize: 0.46, damping: 0.38 },
+            delay: { time: 0.29, feedback: 0.26, wetness: 0.13 },
+            chorus: { rate: 0.48, depth: 0.28, wetness: 0.1 },
+            saturation: { drive: 0.42, warmth: 0.56 },
           },
-          stereoImaging: { width: 1?.18, bassMonoFreq: 135 },
+          stereoImaging: { width: 1.18, bassMonoFreq: 135 },
         },
         masterSettings: this?.getMasteringPresetForGenre("latin"),
         characteristics: {
-          bassEmphasis: 0?.82,
-          vocalClarity: 0?.85,
-          stereoWidth: 0?.82,
-          brightness: 0?.85,
-          warmth: 0?.78,
-          punch: 0?.85,
+          bassEmphasis: 0.82,
+          vocalClarity: 0.85,
+          stereoWidth: 0.82,
+          brightness: 0.85,
+          warmth: 0.78,
+          punch: 0.85,
         },
       },
       {
@@ -1512,37 +1512,37 @@ export class AIMusicService {
         targetLoudness: -13,
         mixSettings: {
           eq: {
-            lowGain: 1?.5,
+            lowGain: 1.5,
             lowMidGain: 1,
-            midGain: 0?.5,
+            midGain: 0.5,
             highMidGain: 1,
-            highGain: 1?.8,
+            highGain: 1.8,
             lowCut: 32,
             highCut: 16500,
           },
           compression: {
             threshold: -15,
-            ratio: 3?.5,
+            ratio: 3.5,
             attack: 16,
             release: 115,
             makeupGain: 3,
           },
           effects: {
-            reverb: { wetness: 0?.21, roomSize: 0?.48, damping: 0?.4 },
-            delay: { time: 0?.31, feedback: 0?.27, wetness: 0?.14 },
-            chorus: { rate: 0?.44, depth: 0?.26, wetness: 0?.09 },
-            saturation: { drive: 0?.52, warmth: 0?.72 },
+            reverb: { wetness: 0.21, roomSize: 0.48, damping: 0.4 },
+            delay: { time: 0.31, feedback: 0.27, wetness: 0.14 },
+            chorus: { rate: 0.44, depth: 0.26, wetness: 0.09 },
+            saturation: { drive: 0.52, warmth: 0.72 },
           },
-          stereoImaging: { width: 1?.08, bassMonoFreq: 128 },
+          stereoImaging: { width: 1.08, bassMonoFreq: 128 },
         },
         masterSettings: this?.getMasteringPresetForGenre("indie"),
         characteristics: {
-          bassEmphasis: 0?.68,
-          vocalClarity: 0?.82,
-          stereoWidth: 0?.78,
-          brightness: 0?.75,
-          warmth: 0?.85,
-          punch: 0?.68,
+          bassEmphasis: 0.68,
+          vocalClarity: 0.82,
+          stereoWidth: 0.78,
+          brightness: 0.75,
+          warmth: 0.85,
+          punch: 0.68,
         },
       },
       {
@@ -1553,36 +1553,36 @@ export class AIMusicService {
         mixSettings: {
           eq: {
             lowGain: 1,
-            lowMidGain: 0?.8,
-            midGain: 0?.5,
-            highMidGain: 1?.2,
-            highGain: 1?.8,
+            lowMidGain: 0.8,
+            midGain: 0.5,
+            highMidGain: 1.2,
+            highGain: 1.8,
             lowCut: 30,
             highCut: 18000,
           },
           compression: {
             threshold: -17,
-            ratio: 2?.5,
+            ratio: 2.5,
             attack: 22,
             release: 135,
-            makeupGain: 2?.5,
+            makeupGain: 2.5,
           },
           effects: {
-            reverb: { wetness: 0?.23, roomSize: 0?.5, damping: 0?.36 },
-            delay: { time: 0?.34, feedback: 0?.21, wetness: 0?.1 },
-            chorus: { rate: 0?.36, depth: 0?.2, wetness: 0?.07 },
-            saturation: { drive: 0?.28, warmth: 0?.62 },
+            reverb: { wetness: 0.23, roomSize: 0.5, damping: 0.36 },
+            delay: { time: 0.34, feedback: 0.21, wetness: 0.1 },
+            chorus: { rate: 0.36, depth: 0.2, wetness: 0.07 },
+            saturation: { drive: 0.28, warmth: 0.62 },
           },
-          stereoImaging: { width: 1?.05, bassMonoFreq: 115 },
+          stereoImaging: { width: 1.05, bassMonoFreq: 115 },
         },
         masterSettings: this?.getMasteringPresetForGenre("folk"),
         characteristics: {
-          bassEmphasis: 0?.6,
-          vocalClarity: 0?.9,
-          stereoWidth: 0?.75,
-          brightness: 0?.8,
-          warmth: 0?.82,
-          punch: 0?.58,
+          bassEmphasis: 0.6,
+          vocalClarity: 0.9,
+          stereoWidth: 0.75,
+          brightness: 0.8,
+          warmth: 0.82,
+          punch: 0.58,
         },
       },
       {
@@ -1593,10 +1593,10 @@ export class AIMusicService {
         mixSettings: {
           eq: {
             lowGain: 2,
-            lowMidGain: 1?.5,
-            midGain: 0?.5,
-            highMidGain: 0?.8,
-            highGain: 1?.5,
+            lowMidGain: 1.5,
+            midGain: 0.5,
+            highMidGain: 0.8,
+            highGain: 1.5,
             lowCut: 28,
             highCut: 16000,
           },
@@ -1608,21 +1608,21 @@ export class AIMusicService {
             makeupGain: 3,
           },
           effects: {
-            reverb: { wetness: 0?.2, roomSize: 0?.47, damping: 0?.43 },
-            delay: { time: 0?.33, feedback: 0?.24, wetness: 0?.12 },
-            chorus: { rate: 0?.4, depth: 0?.24, wetness: 0?.08 },
-            saturation: { drive: 0?.65, warmth: 0?.78 },
+            reverb: { wetness: 0.2, roomSize: 0.47, damping: 0.43 },
+            delay: { time: 0.33, feedback: 0.24, wetness: 0.12 },
+            chorus: { rate: 0.4, depth: 0.24, wetness: 0.08 },
+            saturation: { drive: 0.65, warmth: 0.78 },
           },
-          stereoImaging: { width: 1?.06, bassMonoFreq: 122 },
+          stereoImaging: { width: 1.06, bassMonoFreq: 122 },
         },
         masterSettings: this?.getMasteringPresetForGenre("blues"),
         characteristics: {
-          bassEmphasis: 0?.72,
-          vocalClarity: 0?.85,
-          stereoWidth: 0?.72,
-          brightness: 0?.7,
-          warmth: 0?.92,
-          punch: 0?.7,
+          bassEmphasis: 0.72,
+          vocalClarity: 0.85,
+          stereoWidth: 0.72,
+          brightness: 0.7,
+          warmth: 0.92,
+          punch: 0.7,
         },
       },
       {
@@ -1632,11 +1632,11 @@ export class AIMusicService {
         targetLoudness: -10,
         mixSettings: {
           eq: {
-            lowGain: 3?.5,
-            lowMidGain: 0?.5,
+            lowGain: 3.5,
+            lowMidGain: 0.5,
             midGain: 1,
             highMidGain: 2,
-            highGain: 2?.5,
+            highGain: 2.5,
             lowCut: 30,
             highCut: 17000,
           },
@@ -1648,21 +1648,21 @@ export class AIMusicService {
             makeupGain: 4,
           },
           effects: {
-            reverb: { wetness: 0?.17, roomSize: 0?.44, damping: 0?.46 },
-            delay: { time: 0?.28, feedback: 0?.23, wetness: 0?.11 },
-            chorus: { rate: 0?.46, depth: 0?.3, wetness: 0?.12 },
-            saturation: { drive: 0?.48, warmth: 0?.6 },
+            reverb: { wetness: 0.17, roomSize: 0.44, damping: 0.46 },
+            delay: { time: 0.28, feedback: 0.23, wetness: 0.11 },
+            chorus: { rate: 0.46, depth: 0.3, wetness: 0.12 },
+            saturation: { drive: 0.48, warmth: 0.6 },
           },
-          stereoImaging: { width: 1?.14, bassMonoFreq: 138 },
+          stereoImaging: { width: 1.14, bassMonoFreq: 138 },
         },
         masterSettings: this?.getMasteringPresetForGenre("funk"),
         characteristics: {
-          bassEmphasis: 0?.9,
-          vocalClarity: 0?.8,
-          stereoWidth: 0?.78,
-          brightness: 0?.82,
-          warmth: 0?.75,
-          punch: 0?.92,
+          bassEmphasis: 0.9,
+          vocalClarity: 0.8,
+          stereoWidth: 0.78,
+          brightness: 0.82,
+          warmth: 0.75,
+          punch: 0.92,
         },
       },
       {
@@ -1672,10 +1672,10 @@ export class AIMusicService {
         targetLoudness: -12,
         mixSettings: {
           eq: {
-            lowGain: 2?.5,
-            lowMidGain: 1?.2,
-            midGain: 0?.8,
-            highMidGain: 1?.5,
+            lowGain: 2.5,
+            lowMidGain: 1.2,
+            midGain: 0.8,
+            highMidGain: 1.5,
             highGain: 2,
             lowCut: 29,
             highCut: 17000,
@@ -1685,64 +1685,64 @@ export class AIMusicService {
             ratio: 4,
             attack: 14,
             release: 105,
-            makeupGain: 3?.5,
+            makeupGain: 3.5,
           },
           effects: {
-            reverb: { wetness: 0?.22, roomSize: 0?.49, damping: 0?.42 },
-            delay: { time: 0?.3, feedback: 0?.25, wetness: 0?.13 },
-            chorus: { rate: 0?.42, depth: 0?.27, wetness: 0?.1 },
-            saturation: { drive: 0?.45, warmth: 0?.7 },
+            reverb: { wetness: 0.22, roomSize: 0.49, damping: 0.42 },
+            delay: { time: 0.3, feedback: 0.25, wetness: 0.13 },
+            chorus: { rate: 0.42, depth: 0.27, wetness: 0.1 },
+            saturation: { drive: 0.45, warmth: 0.7 },
           },
-          stereoImaging: { width: 1?.1, bassMonoFreq: 132 },
+          stereoImaging: { width: 1.1, bassMonoFreq: 132 },
         },
         masterSettings: this?.getMasteringPresetForGenre("soul"),
         characteristics: {
-          bassEmphasis: 0?.78,
-          vocalClarity: 0?.93,
-          stereoWidth: 0?.76,
-          brightness: 0?.78,
-          warmth: 0?.9,
-          punch: 0?.75,
+          bassEmphasis: 0.78,
+          vocalClarity: 0.93,
+          stereoWidth: 0.76,
+          brightness: 0.78,
+          warmth: 0.9,
+          punch: 0.75,
         },
       },
       {
         genre: "house",
         displayName: "House",
         description: "Four-on-floor, groove-focused, spacious",
-        targetLoudness: -8?.5,
+        targetLoudness: -8.5,
         mixSettings: {
           eq: {
-            lowGain: 3?.5,
+            lowGain: 3.5,
             lowMidGain: 0,
-            midGain: -0?.5,
-            highMidGain: 1?.5,
-            highGain: 3?.5,
+            midGain: -0.5,
+            highMidGain: 1.5,
+            highGain: 3.5,
             lowCut: 32,
             highCut: 18500,
           },
           compression: {
             threshold: -12,
-            ratio: 4?.5,
+            ratio: 4.5,
             attack: 11,
             release: 105,
-            makeupGain: 3?.5,
+            makeupGain: 3.5,
           },
           effects: {
-            reverb: { wetness: 0?.24, roomSize: 0?.58, damping: 0?.32 },
-            delay: { time: 0?.375, feedback: 0?.33, wetness: 0?.18 },
-            chorus: { rate: 0?.52, depth: 0?.36, wetness: 0?.14 },
-            saturation: { drive: 0?.38, warmth: 0?.45 },
+            reverb: { wetness: 0.24, roomSize: 0.58, damping: 0.32 },
+            delay: { time: 0.375, feedback: 0.33, wetness: 0.18 },
+            chorus: { rate: 0.52, depth: 0.36, wetness: 0.14 },
+            saturation: { drive: 0.38, warmth: 0.45 },
           },
-          stereoImaging: { width: 1?.28, bassMonoFreq: 125 },
+          stereoImaging: { width: 1.28, bassMonoFreq: 125 },
         },
         masterSettings: this?.getMasteringPresetForGenre("house"),
         characteristics: {
-          bassEmphasis: 0?.92,
-          vocalClarity: 0?.72,
-          stereoWidth: 0?.92,
-          brightness: 0?.88,
-          warmth: 0?.65,
-          punch: 0?.88,
+          bassEmphasis: 0.92,
+          vocalClarity: 0.72,
+          stereoWidth: 0.92,
+          brightness: 0.88,
+          warmth: 0.65,
+          punch: 0.88,
         },
       },
       {
@@ -1753,7 +1753,7 @@ export class AIMusicService {
         mixSettings: {
           eq: {
             lowGain: 4,
-            lowMidGain: -0?.5,
+            lowMidGain: -0.5,
             midGain: -1,
             highMidGain: 1,
             highGain: 3,
@@ -1768,21 +1768,21 @@ export class AIMusicService {
             makeupGain: 4,
           },
           effects: {
-            reverb: { wetness: 0?.26, roomSize: 0?.62, damping: 0?.28 },
-            delay: { time: 0?.375, feedback: 0?.36, wetness: 0?.2 },
-            chorus: { rate: 0?.55, depth: 0?.38, wetness: 0?.13 },
-            saturation: { drive: 0?.42, warmth: 0?.42 },
+            reverb: { wetness: 0.26, roomSize: 0.62, damping: 0.28 },
+            delay: { time: 0.375, feedback: 0.36, wetness: 0.2 },
+            chorus: { rate: 0.55, depth: 0.38, wetness: 0.13 },
+            saturation: { drive: 0.42, warmth: 0.42 },
           },
-          stereoImaging: { width: 1?.32, bassMonoFreq: 118 },
+          stereoImaging: { width: 1.32, bassMonoFreq: 118 },
         },
         masterSettings: this?.getMasteringPresetForGenre("techno"),
         characteristics: {
-          bassEmphasis: 0?.96,
-          vocalClarity: 0?.6,
-          stereoWidth: 0?.95,
-          brightness: 0?.82,
-          warmth: 0?.58,
-          punch: 0?.94,
+          bassEmphasis: 0.96,
+          vocalClarity: 0.6,
+          stereoWidth: 0.95,
+          brightness: 0.82,
+          warmth: 0.58,
+          punch: 0.94,
         },
       },
       {
@@ -1793,9 +1793,9 @@ export class AIMusicService {
         mixSettings: {
           eq: {
             lowGain: 5,
-            lowMidGain: -0?.5,
-            midGain: -1?.5,
-            highMidGain: 2?.5,
+            lowMidGain: -0.5,
+            midGain: -1.5,
+            highMidGain: 2.5,
             highGain: 4,
             lowCut: 35,
             highCut: 18500,
@@ -1808,35 +1808,35 @@ export class AIMusicService {
             makeupGain: 5,
           },
           effects: {
-            reverb: { wetness: 0?.22, roomSize: 0?.55, damping: 0?.35 },
-            delay: { time: 0?.375, feedback: 0?.4, wetness: 0?.22 },
-            chorus: { rate: 0?.58, depth: 0?.42, wetness: 0?.16 },
-            saturation: { drive: 0?.7, warmth: 0?.5 },
+            reverb: { wetness: 0.22, roomSize: 0.55, damping: 0.35 },
+            delay: { time: 0.375, feedback: 0.4, wetness: 0.22 },
+            chorus: { rate: 0.58, depth: 0.42, wetness: 0.16 },
+            saturation: { drive: 0.7, warmth: 0.5 },
           },
-          stereoImaging: { width: 1?.35, bassMonoFreq: 115 },
+          stereoImaging: { width: 1.35, bassMonoFreq: 115 },
         },
         masterSettings: this?.getMasteringPresetForGenre("dubstep"),
         characteristics: {
-          bassEmphasis: 0?.99,
-          vocalClarity: 0?.68,
-          stereoWidth: 0?.95,
-          brightness: 0?.92,
-          warmth: 0?.55,
-          punch: 0?.99,
+          bassEmphasis: 0.99,
+          vocalClarity: 0.68,
+          stereoWidth: 0.95,
+          brightness: 0.92,
+          warmth: 0.55,
+          punch: 0.99,
         },
       },
       {
         genre: "trap",
         displayName: "Trap",
         description: "Heavy 808s, crispy hi-hats, modern rap",
-        targetLoudness: -8?.5,
+        targetLoudness: -8.5,
         mixSettings: {
           eq: {
-            lowGain: 4?.5,
+            lowGain: 4.5,
             lowMidGain: -1,
             midGain: 0,
-            highMidGain: 2?.5,
-            highGain: 3?.5,
+            highMidGain: 2.5,
+            highGain: 3.5,
             lowCut: 26,
             highCut: 17500,
           },
@@ -1845,24 +1845,24 @@ export class AIMusicService {
             ratio: 6,
             attack: 6,
             release: 85,
-            makeupGain: 4?.5,
+            makeupGain: 4.5,
           },
           effects: {
-            reverb: { wetness: 0?.16, roomSize: 0?.42, damping: 0?.48 },
-            delay: { time: 0?.25, feedback: 0?.22, wetness: 0?.11 },
-            chorus: { rate: 0?.34, depth: 0?.22, wetness: 0?.06 },
-            saturation: { drive: 0?.55, warmth: 0?.58 },
+            reverb: { wetness: 0.16, roomSize: 0.42, damping: 0.48 },
+            delay: { time: 0.25, feedback: 0.22, wetness: 0.11 },
+            chorus: { rate: 0.34, depth: 0.22, wetness: 0.06 },
+            saturation: { drive: 0.55, warmth: 0.58 },
           },
-          stereoImaging: { width: 1?.08, bassMonoFreq: 155 },
+          stereoImaging: { width: 1.08, bassMonoFreq: 155 },
         },
         masterSettings: this?.getMasteringPresetForGenre("trap"),
         characteristics: {
-          bassEmphasis: 0?.97,
-          vocalClarity: 0?.88,
-          stereoWidth: 0?.7,
-          brightness: 0?.88,
-          warmth: 0?.68,
-          punch: 0?.96,
+          bassEmphasis: 0.97,
+          vocalClarity: 0.88,
+          stereoWidth: 0.7,
+          brightness: 0.88,
+          warmth: 0.68,
+          punch: 0.96,
         },
       },
     ];
@@ -1872,33 +1872,33 @@ export class AIMusicService {
     const basePreset: MasterSettings = {
       multiband: {
         low: { threshold: -20, ratio: 3, gain: 1, frequency: 120 },
-        lowMid: { threshold: -18, ratio: 2?.5, gain: 0, frequency: 500 },
-        mid: { threshold: -16, ratio: 2, gain: -0?.5, frequency: 2000 },
+        lowMid: { threshold: -18, ratio: 2.5, gain: 0, frequency: 500 },
+        mid: { threshold: -16, ratio: 2, gain: -0.5, frequency: 2000 },
         highMid: { threshold: -14, ratio: 2, gain: 1, frequency: 5000 },
-        high: { threshold: -12, ratio: 1?.5, gain: 1?.5, frequency: 10000 },
+        high: { threshold: -12, ratio: 1.5, gain: 1.5, frequency: 10000 },
       },
       limiter: { ceiling: -1, release: 50, lookahead: 5 },
-      maximizer: { amount: 0?.6, character: "transparent" },
-      stereoEnhancer: { width: 1?.1, bassWidth: 0?.8 },
-      spectralBalance: { lowShelf: 1, highShelf: 2, presence: 1?.5 },
+      maximizer: { amount: 0.6, character: "transparent" },
+      stereoEnhancer: { width: 1.1, bassWidth: 0.8 },
+      spectralBalance: { lowShelf: 1, highShelf: 2, presence: 1.5 },
     };
 
     const genreOverrides: Record<string, Partial<MasterSettings>> = {
       hip_hop: {
-        limiter: { ceiling: -0?.5, release: 45, lookahead: 6 },
-        maximizer: { amount: 0?.7, character: "punchy" },
+        limiter: { ceiling: -0.5, release: 45, lookahead: 6 },
+        maximizer: { amount: 0.7, character: "punchy" },
       },
       edm: {
-        limiter: { ceiling: -0?.3, release: 40, lookahead: 7 },
-        maximizer: { amount: 0?.8, character: "aggressive" },
+        limiter: { ceiling: -0.3, release: 40, lookahead: 7 },
+        maximizer: { amount: 0.8, character: "aggressive" },
       },
       classical: {
         limiter: { ceiling: -2, release: 60, lookahead: 4 },
-        maximizer: { amount: 0?.3, character: "transparent" },
+        maximizer: { amount: 0.3, character: "transparent" },
       },
       jazz: {
-        limiter: { ceiling: -1?.5, release: 65, lookahead: 4 },
-        maximizer: { amount: 0?.4, character: "transparent" },
+        limiter: { ceiling: -1.5, release: 65, lookahead: 4 },
+        maximizer: { amount: 0.4, character: "transparent" },
       },
     };
 
@@ -1909,7 +1909,7 @@ export class AIMusicService {
     const _size = Math?.min(audioBuffer?.length / 4, 8192);
     return new Float32Array(size).map((_, i) => {
       const _normalized = i / size;
-      return Math?.sin(normalized * Math?.PI) * Math?.random() * 0?.5 + 0?.5;
+      return Math?.sin(normalized * Math?.PI) * Math?.random() * 0.5 + 0.5;
     });
   }
 
@@ -1924,19 +1924,19 @@ export class AIMusicService {
     );
 
     const baseConfidence: Record<string, number> = {
-      vocals: 0?.82,
-      drums: 0?.88,
-      bass: 0?.85,
-      melody: 0?.79,
-      harmony: 0?.76,
+      vocals: 0.82,
+      drums: 0.88,
+      bass: 0.85,
+      melody: 0.79,
+      harmony: 0.76,
     };
 
-    const _sizeBonus = Math?.min(0?.1, originalSize / 10000000);
-    const _energyBonus = Math?.min(0?.05, rms * 10);
+    const _sizeBonus = Math?.min(0.1, originalSize / 10000000);
+    const _energyBonus = Math?.min(0.05, rms * 10);
 
     return Math?.min(
-      0?.95,
-      (baseConfidence[stemType] || 0?.8) + sizeBonus + energyBonus,
+      0.95,
+      (baseConfidence[stemType] || 0.8) + sizeBonus + energyBonus,
     );
   }
 
@@ -1945,32 +1945,32 @@ export class AIMusicService {
   ): SpectralProfile {
     const _lowFreq =
       spectralData
-        .slice(0, spectralData?.length * 0?.1)
+        .slice(0, spectralData?.length * 0.1)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.1);
+      (spectralData?.length * 0.1);
     const _lowMidFreq =
       spectralData
-        .slice(spectralData?.length * 0?.1, spectralData?.length * 0?.3)
+        .slice(spectralData?.length * 0.1, spectralData?.length * 0.3)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.2);
+      (spectralData?.length * 0.2);
     const _midFreq =
       spectralData
-        .slice(spectralData?.length * 0?.3, spectralData?.length * 0?.6)
+        .slice(spectralData?.length * 0.3, spectralData?.length * 0.6)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.3);
+      (spectralData?.length * 0.3);
     const _highMidFreq =
       spectralData
-        .slice(spectralData?.length * 0?.6, spectralData?.length * 0?.8)
+        .slice(spectralData?.length * 0.6, spectralData?.length * 0.8)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.2);
+      (spectralData?.length * 0.2);
     const _highFreq =
-      spectralData?.slice(spectralData?.length * 0?.8).reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.2);
+      spectralData?.slice(spectralData?.length * 0.8).reduce((a, b) => a + b, 0) /
+      (spectralData?.length * 0.2);
 
     const _spectralCentroid =
       spectralData?.reduce((sum, val, idx) => sum + val * idx, 0) /
       spectralData?.reduce((sum, val) => sum + val, 0);
-    const _spectralRolloff = spectralData?.length * 0?.85;
+    const _spectralRolloff = spectralData?.length * 0.85;
     const _spectralFlux = spectralData?.reduce(
       (sum, val, idx) =>
         idx > 0 ? sum + Math?.abs(val - spectralData[idx - 1]) : sum,
@@ -1993,7 +1993,7 @@ export class AIMusicService {
     const _floatArray = new Float32Array(buffer?.length / 2);
     for (let i = 0; i < floatArray?.length; i++) {
       const _int16 = buffer?.readInt16LE(i * 2);
-      floatArray[i] = int16 / 32768?.0;
+      floatArray[i] = int16 / 32768.0;
     }
     return floatArray;
   }
@@ -2023,7 +2023,7 @@ export class AIMusicService {
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const _blockSize = Math?.floor(sampleRate * 0?.4);
+    const _blockSize = Math?.floor(sampleRate * 0.4);
     let totalLoudness = 0;
     let blockCount = 0;
 
@@ -2032,7 +2032,7 @@ export class AIMusicService {
       const _rms = Math?.sqrt(
         block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
       );
-      const _loudness = -0?.691 + 10 * Math?.log10(rms + 1e-10);
+      const _loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
 
       if (loudness > -70) {
         totalLoudness += loudness;
@@ -2052,19 +2052,19 @@ export class AIMusicService {
     const _rms = Math?.sqrt(
       block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
     );
-    return -0?.691 + 10 * Math?.log10(rms + 1e-10);
+    return -0.691 + 10 * Math?.log10(rms + 1e-10);
   }
 
   private calculateMomentaryLoudness(
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const _blockSize = Math?.floor(sampleRate * 0?.4);
+    const _blockSize = Math?.floor(sampleRate * 0.4);
     const _block = audioData?.slice(0, Math?.min(blockSize, audioData?.length));
     const _rms = Math?.sqrt(
       block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
     );
-    return -0?.691 + 10 * Math?.log10(rms + 1e-10);
+    return -0.691 + 10 * Math?.log10(rms + 1e-10);
   }
 
   private calculateTruePeak(audioData: Float32Array): number {
@@ -2098,7 +2098,7 @@ export class AIMusicService {
       const _rms = Math?.sqrt(
         block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
       );
-      const _loudness = -0?.691 + 10 * Math?.log10(rms + 1e-10);
+      const _loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
       if (loudness > -70) loudnessValues?.push(loudness);
     }
 
@@ -2106,16 +2106,16 @@ export class AIMusicService {
 
     loudnessValues?.sort((a, b) => a - b);
     const _lowPercentile =
-      loudnessValues[Math?.floor(loudnessValues?.length * 0?.1)];
+      loudnessValues[Math?.floor(loudnessValues?.length * 0.1)];
     const _highPercentile =
-      loudnessValues[Math?.floor(loudnessValues?.length * 0?.95)];
+      loudnessValues[Math?.floor(loudnessValues?.length * 0.95)];
 
     return highPercentile - lowPercentile;
   }
 
   private calculateStereoWidth(audioBuffer: Buffer): number {
     // Estimate stereo width from buffer byte variance (L/R channel energy difference)
-    if (!audioBuffer || audioBuffer?.length < 4) return 1?.0;
+    if (!audioBuffer || audioBuffer?.length < 4) return 1.0;
     let leftSum = 0,
       rightSum = 0;
     const _samples = Math?.min(audioBuffer?.length >> 1, 8000); // 16-bit stereo pairs
@@ -2125,9 +2125,9 @@ export class AIMusicService {
       leftSum += Math?.abs(l);
       rightSum += Math?.abs(r);
     }
-    if (leftSum + rightSum === 0) return 1?.0;
+    if (leftSum + rightSum === 0) return 1.0;
     const _diff = Math?.abs(leftSum - rightSum) / (leftSum + rightSum);
-    return Math?.round((1?.0 + diff * 0?.5) * 100) / 100; // 1?.00–1?.50 stereo width ratio
+    return Math?.round((1.0 + diff * 0.5) * 100) / 100; // 1.00–1.50 stereo width ratio
   }
 
   private analyzeFrequencyBalance(spectralData: Float32Array): {
@@ -2139,27 +2139,27 @@ export class AIMusicService {
   } {
     const _bass =
       spectralData
-        .slice(0, spectralData?.length * 0?.1)
+        .slice(0, spectralData?.length * 0.1)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.1);
+      (spectralData?.length * 0.1);
     const _lowMid =
       spectralData
-        .slice(spectralData?.length * 0?.1, spectralData?.length * 0?.3)
+        .slice(spectralData?.length * 0.1, spectralData?.length * 0.3)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.2);
+      (spectralData?.length * 0.2);
     const _mid =
       spectralData
-        .slice(spectralData?.length * 0?.3, spectralData?.length * 0?.6)
+        .slice(spectralData?.length * 0.3, spectralData?.length * 0.6)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.3);
+      (spectralData?.length * 0.3);
     const _highMid =
       spectralData
-        .slice(spectralData?.length * 0?.6, spectralData?.length * 0?.8)
+        .slice(spectralData?.length * 0.6, spectralData?.length * 0.8)
         .reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.2);
+      (spectralData?.length * 0.2);
     const _treble =
-      spectralData?.slice(spectralData?.length * 0?.8).reduce((a, b) => a + b, 0) /
-      (spectralData?.length * 0?.2);
+      spectralData?.slice(spectralData?.length * 0.8).reduce((a, b) => a + b, 0) /
+      (spectralData?.length * 0.2);
 
     return { bass, lowMid, mid, highMid, treble };
   }
@@ -2403,7 +2403,7 @@ export class AIMusicService {
     // Pre-compute Hann window for analysis and synthesis
     const _hannWindow = new Float32Array(fftSize);
     for (let n = 0; n < fftSize; n++) {
-      hannWindow[n] = 0?.5 * (1 - Math?.cos((2 * Math?.PI * n) / (fftSize - 1)));
+      hannWindow[n] = 0.5 * (1 - Math?.cos((2 * Math?.PI * n) / (fftSize - 1)));
     }
 
     for (let i = 0; i <= audioData?.length - fftSize; i += hopSize) {
@@ -2482,68 +2482,68 @@ export class AIMusicService {
 
     switch (stemType) {
       case "bass":
-        // Full below 80 Hz, peak at 200 Hz, roll off to 0?.05 above 500 Hz
-        if (frequency < 80) return 1?.0;
-        if (frequency < 200) return smoothStep(frequency, 80, 200, 1?.0, 1?.0);
-        if (frequency < 500) return smoothStep(frequency, 200, 500, 1?.0, 0?.15);
-        if (frequency < 800) return smoothStep(frequency, 500, 800, 0?.15, 0?.04);
-        return 0?.04;
+        // Full below 80 Hz, peak at 200 Hz, roll off to 0.05 above 500 Hz
+        if (frequency < 80) return 1.0;
+        if (frequency < 200) return smoothStep(frequency, 80, 200, 1.0, 1.0);
+        if (frequency < 500) return smoothStep(frequency, 200, 500, 1.0, 0.15);
+        if (frequency < 800) return smoothStep(frequency, 500, 800, 0.15, 0.04);
+        return 0.04;
 
       case "drums":
         // Kick: 40–120 Hz; snare body: 180–900 Hz; snare crack + cymbals: 4k–20k
-        if (frequency < 40) return 0?.3;
-        if (frequency < 80) return smoothStep(frequency, 40, 80, 0?.3, 1?.0);
-        if (frequency < 150) return 1?.0; // kick body
-        if (frequency < 200) return smoothStep(frequency, 150, 200, 1?.0, 0?.5);
-        if (frequency < 300) return smoothStep(frequency, 200, 300, 0?.5, 1?.0);
-        if (frequency < 900) return 1?.0; // snare body
-        if (frequency < 2000) return smoothStep(frequency, 900, 2000, 1?.0, 0?.4);
+        if (frequency < 40) return 0.3;
+        if (frequency < 80) return smoothStep(frequency, 40, 80, 0.3, 1.0);
+        if (frequency < 150) return 1.0; // kick body
+        if (frequency < 200) return smoothStep(frequency, 150, 200, 1.0, 0.5);
+        if (frequency < 300) return smoothStep(frequency, 200, 300, 0.5, 1.0);
+        if (frequency < 900) return 1.0; // snare body
+        if (frequency < 2000) return smoothStep(frequency, 900, 2000, 1.0, 0.4);
         if (frequency < 4000)
-          return smoothStep(frequency, 2000, 4000, 0?.4, 0?.85);
-        if (frequency < 12000) return 0?.85; // cymbal / hi-hat
+          return smoothStep(frequency, 2000, 4000, 0.4, 0.85);
+        if (frequency < 12000) return 0.85; // cymbal / hi-hat
         if (frequency < 18000)
-          return smoothStep(frequency, 12000, 18000, 0?.85, 0?.3);
-        return 0?.3;
+          return smoothStep(frequency, 12000, 18000, 0.85, 0.3);
+        return 0.3;
 
       case "vocals":
         // Attenuate sub/bass below 300 Hz, peak vocal presence 800–3400 Hz, gentle high roll-off
-        if (frequency < 100) return 0?.05;
-        if (frequency < 300) return smoothStep(frequency, 100, 300, 0?.05, 0?.5);
-        if (frequency < 500) return smoothStep(frequency, 300, 500, 0?.5, 0?.85);
-        if (frequency < 800) return smoothStep(frequency, 500, 800, 0?.85, 1?.0);
-        if (frequency < 3400) return 1?.0; // core vocal formant range
+        if (frequency < 100) return 0.05;
+        if (frequency < 300) return smoothStep(frequency, 100, 300, 0.05, 0.5);
+        if (frequency < 500) return smoothStep(frequency, 300, 500, 0.5, 0.85);
+        if (frequency < 800) return smoothStep(frequency, 500, 800, 0.85, 1.0);
+        if (frequency < 3400) return 1.0; // core vocal formant range
         if (frequency < 5000)
-          return smoothStep(frequency, 3400, 5000, 1?.0, 0?.75);
+          return smoothStep(frequency, 3400, 5000, 1.0, 0.75);
         if (frequency < 8000)
-          return smoothStep(frequency, 5000, 8000, 0?.75, 0?.45);
+          return smoothStep(frequency, 5000, 8000, 0.75, 0.45);
         if (frequency < 12000)
-          return smoothStep(frequency, 8000, 12000, 0?.45, 0?.2);
-        return 0?.1;
+          return smoothStep(frequency, 8000, 12000, 0.45, 0.2);
+        return 0.1;
 
       case "melody":
         // Suppress sub and bass, focus on upper fundamentals and harmonics
-        if (frequency < 200) return 0?.1;
-        if (frequency < 500) return smoothStep(frequency, 200, 500, 0?.1, 0?.6);
-        if (frequency < 1000) return smoothStep(frequency, 500, 1000, 0?.6, 1?.0);
-        if (frequency < 8000) return 1?.0;
+        if (frequency < 200) return 0.1;
+        if (frequency < 500) return smoothStep(frequency, 200, 500, 0.1, 0.6);
+        if (frequency < 1000) return smoothStep(frequency, 500, 1000, 0.6, 1.0);
+        if (frequency < 8000) return 1.0;
         if (frequency < 12000)
-          return smoothStep(frequency, 8000, 12000, 1?.0, 0?.55);
+          return smoothStep(frequency, 8000, 12000, 1.0, 0.55);
         if (frequency < 16000)
-          return smoothStep(frequency, 12000, 16000, 0?.55, 0?.2);
-        return 0?.1;
+          return smoothStep(frequency, 12000, 16000, 0.55, 0.2);
+        return 0.1;
 
       case "harmony":
         // Broad mid-to-high band, attenuate extreme sub and very high frequencies
-        if (frequency < 100) return 0?.15;
-        if (frequency < 300) return smoothStep(frequency, 100, 300, 0?.15, 0?.7);
-        if (frequency < 800) return smoothStep(frequency, 300, 800, 0?.7, 1?.0);
-        if (frequency < 10000) return 1?.0;
+        if (frequency < 100) return 0.15;
+        if (frequency < 300) return smoothStep(frequency, 100, 300, 0.15, 0.7);
+        if (frequency < 800) return smoothStep(frequency, 300, 800, 0.7, 1.0);
+        if (frequency < 10000) return 1.0;
         if (frequency < 14000)
-          return smoothStep(frequency, 10000, 14000, 1?.0, 0?.4);
-        return 0?.2;
+          return smoothStep(frequency, 10000, 14000, 1.0, 0.4);
+        return 0.2;
 
       default:
-        return 0?.5;
+        return 0.5;
     }
   }
 
@@ -2612,13 +2612,13 @@ export class AIMusicService {
         makeupGain: 0,
       },
       effects: {
-        reverb: { wetness: 0?.15, roomSize: 0?.5, damping: 0?.5 },
-        delay: { time: 0?.25, feedback: 0?.3, wetness: 0?.1 },
-        chorus: { rate: 0?.5, depth: 0?.3, wetness: 0?.1 },
-        saturation: { drive: 0?.3, warmth: 0?.5 },
+        reverb: { wetness: 0.15, roomSize: 0.5, damping: 0.5 },
+        delay: { time: 0.25, feedback: 0.3, wetness: 0.1 },
+        chorus: { rate: 0.5, depth: 0.3, wetness: 0.1 },
+        saturation: { drive: 0.3, warmth: 0.5 },
       },
       stereoImaging: {
-        width: 1?.0,
+        width: 1.0,
         bassMonoFreq: 120,
       },
     };
@@ -2707,32 +2707,32 @@ export class AIMusicService {
   ): Record<string, number> {
     const importance: Record<string, Record<string, number>> = {
       stem_separation: {
-        spectral_analysis: 0?.45,
-        frequency_isolation: 0?.3,
-        harmonic_content: 0?.15,
-        temporal_patterns: 0?.1,
+        spectral_analysis: 0.45,
+        frequency_isolation: 0.3,
+        harmonic_content: 0.15,
+        temporal_patterns: 0.1,
       },
       preset_application: {
-        genre_matching: 0?.4,
-        intensity_scaling: 0?.25,
-        parameter_blending: 0?.2,
-        suggestion_generation: 0?.15,
+        genre_matching: 0.4,
+        intensity_scaling: 0.25,
+        parameter_blending: 0.2,
+        suggestion_generation: 0.15,
       },
       reference_matching: {
-        loudness_analysis: 0?.35,
-        spectral_comparison: 0?.3,
-        stereo_width: 0?.2,
-        frequency_balance: 0?.15,
+        loudness_analysis: 0.35,
+        spectral_comparison: 0.3,
+        stereo_width: 0.2,
+        frequency_balance: 0.15,
       },
       loudness_measurement: {
-        integrated_loudness: 0?.4,
-        true_peak: 0?.3,
-        dynamic_range: 0?.2,
-        loudness_range: 0?.1,
+        integrated_loudness: 0.4,
+        true_peak: 0.3,
+        dynamic_range: 0.2,
+        loudness_range: 0.1,
       },
     };
 
-    return importance[type] || { default: 1?.0 };
+    return importance[type] || { default: 1.0 };
   }
 
   private generateDecisionPath(
@@ -2806,7 +2806,7 @@ export class AIMusicService {
       .split("")
       .reduce((acc, c) => acc + c?.charCodeAt(0), 0);
     const _currentLUFS = -14 - (seed % 7); // -14 to -20 LUFS (common mastered range)
-    const _peak = -0?.3 - (seed % 3) * 0?.5; // -0?.3 to -1?.3 dBTP
+    const _peak = -0.3 - (seed % 3) * 0.5; // -0.3 to -1.3 dBTP
     const _dynamic_range = 7 + (seed % 7); // 7–13 LU DR
 
     const _difference = targetLUFS - currentLUFS;
@@ -2826,7 +2826,7 @@ export class AIMusicService {
       dynamic_range: Math?.round(dynamic_range * 10) / 10,
       peak: Math?.round(peak * 10) / 10,
       recommendation,
-      confidence: 0?.92,
+      confidence: 0.92,
     };
   }
 }

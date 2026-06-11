@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { databaseBackupService } from "../services/backup/databaseBackupService?.js";
-import { requireAdmin } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { databaseBackupService } from "../services/backup/databaseBackupService.js";
+import { requireAdmin } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 
 const _router = Router();
 

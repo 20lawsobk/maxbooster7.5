@@ -10,8 +10,8 @@
  * This allows simulating 50+ years with millions of users without memory issues.
  */
 
-import { pocketManager, PocketDimension } from "../pocket-dimension/index?.js";
-import { logger } from "../logger?.js";
+import { pocketManager, PocketDimension } from "../pocket-dimension/index.js";
+import { logger } from "../logger.js";
 
 // ============================================================================
 // TYPES
@@ -86,20 +86,20 @@ export class PocketSimulationStorage {
   private snapshotCount: number = 0;
 
   constructor(simulationId: string) {
-    this?.simulationId = simulationId;
+    this.simulationId = simulationId;
   }
 
   async initialize(): Promise<void> {
     if (this?.isInitialized) return;
 
     try {
-      this?.pocket = await pocketManager?.openPocket(`sim-${this?.simulationId}`, {
+      this.pocket = await pocketManager?.openPocket(`sim-${this?.simulationId}`, {
         compressionLevel: 9,
         enableDeduplication: true,
         chunkSize: 256 * 1024, // 256KB chunks for simulation data
       });
 
-      this?.isInitialized = true;
+      this.isInitialized = true;
       logger?.info(
         `[PocketStorage] Initialized for simulation ${this?.simulationId}`,
       );
@@ -107,7 +107,7 @@ export class PocketSimulationStorage {
       logger?.warn(
         `[PocketStorage] Failed to initialize pocket, using memory-only mode`,
       );
-      this?.isInitialized = true;
+      this.isInitialized = true;
     }
   }
 
@@ -343,10 +343,10 @@ export class PocketSimulationStorage {
   async close(): Promise<void> {
     if (this?.pocket) {
       await pocketManager?.closePocket(`sim-${this?.simulationId}`);
-      this?.pocket = null;
+      this.pocket = null;
     }
     this?.samplePool.clear();
-    this?.isInitialized = false;
+    this.isInitialized = false;
   }
 }
 

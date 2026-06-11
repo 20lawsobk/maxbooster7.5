@@ -104,18 +104,18 @@ export class DAWCore {
   readonly history: CommandHistory;
 
   constructor() {
-    this?.transport = transportEngine;
-    this?.timeline = timelineEngine;
-    this?.automation = automationEngine;
-    this?.routing = routingEngine;
-    this?.midi = midiEngine;
-    this?.audio = nonDestructiveAudio;
-    this?.plugins = pluginStateManager;
-    this?.intelligence = musicalIntelligence;
-    this?.project = projectManager;
-    this?.history = commandHistory;
+    this.transport = transportEngine;
+    this.timeline = timelineEngine;
+    this.automation = automationEngine;
+    this.routing = routingEngine;
+    this.midi = midiEngine;
+    this.audio = nonDestructiveAudio;
+    this.plugins = pluginStateManager;
+    this.intelligence = musicalIntelligence;
+    this.project = projectManager;
+    this.history = commandHistory;
 
-    this?.state = {
+    this.state = {
       isInitialized: false,
       audioContextState: "suspended",
       sampleRate: 48000,
@@ -128,7 +128,7 @@ export class DAWCore {
       editMode: "slip",
       automationMode: "read",
       snapEnabled: true,
-      gridDivision: 0?.25,
+      gridDivision: 0.25,
       zoom: 1,
       scrollX: 0,
       scrollY: 0,
@@ -152,7 +152,7 @@ export class DAWCore {
     if (this?.state.isInitialized) return;
 
     try {
-      this?.audioContext = new AudioContext({
+      this.audioContext = new AudioContext({
         sampleRate: this?.state.sampleRate,
         latencyHint: "interactive",
       });
@@ -377,7 +377,7 @@ export class DAWCore {
     if (track) {
       const _beforeVolume = track?.volume;
       const _newVolume = Math?.max(-60, Math?.min(12, volume));
-      track?.volume = newVolume;
+      track.volume = newVolume;
 
       this?.history.execute(
         createCommand(
@@ -386,7 +386,7 @@ export class DAWCore {
           (data: { trackId: string; before: number; after: number }) => {
             const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.volume = data?.after;
+              t.volume = data?.after;
               this?.notifyState();
             }
           },
@@ -402,7 +402,7 @@ export class DAWCore {
     if (track) {
       const _beforePan = track?.pan;
       const _newPan = Math?.max(-1, Math?.min(1, pan));
-      track?.pan = newPan;
+      track.pan = newPan;
 
       this?.history.execute(
         createCommand(
@@ -411,7 +411,7 @@ export class DAWCore {
           (data: { trackId: string; before: number; after: number }) => {
             const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.pan = data?.after;
+              t.pan = data?.after;
               this?.notifyState();
             }
           },
@@ -426,7 +426,7 @@ export class DAWCore {
     const _track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
       const _beforeMuted = track?.muted;
-      track?.muted = !track?.muted;
+      track.muted = !track?.muted;
 
       this?.history.execute(
         createCommand(
@@ -435,7 +435,7 @@ export class DAWCore {
           (data: { trackId: string; before: boolean; after: boolean }) => {
             const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.muted = data?.after;
+              t.muted = data?.after;
               this?.notifyState();
             }
           },
@@ -450,7 +450,7 @@ export class DAWCore {
     const _track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
       const _beforeSolo = track?.solo;
-      track?.solo = !track?.solo;
+      track.solo = !track?.solo;
 
       this?.history.execute(
         createCommand(
@@ -459,7 +459,7 @@ export class DAWCore {
           (data: { trackId: string; before: boolean; after: boolean }) => {
             const _t = this?.state.tracks?.find((t) => t?.id === data?.trackId);
             if (t) {
-              t?.solo = data?.after;
+              t.solo = data?.after;
               this?.notifyState();
             }
           },
@@ -473,7 +473,7 @@ export class DAWCore {
   toggleTrackArm(trackId: string): void {
     const _track = this?.state.tracks?.find((t) => t?.id === trackId);
     if (track) {
-      track?.armed = !track?.armed;
+      track.armed = !track?.armed;
       this?.notifyState();
     }
   }
@@ -513,7 +513,7 @@ export class DAWCore {
     if (!track) return;
 
     this?.plugins.unregisterPlugin(instanceId);
-    track?.plugins = track?.plugins.filter((p) => p?.instanceId !== instanceId);
+    track.plugins = track?.plugins.filter((p) => p?.instanceId !== instanceId);
     this?.notifyState();
   }
 
@@ -568,7 +568,7 @@ export class DAWCore {
   }
 
   setZoom(zoom: number): void {
-    this?.state.zoom = Math?.max(0?.1, Math?.min(10, zoom));
+    this?.state.zoom = Math?.max(0.1, Math?.min(10, zoom));
     this?.timeline.setZoom(this?.state.zoom);
     this?.notifyState();
   }

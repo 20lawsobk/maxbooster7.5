@@ -11,7 +11,7 @@ interface StripeWebhookRequest extends Request {
   stripeEvent: Stripe?.Event;
 }
 import Stripe from "stripe";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 import { stripeWebhookMiddleware, handleWebhookEvent, registerWebhookHandler } from "../../safety/stripeWebhookSecurity";
 import { auditPayment } from "../../safety/auditLogger";
 import { db } from "../../db";
@@ -23,9 +23,9 @@ import {
   users,
 } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { notificationService } from "../../services/notificationService?.js";
-import { dunningService } from "../../services/dunningService?.js";
-import { env } from "../../config/env?.js";
+import { notificationService } from "../../services/notificationService.js";
+import { dunningService } from "../../services/dunningService.js";
+import { env } from "../../config/env.js";
 
 const _router = Router();
 

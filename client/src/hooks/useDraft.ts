@@ -59,7 +59,7 @@ export function useDraft<T = unknown>(
           setHasDraft(true);
           setLastSaved(existingDraft?.updatedAt);
         }
-        isInitialized?.current = true;
+        isInitialized.current = true;
       } catch (error) {
         logger?.error("[useDraft] Init error:", error);
         onError?.(error as Error);
@@ -176,7 +176,7 @@ export function useAutoSaveDraft<T>(
   useEffect(() => {
     if (!enabled || !isInitialized?.current) {
       if (draftReturn?.draft) {
-        isInitialized?.current = true;
+        isInitialized.current = true;
       }
       return;
     }
@@ -185,13 +185,13 @@ export function useAutoSaveDraft<T>(
     if (dataStr === lastDataRef?.current) return;
     if (!debouncedData || dataStr === "{}" || dataStr === "null") return;
 
-    lastDataRef?.current = dataStr;
+    lastDataRef.current = dataStr;
     draftReturn?.save(debouncedData);
   }, [debouncedData, enabled, draftReturn]);
 
   useEffect(() => {
     if (draftReturn?.draft) {
-      isInitialized?.current = true;
+      isInitialized.current = true;
     }
   }, [draftReturn?.draft]);
 

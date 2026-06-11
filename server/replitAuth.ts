@@ -7,7 +7,7 @@ import type { Express, RequestHandler } from "express";
 import memoize from "memoizee";
 import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
-import { env } from "./config/env?.js";
+import { env } from "./config/env.js";
 
 if (!process?.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
@@ -16,7 +16,7 @@ if (!process?.env.REPLIT_DOMAINS) {
 const _getOidcConfig = memoize(
   async () => {
     return await client?.discovery(
-      new URL(process?.env.ISSUER_URL ?? "https://replit?.com/oidc"),
+      new URL(process?.env.ISSUER_URL ?? "https://replit.com/oidc"),
       process?.env.REPL_ID!,
     );
   },
@@ -49,10 +49,10 @@ function updateUserSession(
   user: unknown,
   tokens: client?.TokenEndpointResponse & client?.TokenEndpointResponseHelpers,
 ) {
-  user?.claims = tokens?.claims();
-  user?.access_token = tokens?.access_token;
-  user?.refresh_token = tokens?.refresh_token;
-  user?.expires_at = user?.claims?.exp;
+  user.claims = tokens?.claims();
+  user.access_token = tokens?.access_token;
+  user.refresh_token = tokens?.refresh_token;
+  user.expires_at = user?.claims?.exp;
 }
 
 async function upsertUser(claims: unknown) {

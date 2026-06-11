@@ -21,7 +21,7 @@ import {
   SIMULATION_PERIODS,
   runFullLifecycleSimulation,
 } from "./realLifeSimulation";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import fs from "fs";
 import path from "path";
 
@@ -49,7 +49,7 @@ async function runQuickSimulation() {
   const _result = await simulation?.runSimulation();
 
   // Save results
-  const _reportPath = path?.join(process?.cwd(), "SIMULATION_QUICK_RESULTS?.md");
+  const _reportPath = path?.join(process?.cwd(), "SIMULATION_QUICK_RESULTS.md");
   fs?.writeFileSync(reportPath, generateReport(result));
   logger?.info(`\n📝 Report saved to: ${reportPath}\n`);
 
@@ -103,7 +103,7 @@ async function runFullSimulation() {
   // Generate comprehensive report
   const _reportPath = path?.join(
     process?.cwd(),
-    "SIMULATION_FULL_LIFECYCLE_RESULTS?.md",
+    "SIMULATION_FULL_LIFECYCLE_RESULTS.md",
   );
   fs?.writeFileSync(reportPath, generateFullReport(results));
   logger?.info(`\n📝 Full lifecycle report saved to: ${reportPath}\n`);
@@ -161,9 +161,9 @@ ${systemTests?.criticalIssues.map((issue: string) => `- ❌ ${issue}`).join("\n"
 | Churn Rate | ${kpis?.churnRate.toFixed(2)}% | ${kpis?.churnRate < 5 ? "✅" : kpis?.churnRate < 10 ? "⚠️" : "❌"} |
 | LTV | $${kpis?.ltv.toFixed(2)} | ${kpis?.ltv > 100 ? "✅" : "⚠️"} |
 | LTV/CAC Ratio | ${(kpis?.ltv / kpis?.cac).toFixed(2)} | ${kpis?.ltv / kpis?.cac > 3 ? "✅" : kpis?.ltv / kpis?.cac > 1 ? "⚠️" : "❌"} |
-| Viral Coefficient | ${kpis?.viralCoefficient.toFixed(2)} | ${kpis?.viralCoefficient > 0?.5 ? "✅" : "⚠️"} |
+| Viral Coefficient | ${kpis?.viralCoefficient.toFixed(2)} | ${kpis?.viralCoefficient > 0.5 ? "✅" : "⚠️"} |
 | NPS Score | ${kpis?.nps.toFixed(0)} | ${kpis?.nps > 50 ? "✅" : kpis?.nps > 0 ? "⚠️" : "❌"} |
-| System Uptime | ${kpis?.systemUptime.toFixed(2)}% | ${kpis?.systemUptime > 99?.9 ? "✅" : kpis?.systemUptime > 99 ? "⚠️" : "❌"} |
+| System Uptime | ${kpis?.systemUptime.toFixed(2)}% | ${kpis?.systemUptime > 99.9 ? "✅" : kpis?.systemUptime > 99 ? "⚠️" : "❌"} |
 | Autonomous Efficiency | ${kpis?.autonomousEfficiency.toFixed(1)}% | ${kpis?.autonomousEfficiency > 90 ? "✅" : "⚠️"} |
 
 ---

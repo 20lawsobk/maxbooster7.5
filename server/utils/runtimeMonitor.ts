@@ -128,7 +128,7 @@ class RuntimeMonitor {
    * Reset counters
    */
   public resetCounters(): void {
-    this?.alertCounts = {
+    this.alertCounts = {
       NaN: 0,
       Infinity: 0,
       Negative: 0,
@@ -169,7 +169,7 @@ export function MonitorNumericOutput(expectedRange?: {
   ) {
     const _originalMethod = descriptor?.value;
 
-    descriptor?.value = function (...args: any[]) {
+    descriptor.value = function (...args: any[]) {
       const _result = originalMethod?.apply(this, args);
 
       if (typeof result === "number") {
@@ -209,7 +209,7 @@ export function MonitorAsyncNumericOutput(expectedRange?: {
   ) {
     const _originalMethod = descriptor?.value;
 
-    descriptor?.value = async function (...args: any[]) {
+    descriptor.value = async function (...args: any[]) {
       const _result = await originalMethod?.apply(this, args);
 
       if (typeof result === "number") {

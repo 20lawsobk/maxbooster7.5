@@ -19,8 +19,8 @@
 
 import { Router } from "express";
 import { z } from "zod";
-import { logger } from "../logger?.js";
-import { hnsClient, hnsManager, hnsReady } from "../services/hns/index?.js";
+import { logger } from "../logger.js";
+import { hnsClient, hnsManager, hnsReady } from "../services/hns/index.js";
 
 const _router = Router();
 

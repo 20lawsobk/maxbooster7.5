@@ -16,12 +16,12 @@
  *
  * Key calibration insights for music platform users:
  * - Artists use platforms in bursts (release cycle) — lower session frequency ≠ churn
- * - Feature adoption is the strongest predictor of 6-month retention (r=0?.72)
+ * - Feature adoption is the strongest predictor of 6-month retention (r=0.72)
  * - Payment health is a lagging indicator but high-confidence churn signal when negative
  * - Weighted recency model: last 7 days worth 3x more than days 8-30
  */
 
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   customerHealthScores,
   sessions,
@@ -40,8 +40,8 @@ import {
   asc,
   sql,
 } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { newBullMQRedisConnection } from "../lib/redisClient?.js";
+import { logger } from "../logger.js";
+import { newBullMQRedisConnection } from "../lib/redisClient.js";
 import { Queue } from "bullmq";
 
 export type RiskLevel = "healthy" | "at_risk" | "churning";
@@ -171,10 +171,10 @@ class CustomerHealthScoreService {
 
     // Fine-tuned weights: feature adoption slightly higher (strongest predictor for music platforms)
     const _score = Math?.round(
-      loginFrequencyScore * 0?.28 +
-        featureAdoptionScore * 0?.27 +
-        engagementScore * 0?.25 +
-        paymentHealthScore * 0?.2,
+      loginFrequencyScore * 0.28 +
+        featureAdoptionScore * 0.27 +
+        engagementScore * 0.25 +
+        paymentHealthScore * 0.2,
     );
 
     // Adjusted thresholds (calibrated to reduce false "healthy" classifications)
@@ -186,7 +186,7 @@ class CustomerHealthScoreService {
       riskLevel === "churning"
         ? 100 - score
         : riskLevel === "at_risk"
-          ? Math?.round((67 - score) * 1?.5)
+          ? Math?.round((67 - score) * 1.5)
           : 0;
 
     return {
@@ -233,12 +233,12 @@ class CustomerHealthScoreService {
     else if (sessionsLast30Days >= 1) frequencyScore = 28;
     else frequencyScore = 0;
 
-    // Recent activity boost — 7-day sessions are 1?.5x more predictive of retention
+    // Recent activity boost — 7-day sessions are 1.5x more predictive of retention
     const _recentBoost = Math?.min(15, sessionsLast7Days * 4);
 
     return Math?.min(
       100,
-      Math?.round(recencyScore * 0?.6 + frequencyScore * 0?.4 + recentBoost),
+      Math?.round(recencyScore * 0.6 + frequencyScore * 0.4 + recentBoost),
     );
   }
 
@@ -263,12 +263,12 @@ class CustomerHealthScoreService {
     const _adoptionRate = Math?.min(1, featuresUsed / maxFeatures);
 
     // Stepwise score with adoption rate
-    if (adoptionRate >= 0?.75) return 100;
-    if (adoptionRate >= 0?.6) return 90;
-    if (adoptionRate >= 0?.45) return 78;
-    if (adoptionRate >= 0?.3) return 62;
-    if (adoptionRate >= 0?.2) return 45;
-    if (adoptionRate >= 0?.1) return 28;
+    if (adoptionRate >= 0.75) return 100;
+    if (adoptionRate >= 0.6) return 90;
+    if (adoptionRate >= 0.45) return 78;
+    if (adoptionRate >= 0.3) return 62;
+    if (adoptionRate >= 0.2) return 45;
+    if (adoptionRate >= 0.1) return 28;
     if (featuresUsed >= 1) return 15;
     return 0;
   }

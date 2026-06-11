@@ -1,5 +1,5 @@
-import { getRedisClient } from "../lib/redisConnectionFactory?.js";
-import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
 const _IDEMPOTENCY_PREFIX = "idempotency:";
 const _DEFAULT_TTL_SECONDS = 86400;

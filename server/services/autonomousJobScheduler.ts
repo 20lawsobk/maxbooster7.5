@@ -1,9 +1,9 @@
 import { Queue, Worker, Job } from "bullmq";
 import fsPromises from "fs/promises";
 import path from "path";
-import { newBullMQRedisConnection } from "../lib/redisClient?.js";
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { newBullMQRedisConnection } from "../lib/redisClient.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { sql } from "drizzle-orm";
 
 export const _AUTONOMOUS_QUEUE = "autonomous";
@@ -63,7 +63,7 @@ async function pruneSystemLogs(days = 7): Promise<void> {
 
 /** Delete audit_log rows older than `days` days. */
 async function pruneAuditLog(days = 90): Promise<void> {
-  const { cleanupAuditLog } = await import("../safety/auditLogger?.js");
+  const { cleanupAuditLog } = await import("../safety/auditLogger.js");
   const _count = await cleanupAuditLog(days);
   if (count > 0)
     logger?.info(
@@ -159,17 +159,17 @@ async function processAutonomousJob(job: Job): Promise<void> {
   }
   switch (job?.name) {
     case "content-dispatch": {
-      const { autonomousService } = await import("./autonomousService?.js");
+      const { autonomousService } = await import("./autonomousService.js");
       await autonomousService?.runContentDispatch();
       break;
     }
     case "analytics": {
-      const { autonomousService } = await import("./autonomousService?.js");
+      const { autonomousService } = await import("./autonomousService.js");
       await autonomousService?.runPeriodicAnalytics();
       break;
     }
     case "metrics-persist": {
-      const { autonomousService } = await import("./autonomousService?.js");
+      const { autonomousService } = await import("./autonomousService.js");
       await autonomousService?.persistMetricsToCache();
       break;
     }
@@ -187,7 +187,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
       break;
     case "beat-money-loop-tick": {
       const { beatMoneyLoopService } = await import(
-        "./beatMoneyLoopService?.js"
+        "./beatMoneyLoopService.js"
       );
       const _result = await beatMoneyLoopService?.tick();
       if (result?.ran) {
@@ -210,7 +210,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
       if (job?.name.startsWith("campaign-optimize-")) {
         const _campaignId = job?.data?.campaignId as string | undefined;
         if (campaignId) {
-          const { autonomousService } = await import("./autonomousService?.js");
+          const { autonomousService } = await import("./autonomousService.js");
           await autonomousService?.runCampaignOptimization(campaignId);
         } else {
           logger?.warn(
@@ -377,7 +377,7 @@ async function waitForPdimSettled(
   extraTimeoutMs = 300_000,
 ): Promise<void> {
   // Single-instance mode: no concurrent PDIM writers, no burst to wait for.
-  const { isPdimConfigured } = await import("../lib/pdimClient?.js");
+  const { isPdimConfigured } = await import("../lib/pdimClient.js");
   if (!isPdimConfigured()) return;
 
   // Fixed initial wait — the burst is coming even if the queue is empty now.
@@ -387,7 +387,7 @@ async function waitForPdimSettled(
   );
   await new Promise((r) => setTimeout(r, minWaitMs));
 
-  const { getPdimQueueDepth } = await import("../lib/pdimClient?.js");
+  const { getPdimQueueDepth } = await import("../lib/pdimClient.js");
   const _deadline = Date?.now() + extraTimeoutMs;
   while (Date?.now() < deadline) {
     const _depth = getPdimQueueDepth();
@@ -476,7 +476,7 @@ export async function setupRepeatableJobs(): Promise<void> {
   // from the moment it was raised, deferring the clear via setTimeout if the
   // loop finishes sooner.
   const _REG_MIN_HOLD_MS = 5 * 60_000; // 5-minute minimum window
-  const { setLuaRegistrationMode } = await import("../lib/luaExecutor?.js");
+  const { setLuaRegistrationMode } = await import("../lib/luaExecutor.js");
   const _regStart = Date?.now();
   setLuaRegistrationMode(true);
   try {

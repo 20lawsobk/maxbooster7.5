@@ -2,12 +2,12 @@
  * Max Booster — In-House Diffusion Video Service
  *
  * TypeScript wrapper for the from-scratch NumPy diffusion model.
- * Calls synthesizer?.py via child_process; handles training, inference,
+ * Calls synthesizer.py via child_process; handles training, inference,
  * frame output, and status reporting.
  */
 
 import { spawn } from "child_process";
-import { PYTHON } from "./pythonPath?.js";
+import { PYTHON } from "./pythonPath.js";
 import path from "path";
 import fs from "fs";
 import os from "os";
@@ -21,10 +21,10 @@ const ___filename = __metaUrl
   : path?.resolve(process?.argv[1] ?? "");
 const ___dirname = path?.dirname(__filename);
 
-const _SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer?.py");
+const _SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
 
 const _WEIGHTS_PATH = path?.join(__dirname, "diffusion", "weights?.npz");
-const _META_PATH = path?.join(__dirname, "diffusion", "meta?.json");
+const _META_PATH = path?.join(__dirname, "diffusion", "meta.json");
 
 export interface DiffusionGenOptions {
   prompt?: string;
@@ -140,7 +140,7 @@ export function generateDiffusionFrames(
       nFrames = 15,
 
       frameSize = 512,
-      guidanceScale = 2?.5,
+      guidanceScale = 2.5,
       forceRetrain = false,
     } = opts;
 
@@ -271,7 +271,7 @@ export interface DigitalGPUStatus {
 }
 
 const _PYTORCH_API_BASE =
-  process?.env.VIDEO_DIFFUSION_URL ?? "http://127?.0.0?.1:8008";
+  process?.env.VIDEO_DIFFUSION_URL ?? "http://127.0.0.1:8008";
 
 /** Query DigitalGPU backend capabilities from the diffusion API server. */
 export async function getDigitalGPUStatus(): Promise<DigitalGPUStatus | null> {
@@ -310,8 +310,8 @@ export async function generatePyTorchDiffusionVideo(
     H: opts?.H ?? 256,
     W: opts?.W ?? 256,
     bpm: opts?.bpm ?? 120,
-    energy: opts?.energy ?? 0?.65,
-    energy_peak: opts?.energy_peak ?? 0?.85,
+    energy: opts?.energy ?? 0.65,
+    energy_peak: opts?.energy_peak ?? 0.85,
     style_name: opts?.style_name ?? "neon_tunnel",
     beat_index: opts?.beat_index ?? 0,
     total_beats: opts?.total_beats ?? 4,

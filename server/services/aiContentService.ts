@@ -1,6 +1,6 @@
 import { randomBytes } from "crypto";
-import { unifiedAIController } from "./unifiedAIController?.js";
-import { renderVideo as renderAdvancedVideo } from "./advancedVideoRendererService?.js";
+import { unifiedAIController } from "./unifiedAIController.js";
+import { renderVideo as renderAdvancedVideo } from "./advancedVideoRendererService.js";
 import { db } from "../db";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
@@ -28,14 +28,14 @@ import {
   type AutopilotPreference,
 } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import * as fs from "fs/promises";
 import * as path from "path";
 
 // Sharp-based image generation (production-ready, replaces Canvas)
-import { sharpImageService } from "./sharpImageService?.js";
+import { sharpImageService } from "./sharpImageService.js";
 
-import { synthesizeToWAV, generateChordProgression, generateMelody } from "./musicGenerationService?.js";
+import { synthesizeToWAV, generateChordProgression, generateMelody } from "./musicGenerationService.js";
 
 import { dynamicTrendsService } from "./dynamicTrendsService";
 
@@ -218,7 +218,7 @@ export class AIContentService {
           inferenceType: "generation",
           inputData,
           outputData,
-          confidenceScore: outputData?.confidence || 0?.85,
+          confidenceScore: outputData?.confidence || 0.85,
           executionTimeMs,
           success: true,
           requestId: randomBytes(8).toString("hex"),
@@ -239,7 +239,7 @@ export class AIContentService {
         explanationType: "feature_importance",
         featureImportance: explanation?.features || {},
         decisionPath: explanation?.path || {},
-        confidence: explanation?.confidence || 0?.85,
+        confidence: explanation?.confidence || 0.85,
         humanReadable: explanation?.text || "Content generated using AI model",
         visualizationData: explanation?.viz || {},
       });
@@ -289,7 +289,7 @@ export class AIContentService {
       const _inferenceId = await this?.logInference(
         "multilingual",
         { prompt, platform, tone, length },
-        { content, confidence: aiResult?.confidence || 0?.9 },
+        { content, confidence: aiResult?.confidence || 0.9 },
         undefined,
         executionTimeMs,
       );
@@ -297,8 +297,8 @@ export class AIContentService {
       if (inferenceId) {
         await this?.logExplanation(inferenceId, {
           text: `Generated ${platform} content via ${aiResult?.source || "AI"} with ${tone} tone`,
-          features: { platform: 0?.3, tone: 0?.4, length: 0?.3 },
-          confidence: aiResult?.confidence || 0?.9,
+          features: { platform: 0.3, tone: 0.4, length: 0.3 },
+          confidence: aiResult?.confidence || 0.9,
         });
       }
 
@@ -440,9 +440,9 @@ export class AIContentService {
     });
 
     const tone: "formal" | "casual" | "mixed" =
-      formalCount > casualCount * 1?.5
+      formalCount > casualCount * 1.5
         ? "formal"
-        : casualCount > formalCount * 1?.5
+        : casualCount > formalCount * 1.5
           ? "casual"
           : "mixed";
 
@@ -518,7 +518,7 @@ export class AIContentService {
     if (inferenceId) {
       await this?.logExplanation(inferenceId, {
         text: `Analyzed ${historicalPosts?.length} posts to extract brand voice with ${confidenceScore}% confidence`,
-        features: { tone: 0?.3, emoji: 0?.2, hashtags: 0?.2, vocabulary: 0?.3 },
+        features: { tone: 0.3, emoji: 0.2, hashtags: 0.2, vocabulary: 0.3 },
         confidence: profile?.confidenceScore / 100,
       });
     }
@@ -618,7 +618,7 @@ export class AIContentService {
       if (inferenceId) {
         await this?.logExplanation(inferenceId, {
           text: `Applied ${profile?.tone} tone with ${profile?.emojiUsage} emoji usage`,
-          features: { tone: 0?.4, emoji: 0?.3, phrases: 0?.3 },
+          features: { tone: 0.4, emoji: 0.3, phrases: 0.3 },
           confidence: profile?.confidenceScore / 100,
         });
       }
@@ -665,12 +665,12 @@ export class AIContentService {
         await this?.logExplanation(inferenceId, {
           text: `Detected ${trends?.length} trending topics for ${platform}${genre ? ` in ${genre}` : ""} using dynamic trends engine`,
           features: {
-            platform: 0?.25,
-            genre: 0?.25,
-            dayOfWeek: 0?.25,
-            season: 0?.25,
+            platform: 0.25,
+            genre: 0.25,
+            dayOfWeek: 0.25,
+            season: 0.25,
           },
-          confidence: 0?.92,
+          confidence: 0.92,
         });
       }
 
@@ -765,7 +765,7 @@ export class AIContentService {
           category: cat,
           popularity: Math?.max(30, 95 - i * 7),
           competition: Math?.max(20, 90 - i * 7),
-          avgEngagement: parseFloat((4?.2 + i * 0?.6).toFixed(1)),
+          avgEngagement: parseFloat((4.2 + i * 0.6).toFixed(1)),
           trending: i < 2,
         };
       });
@@ -916,8 +916,8 @@ export class AIContentService {
     if (inferenceId) {
       await this?.logExplanation(inferenceId, {
         text: `Suggested ${recommendations?.length} optimal posting times for ${platform}`,
-        features: { platform: 0?.3, historical: 0?.4, algorithm: 0?.3 },
-        confidence: 0?.89,
+        features: { platform: 0.3, historical: 0.4, algorithm: 0.3 },
+        confidence: 0.89,
       });
     }
 
@@ -1060,8 +1060,8 @@ export class AIContentService {
     if (inferenceId) {
       await this?.logExplanation(inferenceId, {
         text: `Generated ${variantResults?.length} AI A/B test variants for ${variationType}`,
-        features: { variationType: 0?.5, baseContent: 0?.3, count: 0?.2 },
-        confidence: 0?.9,
+        features: { variationType: 0.5, baseContent: 0.3, count: 0.2 },
+        confidence: 0.9,
       });
     }
 

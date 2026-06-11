@@ -1,4 +1,4 @@
-import { storage } from "../storage?.js";
+import { storage } from "../storage.js";
 
 const _TAX_THRESHOLD = 600;
 

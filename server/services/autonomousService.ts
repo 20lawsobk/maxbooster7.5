@@ -7,19 +7,19 @@ import { viralScoringService } from "./viralScoring";
 import { timingOptimizerService as timingOptimizer } from "./timingOptimizer";
 import { contentVariantGeneratorService as contentVariantGenerator } from "./contentVariantGenerator";
 import { algorithmIntelligenceService as algorithmIntelligence } from "./algorithmIntelligence";
-import { notificationService } from "./notificationService?.js";
+import { notificationService } from "./notificationService.js";
 import type { SocialPost, AdCampaign, Release } from "@shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { EventEmitter } from "events";
-import { cbIsOpen } from "../lib/pdimCircuitBreaker?.js";
+import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
 import sharp from "sharp";
-import { distributedCache } from "../infrastructure/distributedCache?.js";
+import { distributedCache } from "../infrastructure/distributedCache.js";
 import {
   setupRepeatableJobs,
   scheduleCampaignOptimization,
   removeCampaignOptimization,
   teardownRepeatableJobs,
-} from "./autonomousJobScheduler?.js";
+} from "./autonomousJobScheduler.js";
 
 const _METRICS_CACHE_KEY = "autonomous:metrics";
 let _lastPersistWarnAt = 0; // rate-limits persist-failure log to once per 60 s
@@ -93,9 +93,9 @@ export class AutonomousService extends EventEmitter {
 
   constructor() {
     super();
-    this?.autonomousMode = process?.env.AUTONOMOUS_MODE === "true" || false;
-    this?.config = this?.getDefaultConfig();
-    this?.metrics = this?.initializeMetrics();
+    this.autonomousMode = process?.env.AUTONOMOUS_MODE === "true" || false;
+    this.config = this?.getDefaultConfig();
+    this.metrics = this?.initializeMetrics();
     this?.loadAutonomousWhitelist();
     this?.loadMetricsFromCache();
   }
@@ -111,7 +111,7 @@ export class AutonomousService extends EventEmitter {
       const _cached =
         await distributedCache?.get<AutonomousMetrics>(METRICS_CACHE_KEY);
       if (cached) {
-        this?.metrics = { ...cached, lastUpdated: new Date(cached?.lastUpdated) };
+        this.metrics = { ...cached, lastUpdated: new Date(cached?.lastUpdated) };
         logger?.info("[AUTONOMOUS] Metrics restored from shared cache");
       }
     } catch (err) {
@@ -189,7 +189,7 @@ export class AutonomousService extends EventEmitter {
 
   private async loadAutonomousWhitelist(): Promise<void> {
     try {
-      this?.autonomousWhitelist = new Set();
+      this.autonomousWhitelist = new Set();
       if (process?.env.ADMIN_USER_IDS) {
         const _adminIds = process?.env.ADMIN_USER_IDS?.split(",");
         adminIds?.forEach((id) => this?.autonomousWhitelist.add(id?.trim()));
@@ -224,7 +224,7 @@ export class AutonomousService extends EventEmitter {
     if (!this?.isAutonomousEnabled(userId)) {
       throw new Error("Autonomous mode not enabled for this user");
     }
-    this?.config = { ...this?.config, ...updates };
+    this.config = { ...this?.config, ...updates };
     this?.emit("configUpdated", { userId, config: this?.config });
     return this?.config;
   }
@@ -497,7 +497,7 @@ export class AutonomousService extends EventEmitter {
       const _successfulDispatches = dispatchResults?.filter((r) => r?.success);
 
       const _estimatedReach = successfulDispatches?.length * 50000;
-      const _royaltyProjection = estimatedReach * 0?.004;
+      const _royaltyProjection = estimatedReach * 0.004;
 
       this?.metrics.releasesDistributed++;
       this?.metrics.lastUpdated = new Date();
@@ -691,10 +691,10 @@ export class AutonomousService extends EventEmitter {
       recommendations?.push("Schedule posts during optimal engagement windows");
 
       const _predictions = {
-        projectedGrowth: insights?.growthRate * 1?.15,
+        projectedGrowth: insights?.growthRate * 1.15,
         estimatedReach: insights?.totalEngagement * 12,
-        revenueProjection: (insights?.revenueMetrics.monthly || 0) * 1?.2,
-        viralPotential: 0?.35 + insights?.growthRate / 100,
+        revenueProjection: (insights?.revenueMetrics.monthly || 0) * 1.2,
+        viralPotential: 0.35 + insights?.growthRate / 100,
       };
 
       this?.metrics.analyticsGenerated++;
@@ -867,11 +867,11 @@ export class AutonomousService extends EventEmitter {
       const _metrics =
         await advertisingDispatchService?.getCampaignMetrics(campaignId);
 
-      if (metrics?.ctr < 0?.01) {
+      if (metrics?.ctr < 0.01) {
         await advertisingDispatchService?.optimizeTargeting(campaignId);
       }
 
-      if (metrics?.conversionRate < 0?.02) {
+      if (metrics?.conversionRate < 0.02) {
         await advertisingDispatchService?.optimizeCreative(campaignId);
       }
 
@@ -963,7 +963,7 @@ export class AutonomousService extends EventEmitter {
 
   startAutonomousOperations(): void {
     if (this?.isRunning) return;
-    this?.isRunning = true;
+    this.isRunning = true;
 
     logger?.info("[AUTONOMOUS] Starting 24/7 autonomous operations...");
 
@@ -979,7 +979,7 @@ export class AutonomousService extends EventEmitter {
   }
 
   stopAutonomousOperations(): void {
-    this?.isRunning = false;
+    this.isRunning = false;
 
     teardownRepeatableJobs().catch((err) =>
       logger?.warn(

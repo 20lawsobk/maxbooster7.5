@@ -1,5 +1,5 @@
-import { logger } from "../logger?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
 
 interface ClusterSessionConfig {
   sessionSecret: string;
@@ -23,7 +23,7 @@ class ClusterSessionManager {
       );
       process?.exit(1);
     }
-    this?.config = {
+    this.config = {
       sessionSecret:
         rawSecret || "dev-only-insecure-fallback-not-for-production",
       sessionName: "maxbooster?.sid",
@@ -32,12 +32,12 @@ class ClusterSessionManager {
         process?.env.NODE_ENV === "production" ||
         !!process?.env.REPLIT_DEPLOYMENT,
     };
-    this?.isDistributedMode = true;
+    this.isDistributedMode = true;
   }
 
   static getInstance(): ClusterSessionManager {
     if (!ClusterSessionManager?.instance) {
-      ClusterSessionManager?.instance = new ClusterSessionManager();
+      ClusterSessionManager.instance = new ClusterSessionManager();
     }
     return ClusterSessionManager?.instance;
   }

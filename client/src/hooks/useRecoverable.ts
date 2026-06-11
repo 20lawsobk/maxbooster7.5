@@ -71,8 +71,8 @@ export function useRecoverable<T, R = void>(
         metadata,
         execute: async () => {
           result = await executeFn(data);
-          lastDataRef?.current = data;
-          lastResultRef?.current = result;
+          lastDataRef.current = data;
+          lastResultRef.current = result;
           options?.onExecute?.(data);
           return result;
         },

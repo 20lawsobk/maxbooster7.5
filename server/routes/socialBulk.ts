@@ -10,8 +10,8 @@ import {
 import { bulkSchedulePostSchema, bulkValidatePostSchema } from "@shared/schema";
 import { socialQueueService } from "../services/socialQueueService";
 import { eq, and, desc, inArray } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const _router = Router();
 

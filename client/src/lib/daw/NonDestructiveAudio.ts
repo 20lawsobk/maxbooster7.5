@@ -73,7 +73,7 @@ export class NonDestructiveAudioEngine {
   private previewBuffers: Map<string, AudioBuffer> = new Map();
 
   constructor() {
-    this?.state = {
+    this.state = {
       sources: [],
       events: [],
       clipboard: null,
@@ -84,7 +84,7 @@ export class NonDestructiveAudioEngine {
   }
 
   setAudioContext(ctx: AudioContext): void {
-    this?.audioContext = ctx;
+    this.audioContext = ctx;
   }
 
   getState(): Readonly<NonDestructiveAudioState> {
@@ -110,8 +110,8 @@ export class NonDestructiveAudioEngine {
 
     if (audioBuffer) {
       this?.previewBuffers.set(id, audioBuffer);
-      source?.waveformData = this?.extractWaveform(audioBuffer);
-      source?.peakData = this?.extractPeaks(audioBuffer);
+      source.waveformData = this?.extractWaveform(audioBuffer);
+      source.peakData = this?.extractPeaks(audioBuffer);
     }
 
     this?.state.sources?.push(source);
@@ -212,8 +212,8 @@ export class NonDestructiveAudioEngine {
       sourceStartOffset: 0,
       sourceEndOffset: 0,
       gain: 1,
-      fadeIn: { enabled: false, duration: 0?.1, curve: "linear" },
-      fadeOut: { enabled: false, duration: 0?.1, curve: "linear" },
+      fadeIn: { enabled: false, duration: 0.1, curve: "linear" },
+      fadeOut: { enabled: false, duration: 0.1, curve: "linear" },
       timeStretch: {
         enabled: false,
         ratio: 1,
@@ -271,8 +271,8 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.startBeat = Math?.max(0, newStartBeat);
-    if (newTrackId) event?.trackId = newTrackId;
+    event.startBeat = Math?.max(0, newStartBeat);
+    if (newTrackId) event.trackId = newTrackId;
     this?.notify();
   }
 
@@ -290,15 +290,15 @@ export class NonDestructiveAudioEngine {
 
       if (newStartBeat >= 0) {
         const _deltaOffset = event?.startBeat - newStartBeat;
-        event?.startBeat = newStartBeat;
-        event?.sourceStartOffset = Math?.max(
+        event.startBeat = newStartBeat;
+        event.sourceStartOffset = Math?.max(
           0,
           event?.sourceStartOffset - deltaOffset,
         );
       }
     }
 
-    event?.durationBeats = Math?.max(0?.0625, newDuration);
+    event.durationBeats = Math?.max(0.0625, newDuration);
     this?.notify();
   }
 
@@ -306,7 +306,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.gain = Math?.max(0, Math?.min(4, gain));
+    event.gain = Math?.max(0, Math?.min(4, gain));
     this?.notify();
   }
 
@@ -314,7 +314,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.fadeIn = { ...event?.fadeIn, ...settings };
+    event.fadeIn = { ...event?.fadeIn, ...settings };
     this?.notify();
   }
 
@@ -322,7 +322,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.fadeOut = { ...event?.fadeOut, ...settings };
+    event.fadeOut = { ...event?.fadeOut, ...settings };
     this?.notify();
   }
 
@@ -333,7 +333,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.timeStretch = { ...event?.timeStretch, ...settings };
+    event.timeStretch = { ...event?.timeStretch, ...settings };
     this?.notify();
   }
 
@@ -341,7 +341,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.pitchShift = { ...event?.pitchShift, ...settings };
+    event.pitchShift = { ...event?.pitchShift, ...settings };
     this?.notify();
   }
 
@@ -349,7 +349,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return;
 
-    event?.reversed = !event?.reversed;
+    event.reversed = !event?.reversed;
     this?.notify();
   }
 
@@ -357,7 +357,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event) return;
 
-    event?.muted = !event?.muted;
+    event.muted = !event?.muted;
     this?.notify();
   }
 
@@ -365,7 +365,7 @@ export class NonDestructiveAudioEngine {
     const _event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event) return;
 
-    event?.locked = !event?.locked;
+    event.locked = !event?.locked;
     this?.notify();
   }
 
@@ -382,22 +382,22 @@ export class NonDestructiveAudioEngine {
     const _leftDuration = splitBeat - event?.startBeat;
     const _rightDuration = eventEnd - splitBeat;
 
-    event?.durationBeats = leftDuration;
+    event.durationBeats = leftDuration;
 
     const _rightId = this?.createEvent(event?.trackId, event?.sourceId, splitBeat)!;
     const _rightEvent = this?.state.events?.find((e) => e?.id === rightId)!;
 
-    rightEvent?.durationBeats = rightDuration;
-    rightEvent?.sourceStartOffset = event?.sourceStartOffset + leftDuration;
-    rightEvent?.gain = event?.gain;
-    rightEvent?.fadeIn = structuredClone(event?.fadeIn);
-    rightEvent?.fadeOut = structuredClone(event?.fadeOut);
-    rightEvent?.timeStretch = structuredClone(event?.timeStretch);
-    rightEvent?.pitchShift = structuredClone(event?.pitchShift);
-    rightEvent?.color = event?.color;
+    rightEvent.durationBeats = rightDuration;
+    rightEvent.sourceStartOffset = event?.sourceStartOffset + leftDuration;
+    rightEvent.gain = event?.gain;
+    rightEvent.fadeIn = structuredClone(event?.fadeIn);
+    rightEvent.fadeOut = structuredClone(event?.fadeOut);
+    rightEvent.timeStretch = structuredClone(event?.timeStretch);
+    rightEvent.pitchShift = structuredClone(event?.pitchShift);
+    rightEvent.color = event?.color;
 
-    event?.fadeOut = { enabled: false, duration: 0?.1, curve: "linear" };
-    rightEvent?.fadeIn = { enabled: false, duration: 0?.1, curve: "linear" };
+    event.fadeOut = { enabled: false, duration: 0.1, curve: "linear" };
+    rightEvent.fadeIn = { enabled: false, duration: 0.1, curve: "linear" };
 
     this?.notify();
     return { left: eventId, right: rightId };
@@ -432,7 +432,7 @@ export class NonDestructiveAudioEngine {
   crossfade(
     eventId1: string,
     eventId2: string,
-    overlapBeats: number = 0?.25,
+    overlapBeats: number = 0.25,
   ): void {
     const _event1 = this?.state.events?.find((e) => e?.id === eventId1);
     const _event2 = this?.state.events?.find((e) => e?.id === eventId2);
@@ -443,12 +443,12 @@ export class NonDestructiveAudioEngine {
     const [first, second] =
       event1?.startBeat < event2?.startBeat ? [event1, event2] : [event2, event1];
 
-    first?.fadeOut = {
+    first.fadeOut = {
       enabled: true,
       duration: overlapBeats,
       curve: "equal-power",
     };
-    second?.fadeIn = {
+    second.fadeIn = {
       enabled: true,
       duration: overlapBeats,
       curve: "equal-power",
@@ -551,7 +551,7 @@ export class NonDestructiveAudioEngine {
       case "logarithmic":
         return 1 - Math?.pow(1 - progress, 2);
       case "s-curve":
-        return progress < 0?.5
+        return progress < 0.5
           ? 2 * progress * progress
           : 1 - Math?.pow(-2 * progress + 2, 2) / 2;
       case "equal-power":

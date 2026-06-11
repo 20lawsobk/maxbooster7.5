@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _stripeKey =
   process?.env.STRIPE_SECRET_KEY || process?.env.TESTING_STRIPE_SECRET_KEY;
@@ -46,7 +46,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
     // Check if products already exist
     const _existingProducts = await stripe?.products.list({ limit: 100 });
     let product = existingProducts?.data.find(
-      (p) => p?.metadata?.app === "max-booster",
+      (p) => p?.metadata.app === "max-booster",
     );
 
     // Create product if it doesn't exist
@@ -86,7 +86,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
       }
 
       // Create new price
-      const priceParams: Stripe?.PriceCreateParams = {
+      const priceParams: Stripe.PriceCreateParams = {
         product: product!.id,
         unit_amount: amount * 100, // Convert to cents
         currency: "usd",
@@ -97,7 +97,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
       };
 
       if (recurring) {
-        priceParams?.recurring = recurring;
+        priceParams.recurring = recurring;
       }
 
       const _price = await stripe!.prices?.create(priceParams);

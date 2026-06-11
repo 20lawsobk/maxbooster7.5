@@ -1,9 +1,9 @@
-import { storage } from "../storage?.js";
-import { notificationService } from "./notificationService?.js";
-import { loggingService } from "./loggingService?.js";
+import { storage } from "../storage.js";
+import { notificationService } from "./notificationService.js";
+import { loggingService } from "./loggingService.js";
 import type { InsertAnalyticsAnomaly } from "@shared/schema";
-import { queueService } from "./queueService?.js";
-import type { AnalyticsJobData } from "./queueService?.js";
+import { queueService } from "./queueService.js";
+import type { AnalyticsJobData } from "./queueService.js";
 
 export interface JobResponse {
   jobId: string;
@@ -130,10 +130,10 @@ export class AnalyticsAnomalyService {
           value = Number(data?.revenue) || 0;
           break;
         case "listeners":
-          value = Number(data?.streams) / 1?.5 || 0;
+          value = Number(data?.streams) / 1.5 || 0;
           break;
         case "engagement":
-          value = Number(data?.streams) * 0?.8 || 0;
+          value = Number(data?.streams) * 0.8 || 0;
           break;
       }
 

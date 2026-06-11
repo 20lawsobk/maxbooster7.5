@@ -47,12 +47,12 @@ export function useAutoscroll({
       case "turnover": {
         const _currentScroll = container?.scrollLeft;
         const _visibleEnd = currentScroll + containerWidth;
-        const _pageMargin = containerWidth * 0?.1;
+        const _pageMargin = containerWidth * 0.1;
         if (playheadPosition > visibleEnd - pageMargin) {
-          container?.scrollLeft = playheadPosition - pageMargin;
+          container.scrollLeft = playheadPosition - pageMargin;
           setScrollPosition(container?.scrollLeft);
         } else if (playheadPosition < currentScroll) {
-          container?.scrollLeft = Math?.max(0, playheadPosition - pageMargin);
+          container.scrollLeft = Math?.max(0, playheadPosition - pageMargin);
           setScrollPosition(container?.scrollLeft);
         }
         break;
@@ -60,15 +60,15 @@ export function useAutoscroll({
 
       case "continuous-centered": {
         const _targetScroll = playheadPosition - containerWidth / 2;
-        container?.scrollLeft = Math?.max(0, targetScroll);
+        container.scrollLeft = Math?.max(0, targetScroll);
         setScrollPosition(container?.scrollLeft);
         break;
       }
 
       case "continuous-left": {
-        const _leftMargin = containerWidth * 0?.1;
+        const _leftMargin = containerWidth * 0.1;
         const _targetScroll = playheadPosition - leftMargin;
-        container?.scrollLeft = Math?.max(0, targetScroll);
+        container.scrollLeft = Math?.max(0, targetScroll);
         setScrollPosition(container?.scrollLeft);
         break;
       }
@@ -87,22 +87,22 @@ export function useAutoscroll({
     if (!isPlaying || autoscrollMode === "off") {
       if (animationFrameRef?.current) {
         cancelAnimationFrame(animationFrameRef?.current);
-        animationFrameRef?.current = null;
+        animationFrameRef.current = null;
       }
       return;
     }
 
     const _animate = () => {
       updateScroll();
-      animationFrameRef?.current = requestAnimationFrame(animate);
+      animationFrameRef.current = requestAnimationFrame(animate);
     };
 
-    animationFrameRef?.current = requestAnimationFrame(animate);
+    animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animationFrameRef?.current) {
         cancelAnimationFrame(animationFrameRef?.current);
-        animationFrameRef?.current = null;
+        animationFrameRef.current = null;
       }
     };
   }, [isPlaying, autoscrollMode, updateScroll]);

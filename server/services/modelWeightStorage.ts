@@ -1,8 +1,8 @@
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
-import { logger } from "../logger?.js";
-import { PocketDimensionManager } from "../pocket-dimension/index?.js";
+import { logger } from "../logger.js";
+import { PocketDimensionManager } from "../pocket-dimension/index.js";
 
 const _WEIGHTS_DIR = path?.join(process?.cwd(), "ai_model", "weights");
 const _POCKET_ID = "ai-model-weights";
@@ -14,7 +14,7 @@ class ModelWeightStorage {
 
   static getInstance(): ModelWeightStorage {
     if (!ModelWeightStorage?.instance) {
-      ModelWeightStorage?.instance = new ModelWeightStorage();
+      ModelWeightStorage.instance = new ModelWeightStorage();
     }
     return ModelWeightStorage?.instance;
   }
@@ -24,7 +24,7 @@ class ModelWeightStorage {
     await fsPromises?.mkdir(WEIGHTS_DIR, { recursive: true });
     try {
       const _manager = PocketDimensionManager?.getInstance("./pocket-dimensions");
-      this?.pocket = await manager?.openPocket(POCKET_ID, {
+      this.pocket = await manager?.openPocket(POCKET_ID, {
         compressionLevel: 9,
         enableDeduplication: true,
         enableVersioning: false,
@@ -39,7 +39,7 @@ class ModelWeightStorage {
         err instanceof Error ? err?.message : String(err),
       );
     }
-    this?.initialized = true;
+    this.initialized = true;
   }
 
   private localPath(name: string): string {

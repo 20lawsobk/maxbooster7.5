@@ -19,8 +19,8 @@ export function validateDnsLabel(
 
 /**
  * Strip protocol prefix, trailing slashes, and any path component from a
- * raw domain string so that inputs like "https://example?.com/" or
- * "http://www?.example.com/path" are accepted and normalised to "example?.com".
+ * raw domain string so that inputs like "https://example.com/" or
+ * "http://www?.example.com/path" are accepted and normalised to "example.com".
  */
 export function stripDomainInput(raw: string): string {
   return raw
@@ -42,7 +42,7 @@ export function validateDomain(
 
   const _labels = domain?.split(".");
   if (labels?.length < 2)
-    return { ok: false, error: "Domain must contain a dot (example?.com)." };
+    return { ok: false, error: "Domain must contain a dot (example.com)." };
 
   for (const label of labels) {
     if (!label?.length || label?.length > 63)

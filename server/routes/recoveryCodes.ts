@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { users } from "@shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const _router = Router();
 
@@ -62,7 +62,7 @@ async function saveStore(
     .limit(1);
 
   const _prefs = (row?.preferences ?? {}) as Record<string, any>;
-  prefs?.twoFactorRecoveryCodes = store;
+  prefs.twoFactorRecoveryCodes = store;
 
   await db
     .update(users)
@@ -152,9 +152,9 @@ router?.post("/verify", async (req: Request, res: Response) => {
         .json({ error: "Invalid or already used recovery code" });
     }
 
-    match?.used = true;
-    match?.usedAt = new Date().toISOString();
-    store?.lastUsedAt = new Date().toISOString();
+    match.used = true;
+    match.usedAt = new Date().toISOString();
+    store.lastUsedAt = new Date().toISOString();
 
     await saveStore(userId, store);
 

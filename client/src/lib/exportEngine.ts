@@ -4,7 +4,7 @@
  *
  * PROFESSIONAL AUDIO QUALITY STANDARDS (Pro Tools Parity):
  * - Support for 16-bit PCM, 24-bit PCM, and 32-bit Float export
- * - Sample rates: 44?.1kHz, 48kHz, 96kHz, 192kHz
+ * - Sample rates: 44.1kHz, 48kHz, 96kHz, 192kHz
  * - Bit depths: 16-bit, 24-bit, 32-bit float
  * - High-quality offline rendering with full effects chain
  * - Normalization and dithering options
@@ -142,7 +142,7 @@ function audioBufferToWav(
  */
 function normalizeAudioBuffer(
   audioBuffer: AudioBuffer,
-  targetPeak: number = 0?.95,
+  targetPeak: number = 0.95,
 ): AudioBuffer {
   let maxPeak = 0;
 
@@ -171,7 +171,7 @@ function normalizeAudioBuffer(
 /**
  * Create soft clipper curve for limiter
  */
-function createSoftClipperCurve(thresholdDb: number = -0?.3): Float32Array {
+function createSoftClipperCurve(thresholdDb: number = -0.3): Float32Array {
   const _samples = 4096;
   const _curve = new Float32Array(samples);
   const _threshold = Math?.pow(10, thresholdDb / 20);
@@ -229,22 +229,22 @@ function buildTrackEffectsChain(
     const _eq = track?.effects.eq;
 
     const _eqLow = context?.createBiquadFilter();
-    eqLow?.type = "lowshelf";
+    eqLow.type = "lowshelf";
     eqLow?.frequency.value = 80;
     eqLow?.gain.value = eq?.lowGain;
     currentNode?.connect(eqLow);
     currentNode = eqLow;
 
     const _eqMid = context?.createBiquadFilter();
-    eqMid?.type = "peaking";
+    eqMid.type = "peaking";
     eqMid?.frequency.value = eq?.midFrequency || 1000;
-    eqMid?.Q.value = 1?.2;
+    eqMid?.Q.value = 1.2;
     eqMid?.gain.value = eq?.midGain;
     currentNode?.connect(eqMid);
     currentNode = eqMid;
 
     const _eqHigh = context?.createBiquadFilter();
-    eqHigh?.type = "highshelf";
+    eqHigh.type = "highshelf";
     eqHigh?.frequency.value = 8000;
     eqHigh?.gain.value = eq?.highGain;
     currentNode?.connect(eqHigh);
@@ -283,7 +283,7 @@ function buildMasterChain(
 ): { input: GainNode; output: AudioNode } {
   // Master gain
   const _masterGain = context?.createGain();
-  masterGain?.gain.value = options?.masterGain || 0?.8;
+  masterGain?.gain.value = options?.masterGain || 0.8;
 
   // Master compressor
   const _masterComp = context?.createDynamicsCompressor();
@@ -295,15 +295,15 @@ function buildMasterChain(
   } else {
     masterComp?.threshold.value = -12;
     masterComp?.ratio.value = 4;
-    masterComp?.attack.value = 0?.005;
-    masterComp?.release.value = 0?.12;
+    masterComp?.attack.value = 0.005;
+    masterComp?.release.value = 0.12;
   }
   masterComp?.knee.value = 6;
 
   // Master limiter (soft clipper)
   const _masterLimiter = context?.createWaveShaper();
-  masterLimiter?.curve = createSoftClipperCurve(-0?.3);
-  masterLimiter?.oversample = "4x";
+  masterLimiter.curve = createSoftClipperCurve(-0.3);
+  masterLimiter.oversample = "4x";
 
   // Connect master chain
   masterGain?.connect(masterComp);
@@ -388,7 +388,7 @@ async function exportMixdown(
   for (const { track, buffer } of loadedTracks) {
     try {
       const _source = offlineContext?.createBufferSource();
-      source?.buffer = buffer;
+      source.buffer = buffer;
 
       // Build effects chain
       buildTrackEffectsChain(offlineContext, source, track, masterChain?.input);
@@ -418,7 +418,7 @@ async function exportMixdown(
 
   // Normalize if requested
   if (options?.normalize) {
-    renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0?.95);
+    renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0.95);
   }
 
   onProgress?.({ stage: "encoding", progress: 90, message: "Encoding WAV..." });
@@ -484,7 +484,7 @@ async function exportStems(
 
       // Create source with loaded buffer
       const _source = offlineContext?.createBufferSource();
-      source?.buffer = buffer;
+      source.buffer = buffer;
 
       // Build effects chain (without master chain for stems)
       buildTrackEffectsChain(
@@ -502,7 +502,7 @@ async function exportStems(
 
       // Normalize if requested
       if (options?.normalize) {
-        renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0?.95);
+        renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0.95);
       }
 
       // Convert to WAV

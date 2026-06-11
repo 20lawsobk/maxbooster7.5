@@ -5,8 +5,8 @@ import {
   preSaveCampaigns,
 } from "@shared/schema";
 import { eq, and, lte, gte } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { releaseWorkflowService } from "./releaseWorkflowService?.js";
+import { logger } from "../logger.js";
+import { releaseWorkflowService } from "./releaseWorkflowService.js";
 
 export interface SchedulingWindow {
   platform: string;

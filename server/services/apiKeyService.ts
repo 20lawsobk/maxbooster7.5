@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { db } from "../db";
 import { apiKeys, apiUsage } from "@shared/schema";
 import { eq, and, desc, sql, gte } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // Extended Express Request with API key info
 export interface ApiKeyRequest extends Request {
@@ -133,7 +133,7 @@ export async function validateApiKey(
     }
 
     // Attach API key info to request
-    req?.apiKey = {
+    req.apiKey = {
       id: keyRecord?.id,
       userId: keyRecord?.userId,
       tier: "free", // Default tier since schema doesn't store tier
@@ -264,7 +264,7 @@ export async function trackApiUsage(
 
   // Capture response to get status code
   const _originalSend = res?.send;
-  res?.send = function (data: unknown) {
+  res.send = function (data: unknown) {
     const _responseTime = Date?.now() - startTime;
 
     // Track usage asynchronously (don't wait)

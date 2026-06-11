@@ -22,24 +22,24 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { logger } from "../logger?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { db } from "../db.js";
 import { autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import {
   contentQualityPipeline,
   type ContentVariant,
   type ContentContext,
-} from "./contentQualityPipeline?.js";
-import { pocketManager } from "../pocket-dimension/index?.js";
-import { isPdimConfigured, getPdimClient } from "../lib/pdimClient?.js";
-import { pushTrainingFeedback } from "./maxcoreSync?.js";
+} from "./contentQualityPipeline.js";
+import { pocketManager } from "../pocket-dimension/index.js";
+import { isPdimConfigured, getPdimClient } from "../lib/pdimClient.js";
+import { pushTrainingFeedback } from "./maxcoreSync.js";
 import {
   getCalibratedThresholds,
   isCalibrated,
   runCalibration,
-} from "./maxcoreScoreCalibrator?.js";
-import { modelWeightStorage } from "./modelWeightStorage?.js";
+} from "./maxcoreScoreCalibrator.js";
+import { modelWeightStorage } from "./modelWeightStorage.js";
 
 export interface QualityGateResult {
   winner: ContentVariant;
@@ -154,7 +154,7 @@ export class ContentQualityGate {
 
   static getInstance(): ContentQualityGate {
     if (!ContentQualityGate?.instance) {
-      ContentQualityGate?.instance = new ContentQualityGate();
+      ContentQualityGate.instance = new ContentQualityGate();
     }
     return ContentQualityGate?.instance;
   }
@@ -242,7 +242,7 @@ export class ContentQualityGate {
           let inRegistration = false;
           try {
             const { isLuaRegistrationMode } = await import(
-              "../lib/luaExecutor?.js"
+              "../lib/luaExecutor.js"
             );
             inRegistration = isLuaRegistrationMode();
           } catch {
@@ -402,11 +402,11 @@ export class ContentQualityGate {
    *
    *   Platform   │ Avg rate │ High trigger │ Low trigger │ Why
    *   ───────────┼──────────┼──────────────┼─────────────┼────────────────────────────
-   *   Twitter/X  │ 0?.5–1 %  │    ≥ 2 %     │   < 0?.5 %   │ Follow-based, noisy feed
+   *   Twitter/X  │ 0.5–1 %  │    ≥ 2 %     │   < 0.5 %   │ Follow-based, noisy feed
    *   Instagram  │ 1–3 %    │    ≥ 5 %     │   < 1 %     │ Mixed algo + follow
    *   TikTok     │ 5–9 %    │    ≥ 8 %     │   < 3 %     │ FYP exposes to strangers
    *   LinkedIn   │ 2–5 %    │    ≥ 4 %     │   < 1 %     │ Professional, lower volume
-   *   Facebook   │ 0?.5–1 %  │    ≥ 2 %     │   < 0?.5 %   │ Heavily pay-to-play
+   *   Facebook   │ 0.5–1 %  │    ≥ 2 %     │   < 0.5 %   │ Heavily pay-to-play
    *   Threads    │ 1–3 %    │    ≥ 3 %     │   < 1 %     │ New, algo still maturing
    *   YouTube    │ 1–3 %    │    ≥ 4 %     │   < 1 %     │ Long-form, lower rate
    *
@@ -424,16 +424,16 @@ export class ContentQualityGate {
   } {
     const _p = platform?.toLowerCase().replace(/[^a-z]/g, "");
     const benchmarks: Record<string, { high: number; low: number }> = {
-      twitter: { high: 2?.0, low: 0?.5 },
-      x: { high: 2?.0, low: 0?.5 },
-      instagram: { high: 5?.0, low: 1?.0 },
-      tiktok: { high: 8?.0, low: 3?.0 },
-      linkedin: { high: 4?.0, low: 1?.0 },
-      facebook: { high: 2?.0, low: 0?.5 },
-      threads: { high: 3?.0, low: 1?.0 },
-      youtube: { high: 4?.0, low: 1?.0 },
+      twitter: { high: 2.0, low: 0.5 },
+      x: { high: 2.0, low: 0.5 },
+      instagram: { high: 5.0, low: 1.0 },
+      tiktok: { high: 8.0, low: 3.0 },
+      linkedin: { high: 4.0, low: 1.0 },
+      facebook: { high: 2.0, low: 0.5 },
+      threads: { high: 3.0, low: 1.0 },
+      youtube: { high: 4.0, low: 1.0 },
     };
-    return benchmarks[p] ?? { high: 5?.0, low: 2?.0 };
+    return benchmarks[p] ?? { high: 5.0, low: 2.0 };
   }
 
   async recordEngagementOutcome(

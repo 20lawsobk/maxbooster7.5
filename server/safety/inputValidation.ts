@@ -7,7 +7,7 @@
 
 import { Request, Response, NextFunction } from "express";
 import { z, ZodSchema, ZodError } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 /**
  * Common validation schemas
@@ -142,7 +142,7 @@ export function validate<T extends ZodSchema>(
 
       // Replace original data with validated/transformed data
       if (source === "body") {
-        req?.body = validated;
+        req.body = validated;
       } else if (source === "query") {
         (req as Record<string, unknown>).validatedQuery = validated;
       } else {
@@ -219,7 +219,7 @@ export function sanitizationMiddleware(
 ): void {
   // Sanitize body
   if (req?.body && typeof req?.body === "object") {
-    req?.body = sanitizeObject(req?.body);
+    req.body = sanitizeObject(req?.body);
   }
 
   // Sanitize query params (in-place for Express 5 read-only req?.query)

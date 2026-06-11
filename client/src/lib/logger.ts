@@ -21,7 +21,7 @@ class Logger {
   private isDevelopment: boolean;
 
   constructor() {
-    this?.isDevelopment = import?.meta.env?.DEV;
+    this.isDevelopment = import?.meta.env?.DEV;
   }
 
   private formatLog(

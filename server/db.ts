@@ -3,11 +3,11 @@ import { drizzle } from "drizzle-orm/neon-serverless";
 import { sql } from "drizzle-orm";
 import ws from "ws";
 import * as schema from "@shared/schema";
-import { config } from "./config/defaults?.js";
+import { config } from "./config/defaults.js";
 import { createHash } from "crypto";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
-neonConfig?.webSocketConstructor = ws;
+neonConfig.webSocketConstructor = ws;
 
 if (!config?.database.url) {
   throw new Error(
@@ -60,7 +60,7 @@ class QueryTelemetry {
     const _sqlHash = this?.hashSql(sql);
 
     if (this?.firstQueryTime === null) {
-      this?.firstQueryTime = now;
+      this.firstQueryTime = now;
     }
 
     const _isWarmingUp = now - this?.firstQueryTime < this?.warmupGraceMs;
@@ -89,7 +89,7 @@ class QueryTelemetry {
 
     // Track slowest query
     if (!this?.slowestEver || duration > this?.slowestEver.duration) {
-      this?.slowestEver = { sqlHash, duration };
+      this.slowestEver = { sqlHash, duration };
     }
 
     // Adaptive sampling: At high QPS, sample queries instead of storing all
@@ -103,26 +103,26 @@ class QueryTelemetry {
 
       if (avgQueriesPerMinute > 1000000) {
         // >1M QPM = extremely high load
-        this?.sampleRate = 1000; // Sample 1 in 1000 queries
+        this.sampleRate = 1000; // Sample 1 in 1000 queries
       } else if (avgQueriesPerMinute > 100000) {
         // >100K QPM = very high load
-        this?.sampleRate = 100; // Sample 1 in 100 queries
+        this.sampleRate = 100; // Sample 1 in 100 queries
       } else if (avgQueriesPerMinute > 10000) {
         // >10K QPM = high load
-        this?.sampleRate = 10; // Sample 1 in 10 queries
+        this.sampleRate = 10; // Sample 1 in 10 queries
       } else if (avgQueriesPerMinute > 1000) {
         // >1K QPM = medium load
-        this?.sampleRate = 5; // Sample 1 in 5 queries
+        this.sampleRate = 5; // Sample 1 in 5 queries
       } else {
-        this?.sampleRate = 1; // Sample all queries at low load
+        this.sampleRate = 1; // Sample all queries at low load
       }
     }
 
     // Add to ring buffer with sampling (overwrites oldest when full)
     if (this?.queriesSinceLastSample >= this?.sampleRate) {
       this?.ringBuffer[this?.bufferIndex] = { timestamp: now, sqlHash, duration };
-      this?.bufferIndex = (this?.bufferIndex + 1) % this?.maxSize;
-      this?.queriesSinceLastSample = 0;
+      this.bufferIndex = (this?.bufferIndex + 1) % this?.maxSize;
+      this.queriesSinceLastSample = 0;
     }
   }
 
@@ -158,7 +158,7 @@ class QueryTelemetry {
     const _durations = recentQueries
       .map((q) => q?.duration)
       .sort((a, b) => a - b);
-    const _p95Index = Math?.floor(durations?.length * 0?.95);
+    const _p95Index = Math?.floor(durations?.length * 0.95);
     const _p95Latency = durations[p95Index] || 0;
     const _windowedAverage =
       durations?.reduce((sum, d) => sum + d, 0) / durations?.length;

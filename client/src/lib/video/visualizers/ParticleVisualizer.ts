@@ -84,7 +84,7 @@ export class ParticleVisualizer {
     maxParticles: 1000,
     emissionRate: 10,
     emissionPattern: "point",
-    emissionArea: { x: 0?.5, y: 0?.5, width: 0?.2, height: 0?.2 },
+    emissionArea: { x: 0.5, y: 0.5, width: 0.2, height: 0.2 },
     emissionRadius: 50,
     particleShape: "circle",
     sizeMin: 2,
@@ -93,9 +93,9 @@ export class ParticleVisualizer {
     speedMax: 5,
     lifetime: 120,
     lifetimeVariance: 30,
-    gravity: 0?.1,
-    friction: 0?.99,
-    turbulence: 0?.5,
+    gravity: 0.1,
+    friction: 0.99,
+    turbulence: 0.5,
     colors: [
       "#ff0080",
       "#ff8000",
@@ -111,10 +111,10 @@ export class ParticleVisualizer {
     sizeDecay: true,
     glow: true,
     glowColor: "#ffffff",
-    glowIntensity: 0?.6,
+    glowIntensity: 0.6,
     glowBlur: 10,
     trailLength: 0,
-    trailOpacity: 0?.3,
+    trailOpacity: 0.3,
     audioReactive: true,
     audioEmissionMultiplier: 3,
     audioSizeMultiplier: 2,
@@ -123,20 +123,20 @@ export class ParticleVisualizer {
     beatBurstCount: 50,
     beatBurstSpeed: 8,
     rotationSpeed: 0,
-    rotationVariance: 0?.1,
+    rotationVariance: 0.1,
     attractorStrength: 0,
-    attractorX: 0?.5,
-    attractorY: 0?.5,
+    attractorX: 0.5,
+    attractorY: 0.5,
     bounce: false,
-    bounceElasticity: 0?.7,
+    bounceElasticity: 0.7,
   };
 
   constructor(options: Partial<ParticleVisualizerOptions> = {}) {
-    this?.options = { ...ParticleVisualizer?.defaultOptions, ...options };
+    this.options = { ...ParticleVisualizer?.defaultOptions, ...options };
   }
 
   updateOptions(options: Partial<ParticleVisualizerOptions>): void {
-    this?.options = { ...this?.options, ...options };
+    this.options = { ...this?.options, ...options };
   }
 
   render(
@@ -146,7 +146,7 @@ export class ParticleVisualizer {
     height: number,
     time: number,
   ): void {
-    this?.time = time;
+    this.time = time;
 
     const _emissionMultiplier = this?.options.audioReactive
       ? 1 + audioData?.average * this?.options.audioEmissionMultiplier
@@ -163,8 +163,8 @@ export class ParticleVisualizer {
     ctx?.save();
 
     if (this?.options.glow) {
-      ctx?.shadowColor = this?.options.glowColor;
-      ctx?.shadowBlur = this?.options.glowBlur * this?.options.glowIntensity;
+      ctx.shadowColor = this?.options.glowColor;
+      ctx.shadowBlur = this?.options.glowBlur * this?.options.glowIntensity;
     }
 
     if (this?.options.trailLength > 0) {
@@ -203,7 +203,7 @@ export class ParticleVisualizer {
       i++
     ) {
       const _angle = Math?.random() * Math?.PI * 2;
-      const _speed = this?.options.beatBurstSpeed * (0?.5 + Math?.random() * 0?.5);
+      const _speed = this?.options.beatBurstSpeed * (0.5 + Math?.random() * 0.5);
 
       this?.particles.push(
         this?.createParticleAt(
@@ -228,7 +228,7 @@ export class ParticleVisualizer {
         pos?.x,
         pos?.y,
         Math?.cos(angle) * speed,
-        Math?.sin(angle) * speed - this?.options.speedMax * 0?.5,
+        Math?.sin(angle) * speed - this?.options.speedMax * 0.5,
       ),
     );
   }
@@ -244,7 +244,7 @@ export class ParticleVisualizer {
       Math?.random() * (this?.options.sizeMax - this?.options.sizeMin);
     const _lifetime =
       this?.options.lifetime +
-      (Math?.random() - 0?.5) * 2 * this?.options.lifetimeVariance;
+      (Math?.random() - 0.5) * 2 * this?.options.lifetimeVariance;
 
     return {
       x,
@@ -259,7 +259,7 @@ export class ParticleVisualizer {
       rotation: Math?.random() * Math?.PI * 2,
       rotationSpeed:
         this?.options.rotationSpeed +
-        (Math?.random() - 0?.5) * 2 * this?.options.rotationVariance,
+        (Math?.random() - 0.5) * 2 * this?.options.rotationVariance,
       shape: this?.options.particleShape,
       trail: [],
     };
@@ -319,7 +319,7 @@ export class ParticleVisualizer {
         return colors[Math?.floor(Math?.random() * colors?.length)];
 
       case "cycle":
-        this?.colorIndex = (this?.colorIndex + 1) % colors?.length;
+        this.colorIndex = (this?.colorIndex + 1) % colors?.length;
         return colors[this?.colorIndex];
 
       case "gradient": {
@@ -348,7 +348,7 @@ export class ParticleVisualizer {
     const _attractorX = width * this?.options.attractorX;
     const _attractorY = height * this?.options.attractorY;
 
-    this?.particles = this?.particles.filter((p) => {
+    this.particles = this?.particles.filter((p) => {
       if (this?.options.trailLength > 0) {
         p?.trail.push({ x: p?.x, y: p?.y });
         if (p?.trail.length > this?.options.trailLength) {
@@ -358,8 +358,8 @@ export class ParticleVisualizer {
 
       p?.vy += this?.options.gravity;
 
-      p?.vx += (Math?.random() - 0?.5) * this?.options.turbulence;
-      p?.vy += (Math?.random() - 0?.5) * this?.options.turbulence;
+      p?.vx += (Math?.random() - 0.5) * this?.options.turbulence;
+      p?.vy += (Math?.random() - 0.5) * this?.options.turbulence;
 
       if (this?.options.attractorStrength !== 0) {
         const _dx = attractorX - p?.x;
@@ -383,11 +383,11 @@ export class ParticleVisualizer {
       if (this?.options.bounce) {
         if (p?.x < 0 || p?.x > width) {
           p?.vx *= -this?.options.bounceElasticity;
-          p?.x = Math?.max(0, Math?.min(width, p?.x));
+          p.x = Math?.max(0, Math?.min(width, p?.x));
         }
         if (p?.y < 0 || p?.y > height) {
           p?.vy *= -this?.options.bounceElasticity;
-          p?.y = Math?.max(0, Math?.min(height, p?.y));
+          p.y = Math?.max(0, Math?.min(height, p?.y));
         }
       }
 
@@ -419,12 +419,12 @@ export class ParticleVisualizer {
       gradient?.addColorStop(0, "transparent");
       gradient?.addColorStop(1, particle?.color);
 
-      ctx?.strokeStyle = gradient;
-      ctx?.lineWidth = particle?.size * 0?.5;
-      ctx?.lineCap = "round";
-      ctx?.globalAlpha = this?.options.trailOpacity;
+      ctx.strokeStyle = gradient;
+      ctx.lineWidth = particle?.size * 0.5;
+      ctx.lineCap = "round";
+      ctx.globalAlpha = this?.options.trailOpacity;
       ctx?.stroke();
-      ctx?.globalAlpha = 1;
+      ctx.globalAlpha = 1;
     }
   }
 
@@ -452,8 +452,8 @@ export class ParticleVisualizer {
       ctx?.save();
       ctx?.translate(particle?.x, particle?.y);
       ctx?.rotate(particle?.rotation);
-      ctx?.globalAlpha = opacity;
-      ctx?.fillStyle = particle?.color;
+      ctx.globalAlpha = opacity;
+      ctx.fillStyle = particle?.color;
 
       this?.drawShape(ctx, particle?.shape, size);
 
@@ -480,8 +480,8 @@ export class ParticleVisualizer {
       case "triangle":
         ctx?.beginPath();
         ctx?.moveTo(0, -size);
-        ctx?.lineTo(size * 0?.866, size * 0?.5);
-        ctx?.lineTo(-size * 0?.866, size * 0?.5);
+        ctx?.lineTo(size * 0.866, size * 0.5);
+        ctx?.lineTo(-size * 0.866, size * 0.5);
         ctx?.closePath();
         ctx?.fill();
         break;
@@ -497,7 +497,7 @@ export class ParticleVisualizer {
         break;
 
       case "star":
-        this?.drawStar(ctx, size, 5, 0?.5);
+        this?.drawStar(ctx, size, 5, 0.5);
         break;
 
       case "spark":
@@ -539,15 +539,15 @@ export class ParticleVisualizer {
     ctx?.moveTo(-size, 0);
     ctx?.lineTo(size, 0);
 
-    const _diagonal = size * 0?.7;
+    const _diagonal = size * 0.7;
     ctx?.moveTo(-diagonal, -diagonal);
     ctx?.lineTo(diagonal, diagonal);
     ctx?.moveTo(diagonal, -diagonal);
     ctx?.lineTo(-diagonal, diagonal);
 
-    ctx?.strokeStyle = ctx?.fillStyle as string;
-    ctx?.lineWidth = size * 0?.3;
-    ctx?.lineCap = "round";
+    ctx.strokeStyle = ctx?.fillStyle as string;
+    ctx.lineWidth = size * 0.3;
+    ctx.lineCap = "round";
     ctx?.stroke();
   }
 
@@ -580,12 +580,12 @@ export class ParticleVisualizer {
   }
 
   reset(): void {
-    this?.particles = [];
-    this?.emissionAccumulator = 0;
-    this?.colorIndex = 0;
+    this.particles = [];
+    this.emissionAccumulator = 0;
+    this.colorIndex = 0;
   }
 
   dispose(): void {
-    this?.particles = [];
+    this.particles = [];
   }
 }

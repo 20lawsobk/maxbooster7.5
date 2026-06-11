@@ -17,10 +17,10 @@
 
 import dns from "dns";
 import { eq } from "drizzle-orm";
-import { db, pool } from "../../db?.js";
+import { db, pool } from "../../db.js";
 import { claimedDomains } from "@shared/schema";
-import { logger } from "../../logger?.js";
-import { NS1, NS2, PLATFORM_DOMAIN, DOMAIN_PRICES } from "../domainRegistrarService?.js";
+import { logger } from "../../logger.js";
+import { NS1, NS2, PLATFORM_DOMAIN, DOMAIN_PRICES } from "../domainRegistrarService.js";
 import type {
   RegistrarProvider,
   AvailabilityResult,
@@ -30,7 +30,7 @@ import type {
   DomainInfo,
   TransferParams,
   TransferResult,
-} from "./types?.js";
+} from "./types.js";
 
 const _dnsResolve = dns?.promises.resolve;
 

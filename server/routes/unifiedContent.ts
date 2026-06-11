@@ -27,20 +27,20 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import { logger } from "../logger?.js";
-import { requireAuth } from "../middleware/auth?.js";
+import { logger } from "../logger.js";
+import { requireAuth } from "../middleware/auth.js";
 import {
   unifiedContentOrchestrator,
   type UnifiedContentInput,
   type BoostSheetInput,
   type ArtistContextInput,
-} from "../services/unifiedContentOrchestrator?.js";
+} from "../services/unifiedContentOrchestrator.js";
 import {
   PLATFORM_SPECS,
   ALL_PLATFORMS,
   type SupportedPlatform,
-} from "../services/contentPipeline/platformFormatters?.js";
-import { MAX_BOOSTER_FEATURES } from "../services/contentPipeline/maxBoosterContentStrategy?.js";
+} from "../services/contentPipeline/platformFormatters.js";
+import { MAX_BOOSTER_FEATURES } from "../services/contentPipeline/maxBoosterContentStrategy.js";
 
 const _router = Router();
 

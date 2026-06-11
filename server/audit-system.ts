@@ -3,7 +3,7 @@ import { exec } from "child_process";
 import fs from "fs/promises";
 import path from "path";
 import crypto from "crypto";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 const _execAsync = promisify(exec);
 
@@ -19,7 +19,7 @@ export class AuditSystem {
   private seoAuditor: SEOAuditor;
 
   private constructor() {
-    this?.auditResults = {
+    this.auditResults = {
       overallScore: 0,
       securityScore: 0,
       functionalityScore: 0,
@@ -39,19 +39,19 @@ export class AuditSystem {
       },
     };
 
-    this?.securityAuditor = new SecurityAuditor();
-    this?.functionalityAuditor = new FunctionalityAuditor();
-    this?.performanceAuditor = new PerformanceAuditor();
-    this?.codeQualityAuditor = new CodeQualityAuditor();
-    this?.accessibilityAuditor = new AccessibilityAuditor();
-    this?.seoAuditor = new SEOAuditor();
+    this.securityAuditor = new SecurityAuditor();
+    this.functionalityAuditor = new FunctionalityAuditor();
+    this.performanceAuditor = new PerformanceAuditor();
+    this.codeQualityAuditor = new CodeQualityAuditor();
+    this.accessibilityAuditor = new AccessibilityAuditor();
+    this.seoAuditor = new SEOAuditor();
 
     this?.initializeAuditSystem();
   }
 
   public static getInstance(): AuditSystem {
     if (!AuditSystem?.instance) {
-      AuditSystem?.instance = new AuditSystem();
+      AuditSystem.instance = new AuditSystem();
     }
     return AuditSystem?.instance;
   }
@@ -232,12 +232,12 @@ export class AuditSystem {
   // Calculate overall score
   private calculateOverallScore(): void {
     const _weights = {
-      security: 0?.25,
-      functionality: 0?.25,
-      performance: 0?.2,
-      codeQuality: 0?.15,
-      accessibility: 0?.1,
-      seo: 0?.05,
+      security: 0.25,
+      functionality: 0.25,
+      performance: 0.2,
+      codeQuality: 0.15,
+      accessibility: 0.1,
+      seo: 0.05,
     };
 
     this?.auditResults.overallScore = Math?.round(
@@ -253,19 +253,19 @@ export class AuditSystem {
   // Check compliance
   private async checkCompliance(): Promise<void> {
     // GDPR compliance
-    this?.auditResults.compliance?.gdpr = await this?.checkGDPRCompliance();
+    this?.auditResults.compliance.gdpr = await this?.checkGDPRCompliance();
 
     // CCPA compliance
-    this?.auditResults.compliance?.ccpa = await this?.checkCCPACompliance();
+    this?.auditResults.compliance.ccpa = await this?.checkCCPACompliance();
 
     // SOX compliance
-    this?.auditResults.compliance?.sox = await this?.checkSOXCompliance();
+    this?.auditResults.compliance.sox = await this?.checkSOXCompliance();
 
     // HIPAA compliance
-    this?.auditResults.compliance?.hipaa = await this?.checkHIPAACompliance();
+    this?.auditResults.compliance.hipaa = await this?.checkHIPAACompliance();
 
     // PCI compliance
-    this?.auditResults.compliance?.pci = await this?.checkPCICompliance();
+    this?.auditResults.compliance.pci = await this?.checkPCICompliance();
   }
 
   // Check GDPR compliance
@@ -386,7 +386,7 @@ export class AuditSystem {
   private async checkDataRetention(): Promise<boolean> {
     // Real: a retention policy file must exist OR an env var must declare it.
     const _hasPolicyFile = await this?.fileExists(
-      path?.join(process?.cwd(), "server/compliance/policies/data-retention?.md"),
+      path?.join(process?.cwd(), "server/compliance/policies/data-retention.md"),
     );
     return hasPolicyFile || !!process?.env.DATA_RETENTION_DAYS;
   }
@@ -395,15 +395,15 @@ export class AuditSystem {
     // Real: a cookie/consent banner component must exist on the client.
     return (
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/components/CookieConsent?.tsx"),
+        path?.join(process?.cwd(), "client/src/components/CookieConsent.tsx"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/components/CookieBanner?.tsx"),
+        path?.join(process?.cwd(), "client/src/components/CookieBanner.tsx"),
       )) ||
       (await this?.fileExists(
         path?.join(
           process?.cwd(),
-          "client/src/components/legal/CookieConsent?.tsx",
+          "client/src/components/legal/CookieConsent.tsx",
         ),
       ))
     );
@@ -435,15 +435,15 @@ export class AuditSystem {
   private async checkPrivacyNotice(): Promise<boolean> {
     return (
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/Privacy?.tsx"),
+        path?.join(process?.cwd(), "client/src/pages/Privacy.tsx"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/PrivacyPolicy?.tsx"),
+        path?.join(process?.cwd(), "client/src/pages/PrivacyPolicy.tsx"),
       )) ||
       (await this?.fileExists(
         path?.join(
           process?.cwd(),
-          "server/compliance/policies/privacy-policy?.md",
+          "server/compliance/policies/privacy-policy.md",
         ),
       ))
     );
@@ -465,11 +465,11 @@ export class AuditSystem {
       (await this?.fileExists(
         path?.join(
           process?.cwd(),
-          "server/compliance/policies/data-processing-agreement?.md",
+          "server/compliance/policies/data-processing-agreement.md",
         ),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/DataDisclosure?.tsx"),
+        path?.join(process?.cwd(), "client/src/pages/DataDisclosure.tsx"),
       ))
     );
   }
@@ -484,13 +484,13 @@ export class AuditSystem {
   private async checkAuditTrail(): Promise<boolean> {
     return (
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/services/auditLoggerService?.ts"),
+        path?.join(process?.cwd(), "server/services/auditLoggerService.ts"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/safety/auditLogger?.ts"),
+        path?.join(process?.cwd(), "server/safety/auditLogger.ts"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/middleware/auditLogger?.ts"),
+        path?.join(process?.cwd(), "server/middleware/auditLogger.ts"),
       ))
     );
   }
@@ -505,9 +505,9 @@ export class AuditSystem {
 
   private async checkAccessControls(): Promise<boolean> {
     return (
-      (await this?.fileExists(path?.join(process?.cwd(), "server/auth?.ts"))) &&
+      (await this?.fileExists(path?.join(process?.cwd(), "server/auth.ts"))) &&
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/middleware/auth?.ts"),
+        path?.join(process?.cwd(), "server/middleware/auth.ts"),
       ))
     );
   }
@@ -549,13 +549,13 @@ export class AuditSystem {
     // Real: a security workflow / scanner must exist.
     return (
       (await this?.fileExists(
-        path?.join(process?.cwd(), ".github/workflows/security?.yml"),
+        path?.join(process?.cwd(), ".github/workflows/security.yml"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), ".github/workflows/codeql?.yml"),
+        path?.join(process?.cwd(), ".github/workflows/codeql.yml"),
       )) ||
       (await this?.fileExists(
-        path?.join(process?.cwd(), "server/security-system?.ts"),
+        path?.join(process?.cwd(), "server/security-system.ts"),
       ))
     );
   }
@@ -1018,7 +1018,7 @@ class AccessibilityAuditor {
     let scoreDeduction = 0;
     try {
       const _html = await fs?.readFile(
-        path?.join(process?.cwd(), "client/index?.html"),
+        path?.join(process?.cwd(), "client/index.html"),
         "utf-8",
       );
       if (!/<html[^>]+lang=["'][a-z-]+["']/i?.test(html)) {
@@ -1028,8 +1028,8 @@ class AccessibilityAuditor {
           severity: "high",
           title: "Missing lang attribute on <html>",
           description:
-            "WCAG 3?.1.1 requires the page language be programmatically set.",
-          file: "client/index?.html",
+            "WCAG 3.1.1 requires the page language be programmatically set.",
+          file: "client/index.html",
           recommendation:
             'Add lang="en" (or the appropriate code) to the <html> element.',
         });
@@ -1042,8 +1042,8 @@ class AccessibilityAuditor {
           severity: "medium",
           title: "Missing viewport meta",
           description:
-            "Required for mobile zoom/scaling per WCAG 1?.4.10 reflow.",
-          file: "client/index?.html",
+            "Required for mobile zoom/scaling per WCAG 1.4.10 reflow.",
+          file: "client/index.html",
           recommendation:
             'Add <meta name="viewport" content="width=device-width, initial-scale=1">',
         });
@@ -1095,7 +1095,7 @@ class SEOAuditor {
     let scoreDeduction = 0;
     try {
       const _html = await fs?.readFile(
-        path?.join(process?.cwd(), "client/index?.html"),
+        path?.join(process?.cwd(), "client/index.html"),
         "utf-8",
       );
       const required: { name: string; pattern: RegExp; weight: number }[] = [
@@ -1138,8 +1138,8 @@ class SEOAuditor {
             type: "seo",
             severity: r?.weight >= 4 ? "high" : "medium",
             title: `Missing <${r?.name}> meta tag`,
-            description: `client/index?.html is missing the <${r?.name}> tag.`,
-            file: "client/index?.html",
+            description: `client/index.html is missing the <${r?.name}> tag.`,
+            file: "client/index.html",
             recommendation: `Add the appropriate <${r?.name}> tag to client/index?.html.`,
           });
           scoreDeduction += r?.weight;
@@ -1161,7 +1161,7 @@ class SEOAuditor {
     let scoreDeduction = 0;
     try {
       const _html = await fs?.readFile(
-        path?.join(process?.cwd(), "client/index?.html"),
+        path?.join(process?.cwd(), "client/index.html"),
         "utf-8",
       );
       const _hasJsonLd = /<script[^>]+type=["']application\/ld\+json["']/i?.test(
@@ -1174,8 +1174,8 @@ class SEOAuditor {
           severity: "medium",
           title: "Missing JSON-LD structured data",
           description:
-            'client/index?.html does not contain a <script type="application/ld+json"> block. Search engines benefit from structured data (Organization, WebSite, BreadcrumbList).',
-          file: "client/index?.html",
+            'client/index.html does not contain a <script type="application/ld+json"> block. Search engines benefit from structured data (Organization, WebSite, BreadcrumbList).',
+          file: "client/index.html",
           recommendation:
             "Add a JSON-LD <script> block describing your Organization and WebSite per schema?.org.",
         });

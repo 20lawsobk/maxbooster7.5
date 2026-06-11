@@ -21,7 +21,7 @@ class InMemoryCache {
   private misses = 0;
 
   constructor(config: Partial<CacheConfig> = {}) {
-    this?.config = {
+    this.config = {
       ttlMs: 60000,
       maxEntries: 10000,
       enabled: true,
@@ -122,7 +122,7 @@ class InMemoryCache {
 
   clear(): void {
     this?.cache.clear();
-    this?.accessOrder = [];
+    this.accessOrder = [];
   }
 
   private cleanup(): void {
@@ -230,14 +230,14 @@ export const _createCachingMiddleware = (
     const _originalJson = res?.json.bind(res);
     const _originalSend = res?.send.bind(res);
 
-    res?.json = (data: Record<string, unknown>) => {
+    res.json = (data: Record<string, unknown>) => {
       if (res?.statusCode >= 200 && res?.statusCode < 300) {
         cache?.set(key, data, "application/json");
       }
       return originalJson(data);
     };
 
-    res?.send = (data: Record<string, unknown>) => {
+    res.send = (data: Record<string, unknown>) => {
       if (res?.statusCode >= 200 && res?.statusCode < 300) {
         const _contentType =
           (res?.getHeader("Content-Type") as string) || "text/html";

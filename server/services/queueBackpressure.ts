@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { EventEmitter } from "events";
 
 interface BackpressureConfig {
@@ -18,12 +18,12 @@ interface BackpressureStatus {
 export class QueueBackpressureManager extends EventEmitter {
   private config: BackpressureConfig;
   private backpressureActive: boolean = false;
-  private monitoringInterval: NodeJS?.Timeout | null = null;
+  private monitoringInterval: NodeJS.Timeout | null = null;
 
   constructor(config?: Partial<BackpressureConfig>) {
     super();
 
-    this?.config = {
+    this.config = {
       maxQueueSize: config?.maxQueueSize || 1000,
       maxMemoryMB: config?.maxMemoryMB || 1200,
       checkIntervalMs: config?.checkIntervalMs || 30000,
@@ -44,7 +44,7 @@ export class QueueBackpressureManager extends EventEmitter {
 
     logger?.info("🚦 Starting backpressure monitoring...");
 
-    this?.monitoringInterval = setInterval(() => {
+    this.monitoringInterval = setInterval(() => {
       this?.checkBackpressure();
     }, this?.config.checkIntervalMs);
   }
@@ -52,7 +52,7 @@ export class QueueBackpressureManager extends EventEmitter {
   stop(): void {
     if (this?.monitoringInterval) {
       clearInterval(this?.monitoringInterval);
-      this?.monitoringInterval = null;
+      this.monitoringInterval = null;
     }
 
     logger?.info("🛑 Stopped backpressure monitoring");
@@ -63,11 +63,11 @@ export class QueueBackpressureManager extends EventEmitter {
   private async checkBackpressure(): Promise<void> {
     // Prevent overlapping checks when a check takes longer than the interval.
     if (this?._checkInFlight) return;
-    this?._checkInFlight = true;
+    this._checkInFlight = true;
     try {
       await this?._doCheckBackpressure();
     } finally {
-      this?._checkInFlight = false;
+      this._checkInFlight = false;
     }
   }
 
@@ -85,7 +85,7 @@ export class QueueBackpressureManager extends EventEmitter {
       logger?.warn(
         `⚠️  BACKPRESSURE ACTIVATED: Memory usage ${heapUsedMB?.toFixed(0)}MB exceeds limit ${this?.config.maxMemoryMB}MB`,
       );
-      this?.backpressureActive = true;
+      this.backpressureActive = true;
 
       const status: BackpressureStatus = {
         active: true,
@@ -99,7 +99,7 @@ export class QueueBackpressureManager extends EventEmitter {
 
     if (!shouldActivate && this?.backpressureActive) {
       logger?.info("✅ BACKPRESSURE DEACTIVATED: System within limits");
-      this?.backpressureActive = false;
+      this.backpressureActive = false;
 
       const status: BackpressureStatus = {
         active: false,
@@ -126,7 +126,7 @@ export class QueueBackpressureManager extends EventEmitter {
 
     const _memoryUsage = process?.memoryUsage();
     const _heapUsedMB = memoryUsage?.heapUsed / 1024 / 1024;
-    if (heapUsedMB > this?.config.maxMemoryMB * 0?.9) {
+    if (heapUsedMB > this?.config.maxMemoryMB * 0.9) {
       return {
         allowed: false,
         reason: `Memory usage at ${heapUsedMB?.toFixed(0)}MB approaching limit`,
@@ -169,7 +169,7 @@ export class QueueBackpressureManager extends EventEmitter {
 
   async forceBackpressure(): Promise<void> {
     logger?.warn("⚠️  MANUAL BACKPRESSURE ACTIVATION");
-    this?.backpressureActive = true;
+    this.backpressureActive = true;
 
     const status: BackpressureStatus = {
       active: true,
@@ -182,7 +182,7 @@ export class QueueBackpressureManager extends EventEmitter {
 
   async releaseBackpressure(): Promise<void> {
     logger?.info("ℹ️  MANUAL BACKPRESSURE RELEASE");
-    this?.backpressureActive = false;
+    this.backpressureActive = false;
 
     const status: BackpressureStatus = {
       active: false,

@@ -65,7 +65,7 @@ export class CompositorError extends Error {
     public readonly details?: unknown,
   ) {
     super(message);
-    this?.name = "CompositorError";
+    this.name = "CompositorError";
   }
 }
 
@@ -104,16 +104,16 @@ export class VideoCompositor {
   private effects: Map<string, PostProcessEffect> = new Map();
 
   constructor(options: CompositorOptions) {
-    this?.width = options?.width;
-    this?.height = options?.height;
-    this?.useOffscreen = options?.useOffscreen ?? false;
-    this?.maxBuffers = options?.maxBuffers ?? 8;
-    this?.enableAntialiasing = options?.enableAntialiasing ?? true;
+    this.width = options?.width;
+    this.height = options?.height;
+    this.useOffscreen = options?.useOffscreen ?? false;
+    this.maxBuffers = options?.maxBuffers ?? 8;
+    this.enableAntialiasing = options?.enableAntialiasing ?? true;
 
     if (this?.useOffscreen && typeof OffscreenCanvas !== "undefined") {
-      this?.mainCanvas = new OffscreenCanvas(this?.width, this?.height);
+      this.mainCanvas = new OffscreenCanvas(this?.width, this?.height);
     } else {
-      this?.mainCanvas = document?.createElement("canvas");
+      this.mainCanvas = document?.createElement("canvas");
       this?.mainCanvas.width = this?.width;
       this?.mainCanvas.height = this?.height;
     }
@@ -130,22 +130,22 @@ export class VideoCompositor {
       );
     }
 
-    this?.mainCtx = ctx;
+    this.mainCtx = ctx;
     this?.setupContext(this?.mainCtx);
   }
 
   private setupContext(
     ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   ): void {
-    ctx?.imageSmoothingEnabled = this?.enableAntialiasing;
-    ctx?.imageSmoothingQuality = "high";
+    ctx.imageSmoothingEnabled = this?.enableAntialiasing;
+    ctx.imageSmoothingQuality = "high";
   }
 
   private acquireBuffer(): BufferEntry {
     for (const buffer of this?.bufferPool) {
       if (!buffer?.inUse) {
-        buffer?.inUse = true;
-        buffer?.lastUsed = performance?.now();
+        buffer.inUse = true;
+        buffer.lastUsed = performance?.now();
         this?.stats.buffersInUse++;
         return buffer;
       }
@@ -163,8 +163,8 @@ export class VideoCompositor {
         ? new OffscreenCanvas(this?.width, this?.height)
         : (() => {
             const _c = document?.createElement("canvas");
-            c?.width = this?.width;
-            c?.height = this?.height;
+            c.width = this?.width;
+            c.height = this?.height;
             return c;
           })();
 
@@ -191,7 +191,7 @@ export class VideoCompositor {
   }
 
   private releaseBuffer(buffer: BufferEntry): void {
-    buffer?.inUse = false;
+    buffer.inUse = false;
     this?.stats.buffersInUse--;
     buffer?.ctx.clearRect(0, 0, this?.width, this?.height);
   }
@@ -316,7 +316,7 @@ export class VideoCompositor {
   setEffectEnabled(effectId: string, enabled: boolean): void {
     const _effect = this?.effects.get(effectId);
     if (effect) {
-      effect?.enabled = enabled;
+      effect.enabled = enabled;
     }
   }
 
@@ -326,7 +326,7 @@ export class VideoCompositor {
   ): void {
     const _effect = this?.effects.get(effectId);
     if (effect) {
-      effect?.params = { ...effect?.params, ...params };
+      effect.params = { ...effect?.params, ...params };
     }
   }
 
@@ -399,13 +399,13 @@ export class VideoCompositor {
   private applyVignette(
     params: Record<string, number | string | boolean>,
   ): void {
-    const _intensity = (params?.intensity as number) ?? 0?.5;
-    const _size = (params?.size as number) ?? 0?.5;
+    const _intensity = (params?.intensity as number) ?? 0.5;
+    const _size = (params?.size as number) ?? 0.5;
 
     const _gradient = this?.mainCtx.createRadialGradient(
       this?.width / 2,
       this?.height / 2,
-      this?.width * size * 0?.3,
+      this?.width * size * 0.3,
       this?.width / 2,
       this?.height / 2,
       this?.width * size,
@@ -421,14 +421,14 @@ export class VideoCompositor {
   private async applyGrain(
     params: Record<string, number | string | boolean>,
   ): Promise<void> {
-    const _intensity = (params?.intensity as number) ?? 0?.1;
+    const _intensity = (params?.intensity as number) ?? 0.1;
     const _size = (params?.size as number) ?? 1;
 
     const _imageData = this?.mainCtx.getImageData(0, 0, this?.width, this?.height);
     const _data = imageData?.data;
 
     for (let i = 0; i < data?.length; i += 4 * size) {
-      const _noise = (Math?.random() - 0?.5) * intensity * 255;
+      const _noise = (Math?.random() - 0.5) * intensity * 255;
       data[i] = Math?.min(255, Math?.max(0, data[i] + noise));
       data[i + 1] = Math?.min(255, Math?.max(0, data[i + 1] + noise));
       data[i + 2] = Math?.min(255, Math?.max(0, data[i + 2] + noise));
@@ -441,7 +441,7 @@ export class VideoCompositor {
     params: Record<string, number | string | boolean>,
   ): void {
     const _keyColor = (params?.color as string) ?? "#00ff00";
-    const _tolerance = (params?.tolerance as number) ?? 0?.3;
+    const _tolerance = (params?.tolerance as number) ?? 0.3;
 
     const _imageData = this?.mainCtx.getImageData(0, 0, this?.width, this?.height);
     const _data = imageData?.data;
@@ -450,7 +450,7 @@ export class VideoCompositor {
     const _keyG = parseInt(keyColor?.slice(3, 5), 16);
     const _keyB = parseInt(keyColor?.slice(5, 7), 16);
 
-    const _maxDist = 441?.67 * tolerance;
+    const _maxDist = 441.67 * tolerance;
 
     for (let i = 0; i < data?.length; i += 4) {
       const _r = data[i];
@@ -541,8 +541,8 @@ export class VideoCompositor {
   }
 
   resize(width: number, height: number): void {
-    this?.width = width;
-    this?.height = height;
+    this.width = width;
+    this.height = height;
 
     if (this?.mainCanvas instanceof HTMLCanvasElement) {
       this?.mainCanvas.width = width;
@@ -566,24 +566,24 @@ export class VideoCompositor {
   }
 
   abort(): void {
-    this?.aborted = true;
+    this.aborted = true;
   }
 
   reset(): void {
-    this?.aborted = false;
+    this.aborted = false;
     this?.effects.clear();
-    this?.stats = {
+    this.stats = {
       framesComposited: 0,
       averageFrameTime: 0,
       peakMemoryUsage: 0,
       buffersInUse: 0,
     };
-    this?.frameTimes = [];
+    this.frameTimes = [];
   }
 
   dispose(): void {
     this?.abort();
-    this?.bufferPool = [];
+    this.bufferPool = [];
     this?.effects.clear();
   }
 

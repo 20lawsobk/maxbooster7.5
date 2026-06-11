@@ -6,7 +6,7 @@ import {
 import { playlistAttributionService } from "../../services/playlistAttributionService";
 import { cohortAnalyticsService } from "../../services/cohortAnalyticsService";
 import { revenueForecaster } from "../../services/revenueForecaster";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 
 const _router = Router();
 

@@ -70,171 +70,171 @@ export interface ScenePostConfig {
 /** Scene-specific GPU post-processing presets — tuned for each scene category */
 const SCENE_PRESETS: Record<string, ScenePostConfig> = {
   concert_stage: {
-    bloom: { threshold: 0?.6, intensity: 1?.8, radius: 2?.5 },
+    bloom: { threshold: 0.6, intensity: 1.8, radius: 2.5 },
     colorGrading: {
-      brightness: 0?.05,
-      contrast: 1?.2,
-      saturation: 1?.4,
+      brightness: 0.05,
+      contrast: 1.2,
+      saturation: 1.4,
       hue: 0,
-      exposure: 0?.3,
-      gamma: 0?.9,
-      shadows: [-0?.02, -0?.01, 0?.05],
-      midtones: [0?.02, 0?.01, -0?.01],
-      highlights: [0?.05, 0?.02, -0?.03],
-      temperature: 2?.0,
-      tint: 0?.5,
-      vibrance: 0?.3,
-      filmGrain: 0?.02,
+      exposure: 0.3,
+      gamma: 0.9,
+      shadows: [-0.02, -0.01, 0.05],
+      midtones: [0.02, 0.01, -0.01],
+      highlights: [0.05, 0.02, -0.03],
+      temperature: 2.0,
+      tint: 0.5,
+      vibrance: 0.3,
+      filmGrain: 0.02,
     },
-    chromaticAb: { amount: 0?.003, radial: true },
-    vignette: { intensity: 0?.7, radius: 0?.6, softness: 0?.4 },
+    chromaticAb: { amount: 0.003, radial: true },
+    vignette: { intensity: 0.7, radius: 0.6, softness: 0.4 },
   },
 
   city_nights: {
-    bloom: { threshold: 0?.5, intensity: 2?.2, radius: 3?.0 },
+    bloom: { threshold: 0.5, intensity: 2.2, radius: 3.0 },
     colorGrading: {
-      brightness: -0?.05,
-      contrast: 1?.3,
-      saturation: 1?.2,
-      hue: 0?.02,
-      exposure: 0?.1,
-      gamma: 1?.0,
-      shadows: [0?.0, 0?.02, 0?.08],
-      midtones: [0?.0, 0?.0, 0?.03],
-      highlights: [0?.02, 0?.0, -0?.02],
-      temperature: -3?.0,
-      tint: -0?.5,
-      vibrance: 0?.4,
-      filmGrain: 0?.03,
+      brightness: -0.05,
+      contrast: 1.3,
+      saturation: 1.2,
+      hue: 0.02,
+      exposure: 0.1,
+      gamma: 1.0,
+      shadows: [0.0, 0.02, 0.08],
+      midtones: [0.0, 0.0, 0.03],
+      highlights: [0.02, 0.0, -0.02],
+      temperature: -3.0,
+      tint: -0.5,
+      vibrance: 0.4,
+      filmGrain: 0.03,
     },
-    chromaticAb: { amount: 0?.005, radial: true },
-    vignette: { intensity: 0?.8, radius: 0?.55, softness: 0?.35 },
+    chromaticAb: { amount: 0.005, radial: true },
+    vignette: { intensity: 0.8, radius: 0.55, softness: 0.35 },
   },
 
   studio_session: {
-    bloom: { threshold: 0?.75, intensity: 0?.8, radius: 1?.5 },
+    bloom: { threshold: 0.75, intensity: 0.8, radius: 1.5 },
     colorGrading: {
-      brightness: 0?.02,
-      contrast: 1?.1,
-      saturation: 0?.9,
+      brightness: 0.02,
+      contrast: 1.1,
+      saturation: 0.9,
       hue: 0,
-      exposure: 0?.0,
-      gamma: 1?.0,
-      shadows: [0?.03, 0?.02, 0?.0],
-      midtones: [0?.01, 0?.01, 0?.0],
-      highlights: [0?.02, 0?.01, 0?.0],
-      temperature: 5?.0,
-      tint: 1?.0,
-      vibrance: 0?.1,
-      filmGrain: 0?.015,
+      exposure: 0.0,
+      gamma: 1.0,
+      shadows: [0.03, 0.02, 0.0],
+      midtones: [0.01, 0.01, 0.0],
+      highlights: [0.02, 0.01, 0.0],
+      temperature: 5.0,
+      tint: 1.0,
+      vibrance: 0.1,
+      filmGrain: 0.015,
     },
-    chromaticAb: { amount: 0?.001, radial: false },
-    vignette: { intensity: 0?.5, radius: 0?.65, softness: 0?.4 },
+    chromaticAb: { amount: 0.001, radial: false },
+    vignette: { intensity: 0.5, radius: 0.65, softness: 0.4 },
   },
 
   golden_hour: {
-    bloom: { threshold: 0?.55, intensity: 1?.5, radius: 4?.0 },
+    bloom: { threshold: 0.55, intensity: 1.5, radius: 4.0 },
     colorGrading: {
-      brightness: 0?.08,
-      contrast: 1?.15,
-      saturation: 1?.5,
-      hue: 0?.01,
-      exposure: 0?.4,
-      gamma: 0?.85,
-      shadows: [0?.05, 0?.02, -0?.03],
-      midtones: [0?.08, 0?.04, -0?.02],
-      highlights: [0?.12, 0?.06, -0?.04],
-      temperature: 12?.0,
-      tint: 2?.0,
-      vibrance: 0?.5,
-      filmGrain: 0?.01,
+      brightness: 0.08,
+      contrast: 1.15,
+      saturation: 1.5,
+      hue: 0.01,
+      exposure: 0.4,
+      gamma: 0.85,
+      shadows: [0.05, 0.02, -0.03],
+      midtones: [0.08, 0.04, -0.02],
+      highlights: [0.12, 0.06, -0.04],
+      temperature: 12.0,
+      tint: 2.0,
+      vibrance: 0.5,
+      filmGrain: 0.01,
     },
-    chromaticAb: { amount: 0?.002, radial: true },
-    vignette: { intensity: 0?.4, radius: 0?.7, softness: 0?.5 },
+    chromaticAb: { amount: 0.002, radial: true },
+    vignette: { intensity: 0.4, radius: 0.7, softness: 0.5 },
   },
 
   neon_cityscape: {
-    bloom: { threshold: 0?.45, intensity: 2?.8, radius: 3?.5 },
+    bloom: { threshold: 0.45, intensity: 2.8, radius: 3.5 },
     colorGrading: {
-      brightness: -0?.02,
-      contrast: 1?.4,
-      saturation: 1?.8,
-      hue: 0?.03,
-      exposure: 0?.2,
-      gamma: 0?.95,
-      shadows: [-0?.03, 0?.0, 0?.08],
-      midtones: [0?.0, -0?.02, 0?.05],
-      highlights: [0?.05, -0?.02, 0?.08],
-      temperature: -5?.0,
-      tint: -2?.0,
-      vibrance: 0?.6,
-      filmGrain: 0?.025,
+      brightness: -0.02,
+      contrast: 1.4,
+      saturation: 1.8,
+      hue: 0.03,
+      exposure: 0.2,
+      gamma: 0.95,
+      shadows: [-0.03, 0.0, 0.08],
+      midtones: [0.0, -0.02, 0.05],
+      highlights: [0.05, -0.02, 0.08],
+      temperature: -5.0,
+      tint: -2.0,
+      vibrance: 0.6,
+      filmGrain: 0.025,
     },
-    chromaticAb: { amount: 0?.007, radial: true },
-    vignette: { intensity: 0?.9, radius: 0?.5, softness: 0?.3 },
+    chromaticAb: { amount: 0.007, radial: true },
+    vignette: { intensity: 0.9, radius: 0.5, softness: 0.3 },
   },
 
   trap_aesthetic: {
-    bloom: { threshold: 0?.5, intensity: 2?.0, radius: 2?.0 },
+    bloom: { threshold: 0.5, intensity: 2.0, radius: 2.0 },
     colorGrading: {
-      brightness: -0?.05,
-      contrast: 1?.35,
-      saturation: 1?.1,
+      brightness: -0.05,
+      contrast: 1.35,
+      saturation: 1.1,
       hue: 0,
-      exposure: 0?.15,
-      gamma: 0?.92,
-      shadows: [0?.0, 0?.0, 0?.05],
-      midtones: [0?.0, 0?.0, 0?.02],
-      highlights: [0?.02, 0?.0, 0?.03],
-      temperature: -2?.0,
-      tint: 0?.0,
-      vibrance: 0?.2,
-      filmGrain: 0?.04,
+      exposure: 0.15,
+      gamma: 0.92,
+      shadows: [0.0, 0.0, 0.05],
+      midtones: [0.0, 0.0, 0.02],
+      highlights: [0.02, 0.0, 0.03],
+      temperature: -2.0,
+      tint: 0.0,
+      vibrance: 0.2,
+      filmGrain: 0.04,
     },
-    chromaticAb: { amount: 0?.004, radial: true },
-    vignette: { intensity: 0?.85, radius: 0?.52, softness: 0?.32 },
+    chromaticAb: { amount: 0.004, radial: true },
+    vignette: { intensity: 0.85, radius: 0.52, softness: 0.32 },
   },
 
   gospel_choir: {
-    bloom: { threshold: 0?.6, intensity: 1?.4, radius: 3?.0 },
+    bloom: { threshold: 0.6, intensity: 1.4, radius: 3.0 },
     colorGrading: {
-      brightness: 0?.06,
-      contrast: 1?.1,
-      saturation: 1?.2,
-      hue: 0?.02,
-      exposure: 0?.35,
-      gamma: 0?.88,
-      shadows: [0?.04, 0?.03, 0?.0],
-      midtones: [0?.06, 0?.04, 0?.0],
-      highlights: [0?.1, 0?.07, 0?.02],
-      temperature: 8?.0,
-      tint: 2?.5,
-      vibrance: 0?.35,
-      filmGrain: 0?.015,
+      brightness: 0.06,
+      contrast: 1.1,
+      saturation: 1.2,
+      hue: 0.02,
+      exposure: 0.35,
+      gamma: 0.88,
+      shadows: [0.04, 0.03, 0.0],
+      midtones: [0.06, 0.04, 0.0],
+      highlights: [0.1, 0.07, 0.02],
+      temperature: 8.0,
+      tint: 2.5,
+      vibrance: 0.35,
+      filmGrain: 0.015,
     },
-    chromaticAb: { amount: 0?.001, radial: false },
-    vignette: { intensity: 0?.5, radius: 0?.68, softness: 0?.45 },
+    chromaticAb: { amount: 0.001, radial: false },
+    vignette: { intensity: 0.5, radius: 0.68, softness: 0.45 },
   },
 
   default: {
-    bloom: { threshold: 0?.65, intensity: 1?.2, radius: 2?.0 },
+    bloom: { threshold: 0.65, intensity: 1.2, radius: 2.0 },
     colorGrading: {
-      brightness: 0?.0,
-      contrast: 1?.1,
-      saturation: 1?.15,
+      brightness: 0.0,
+      contrast: 1.1,
+      saturation: 1.15,
       hue: 0,
-      exposure: 0?.1,
-      gamma: 1?.0,
-      shadows: [0?.0, 0?.0, 0?.0],
-      midtones: [0?.0, 0?.0, 0?.0],
-      highlights: [0?.0, 0?.0, 0?.0],
-      temperature: 0?.0,
-      tint: 0?.0,
-      vibrance: 0?.1,
-      filmGrain: 0?.01,
+      exposure: 0.1,
+      gamma: 1.0,
+      shadows: [0.0, 0.0, 0.0],
+      midtones: [0.0, 0.0, 0.0],
+      highlights: [0.0, 0.0, 0.0],
+      temperature: 0.0,
+      tint: 0.0,
+      vibrance: 0.1,
+      filmGrain: 0.01,
     },
-    chromaticAb: { amount: 0?.002, radial: true },
-    vignette: { intensity: 0?.5, radius: 0?.65, softness: 0?.4 },
+    chromaticAb: { amount: 0.002, radial: true },
+    vignette: { intensity: 0.5, radius: 0.65, softness: 0.4 },
   },
 };
 
@@ -245,7 +245,7 @@ export class DigitalGPUInferenceBridge {
   private frameCount: number = 0;
 
   constructor(config: InferenceConfig) {
-    this?.config = {
+    this.config = {
       width: config?.width || 512,
       height: config?.height || 512,
       scene: config?.scene || "default",
@@ -258,7 +258,7 @@ export class DigitalGPUInferenceBridge {
 
   async init(): Promise<void> {
     try {
-      this?.renderer = new WebGLRenderer({
+      this.renderer = new WebGLRenderer({
         width: this?.config.width,
         height: this?.config.height,
         antialias: false,
@@ -311,10 +311,10 @@ export class DigitalGPUInferenceBridge {
         this?.config.height,
       );
 
-      this?.ready = true;
+      this.ready = true;
     } catch (err) {
       console?.warn("[DigitalGPUInferenceBridge] WebGL2 init failed:", err);
-      this?.ready = false;
+      this.ready = false;
     }
   }
 
@@ -339,7 +339,7 @@ export class DigitalGPUInferenceBridge {
 
     const _scene = sceneOverride || this?.config.scene || "default";
     const _preset = SCENE_PRESETS[scene] || SCENE_PRESETS["default"];
-    const _t = this?.frameCount * 0?.016;
+    const _t = this?.frameCount * 0.016;
     this?.frameCount++;
 
     this?.renderer.getContext();
@@ -465,8 +465,8 @@ export class DigitalGPUInferenceBridge {
     this?.renderer.bindTexture(fbA, 0);
     this?.renderer.setUniform(chromaProg, "u_texture", 0);
     this?.renderer.setUniform(chromaProg, "u_amount", preset?.chromaticAb.amount);
-    this?.renderer.setUniform(chromaProg, "u_angle", 0?.0);
-    this?.renderer.setUniform(chromaProg, "u_center", [0?.5, 0?.5]);
+    this?.renderer.setUniform(chromaProg, "u_angle", 0.0);
+    this?.renderer.setUniform(chromaProg, "u_center", [0.5, 0.5]);
     this?.renderer.setUniform(
       chromaProg,
       "u_radial",
@@ -498,7 +498,7 @@ export class DigitalGPUInferenceBridge {
       "u_softness",
       preset?.vignette.softness,
     );
-    this?.renderer.setUniform(vignetteProg, "u_center", [0?.5, 0?.5]);
+    this?.renderer.setUniform(vignetteProg, "u_center", [0.5, 0.5]);
     this?.renderer.setUniform(vignetteProg, "u_color", [0, 0, 0, 1]);
     this?.renderer.setUniform(vignetteProg, "u_type", 0);
     this?.renderer.drawQuad(vignetteProg);
@@ -515,7 +515,7 @@ export class DigitalGPUInferenceBridge {
     this?.config.bass = bass;
     this?.config.mid = mid;
     this?.config.treble = treble;
-    this?.config.audioReactivity = bass * 0?.5 + mid * 0?.3 + treble * 0?.2;
+    this?.config.audioReactivity = bass * 0.5 + mid * 0.3 + treble * 0.2;
   }
 
   setScene(scene: string): void {
@@ -527,8 +527,8 @@ export class DigitalGPUInferenceBridge {
   }
 
   destroy(): void {
-    this?.ready = false;
-    this?.renderer = null;
+    this.ready = false;
+    this.renderer = null;
   }
 
   private async _fallbackToSource(
@@ -536,8 +536,8 @@ export class DigitalGPUInferenceBridge {
   ): Promise<ImageData> {
     if (src instanceof ImageData) return src;
     const _canvas = document?.createElement("canvas");
-    canvas?.width = this?.config.width;
-    canvas?.height = this?.config.height;
+    canvas.width = this?.config.width;
+    canvas.height = this?.config.height;
     const _ctx = canvas?.getContext("2d")!;
     if (src instanceof HTMLCanvasElement) {
       ctx?.drawImage(src, 0, 0, canvas?.width, canvas?.height);

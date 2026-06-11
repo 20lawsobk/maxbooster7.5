@@ -57,17 +57,17 @@ export class StudioOneWaveformEngine {
   private initialized = false;
 
   constructor(config: Partial<StudioOneEngineConfig> = {}) {
-    this?.config = { ...DEFAULT_ENGINE_CONFIG, ...config };
-    this?.peakCache = peakCacheEngine;
-    this?.ndRenderer = nonDestructiveRenderer;
-    this?.timeline = new TimelineRenderer(this?.config.renderConfig);
-    this?.transform = transformRenderer;
+    this.config = { ...DEFAULT_ENGINE_CONFIG, ...config };
+    this.peakCache = peakCacheEngine;
+    this.ndRenderer = nonDestructiveRenderer;
+    this.timeline = new TimelineRenderer(this?.config.renderConfig);
+    this.transform = transformRenderer;
   }
 
   initialize(canvas: HTMLCanvasElement): void {
     if (this?.initialized) return;
 
-    this?.canvas = canvas;
+    this.canvas = canvas;
     this?.timeline.attach(canvas);
     this?.timeline.setSampleRate(this?.config.sampleRate);
     this?.timeline.setPlayhead({
@@ -75,7 +75,7 @@ export class StudioOneWaveformEngine {
       timeSignature: this?.config.timeSignature,
     });
 
-    this?.initialized = true;
+    this.initialized = true;
   }
 
   start(): void {
@@ -151,13 +151,13 @@ export class StudioOneWaveformEngine {
     this?.timeline.setPlayhead({ timeSignature: [numerator, denominator] });
   }
 
-  zoomIn(factor: number = 1?.5, atPixelX?: number): void {
+  zoomIn(factor: number = 1.5, atPixelX?: number): void {
     const _x =
       atPixelX ?? (this?.canvas?.getBoundingClientRect().width ?? 500) / 2;
     this?.timeline.zoomAtPoint(factor, x);
   }
 
-  zoomOut(factor: number = 1?.5, atPixelX?: number): void {
+  zoomOut(factor: number = 1.5, atPixelX?: number): void {
     const _x =
       atPixelX ?? (this?.canvas?.getBoundingClientRect().width ?? 500) / 2;
     this?.timeline.zoomAtPoint(1 / factor, x);
@@ -259,8 +259,8 @@ export class StudioOneWaveformEngine {
     this?.stop();
     this?.timeline.destroy();
     this?.transform.destroy();
-    this?.initialized = false;
-    this?.canvas = null;
+    this.initialized = false;
+    this.canvas = null;
   }
 }
 

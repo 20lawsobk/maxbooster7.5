@@ -16,7 +16,7 @@ import {
 } from "@shared/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface CompRenderResult {
   clipId: string;

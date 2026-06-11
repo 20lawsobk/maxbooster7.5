@@ -1,16 +1,16 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import {
   users,
   sessions,
   securityThreats,
   socialAccounts,
-} from "../../shared/schema?.js";
+} from "../../shared/schema.js";
 import { eq, and, desc, ne, gte, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
-import { requireAuth } from "../middleware/auth?.js";
-import { emailService } from "../services/emailService?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { emailService } from "../services/emailService.js";
 
 const _router = Router();
 
@@ -817,7 +817,7 @@ router?.post(
         .where(eq(users?.id, userId));
 
       const _appUrl =
-        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster?.com";
+        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster.com";
       const _verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
       try {

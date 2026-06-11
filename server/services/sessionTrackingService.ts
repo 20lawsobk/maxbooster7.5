@@ -1,5 +1,5 @@
-import { getRedisClient } from "../lib/redisConnectionFactory?.js";
-import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
 /**
  * Session Tracking Service

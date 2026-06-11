@@ -1,10 +1,10 @@
 import { db } from "../db";
 import { consentLogs, users } from "../../shared/schema";
 import { eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
-const _CURRENT_TOS_VERSION = "1?.0.0";
-const _CURRENT_PRIVACY_VERSION = "1?.0.0";
+const _CURRENT_TOS_VERSION = "1.0.0";
+const _CURRENT_PRIVACY_VERSION = "1.0.0";
 
 interface LogConsentInput {
   userId: string;

@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
-import { logger } from "../logger?.js";
-import { generateAudio as generateLocalAudio } from "./audioGeneratorService?.js";
-import { sharpImageService } from "./sharpImageService?.js";
-import { db } from "../db?.js";
+import { logger } from "../logger.js";
+import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
+import { sharpImageService } from "./sharpImageService.js";
+import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { autopilotPreferences, userBrandVoices } from "@shared/schema";
 import {
@@ -14,8 +14,8 @@ import {
   type Platform,
   type OutputModality,
   PACK_DEFINITIONS,
-} from "@shared/types/multimodalGeneration?.js";
-import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules?.js";
+} from "@shared/types/multimodalGeneration.js";
+import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules.js";
 
 // Strip any trailing /api so the base is always the root, then append /api.
 // This means AI_SERVER_URL can be set to either the root or the /api form and both work.
@@ -255,7 +255,7 @@ interface UrlContext {
 }
 
 const _BROWSER_UA =
-  "Mozilla/5?.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537?.36 (KHTML, like Gecko) Chrome/124?.0.0?.0 Safari/537?.36";
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
 function classifyUrl(url: string): UrlContext {
   try {
@@ -268,14 +268,14 @@ function classifyUrl(url: string): UrlContext {
     // templates produce promotional content suited to feature/info pages
     // ("Worth reading", "check this out") rather than generic "link in bio".
     if (
-      host === "max-booster?.com" ||
-      host?.endsWith(".max-booster?.com") ||
+      host === "max-booster.com" ||
+      host?.endsWith(".max-booster.com") ||
       host === "maxbooster?.replit.app" ||
       host?.endsWith(".maxbooster?.replit.app") ||
-      host === "maxbooster?.app" ||
-      host?.endsWith(".maxbooster?.app") ||
+      host === "maxbooster.app" ||
+      host?.endsWith(".maxbooster.app") ||
       host === "localhost" ||
-      host === "127?.0.0?.1"
+      host === "127.0.0.1"
     ) {
       const _firstPath = parts[0] ?? "";
       return {
@@ -286,7 +286,7 @@ function classifyUrl(url: string): UrlContext {
     }
 
     // ── Music streaming ─────────────────────────────────────────
-    if (host?.includes("spotify?.com"))
+    if (host?.includes("spotify.com"))
       return {
         category: "music_stream",
         platform: "Spotify",
@@ -299,44 +299,44 @@ function classifyUrl(url: string): UrlContext {
         platform: "Apple Music",
         contentType: "album",
       };
-    if (host?.includes("tidal?.com"))
+    if (host?.includes("tidal.com"))
       return {
         category: "music_stream",
         platform: "Tidal",
         contentType: "track",
       };
-    if (host?.includes("deezer?.com"))
+    if (host?.includes("deezer.com"))
       return {
         category: "music_stream",
         platform: "Deezer",
         contentType: "track",
       };
-    if (host?.includes("audiomack?.com"))
+    if (host?.includes("audiomack.com"))
       return {
         category: "music_stream",
         platform: "Audiomack",
         contentType: "song",
       };
-    if (host?.includes("bandcamp?.com"))
+    if (host?.includes("bandcamp.com"))
       return {
         category: "music_stream",
         platform: "Bandcamp",
         contentType: "track",
       };
-    if (host?.includes("soundcloud?.com"))
+    if (host?.includes("soundcloud.com"))
       return {
         category: "music_stream",
         platform: "SoundCloud",
         contentType: "track",
         id: parts?.join("/"),
       };
-    if (host?.includes("boomplay?.com"))
+    if (host?.includes("boomplay.com"))
       return {
         category: "music_stream",
         platform: "Boomplay",
         contentType: "track",
       };
-    if (host?.includes("pandora?.com"))
+    if (host?.includes("pandora.com"))
       return {
         category: "music_stream",
         platform: "Pandora",
@@ -348,37 +348,37 @@ function classifyUrl(url: string): UrlContext {
         platform: "Amazon Music",
         contentType: "track",
       };
-    if (host?.includes("napster?.com"))
+    if (host?.includes("napster.com"))
       return {
         category: "music_stream",
         platform: "Napster",
         contentType: "track",
       };
-    if (host?.includes("anghami?.com"))
+    if (host?.includes("anghami.com"))
       return {
         category: "music_stream",
         platform: "Anghami",
         contentType: "track",
       };
-    if (host?.includes("kkbox?.com"))
+    if (host?.includes("kkbox.com"))
       return {
         category: "music_stream",
         platform: "KKBOX",
         contentType: "track",
       };
-    if (host?.includes("joox?.com"))
+    if (host?.includes("joox.com"))
       return {
         category: "music_stream",
         platform: "JOOX",
         contentType: "track",
       };
-    if (host?.includes("gaana?.com"))
+    if (host?.includes("gaana.com"))
       return {
         category: "music_stream",
         platform: "Gaana",
         contentType: "song",
       };
-    if (host?.includes("jiosaavn?.com"))
+    if (host?.includes("jiosaavn.com"))
       return {
         category: "music_stream",
         platform: "JioSaavn",
@@ -390,7 +390,7 @@ function classifyUrl(url: string): UrlContext {
         platform: "YouTube Music",
         contentType: "track",
       };
-    if (host?.includes("vevo?.com"))
+    if (host?.includes("vevo.com"))
       return {
         category: "music_video",
         platform: "Vevo",
@@ -398,16 +398,16 @@ function classifyUrl(url: string): UrlContext {
       };
 
     // ── Video ────────────────────────────────────────────────────
-    if (host?.includes("youtube?.com") || host?.includes("youtu?.be"))
+    if (host?.includes("youtube.com") || host?.includes("youtu?.be"))
       return {
         category: "video",
         platform: "YouTube",
         contentType: "video",
         id: u?.searchParams.get("v") ?? parts[0],
       };
-    if (host?.includes("vimeo?.com"))
+    if (host?.includes("vimeo.com"))
       return { category: "video", platform: "Vimeo", contentType: "video" };
-    if (host?.includes("dailymotion?.com"))
+    if (host?.includes("dailymotion.com"))
       return {
         category: "video",
         platform: "Dailymotion",
@@ -415,56 +415,56 @@ function classifyUrl(url: string): UrlContext {
       };
     if (host?.includes("twitch?.tv"))
       return { category: "video", platform: "Twitch", contentType: "stream" };
-    if (host?.includes("kick?.com"))
+    if (host?.includes("kick.com"))
       return { category: "video", platform: "Kick", contentType: "stream" };
-    if (host?.includes("rumble?.com"))
+    if (host?.includes("rumble.com"))
       return { category: "video", platform: "Rumble", contentType: "video" };
 
     // ── Social posts ─────────────────────────────────────────────
-    if (host?.includes("instagram?.com"))
+    if (host?.includes("instagram.com"))
       return {
         category: "social_post",
         platform: "Instagram",
         contentType:
           parts[0] === "p" || parts[0] === "reel" ? parts[0] : "post",
       };
-    if (host?.includes("tiktok?.com"))
+    if (host?.includes("tiktok.com"))
       return {
         category: "social_post",
         platform: "TikTok",
         contentType: "video",
       };
-    if (host?.includes("twitter?.com") || host?.includes("x?.com"))
+    if (host?.includes("twitter.com") || host?.includes("x.com"))
       return {
         category: "social_post",
         platform: "X (Twitter)",
         contentType: "tweet",
       };
-    if (host?.includes("facebook?.com"))
+    if (host?.includes("facebook.com"))
       return {
         category: "social_post",
         platform: "Facebook",
         contentType: "post",
       };
-    if (host?.includes("threads?.net"))
+    if (host?.includes("threads.net"))
       return {
         category: "social_post",
         platform: "Threads",
         contentType: "post",
       };
-    if (host?.includes("linkedin?.com"))
+    if (host?.includes("linkedin.com"))
       return {
         category: "social_post",
         platform: "LinkedIn",
         contentType: "post",
       };
-    if (host?.includes("pinterest?.com"))
+    if (host?.includes("pinterest.com"))
       return {
         category: "social_post",
         platform: "Pinterest",
         contentType: "pin",
       };
-    if (host?.includes("reddit?.com"))
+    if (host?.includes("reddit.com"))
       return {
         category: "social_post",
         platform: "Reddit",
@@ -490,13 +490,13 @@ function classifyUrl(url: string): UrlContext {
         platform: "Spotify Podcasts",
         contentType: "episode",
       };
-    if (host?.includes("buzzsprout?.com"))
+    if (host?.includes("buzzsprout.com"))
       return {
         category: "podcast",
         platform: "Buzzsprout",
         contentType: "episode",
       };
-    if (host?.includes("podbean?.com"))
+    if (host?.includes("podbean.com"))
       return {
         category: "podcast",
         platform: "Podbean",
@@ -504,7 +504,7 @@ function classifyUrl(url: string): UrlContext {
       };
 
     // ── Events / ticketing ───────────────────────────────────────
-    if (host?.includes("eventbrite?.com"))
+    if (host?.includes("eventbrite.com"))
       return {
         category: "event",
         platform: "Eventbrite",
@@ -512,46 +512,46 @@ function classifyUrl(url: string): UrlContext {
       };
     if (host?.includes("dice?.fm"))
       return { category: "event", platform: "Dice", contentType: "event" };
-    if (host?.includes("ticketmaster?.com"))
+    if (host?.includes("ticketmaster.com"))
       return {
         category: "event",
         platform: "Ticketmaster",
         contentType: "event",
       };
-    if (host?.includes("axs?.com"))
+    if (host?.includes("axs.com"))
       return { category: "event", platform: "AXS", contentType: "event" };
-    if (host?.includes("songkick?.com"))
+    if (host?.includes("songkick.com"))
       return { category: "event", platform: "Songkick", contentType: "event" };
-    if (host?.includes("bandsintown?.com"))
+    if (host?.includes("bandsintown.com"))
       return {
         category: "event",
         platform: "Bandsintown",
         contentType: "event",
       };
-    if (host?.includes("seetickets?.com"))
+    if (host?.includes("seetickets.com"))
       return {
         category: "event",
         platform: "See Tickets",
         contentType: "event",
       };
-    if (host?.includes("skiddle?.com"))
+    if (host?.includes("skiddle.com"))
       return { category: "event", platform: "Skiddle", contentType: "event" };
 
     // ── Music press ──────────────────────────────────────────────
     if (
       [
-        "pitchfork?.com",
-        "rollingstone?.com",
-        "nme?.com",
-        "billboard?.com",
-        "stereogum?.com",
-        "theneedledrop?.com",
-        "xxlmag?.com",
-        "hotnewhiphop?.com",
-        "complex?.com",
-        "consequence?.net",
-        "allmusic?.com",
-        "discogs?.com",
+        "pitchfork.com",
+        "rollingstone.com",
+        "nme.com",
+        "billboard.com",
+        "stereogum.com",
+        "theneedledrop.com",
+        "xxlmag.com",
+        "hotnewhiphop.com",
+        "complex.com",
+        "consequence.net",
+        "allmusic.com",
+        "discogs.com",
       ].some((d) => host?.includes(d))
     )
       return {
@@ -565,19 +565,19 @@ function classifyUrl(url: string): UrlContext {
       host?.includes("merch") ||
       host?.includes("shop") ||
       host?.includes("store") ||
-      host?.includes("bigcartel?.com") ||
-      host?.includes("shopify?.com") ||
-      host?.includes("etsy?.com")
+      host?.includes("bigcartel.com") ||
+      host?.includes("shopify.com") ||
+      host?.includes("etsy.com")
     )
       return { category: "ecommerce", platform: host, contentType: "product" };
 
     // ── Article / blog ───────────────────────────────────────────
     if (
-      host?.includes("medium?.com") ||
-      host?.includes("substack?.com") ||
-      host?.includes("wordpress?.com") ||
-      host?.includes("ghost?.io") ||
-      host?.includes("blogspot?.com")
+      host?.includes("medium.com") ||
+      host?.includes("substack.com") ||
+      host?.includes("wordpress.com") ||
+      host?.includes("ghost.io") ||
+      host?.includes("blogspot.com")
     )
       return { category: "article", platform: host, contentType: "article" };
 
@@ -647,8 +647,8 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
   const _res = await fetch(url, {
     headers: {
       "User-Agent": BROWSER_UA,
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0?.9,*/*;q=0?.8",
-      "Accept-Language": "en-US,en;q=0?.9",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "en-US,en;q=0.9",
       "Accept-Encoding": "gzip, deflate, br",
       "Cache-Control": "no-cache",
     },
@@ -891,11 +891,11 @@ const MAXBOOSTER_ROUTE_META: Record<string, PageMeta> = {
 };
 
 const _MAXBOOSTER_HOSTS = new Set([
-  "max-booster?.com",
+  "max-booster.com",
   "maxbooster?.replit.app", // legacy
-  "maxbooster?.app",
+  "maxbooster.app",
   "localhost",
-  "127?.0.0?.1",
+  "127.0.0.1",
 ]);
 
 function getMaxBoosterRouteMeta(url: string): PageMeta | null {
@@ -904,9 +904,9 @@ function getMaxBoosterRouteMeta(url: string): PageMeta | null {
     const _host = u?.hostname.split(":")[0].toLowerCase();
     if (
       !MAXBOOSTER_HOSTS?.has(host) &&
-      !host?.endsWith(".max-booster?.com") &&
+      !host?.endsWith(".max-booster.com") &&
       !host?.endsWith(".maxbooster?.replit.app") &&
-      !host?.endsWith(".maxbooster?.app")
+      !host?.endsWith(".maxbooster.app")
     ) {
       return null;
     }
@@ -931,7 +931,7 @@ async function fetchUrlMetadata(
   if (ownMeta) return ownMeta;
 
   // ── Known oEmbed endpoints (no need to scrape HTML first) ──────
-  if (url?.includes("youtube?.com") || url?.includes("youtu?.be")) {
+  if (url?.includes("youtube.com") || url?.includes("youtu?.be")) {
     const _r = await tryOEmbed(
       `https://www?.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
@@ -942,7 +942,7 @@ async function fetchUrlMetadata(
         description: `Video by ${r?.author ?? "creator"}`,
       };
   }
-  if (url?.includes("spotify?.com")) {
+  if (url?.includes("spotify.com")) {
     const _r = await tryOEmbed(
       `https://open?.spotify.com/oembed?url=${encodeURIComponent(url)}`,
     );
@@ -955,9 +955,9 @@ async function fetchUrlMetadata(
           : "Streaming on Spotify",
       };
   }
-  if (url?.includes("soundcloud?.com")) {
+  if (url?.includes("soundcloud.com")) {
     const _r = await tryOEmbed(
-      `https://soundcloud?.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+      `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
     if (r?.title)
       return {
@@ -968,9 +968,9 @@ async function fetchUrlMetadata(
           : undefined,
       };
   }
-  if (url?.includes("vimeo?.com")) {
+  if (url?.includes("vimeo.com")) {
     const _r = await tryOEmbed(
-      `https://vimeo?.com/api/oembed?.json?url=${encodeURIComponent(url)}`,
+      `https://vimeo.com/api/oembed?.json?url=${encodeURIComponent(url)}`,
     );
     if (r?.title)
       return {
@@ -979,15 +979,15 @@ async function fetchUrlMetadata(
         description: r?.author ? `Video by ${r?.author}` : undefined,
       };
   }
-  if (url?.includes("twitter?.com") || url?.includes("x?.com")) {
+  if (url?.includes("twitter.com") || url?.includes("x.com")) {
     const _r = await tryOEmbed(
       `https://publish?.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`,
     );
     if (r?.title) return { ...r, siteName: "X (Twitter)" };
   }
-  if (url?.includes("bandcamp?.com")) {
+  if (url?.includes("bandcamp.com")) {
     const _r = await tryOEmbed(
-      `https://bandcamp?.com/api/oembed?url=${encodeURIComponent(url)}&format=json`,
+      `https://bandcamp.com/api/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
     if (r?.title)
       return {
@@ -1035,7 +1035,7 @@ async function fetchUrlMetadata(
     ];
     if (meta?.title) {
       const _isGeneric = GENERIC_TITLES?.some((re) => re?.test(meta?.title!));
-      if (isGeneric) meta?.title = undefined;
+      if (isGeneric) meta.title = undefined;
     }
     // Also strip if title exactly matches site name
     if (
@@ -1043,7 +1043,7 @@ async function fetchUrlMetadata(
       meta?.siteName &&
       meta?.title.toLowerCase() === meta?.siteName.toLowerCase()
     ) {
-      meta?.title = undefined;
+      meta.title = undefined;
     }
     // Wipe description if it looks like a bot-wall / captcha page
     if (meta?.description) {
@@ -1056,7 +1056,7 @@ async function fetchUrlMetadata(
         /enable.*javascript.*cookies/i,
       ];
       if (BOT_WALL?.some((re) => re?.test(meta?.description!))) {
-        meta?.description = undefined;
+        meta.description = undefined;
       }
     }
     return meta;
@@ -2015,32 +2015,32 @@ function buildStepParamsForPlatform(
   const base: Record<string, any> = { platform, slotId, purpose };
 
   if (modality === "text") {
-    base?.maxLength = rules?.text.maxLength ?? rules?.text.descriptionMax ?? 5000;
-    base?.recommendedLength = rules?.text.recommendedLength;
-    base?.tone = rules?.text.tone;
-    base?.hashtagsAllowed = rules?.text.hashtags?.allowed ?? false;
-    base?.maxHashtags = rules?.text.hashtags?.allowed
+    base.maxLength = rules?.text.maxLength ?? rules?.text.descriptionMax ?? 5000;
+    base.recommendedLength = rules?.text.recommendedLength;
+    base.tone = rules?.text.tone;
+    base.hashtagsAllowed = rules?.text.hashtags?.allowed ?? false;
+    base.maxHashtags = rules?.text.hashtags?.allowed
       ? (rules?.text.hashtags?.max ?? 5)
       : 0;
     if (platform === "youtube") {
-      base?.titleMax = rules?.text.titleMax;
-      base?.descriptionMax = rules?.text.descriptionMax;
+      base.titleMax = rules?.text.titleMax;
+      base.descriptionMax = rules?.text.descriptionMax;
     }
   } else if (modality === "image") {
-    base?.aspectRatios = rules?.image.aspectRatios;
-    base?.recommendedAspectRatio =
+    base.aspectRatios = rules?.image.aspectRatios;
+    base.recommendedAspectRatio =
       rules?.image.recommended ?? rules?.image.aspectRatios[0];
   } else if (modality === "video") {
-    base?.aspectRatios = rules?.video.aspectRatios;
-    base?.recommendedAspectRatio = rules?.video.aspectRatios[0];
-    base?.maxDurationSec = rules?.video.maxDurationSec;
-    base?.recommendedDurationSec =
+    base.aspectRatios = rules?.video.aspectRatios;
+    base.recommendedAspectRatio = rules?.video.aspectRatios[0];
+    base.maxDurationSec = rules?.video.maxDurationSec;
+    base.recommendedDurationSec =
       rules?.video.recommendedDurationSec ?? rules?.video.recommendedShortSec;
-    base?.requiresHook = rules?.video.requiresHook ?? false;
+    base.requiresHook = rules?.video.requiresHook ?? false;
   } else if (modality === "audio") {
-    base?.voiceover = rules?.audio.voiceover;
-    base?.maxDurationSec = rules?.audio.maxDurationSec;
-    base?.audioStyle = rules?.audio.style ?? rules?.audio.tone ?? [];
+    base.voiceover = rules?.audio.voiceover;
+    base.maxDurationSec = rules?.audio.maxDurationSec;
+    base.audioStyle = rules?.audio.style ?? rules?.audio.tone ?? [];
   }
 
   return base;
@@ -2413,7 +2413,7 @@ const _textWorker = {
             topic = parts?.join(" ");
           } else {
             // No title from metadata — try to parse a readable slug from the URL path.
-            // e?.g. "pitchfork?.com/reviews/albums/frank-ocean-blonde/" → "Frank Ocean Blonde"
+            // e?.g. "pitchfork.com/reviews/albums/frank-ocean-blonde/" → "Frank Ocean Blonde"
             const _slugTopic = (() => {
               try {
                 const _u = new URL(req?.input.payload ?? "");
@@ -2866,7 +2866,7 @@ function enrichTextAssetMetadata(
       if (wordCount < 10) suggestions?.push("Expand content for better reach");
   }
 
-  if (charLimit && charCount > charLimit * 0?.9)
+  if (charLimit && charCount > charLimit * 0.9)
     suggestions?.push("Near character limit — consider trimming");
   score = Math?.min(100, score);
 

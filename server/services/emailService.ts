@@ -1,8 +1,8 @@
 import { Resend } from "resend";
 import { emailMonitor } from "../monitoring/emailMonitor";
-import { logger } from "../logger?.js";
-import { queueForRetry } from "./externalServices?.js";
-import { env } from "../config/env?.js";
+import { logger } from "../logger.js";
+import { queueForRetry } from "./externalServices.js";
+import { env } from "../config/env.js";
 
 interface EmailData {
   to: string | string[];
@@ -59,8 +59,8 @@ class EmailService {
   private initialize() {
     if (!this?.isInitialized && env?.RESEND_API_KEY) {
       try {
-        this?.resend = new Resend(env?.RESEND_API_KEY);
-        this?.isInitialized = true;
+        this.resend = new Resend(env?.RESEND_API_KEY);
+        this.isInitialized = true;
         logger?.info("✅ Resend EmailService initialized");
       } catch (error: unknown) {
         logger?.warn(
@@ -124,7 +124,7 @@ class EmailService {
     }
 
     const _template = this?.getInvitationTemplate(data);
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     const _emailData = {
       to: data?.to,
@@ -203,7 +203,7 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     const _emailData = {
       to,
@@ -256,7 +256,7 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const _truncatedMessage =
       replyMessage?.length > 200
         ? replyMessage?.substring(0, 200) + "..."
@@ -313,7 +313,7 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const statusMessages: Record<string, string> = {
       open: "Your ticket is now open and awaiting review.",
       in_progress: "Our team is actively working on your ticket.",
@@ -365,7 +365,7 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const _html = `
 <!DOCTYPE html>
 <html>
@@ -379,7 +379,7 @@ class EmailService {
         <p>Hi ${data?.firstName},</p>
         <p>Welcome to <strong>Max Booster</strong> – your all-in-one music career management platform!</p>
         <p>You now have access to:</p>
-        <ul style="color: #4b5563; line-height: 1?.8;">
+        <ul style="color: #4b5563; line-height: 1.8;">
           <li>🎹 <strong>Studio One-Inspired DAW</strong> – Professional music production in your browser</li>
           <li>🌍 <strong>Distribution to 34+ Platforms</strong> – Spotify, Apple Music, YouTube Music, and more</li>
           <li>📱 <strong>Social Media Management</strong> – Schedule posts across all platforms</li>
@@ -423,7 +423,7 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const _html = `
 <!DOCTYPE html>
 <html>
@@ -496,7 +496,7 @@ class EmailService {
       failed: "Distribution Failed",
     };
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const _platformsTags = data?.platforms
       .map(
         (p) =>
@@ -565,7 +565,7 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster?.com";
+    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const _html = `
 <!DOCTYPE html>
 <html>
@@ -631,13 +631,13 @@ class EmailService {
       case "collaboration":
         subject = `${inviterName} invited you to collaborate on "${projectName}"`;
         mainMessage = `
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             <strong>${inviterName}</strong> (${inviterEmail}) has invited you to collaborate on the project <strong>"${projectName}"</strong>.
           </p>
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             Your role: <strong>${role || "Collaborator"}</strong>
           </p>
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             Log in to Max Booster to view the project and start collaborating!
           </p>
         `;
@@ -647,13 +647,13 @@ class EmailService {
       case "team":
         subject = `${inviterName} invited you to join their team on Max Booster`;
         mainMessage = `
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             <strong>${inviterName}</strong> (${inviterEmail}) has invited you to join their team on Max Booster.
           </p>
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             Your role: <strong>${role || "Team Member"}</strong>
           </p>
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             Join their team to collaborate on music projects, manage releases, and grow together!
           </p>
         `;
@@ -663,10 +663,10 @@ class EmailService {
       case "general":
         subject = `${inviterName} invited you to Max Booster`;
         mainMessage = `
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             <strong>${inviterName}</strong> (${inviterEmail}) has invited you to join Max Booster, the AI-powered music career management platform.
           </p>
-          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1?.6;">
+          <p style="margin: 0 0 20px; color: #4b5563; font-size: 16px; line-height: 1.6;">
             Max Booster helps artists distribute music, manage royalties, create AI-powered content, and grow their music career.
           </p>
         `;
@@ -681,19 +681,19 @@ class EmailService {
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1?.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f3f4f6;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0?.1); overflow: hidden;">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
           <!-- Header -->
           <tr>
             <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
               <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">Max Booster</h1>
-              <p style="margin: 10px 0 0; color: rgba(255,255,255,0?.9); font-size: 14px;">AI-Powered Music Platform</p>
+              <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">AI-Powered Music Platform</p>
             </td>
           </tr>
           
@@ -772,9 +772,9 @@ If you did not expect this invitation, you can safely ignore this email.
     subject: string,
     html: string,
   ): Promise<boolean> {
-    const emailData: sgMail?.MailDataRequired = {
+    const emailData: sgMail.MailDataRequired = {
       to,
-      from: env?.SENDGRID_FROM_EMAIL ?? "noreply@max-booster?.com",
+      from: env?.SENDGRID_FROM_EMAIL ?? "noreply@max-booster.com",
       subject,
       html,
     };
@@ -798,10 +798,10 @@ If you did not expect this invitation, you can safely ignore this email.
       );
       return false;
     }
-    const emailData: sgMail?.MailDataRequired = {
+    const emailData: sgMail.MailDataRequired = {
       to: options?.to,
       from:
-        options?.from ?? env?.SENDGRID_FROM_EMAIL ?? "noreply@max-booster?.com",
+        options?.from ?? env?.SENDGRID_FROM_EMAIL ?? "noreply@max-booster.com",
       subject: options?.subject,
       html: options?.html,
       text: options?.text ?? options?.html.replace(/<[^>]+>/g, ""),

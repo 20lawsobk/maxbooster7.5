@@ -74,7 +74,7 @@ class DraftStorage {
     if (this?.isInitialized) return;
 
     try {
-      this?.db = await openDB<DraftStorageDB>(DB_NAME, DB_VERSION, {
+      this.db = await openDB<DraftStorageDB>(DB_NAME, DB_VERSION, {
         upgrade(db) {
           if (!db?.objectStoreNames.contains("drafts")) {
             const _store = db?.createObjectStore("drafts", { keyPath: "id" });
@@ -85,7 +85,7 @@ class DraftStorage {
         },
       });
 
-      this?.isInitialized = true;
+      this.isInitialized = true;
       this?.startCleanupTimer();
     } catch (error) {
       logger?.info(
@@ -343,7 +343,7 @@ class DraftStorage {
   }
 
   private startCleanupTimer(): void {
-    this?.cleanupInterval = setInterval(
+    this.cleanupInterval = setInterval(
       () => {
         this?.cleanupExpired();
       },
@@ -393,7 +393,7 @@ class DraftStorage {
     this?.autoSaveTimers.clear();
 
     this?.listeners.clear();
-    this?.isInitialized = false;
+    this.isInitialized = false;
   }
 }
 

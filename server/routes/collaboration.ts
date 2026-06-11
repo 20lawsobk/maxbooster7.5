@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { db } from "../db";
 import {
   collaborationComments,
@@ -9,7 +9,7 @@ import {
   studioProjects,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const _router = Router();
 
@@ -268,8 +268,8 @@ router?.get(
         });
       }
 
-      existingUser?.lastActive = new Date();
-      existingUser?.status = "online";
+      existingUser.lastActive = new Date();
+      existingUser.status = "online";
 
       res?.json({
         presence: Array?.from(sessionPresence?.values()),
@@ -322,7 +322,7 @@ router?.put(
       const _previousStatus = userPresence?.status;
 
       if (validatedData?.status) {
-        userPresence?.status = validatedData?.status;
+        userPresence.status = validatedData?.status;
         if (previousStatus !== validatedData?.status) {
           if (
             validatedData?.status === "idle" ||
@@ -338,7 +338,7 @@ router?.put(
       }
 
       if (validatedData?.cursorPosition) {
-        userPresence?.cursorPosition = validatedData?.cursorPosition;
+        userPresence.cursorPosition = validatedData?.cursorPosition;
         outcomes?.push({
           type: "cursor_position_updated",
           userId: req?.user!.id,
@@ -347,7 +347,7 @@ router?.put(
       }
 
       if (validatedData?.selection) {
-        userPresence?.selection = validatedData?.selection;
+        userPresence.selection = validatedData?.selection;
         outcomes?.push({
           type: "user_selection_highlighted",
           userId: req?.user!.id,
@@ -356,7 +356,7 @@ router?.put(
       }
 
       if (validatedData?.isTyping !== undefined) {
-        userPresence?.isTyping = validatedData?.isTyping;
+        userPresence.isTyping = validatedData?.isTyping;
         if (validatedData?.isTyping) {
           outcomes?.push({
             type: "user_is_typing",
@@ -365,7 +365,7 @@ router?.put(
         }
       }
 
-      userPresence?.lastActive = new Date();
+      userPresence.lastActive = new Date();
 
       res?.json({
         success: true,

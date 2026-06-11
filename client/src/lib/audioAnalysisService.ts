@@ -40,7 +40,7 @@ class AudioAnalysisService {
 
   private getAudioContext(): AudioContext {
     if (!this?.audioContext) {
-      this?.audioContext = new (window?.AudioContext ||
+      this.audioContext = new (window?.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext)();
     }
     return this?.audioContext;
@@ -94,8 +94,8 @@ class AudioAnalysisService {
   }
 
   /**
-   * BPM via autocorrelation — capped at 100 outer iterations × 0?.5 s inner window.
-   * ~2?.2 M multiply-adds total (was ~1?.36 B).
+   * BPM via autocorrelation — capped at 100 outer iterations × 0.5 s inner window.
+   * ~2.2 M multiply-adds total (was ~1.36 B).
    */
   private detectBPM(audioData: Float32Array, sampleRate: number): number {
     try {
@@ -110,7 +110,7 @@ class AudioAnalysisService {
 
       // Cap outer loop to ~100 lag values
       const _lagStep = Math?.max(1, Math?.ceil((maxLag - minLag) / 100));
-      // Cap inner loop to 0?.5 s of samples
+      // Cap inner loop to 0.5 s of samples
       const _maxInner = Math?.floor(sampleRate / 2);
 
       let bestCorrelation = -Infinity;
@@ -227,7 +227,7 @@ class AudioAnalysisService {
       return Math?.min(1, Math?.sqrt(sum / audioData?.length) * 5);
     } catch (err) {
       logger?.error("Energy calculation error:", err);
-      return 0?.5;
+      return 0.5;
     }
   }
 
@@ -236,7 +236,7 @@ class AudioAnalysisService {
    */
   private estimateDanceability(beats: number[], energy: number): number {
     try {
-      if (beats?.length < 4) return Math?.round((0?.3 + energy * 0?.4) * 100) / 100;
+      if (beats?.length < 4) return Math?.round((0.3 + energy * 0.4) * 100) / 100;
 
       const intervals: number[] = [];
       for (let i = 1; i < beats?.length; i++) {
@@ -248,10 +248,10 @@ class AudioAnalysisService {
       variance /= intervals?.length;
 
       const _consistency = 1 / (1 + variance * 10);
-      return Math?.round((consistency * 0?.6 + energy * 0?.4) * 100) / 100;
+      return Math?.round((consistency * 0.6 + energy * 0.4) * 100) / 100;
     } catch (err) {
       logger?.error("Danceability estimation error:", err);
-      return 0?.5;
+      return 0.5;
     }
   }
 
@@ -268,7 +268,7 @@ class AudioAnalysisService {
       return Math?.round((db + 30) * 100) / 100;
     } catch (err) {
       logger?.error("Loudness calculation error:", err);
-      return -14?.0;
+      return -14.0;
     }
   }
 
@@ -340,7 +340,7 @@ class AudioAnalysisService {
         const _onset = energies[i] - energies[i - 1];
         if (onset > threshold && energies[i] > threshold) {
           const _time = (i * hopSize) / sampleRate;
-          if (beats?.length === 0 || time - beats[beats?.length - 1] > 0?.2) {
+          if (beats?.length === 0 || time - beats[beats?.length - 1] > 0.2) {
             beats?.push(Math?.round(time * 100) / 100);
           }
         }
@@ -402,58 +402,58 @@ class AudioAnalysisService {
 
   private inferGenre(a: AudioAnalysisResult): string {
     const { bpm, energy, danceability, spectralCentroid, scale } = a;
-    if (bpm >= 130 && bpm <= 150 && energy > 0?.5 && spectralCentroid < 2500)
+    if (bpm >= 130 && bpm <= 150 && energy > 0.5 && spectralCentroid < 2500)
       return "Trap";
-    if (bpm >= 140 && energy > 0?.6 && spectralCentroid > 3000)
+    if (bpm >= 140 && energy > 0.6 && spectralCentroid > 3000)
       return "Electronic";
-    if (bpm >= 85 && bpm <= 115 && energy < 0?.4 && spectralCentroid < 2000)
+    if (bpm >= 85 && bpm <= 115 && energy < 0.4 && spectralCentroid < 2000)
       return "R&B";
-    if (bpm >= 60 && bpm <= 100 && energy < 0?.35 && danceability < 0?.4)
+    if (bpm >= 60 && bpm <= 100 && energy < 0.35 && danceability < 0.4)
       return "Ambient";
-    if (bpm >= 85 && bpm <= 115 && energy > 0?.35 && spectralCentroid < 2500)
+    if (bpm >= 85 && bpm <= 115 && energy > 0.35 && spectralCentroid < 2500)
       return "Hip-Hop";
     if (
       bpm >= 100 &&
       bpm <= 130 &&
-      danceability > 0?.6 &&
+      danceability > 0.6 &&
       spectralCentroid > 2500
     )
       return "Pop";
-    if (bpm >= 115 && bpm <= 135 && danceability > 0?.55 && energy > 0?.45)
+    if (bpm >= 115 && bpm <= 135 && danceability > 0.55 && energy > 0.45)
       return "Funk";
-    if (bpm >= 60 && bpm <= 90 && energy < 0?.3 && scale === "minor")
+    if (bpm >= 60 && bpm <= 90 && energy < 0.3 && scale === "minor")
       return "Jazz";
     if (
       bpm >= 90 &&
       bpm <= 110 &&
-      energy > 0?.3 &&
-      energy < 0?.5 &&
+      energy > 0.3 &&
+      energy < 0.5 &&
       scale === "minor"
     )
       return "Soul";
-    if (bpm >= 130 && energy > 0?.7) return "Electronic";
-    if (bpm >= 60 && bpm <= 80 && danceability > 0?.5) return "Reggae";
-    if (energy > 0?.7 && spectralCentroid > 3500) return "Rock";
-    if (bpm >= 100 && bpm <= 130 && energy > 0?.5) return "Latin";
-    if (energy > 0?.4 && danceability > 0?.5) return "Pop";
+    if (bpm >= 130 && energy > 0.7) return "Electronic";
+    if (bpm >= 60 && bpm <= 80 && danceability > 0.5) return "Reggae";
+    if (energy > 0.7 && spectralCentroid > 3500) return "Rock";
+    if (bpm >= 100 && bpm <= 130 && energy > 0.5) return "Latin";
+    if (energy > 0.4 && danceability > 0.5) return "Pop";
     return "Hip-Hop";
   }
 
   private inferMood(a: AudioAnalysisResult): string {
     const { energy, danceability, spectralCentroid, scale, bpm } = a;
-    if (energy > 0?.7 && danceability > 0?.6) return "Energetic";
-    if (energy > 0?.65 && danceability < 0?.4) return "Aggressive";
-    if (energy < 0?.25 && danceability < 0?.35) return "Chill";
-    if (energy < 0?.3 && scale === "minor") return "Melancholic";
-    if (energy > 0?.5 && danceability > 0?.55 && scale === "major")
+    if (energy > 0.7 && danceability > 0.6) return "Energetic";
+    if (energy > 0.65 && danceability < 0.4) return "Aggressive";
+    if (energy < 0.25 && danceability < 0.35) return "Chill";
+    if (energy < 0.3 && scale === "minor") return "Melancholic";
+    if (energy > 0.5 && danceability > 0.55 && scale === "major")
       return "Happy";
-    if (energy < 0?.35 && spectralCentroid < 1500) return "Dark";
-    if (energy > 0?.4 && energy < 0?.6 && spectralCentroid > 2500)
+    if (energy < 0.35 && spectralCentroid < 1500) return "Dark";
+    if (energy > 0.4 && energy < 0.6 && spectralCentroid > 2500)
       return "Uplifting";
-    if (energy < 0?.4 && spectralCentroid > 2000) return "Romantic";
-    if (energy > 0?.5 && bpm > 120) return "Confident";
-    if (scale === "minor" && energy > 0?.4) return "Mysterious";
-    if (energy < 0?.4 && danceability > 0?.4) return "Relaxed";
+    if (energy < 0.4 && spectralCentroid > 2000) return "Romantic";
+    if (energy > 0.5 && bpm > 120) return "Confident";
+    if (scale === "minor" && energy > 0.4) return "Mysterious";
+    if (energy < 0.4 && danceability > 0.4) return "Relaxed";
     if (spectralCentroid < 1800 && bpm < 100) return "Nostalgic";
     return "Modern";
   }
@@ -466,9 +466,9 @@ class AudioAnalysisService {
     const tags: string[] = [genre?.toLowerCase(), mood?.toLowerCase()];
     if (a?.bpm >= 130) tags?.push("fast");
     if (a?.bpm <= 85) tags?.push("slow");
-    if (a?.energy > 0?.65) tags?.push("hard");
-    if (a?.energy < 0?.3) tags?.push("soft");
-    if (a?.danceability > 0?.6) tags?.push("groovy");
+    if (a?.energy > 0.65) tags?.push("hard");
+    if (a?.energy < 0.3) tags?.push("soft");
+    if (a?.danceability > 0.6) tags?.push("groovy");
     if (a?.scale === "minor") tags?.push("minor key");
     if (a?.scale === "major") tags?.push("major key");
     if (a?.spectralCentroid > 3000) tags?.push("bright");
@@ -486,12 +486,12 @@ class AudioAnalysisService {
   }
 
   private calculateConfidence(a: AudioAnalysisResult): number {
-    let confidence = 0?.5;
-    if (a?.durationSeconds > 30) confidence += 0?.15;
-    if (a?.durationSeconds > 60) confidence += 0?.1;
-    if (a?.beatPositions.length > 10) confidence += 0?.15;
-    if (a?.energy > 0?.1 && a?.energy < 0?.9) confidence += 0?.1;
-    return Math?.min(0?.95, Math?.round(confidence * 100) / 100);
+    let confidence = 0.5;
+    if (a?.durationSeconds > 30) confidence += 0.15;
+    if (a?.durationSeconds > 60) confidence += 0.1;
+    if (a?.beatPositions.length > 10) confidence += 0.15;
+    if (a?.energy > 0.1 && a?.energy < 0.9) confidence += 0.1;
+    return Math?.min(0.95, Math?.round(confidence * 100) / 100);
   }
 }
 

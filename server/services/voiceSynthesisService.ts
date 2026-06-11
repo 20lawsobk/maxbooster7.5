@@ -6,7 +6,7 @@
  * Each profile is a unique audio processing chain applied to FFmpeg's built-in
  * flite TTS engine (kal16 voice — highest quality 16kHz flite variant).
  * Processing stages per profile:
- *   1. flite TTS → raw speech PCM (44?.1kHz stereo)
+ *   1. flite TTS → raw speech PCM (44.1kHz stereo)
  *   2. asetrate pitch shift (via sample-rate trick: shift pitch without time-stretch)
  *   3. atempo speed/tempo correction (restores duration after pitch shift)
  *   4. Genre-specific EQ chain (treble/bass/equalizer filters)
@@ -31,7 +31,7 @@ import { writeFile as fsWriteFile } from "fs/promises";
 import path from "path";
 import os from "os";
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _execFileAsync = promisify(execFile);
 
@@ -77,7 +77,7 @@ async function detectBestFliteVoice(): Promise<string> {
           "-i",
           `flite=text='test':voice=${v}`,
           "-t",
-          "0?.1",
+          "0.1",
           "-f",
           "null",
           "-",
@@ -106,11 +106,11 @@ export interface VoiceProfile {
   description: string;
   category: "hype" | "smooth" | "cinematic" | "character";
   gender: "neutral" | "masculine" | "feminine";
-  pitchFactor: number; // asetrate multiplier (1?.0=normal, 0?.80=deeper, 1?.20=higher)
-  tempoFactor: number; // atempo speed (1?.0=normal, 1?.15=faster, 0?.90=slower)
+  pitchFactor: number; // asetrate multiplier (1.0=normal, 0.80=deeper, 1.20=higher)
+  tempoFactor: number; // atempo speed (1.0=normal, 1.15=faster, 0.90=slower)
   eqChain: string; // FFmpeg audio filter chain
   spatialFx: string; // echo/reverb/delay filter
-  stereoWidth: number; // extrastereo m value (1?.0=normal, 1?.8=wide)
+  stereoWidth: number; // extrastereo m value (1.0=normal, 1.8=wide)
   gainDb: number; // final gain adjustment in dB
 }
 
@@ -122,12 +122,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     gender: "masculine",
     description:
       "Deep, authoritative broadcast voice — cut-through-the-noise presence",
-    pitchFactor: 0?.88,
-    tempoFactor: 0?.97,
+    pitchFactor: 0.88,
+    tempoFactor: 0.97,
     eqChain:
-      "highpass=f=120,equalizer=f=200:width_type=o:width=2:g=3,equalizer=f=1200:width_type=o:width=2:g=2,equalizer=f=8000:width_type=o:width=2:g=-2,acompressor=threshold=0?.4:ratio=4:attack=3:release=40",
-    spatialFx: "aecho=0?.8:0?.6:20:0?.08",
-    stereoWidth: 1?.3,
+      "highpass=f=120,equalizer=f=200:width_type=o:width=2:g=3,equalizer=f=1200:width_type=o:width=2:g=2,equalizer=f=8000:width_type=o:width=2:g=-2,acompressor=threshold=0.4:ratio=4:attack=3:release=40",
+    spatialFx: "aecho=0.8:0.6:20:0.08",
+    stereoWidth: 1.3,
     gainDb: 2,
   },
   hype_man: {
@@ -136,12 +136,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "hype",
     gender: "masculine",
     description: "High-energy, punchy and fast — festival opener energy",
-    pitchFactor: 1?.06,
-    tempoFactor: 1?.12,
+    pitchFactor: 1.06,
+    tempoFactor: 1.12,
     eqChain:
-      "highpass=f=100,treble=g=4,equalizer=f=3000:width_type=o:width=2:g=3,acompressor=threshold=0?.3:ratio=6:attack=1:release=20",
-    spatialFx: "aecho=0?.6:0?.4:15:0?.05",
-    stereoWidth: 1?.6,
+      "highpass=f=100,treble=g=4,equalizer=f=3000:width_type=o:width=2:g=3,acompressor=threshold=0.3:ratio=6:attack=1:release=20",
+    spatialFx: "aecho=0.6:0.4:15:0.05",
+    stereoWidth: 1.6,
     gainDb: 3,
   },
   smooth_narrator: {
@@ -150,12 +150,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "cinematic",
     gender: "neutral",
     description: "Measured, cinematic documentary voice — trust and gravitas",
-    pitchFactor: 0?.92,
-    tempoFactor: 0?.9,
+    pitchFactor: 0.92,
+    tempoFactor: 0.9,
     eqChain:
-      "highpass=f=90,equalizer=f=300:width_type=o:width=2:g=2,equalizer=f=2500:width_type=o:width=2:g=1,lowpass=f=14000,acompressor=threshold=0?.45:ratio=3:attack=8:release=80",
-    spatialFx: "aecho=0?.85:0?.6:30:0?.12",
-    stereoWidth: 1?.2,
+      "highpass=f=90,equalizer=f=300:width_type=o:width=2:g=2,equalizer=f=2500:width_type=o:width=2:g=1,lowpass=f=14000,acompressor=threshold=0.45:ratio=3:attack=8:release=80",
+    spatialFx: "aecho=0.85:0.6:30:0.12",
+    stereoWidth: 1.2,
     gainDb: 1,
   },
   r_and_b_smooth: {
@@ -164,12 +164,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "smooth",
     gender: "neutral",
     description: "Warm, silky, intimate — velvet texture for soulful content",
-    pitchFactor: 0?.9,
-    tempoFactor: 0?.93,
+    pitchFactor: 0.9,
+    tempoFactor: 0.93,
     eqChain:
-      "highpass=f=80,equalizer=f=180:width_type=o:width=2:g=4,equalizer=f=800:width_type=o:width=2:g=2,equalizer=f=6000:width_type=o:width=2:g=-3,lowpass=f=12000,acompressor=threshold=0?.4:ratio=3:attack=6:release=60",
-    spatialFx: "aecho=0?.9:0?.7:40:0?.18",
-    stereoWidth: 1?.5,
+      "highpass=f=80,equalizer=f=180:width_type=o:width=2:g=4,equalizer=f=800:width_type=o:width=2:g=2,equalizer=f=6000:width_type=o:width=2:g=-3,lowpass=f=12000,acompressor=threshold=0.4:ratio=3:attack=6:release=60",
+    spatialFx: "aecho=0.9:0.7:40:0.18",
+    stereoWidth: 1.5,
     gainDb: 1,
   },
   hype_girl: {
@@ -178,12 +178,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "hype",
     gender: "feminine",
     description: "Bright, energetic, celebratory — pop and dance content queen",
-    pitchFactor: 1?.18,
-    tempoFactor: 1?.08,
+    pitchFactor: 1.18,
+    tempoFactor: 1.08,
     eqChain:
-      "highpass=f=150,treble=g=5,equalizer=f=4000:width_type=o:width=2:g=3,equalizer=f=200:width_type=o:width=2:g=-2,acompressor=threshold=0?.35:ratio=4:attack=2:release=25",
-    spatialFx: "aecho=0?.7:0?.5:18:0?.08",
-    stereoWidth: 1?.7,
+      "highpass=f=150,treble=g=5,equalizer=f=4000:width_type=o:width=2:g=3,equalizer=f=200:width_type=o:width=2:g=-2,acompressor=threshold=0.35:ratio=4:attack=2:release=25",
+    spatialFx: "aecho=0.7:0.5:18:0.08",
+    stereoWidth: 1.7,
     gainDb: 2,
   },
   deep_boss: {
@@ -192,12 +192,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "hype",
     gender: "masculine",
     description: "Very deep, commanding, bass-heavy — trap and rap authority",
-    pitchFactor: 0?.78,
-    tempoFactor: 0?.95,
+    pitchFactor: 0.78,
+    tempoFactor: 0.95,
     eqChain:
-      "highpass=f=60,bass=g=6,equalizer=f=100:width_type=o:width=2:g=4,equalizer=f=4000:width_type=o:width=2:g=-3,acompressor=threshold=0?.3:ratio=5:attack=3:release=35",
-    spatialFx: "aecho=0?.8:0?.5:25:0?.10",
-    stereoWidth: 1?.4,
+      "highpass=f=60,bass=g=6,equalizer=f=100:width_type=o:width=2:g=4,equalizer=f=4000:width_type=o:width=2:g=-3,acompressor=threshold=0.3:ratio=5:attack=3:release=35",
+    spatialFx: "aecho=0.8:0.5:25:0.10",
+    stereoWidth: 1.4,
     gainDb: 3,
   },
   ethereal_guide: {
@@ -207,12 +207,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     gender: "feminine",
     description:
       "Dreamy, reverb-drenched, otherworldly — ambient and spiritual vibes",
-    pitchFactor: 1?.1,
-    tempoFactor: 0?.88,
+    pitchFactor: 1.1,
+    tempoFactor: 0.88,
     eqChain:
-      "highpass=f=100,equalizer=f=500:width_type=o:width=2:g=-2,equalizer=f=3000:width_type=o:width=2:g=4,treble=g=3,acompressor=threshold=0?.5:ratio=2:attack=15:release=120",
-    spatialFx: "aecho=0?.8:0?.6:60:0?.30,aecho=0?.6:0?.4:120:0?.15",
-    stereoWidth: 1?.9,
+      "highpass=f=100,equalizer=f=500:width_type=o:width=2:g=-2,equalizer=f=3000:width_type=o:width=2:g=4,treble=g=3,acompressor=threshold=0.5:ratio=2:attack=15:release=120",
+    spatialFx: "aecho=0.8:0.6:60:0.30,aecho=0.6:0.4:120:0.15",
+    stereoWidth: 1.9,
     gainDb: 0,
   },
   rap_mc: {
@@ -221,12 +221,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "hype",
     gender: "neutral",
     description: "Fast, rhythmic, punchy — hip-hop and rap drops",
-    pitchFactor: 1?.02,
-    tempoFactor: 1?.18,
+    pitchFactor: 1.02,
+    tempoFactor: 1.18,
     eqChain:
-      "highpass=f=100,equalizer=f=200:width_type=o:width=2:g=2,treble=g=2,equalizer=f=2000:width_type=o:width=2:g=2,acompressor=threshold=0?.28:ratio=7:attack=1:release=18",
-    spatialFx: "aecho=0?.7:0?.4:12:0?.06",
-    stereoWidth: 1?.5,
+      "highpass=f=100,equalizer=f=200:width_type=o:width=2:g=2,treble=g=2,equalizer=f=2000:width_type=o:width=2:g=2,acompressor=threshold=0.28:ratio=7:attack=1:release=18",
+    spatialFx: "aecho=0.7:0.4:12:0.06",
+    stereoWidth: 1.5,
     gainDb: 2,
   },
   whisper_intimate: {
@@ -236,12 +236,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     gender: "neutral",
     description:
       "Soft, hushed, intimate — perfect for emotional or late-night content",
-    pitchFactor: 0?.95,
-    tempoFactor: 0?.86,
+    pitchFactor: 0.95,
+    tempoFactor: 0.86,
     eqChain:
-      "highpass=f=120,equalizer=f=1000:width_type=o:width=2:g=2,treble=g=-2,lowpass=f=10000,acompressor=threshold=0?.6:ratio=2:attack=20:release=150,volume=0?.7",
-    spatialFx: "aecho=0?.9:0?.8:50:0?.25",
-    stereoWidth: 1?.6,
+      "highpass=f=120,equalizer=f=1000:width_type=o:width=2:g=2,treble=g=-2,lowpass=f=10000,acompressor=threshold=0.6:ratio=2:attack=20:release=150,volume=0.7",
+    spatialFx: "aecho=0.9:0.8:50:0.25",
+    stereoWidth: 1.6,
     gainDb: -3,
   },
   storyteller_warm: {
@@ -251,12 +251,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     gender: "neutral",
     description:
       "Warm, measured, inviting — the voice of a compelling narrative",
-    pitchFactor: 0?.94,
-    tempoFactor: 0?.92,
+    pitchFactor: 0.94,
+    tempoFactor: 0.92,
     eqChain:
-      "highpass=f=100,equalizer=f=250:width_type=o:width=2:g=3,equalizer=f=2000:width_type=o:width=2:g=1,equalizer=f=7000:width_type=o:width=2:g=-1,acompressor=threshold=0?.42:ratio=3:attack=7:release=70",
-    spatialFx: "aecho=0?.85:0?.65:35:0?.14",
-    stereoWidth: 1?.3,
+      "highpass=f=100,equalizer=f=250:width_type=o:width=2:g=3,equalizer=f=2000:width_type=o:width=2:g=1,equalizer=f=7000:width_type=o:width=2:g=-1,acompressor=threshold=0.42:ratio=3:attack=7:release=70",
+    spatialFx: "aecho=0.85:0.65:35:0.14",
+    stereoWidth: 1.3,
     gainDb: 1,
   },
   arena_hype: {
@@ -265,12 +265,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "hype",
     gender: "masculine",
     description: "MASSIVE, stadium-sized, echo-heavy — concert intro energy",
-    pitchFactor: 0?.93,
-    tempoFactor: 1?.05,
+    pitchFactor: 0.93,
+    tempoFactor: 1.05,
     eqChain:
-      "highpass=f=100,bass=g=4,equalizer=f=1500:width_type=o:width=2:g=3,treble=g=2,acompressor=threshold=0?.25:ratio=8:attack=2:release=30",
-    spatialFx: "aecho=0?.85:0?.7:80:0?.35,aecho=0?.7:0?.5:160:0?.18",
-    stereoWidth: 1?.8,
+      "highpass=f=100,bass=g=4,equalizer=f=1500:width_type=o:width=2:g=3,treble=g=2,acompressor=threshold=0.25:ratio=8:attack=2:release=30",
+    spatialFx: "aecho=0.85:0.7:80:0.35,aecho=0.7:0.5:160:0.18",
+    stereoWidth: 1.8,
     gainDb: 4,
   },
   afrobeats_hype: {
@@ -279,12 +279,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "hype",
     gender: "neutral",
     description: "Bright, tropical, rhythmic — Afrobeats and Amapiano energy",
-    pitchFactor: 1?.05,
-    tempoFactor: 1?.06,
+    pitchFactor: 1.05,
+    tempoFactor: 1.06,
     eqChain:
-      "highpass=f=110,treble=g=4,equalizer=f=3500:width_type=o:width=2:g=3,equalizer=f=150:width_type=o:width=2:g=3,acompressor=threshold=0?.32:ratio=5:attack=3:release=35",
-    spatialFx: "aecho=0?.75:0?.5:20:0?.10",
-    stereoWidth: 1?.6,
+      "highpass=f=110,treble=g=4,equalizer=f=3500:width_type=o:width=2:g=3,equalizer=f=150:width_type=o:width=2:g=3,acompressor=threshold=0.32:ratio=5:attack=3:release=35",
+    spatialFx: "aecho=0.75:0.5:20:0.10",
+    stereoWidth: 1.6,
     gainDb: 2,
   },
   latin_energy: {
@@ -293,12 +293,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     category: "hype",
     gender: "feminine",
     description: "Vibrant, bright, passionate — reggaeton and Latin pop",
-    pitchFactor: 1?.08,
-    tempoFactor: 1?.1,
+    pitchFactor: 1.08,
+    tempoFactor: 1.1,
     eqChain:
-      "highpass=f=120,treble=g=5,equalizer=f=4000:width_type=o:width=2:g=4,equalizer=f=100:width_type=o:width=2:g=2,acompressor=threshold=0?.30:ratio=5:attack=2:release=28",
-    spatialFx: "aecho=0?.72:0?.48:16:0?.07",
-    stereoWidth: 1?.7,
+      "highpass=f=120,treble=g=5,equalizer=f=4000:width_type=o:width=2:g=4,equalizer=f=100:width_type=o:width=2:g=2,acompressor=threshold=0.30:ratio=5:attack=2:release=28",
+    spatialFx: "aecho=0.72:0.48:16:0.07",
+    stereoWidth: 1.7,
     gainDb: 2,
   },
   cold_luxury: {
@@ -308,12 +308,12 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
     gender: "neutral",
     description:
       "Cool, detached, premium — luxury brand and high-fashion energy",
-    pitchFactor: 0?.87,
-    tempoFactor: 0?.88,
+    pitchFactor: 0.87,
+    tempoFactor: 0.88,
     eqChain:
-      "highpass=f=150,equalizer=f=300:width_type=o:width=2:g=-2,equalizer=f=2000:width_type=o:width=2:g=2,equalizer=f=8000:width_type=o:width=2:g=3,acompressor=threshold=0?.5:ratio=3:attack=10:release=90",
-    spatialFx: "aecho=0?.9:0?.7:45:0?.20",
-    stereoWidth: 1?.4,
+      "highpass=f=150,equalizer=f=300:width_type=o:width=2:g=-2,equalizer=f=2000:width_type=o:width=2:g=2,equalizer=f=8000:width_type=o:width=2:g=3,acompressor=threshold=0.5:ratio=3:attack=10:release=90",
+    spatialFx: "aecho=0.9:0.7:45:0.20",
+    stereoWidth: 1.4,
     gainDb: 0,
   },
 };
@@ -407,11 +407,11 @@ export async function analyzeReferenceVoice(
 // ── CORE SYNTHESIS ────────────────────────────────────────────────────────────
 export interface SynthesisOptions {
   profileId?: string;
-  speed?: number; // additional speed multiplier (0?.5–2?.0, default 1?.0)
-  pitch?: number; // additional pitch multiplier (0?.7–1?.5, default 1?.0)
-  volume?: number; // output volume 0?.0–2?.0 (default 1?.0)
+  speed?: number; // additional speed multiplier (0.5–2.0, default 1.0)
+  pitch?: number; // additional pitch multiplier (0.7–1.5, default 1.0)
+  volume?: number; // output volume 0.0–2.0 (default 1.0)
   outputFormat?: "wav" | "mp3";
-  reverbAmount?: number; // 0?.0 (none) – 1?.0 (heavy) — scales spatial FX
+  reverbAmount?: number; // 0.0 (none) – 1.0 (heavy) — scales spatial FX
   referenceAudioPath?: string; // analyze + adapt voice to this sample
   maxDurationSeconds?: number; // truncate output to this length
 }
@@ -461,26 +461,26 @@ export async function synthesizeVoice(
   }
 
   // Compute final processing parameters (profile × user overrides)
-  const _pitchMult = profile?.pitchFactor * (options?.pitch ?? 1?.0);
-  const _tempoMult = profile?.tempoFactor * (options?.speed ?? 1?.0);
-  const _volumeMult = options?.volume ?? 1?.0;
-  const _reverbMix = Math?.max(0, Math?.min(1, options?.reverbAmount ?? 1?.0));
+  const _pitchMult = profile?.pitchFactor * (options?.pitch ?? 1.0);
+  const _tempoMult = profile?.tempoFactor * (options?.speed ?? 1.0);
+  const _volumeMult = options?.volume ?? 1.0;
+  const _reverbMix = Math?.max(0, Math?.min(1, options?.reverbAmount ?? 1.0));
 
   // FFmpeg pitch-shift trick:
   //   asetrate changes the sample rate (shifts pitch + speed together)
   //   atempo corrects the speed back (restores duration without affecting pitch)
-  // Clamp atempo to valid range (0?.5–2?.0); for extreme shifts use chained atempo filters
+  // Clamp atempo to valid range (0.5–2.0); for extreme shifts use chained atempo filters
   const _asetrate = Math?.round(44100 * pitchMult);
   const _rawTempo = (1 / pitchMult) * tempoMult;
   const clampedTempos: number[] = [];
   let t = rawTempo;
-  while (t > 2?.0) {
-    clampedTempos?.push(2?.0);
-    t /= 2?.0;
+  while (t > 2.0) {
+    clampedTempos?.push(2.0);
+    t /= 2.0;
   }
-  while (t < 0?.5) {
-    clampedTempos?.push(0?.5);
-    t *= 2?.0;
+  while (t < 0.5) {
+    clampedTempos?.push(0.5);
+    t *= 2.0;
   }
   clampedTempos?.push(t);
   const _atempoChain = clampedTempos
@@ -489,7 +489,7 @@ export async function synthesizeVoice(
 
   // Build the spatial FX with scaled reverb
   const _spatialFx =
-    reverbMix <= 0?.05
+    reverbMix <= 0.05
       ? "aecho=0:0:1:0" // near-zero echo = effectively bypass
       : profile?.spatialFx;
 
@@ -503,7 +503,7 @@ export async function synthesizeVoice(
     profile?.eqChain, // genre EQ + compression
     spatialFx, // reverb / echo
     `extrastereo=m=${profile?.stereoWidth.toFixed(2)}`, // stereo width
-    `dynaudnorm=p=0?.90:r=0?.8`, // loudness normalize
+    `dynaudnorm=p=0.90:r=0.8`, // loudness normalize
     gainFilter, // final gain
   ].join(",");
 

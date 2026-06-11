@@ -77,7 +77,7 @@ export class TransportEngine {
   private audioContext: AudioContext | null = null;
 
   constructor(sampleRate: number = 48000, bufferSize: number = 512) {
-    this?.state = {
+    this.state = {
       sampleRate,
       bufferSize,
       currentSample: 0,
@@ -100,7 +100,7 @@ export class TransportEngine {
   }
 
   setAudioContext(ctx: AudioContext): void {
-    this?.audioContext = ctx;
+    this.audioContext = ctx;
     this?.state.sampleRate = ctx?.sampleRate;
   }
 
@@ -284,7 +284,7 @@ export class TransportEngine {
 
   private startPlayback(): void {
     this?.state.isPlaying = true;
-    this?.lastTickTime = performance?.now();
+    this.lastTickTime = performance?.now();
     this?.emit({ type: "play", time: performance?.now() });
     this?.startAnimationLoop();
   }
@@ -361,7 +361,7 @@ export class TransportEngine {
 
       const _now = performance?.now();
       const _deltaMs = now - this?.lastTickTime;
-      this?.lastTickTime = now;
+      this.lastTickTime = now;
 
       this?.getTempoAtTime(
         this?.state.currentSample / this?.state.sampleRate,
@@ -383,16 +383,16 @@ export class TransportEngine {
         time: now,
         data: this?.getCurrentPosition(),
       });
-      this?.animationFrameId = requestAnimationFrame(tick);
+      this.animationFrameId = requestAnimationFrame(tick);
     };
 
-    this?.animationFrameId = requestAnimationFrame(tick);
+    this.animationFrameId = requestAnimationFrame(tick);
   }
 
   private stopAnimationLoop(): void {
     if (this?.animationFrameId !== null) {
       cancelAnimationFrame(this?.animationFrameId);
-      this?.animationFrameId = null;
+      this.animationFrameId = null;
     }
   }
 

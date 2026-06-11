@@ -4,12 +4,12 @@ import type { IncomingMessage } from "http";
 import { parse as parseUrl } from "url";
 import { parse as parseCookie } from "cookie";
 import * as Y from "yjs";
-import { yjsService } from "../services/yjsService?.js";
-import { presenceManager, type CursorPosition, type SelectionState } from "./presenceManager?.js";
-import { jwtAuthService } from "../services/jwtAuthService?.js";
-import { storage } from "../storage?.js";
-import { getRedisClient } from "../lib/redisConnectionFactory?.js";
-import { logger } from "../logger?.js";
+import { yjsService } from "../services/yjsService.js";
+import { presenceManager, type CursorPosition, type SelectionState } from "./presenceManager.js";
+import { jwtAuthService } from "../services/jwtAuthService.js";
+import { storage } from "../storage.js";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 
 interface CollabClient {
   ws: WebSocket;
@@ -74,13 +74,13 @@ export class StudioCollabServer {
   private clients: Map<string, Set<CollabClient>> = new Map();
   private userConnectionCount: Map<string, number> = new Map();
   private documents: Map<string, Y?.Doc> = new Map();
-  private pingInterval: NodeJS?.Timeout | null = null;
-  private awarenessInterval: NodeJS?.Timeout | null = null;
+  private pingInterval: NodeJS.Timeout | null = null;
+  private awarenessInterval: NodeJS.Timeout | null = null;
 
   async initialize(server: Server, path: string = "/ws/studio"): Promise<void> {
     // maxPayload: 1 MB covers the largest Yjs document update chunks produced by
     // the studio editor.  Without this a single malicious frame OOMs the process.
-    this?.wss = new WebSocketServer({
+    this.wss = new WebSocketServer({
       noServer: true,
       maxPayload: 1 * 1024 * 1024,
     });
@@ -100,7 +100,7 @@ export class StudioCollabServer {
               `[StudioCollab] Global connection limit reached (${MAX_STUDIO_WS_CONNECTIONS})`,
             );
             socket?.write(
-              "HTTP/1?.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n",
+              "HTTP/1.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n",
             );
             socket?.destroy();
             return;
@@ -109,7 +109,7 @@ export class StudioCollabServer {
           const _authResult = await this?.authenticateRequest(request);
 
           if (!authResult?.authenticated) {
-            socket?.write("HTTP/1?.1 401 Unauthorized\r\n\r\n");
+            socket?.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
             socket?.destroy();
             return;
           }
@@ -122,7 +122,7 @@ export class StudioCollabServer {
               `[StudioCollab] Per-user connection limit reached for ${authResult?.userId}`,
             );
             socket?.write(
-              "HTTP/1?.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n",
+              "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n",
             );
             socket?.destroy();
             return;
@@ -131,7 +131,7 @@ export class StudioCollabServer {
           const _projectId = this?.extractProjectId(request?.url || "");
 
           if (!projectId) {
-            socket?.write("HTTP/1?.1 400 Bad Request\r\n\r\n");
+            socket?.write("HTTP/1.1 400 Bad Request\r\n\r\n");
             socket?.destroy();
             return;
           }
@@ -142,7 +142,7 @@ export class StudioCollabServer {
           );
 
           if (!hasAccess) {
-            socket?.write("HTTP/1?.1 403 Forbidden\r\n\r\n");
+            socket?.write("HTTP/1.1 403 Forbidden\r\n\r\n");
             socket?.destroy();
             return;
           }
@@ -156,7 +156,7 @@ export class StudioCollabServer {
           });
         } catch (error) {
           logger?.warn({ err: error }, "[StudioCollab] Upgrade error:");
-          socket?.write("HTTP/1?.1 500 Internal Server Error\r\n\r\n");
+          socket?.write("HTTP/1.1 500 Internal Server Error\r\n\r\n");
           socket?.destroy();
         }
       }
@@ -436,8 +436,8 @@ export class StudioCollabServer {
     });
 
     ws?.on("pong", () => {
-      client?.isAlive = true;
-      client?.lastPing = Date?.now();
+      client.isAlive = true;
+      client.lastPing = Date?.now();
     });
 
     ws?.on("close", async () => {
@@ -563,8 +563,8 @@ export class StudioCollabServer {
 
       case "ping": {
         this?.sendToClient(client?.ws, { type: "pong" });
-        client?.isAlive = true;
-        client?.lastPing = Date?.now();
+        client.isAlive = true;
+        client.lastPing = Date?.now();
         break;
       }
 
@@ -650,7 +650,7 @@ export class StudioCollabServer {
   }
 
   private startPingInterval(): void {
-    this?.pingInterval = setInterval(() => {
+    this.pingInterval = setInterval(() => {
       for (const [projectId, projectClients] of this?.clients.entries()) {
         for (const client of projectClients) {
           if (!client?.isAlive) {
@@ -662,7 +662,7 @@ export class StudioCollabServer {
             continue;
           }
 
-          client?.isAlive = false;
+          client.isAlive = false;
           if (client?.ws.readyState === WebSocket?.OPEN) {
             client?.ws.ping();
           }
@@ -672,7 +672,7 @@ export class StudioCollabServer {
   }
 
   private startAwarenessBroadcast(): void {
-    this?.awarenessInterval = setInterval(async () => {
+    this.awarenessInterval = setInterval(async () => {
       for (const [projectId, projectClients] of this?.clients.entries()) {
         if (projectClients?.size > 0) {
           try {
@@ -714,12 +714,12 @@ export class StudioCollabServer {
 
     if (this?.pingInterval) {
       clearInterval(this?.pingInterval);
-      this?.pingInterval = null;
+      this.pingInterval = null;
     }
 
     if (this?.awarenessInterval) {
       clearInterval(this?.awarenessInterval);
-      this?.awarenessInterval = null;
+      this.awarenessInterval = null;
     }
 
     for (const [projectId, projectClients] of this?.clients.entries()) {
@@ -743,7 +743,7 @@ export class StudioCollabServer {
 
     if (this?.wss) {
       this?.wss.close();
-      this?.wss = null;
+      this.wss = null;
     }
 
     logger?.info("[StudioCollab] Shutdown complete");

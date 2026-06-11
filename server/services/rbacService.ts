@@ -6,7 +6,7 @@ import {
   type WorkspaceRole,
 } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type ResourceType =
   | "releases"

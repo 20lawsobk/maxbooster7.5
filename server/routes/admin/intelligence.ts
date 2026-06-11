@@ -15,8 +15,8 @@
  */
 
 import { Router } from "express";
-import { systemIntelligence } from "../../services/systemIntelligence?.js";
-import { logger } from "../../logger?.js";
+import { systemIntelligence } from "../../services/systemIntelligence.js";
+import { logger } from "../../logger.js";
 
 const _router = Router();
 

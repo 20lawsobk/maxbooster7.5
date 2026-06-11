@@ -1,6 +1,6 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import os from "os";
-import { env } from "./env?.js";
+import { env } from "./env.js";
 
 // VM Reserve auto-sizing: scale queue concurrency proportionally to available CPU cores.
 // Formula: floor(cpuCount / 4) gives a whole-number multiplier:
@@ -178,7 +178,7 @@ export const config: AppConfig = {
     maxConnections: parseEnvInt("DB_MAX_CONNECTIONS", 200),
     idleTimeout: parseEnvInt("DB_IDLE_TIMEOUT", 60000),
     // 3 s connection-checkout timeout: if the pool is momentarily exhausted by
-    // background tasks, _retryQuery (2 attempts, 300 ms gap) fails within 6?.3 s
+    // background tasks, _retryQuery (2 attempts, 300 ms gap) fails within 6.3 s
     // — well under a 10 s HTTP client AbortSignal — instead of hanging 20 s.
     connectionTimeout: parseEnvInt("DB_CONNECTION_TIMEOUT", 3000),
   },

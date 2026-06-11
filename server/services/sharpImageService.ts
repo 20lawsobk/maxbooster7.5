@@ -9,7 +9,7 @@ import sharp from "sharp";
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface ImageDimensions {
   width: number;
@@ -65,7 +65,7 @@ class SharpImageService {
   private outputDir: string;
 
   constructor() {
-    this?.outputDir = path?.join(
+    this.outputDir = path?.join(
       process?.cwd(),
       "public",
       "generated-content",
@@ -121,28 +121,28 @@ class SharpImageService {
     const _svg = `
       <svg width="${width}" height="${height}" xmlns="http://www?.w3.org/2000/svg">
         <!-- Decorative circles -->
-        <circle cx="${width * 0?.1}" cy="${height * 0?.2}" r="${Math?.min(width, height) * 0?.15}" 
-                fill="${accentColor}" opacity="0?.1"/>
-        <circle cx="${width * 0?.9}" cy="${height * 0?.8}" r="${Math?.min(width, height) * 0?.2}" 
-                fill="${accentColor}" opacity="0?.08"/>
-        <circle cx="${width * 0?.5}" cy="${height * 0?.1}" r="${Math?.min(width, height) * 0?.1}" 
-                fill="${BRAND_COLORS?.secondary}" opacity="0?.12"/>
+        <circle cx="${width * 0.1}" cy="${height * 0.2}" r="${Math?.min(width, height) * 0.15}" 
+                fill="${accentColor}" opacity="0.1"/>
+        <circle cx="${width * 0.9}" cy="${height * 0.8}" r="${Math?.min(width, height) * 0.2}" 
+                fill="${accentColor}" opacity="0.08"/>
+        <circle cx="${width * 0.5}" cy="${height * 0.1}" r="${Math?.min(width, height) * 0.1}" 
+                fill="${BRAND_COLORS?.secondary}" opacity="0.12"/>
         
         <!-- Sound wave lines -->
-        <g stroke="${accentColor}" stroke-width="2" opacity="0?.2" fill="none">
-          <path d="M ${width * 0?.05} ${height * 0?.5} 
-                   Q ${width * 0?.15} ${height * 0?.3}, ${width * 0?.25} ${height * 0?.5} 
-                   T ${width * 0?.45} ${height * 0?.5}"/>
-          <path d="M ${width * 0?.55} ${height * 0?.5} 
-                   Q ${width * 0?.65} ${height * 0?.7}, ${width * 0?.75} ${height * 0?.5} 
-                   T ${width * 0?.95} ${height * 0?.5}"/>
+        <g stroke="${accentColor}" stroke-width="2" opacity="0.2" fill="none">
+          <path d="M ${width * 0.05} ${height * 0.5} 
+                   Q ${width * 0.15} ${height * 0.3}, ${width * 0.25} ${height * 0.5} 
+                   T ${width * 0.45} ${height * 0.5}"/>
+          <path d="M ${width * 0.55} ${height * 0.5} 
+                   Q ${width * 0.65} ${height * 0.7}, ${width * 0.75} ${height * 0.5} 
+                   T ${width * 0.95} ${height * 0.5}"/>
         </g>
         
         <!-- Corner accents -->
-        <polygon points="0,0 ${width * 0?.15},0 0,${height * 0?.15}" 
-                 fill="${accentColor}" opacity="0?.15"/>
-        <polygon points="${width},${height} ${width - width * 0?.15},${height} ${width},${height - height * 0?.15}" 
-                 fill="${accentColor}" opacity="0?.15"/>
+        <polygon points="0,0 ${width * 0.15},0 0,${height * 0.15}" 
+                 fill="${accentColor}" opacity="0.15"/>
+        <polygon points="${width},${height} ${width - width * 0.15},${height} ${width},${height - height * 0.15}" 
+                 fill="${accentColor}" opacity="0.15"/>
       </svg>
     `;
 
@@ -166,7 +166,7 @@ class SharpImageService {
       Math?.floor(width / 15),
       Math?.floor(height / (lines?.length * 2 + 2)),
     );
-    const _lineHeight = fontSize * 1?.4;
+    const _lineHeight = fontSize * 1.4;
     const _totalTextHeight = lines?.length * lineHeight;
     const _startY = (height - totalTextHeight) / 2 + fontSize;
 
@@ -181,7 +181,7 @@ class SharpImageService {
               font-size="${fontSize}px" 
               font-weight="bold" 
               fill="${BRAND_COLORS?.white}">
-          <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0?.5))">${this?.escapeXml(line)}</tspan>
+          <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0.5))">${this?.escapeXml(line)}</tspan>
         </text>
       `;
       })
@@ -216,7 +216,7 @@ class SharpImageService {
               font-size="${fontSize}px" 
               font-weight="bold" 
               fill="${BRAND_COLORS?.primary}" 
-              opacity="0?.8">
+              opacity="0.8">
           ${brandText}
         </text>
         
@@ -225,7 +225,7 @@ class SharpImageService {
               fill="none" 
               stroke="${BRAND_COLORS?.primary}" 
               stroke-width="4" 
-              opacity="0?.3"/>
+              opacity="0.3"/>
       </svg>
     `;
 
@@ -398,7 +398,7 @@ class SharpImageService {
       .png()
       .toBuffer();
 
-    const _thumbnailFilename = result?.filename.replace(".png", "-thumb?.png");
+    const _thumbnailFilename = result?.filename.replace(".png", "-thumb.png");
     const _thumbnailPath = path?.join(this?.outputDir, thumbnailFilename);
     await fs?.writeFile(thumbnailPath, thumbnailBuffer);
 
@@ -416,23 +416,23 @@ class SharpImageService {
     width: number,
     height: number,
   ): Promise<Buffer> {
-    const _buttonRadius = Math?.min(width, height) * 0?.1;
+    const _buttonRadius = Math?.min(width, height) * 0.1;
     const _cx = width / 2;
     const _cy = height / 2;
 
     const _svg = `
       <svg width="${width}" height="${height}" xmlns="http://www?.w3.org/2000/svg">
         <!-- Semi-transparent backdrop -->
-        <circle cx="${cx}" cy="${cy}" r="${buttonRadius * 1?.3}" 
-                fill="rgba(0,0,0,0?.5)"/>
+        <circle cx="${cx}" cy="${cy}" r="${buttonRadius * 1.3}" 
+                fill="rgba(0,0,0,0.5)"/>
         <!-- Play button circle -->
         <circle cx="${cx}" cy="${cy}" r="${buttonRadius}" 
                 fill="${BRAND_COLORS?.primary}"/>
         <!-- Play triangle -->
         <polygon 
-          points="${cx - buttonRadius * 0?.3},${cy - buttonRadius * 0?.4} 
-                  ${cx - buttonRadius * 0?.3},${cy + buttonRadius * 0?.4} 
-                  ${cx + buttonRadius * 0?.5},${cy}" 
+          points="${cx - buttonRadius * 0.3},${cy - buttonRadius * 0.4} 
+                  ${cx - buttonRadius * 0.3},${cy + buttonRadius * 0.4} 
+                  ${cx + buttonRadius * 0.5},${cy}" 
           fill="${BRAND_COLORS?.dark}"/>
       </svg>
     `;

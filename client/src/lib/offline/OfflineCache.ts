@@ -81,7 +81,7 @@ class OfflineCache {
     if (this?.isInitialized) return;
 
     try {
-      this?.db = await openDB<OfflineCacheDB>(DB_NAME, DB_VERSION, {
+      this.db = await openDB<OfflineCacheDB>(DB_NAME, DB_VERSION, {
         upgrade(db) {
           if (!db?.objectStoreNames.contains("cache")) {
             const _store = db?.createObjectStore("cache", { keyPath: "key" });
@@ -92,7 +92,7 @@ class OfflineCache {
         },
       });
 
-      this?.isInitialized = true;
+      this.isInitialized = true;
       this?.startCleanupTimer();
     } catch (error) {
       logger?.info(
@@ -177,7 +177,7 @@ class OfflineCache {
     if (this?.memoryCache.has(key)) {
       const _entry = this?.memoryCache.get(key)!;
       if (entry?.expiresAt > Date?.now()) {
-        entry?.lastAccessed = Date?.now();
+        entry.lastAccessed = Date?.now();
         entry?.accessCount++;
         this?.emit({ type: "cache-hit", key, category: entry?.category, entry });
         return entry?.data as T;
@@ -200,7 +200,7 @@ class OfflineCache {
       return null;
     }
 
-    entry?.lastAccessed = Date?.now();
+    entry.lastAccessed = Date?.now();
     entry?.accessCount++;
     await db?.put("cache", entry);
     this?.memoryCache.set(key, entry);
@@ -343,7 +343,7 @@ class OfflineCache {
   }
 
   private startCleanupTimer(): void {
-    this?.cleanupInterval = setInterval(
+    this.cleanupInterval = setInterval(
       () => {
         this?.cleanupExpired();
       },
@@ -463,7 +463,7 @@ class OfflineCache {
 
     this?.memoryCache.clear();
     this?.listeners.clear();
-    this?.isInitialized = false;
+    this.isInitialized = false;
   }
 }
 

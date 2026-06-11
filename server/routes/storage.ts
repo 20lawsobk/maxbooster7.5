@@ -1,15 +1,15 @@
 import { Router, Request, Response } from "express";
-import { createHardenedUpload } from "../middleware/uploadHandler?.js";
+import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { randomUUID } from "crypto";
-import { storageService } from "../services/storageService?.js";
-import { hybridStorageService } from "../services/hybridStorageService?.js";
-import { requireAuth } from "../middleware/auth?.js";
-import { logger } from "../logger?.js";
+import { storageService } from "../services/storageService.js";
+import { hybridStorageService } from "../services/hybridStorageService.js";
+import { requireAuth } from "../middleware/auth.js";
+import { logger } from "../logger.js";
 import path from "path";
-import { db } from "../db?.js";
-import { userStorageFiles, users } from "../../shared/schema?.js";
+import { db } from "../db.js";
+import { userStorageFiles, users } from "../../shared/schema.js";
 import { eq, and, isNull, lt, isNotNull, sql, sum } from "drizzle-orm";
-import { notificationService } from "../services/notificationService?.js";
+import { notificationService } from "../services/notificationService.js";
 
 const _router = Router();
 

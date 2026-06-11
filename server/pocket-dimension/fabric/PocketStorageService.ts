@@ -11,18 +11,18 @@ import type {
   FabricObject,
   FabricStats,
   VolumeType,
-} from "./types?.js";
-import type { PocketRegistry } from "./infra/PocketRegistry?.js";
-import type { VolumeRegistry } from "./infra/VolumeRegistry?.js";
-import type { ObjectIndex } from "./infra/ObjectIndex?.js";
-import type { ChunkIndex } from "./infra/ChunkIndex?.js";
-import type { NodeRegistry } from "./infra/NodeRegistry?.js";
-import type { PlacementStrategy } from "./control/PlacementStrategy?.js";
-import type { ChunkStore } from "./storage/ChunkStore?.js";
-import { compressionRouter } from "./compression/CompressionProfileRouter?.js";
-import { cdcChunker } from "./compression/ContentDefinedChunker?.js";
-import type { StoreOptions } from "./compression/types?.js";
-import { logger } from "../../logger?.js";
+} from "./types.js";
+import type { PocketRegistry } from "./infra/PocketRegistry.js";
+import type { VolumeRegistry } from "./infra/VolumeRegistry.js";
+import type { ObjectIndex } from "./infra/ObjectIndex.js";
+import type { ChunkIndex } from "./infra/ChunkIndex.js";
+import type { NodeRegistry } from "./infra/NodeRegistry.js";
+import type { PlacementStrategy } from "./control/PlacementStrategy.js";
+import type { ChunkStore } from "./storage/ChunkStore.js";
+import { compressionRouter } from "./compression/CompressionProfileRouter.js";
+import { cdcChunker } from "./compression/ContentDefinedChunker.js";
+import type { StoreOptions } from "./compression/types.js";
+import { logger } from "../../logger.js";
 
 export class PocketStorageService {
   constructor(

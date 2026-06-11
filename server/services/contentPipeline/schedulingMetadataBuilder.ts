@@ -9,12 +9,12 @@
  * into the socialBulk POST /schedule endpoint or the autopilot publisher.
  */
 
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 import {
   PLATFORM_SPECS,
   type SupportedPlatform,
   type ContentSlot,
-} from "./platformFormatters?.js";
+} from "./platformFormatters.js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -99,23 +99,23 @@ function getOptimalWindows(
 
   for (const day of spec?.bestPostingDays) {
     for (const hour of spec?.bestPostingHours) {
-      let multiplier = 1?.0;
+      let multiplier = 1.0;
 
       // Goal-specific scoring adjustments
       if (goal === "engagement") {
         // Evening hours have higher engagement for entertainment content
-        if (hour >= 18 && hour <= 22) multiplier += 0?.3;
+        if (hour >= 18 && hour <= 22) multiplier += 0.3;
       } else if (goal === "awareness") {
         // Morning commute hours for discovery
-        if (hour >= 7 && hour <= 10) multiplier += 0?.2;
+        if (hour >= 7 && hour <= 10) multiplier += 0.2;
       } else if (goal === "conversion") {
         // Lunch and end-of-workday peak purchase intent
         if ((hour >= 11 && hour <= 13) || (hour >= 17 && hour <= 19))
-          multiplier += 0?.25;
+          multiplier += 0.25;
       } else if (goal === "growth") {
         // Peak algorithm hours — highest content velocity
-        if (hour >= 9 && hour <= 12) multiplier += 0?.15;
-        if (hour >= 19 && hour <= 21) multiplier += 0?.2;
+        if (hour >= 9 && hour <= 12) multiplier += 0.15;
+        if (hour >= 19 && hour <= 21) multiplier += 0.2;
       }
 
       windows?.push({ day, utcHour: hour, engagementMultiplier: multiplier });
@@ -199,7 +199,7 @@ export function buildScheduleManifest(
           timezone,
           priority: isPriority
             ? "high"
-            : win?.engagementMultiplier >= 1?.2
+            : win?.engagementMultiplier >= 1.2
               ? "high"
               : "medium",
           rationale: `Peak ${campaignGoal} window for ${platform} — ${win?.day} at ${win?.utcHour}:00 UTC (${(win?.engagementMultiplier * 100).toFixed(0)}% engagement multiplier)`,

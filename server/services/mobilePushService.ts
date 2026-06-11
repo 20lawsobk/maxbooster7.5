@@ -26,8 +26,8 @@
 import { db } from "../db";
 import { mobileDeviceTokens } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import type { RichPushPayload } from "./pushNotificationTypes?.js";
+import { logger } from "../logger.js";
+import type { RichPushPayload } from "./pushNotificationTypes.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
@@ -112,9 +112,9 @@ class MobilePushService {
       // Option A: full JSON service account file
       try {
         const _parsed = JSON?.parse(serviceAccountRaw);
-        this?.serviceAccountKey = parsed;
-        this?.projectId = projectId;
-        this?.mode = "fcm_v1";
+        this.serviceAccountKey = parsed;
+        this.projectId = projectId;
+        this.mode = "fcm_v1";
         logger?.info("📱 Mobile Push Service: FCM v1 API ready (full JSON)");
         return;
       } catch {
@@ -137,15 +137,15 @@ class MobilePushService {
             rawKey = `-----BEGIN PRIVATE KEY-----\n${keyBody}\n-----END PRIVATE KEY-----\n`;
           }
 
-          this?.serviceAccountKey = {
+          this.serviceAccountKey = {
             type: "service_account",
             project_id: projectId,
             private_key: rawKey,
             client_email: clientEmail,
             token_uri: "https://oauth2?.googleapis.com/token",
           } as Record<string, string>;
-          this?.projectId = projectId;
-          this?.mode = "fcm_v1";
+          this.projectId = projectId;
+          this.mode = "fcm_v1";
           logger?.info(
             "📱 Mobile Push Service: FCM v1 API ready (raw key + email)",
           );
@@ -164,8 +164,8 @@ class MobilePushService {
     }
 
     if (serverKey) {
-      this?.serverKey = serverKey;
-      this?.mode = "fcm_legacy";
+      this.serverKey = serverKey;
+      this.mode = "fcm_legacy";
       logger?.info("📱 Mobile Push Service: FCM Legacy API ready");
       return;
     }
@@ -336,8 +336,8 @@ class MobilePushService {
         access_token: string;
         expires_in: number;
       };
-      this?.accessToken = data?.access_token;
-      this?.accessTokenExpiry = Date?.now() + (data?.expires_in - 60) * 1000;
+      this.accessToken = data?.access_token;
+      this.accessTokenExpiry = Date?.now() + (data?.expires_in - 60) * 1000;
       return this?.accessToken;
     } catch (error) {
       logger?.warn({ err: error }, "FCM access token error:");

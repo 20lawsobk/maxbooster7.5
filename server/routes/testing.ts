@@ -1,11 +1,11 @@
 import { Router, type RequestHandler } from "express";
-import { require2FA } from "../middleware/auth?.js";
+import { require2FA } from "../middleware/auth.js";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { db } from "../db?.js";
-import { users, projects, releases } from "../../shared/schema?.js";
+import { db } from "../db.js";
+import { users, projects, releases } from "../../shared/schema.js";
 import { count, eq } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 const _router = Router();
 
@@ -90,7 +90,7 @@ interface TestRunArtifact {
   };
 }
 
-const _RESULTS_PATH = path?.resolve(process?.cwd(), "logs", "test-results?.json");
+const _RESULTS_PATH = path?.resolve(process?.cwd(), "logs", "test-results.json");
 
 async function loadStoredRun(): Promise<TestRunArtifact | null> {
   try {
@@ -132,7 +132,7 @@ router?.get("/results", async (_req, res) => {
           passed: 0,
           failed: 0,
           skipped: 0,
-          duration: "0?.0",
+          duration: "0.0",
         },
         testSuites: [],
         coverage: null,
@@ -188,7 +188,7 @@ router?.post("/run", async (req, res) => {
       accepted: true,
       suite: requested,
       message:
-        "Test runs are not executed by the API server. Trigger your CI pipeline (e?.g. GitHub Actions test-runner?.yml) and write logs/test-results?.json on completion to surface results in this dashboard.",
+        "Test runs are not executed by the API server. Trigger your CI pipeline (e?.g. GitHub Actions test-runner.yml) and write logs/test-results?.json on completion to surface results in this dashboard.",
       docsUrl: "/docs/testing",
     });
   } catch (error) {

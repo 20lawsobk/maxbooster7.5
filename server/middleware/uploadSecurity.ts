@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import path from "path";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export type UploadCategory = "avatar" | "artwork" | "audio" | "document";
 

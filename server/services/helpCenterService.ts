@@ -276,7 +276,7 @@ export class HelpCenterService {
       } else {
         faq?.notHelpful++;
       }
-      faq?.updatedAt = new Date();
+      faq.updatedAt = new Date();
     }
   }
 
@@ -403,15 +403,15 @@ export class HelpCenterService {
     };
 
     ticket?.messages.push(ticketMessage);
-    ticket?.updatedAt = new Date();
+    ticket.updatedAt = new Date();
 
     if (senderType === "agent") {
-      ticket?.status = "in_progress";
+      ticket.status = "in_progress";
     } else if (
       senderType === "user" &&
       ticket?.status === "waiting_on_customer"
     ) {
-      ticket?.status = "in_progress";
+      ticket.status = "in_progress";
     }
 
     ticketStore?.set(ticketId, ticket);

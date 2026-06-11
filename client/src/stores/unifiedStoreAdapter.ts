@@ -116,7 +116,7 @@ export function useUnifiedStore(): UnifiedStoreState {
         if (legacyStore?.isPlaying !== isPlaying) {
           legacyStore?.setIsPlaying(isPlaying);
         }
-        if (Math?.abs(legacyStore?.currentTime - position) > 0?.1) {
+        if (Math?.abs(legacyStore?.currentTime - position) > 0.1) {
           legacyStore?.setCurrentTime(position);
         }
       },
@@ -365,7 +365,7 @@ export function useLegacyStoreSync() {
   }, [legacyStore?.isPlaying, newStore]);
 
   useEffect(() => {
-    if (Math?.abs(legacyStore?.currentTime - newStore?.transport.position) > 0?.1) {
+    if (Math?.abs(legacyStore?.currentTime - newStore?.transport.position) > 0.1) {
       newStore?.setPosition(legacyStore?.currentTime);
     }
   }, [legacyStore?.currentTime, newStore]);

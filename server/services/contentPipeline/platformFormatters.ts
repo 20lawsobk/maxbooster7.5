@@ -134,7 +134,7 @@ export const PLATFORM_SPECS: Record<SupportedPlatform, PlatformSpec> = {
     videoAspectRatios: ["9:16", "4:5", "1:1", "16:9"],
     videoMaxDurationSeconds: 90,
     videoMinDurationSeconds: 3,
-    imageAspectRatios: ["1:1", "4:5", "1?.91:1"],
+    imageAspectRatios: ["1:1", "4:5", "1.91:1"],
     supportedSlots: [
       "short_video",
       "static_post",
@@ -310,7 +310,7 @@ export const PLATFORM_SPECS: Record<SupportedPlatform, PlatformSpec> = {
     videoAspectRatios: ["16:9", "1:1", "9:16"],
     videoMaxDurationSeconds: 600,
     videoMinDurationSeconds: 3,
-    imageAspectRatios: ["1?.91:1", "1:1"],
+    imageAspectRatios: ["1.91:1", "1:1"],
     supportedSlots: [
       "text_post",
       "static_post",

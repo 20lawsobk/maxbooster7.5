@@ -1,11 +1,11 @@
 import session from "express-session";
 import { RedisStore } from "connect-redis";
 import crypto from "crypto";
-import { getRedisClient } from "../lib/redisClient?.js";
-import { isPdimConfigured } from "../lib/pdimClient?.js";
-import { logger } from "../logger?.js";
-import { env } from "../config/env?.js";
-import { db } from "../db?.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { isPdimConfigured } from "../lib/pdimClient.js";
+import { logger } from "../logger.js";
+import { env } from "../config/env.js";
+import { db } from "../db.js";
 import { sql } from "drizzle-orm";
 
 // ── PostgreSQL session fallback ───────────────────────────────────────────────
@@ -358,7 +358,7 @@ class PdimSessionStore extends session?.Store {
 
   constructor(inner: session?.Store) {
     super();
-    this?.inner = inner;
+    this.inner = inner;
   }
 
   get(

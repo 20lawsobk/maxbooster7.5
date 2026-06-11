@@ -1,7 +1,7 @@
 import { randomBytes } from "crypto";
 import bcrypt from "bcrypt";
 import { storage } from "./storage";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 import { db } from "./db";
 import {
   users,
@@ -185,7 +185,7 @@ async function initializeAdminResources(
     if (!existingStorage) {
       try {
         const { userPocketService } = await import(
-          "./services/userPocketDimensionService?.js"
+          "./services/userPocketDimensionService.js"
         );
         await userPocketService?.initializeUserStorage(adminId, adminEmail);
         logger?.info("   ✓ Admin Pocket Dimension storage initialized");
@@ -207,13 +207,13 @@ async function initializeAdminResources(
     if (!existingTasteProfile) {
       await db?.insert(userTasteProfiles).values({
         userId: adminId,
-        genreScores: { "hip-hop": 0?.8, "r&b": 0?.7, trap: 0?.6, pop: 0?.5 },
-        moodScores: { energetic: 0?.7, chill: 0?.6, dark: 0?.5, uplifting: 0?.5 },
+        genreScores: { "hip-hop": 0.8, "r&b": 0.7, trap: 0.6, pop: 0.5 },
+        moodScores: { energetic: 0.7, chill: 0.6, dark: 0.5, uplifting: 0.5 },
         preferredTempoMin: 80,
         preferredTempoMax: 160,
         preferredKeys: ["C minor", "G minor", "A minor"],
         followedProducers: [],
-        priceSensitivity: 0?.5,
+        priceSensitivity: 0.5,
         totalInteractions: 0,
         purchaseCount: 0,
       });
@@ -248,9 +248,9 @@ async function initializeAdminResources(
           layoutStyle: "grid",
         },
         socialLinks: {
-          instagram: "https://instagram?.com/blawzmusic",
-          twitter: "https://twitter?.com/blawzmusic",
-          youtube: "https://youtube?.com/@blawzmusic",
+          instagram: "https://instagram.com/blawzmusic",
+          twitter: "https://twitter.com/blawzmusic",
+          youtube: "https://youtube.com/@blawzmusic",
           spotify: "https://open?.spotify.com/artist/blawzmusic",
         },
         seoSettings: {
@@ -862,8 +862,8 @@ async function seedStorefrontTemplates() {
       slug: "platinum-producer",
       description:
         "Premium dark theme with gold accents. Features prominent audio player, trust badges, and urgency indicators. Optimized for high-ticket beat sales.",
-      thumbnailUrl: "/templates/platinum-producer-thumb?.png",
-      previewUrl: "/templates/platinum-producer-preview?.png",
+      thumbnailUrl: "/templates/platinum-producer-thumb.png",
+      previewUrl: "/templates/platinum-producer-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -909,8 +909,8 @@ async function seedStorefrontTemplates() {
       slug: "midnight-studio",
       description:
         "Sleek dark mode design inspired by professional DAWs. Perfect for trap and hip-hop producers wanting a studio-quality aesthetic.",
-      thumbnailUrl: "/templates/midnight-studio-thumb?.png",
-      previewUrl: "/templates/midnight-studio-preview?.png",
+      thumbnailUrl: "/templates/midnight-studio-thumb.png",
+      previewUrl: "/templates/midnight-studio-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -955,8 +955,8 @@ async function seedStorefrontTemplates() {
       slug: "neon-wave",
       description:
         "Vibrant cyberpunk-inspired design with neon gradients. Eye-catching visuals that stand out in any genre. Great for electronic and trap beats.",
-      thumbnailUrl: "/templates/neon-wave-thumb?.png",
-      previewUrl: "/templates/neon-wave-preview?.png",
+      thumbnailUrl: "/templates/neon-wave-thumb.png",
+      previewUrl: "/templates/neon-wave-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -998,8 +998,8 @@ async function seedStorefrontTemplates() {
       slug: "luxury-gold",
       description:
         "Premium luxury theme with elegant typography and gold accents. Perfect for high-end producers targeting serious artists.",
-      thumbnailUrl: "/templates/luxury-gold-thumb?.png",
-      previewUrl: "/templates/luxury-gold-preview?.png",
+      thumbnailUrl: "/templates/luxury-gold-thumb.png",
+      previewUrl: "/templates/luxury-gold-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -1041,8 +1041,8 @@ async function seedStorefrontTemplates() {
       slug: "studio-pro",
       description:
         "Professional recording studio aesthetic with mixing console elements. Communicates expertise and quality production.",
-      thumbnailUrl: "/templates/studio-pro-thumb?.png",
-      previewUrl: "/templates/studio-pro-preview?.png",
+      thumbnailUrl: "/templates/studio-pro-thumb.png",
+      previewUrl: "/templates/studio-pro-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -1087,8 +1087,8 @@ async function seedStorefrontTemplates() {
       slug: "clean-slate",
       description:
         "Minimalist white theme with bold typography. Maximum focus on your beats with distraction-free browsing experience.",
-      thumbnailUrl: "/templates/clean-slate-thumb?.png",
-      previewUrl: "/templates/clean-slate-preview?.png",
+      thumbnailUrl: "/templates/clean-slate-thumb.png",
+      previewUrl: "/templates/clean-slate-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1126,8 +1126,8 @@ async function seedStorefrontTemplates() {
       slug: "urban-heat",
       description:
         "Bold street-style design with fire gradient accents. High-energy layout perfect for trap, drill, and hip-hop beats.",
-      thumbnailUrl: "/templates/urban-heat-thumb?.png",
-      previewUrl: "/templates/urban-heat-preview?.png",
+      thumbnailUrl: "/templates/urban-heat-thumb.png",
+      previewUrl: "/templates/urban-heat-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1166,8 +1166,8 @@ async function seedStorefrontTemplates() {
       slug: "ocean-breeze",
       description:
         "Calm blue gradient theme. Perfect for R&B, soul, lo-fi, and chill beats. Creates a relaxed shopping experience.",
-      thumbnailUrl: "/templates/ocean-breeze-thumb?.png",
-      previewUrl: "/templates/ocean-breeze-preview?.png",
+      thumbnailUrl: "/templates/ocean-breeze-thumb.png",
+      previewUrl: "/templates/ocean-breeze-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1205,8 +1205,8 @@ async function seedStorefrontTemplates() {
       slug: "monochrome-pro",
       description:
         "Sophisticated grayscale design with subtle gradients. Timeless aesthetic that works across all genres.",
-      thumbnailUrl: "/templates/monochrome-pro-thumb?.png",
-      previewUrl: "/templates/monochrome-pro-preview?.png",
+      thumbnailUrl: "/templates/monochrome-pro-thumb.png",
+      previewUrl: "/templates/monochrome-pro-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1244,8 +1244,8 @@ async function seedStorefrontTemplates() {
       slug: "sunset-vibes",
       description:
         "Warm orange and pink gradient theme. Creates an inviting atmosphere ideal for pop, R&B, and afrobeat producers.",
-      thumbnailUrl: "/templates/sunset-vibes-thumb?.png",
-      previewUrl: "/templates/sunset-vibes-preview?.png",
+      thumbnailUrl: "/templates/sunset-vibes-thumb.png",
+      previewUrl: "/templates/sunset-vibes-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1283,8 +1283,8 @@ async function seedStorefrontTemplates() {
       slug: "matrix-code",
       description:
         "Hacker-inspired green-on-black design. Unique tech aesthetic for electronic, dubstep, and experimental producers.",
-      thumbnailUrl: "/templates/matrix-code-thumb?.png",
-      previewUrl: "/templates/matrix-code-preview?.png",
+      thumbnailUrl: "/templates/matrix-code-thumb.png",
+      previewUrl: "/templates/matrix-code-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1322,8 +1322,8 @@ async function seedStorefrontTemplates() {
       slug: "velvet-night",
       description:
         "Rich purple and burgundy tones. Sophisticated dark theme perfect for moody, atmospheric, and alternative beats.",
-      thumbnailUrl: "/templates/velvet-night-thumb?.png",
-      previewUrl: "/templates/velvet-night-preview?.png",
+      thumbnailUrl: "/templates/velvet-night-thumb.png",
+      previewUrl: "/templates/velvet-night-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1363,8 +1363,8 @@ async function seedStorefrontTemplates() {
       slug: "basic-black",
       description:
         "Simple and effective dark theme. No distractions, just your beats. Perfect for getting started quickly.",
-      thumbnailUrl: "/templates/basic-black-thumb?.png",
-      previewUrl: "/templates/basic-black-preview?.png",
+      thumbnailUrl: "/templates/basic-black-thumb.png",
+      previewUrl: "/templates/basic-black-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1398,8 +1398,8 @@ async function seedStorefrontTemplates() {
       slug: "fresh-start",
       description:
         "Clean white background with simple navigation. Great for new producers building their first store.",
-      thumbnailUrl: "/templates/fresh-start-thumb?.png",
-      previewUrl: "/templates/fresh-start-preview?.png",
+      thumbnailUrl: "/templates/fresh-start-thumb.png",
+      previewUrl: "/templates/fresh-start-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1434,8 +1434,8 @@ async function seedStorefrontTemplates() {
       slug: "street-corner",
       description:
         "Gritty urban design with bold red accents. High-impact visuals for drill, Chicago, and UK rap producers.",
-      thumbnailUrl: "/templates/street-corner-thumb?.png",
-      previewUrl: "/templates/street-corner-preview?.png",
+      thumbnailUrl: "/templates/street-corner-thumb.png",
+      previewUrl: "/templates/street-corner-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1472,8 +1472,8 @@ async function seedStorefrontTemplates() {
       slug: "cloud-nine",
       description:
         "Dreamy pastel gradient design. Soft and inviting for lo-fi, ambient, and bedroom pop producers.",
-      thumbnailUrl: "/templates/cloud-nine-thumb?.png",
-      previewUrl: "/templates/cloud-nine-preview?.png",
+      thumbnailUrl: "/templates/cloud-nine-thumb.png",
+      previewUrl: "/templates/cloud-nine-preview.png",
       isActive: true,
       isPremium: false,
       configuration: {
@@ -1510,8 +1510,8 @@ async function seedStorefrontTemplates() {
       slug: "industry-standard",
       description:
         "Professional layout inspired by major label aesthetics. Commands respect and communicates serious quality.",
-      thumbnailUrl: "/templates/industry-standard-thumb?.png",
-      previewUrl: "/templates/industry-standard-preview?.png",
+      thumbnailUrl: "/templates/industry-standard-thumb.png",
+      previewUrl: "/templates/industry-standard-preview.png",
       isActive: true,
       isPremium: true,
       configuration: {
@@ -1654,7 +1654,7 @@ function getCategoryFromSlug(slug: string): string {
 async function seedDistributionPlatformsFromFile() {
   try {
     const { seedDistributionPlatforms } = await import(
-      "./seed/distributionPlatforms?.js"
+      "./seed/distributionPlatforms.js"
     );
     await seedDistributionPlatforms();
   } catch (error) {
@@ -1664,7 +1664,7 @@ async function seedDistributionPlatformsFromFile() {
 
 async function seedAchievementsData() {
   try {
-    const { seedAchievements } = await import("./seed/seedAchievements?.js");
+    const { seedAchievements } = await import("./seed/seedAchievements.js");
     await seedAchievements();
     logger?.info("   ✓ Achievements seeded");
   } catch (error) {
@@ -1675,7 +1675,7 @@ async function seedAchievementsData() {
 async function seedStatusPageServices() {
   try {
     const { statusPageService } = await import(
-      "./services/statusPageService?.js"
+      "./services/statusPageService.js"
     );
     await statusPageService?.initializeDefaultServices();
     logger?.info("   ✓ Status page services initialized");
@@ -1687,15 +1687,15 @@ async function seedStatusPageServices() {
 async function seedAIModels() {
   try {
     const { initializeAIMusicModels } = await import(
-      "./seed/initializeAIMusicModels?.js"
+      "./seed/initializeAIMusicModels.js"
     );
     await initializeAIMusicModels();
     const { initializeAIInsightsModels } = await import(
-      "./seed/initializeAIInsightsModels?.js"
+      "./seed/initializeAIInsightsModels.js"
     );
     await initializeAIInsightsModels();
     const { initializeAIContentModels } = await import(
-      "./seed/initializeAIContentModels?.js"
+      "./seed/initializeAIContentModels.js"
     );
     await initializeAIContentModels();
     logger?.info("   ✓ AI models seeded");
@@ -1742,11 +1742,11 @@ async function seedSystemSettings() {
         key: "currency_rates",
         value: JSON?.stringify({
           USD: 1,
-          EUR: 0?.92,
-          GBP: 0?.79,
-          CAD: 1?.36,
-          AUD: 1?.53,
-          JPY: 149?.5,
+          EUR: 0.92,
+          GBP: 0.79,
+          CAD: 1.36,
+          AUD: 1.53,
+          JPY: 149.5,
         }),
         description: "Currency exchange rates (updated periodically)",
       },
@@ -1782,7 +1782,7 @@ async function seedSystemSettings() {
       },
       {
         key: "default_royalty_rate",
-        value: JSON?.stringify(0?.004),
+        value: JSON?.stringify(0.004),
         description: "Default per-stream royalty rate in USD",
       },
       {

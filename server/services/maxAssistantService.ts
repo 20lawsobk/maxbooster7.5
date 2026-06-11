@@ -1,4 +1,4 @@
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -287,7 +287,7 @@ For MIDI hardware (keyboards, controllers), you may be prompted for MIDI device 
     answer: `Exporting your finished music from Max Booster Studio:
 
 **Export Formats:**
-• **WAV** — Full lossless quality (16-bit or 24-bit, 44?.1kHz or 48kHz)
+• **WAV** — Full lossless quality (16-bit or 24-bit, 44.1kHz or 48kHz)
 • **MP3** — Compressed, smaller file (128, 192, or 320 kbps)
 • **FLAC** — Lossless compressed (ideal for distribution masters)
 • **AIFF** — Apple lossless (compatible with all DAWs)
@@ -432,7 +432,7 @@ For MIDI hardware (keyboards, controllers), you may be prompted for MIDI device 
 **Step-by-Step Distribution:**
 1. Go to **Distribution** in the sidebar
 2. Click **"New Release"**
-3. Upload your audio file (WAV or FLAC recommended, minimum 16-bit/44?.1kHz)
+3. Upload your audio file (WAV or FLAC recommended, minimum 16-bit/44.1kHz)
 4. Upload cover art (3000×3000 pixels, JPG or PNG)
 5. Fill in metadata:
    - Song/album title
@@ -923,11 +923,11 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
 • Acapella files
 
 **Pricing Psychology:**
-• Basic Lease: $19?.99–$49?.99 (most conversions here)
-• Premium Lease: $49?.99–$149?.99
+• Basic Lease: $19.99–$49.99 (most conversions here)
+• Premium Lease: $49.99–$149.99
 • Exclusive: $299–$999+ (position as premium)
 
-**You keep 100%** (minus Stripe processing: ~2?.9% + $0?.30 per transaction).`,
+**You keep 100%** (minus Stripe processing: ~2.9% + $0.30 per transaction).`,
   },
   {
     keywords: [
@@ -1573,7 +1573,7 @@ The Coach adapts to your stage:
 3. Upload professional photos
 4. Select which tracks to feature
 5. Your streaming stats populate automatically from your analytics
-6. Publish — you get a shareable link: \`maxbooster?.app/epk/yourname\`
+6. Publish — you get a shareable link: \`maxbooster.app/epk/yourname\`
 
 **EPK Analytics:**
 • See who viewed your EPK and for how long
@@ -2363,7 +2363,7 @@ All your projects, settings, and data sync instantly across all devices. Start a
 • Store your social media passwords (OAuth only)
 
 **Data Security:**
-• Encrypted at rest (AES-256) and in transit (TLS 1?.3)
+• Encrypted at rest (AES-256) and in transit (TLS 1.3)
 • US-based servers (SOC 2 compliant infrastructure)
 • EU data residency available on request (GDPR Article 46)
 • 90-day backup retention after account deletion`,
@@ -3687,7 +3687,7 @@ export function generateMaxResponse(
       return {
         content: entry?.answer,
         category: followUpCategory,
-        confidence: 0?.5,
+        confidence: 0.5,
         proactiveSuggestions: getProactiveSuggestions(followUpCategory, entry),
         relatedTopics: getRelatedTopics(entry),
         quickActions: getQuickActions(followUpCategory),
@@ -3718,7 +3718,7 @@ What would you like to explore?`;
       ? `Great question! Let me point you in the right direction.\n\n${fallbackTopics}`
       : fallbackTopics,
     category: "general",
-    confidence: 0?.2,
+    confidence: 0.2,
     quickActions: [
       {
         label: "Getting started",

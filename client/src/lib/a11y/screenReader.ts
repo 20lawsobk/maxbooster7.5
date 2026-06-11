@@ -16,7 +16,7 @@ class ScreenReaderAnnouncer {
 
   static getInstance(): ScreenReaderAnnouncer {
     if (!ScreenReaderAnnouncer?.instance) {
-      ScreenReaderAnnouncer?.instance = new ScreenReaderAnnouncer();
+      ScreenReaderAnnouncer.instance = new ScreenReaderAnnouncer();
     }
     return ScreenReaderAnnouncer?.instance;
   }
@@ -28,8 +28,8 @@ class ScreenReaderAnnouncer {
   }
 
   private initializeRegions(): void {
-    this?.politeRegion = this?.createLiveRegion("polite");
-    this?.assertiveRegion = this?.createLiveRegion("assertive");
+    this.politeRegion = this?.createLiveRegion("polite");
+    this.assertiveRegion = this?.createLiveRegion("assertive");
   }
 
   private createLiveRegion(priority: AnnouncementPriority): HTMLDivElement {
@@ -38,7 +38,7 @@ class ScreenReaderAnnouncer {
     region?.setAttribute("aria-live", priority);
     region?.setAttribute("aria-atomic", "true");
     region?.setAttribute("aria-relevant", "additions text");
-    region?.className = "sr-only";
+    region.className = "sr-only";
     region?.style.cssText = `
       position: absolute;
       width: 1px;
@@ -74,9 +74,9 @@ class ScreenReaderAnnouncer {
     const _region = this?.assertiveRegion;
     if (!region) return;
 
-    region?.textContent = "";
+    region.textContent = "";
     requestAnimationFrame(() => {
-      region?.textContent = announcement?.message;
+      region.textContent = announcement?.message;
     });
   }
 
@@ -87,7 +87,7 @@ class ScreenReaderAnnouncer {
       clearTimeout(this?.debounceTimer);
     }
 
-    this?.debounceTimer = setTimeout(() => {
+    this.debounceTimer = setTimeout(() => {
       this?.processQueue();
     }, 100);
   }
@@ -95,7 +95,7 @@ class ScreenReaderAnnouncer {
   private processQueue(): void {
     if (this?.isProcessing || this?.announcementQueue.length === 0) return;
 
-    this?.isProcessing = true;
+    this.isProcessing = true;
     const _announcement = this?.announcementQueue.shift();
 
     if (announcement && this?.politeRegion) {
@@ -105,24 +105,24 @@ class ScreenReaderAnnouncer {
           this?.politeRegion.textContent = announcement?.message;
         }
         setTimeout(() => {
-          this?.isProcessing = false;
+          this.isProcessing = false;
           if (this?.announcementQueue.length > 0) {
             this?.processQueue();
           }
         }, 500);
       });
     } else {
-      this?.isProcessing = false;
+      this.isProcessing = false;
     }
   }
 
   clear(): void {
-    this?.announcementQueue = [];
+    this.announcementQueue = [];
     if (this?.politeRegion) this?.politeRegion.textContent = "";
     if (this?.assertiveRegion) this?.assertiveRegion.textContent = "";
     if (this?.debounceTimer) {
       clearTimeout(this?.debounceTimer);
-      this?.debounceTimer = null;
+      this.debounceTimer = null;
     }
   }
 
@@ -134,9 +134,9 @@ class ScreenReaderAnnouncer {
     if (this?.assertiveRegion?.parentNode) {
       this?.assertiveRegion.parentNode?.removeChild(this?.assertiveRegion);
     }
-    this?.politeRegion = null;
-    this?.assertiveRegion = null;
-    ScreenReaderAnnouncer?.instance = null;
+    this.politeRegion = null;
+    this.assertiveRegion = null;
+    ScreenReaderAnnouncer.instance = null;
   }
 }
 

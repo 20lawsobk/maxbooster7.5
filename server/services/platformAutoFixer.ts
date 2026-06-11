@@ -30,9 +30,9 @@
 
 import { EventEmitter } from "events";
 import { randomBytes } from "crypto";
-import { logger } from "../logger?.js";
-import { addLogTransport, type LogEntry } from "./structuredLogger?.js";
-import { permanentFixRegistry } from "./permanentFixRegistry?.js";
+import { logger } from "../logger.js";
+import { addLogTransport, type LogEntry } from "./structuredLogger.js";
+import { permanentFixRegistry } from "./permanentFixRegistry.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -44,7 +44,7 @@ const _PDIM_SLOW_THRESHOLD_MS = 1_500; // raised: PDIM under burst load routinel
  // warn when heap > 80 % of limit
  // patch when heap > 92 %
 const _ROUTE_ERROR_WINDOW_MS = 60_000;
-const _ROUTE_ERROR_THRESHOLD = 0?.2; // 20 % 5xx → mark degraded
+const _ROUTE_ERROR_THRESHOLD = 0.2; // 20 % 5xx → mark degraded
 const _MAX_HISTORY = 200;
 const _MAX_INCIDENTS = 100;
 // Rolling trend window — keep up to N probe snapshots (≈ 30 s × 120 = 1 h)
@@ -58,7 +58,7 @@ const _OFFENSIVE_SWEEP_EVERY_N_SCANS = 4;
 // Memory growth rate (MB/min) that triggers a pre-emptive GC before OOM
 const _HEAP_GROWTH_ALARM_MB_PER_MIN = 15;
 // Route 5xx slope (errors/sec) that indicates a feedback loop or attack
-const _ROUTE_ATTACK_SLOPE_THRESHOLD = 0?.5;
+const _ROUTE_ATTACK_SLOPE_THRESHOLD = 0.5;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -133,7 +133,7 @@ export function recordRouteRequest(route: string, statusCode: number): void {
     entry?.errors++;
   }
   // Prune old timestamps
-  entry?.timestamps = entry?.timestamps.filter((t) => t > cutoff);
+  entry.timestamps = entry?.timestamps.filter((t) => t > cutoff);
 }
 
 // ─── Platform Auto-Fixer ─────────────────────────────────────────────────────
@@ -151,7 +151,7 @@ class PlatformAutoFixer extends EventEmitter {
   private patches = new Map<string, ActivePatch>();
   private patchHistory: ActivePatch[] = [];
   private incidents: Incident[] = [];
-  private probeTimer: NodeJS?.Timeout | null = null;
+  private probeTimer: NodeJS.Timeout | null = null;
   private started = false;
   private scanCount = 0;
   private logErrorCounts = new Map<string, number>();
@@ -173,8 +173,8 @@ class PlatformAutoFixer extends EventEmitter {
   private trendWindow: TrendSnapshot[] = [];
 
   // ─── Daily report ───────────────────────────────────────────────────────────
-  private _dailyReportTimer: NodeJS?.Timeout | null = null;
-  private _dailyPatternResetTimer: NodeJS?.Timeout | null = null;
+  private _dailyReportTimer: NodeJS.Timeout | null = null;
+  private _dailyPatternResetTimer: NodeJS.Timeout | null = null;
 
   // ─── Offensive mode state ───────────────────────────────────────────────────
   /** Number of threats neutralized proactively (before they caused an error) */
@@ -202,7 +202,7 @@ class PlatformAutoFixer extends EventEmitter {
 
   start(): void {
     if (this?.started) return;
-    this?.started = true;
+    this.started = true;
 
     // Intercept log entries for error-rate tracking
     addLogTransport(this?._logTransport.bind(this));
@@ -212,14 +212,14 @@ class PlatformAutoFixer extends EventEmitter {
 
     // Daily report — staggered with random jitter so two cluster workers don't log at the same ms.
     const _jitterMs = Math?.floor(Math?.random() * 60_000);
-    this?._dailyReportTimer = setInterval(
+    this._dailyReportTimer = setInterval(
       () => this?.runDailyReport(),
       24 * 60 * 60_000 + jitterMs,
     );
     this?._dailyReportTimer.unref();
 
     // Daily pattern reset — un-suppress ChainFixer patterns so long-dormant errors are re-caught.
-    this?._dailyPatternResetTimer = setInterval(
+    this._dailyPatternResetTimer = setInterval(
       () => this?._unsuppressChainFixerPatterns(),
       24 * 60 * 60_000 + jitterMs + 10_000,
     );
@@ -233,24 +233,24 @@ class PlatformAutoFixer extends EventEmitter {
   stop(): void {
     if (this?.probeTimer) {
       clearTimeout(this?.probeTimer);
-      this?.probeTimer = null;
+      this.probeTimer = null;
     }
     if (this?._dailyReportTimer) {
       clearInterval(this?._dailyReportTimer);
-      this?._dailyReportTimer = null;
+      this._dailyReportTimer = null;
     }
     if (this?._dailyPatternResetTimer) {
       clearInterval(this?._dailyPatternResetTimer);
-      this?._dailyPatternResetTimer = null;
+      this._dailyPatternResetTimer = null;
     }
-    this?.started = false;
+    this.started = false;
   }
 
   // ─── Adaptive scan scheduler ────────────────────────────────────────────────
 
   private _scheduleNextScan(): void {
     if (!this?.started) return;
-    this?.probeTimer = setTimeout(async () => {
+    this.probeTimer = setTimeout(async () => {
       await this?.runFullScan();
       this?._scheduleNextScan();
     }, this?.currentProbeIntervalMs);
@@ -269,7 +269,7 @@ class PlatformAutoFixer extends EventEmitter {
         : PROBE_INTERVAL_HEALTHY_MS;
 
     if (target !== this?.currentProbeIntervalMs) {
-      this?.currentProbeIntervalMs = target;
+      this.currentProbeIntervalMs = target;
       logger?.info(
         `[PlatformAutoFixer] Probe interval adjusted → ${target / 1000}s (${hasCritical ? "critical" : hasDegraded ? "degraded" : "healthy"})`,
       );
@@ -316,9 +316,9 @@ class PlatformAutoFixer extends EventEmitter {
     const _avgSecond = second?.reduce((a, b) => a + score(b), 0) / second?.length;
     const _delta = avgSecond - avgFirst;
     return {
-      worsening: delta > 0?.5,
-      stable: Math?.abs(delta) <= 0?.5,
-      improving: delta < -0?.5,
+      worsening: delta > 0.5,
+      stable: Math?.abs(delta) <= 0.5,
+      improving: delta < -0.5,
     };
   }
 
@@ -355,7 +355,7 @@ class PlatformAutoFixer extends EventEmitter {
         logger?.warn(
           "[PlatformAutoFixer] ⚠️  Health trend is WORSENING — increasing monitoring cadence",
         );
-        this?.currentProbeIntervalMs = PROBE_INTERVAL_DEGRADED_MS;
+        this.currentProbeIntervalMs = PROBE_INTERVAL_DEGRADED_MS;
       }
     } catch {
       /* non-critical */
@@ -364,7 +364,7 @@ class PlatformAutoFixer extends EventEmitter {
 
   private async _unsuppressChainFixerPatterns(): Promise<void> {
     try {
-      const { chainErrorAutoFixer } = await import("./chainErrorAutoFixer?.js");
+      const { chainErrorAutoFixer } = await import("./chainErrorAutoFixer.js");
       const _status = chainErrorAutoFixer?.getStatus();
       let reset = 0;
       for (const p of status?.patterns) {
@@ -482,7 +482,7 @@ class PlatformAutoFixer extends EventEmitter {
     let details: Record<string, unknown> = {};
 
     try {
-      const { pool } = await import("../db?.js");
+      const { pool } = await import("../db.js");
       const _p = pool as Record<string, unknown>;
       const _total = p?.totalCount ?? 0;
       const _idle = p?.idleCount ?? 0;
@@ -499,8 +499,8 @@ class PlatformAutoFixer extends EventEmitter {
       const _pingMs = Date?.now() - pingStart;
 
       // Successful probe — reset backoff counter
-      this?._dbConsecutiveFailures = 0;
-      this?._dbNextAllowedProbeAt = 0;
+      this._dbConsecutiveFailures = 0;
+      this._dbNextAllowedProbeAt = 0;
 
       details = { total, idle, waiting, pingMs };
 
@@ -528,7 +528,7 @@ class PlatformAutoFixer extends EventEmitter {
         10_000 * Math?.pow(2, this?._dbConsecutiveFailures - 1),
         120_000,
       );
-      this?._dbNextAllowedProbeAt = Date?.now() + backoffMs;
+      this._dbNextAllowedProbeAt = Date?.now() + backoffMs;
 
       details = {
         error: err?.message,
@@ -555,14 +555,14 @@ class PlatformAutoFixer extends EventEmitter {
         getPdimAdaptiveGapMs,
         getPdimQueueDepth,
         getPdimGapFloor,
-      } = await import("../lib/pdimClient?.js");
+      } = await import("../lib/pdimClient.js");
       if (!isPdimConfigured()) {
         return this?._result("pdim", "unknown", 0, "PDIM not configured", {});
       }
 
       // Check circuit breaker state first — no HTTP call needed if OPEN.
       const { cbIsOpen, cbGetState, cbForceClose } = await import(
-        "../lib/pdimCircuitBreaker?.js"
+        "../lib/pdimCircuitBreaker.js"
       );
       const _cbStateBeforeProbe = cbGetState();
       if (cbIsOpen()) {
@@ -605,12 +605,12 @@ class PlatformAutoFixer extends EventEmitter {
       // endpoint unknown" — return 'unknown' so the backoff patch is NOT triggered.
       if (!res?.ok) {
         if (res?.status === 429) {
-          this?._pdimConsecutiveProbeSuccesses = 0;
+          this._pdimConsecutiveProbeSuccesses = 0;
           throw new Error(`HTTP ${res?.status}`);
         }
         if (res?.status >= 500 || (res?.status >= 300 && res?.status < 400)) {
           // 5xx / 3xx: PDIM is down or proxied away — reset success streak.
-          this?._pdimConsecutiveProbeSuccesses = 0;
+          this._pdimConsecutiveProbeSuccesses = 0;
           throw new Error(`HTTP ${res?.status}`);
         }
         // Non-429 4xx: server responded — count as a probe success.
@@ -665,7 +665,7 @@ class PlatformAutoFixer extends EventEmitter {
         let inRegistrationP = false;
         try {
           const { isLuaRegistrationMode: isRegModeP } = await import(
-            "../lib/luaExecutor?.js"
+            "../lib/luaExecutor.js"
           );
           inRegistrationP = isRegModeP();
         } catch {
@@ -686,7 +686,7 @@ class PlatformAutoFixer extends EventEmitter {
     } catch (err) {
       // Any probe failure resets the consecutive-success streak so a
       // subsequent success starts counting from 1, not from a stale value.
-      this?._pdimConsecutiveProbeSuccesses = 0;
+      this._pdimConsecutiveProbeSuccesses = 0;
       const _msg = (err?.message ?? "") as string;
       if (
         err?.name === "AbortError" ||
@@ -721,7 +721,7 @@ class PlatformAutoFixer extends EventEmitter {
     const _external = mem?.external;
     const _rss = mem?.rss;
 
-    // V8 heap limit (default ~1?.5 GB for Node?.js 64-bit)
+    // V8 heap limit (default ~1.5 GB for Node?.js 64-bit)
     const _v8 = await import("v8");
     const _heapStats = v8?.getHeapStatistics();
     const _heapLimit = heapStats?.heap_size_limit;
@@ -760,7 +760,7 @@ class PlatformAutoFixer extends EventEmitter {
 
     try {
       const { getLuaExecutorStats, isLuaRegistrationMode } = await import(
-        "../lib/luaExecutor?.js"
+        "../lib/luaExecutor.js"
       );
       const _stats = getLuaExecutorStats();
       details = { active: stats?.active, queued: stats?.queued, max: stats?.max };
@@ -780,7 +780,7 @@ class PlatformAutoFixer extends EventEmitter {
         message = `${stats?.active}/${stats?.max} slots active, ${stats?.queued} queued (boot settling)`;
         // With MAX_CONCURRENT_WORKERS=1, active=1/max=1 (utilization=100%) is the
         // normal steady state during any BullMQ Lua script execution.  Alerting on
-        // utilization >= 0?.8 causes a permanent warn flood every 60 s.  Instead,
+        // utilization >= 0.8 causes a permanent warn flood every 60 s.  Instead,
         // grade on *queue buildup* — a growing wait queue is the real signal that
         // the executor is overloaded and callers are being rejected.
       } else if (stats?.queued > 8) {
@@ -837,7 +837,7 @@ class PlatformAutoFixer extends EventEmitter {
       // high-PDIM-load windows that do not represent a real queue failure.
       try {
         const { isPdimConfigured, getPdimQueueDepth, getPdimAdaptiveGapMs } =
-          await import("../lib/pdimClient?.js");
+          await import("../lib/pdimClient.js");
         if (isPdimConfigured()) {
           const _pdimQueue = getPdimQueueDepth();
           const _pdimGap = getPdimAdaptiveGapMs();
@@ -850,7 +850,7 @@ class PlatformAutoFixer extends EventEmitter {
           let inRegistration = false;
           try {
             const { isLuaRegistrationMode } = await import(
-              "../lib/luaExecutor?.js"
+              "../lib/luaExecutor.js"
             );
             inRegistration = isLuaRegistrationMode();
           } catch {
@@ -886,7 +886,7 @@ class PlatformAutoFixer extends EventEmitter {
     let totalErrs = 0;
 
     for (const [route, entry] of routeErrors?.entries()) {
-      entry?.timestamps = entry?.timestamps.filter((t) => t > cutoff);
+      entry.timestamps = entry?.timestamps.filter((t) => t > cutoff);
       totalReqs += entry?.total;
       totalErrs += entry?.timestamps.length;
 
@@ -895,10 +895,10 @@ class PlatformAutoFixer extends EventEmitter {
           ? entry?.timestamps.length / Math?.min(entry?.total, 100)
           : 0;
       if (rate >= ROUTE_ERROR_THRESHOLD && entry?.timestamps.length >= 3) {
-        entry?.degraded = true;
+        entry.degraded = true;
         degradedRoutes?.push(route);
       } else {
-        entry?.degraded = false;
+        entry.degraded = false;
       }
     }
 
@@ -932,7 +932,7 @@ class PlatformAutoFixer extends EventEmitter {
       // Timeout raised 3s → 5s: Neon cold-starts on the first post-boot probe routinely
       // exceed 3s, triggering a false "sessions degraded" alert and escalating the probe
       // interval to 5s for the rest of the boot window.
-      const { pool } = await import("../db?.js");
+      const { pool } = await import("../db.js");
       const _start = Date?.now();
       (await Promise?.race([
         pool?.query("SELECT 1 FROM session WHERE expire > NOW() LIMIT 1"),
@@ -989,13 +989,13 @@ class PlatformAutoFixer extends EventEmitter {
     try {
       // 1. Check system uptime (very long uptimes can accumulate subtle leaks)
       const _uptimeHours = process?.uptime() / 3600;
-      details?.uptimeHours = Math?.round(uptimeHours * 10) / 10;
+      details.uptimeHours = Math?.round(uptimeHours * 10) / 10;
 
       // 2. Check open file descriptor count via /proc/self/fd (Linux only)
       try {
         const _fs = await import("fs");
         const _fds = fs?.readdirSync("/proc/self/fd").length;
-        details?.openFds = fds;
+        details.openFds = fds;
         if (fds > 4000) {
           status = "critical";
           message = `File descriptor leak: ${fds} open FDs`;
@@ -1013,7 +1013,7 @@ class PlatformAutoFixer extends EventEmitter {
       // A baseline of 1200 handles is normal at runtime. Alarm at 3000 (genuine leak territory).
       const _listenerCount =
         (process as Record<string, unknown>)._getActiveHandles?.()?.length ?? 0;
-      details?.activeHandles = listenerCount;
+      details.activeHandles = listenerCount;
       if (listenerCount > 3000) {
         status = status === "healthy" ? "degraded" : status;
         message =
@@ -1027,8 +1027,8 @@ class PlatformAutoFixer extends EventEmitter {
       const _rssMB = mem?.rss / 1e6;
       const _heapLimitMB =
         (await import("v8")).getHeapStatistics().heap_size_limit / 1e6;
-      details?.rssMB = Math?.round(rssMB);
-      details?.heapLimitMB = Math?.round(heapLimitMB);
+      details.rssMB = Math?.round(rssMB);
+      details.heapLimitMB = Math?.round(heapLimitMB);
       if (rssMB > heapLimitMB * 2) {
         status = status === "healthy" ? "degraded" : status;
         message =
@@ -1141,7 +1141,7 @@ class PlatformAutoFixer extends EventEmitter {
             if (typeof global?.gc === "function") global?.gc();
             try {
               const { distributedCache } = await import(
-                "./distributedCacheService?.js"
+                "./distributedCacheService.js"
               );
               await (
                 distributedCache as Record<string, unknown>
@@ -1166,7 +1166,7 @@ class PlatformAutoFixer extends EventEmitter {
             action: async () => {
               try {
                 const { distributedCache } = await import(
-                  "./distributedCacheService?.js"
+                  "./distributedCacheService.js"
                 );
                 await (distributedCache as Record<string, unknown>)?.flush?.();
                 logger?.warn(
@@ -1191,7 +1191,7 @@ class PlatformAutoFixer extends EventEmitter {
         runtimeEffect: "All LuaExecutor semaphore slots released",
         action: async () => {
           const { resetLuaExecutorSemaphore } = await import(
-            "../lib/luaExecutor?.js"
+            "../lib/luaExecutor.js"
           );
           const _released = resetLuaExecutorSemaphore();
           logger?.info(
@@ -1204,7 +1204,7 @@ class PlatformAutoFixer extends EventEmitter {
     // NOTE: The "PDIM backoff increase" patch that previously raised the adaptive
     // chain gap to 2000ms has been removed.  That patch was counterproductive:
     // it triggered on queue-depth growth (not on 429 errors), and raising the gap
-    // reduced chain throughput from ~8 req/s to ~0?.5 req/s — making the backlog
+    // reduced chain throughput from ~8 req/s to ~0.5 req/s — making the backlog
     // drain 16× slower and turning a transient burst into a runaway cascade.
     // The AIMD mechanism in pdimClient?.ts already handles 429-based backoff
     // correctly; no manual gap raise is needed for high-queue-depth situations.
@@ -1253,7 +1253,7 @@ class PlatformAutoFixer extends EventEmitter {
         runtimeEffect: "DB pool connection tested and refreshed",
         action: async () => {
           try {
-            const { pool } = await import("../db?.js");
+            const { pool } = await import("../db.js");
             await pool?.query("SELECT 1");
             logger?.info(
               "[PlatformAutoFixer] Session store ping recovered after critical failure",
@@ -1335,7 +1335,7 @@ class PlatformAutoFixer extends EventEmitter {
       };
       const __pfrPatternId = _subsystemToPattern[opts?.subsystem];
       if (_pfrPatternId) {
-        import("./permanentFixRegistry?.js")
+        import("./permanentFixRegistry.js")
           .then((m) => m?.permanentFixRegistry.recordFix(_pfrPatternId))
           .catch(() => {});
       }
@@ -1357,8 +1357,8 @@ class PlatformAutoFixer extends EventEmitter {
     const _patch = this?.patches.get(id);
     if (!patch || patch?.status !== "active") return false;
 
-    patch?.status = "reverted";
-    patch?.revertedAt = Date?.now();
+    patch.status = "reverted";
+    patch.revertedAt = Date?.now();
     this?.patches.delete(id);
     this?.patchHistory.unshift(patch);
     if (this?.patchHistory.length > MAX_HISTORY) this?.patchHistory.pop();
@@ -1439,7 +1439,7 @@ class PlatformAutoFixer extends EventEmitter {
         return !r || r?.status === "healthy" || r?.status === "unknown";
       });
       if (allHealthy) {
-        incident?.resolvedAt = Date?.now();
+        incident.resolvedAt = Date?.now();
         logger?.info(`[PlatformAutoFixer] Incident resolved: ${incident?.title}`);
       }
     }
@@ -1499,7 +1499,7 @@ class PlatformAutoFixer extends EventEmitter {
   // ═══════════════════════════════════════════════════════════════════════════
 
   private async _runOffensiveSweep(): Promise<void> {
-    this?._lastOffensiveSweepAt = Date?.now();
+    this._lastOffensiveSweepAt = Date?.now();
     await Promise?.allSettled([
       this?._forecastThreatTrajectory(),
       this?._adversarialStressProbe(),
@@ -1561,7 +1561,7 @@ class PlatformAutoFixer extends EventEmitter {
       // which would produce dozens of identical WARNs per incident window.
       const _now2 = Date?.now();
       if (now2 - this?._threatTrajectoryLastWarn >= TWO_MINUTES_MS) {
-        this?._threatTrajectoryLastWarn = now2;
+        this._threatTrajectoryLastWarn = now2;
         logger?.warn(
           `[PlatformAutoFixer] 🎯 OFFENSIVE: Threat trajectory detected — ` +
             `full-critical state projected in ~${Math?.round((estMsToCritical / 60_000) * 10) / 10} min ` +
@@ -1571,7 +1571,7 @@ class PlatformAutoFixer extends EventEmitter {
 
       // Pre-emptive actions: force probe interval to degraded, trigger GC,
       // and flag a synthetic incident so the admin dashboard shows the forecast.
-      this?.currentProbeIntervalMs = PROBE_INTERVAL_DEGRADED_MS;
+      this.currentProbeIntervalMs = PROBE_INTERVAL_DEGRADED_MS;
       if (typeof global?.gc === "function") {
         try {
           global?.gc();
@@ -1597,19 +1597,19 @@ class PlatformAutoFixer extends EventEmitter {
         // (health-check fires every 5 s when critical).
         try {
           const { resetLuaExecutorSemaphore } = await import(
-            "../lib/luaExecutor?.js"
+            "../lib/luaExecutor.js"
           );
           resetLuaExecutorSemaphore();
           const __nowP = Date?.now();
           if (_nowP - this?._lastLuaPreemptiveWarnMs >= TWO_MINUTES_MS) {
-            this?._lastLuaPreemptiveWarnMs = _nowP;
+            this._lastLuaPreemptiveWarnMs = _nowP;
             // Suppress during 120s boot-grace (LuaExecutor stalls are expected while
             // the startup PDIM burst is draining) and during job registration.
             const _inBootGraceOff = _nowP - this?._bootTs < 120_000;
             let inRegistrationOff = false;
             try {
               const { isLuaRegistrationMode: isRegModeOff } = await import(
-                "../lib/luaExecutor?.js"
+                "../lib/luaExecutor.js"
               );
               inRegistrationOff = isRegModeOff();
             } catch {
@@ -1654,7 +1654,7 @@ class PlatformAutoFixer extends EventEmitter {
 
     // ── DB stress probe ──────────────────────────────────────────────────────
     try {
-      const { pool } = await import("../db?.js");
+      const { pool } = await import("../db.js");
       const _t0 = Date?.now();
       await Promise?.race([
         (pool as Record<string, unknown>).query("SELECT 1"),
@@ -1663,7 +1663,7 @@ class PlatformAutoFixer extends EventEmitter {
         ),
       ]);
       const _latency = Date?.now() - t0;
-      if (latency > STRESS_TIMEOUT_MS * 0?.75) {
+      if (latency > STRESS_TIMEOUT_MS * 0.75) {
         // Borderline — close to the stress limit
         logger?.info(
           `[PlatformAutoFixer] 🎯 OFFENSIVE: DB stress probe borderline (${latency}ms / ${STRESS_TIMEOUT_MS}ms budget). ` +
@@ -1696,7 +1696,7 @@ class PlatformAutoFixer extends EventEmitter {
     // measures PDIM's raw response time rather than AIMD chain wait time.
     // A 400ms budget against a 1690ms gap would always fail via the chain.
     try {
-      const { isPdimConfigured } = await import("../lib/pdimClient?.js");
+      const { isPdimConfigured } = await import("../lib/pdimClient.js");
       if (!isPdimConfigured()) return;
       const _stressUrl =
         process?.env.PDIM_EXEC_URL || process?.env.PDIM_HTTP_EXEC_URL || "";
@@ -1713,7 +1713,7 @@ class PlatformAutoFixer extends EventEmitter {
         signal: AbortSignal?.timeout(STRESS_TIMEOUT_MS),
       });
       const _latency = Date?.now() - t0;
-      if (latency > STRESS_TIMEOUT_MS * 0?.75) {
+      if (latency > STRESS_TIMEOUT_MS * 0.75) {
         logger?.info(
           `[PlatformAutoFixer] 🎯 OFFENSIVE: PDIM stress probe borderline (${latency}ms / ${STRESS_TIMEOUT_MS}ms budget). ` +
             `Increasing adaptive gap pre-emptively.`,
@@ -1723,7 +1723,7 @@ class PlatformAutoFixer extends EventEmitter {
         // so heavily-loaded systems get more breathing room.
         try {
           const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import(
-            "../lib/pdimClient?.js"
+            "../lib/pdimClient.js"
           );
           if (typeof setPdimAdaptiveGap === "function") {
             const _current = getPdimAdaptiveGapMs?.() ?? 600;
@@ -1768,7 +1768,7 @@ class PlatformAutoFixer extends EventEmitter {
     // Maintain a 5-minute sliding window of samples (max 30 samples × 10s)
     this?._heapSamples.push({ ts: now, heapMB });
     const _FIVE_MIN_MS = 5 * 60_000;
-    this?._heapSamples = this?._heapSamples.filter(
+    this._heapSamples = this?._heapSamples.filter(
       (s) => now - s?.ts < FIVE_MIN_MS,
     );
 
@@ -1822,7 +1822,7 @@ class PlatformAutoFixer extends EventEmitter {
       // Also try evicting cache to buy headroom
       try {
         const { distributedCache } = await import(
-          "../infrastructure/distributedCache?.js"
+          "../infrastructure/distributedCache.js"
         );
         await (distributedCache as Record<string, unknown>)?.evictExpired?.();
         logger?.info(
@@ -1861,7 +1861,7 @@ class PlatformAutoFixer extends EventEmitter {
 
     // Maintain a sliding window of 5xx arrival times
     this?._routeErrTimestamps.push(...freshErrors);
-    this?._routeErrTimestamps = this?._routeErrTimestamps.filter(
+    this._routeErrTimestamps = this?._routeErrTimestamps.filter(
       (t) => now - t < ATTACK_WINDOW_MS,
     );
 
@@ -1879,7 +1879,7 @@ class PlatformAutoFixer extends EventEmitter {
     for (let i = 1; i < sorted?.length; i++) {
       if (sorted[i] - sorted[i - 1] < 200) burstCount++; // errors < 200ms apart
     }
-    const _isBurst = burstCount > sorted?.length * 0?.5;
+    const _isBurst = burstCount > sorted?.length * 0.5;
 
     logger?.warn(
       `[PlatformAutoFixer] 🎯 OFFENSIVE: Route attack surface alert — ` +

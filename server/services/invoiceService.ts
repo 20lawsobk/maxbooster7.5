@@ -2,7 +2,7 @@ import { randomBytes } from "crypto";
 
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 export interface InvoiceLineItem {
   id: string;
@@ -74,70 +74,70 @@ const taxRates: TaxRate[] = [
     country: "US",
     state: "CA",
     taxType: "sales",
-    rate: 7?.25,
+    rate: 7.25,
     name: "California Sales Tax",
   },
   {
     country: "US",
     state: "NY",
     taxType: "sales",
-    rate: 8?.0,
+    rate: 8.0,
     name: "New York Sales Tax",
   },
   {
     country: "US",
     state: "TX",
     taxType: "sales",
-    rate: 6?.25,
+    rate: 6.25,
     name: "Texas Sales Tax",
   },
   {
     country: "US",
     state: "FL",
     taxType: "sales",
-    rate: 6?.0,
+    rate: 6.0,
     name: "Florida Sales Tax",
   },
   {
     country: "US",
     state: "WA",
     taxType: "sales",
-    rate: 6?.5,
+    rate: 6.5,
     name: "Washington Sales Tax",
   },
   {
     country: "US",
     state: "IL",
     taxType: "sales",
-    rate: 6?.25,
+    rate: 6.25,
     name: "Illinois Sales Tax",
   },
   {
     country: "US",
     state: "PA",
     taxType: "sales",
-    rate: 6?.0,
+    rate: 6.0,
     name: "Pennsylvania Sales Tax",
   },
   {
     country: "US",
     state: "OH",
     taxType: "sales",
-    rate: 5?.75,
+    rate: 5.75,
     name: "Ohio Sales Tax",
   },
   {
     country: "US",
     state: "GA",
     taxType: "sales",
-    rate: 4?.0,
+    rate: 4.0,
     name: "Georgia Sales Tax",
   },
   {
     country: "US",
     state: "NC",
     taxType: "sales",
-    rate: 4?.75,
+    rate: 4.75,
     name: "North Carolina Sales Tax",
   },
   { country: "GB", taxType: "VAT", rate: 20, name: "UK VAT" },
@@ -156,7 +156,7 @@ const taxRates: TaxRate[] = [
   { country: "CZ", taxType: "VAT", rate: 21, name: "Czech Republic VAT" },
   { country: "PT", taxType: "VAT", rate: 23, name: "Portugal VAT" },
   { country: "IE", taxType: "VAT", rate: 23, name: "Ireland VAT" },
-  { country: "CH", taxType: "VAT", rate: 7?.7, name: "Switzerland VAT" },
+  { country: "CH", taxType: "VAT", rate: 7.7, name: "Switzerland VAT" },
   { country: "AU", taxType: "GST", rate: 10, name: "Australia GST" },
   { country: "NZ", taxType: "GST", rate: 15, name: "New Zealand GST" },
   { country: "CA", taxType: "GST", rate: 5, name: "Canada GST" },
@@ -172,7 +172,7 @@ const taxRates: TaxRate[] = [
     country: "CA",
     state: "QC",
     taxType: "QST",
-    rate: 9?.975,
+    rate: 9.975,
     name: "Quebec QST",
     isCompound: true,
   },
@@ -412,10 +412,10 @@ class InvoiceService {
       throw new Error("Invoice not found");
     }
 
-    invoice?.status = status;
+    invoice.status = status;
     if (status === "paid" && paymentDetails) {
-      invoice?.paidDate = paymentDetails?.paidDate || new Date();
-      invoice?.paymentMethod = paymentDetails?.paymentMethod;
+      invoice.paidDate = paymentDetails?.paidDate || new Date();
+      invoice.paymentMethod = paymentDetails?.paymentMethod;
     }
 
     this?.evictIfOverCap();
@@ -601,7 +601,7 @@ class InvoiceService {
     }
 
     y += 3;
-    doc?.setLineWidth(0?.5);
+    doc?.setLineWidth(0.5);
     doc?.line(totalsX, y, pageWidth - margin, y);
     y += 7;
 

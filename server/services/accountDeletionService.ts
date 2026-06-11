@@ -1,8 +1,8 @@
 import cron from "node-cron";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { users, deletionAuditLogs } from "@shared/schema";
 import { eq, lte, and } from "drizzle-orm";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 /**
  * GDPR Compliance: Account Deletion Service
@@ -28,7 +28,7 @@ export class AccountDeletionService {
    */
   public initialize(): void {
     // Run daily at 2 AM UTC (off-peak hours)
-    this?.cronJob = cron?.schedule(
+    this.cronJob = cron?.schedule(
       "0 2 * * *",
       async () => {
         await this?.processScheduledDeletions();
@@ -60,7 +60,7 @@ export class AccountDeletionService {
       return { processed: 0, successful: 0, failed: 0, errors: [] };
     }
 
-    this?.isRunning = true;
+    this.isRunning = true;
     const _startTime = Date?.now();
 
     try {
@@ -79,7 +79,7 @@ export class AccountDeletionService {
 
       if (usersToDelete?.length === 0) {
         logger?.info("✅ No accounts scheduled for deletion");
-        this?.isRunning = false;
+        this.isRunning = false;
         return { processed: 0, successful: 0, failed: 0, errors: [] };
       }
 
@@ -127,10 +127,10 @@ export class AccountDeletionService {
         );
       }
 
-      this?.isRunning = false;
+      this.isRunning = false;
       return results;
     } catch (error: unknown) {
-      this?.isRunning = false;
+      this.isRunning = false;
       logger?.warn({ err: error }, "❌ Account deletion job failed:");
       throw error;
     }

@@ -331,7 +331,7 @@ class SocialChatbotService {
   }
 
   private initializeEscalationRules() {
-    this?.escalationRules = [
+    this.escalationRules = [
       {
         id: "negative_sentiment",
         condition: "sentiment",
@@ -343,7 +343,7 @@ class SocialChatbotService {
         id: "low_confidence",
         condition: "confidence",
         operator: "lessThan",
-        value: 0?.6,
+        value: 0.6,
         action: "escalate",
       },
       {
@@ -390,9 +390,9 @@ class SocialChatbotService {
       }
     }
 
-    if (maxConfidence < 0?.3) {
+    if (maxConfidence < 0.3) {
       detectedIntent = "general";
-      maxConfidence = 0?.5;
+      maxConfidence = 0.5;
     }
 
     const _sentiment = this?.analyzeSentiment(message);
@@ -413,7 +413,7 @@ class SocialChatbotService {
     if (!match) return 0;
     const _matchLength = match[0].length;
     const _messageLength = message?.length;
-    return Math?.min(0?.5 + (matchLength / messageLength) * 0?.5, 0?.95);
+    return Math?.min(0.5 + (matchLength / messageLength) * 0.5, 0.95);
   }
 
   private analyzeSentiment(
@@ -495,18 +495,18 @@ class SocialChatbotService {
     const entities: Record<string, string> = {};
 
     const _emailMatch = message?.match(/[\w.-]+@[\w.-]+\.\w+/);
-    if (emailMatch) entities?.email = emailMatch[0];
+    if (emailMatch) entities.email = emailMatch[0];
 
     const _dateMatch = message?.match(
       /\b(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\w+\s+\d{1,2},?\s+\d{4})\b/,
     );
-    if (dateMatch) entities?.date = dateMatch[0];
+    if (dateMatch) entities.date = dateMatch[0];
 
     const _urlMatch = message?.match(/https?:\/\/[^\s]+/);
-    if (urlMatch) entities?.url = urlMatch[0];
+    if (urlMatch) entities.url = urlMatch[0];
 
     const _handleMatch = message?.match(/@[\w]+/);
-    if (handleMatch) entities?.handle = handleMatch[0];
+    if (handleMatch) entities.handle = handleMatch[0];
 
     return entities;
   }
@@ -524,7 +524,7 @@ class SocialChatbotService {
       let confidence = intent?.confidence;
 
       const _kbResponse = this?.searchKnowledgeBase(message?.content);
-      if (kbResponse && kbResponse?.confidence > 0?.8) {
+      if (kbResponse && kbResponse?.confidence > 0.8) {
         response = kbResponse?.answer;
         confidence = kbResponse?.confidence;
       }
@@ -537,13 +537,13 @@ class SocialChatbotService {
         if (template) {
           response = this?.populateTemplate(template, message);
           templateUsed = template?.id;
-          confidence = Math?.max(confidence, 0?.85);
+          confidence = Math?.max(confidence, 0.85);
         }
       }
 
       if (!response) {
         response = this?.generateAIResponse(message?.content, intent);
-        confidence = Math?.min(confidence, 0?.7);
+        confidence = Math?.min(confidence, 0.7);
       }
 
       const _requiresHumanReview = this?.checkEscalation(intent, message);
@@ -595,16 +595,16 @@ class SocialChatbotService {
 
       entry?.keywords.forEach((keyword) => {
         if (lowerQuery?.includes(keyword?.toLowerCase())) {
-          score += 0?.3;
+          score += 0.3;
         }
       });
 
       const _questionWords = entry?.question.toLowerCase().split(/\s+/);
       const _queryWords = lowerQuery?.split(/\s+/);
       const _matchingWords = questionWords?.filter((w) => queryWords?.includes(w));
-      score += (matchingWords?.length / questionWords?.length) * 0?.5;
+      score += (matchingWords?.length / questionWords?.length) * 0.5;
 
-      if (score > bestScore && score > 0?.5) {
+      if (score > bestScore && score > 0.5) {
         bestScore = score;
         bestMatch = entry;
       }
@@ -798,7 +798,7 @@ class SocialChatbotService {
       automatedResponses,
       humanHandled,
       automationRate: (automatedResponses / totalMessages) * 100,
-      avgResponseTime: 1?.2,
+      avgResponseTime: 1.2,
       topIntents: [
         { intent: "greeting", count: 312 },
         { intent: "inquiry_music", count: 245 },
@@ -817,8 +817,8 @@ class SocialChatbotService {
         neutral: 450,
         negative: 120,
       },
-      escalationRate: 15?.04,
-      customerSatisfaction: 4?.3,
+      escalationRate: 15.04,
+      customerSatisfaction: 4.3,
     };
   }
 
@@ -863,11 +863,11 @@ class SocialChatbotService {
       return { action: "escalate", priority: 1 };
     }
 
-    if (intent?.sentiment === "negative" && intent?.confidence > 0?.7) {
+    if (intent?.sentiment === "negative" && intent?.confidence > 0.7) {
       return { action: "escalate", priority: 2 };
     }
 
-    if (intent?.confidence > 0?.8) {
+    if (intent?.confidence > 0.8) {
       return { action: "auto_respond", priority: 3 };
     }
 

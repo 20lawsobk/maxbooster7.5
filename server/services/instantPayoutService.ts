@@ -8,8 +8,8 @@ import {
   splitPayments,
 } from "@shared/schema";
 import { eq, and, sql, desc, gte, lte } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { withLock } from "../lib/distributedLock?.js";
+import { logger } from "../logger.js";
+import { withLock } from "../lib/distributedLock.js";
 
 // Initialize Stripe
 const _stripe = process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
@@ -196,7 +196,7 @@ export class InstantPayoutService {
 
       // Check for large single payout
       const _balance = await this?.calculateAvailableBalance(userId);
-      if (amount > balance?.availableBalance * 0?.9) {
+      if (amount > balance?.availableBalance * 0.9) {
         flags?.push("NEAR_FULL_WITHDRAWAL");
         score += 15;
       }
@@ -268,7 +268,7 @@ export class InstantPayoutService {
 
       // Get total payouts already processed for this user (amount_cents / 100 to convert to dollars)
       const _payoutsResult = await db?.execute(
-        sql`SELECT COALESCE(SUM(amount_cents), 0) / 100?.0 as total_paid
+        sql`SELECT COALESCE(SUM(amount_cents), 0) / 100.0 as total_paid
             FROM instant_payouts 
             WHERE user_id = ${userId} AND status = 'completed'`,
       );
@@ -276,7 +276,7 @@ export class InstantPayoutService {
 
       // Get pending payouts (requested but not completed)
       const _pendingPayoutsResult = await db?.execute(
-        sql`SELECT COALESCE(SUM(amount_cents), 0) / 100?.0 as pending_paid
+        sql`SELECT COALESCE(SUM(amount_cents), 0) / 100.0 as pending_paid
             FROM instant_payouts 
             WHERE user_id = ${userId} AND status = 'pending'`,
       );
@@ -1194,9 +1194,9 @@ export class InstantPayoutService {
                 })
                 .where(eq(instantPayouts?.id, payoutId));
 
-              payout?.status = stripePayout?.status;
+              payout.status = stripePayout?.status;
               if (stripePayout?.status === "paid") {
-                payout?.processedAt = new Date();
+                payout.processedAt = new Date();
               }
             }
           }

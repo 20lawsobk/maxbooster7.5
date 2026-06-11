@@ -7,18 +7,18 @@
  *
  * Registrar identity:
  *   Name    : Max Booster, LLC
- *   Support : registrar@max-booster?.com
- *   Abuse   : abuse@max-booster?.com
- *   RDAP    : https://max-booster?.com/api/whois/:domain
+ *   Support : registrar@max-booster.com
+ *   Abuse   : abuse@max-booster.com
+ *   RDAP    : https://max-booster.com/api/whois/:domain
  *
  * Nameservers:
- *   ns1?.max-booster?.com  (primary — main application)
- *   ns2?.max-booster?.com  (secondary — standalone dns-node)
- *   ns3?.max-booster?.com  (tertiary — standalone dns-node)
+ *   ns1?.max-booster.com  (primary — main application)
+ *   ns2?.max-booster.com  (secondary — standalone dns-node)
+ *   ns3?.max-booster.com  (tertiary — standalone dns-node)
  *
  * Domain lifecycle:
  *   requested → active → expiring_soon → grace → expired
- *   Platform subdomains (*.max-booster?.com) are always active immediately.
+ *   Platform subdomains (*.max-booster.com) are always active immediately.
  *   gTLD registrations create a DNS zone and delegate to all 3 NS.
  *
  * WHOIS/RDAP:
@@ -29,9 +29,9 @@
 
 import { randomUUID } from "crypto";
 import { eq } from "drizzle-orm";
-import { db, pool } from "../../db?.js";
+import { db, pool } from "../../db.js";
 import { claimedDomains } from "@shared/schema";
-import { logger } from "../../logger?.js";
+import { logger } from "../../logger.js";
 import {
   NS1,
   NS2,
@@ -44,7 +44,7 @@ import {
   REGISTRAR_EMAIL,
   REGISTRAR_ABUSE,
   DOMAIN_PRICES,
-} from "../domainRegistrarService?.js";
+} from "../domainRegistrarService.js";
 import type {
   RegistrarProvider,
   AvailabilityResult,
@@ -54,7 +54,7 @@ import type {
   DomainInfo,
   TransferParams,
   TransferResult,
-} from "./types?.js";
+} from "./types.js";
 
 // ── RDAP / WHOIS response builder ─────────────────────────────────────────
 
@@ -120,7 +120,7 @@ export function buildRdapResponse(
           vcardArray: [
             "vcard",
             [
-              ["version", {}, "text", "4?.0"],
+              ["version", {}, "text", "4.0"],
               ["fn", {}, "text", "REDACTED FOR PRIVACY"],
               ["email", {}, "text", `registrant@${PLATFORM_DOMAIN}`],
             ],
@@ -140,7 +140,7 @@ export function buildRdapResponse(
           vcardArray: [
             "vcard",
             [
-              ["version", {}, "text", "4?.0"],
+              ["version", {}, "text", "4.0"],
               ["fn", {}, "text", REGISTRAR_NAME],
               ["email", {}, "text", REGISTRAR_EMAIL],
             ],
@@ -166,7 +166,7 @@ export function buildRdapResponse(
         vcardArray: [
           "vcard",
           [
-            ["version", {}, "text", "4?.0"],
+            ["version", {}, "text", "4.0"],
             ["fn", {}, "text", `${REGISTRAR_NAME} d/b/a ${REGISTRAR_BRAND}`],
             ["org", {}, "text", REGISTRAR_NAME],
             ["url", {}, "uri", REGISTRAR_URL],

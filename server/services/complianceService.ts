@@ -1,7 +1,7 @@
 import { storage } from "../storage";
 import crypto from "crypto";
 import type { ComplianceControl, ComplianceAudit, InsertComplianceAudit } from "@shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 
 interface ComplianceReport {
   standard: string;
@@ -58,7 +58,7 @@ export class ComplianceService {
 
   public static getInstance(): ComplianceService {
     if (!ComplianceService?.instance) {
-      ComplianceService?.instance = new ComplianceService();
+      ComplianceService.instance = new ComplianceService();
     }
     return ComplianceService?.instance;
   }
@@ -680,9 +680,9 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     if (controls?.length === 0) return 0;
 
     const _weights = {
-      implemented: 1?.0,
-      partial: 0?.5,
-      planned: 0?.0,
+      implemented: 1.0,
+      partial: 0.5,
+      planned: 0.0,
     };
 
     const _totalWeight = controls?.reduce((sum, control) => {

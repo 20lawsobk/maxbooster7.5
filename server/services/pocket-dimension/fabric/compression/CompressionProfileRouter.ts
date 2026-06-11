@@ -1,14 +1,14 @@
 import { createHash } from "crypto";
-import { zstdEngine } from "./ZstdEngine?.js";
-import { deltaEngine } from "./DeltaEngine?.js";
-import { mediaTranscoder, classifyContentType } from "./MediaTranscoder?.js";
-import { semanticArchiver } from "./SemanticArchiver?.js";
+import { zstdEngine } from "./ZstdEngine.js";
+import { deltaEngine } from "./DeltaEngine.js";
+import { mediaTranscoder, classifyContentType } from "./MediaTranscoder.js";
+import { semanticArchiver } from "./SemanticArchiver.js";
 import type {
   CompressionProfile,
   ContentClass,
   StoreOptions,
   CompressionResult,
-} from "./types?.js";
+} from "./types.js";
 
 const _MEDIA_CLASSES = new Set<ContentClass>(["video", "audio", "image"]);
 const _SEMANTIC_CLASSES = new Set<ContentClass>([
@@ -92,7 +92,7 @@ export class CompressionProfileRouter {
       if (base) {
         try {
           const _delta = deltaEngine?.encode(base, data);
-          if (delta?.length < data?.length * 0?.8) {
+          if (delta?.length < data?.length * 0.8) {
             processedData = delta;
             isDelta = true;
             deltaBaseId = opts?.versionOf;
@@ -147,7 +147,7 @@ export class CompressionProfileRouter {
       originalName,
     );
 
-    if (transcodeResult && transcodeResult?.ratio > 1?.1) {
+    if (transcodeResult && transcodeResult?.ratio > 1.1) {
       workingData = transcodeResult?.data;
       codec = transcodeResult?.codec;
       wasTranscoded = true;

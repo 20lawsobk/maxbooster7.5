@@ -1,10 +1,10 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { eq, and, inArray } from "drizzle-orm";
 import { artistProfiles, artistProfileReleases, distroTracks, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports } from "@shared/schema";
 import type { ArtistProfile, InsertArtistProfile, ProfileClaimPipeline, ArtistIdentityLink, ArtistDnaSnapshot } from "@shared/schema";
-import { logger } from "../logger?.js";
-import { labelGridService } from "./labelgrid-service?.js";
-import type { LabelGridArtistPlatformPresence } from "./labelgrid-service?.js";
+import { logger } from "../logger.js";
+import { labelGridService } from "./labelgrid-service.js";
+import type { LabelGridArtistPlatformPresence } from "./labelgrid-service.js";
 
 // ── Claim pipeline state constants ────────────────────────────────────────────
 export const _CLAIM_STATES = [
@@ -121,7 +121,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
     id: "tidal",
     label: "Tidal",
     searchUrl: (n) =>
-      `https://tidal?.com/browse/search?q=${encodeURIComponent(n)}&type=artists`,
+      `https://tidal.com/browse/search?q=${encodeURIComponent(n)}&type=artists`,
   },
   {
     id: "amazon-music",
@@ -139,13 +139,13 @@ const ALL_DSP_URL_TEMPLATES: Array<{
     id: "soundcloud",
     label: "SoundCloud",
     searchUrl: (n, _s) =>
-      `https://soundcloud?.com/search/people?q=${encodeURIComponent(n)}`,
+      `https://soundcloud.com/search/people?q=${encodeURIComponent(n)}`,
   },
   {
     id: "bandcamp",
     label: "Bandcamp",
     searchUrl: (n) =>
-      `https://bandcamp?.com/search?q=${encodeURIComponent(n)}&item_type=b`,
+      `https://bandcamp.com/search?q=${encodeURIComponent(n)}&item_type=b`,
   },
   {
     id: "napster",
@@ -192,7 +192,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "gaana",
     label: "Gaana",
-    searchUrl: (n) => `https://gaana?.com/search/${encodeURIComponent(n)}`,
+    searchUrl: (n) => `https://gaana.com/search/${encodeURIComponent(n)}`,
   },
   {
     id: "kkbox",
@@ -246,7 +246,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
     id: "vk-music",
     label: "VK Music",
     searchUrl: (n) =>
-      `https://vk?.com/search?c[section]=artists&c[q]=${encodeURIComponent(n)}`,
+      `https://vk.com/search?c[section]=artists&c[q]=${encodeURIComponent(n)}`,
   },
   {
     id: "claro-musica",
@@ -404,7 +404,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "kuack-media",
     label: "Kuack Media",
-    searchUrl: (n) => `https://kuack?.com/search?q=${encodeURIComponent(n)}`,
+    searchUrl: (n) => `https://kuack.com/search?q=${encodeURIComponent(n)}`,
   },
   {
     id: "bugs",
@@ -433,7 +433,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
     id: "flo",
     label: "FLO",
     searchUrl: (n) =>
-      `https://www?.music-flo?.com/search?q=${encodeURIComponent(n)}`,
+      `https://www?.music-flo.com/search?q=${encodeURIComponent(n)}`,
   },
   {
     id: "vibe",
@@ -466,7 +466,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "zvuk",
     label: "Zvuk",
-    searchUrl: (n) => `https://zvuk?.com/search?q=${encodeURIComponent(n)}`,
+    searchUrl: (n) => `https://zvuk.com/search?q=${encodeURIComponent(n)}`,
   },
   {
     id: "livexlive",
@@ -487,7 +487,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "uma",
     label: "UMA",
-    searchUrl: (n) => `https://uma?.app/search?q=${encodeURIComponent(n)}`,
+    searchUrl: (n) => `https://uma.app/search?q=${encodeURIComponent(n)}`,
   },
   {
     id: "touchtunes",
@@ -525,7 +525,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
   {
     id: "udux",
     label: "UDUX",
-    searchUrl: (n) => `https://udux?.com/search/${encodeURIComponent(n)}`,
+    searchUrl: (n) => `https://udux.com/search/${encodeURIComponent(n)}`,
   },
   {
     id: "amazon-alexa",
@@ -600,7 +600,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{
     id: "primephonic",
     label: "Primephonic",
     searchUrl: (n) =>
-      `https://primephonic?.com/search?q=${encodeURIComponent(n)}`,
+      `https://primephonic.com/search?q=${encodeURIComponent(n)}`,
   },
   {
     id: "idagio",
@@ -898,8 +898,8 @@ class ArtistProfileService {
         access_token: string;
         expires_in: number;
       };
-      this?.spotifyToken = data?.access_token;
-      this?.spotifyTokenExpiry = Date?.now() + (data?.expires_in - 60) * 1000;
+      this.spotifyToken = data?.access_token;
+      this.spotifyTokenExpiry = Date?.now() + (data?.expires_in - 60) * 1000;
       return this?.spotifyToken;
     } catch (err) {
       logger?.warn({ err: err }, "[ArtistProfile] Spotify token error:");
@@ -1044,7 +1044,7 @@ class ArtistProfileService {
   ): Promise<MusicBrainzArtistResult[]> {
     const _mbHeaders = {
       "User-Agent":
-        "MaxBooster/1?.0 (music career management platform; max@maxbooster?.io)",
+        "MaxBooster/1.0 (music career management platform; max@maxbooster.io)",
       Accept: "application/json",
     };
 
@@ -1075,7 +1075,7 @@ class ArtistProfileService {
 
     try {
       // Stage 1: Strict quoted artist name search — most precise
-      const _strictUrl = `https://musicbrainz?.org/ws/2/artist?query=artist:"${encodeURIComponent(query)}"&limit=8&fmt=json`;
+      const _strictUrl = `https://musicbrainz.org/ws/2/artist?query=artist:"${encodeURIComponent(query)}"&limit=8&fmt=json`;
       const _strictRes = await this?._withRetry(
         () =>
           fetch(strictUrl, {
@@ -1094,7 +1094,7 @@ class ArtistProfileService {
 
       // Stage 2: Relaxed bare-name search — catches aliases, romanised names, alternate spellings
       await new Promise((r) => setTimeout(r, 500)); // Respect MusicBrainz rate limit (1 req/sec)
-      const _relaxedUrl = `https://musicbrainz?.org/ws/2/artist?query=${encodeURIComponent(query)}&limit=8&fmt=json`;
+      const _relaxedUrl = `https://musicbrainz.org/ws/2/artist?query=${encodeURIComponent(query)}&limit=8&fmt=json`;
       const _relaxedRes = await fetch(relaxedUrl, {
         headers: mbHeaders,
         signal: AbortSignal?.timeout(8000),
@@ -1119,7 +1119,7 @@ class ArtistProfileService {
     try {
       const _url = `https://api?.audiomack.com/v1/search?type=artists&q=${encodeURIComponent(query)}&limit=5`;
       const _response = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "MaxBooster/1?.0" },
+        headers: { Accept: "application/json", "User-Agent": "MaxBooster/1.0" },
         signal: AbortSignal?.timeout(6000),
       });
 
@@ -1137,7 +1137,7 @@ class ArtistProfileService {
           slug: a?.url_slug ?? "",
           imageUrl: a?.image ?? a?.avatar ?? null,
           followers: a?.followers ?? a?.fans ?? 0,
-          url: a?.url_slug ? `https://audiomack?.com/${a?.url_slug}` : "",
+          url: a?.url_slug ? `https://audiomack.com/${a?.url_slug}` : "",
         }),
       );
     } catch (err) {
@@ -1152,14 +1152,14 @@ class ArtistProfileService {
     }
   }
 
-  // JioSaavn artist search — primary: saavn?.dev community mirror (richer data)
+  // JioSaavn artist search — primary: saavn.dev community mirror (richer data)
   // fallback: JioSaavn autocomplete endpoint (minimal data but more stable)
   async searchJioSaavnArtists(query: string): Promise<JioSaavnArtistResult[]> {
-    // Primary: saavn?.dev open API — returns structured artist data with images
+    // Primary: saavn.dev open API — returns structured artist data with images
     try {
-      const _url = `https://saavn?.dev/api/search/artists?query=${encodeURIComponent(query)}&page=1&limit=5`;
+      const _url = `https://saavn.dev/api/search/artists?query=${encodeURIComponent(query)}&page=1&limit=5`;
       const _response = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "MaxBooster/1?.0" },
+        headers: { Accept: "application/json", "User-Agent": "MaxBooster/1.0" },
         signal: AbortSignal?.timeout(7000),
       });
       if (response?.ok) {
@@ -1171,7 +1171,7 @@ class ArtistProfileService {
             (a: Record<string, unknown>): JioSaavnArtistResult => ({
               id: String(a?.id ?? ""),
               name: a?.name ?? a?.title ?? "",
-              // saavn?.dev image array: [{quality:"50x50",url:...},{quality:"150x150",url:...},{quality:"500x500",url:...}]
+              // saavn.dev image array: [{quality:"50x50",url:...},{quality:"150x150",url:...},{quality:"500x500",url:...}]
               imageUrl:
                 (Array?.isArray(a?.image)
                   ? (
@@ -1195,7 +1195,7 @@ class ArtistProfileService {
     try {
       const _url = `https://www?.jiosaavn.com/api?.php?__call=autocomplete?.get&_format=json&_marker=0&cc=in&includeMetaTags=1&query=${encodeURIComponent(query)}`;
       const _response = await fetch(url, {
-        headers: { Accept: "application/json", "User-Agent": "MaxBooster/1?.0" },
+        headers: { Accept: "application/json", "User-Agent": "MaxBooster/1.0" },
         signal: AbortSignal?.timeout(8000),
       });
       if (!response?.ok) return [];
@@ -1505,8 +1505,8 @@ class ArtistProfileService {
         "spotify:artist:",
         "",
       );
-      updates?.spotifyArtistId = spotifyId;
-      updates?.spotifyArtistUri = profile?.fixerTargetSpotifyUri;
+      updates.spotifyArtistId = spotifyId;
+      updates.spotifyArtistUri = profile?.fixerTargetSpotifyUri;
     }
 
     const [updated] = await db
@@ -1544,8 +1544,8 @@ class ArtistProfileService {
     if (nameSim >= 95) return exactWeight; // Exact / near-exact
     if (nameSim >= 80) return highWeight; // Very close (one-char diff, collapsed equal)
     if (nameSim >= 65) return medWeight; // Probable match (bigram / Levenshtein strong)
-    if (nameSim >= 45) return Math?.round(medWeight * 0?.6); // Possible — below threshold alone
-    if (nameSim >= 25) return Math?.round(medWeight * 0?.3); // Weak — will need other signals
+    if (nameSim >= 45) return Math?.round(medWeight * 0.6); // Possible — below threshold alone
+    if (nameSim >= 25) return Math?.round(medWeight * 0.3); // Weak — will need other signals
     return 0; // No meaningful name overlap
   }
 
@@ -1804,16 +1804,16 @@ class ArtistProfileService {
       finalSpotify?.confidence >= CONFIDENCE_THRESHOLD &&
       !profile?.spotifyArtistId
     ) {
-      updates?.spotifyArtistId = finalSpotify?.result.id;
-      updates?.spotifyArtistUri = finalSpotify?.result.uri;
+      updates.spotifyArtistId = finalSpotify?.result.id;
+      updates.spotifyArtistUri = finalSpotify?.result.uri;
       if (finalSpotify?.result.imageUrl && !profile?.profileImageUrl) {
-        updates?.profileImageUrl = finalSpotify?.result.imageUrl;
+        updates.profileImageUrl = finalSpotify?.result.imageUrl;
       }
       if (
         finalSpotify?.result.genres?.length > 0 &&
         (!profile?.genres || profile?.genres.length === 0)
       ) {
-        updates?.genres = finalSpotify?.result.genres?.slice(0, 5);
+        updates.genres = finalSpotify?.result.genres?.slice(0, 5);
       }
       savedFields?.push("spotify");
     }
@@ -1823,7 +1823,7 @@ class ArtistProfileService {
       finalApple?.confidence >= CONFIDENCE_THRESHOLD &&
       !profile?.appleArtistId
     ) {
-      updates?.appleArtistId = finalApple?.result.id;
+      updates.appleArtistId = finalApple?.result.id;
       savedFields?.push("apple");
     }
 
@@ -1832,13 +1832,13 @@ class ArtistProfileService {
       finalDeezer?.confidence >= CONFIDENCE_THRESHOLD &&
       !profile?.deezerArtistId
     ) {
-      updates?.deezerArtistId = finalDeezer?.result.id;
+      updates.deezerArtistId = finalDeezer?.result.id;
       if (
         finalDeezer?.result.pictureUrl &&
         !profile?.profileImageUrl &&
         !updates?.profileImageUrl
       ) {
-        updates?.profileImageUrl = finalDeezer?.result.pictureUrl;
+        updates.profileImageUrl = finalDeezer?.result.pictureUrl;
       }
       savedFields?.push("deezer");
     }
@@ -1848,7 +1848,7 @@ class ArtistProfileService {
       finalAudiomack?.confidence >= CONFIDENCE_THRESHOLD &&
       !profile?.soundcloudArtistId
     ) {
-      updates?.soundcloudArtistId =
+      updates.soundcloudArtistId =
         finalAudiomack?.result.slug || finalAudiomack?.result.id;
       savedFields?.push("audiomack");
     }
@@ -1973,8 +1973,8 @@ class ArtistProfileService {
       if (fresh) {
         synced?.push("spotify");
         if (fresh?.imageUrl && fresh?.imageUrl !== profile?.profileImageUrl) {
-          updates?.profileImageUrl = fresh?.imageUrl;
-          changes?.profileImageUrl = fresh?.imageUrl;
+          updates.profileImageUrl = fresh?.imageUrl;
+          changes.profileImageUrl = fresh?.imageUrl;
         }
         if (fresh?.genres.length > 0) {
           const _existing = JSON?.stringify(
@@ -1982,14 +1982,14 @@ class ArtistProfileService {
           );
           const _incoming = JSON?.stringify(fresh?.genres.slice().sort());
           if (existing !== incoming) {
-            updates?.genres = fresh?.genres.slice(0, 5);
-            changes?.genres = fresh?.genres.slice(0, 5);
+            updates.genres = fresh?.genres.slice(0, 5);
+            changes.genres = fresh?.genres.slice(0, 5);
           }
         }
         if (!profile?.isVerified) {
-          updates?.isVerified = true;
-          updates?.verifiedAt = new Date();
-          changes?.isVerified = true;
+          updates.isVerified = true;
+          updates.verifiedAt = new Date();
+          changes.isVerified = true;
         }
       }
     }
@@ -2010,8 +2010,8 @@ class ArtistProfileService {
             d?.picture_medium !== profile?.profileImageUrl &&
             !updates?.profileImageUrl
           ) {
-            updates?.profileImageUrl = d?.picture_medium;
-            changes?.profileImageUrl = d?.picture_medium;
+            updates.profileImageUrl = d?.picture_medium;
+            changes.profileImageUrl = d?.picture_medium;
           }
         }
       } catch {
@@ -2190,16 +2190,16 @@ class ArtistProfileService {
       {
         key: "soundcloud",
         label: "SoundCloud for Artists",
-        portalUrl: "https://soundcloud?.com/for/artists",
+        portalUrl: "https://soundcloud.com/for/artists",
         artistPageUrl: profile?.soundcloudArtistId
-          ? `https://soundcloud?.com/${profile?.soundcloudArtistId}`
+          ? `https://soundcloud.com/${profile?.soundcloudArtistId}`
           : null,
         fieldKey: "soundcloudArtistId",
         claimed: !!profile?.soundcloudArtistId,
         artistId: profile?.soundcloudArtistId ?? null,
         howVerified: "Account verification + distribution delivery",
         claimInstructions:
-          "Visit soundcloud?.com/for/artists to upgrade to SoundCloud Pro for expanded analytics. Your username/slug on SoundCloud is your identifier.",
+          "Visit soundcloud.com/for/artists to upgrade to SoundCloud Pro for expanded analytics. Your username/slug on SoundCloud is your identifier.",
         distributorHandles: false,
         autoDiscoverKey: "audiomack",
       },
@@ -2311,9 +2311,9 @@ class ArtistProfileService {
     for (const isrc of uniqueIsrcs) {
       if (mbid) break;
       try {
-        const _url = `https://musicbrainz?.org/ws/2/isrc/${isrc}?fmt=json&inc=artists`;
+        const _url = `https://musicbrainz.org/ws/2/isrc/${isrc}?fmt=json&inc=artists`;
         const _res = await fetch(url, {
-          headers: { "User-Agent": "MaxBooster/3?.0 (music-career-platform)" },
+          headers: { "User-Agent": "MaxBooster/3.0 (music-career-platform)" },
           signal: AbortSignal?.timeout(8000),
         });
         if (!res?.ok) continue;
@@ -2360,9 +2360,9 @@ class ArtistProfileService {
 
     // Step 3: Use MBID to query MusicBrainz artist relations for Spotify/Apple IDs
     try {
-      const _url = `https://musicbrainz?.org/ws/2/artist/${mbid}?fmt=json&inc=url-rels`;
+      const _url = `https://musicbrainz.org/ws/2/artist/${mbid}?fmt=json&inc=url-rels`;
       const _res = await fetch(url, {
-        headers: { "User-Agent": "MaxBooster/3?.0 (music-career-platform)" },
+        headers: { "User-Agent": "MaxBooster/3.0 (music-career-platform)" },
         signal: AbortSignal?.timeout(8000),
       });
       if (res?.ok) {
@@ -2377,7 +2377,7 @@ class ArtistProfileService {
           ) {
             const _id = url?.split("/artist/")[1]?.split("?")[0];
             if (id) {
-              platformsDiscovered?.spotify = id;
+              platformsDiscovered.spotify = id;
             }
           }
           if (
@@ -2388,28 +2388,28 @@ class ArtistProfileService {
             const _parts = url?.split("/artist/");
             const _id = parts[1]?.split("/")[0]?.split("?")[0];
             if (id) {
-              platformsDiscovered?.apple = id;
+              platformsDiscovered.apple = id;
             }
           }
-          if (!profile?.deezerArtistId && url?.includes("deezer?.com/artist/")) {
+          if (!profile?.deezerArtistId && url?.includes("deezer.com/artist/")) {
             const _id = url?.split("/artist/")[1]?.split("?")[0];
             if (id) {
-              platformsDiscovered?.deezer = id;
+              platformsDiscovered.deezer = id;
             }
           }
           if (
             !profile?.youtubeChannelId &&
-            url?.includes("youtube?.com/channel/")
+            url?.includes("youtube.com/channel/")
           ) {
             const _id = url?.split("/channel/")[1]?.split("?")[0];
             if (id) {
-              platformsDiscovered?.youtube = id;
+              platformsDiscovered.youtube = id;
             }
           }
-          if (!profile?.soundcloudArtistId && url?.includes("soundcloud?.com/")) {
-            const _slug = url?.split("soundcloud?.com/")[1]?.split("/")[0];
+          if (!profile?.soundcloudArtistId && url?.includes("soundcloud.com/")) {
+            const _slug = url?.split("soundcloud.com/")[1]?.split("/")[0];
             if (slug) {
-              platformsDiscovered?.soundcloud = slug;
+              platformsDiscovered.soundcloud = slug;
             }
           }
         }
@@ -2434,28 +2434,28 @@ class ArtistProfileService {
     // Step 4: Save discovered IDs + update identity graph
     const updates: Partial<InsertArtistProfile> = {};
     if (!profile?.musicbrainzId && mbid) {
-      updates?.musicbrainzId = mbid;
+      updates.musicbrainzId = mbid;
       savedFields?.push("musicbrainz");
     }
     if (platformsDiscovered?.spotify && !profile?.spotifyArtistId) {
-      updates?.spotifyArtistId = platformsDiscovered?.spotify;
-      updates?.spotifyArtistUri = `spotify:artist:${platformsDiscovered?.spotify}`;
+      updates.spotifyArtistId = platformsDiscovered?.spotify;
+      updates.spotifyArtistUri = `spotify:artist:${platformsDiscovered?.spotify}`;
       savedFields?.push("spotify");
     }
     if (platformsDiscovered?.apple && !profile?.appleArtistId) {
-      updates?.appleArtistId = platformsDiscovered?.apple;
+      updates.appleArtistId = platformsDiscovered?.apple;
       savedFields?.push("apple");
     }
     if (platformsDiscovered?.deezer && !profile?.deezerArtistId) {
-      updates?.deezerArtistId = platformsDiscovered?.deezer;
+      updates.deezerArtistId = platformsDiscovered?.deezer;
       savedFields?.push("deezer");
     }
     if (platformsDiscovered?.youtube && !profile?.youtubeChannelId) {
-      updates?.youtubeChannelId = platformsDiscovered?.youtube;
+      updates.youtubeChannelId = platformsDiscovered?.youtube;
       savedFields?.push("youtube");
     }
     if (platformsDiscovered?.soundcloud && !profile?.soundcloudArtistId) {
-      updates?.soundcloudArtistId = platformsDiscovered?.soundcloud;
+      updates.soundcloudArtistId = platformsDiscovered?.soundcloud;
       savedFields?.push("soundcloud");
     }
 
@@ -2571,10 +2571,10 @@ class ArtistProfileService {
       for (const isrc of isrcs?.slice(0, 3)) {
         try {
           const _res = await fetch(
-            `https://musicbrainz?.org/ws/2/isrc/${isrc}?fmt=json&inc=artists`,
+            `https://musicbrainz.org/ws/2/isrc/${isrc}?fmt=json&inc=artists`,
             {
               headers: {
-                "User-Agent": "MaxBooster/3?.0 (music-career-platform)",
+                "User-Agent": "MaxBooster/3.0 (music-career-platform)",
               },
               signal: AbortSignal?.timeout(6000),
             },
@@ -2587,9 +2587,9 @@ class ArtistProfileService {
             if (mbArtistId) {
               // Use mbid→spotify URL relation to get Spotify ID
               const _relRes = await fetch(
-                `https://musicbrainz?.org/ws/2/artist/${mbArtistId}?fmt=json&inc=url-rels`,
+                `https://musicbrainz.org/ws/2/artist/${mbArtistId}?fmt=json&inc=url-rels`,
                 {
-                  headers: { "User-Agent": "MaxBooster/3?.0" },
+                  headers: { "User-Agent": "MaxBooster/3.0" },
                   signal: AbortSignal?.timeout(6000),
                 },
               );
@@ -2706,7 +2706,7 @@ class ArtistProfileService {
     const _coverageScore = Math?.round(
       (claimedCount / keyPortals?.length) * HEALTH_WEIGHTS?.coverage,
     );
-    breakdown?.coverage = coverageScore;
+    breakdown.coverage = coverageScore;
     if (claimedCount < 4)
       recommendations?.push(
         `Claim ${4 - claimedCount} more key DSP portals to protect your profile`,
@@ -2737,7 +2737,7 @@ class ArtistProfileService {
       recommendations?.push(
         "Link your social handles to bridge fans across platforms",
       );
-    breakdown?.metadata = Math?.min(metaScore, HEALTH_WEIGHTS?.metadata);
+    breakdown.metadata = Math?.min(metaScore, HEALTH_WEIGHTS?.metadata);
 
     // ── 3. Verification (0–20): verified platform count ──────────────────
     const _verifiedPlatforms = (profile?.verifiedPlatforms ?? []) as string[];
@@ -2745,7 +2745,7 @@ class ArtistProfileService {
       Math?.round((verifiedPlatforms?.length / 3) * HEALTH_WEIGHTS?.verification),
       HEALTH_WEIGHTS?.verification,
     );
-    breakdown?.verification = verifyScore;
+    breakdown.verification = verifyScore;
     if (verifiedPlatforms?.length === 0)
       recommendations?.push("Verify your Spotify profile for a trusted badge");
     if (!verifiedPlatforms?.includes("spotify") && profile?.spotifyArtistId) {
@@ -2780,7 +2780,7 @@ class ArtistProfileService {
         "Run Split Scanner to check for unauthorized profile splits",
       );
     }
-    breakdown?.freshness = Math?.max(0, freshnessScore);
+    breakdown.freshness = Math?.max(0, freshnessScore);
 
     // ── 5. Safety (0–15): no splits, claim events logged, watch active ───
     let safetyScore = HEALTH_WEIGHTS?.safety;
@@ -2799,7 +2799,7 @@ class ArtistProfileService {
     if (profile?.fixerPending) {
       safetyScore -= 2;
     }
-    breakdown?.safety = Math?.max(0, safetyScore);
+    breakdown.safety = Math?.max(0, safetyScore);
 
     const _score = Object?.values(breakdown).reduce((a, b) => a + b, 0);
     const grade: "A" | "B" | "C" | "D" | "F" =
@@ -2904,11 +2904,11 @@ class ArtistProfileService {
       watchingStartedAt: existing?.watchingStartedAt ?? undefined,
     };
     if (newState === "instructions_viewed")
-      stateTimestamps?.instructionsViewedAt = now;
-    if (newState === "portal_opened") stateTimestamps?.portalOpenedAt = now;
-    if (newState === "id_submitted") stateTimestamps?.idSubmittedAt = now;
-    if (newState === "verified") stateTimestamps?.verifiedAt = now;
-    if (newState === "watching") stateTimestamps?.watchingStartedAt = now;
+      stateTimestamps.instructionsViewedAt = now;
+    if (newState === "portal_opened") stateTimestamps.portalOpenedAt = now;
+    if (newState === "id_submitted") stateTimestamps.idSubmittedAt = now;
+    if (newState === "verified") stateTimestamps.verifiedAt = now;
+    if (newState === "watching") stateTimestamps.watchingStartedAt = now;
 
     let row: ProfileClaimPipeline;
     if (!existing) {
@@ -3083,20 +3083,20 @@ class ArtistProfileService {
     if (!profile) throw new Error("Artist profile not found");
 
     const platformIds: Record<string, string> = {};
-    if (profile?.spotifyArtistId) platformIds?.spotify = profile?.spotifyArtistId;
-    if (profile?.appleArtistId) platformIds?.apple = profile?.appleArtistId;
-    if (profile?.deezerArtistId) platformIds?.deezer = profile?.deezerArtistId;
+    if (profile?.spotifyArtistId) platformIds.spotify = profile?.spotifyArtistId;
+    if (profile?.appleArtistId) platformIds.apple = profile?.appleArtistId;
+    if (profile?.deezerArtistId) platformIds.deezer = profile?.deezerArtistId;
     if (profile?.youtubeChannelId)
-      platformIds?.youtube = profile?.youtubeChannelId;
-    if (profile?.tidalArtistId) platformIds?.tidal = profile?.tidalArtistId;
+      platformIds.youtube = profile?.youtubeChannelId;
+    if (profile?.tidalArtistId) platformIds.tidal = profile?.tidalArtistId;
     if (profile?.soundcloudArtistId)
-      platformIds?.soundcloud = profile?.soundcloudArtistId;
+      platformIds.soundcloud = profile?.soundcloudArtistId;
     if (profile?.amazonMusicArtistId)
-      platformIds?.amazon = profile?.amazonMusicArtistId;
-    if (profile?.musicbrainzId) platformIds?.musicbrainz = profile?.musicbrainzId;
+      platformIds.amazon = profile?.amazonMusicArtistId;
+    if (profile?.musicbrainzId) platformIds.musicbrainz = profile?.musicbrainzId;
 
     const snapshotJson: Record<string, unknown> = {
-      version: "3?.0",
+      version: "3.0",
       capturedAt: new Date().toISOString(),
       artistName: profile?.artistName,
       genres: profile?.genres,
@@ -3179,7 +3179,7 @@ class ArtistProfileService {
       const _spotifyId = targetPlatformIds?.spotify.startsWith("spotify:artist:")
         ? targetPlatformIds?.spotify.replace("spotify:artist:", "")
         : targetPlatformIds?.spotify;
-      updates?.fixerTargetSpotifyUri = `spotify:artist:${spotifyId}`;
+      updates.fixerTargetSpotifyUri = `spotify:artist:${spotifyId}`;
     }
 
     const [updated] = await db
@@ -3257,7 +3257,7 @@ class ArtistProfileService {
       isrcsQueued: cleanIsrcs?.length,
       upcsQueued: cleanUpcs?.length,
       estimatedDiscoveries: Math?.round(
-        (cleanIsrcs?.length + cleanUpcs?.length) * 0?.6,
+        (cleanIsrcs?.length + cleanUpcs?.length) * 0.6,
       ),
     };
   }
@@ -3275,9 +3275,9 @@ class ArtistProfileService {
     for (const isrc of isrcs?.slice(0, 15)) {
       try {
         const _res = await fetch(
-          `https://musicbrainz?.org/ws/2/isrc/${isrc}?fmt=json&inc=artists+url-rels`,
+          `https://musicbrainz.org/ws/2/isrc/${isrc}?fmt=json&inc=artists+url-rels`,
           {
-            headers: { "User-Agent": "MaxBooster/3?.0" },
+            headers: { "User-Agent": "MaxBooster/3.0" },
             signal: AbortSignal?.timeout(6000),
           },
         );
@@ -3290,7 +3290,7 @@ class ArtistProfileService {
           for (const recording of data?.recordings ?? []) {
             const _mbArtistId = recording["artist-credit"]?.[0]?.artist?.id;
             if (mbArtistId && !discovered?.musicbrainz) {
-              discovered?.musicbrainz = mbArtistId;
+              discovered.musicbrainz = mbArtistId;
             }
           }
         }
@@ -3304,9 +3304,9 @@ class ArtistProfileService {
     for (const upc of upcs?.slice(0, 15)) {
       try {
         const _res = await fetch(
-          `https://musicbrainz?.org/ws/2/release/?query=barcode:${encodeURIComponent(upc)}&fmt=json`,
+          `https://musicbrainz.org/ws/2/release/?query=barcode:${encodeURIComponent(upc)}&fmt=json`,
           {
-            headers: { "User-Agent": "MaxBooster/3?.0" },
+            headers: { "User-Agent": "MaxBooster/3.0" },
             signal: AbortSignal?.timeout(6000),
           },
         );
@@ -3319,7 +3319,7 @@ class ArtistProfileService {
           for (const release of data?.releases ?? []) {
             const _mbArtistId = release["artist-credit"]?.[0]?.artist?.id;
             if (mbArtistId && !discovered?.musicbrainz) {
-              discovered?.musicbrainz = mbArtistId;
+              discovered.musicbrainz = mbArtistId;
             }
           }
         }
@@ -3407,43 +3407,43 @@ class ArtistProfileService {
     const platformMap: Record<string, string> = {};
     if (profile?.spotifyArtistId) {
       claimedPlatforms?.push("spotify");
-      platformMap?.spotify = profile?.spotifyArtistId;
+      platformMap.spotify = profile?.spotifyArtistId;
     }
     if (profile?.appleArtistId) {
       claimedPlatforms?.push("apple");
-      platformMap?.apple = profile?.appleArtistId;
+      platformMap.apple = profile?.appleArtistId;
     }
     if (profile?.deezerArtistId) {
       claimedPlatforms?.push("deezer");
-      platformMap?.deezer = profile?.deezerArtistId;
+      platformMap.deezer = profile?.deezerArtistId;
     }
     if (profile?.youtubeChannelId) {
       claimedPlatforms?.push("youtube");
-      platformMap?.youtube = profile?.youtubeChannelId;
+      platformMap.youtube = profile?.youtubeChannelId;
     }
     if (profile?.tidalArtistId) {
       claimedPlatforms?.push("tidal");
-      platformMap?.tidal = profile?.tidalArtistId;
+      platformMap.tidal = profile?.tidalArtistId;
     }
     if (profile?.soundcloudArtistId) {
       claimedPlatforms?.push("soundcloud");
-      platformMap?.soundcloud = profile?.soundcloudArtistId;
+      platformMap.soundcloud = profile?.soundcloudArtistId;
     }
     if (profile?.amazonMusicArtistId) {
       claimedPlatforms?.push("amazon");
-      platformMap?.amazon = profile?.amazonMusicArtistId;
+      platformMap.amazon = profile?.amazonMusicArtistId;
     }
     if (profile?.musicbrainzId) {
       claimedPlatforms?.push("musicbrainz");
-      platformMap?.musicbrainz = profile?.musicbrainzId;
+      platformMap.musicbrainz = profile?.musicbrainzId;
     }
 
     const _verifiedPlatforms = (profile?.verifiedPlatforms ?? []) as string[];
 
     const jsonLd: Record<string, unknown> = {
-      "@context": "https://schema?.org",
+      "@context": "https://schema.org",
       "@type": "MusicGroup",
-      "@id": `https://maxbooster?.app/artist/${profileId}`,
+      "@id": `https://maxbooster.app/artist/${profileId}`,
       name: profile?.artistName,
       genre: profile?.genres ?? [],
       image: profile?.profileImageUrl,
@@ -3462,11 +3462,11 @@ class ArtistProfileService {
           ? `https://www?.youtube.com/channel/${profile?.youtubeChannelId}`
           : null,
         profile?.soundcloudArtistId
-          ? `https://soundcloud?.com/${profile?.soundcloudArtistId}`
+          ? `https://soundcloud.com/${profile?.soundcloudArtistId}`
           : null,
       ].filter(Boolean),
       "mb:maxbooster": {
-        version: "3?.0",
+        version: "3.0",
         exportedAt: new Date().toISOString(),
         profileId,
         platformIds: platformMap,
@@ -3598,14 +3598,14 @@ class ArtistProfileService {
         profileUrl = `https://www?.tiktok.com/@${cleanHandle}`;
         break;
       case "twitter":
-        profileUrl = `https://twitter?.com/${cleanHandle}`;
+        profileUrl = `https://twitter.com/${cleanHandle}`;
         break;
       case "youtube":
         profileUrl = `https://www?.youtube.com/@${cleanHandle}`;
         dspLink = `https://music?.youtube.com/search?q=${encodeURIComponent(profile?.artistName)}`;
         break;
       case "soundcloud":
-        profileUrl = `https://soundcloud?.com/${cleanHandle}`;
+        profileUrl = `https://soundcloud.com/${cleanHandle}`;
         dspLink = profileUrl;
         if (!profile?.soundcloudArtistId) {
           await this?.updateProfile(profileId, userId, {
@@ -3615,7 +3615,7 @@ class ArtistProfileService {
         }
         break;
       case "bandcamp":
-        profileUrl = `https://${cleanHandle}.bandcamp?.com`;
+        profileUrl = `https://${cleanHandle}.bandcamp.com`;
         dspLink = profileUrl;
         if (!profile?.bandcampSlug) {
           await this?.updateProfile(profileId, userId, {

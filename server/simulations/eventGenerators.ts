@@ -16,31 +16,31 @@ import { EventEmitter } from "events";
 export const _INDUSTRY_BENCHMARKS = {
   // Global Market Size (2024-2025)
   globalRecordedMusicRevenue: 35, // $35B global recorded music
-  distributionPlatformMarket: 2?.1, // $2?.1B distribution platforms
+  distributionPlatformMarket: 2.1, // $2.1B distribution platforms
   independentArtistCount: 80000000, // 80M active independent artists globally
-  independentMarketShare: 0?.43, // 43% of Spotify catalog streams
-  marketGrowthRate: 0?.13, // 12-15% CAGR
+  independentMarketShare: 0.43, // 43% of Spotify catalog streams
+  marketGrowthRate: 0.13, // 12-15% CAGR
   targetAddressableMarket: 8000000, // 10% of 80M = serious/growth-minded artists
 
   // User metrics (premium SaaS model)
-  avgMonthlyChurnRate: 0?.04, // 4% monthly churn (lower for premium)
-  avgUpgradeRate: 0?.06, // 6% upgrade per month (AI features drive upgrades)
-  avgEngagementRate: 0?.065, // 6?.5% DAU (higher with AI tools)
+  avgMonthlyChurnRate: 0.04, // 4% monthly churn (lower for premium)
+  avgUpgradeRate: 0.06, // 6% upgrade per month (AI features drive upgrades)
+  avgEngagementRate: 0.065, // 6.5% DAU (higher with AI tools)
   avgSessionDuration: 18, // 18 minutes (DAW + analytics)
-  avgSessionsPerWeek: 4?.5, // Higher due to autonomous monitoring
+  avgSessionsPerWeek: 4.5, // Higher due to autonomous monitoring
 
   // Streaming metrics
   avgStreamsPerRelease: 5000,
-  avgRevenuePerStream: 0?.004, // $0?.004 per stream
+  avgRevenuePerStream: 0.004, // $0.004 per stream
   viralThresholdStreams: 100000,
-  playlistPickupRate: 0?.12, // 12% with AI optimization (vs 8% industry)
-  streamingUplift: 0?.18, // 15-20% streaming increase with AI
+  playlistPickupRate: 0.12, // 12% with AI optimization (vs 8% industry)
+  streamingUplift: 0.18, // 15-20% streaming increase with AI
 
   // Social metrics (with autonomous systems)
-  avgFollowerGrowthRate: 0?.035, // 3?.5% with auto-posting (vs 2% manual)
-  avgPostEngagementRate: 0?.045, // 4?.5% with AI optimization
+  avgFollowerGrowthRate: 0.035, // 3.5% with auto-posting (vs 2% manual)
+  avgPostEngagementRate: 0.045, // 4.5% with AI optimization
   viralPostThreshold: 10000, // 10k engagements = viral
-  marketingLaborReduction: 0?.5, // 40-60% labor savings
+  marketingLaborReduction: 0.5, // 40-60% labor savings
 
   // Max Booster Pricing
   monthlyPrice: 49, // $49/month standard
@@ -48,21 +48,21 @@ export const _INDUSTRY_BENCHMARKS = {
   lifetimePrice: 699, // $699 lifetime
   avgOrderValue: 49,
   avgPayoutAmount: 250, // Higher payouts with optimization
-  refundRate: 0?.015, // 1?.5% refund (premium product)
+  refundRate: 0.015, // 1.5% refund (premium product)
 
   // Competitor Pricing Context
-  competitorDistroKidYearly: 22?.99,
-  competitorTuneCoreSingle: 9?.99,
-  competitorBeatStarsMonthly: 19?.99,
+  competitorDistroKidYearly: 22.99,
+  competitorTuneCoreSingle: 9.99,
+  competitorBeatStarsMonthly: 19.99,
 
   // Platform metrics
-  targetUptime: 99?.95,
+  targetUptime: 99.95,
   avgResponseTime: 120, // 120ms
-  maxAcceptableErrorRate: 0?.01, // 1%
+  maxAcceptableErrorRate: 0.01, // 1%
 
   // Market Penetration Targets (80M artist market - AGGRESSIVE)
-  targetConversionFromCompetitors: 0?.15, // 15% power user conversion - Max Booster is that good
-  targetLabelConversion: 0?.1, // 10% boutique labels - full suite wins deals
+  targetConversionFromCompetitors: 0.15, // 15% power user conversion - Max Booster is that good
+  targetLabelConversion: 0.1, // 10% boutique labels - full suite wins deals
   year1SubscriberTarget: 250000, // 250k subscribers year 1
   year2SubscriberTarget: 500000, // 500k by year 2 (viral word-of-mouth)
   year3SubscriberTarget: 1000000, // 1M by year 3 (market dominance begins)
@@ -76,59 +76,59 @@ export const _INDUSTRY_BENCHMARKS = {
 
 // Seasonal modifiers (indexed by month 0-11)
 export const _SEASONAL_MODIFIERS = {
-  userGrowth: [0?.8, 0?.9, 1?.0, 1?.0, 0?.9, 0?.85, 0?.8, 0?.85, 1?.1, 1?.0, 1?.2, 1?.3], // Q4 spike
-  streaming: [1?.0, 0?.95, 1?.0, 1?.0, 1?.0, 1?.1, 1?.2, 1?.15, 1?.0, 1?.0, 1?.1, 1?.3], // Summer + holidays
-  releases: [0?.9, 0?.95, 1?.0, 1?.1, 1?.0, 0?.9, 0?.8, 0?.85, 1?.2, 1?.1, 1?.0, 0?.7], // Q3 releases
+  userGrowth: [0.8, 0.9, 1.0, 1.0, 0.9, 0.85, 0.8, 0.85, 1.1, 1.0, 1.2, 1.3], // Q4 spike
+  streaming: [1.0, 0.95, 1.0, 1.0, 1.0, 1.1, 1.2, 1.15, 1.0, 1.0, 1.1, 1.3], // Summer + holidays
+  releases: [0.9, 0.95, 1.0, 1.1, 1.0, 0.9, 0.8, 0.85, 1.2, 1.1, 1.0, 0.7], // Q3 releases
   socialActivity: [
-    0?.9, 0?.95, 1?.0, 1?.0, 1?.0, 1?.1, 1?.2, 1?.2, 1?.0, 1?.05, 1?.1, 1?.0,
+    0.9, 0.95, 1.0, 1.0, 1.0, 1.1, 1.2, 1.2, 1.0, 1.05, 1.1, 1.0,
   ],
 };
 
 // Day of week modifiers (0 = Sunday)
 export const _DAY_MODIFIERS = {
-  streaming: [1?.2, 0?.9, 0?.85, 0?.85, 0?.9, 1?.1, 1?.2], // Weekends higher
-  socialActivity: [1?.1, 0?.8, 0?.85, 0?.9, 1?.0, 1?.2, 1?.15],
-  userSignups: [0?.7, 1?.0, 1?.1, 1?.0, 1?.0, 0?.9, 0?.8], // Weekdays higher
+  streaming: [1.2, 0.9, 0.85, 0.85, 0.9, 1.1, 1.2], // Weekends higher
+  socialActivity: [1.1, 0.8, 0.85, 0.9, 1.0, 1.2, 1.15],
+  userSignups: [0.7, 1.0, 1.1, 1.0, 1.0, 0.9, 0.8], // Weekdays higher
 };
 
 // Hour of day modifiers (0-23)
 export const _HOUR_MODIFIERS = {
   streaming: [
-    0?.3, 0?.2, 0?.15, 0?.1, 0?.1, 0?.2, 0?.4, 0?.6, 0?.8, 0?.9, 1?.0, 1?.0, 1?.1, 1?.0, 0?.95,
-    1?.0, 1?.1, 1?.2, 1?.3, 1?.4, 1?.3, 1?.1, 0?.8, 0?.5,
+    0.3, 0.2, 0.15, 0.1, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1.0, 1.0, 1.1, 1.0, 0.95,
+    1.0, 1.1, 1.2, 1.3, 1.4, 1.3, 1.1, 0.8, 0.5,
   ],
   socialActivity: [
-    0?.2, 0?.1, 0?.1, 0?.1, 0?.1, 0?.2, 0?.3, 0?.5, 0?.8, 1?.0, 1?.1, 1?.2, 1?.3, 1?.2, 1?.0,
-    1?.0, 1?.1, 1?.2, 1?.3, 1?.4, 1?.3, 1?.1, 0?.7, 0?.4,
+    0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.5, 0.8, 1.0, 1.1, 1.2, 1.3, 1.2, 1.0,
+    1.0, 1.1, 1.2, 1.3, 1.4, 1.3, 1.1, 0.7, 0.4,
   ],
 };
 
 // Genre-specific multipliers
 export const _GENRE_MULTIPLIERS = {
-  hiphop: { streams: 1?.4, social: 1?.5, viral: 1?.3 },
-  pop: { streams: 1?.3, social: 1?.4, viral: 1?.4 },
-  electronic: { streams: 1?.2, social: 1?.1, viral: 1?.0 },
-  rnb: { streams: 1?.2, social: 1?.3, viral: 1?.2 },
-  rock: { streams: 1?.0, social: 0?.8, viral: 0?.7 },
-  country: { streams: 0?.9, social: 0?.9, viral: 0?.8 },
-  latin: { streams: 1?.5, social: 1?.6, viral: 1?.5 },
-  indie: { streams: 0?.7, social: 1?.0, viral: 0?.9 },
-  classical: { streams: 0?.4, social: 0?.3, viral: 0?.2 },
+  hiphop: { streams: 1.4, social: 1.5, viral: 1.3 },
+  pop: { streams: 1.3, social: 1.4, viral: 1.4 },
+  electronic: { streams: 1.2, social: 1.1, viral: 1.0 },
+  rnb: { streams: 1.2, social: 1.3, viral: 1.2 },
+  rock: { streams: 1.0, social: 0.8, viral: 0.7 },
+  country: { streams: 0.9, social: 0.9, viral: 0.8 },
+  latin: { streams: 1.5, social: 1.6, viral: 1.5 },
+  indie: { streams: 0.7, social: 1.0, viral: 0.9 },
+  classical: { streams: 0.4, social: 0.3, viral: 0.2 },
 };
 
 // Platform-specific engagement rates
 export const _PLATFORM_ENGAGEMENT = {
-  spotify: { streamMultiplier: 1?.0, playlistChance: 0?.08, saveRate: 0?.15 },
-  apple_music: { streamMultiplier: 0?.4, playlistChance: 0?.06, saveRate: 0?.2 },
-  youtube_music: { streamMultiplier: 0?.3, playlistChance: 0?.05, saveRate: 0?.1 },
+  spotify: { streamMultiplier: 1.0, playlistChance: 0.08, saveRate: 0.15 },
+  apple_music: { streamMultiplier: 0.4, playlistChance: 0.06, saveRate: 0.2 },
+  youtube_music: { streamMultiplier: 0.3, playlistChance: 0.05, saveRate: 0.1 },
   amazon_music: {
-    streamMultiplier: 0?.15,
-    playlistChance: 0?.04,
-    saveRate: 0?.12,
+    streamMultiplier: 0.15,
+    playlistChance: 0.04,
+    saveRate: 0.12,
   },
-  tidal: { streamMultiplier: 0?.05, playlistChance: 0?.03, saveRate: 0?.25 },
-  deezer: { streamMultiplier: 0?.08, playlistChance: 0?.04, saveRate: 0?.11 },
-  soundcloud: { streamMultiplier: 0?.1, playlistChance: 0?.02, saveRate: 0?.08 },
+  tidal: { streamMultiplier: 0.05, playlistChance: 0.03, saveRate: 0.25 },
+  deezer: { streamMultiplier: 0.08, playlistChance: 0.04, saveRate: 0.11 },
+  soundcloud: { streamMultiplier: 0.1, playlistChance: 0.02, saveRate: 0.08 },
 };
 
 export interface GeneratedEvent {
@@ -174,8 +174,8 @@ export class EventGenerator extends EventEmitter {
 
   constructor(simulatedDate: Date = new Date(), seed?: number) {
     super();
-    this?.simulatedDate = simulatedDate;
-    this?.random = seed !== undefined ? this?.seededRandom(seed) : Math?.random;
+    this.simulatedDate = simulatedDate;
+    this.random = seed !== undefined ? this?.seededRandom(seed) : Math?.random;
   }
 
   private seededRandom(seed: number): () => number {
@@ -204,7 +204,7 @@ export class EventGenerator extends EventEmitter {
     return HOUR_MODIFIERS[type][hour];
   }
 
-  public generateUserSignupEvent(baseProb: number = 0?.15): GeneratedEvent {
+  public generateUserSignupEvent(baseProb: number = 0.15): GeneratedEvent {
     const _seasonalMod = this?.getSeasonalModifier("userGrowth");
     const _dayMod = this?.getDayModifier("userSignups");
     const _finalProb = baseProb * seasonalMod * dayMod;
@@ -217,16 +217,16 @@ export class EventGenerator extends EventEmitter {
       "label",
       "enterprise",
     ];
-    const _weights = [0?.5, 0?.25, 0?.15, 0?.07, 0?.03];
+    const _weights = [0.5, 0.25, 0.15, 0.07, 0.03];
     const _archetype = this?.weightedChoice(archetypes, weights);
 
     const _tiers = ["monthly", "yearly", "lifetime"];
     const _tierWeights =
       archetype === "hobbyist"
-        ? [0?.65, 0?.3, 0?.05]
+        ? [0.65, 0.3, 0.05]
         : archetype === "enterprise"
-          ? [0?.1, 0?.3, 0?.6]
-          : [0?.5, 0?.35, 0?.15];
+          ? [0.1, 0.3, 0.6]
+          : [0.5, 0.35, 0.15];
     const _tier = this?.weightedChoice(tiers, tierWeights);
 
     const _genres = Object?.keys(GENRE_MULTIPLIERS);
@@ -243,7 +243,7 @@ export class EventGenerator extends EventEmitter {
         genre,
         source: this?.weightedChoice(
           ["organic", "referral", "paid_ad", "social", "press"],
-          [0?.4, 0?.25, 0?.2, 0?.1, 0?.05],
+          [0.4, 0.25, 0.2, 0.1, 0.05],
         ),
         expectedLTV: tier === "monthly" ? 588 : tier === "yearly" ? 1200 : 699,
       },
@@ -260,12 +260,12 @@ export class EventGenerator extends EventEmitter {
     tier: string;
   }): GeneratedEvent {
     const _baseProbDaily = INDUSTRY_BENCHMARKS?.avgMonthlyChurnRate / 30;
-    const _riskMultiplier = user?.churnRisk * (1 + user?.daysSinceActive * 0?.1);
+    const _riskMultiplier = user?.churnRisk * (1 + user?.daysSinceActive * 0.1);
     const _tierMultiplier =
-      user?.tier === "monthly" ? 1?.0 : user?.tier === "yearly" ? 0?.7 : 0?.5;
+      user?.tier === "monthly" ? 1.0 : user?.tier === "yearly" ? 0.7 : 0.5;
 
     const _finalProb = Math?.min(
-      0?.5,
+      0.5,
       baseProbDaily * riskMultiplier * tierMultiplier,
     );
     const _triggered = this?.random() < finalProb;
@@ -285,9 +285,9 @@ export class EventGenerator extends EventEmitter {
             "support",
             "other",
           ],
-          [0?.25, 0?.2, 0?.2, 0?.15, 0?.1, 0?.1],
+          [0.25, 0.2, 0.2, 0.15, 0.1, 0.1],
         ),
-        preventable: this?.random() < 0?.4,
+        preventable: this?.random() < 0.4,
         daysSinceActive: user?.daysSinceActive,
         tier: user?.tier,
       },
@@ -314,7 +314,7 @@ export class EventGenerator extends EventEmitter {
 
     const _genreMultiplier =
       GENRE_MULTIPLIERS[release?.genre as keyof typeof GENRE_MULTIPLIERS]
-        ?.streams || 1?.0;
+        ?.streams || 1.0;
     const _viralMultiplier = release?.isViral ? 50 : 1;
     const _decayFactor = Math?.exp(-release?.daysSinceRelease / 30); // 30-day half-life
     const _followerFactor = Math?.log10(Math?.max(10, release?.followers)) / 4;
@@ -329,7 +329,7 @@ export class EventGenerator extends EventEmitter {
         viralMultiplier *
         decayFactor *
         followerFactor *
-        (1 + this?.random() * 0?.5),
+        (1 + this?.random() * 0.5),
     );
 
     const _triggered = estimatedStreams > 0;
@@ -343,7 +343,7 @@ export class EventGenerator extends EventEmitter {
         streamCount: estimatedStreams,
         revenue: estimatedStreams * INDUSTRY_BENCHMARKS?.avgRevenuePerStream,
         platforms: Object?.entries(PLATFORM_ENGAGEMENT)
-          .filter(() => this?.random() < 0?.7)
+          .filter(() => this?.random() < 0.7)
           .reduce(
             (acc, [platform, data]) => {
               acc[platform] = Math?.floor(
@@ -374,12 +374,12 @@ export class EventGenerator extends EventEmitter {
     socialEngagement: number;
     genre: string;
   }): GeneratedEvent {
-    const _baseProb = 0?.001;
+    const _baseProb = 0.001;
     const _streamFactor = Math?.min(2, release?.totalStreams / 50000);
     const _socialFactor = Math?.min(2, release?.socialEngagement / 5000);
     const _genreMultiplier =
       GENRE_MULTIPLIERS[release?.genre as keyof typeof GENRE_MULTIPLIERS]
-        ?.viral || 1?.0;
+        ?.viral || 1.0;
 
     const _finalProb = baseProb * streamFactor * socialFactor * genreMultiplier;
     const _triggered = this?.random() < finalProb;
@@ -393,7 +393,7 @@ export class EventGenerator extends EventEmitter {
         "challenge",
         "organic",
       ],
-      [0?.35, 0?.25, 0?.15, 0?.1, 0?.1, 0?.05],
+      [0.35, 0.25, 0.15, 0.1, 0.1, 0.05],
     );
 
     return {
@@ -430,7 +430,7 @@ export class EventGenerator extends EventEmitter {
     daysSincePayment: number;
   }): GeneratedEvent {
     const _isSubscription = user?.daysSincePayment >= 30;
-    const _tierPrices = { free: 0, basic: 9?.99, pro: 29?.99, enterprise: 99?.99 };
+    const _tierPrices = { free: 0, basic: 9.99, pro: 29.99, enterprise: 99.99 };
     const _amount = tierPrices[user?.tier as keyof typeof tierPrices] || 0;
 
     if (amount === 0) {
@@ -447,7 +447,7 @@ export class EventGenerator extends EventEmitter {
     }
 
     const _triggered = isSubscription;
-    const _failureRate = 0?.02;
+    const _failureRate = 0.02;
     const _failed = triggered && this?.random() < failureRate;
 
     return {
@@ -461,7 +461,7 @@ export class EventGenerator extends EventEmitter {
         type: "subscription",
         method: this?.weightedChoice(
           ["card", "paypal", "apple_pay", "google_pay"],
-          [0?.6, 0?.2, 0?.12, 0?.08],
+          [0.6, 0.2, 0.12, 0.08],
         ),
         failed,
         failureReason: failed
@@ -472,7 +472,7 @@ export class EventGenerator extends EventEmitter {
                 "fraud_block",
                 "network_error",
               ],
-              [0?.4, 0?.3, 0?.2, 0?.1],
+              [0.4, 0.3, 0.2, 0.1],
             )
           : null,
       },
@@ -491,14 +491,14 @@ export class EventGenerator extends EventEmitter {
     const _dayMod = this?.getDayModifier("socialActivity");
     const _hourMod = this?.getHourModifier("socialActivity");
 
-    const _baseProb = 0?.1 * seasonalMod * dayMod * hourMod;
+    const _baseProb = 0.1 * seasonalMod * dayMod * hourMod;
     const _triggered = this?.random() < baseProb;
 
     const _platform =
       user?.platforms[Math?.floor(this?.random() * user?.platforms.length)] ||
       "instagram";
     const _estimatedEngagement = Math?.floor(
-      user?.followers * user?.engagementRate * (0?.5 + this?.random()),
+      user?.followers * user?.engagementRate * (0.5 + this?.random()),
     );
 
     const _isViral =
@@ -513,10 +513,10 @@ export class EventGenerator extends EventEmitter {
         platform,
         contentType: this?.weightedChoice(
           ["image", "video", "story", "reel", "text"],
-          [0?.25, 0?.3, 0?.2, 0?.2, 0?.05],
+          [0.25, 0.3, 0.2, 0.2, 0.05],
         ),
         estimatedReach: Math?.floor(
-          user?.followers * (0?.1 + this?.random() * 0?.3),
+          user?.followers * (0.1 + this?.random() * 0.3),
         ),
         estimatedEngagement,
         isViral,
@@ -540,7 +540,7 @@ export class EventGenerator extends EventEmitter {
 
     const _type = this?.weightedChoice(
       eventTypes,
-      [0?.3, 0?.25, 0?.25, 0?.1, 0?.1],
+      [0.3, 0.25, 0.25, 0.1, 0.1],
     ) as MarketEvent["type"];
 
     const _platforms = [
@@ -554,14 +554,14 @@ export class EventGenerator extends EventEmitter {
 
     const _baseProb =
       type === "algorithm_change"
-        ? 0?.001
+        ? 0.001
         : type === "competitor_launch"
-          ? 0?.0005
+          ? 0.0005
           : type === "industry_trend"
-            ? 0?.002
+            ? 0.002
             : type === "regulation"
-              ? 0?.0001
-              : 0?.0003;
+              ? 0.0001
+              : 0.0003;
 
     const _triggered = this?.random() < baseProb;
 
@@ -573,15 +573,15 @@ export class EventGenerator extends EventEmitter {
       data: {
         eventType: type,
         platform: type === "algorithm_change" ? platform : undefined,
-        impact: -0?.2 + this?.random() * 0?.4, // -20% to +20%
+        impact: -0.2 + this?.random() * 0.4, // -20% to +20%
         duration: Math?.floor(7 + this?.random() * 83), // 7-90 days
         description: this?.getMarketEventDescription(type, platform),
         affectedMetrics: this?.getAffectedMetrics(type),
-        requiresResponse: this?.random() < 0?.7,
+        requiresResponse: this?.random() < 0.7,
       },
       probability: baseProb,
       triggered,
-      impact: Math?.abs(-0?.2 + this?.random() * 0?.4) > 0?.1 ? "high" : "medium",
+      impact: Math?.abs(-0.2 + this?.random() * 0.4) > 0.1 ? "high" : "medium",
     };
   }
 
@@ -598,16 +598,16 @@ export class EventGenerator extends EventEmitter {
 
     const _type = eventTypes[Math?.floor(this?.random() * eventTypes?.length)];
 
-    const _baseProbDaily = 0?.005; // 0?.5% daily chance of any system event
+    const _baseProbDaily = 0.005; // 0.5% daily chance of any system event
     const _triggered = this?.random() < baseProbDaily;
 
     const _severity = this?.random();
     const impact: GeneratedEvent["impact"] =
-      severity > 0?.95
+      severity > 0.95
         ? "critical"
-        : severity > 0?.8
+        : severity > 0.8
           ? "high"
-          : severity > 0?.5
+          : severity > 0.5
             ? "medium"
             : "low";
 
@@ -621,7 +621,7 @@ export class EventGenerator extends EventEmitter {
         severity,
         affectedServices: this?.getAffectedServices(type),
         estimatedResolutionTime: Math?.floor(5 + this?.random() * 55), // 5-60 minutes
-        autoRecoverable: this?.random() < 0?.7,
+        autoRecoverable: this?.random() < 0.7,
         userImpact: Math?.floor(this?.random() * 10), // % of users affected
       },
       probability: baseProbDaily,
@@ -682,7 +682,7 @@ export class EventGenerator extends EventEmitter {
   }
 
   public setSimulatedDate(date: Date): void {
-    this?.simulatedDate = date;
+    this.simulatedDate = date;
   }
 
   public generateBatchEvents(count: number, type: string): GeneratedEvent[] {

@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { createHardenedUpload } from "../middleware/uploadHandler?.js";
+import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import path from "path";
 import { storefrontService } from "../services/storefrontService";
 import { hybridStorageService } from "../services/hybridStorageService";
-import { storeUploadedFile } from "../middleware/uploadHandler?.js";
+import { storeUploadedFile } from "../middleware/uploadHandler.js";
 import {
   insertStorefrontSchema,
   updateStorefrontSchema,
@@ -37,13 +37,13 @@ import {
   inArray,
 } from "drizzle-orm";
 import { z } from "zod";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import dns from "dns";
-import { validateDomain } from "../modules/domains/dnsValidators?.js";
-import { env } from "../config/env?.js";
+import { validateDomain } from "../modules/domains/dnsValidators.js";
+import { env } from "../config/env.js";
 
 const _dnsPromises = dns?.promises;
-const _PLATFORM_IP = process?.env.DNS_SERVER_IP || "34?.111.179?.208";
+const _PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
 
 const _upload = createHardenedUpload({
   maxFileSize: 200 * 1024 * 1024, // 200MB
@@ -138,8 +138,8 @@ router?.get("/suggest-url", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
     const _slug = await storefrontService?.generateRandomSlug();
-    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster?.com";
-    // Platform subdomain: each artist's store lives at {slug}.max-booster?.com
+    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster.com";
+    // Platform subdomain: each artist's store lives at {slug}.max-booster.com
     const _suggestedDomain = `${slug}.${baseDomain}`;
     const _publicUrl = `https://${suggestedDomain}`;
 
@@ -715,7 +715,7 @@ router?.post("/subscribe/:tierId", async (req, res) => {
         .where(eq(membershipTiers?.id, tierId));
     }
 
-    const _appUrl = env?.APP_URL || "https://max-booster?.com";
+    const _appUrl = env?.APP_URL || "https://max-booster.com";
     const _storefrontSlug = storefront?.slug || "";
     const _returnBase = `${appUrl}/storefront/${storefrontSlug}`;
 
@@ -1058,7 +1058,7 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
 /**
  * POST /api/storefront/:storefrontId/verify-domain
  * Perform DNS verification of the custom domain
- * Checks for CNAME pointing to max-booster?.com
+ * Checks for CNAME pointing to max-booster.com
  */
 router?.post("/:storefrontId/verify-domain", async (req, res) => {
   try {
@@ -1100,8 +1100,8 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
 
     try {
       const _cnames = await dnsPromises?.resolveCname(domain);
-      result?.cnameFound = cnames?.length > 0;
-      result?.cnameTarget = cnames[0];
+      result.cnameFound = cnames?.length > 0;
+      result.cnameTarget = cnames[0];
       if (
         cnames?.some(
           (c) =>
@@ -1109,22 +1109,22 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
             c?.toLowerCase().includes("replit"),
         )
       ) {
-        result?.verified = true;
+        result.verified = true;
       }
     } catch {
-      result?.cnameFound = false;
+      result.cnameFound = false;
     }
 
     if (!result?.verified) {
       try {
         const _addresses = await dnsPromises?.resolve4(domain);
-        result?.aRecordFound = addresses?.length > 0;
-        result?.aRecords = addresses;
+        result.aRecordFound = addresses?.length > 0;
+        result.aRecords = addresses;
         if (addresses?.includes(PLATFORM_IP)) {
-          result?.verified = true;
+          result.verified = true;
         }
       } catch {
-        result?.aRecordFound = false;
+        result.aRecordFound = false;
       }
     }
 
@@ -2383,32 +2383,32 @@ router?.put("/:storefrontId/bogo-promotions/:promoId", async (req, res) => {
     } = req?.body;
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
-    if (name !== undefined) updateData?.name = name;
-    if (description !== undefined) updateData?.description = description;
-    if (promoType !== undefined) updateData?.promoType = promoType;
-    if (buyQuantity !== undefined) updateData?.buyQuantity = buyQuantity;
-    if (getQuantity !== undefined) updateData?.getQuantity = getQuantity;
+    if (name !== undefined) updateData.name = name;
+    if (description !== undefined) updateData.description = description;
+    if (promoType !== undefined) updateData.promoType = promoType;
+    if (buyQuantity !== undefined) updateData.buyQuantity = buyQuantity;
+    if (getQuantity !== undefined) updateData.getQuantity = getQuantity;
     if (getDiscountPercent !== undefined)
-      updateData?.getDiscountPercent = getDiscountPercent;
-    if (appliesTo !== undefined) updateData?.appliesTo = appliesTo;
+      updateData.getDiscountPercent = getDiscountPercent;
+    if (appliesTo !== undefined) updateData.appliesTo = appliesTo;
     if (applicableListingIds !== undefined)
-      updateData?.applicableListingIds = applicableListingIds;
+      updateData.applicableListingIds = applicableListingIds;
     if (applicableGenres !== undefined)
-      updateData?.applicableGenres = applicableGenres;
+      updateData.applicableGenres = applicableGenres;
     if (buyLicenseType !== undefined)
-      updateData?.buyLicenseType = buyLicenseType;
+      updateData.buyLicenseType = buyLicenseType;
     if (bogoLicenseType !== undefined)
-      updateData?.bogoLicenseType = bogoLicenseType;
+      updateData.bogoLicenseType = bogoLicenseType;
     if (maxRedemptions !== undefined)
-      updateData?.maxRedemptions = maxRedemptions;
+      updateData.maxRedemptions = maxRedemptions;
     if (perCustomerLimit !== undefined)
-      updateData?.perCustomerLimit = perCustomerLimit;
-    if (stackable !== undefined) updateData?.stackable = stackable;
-    if (priority !== undefined) updateData?.priority = priority;
-    if (status !== undefined) updateData?.status = status;
+      updateData.perCustomerLimit = perCustomerLimit;
+    if (stackable !== undefined) updateData.stackable = stackable;
+    if (priority !== undefined) updateData.priority = priority;
+    if (status !== undefined) updateData.status = status;
     if (startAt !== undefined)
-      updateData?.startAt = startAt ? new Date(startAt) : null;
-    if (endAt !== undefined) updateData?.endAt = endAt ? new Date(endAt) : null;
+      updateData.startAt = startAt ? new Date(startAt) : null;
+    if (endAt !== undefined) updateData.endAt = endAt ? new Date(endAt) : null;
 
     const [promo] = await db
       .update(bogoPromotions)

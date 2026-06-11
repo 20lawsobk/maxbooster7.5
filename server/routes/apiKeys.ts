@@ -1,10 +1,10 @@
 import { Router, Request, Response } from "express";
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { eq, and, count } from "drizzle-orm";
 import { apiKeys } from "@shared/schema";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 import rateLimit from "express-rate-limit";
 
 const _router = Router();
@@ -13,7 +13,7 @@ router?.use(requireAuth);
 
 const _MAX_KEYS_PER_USER = 20;
 
-// 120M req/s capacity — 7?.2B req/min per authenticated user.
+// 120M req/s capacity — 7.2B req/min per authenticated user.
 // requireAuth above already ensures only authenticated users reach this limiter.
 const _keyCreateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

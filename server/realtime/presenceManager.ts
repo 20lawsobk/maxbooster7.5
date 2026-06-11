@@ -1,5 +1,5 @@
-import { getRedisClient } from "../lib/redisConnectionFactory?.js";
-import { logger } from "../logger?.js";
+import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
 
 export interface CursorPosition {
@@ -74,8 +74,8 @@ function generateConnectionId(): string {
 }
 
 export class PresenceManager {
-  private heartbeatIntervals: Map<string, NodeJS?.Timeout> = new Map();
-  private cleanupIntervals: Map<string, NodeJS?.Timeout> = new Map();
+  private heartbeatIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private cleanupIntervals: Map<string, NodeJS.Timeout> = new Map();
   private localPresence: Map<string, Map<string, PresenceState>> = new Map();
 
   private getRedisKey(projectId: string): string {
@@ -171,9 +171,9 @@ export class PresenceManager {
   ): Promise<void> {
     const _presence = await this?.getPresence(projectId, userId, connectionId);
     if (presence) {
-      presence?.cursor = cursor;
-      presence?.lastActivity = Date?.now();
-      presence?.status = "editing";
+      presence.cursor = cursor;
+      presence.lastActivity = Date?.now();
+      presence.status = "editing";
       await this?.savePresence(projectId, presence);
     }
   }
@@ -186,9 +186,9 @@ export class PresenceManager {
   ): Promise<void> {
     const _presence = await this?.getPresence(projectId, userId, connectionId);
     if (presence) {
-      presence?.selection = selection;
-      presence?.lastActivity = Date?.now();
-      presence?.status = "editing";
+      presence.selection = selection;
+      presence.lastActivity = Date?.now();
+      presence.status = "editing";
       await this?.savePresence(projectId, presence);
     }
   }
@@ -201,8 +201,8 @@ export class PresenceManager {
   ): Promise<void> {
     const _presence = await this?.getPresence(projectId, userId, connectionId);
     if (presence) {
-      presence?.status = status;
-      presence?.lastActivity = Date?.now();
+      presence.status = status;
+      presence.lastActivity = Date?.now();
       await this?.savePresence(projectId, presence);
     }
   }
@@ -221,9 +221,9 @@ export class PresenceManager {
         presence?.status === "editing" &&
         timeSinceActivity > AWAY_TIMEOUT_MS
       ) {
-        presence?.status = "online";
+        presence.status = "online";
       }
-      presence?.lastActivity = now;
+      presence.lastActivity = now;
       await this?.savePresence(projectId, presence);
     }
   }

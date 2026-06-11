@@ -103,7 +103,7 @@ export class AudioWorkletEngine {
   private listeners: Set<(event: AudioEngineEvent) => void> = new Set();
   private animationFrameId: number | null = null;
   private lastScheduleTime: number = 0;
-  private scheduleAheadTime: number = 0?.1;
+  private scheduleAheadTime: number = 0.1;
   private lookAhead: number = 25;
   private schedulerTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -114,11 +114,11 @@ export class AudioWorkletEngine {
 
   async initialize(config?: Partial<AudioEngineConfig>): Promise<void> {
     if (config) {
-      this?.config = { ...this?.config, ...config };
+      this.config = { ...this?.config, ...config };
     }
 
     try {
-      this?.audioContext = new AudioContext({
+      this.audioContext = new AudioContext({
         sampleRate: this?.config.sampleRate,
         latencyHint: this?.config.latencyHint,
       });
@@ -130,14 +130,14 @@ export class AudioWorkletEngine {
       this?.config.sampleRate = this?.audioContext.sampleRate;
 
       try {
-        await this?.audioContext.audioWorklet?.addModule("/audio-processor?.js");
-        this?.workletNode = new AudioWorkletNode(
+        await this?.audioContext.audioWorklet?.addModule("/audio-processor.js");
+        this.workletNode = new AudioWorkletNode(
           this?.audioContext,
           "daw-audio-processor",
         );
-        this?.workletReady = true;
+        this.workletReady = true;
 
-        this?.workletNode.port?.onmessage = (event) => {
+        this?.workletNode.port.onmessage = (event) => {
           const { type, data } = event?.data;
           if (type === "metering") {
             this?.state.currentSample = data?.position;
@@ -181,13 +181,13 @@ export class AudioWorkletEngine {
         logger?.warn(
           "[AudioWorkletEngine] AudioWorklet not supported, falling back to analyzer-based metering",
         );
-        this?.workletReady = false;
+        this.workletReady = false;
       }
 
-      this?.masterGain = this?.audioContext.createGain();
-      this?.masterAnalyzer = this?.audioContext.createAnalyser();
+      this.masterGain = this?.audioContext.createGain();
+      this.masterAnalyzer = this?.audioContext.createAnalyser();
       this?.masterAnalyzer.fftSize = 2048;
-      this?.masterAnalyzer.smoothingTimeConstant = 0?.8;
+      this?.masterAnalyzer.smoothingTimeConstant = 0.8;
 
       this?.masterGain.connect(this?.masterAnalyzer);
 
@@ -211,7 +211,7 @@ export class AudioWorkletEngine {
 
     const _updateMeters = () => {
       if (!this?.audioContext || !this?.state.isPlaying) {
-        this?.animationFrameId = requestAnimationFrame(updateMeters);
+        this.animationFrameId = requestAnimationFrame(updateMeters);
         return;
       }
 
@@ -237,10 +237,10 @@ export class AudioWorkletEngine {
         this?.emit({ type: "metering-update", data: allMeteringData });
       }
 
-      this?.animationFrameId = requestAnimationFrame(updateMeters);
+      this.animationFrameId = requestAnimationFrame(updateMeters);
     };
 
-    this?.animationFrameId = requestAnimationFrame(updateMeters);
+    this.animationFrameId = requestAnimationFrame(updateMeters);
   }
 
   private getTrackMeteringData(
@@ -291,8 +291,8 @@ export class AudioWorkletEngine {
     const _gain = this?.audioContext.createGain();
     const _panner = this?.audioContext.createStereoPanner();
     const _analyzer = this?.audioContext.createAnalyser();
-    analyzer?.fftSize = 1024;
-    analyzer?.smoothingTimeConstant = 0?.85;
+    analyzer.fftSize = 1024;
+    analyzer.smoothingTimeConstant = 0.85;
 
     gain?.connect(panner);
     panner?.connect(analyzer);
@@ -327,7 +327,7 @@ export class AudioWorkletEngine {
     if (!nodes || !this?.audioContext) return;
 
     const _linearGain = Math?.pow(10, volume / 20);
-    nodes?.volume = linearGain;
+    nodes.volume = linearGain;
 
     const _hasSolo = Array?.from(this?.trackNodes.values()).some((n) => n?.solo);
     const _shouldMute = nodes?.muted || (hasSolo && !nodes?.solo);
@@ -335,7 +335,7 @@ export class AudioWorkletEngine {
       nodes?.gain.gain?.setTargetAtTime(
         linearGain,
         this?.audioContext.currentTime,
-        0?.01,
+        0.01,
       );
     }
   }
@@ -344,14 +344,14 @@ export class AudioWorkletEngine {
     const _nodes = this?.trackNodes.get(trackId);
     if (!nodes || !this?.audioContext) return;
 
-    nodes?.panner.pan?.setTargetAtTime(pan, this?.audioContext.currentTime, 0?.01);
+    nodes?.panner.pan?.setTargetAtTime(pan, this?.audioContext.currentTime, 0.01);
   }
 
   setTrackMute(trackId: string, muted: boolean): void {
     const _nodes = this?.trackNodes.get(trackId);
     if (!nodes || !this?.audioContext) return;
 
-    nodes?.muted = muted;
+    nodes.muted = muted;
     this?.updateTrackSoloMute();
   }
 
@@ -359,7 +359,7 @@ export class AudioWorkletEngine {
     const _nodes = this?.trackNodes.get(trackId);
     if (!nodes) return;
 
-    nodes?.solo = solo;
+    nodes.solo = solo;
     this?.updateTrackSoloMute();
   }
 
@@ -379,7 +379,7 @@ export class AudioWorkletEngine {
       nodes?.gain.gain?.setTargetAtTime(
         targetGain,
         this?.audioContext!.currentTime,
-        0?.01,
+        0.01,
       );
     });
   }
@@ -391,7 +391,7 @@ export class AudioWorkletEngine {
     this?.masterGain.gain?.setTargetAtTime(
       linearGain,
       this?.audioContext.currentTime,
-      0?.01,
+      0.01,
     );
   }
 
@@ -441,7 +441,7 @@ export class AudioWorkletEngine {
     if (remainingDuration <= 0) return;
 
     const _source = this?.audioContext.createBufferSource();
-    source?.buffer = clip?.buffer;
+    source.buffer = clip?.buffer;
 
     const _clipGain = this?.audioContext.createGain();
     clipGain?.gain.value = clip?.gain;
@@ -486,7 +486,7 @@ export class AudioWorkletEngine {
     sources?.push(source);
     this?.scheduledSources.set(clip?.id, sources);
 
-    source?.onended = () => {
+    source.onended = () => {
       const _currentSources = this?.scheduledSources.get(clip?.id);
       if (currentSources) {
         const _index = currentSources?.indexOf(source);
@@ -539,7 +539,7 @@ export class AudioWorkletEngine {
 
     const _doPlay = () => {
       this?.state.isPlaying = true;
-      this?.lastScheduleTime = this?.audioContext!.currentTime;
+      this.lastScheduleTime = this?.audioContext!.currentTime;
 
       if (this?.workletNode && this?.workletReady) {
         this?.workletNode.port?.postMessage({ type: "play" });
@@ -638,7 +638,7 @@ export class AudioWorkletEngine {
       if (!this?.workletReady) {
         const _now = this?.audioContext.currentTime;
         const _elapsed = now - this?.lastScheduleTime;
-        this?.lastScheduleTime = now;
+        this.lastScheduleTime = now;
 
         const _samplesElapsed = Math?.round(elapsed * this?.config.sampleRate);
         this?.state.currentSample += samplesElapsed;
@@ -680,7 +680,7 @@ export class AudioWorkletEngine {
         }
       });
 
-      this?.schedulerTimeoutId = setTimeout(scheduler, this?.lookAhead);
+      this.schedulerTimeoutId = setTimeout(scheduler, this?.lookAhead);
     };
 
     scheduler();
@@ -689,7 +689,7 @@ export class AudioWorkletEngine {
   private stopSchedulerLoop(): void {
     if (this?.schedulerTimeoutId) {
       clearTimeout(this?.schedulerTimeoutId);
-      this?.schedulerTimeoutId = null;
+      this.schedulerTimeoutId = null;
     }
   }
 
@@ -781,7 +781,7 @@ export class AudioWorkletEngine {
           let maxVal = 0;
 
           for (let j = start; j < end; j++) {
-            const _v = ch1 ? (ch0[j] + ch1[j]) * 0?.5 : ch0[j];
+            const _v = ch1 ? (ch0[j] + ch1[j]) * 0.5 : ch0[j];
             if (v < minVal) minVal = v;
             if (v > maxVal) maxVal = v;
           }

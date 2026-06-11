@@ -23,17 +23,17 @@ export class PlateReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(44100);
-    this?.inputFilter = new BiquadFilter();
-    this?.outputFilterL = new BiquadFilter();
-    this?.outputFilterR = new BiquadFilter();
+    this.preDelay = new DelayLine(44100);
+    this.inputFilter = new BiquadFilter();
+    this.outputFilterL = new BiquadFilter();
+    this.outputFilterR = new BiquadFilter();
     for (let i = 0; i < 4; i++) {
       this?.diffusers.push(
-        new AllPassFilter(Math?.floor(142 * (i + 1) * 1?.3), 0?.75),
+        new AllPassFilter(Math?.floor(142 * (i + 1) * 1.3), 0.75),
       );
     }
     for (let i = 0; i < 8; i++) {
-      this?.tanks.push(new CombFilter(Math?.floor(1557 + i * 233), 0?.84, 0?.2));
+      this?.tanks.push(new CombFilter(Math?.floor(1557 + i * 233), 0.84, 0.2));
       this?.damping.push(new OnePoleFilter());
     }
   }
@@ -44,27 +44,27 @@ export class PlateReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.35;
-    const _decay = (params?.decay as number) ?? 2?.5;
-    const _damping = (params?.damping as number) ?? 0?.5;
+    const _mix = (params?.mix as number) ?? 0.35;
+    const _decay = (params?.decay as number) ?? 2.5;
+    const _damping = (params?.damping as number) ?? 0.5;
     const _preDelayMs = (params?.preDelay as number) ?? 10;
-    const _brightness = (params?.brightness as number) ?? 0?.7;
-    const _modulation = (params?.modulation as number) ?? 0?.3;
+    const _brightness = (params?.brightness as number) ?? 0.7;
+    const _modulation = (params?.modulation as number) ?? 0.3;
 
     const _preDelaySamples = msToSamples(preDelayMs, this?.sampleRate);
-    const _decayFactor = Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 1557));
+    const _decayFactor = Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 1557));
 
-    this?.inputFilter.setHighpass(80, 0?.707, this?.sampleRate);
+    this?.inputFilter.setHighpass(80, 0.707, this?.sampleRate);
     this?.outputFilterL.setLowpass(
       Math?.min(20000, 2000 + brightness * 18000),
-      0?.707,
+      0.707,
       this?.sampleRate,
     );
     this?.outputFilterR.setLowpass(
       Math?.min(20000, 2000 + brightness * 18000),
-      0?.707,
+      0.707,
       this?.sampleRate,
     );
 
@@ -75,7 +75,7 @@ export class PlateReverbProcessor implements DSPProcessor {
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
       const _filtered = this?.inputFilter.process(mono);
 
       this?.preDelay.write(filtered);
@@ -89,14 +89,14 @@ export class PlateReverbProcessor implements DSPProcessor {
         rightSum = 0;
       for (let t = 0; t < 8; t++) {
         const _tankOut = this?.damping[t].process(
-          this?.tanks[t].process(signal * 0?.25),
+          this?.tanks[t].process(signal * 0.25),
         );
         if (t % 2 === 0) leftSum += tankOut;
         else rightSum += tankOut;
       }
 
-      const _modPhase = (2 * Math?.PI * i * 0?.5) / this?.sampleRate;
-      const _modAmount = Math?.sin(modPhase) * modulation * 0?.01;
+      const _modPhase = (2 * Math?.PI * i * 0.5) / this?.sampleRate;
+      const _modAmount = Math?.sin(modPhase) * modulation * 0.01;
 
       const _wetL = this?.outputFilterL.process(leftSum * (1 + modAmount));
       const _wetR = this?.outputFilterR.process(rightSum * (1 - modAmount));
@@ -128,17 +128,17 @@ export class HallReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(88200);
+    this.preDelay = new DelayLine(88200);
     for (let i = 0; i < 12; i++) {
       this?.earlyReflections.push(new DelayLine(Math?.floor(4410 + i * 367)));
     }
     const _combDelays = [2473, 2767, 3217, 3557, 3907, 4127, 4517, 4903];
     for (let i = 0; i < 8; i++) {
-      this?.lateCombs.push(new CombFilter(combDelays[i], 0?.9, 0?.3));
+      this?.lateCombs.push(new CombFilter(combDelays[i], 0.9, 0.3));
       this?.lpFilters.push(new OnePoleFilter());
     }
     for (let i = 0; i < 4; i++) {
-      this?.allPasses.push(new AllPassFilter(Math?.floor(347 + i * 113), 0?.7));
+      this?.allPasses.push(new AllPassFilter(Math?.floor(347 + i * 113), 0.7));
     }
   }
 
@@ -148,19 +148,19 @@ export class HallReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.4;
-    const _decay = (params?.decay as number) ?? 4?.0;
-    const _size = (params?.size as number) ?? 0?.8;
+    const _mix = (params?.mix as number) ?? 0.4;
+    const _decay = (params?.decay as number) ?? 4.0;
+    const _size = (params?.size as number) ?? 0.8;
     const _preDelayMs = (params?.preDelay as number) ?? 30;
-    const _diffusion = (params?.diffusion as number) ?? 0?.8;
-    const _damping = (params?.damping as number) ?? 0?.4;
-    const _erLevel = (params?.earlyLevel as number) ?? 0?.5;
-    const _lateLevel = (params?.lateLevel as number) ?? 0?.7;
+    const _diffusion = (params?.diffusion as number) ?? 0.8;
+    const _damping = (params?.damping as number) ?? 0.4;
+    const _erLevel = (params?.earlyLevel as number) ?? 0.5;
+    const _lateLevel = (params?.lateLevel as number) ?? 0.7;
 
     const _preDelaySamples = msToSamples(preDelayMs, this?.sampleRate);
-    const _decayFactor = Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 3000));
+    const _decayFactor = Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 3000));
 
     for (let i = 0; i < 8; i++) {
       this?.lateCombs[i].setFeedback(decayFactor);
@@ -173,11 +173,11 @@ export class HallReverbProcessor implements DSPProcessor {
 
     const _erDelays = [7, 11, 17, 23, 31, 41, 53, 67, 83, 97, 113, 127];
     const _erGains = [
-      0?.9, 0?.85, 0?.8, 0?.75, 0?.7, 0?.65, 0?.6, 0?.55, 0?.5, 0?.45, 0?.4, 0?.35,
+      0.9, 0.85, 0.8, 0.75, 0.7, 0.65, 0.6, 0.55, 0.5, 0.45, 0.4, 0.35,
     ];
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
 
       this?.preDelay.write(mono);
       const _preDelayed = this?.preDelay.read(preDelaySamples);
@@ -187,7 +187,7 @@ export class HallReverbProcessor implements DSPProcessor {
       for (let e = 0; e < 12; e++) {
         this?.earlyReflections[e].write(preDelayed);
         const _erSample = this?.earlyReflections[e].read(
-          Math?.floor(erDelays[e] * size * 44?.1),
+          Math?.floor(erDelays[e] * size * 44.1),
         );
         if (e % 2 === 0) erL += erSample * erGains[e];
         else erR += erSample * erGains[e];
@@ -204,7 +204,7 @@ export class HallReverbProcessor implements DSPProcessor {
         lateR = 0;
       for (let c = 0; c < 8; c++) {
         const _combOut = this?.lpFilters[c].process(
-          this?.lateCombs[c].process(signal * 0?.125),
+          this?.lateCombs[c].process(signal * 0.125),
         );
         if (c < 4) lateL += combOut;
         else lateR += combOut;
@@ -243,7 +243,7 @@ export class RoomReverbProcessor implements DSPProcessor {
       this?.filters.push(new BiquadFilter());
     }
     for (let i = 0; i < 3; i++) {
-      this?.allPasses.push(new AllPassFilter(113 + i * 73, 0?.6));
+      this?.allPasses.push(new AllPassFilter(113 + i * 73, 0.6));
     }
   }
 
@@ -253,12 +253,12 @@ export class RoomReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.25;
-    const _size = (params?.roomSize as number) ?? 0?.5;
-    const _absorption = (params?.absorption as number) ?? 0?.5;
-    const _brightness = (params?.brightness as number) ?? 0?.6;
+    const _mix = (params?.mix as number) ?? 0.25;
+    const _size = (params?.roomSize as number) ?? 0.5;
+    const _absorption = (params?.absorption as number) ?? 0.5;
+    const _brightness = (params?.brightness as number) ?? 0.6;
 
     const _roomDelays = [
       Math?.floor(size * 441),
@@ -268,20 +268,20 @@ export class RoomReverbProcessor implements DSPProcessor {
       Math?.floor(size * 1033),
       Math?.floor(size * 1181),
     ];
-    const _reflectionGains = [0?.8, 0?.7, 0?.6, 0?.5, 0?.4, 0?.3].map(
+    const _reflectionGains = [0.8, 0.7, 0.6, 0.5, 0.4, 0.3].map(
       (g) => g * (1 - absorption),
     );
 
     for (let i = 0; i < 6; i++) {
       this?.filters[i].setLowpass(
         2000 + brightness * 8000,
-        0?.707,
+        0.707,
         this?.sampleRate,
       );
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
 
       let signal = mono;
       for (const ap of this?.allPasses) {
@@ -325,15 +325,15 @@ export class ChamberReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(22050);
-    this?.lpFilter = new OnePoleFilter();
-    this?.hpFilter = new BiquadFilter();
+    this.preDelay = new DelayLine(22050);
+    this.lpFilter = new OnePoleFilter();
+    this.hpFilter = new BiquadFilter();
     for (let i = 0; i < 6; i++) {
-      this?.diffusers.push(new AllPassFilter(Math?.floor(179 + i * 97), 0?.65));
+      this?.diffusers.push(new AllPassFilter(Math?.floor(179 + i * 97), 0.65));
     }
     for (let i = 0; i < 4; i++) {
       this?.feedback.push(
-        new CombFilter(Math?.floor(1847 + i * 347), 0?.85, 0?.25),
+        new CombFilter(Math?.floor(1847 + i * 347), 0.85, 0.25),
       );
     }
   }
@@ -344,28 +344,28 @@ export class ChamberReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.3;
-    const _decay = (params?.decay as number) ?? 1?.8;
-    const _size = (params?.size as number) ?? 0?.6;
+    const _mix = (params?.mix as number) ?? 0.3;
+    const _decay = (params?.decay as number) ?? 1.8;
+    const _size = (params?.size as number) ?? 0.6;
     const _preDelayMs = (params?.preDelay as number) ?? 15;
-    const _density = (params?.density as number) ?? 0?.7;
+    const _density = (params?.density as number) ?? 0.7;
     const _lowCut = (params?.lowCut as number) ?? 150;
     const _highCut = (params?.highCut as number) ?? 8000;
 
     const _preDelaySamples = msToSamples(preDelayMs, this?.sampleRate);
-    const _decayFactor = Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 2000));
+    const _decayFactor = Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 2000));
 
     this?.lpFilter.setLowpass(highCut, this?.sampleRate);
-    this?.hpFilter.setHighpass(lowCut, 0?.707, this?.sampleRate);
+    this?.hpFilter.setHighpass(lowCut, 0.707, this?.sampleRate);
 
     for (let i = 0; i < 4; i++) {
       this?.feedback[i].setFeedback(decayFactor);
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
       const _filtered = this?.hpFilter.process(mono);
 
       this?.preDelay.write(filtered);
@@ -376,17 +376,17 @@ export class ChamberReverbProcessor implements DSPProcessor {
         signal = apOut * density + signal * (1 - density);
       }
 
-      signal = signal + this?.crossFeedback * 0?.15;
+      signal = signal + this?.crossFeedback * 0.15;
 
       let wetL = 0,
         wetR = 0;
       for (let f = 0; f < 4; f++) {
-        const _combOut = this?.feedback[f].process(signal * 0?.25 * size);
+        const _combOut = this?.feedback[f].process(signal * 0.25 * size);
         if (f < 2) wetL += combOut;
         else wetR += combOut;
       }
 
-      this?.crossFeedback = this?.lpFilter.process((wetL + wetR) * 0?.5);
+      this.crossFeedback = this?.lpFilter.process((wetL + wetR) * 0.5);
 
       output?.samples[0][i] = input?.samples[0][i] * (1 - mix) + wetL * mix;
       output?.samples[1][i] = input?.samples[1][i] * (1 - mix) + wetR * mix;
@@ -401,7 +401,7 @@ export class ChamberReverbProcessor implements DSPProcessor {
     this?.feedback.forEach((f) => f?.clear());
     this?.lpFilter.clear();
     this?.hpFilter.clear();
-    this?.crossFeedback = 0;
+    this.crossFeedback = 0;
   }
 }
 
@@ -420,10 +420,10 @@ export class SpringReverbProcessor implements DSPProcessor {
     }
     for (let i = 0; i < 8; i++) {
       this?.dispersionFilters.push(
-        new AllPassFilter(Math?.floor(29 + i * 17), 0?.5),
+        new AllPassFilter(Math?.floor(29 + i * 17), 0.5),
       );
     }
-    this?.lpFilter = new OnePoleFilter();
+    this.lpFilter = new OnePoleFilter();
   }
 
   process(
@@ -432,14 +432,14 @@ export class SpringReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.35;
-    const _decay = (params?.decay as number) ?? 3?.0;
-    const _tension = (params?.tension as number) ?? 0?.6;
-    const _damping = (params?.damping as number) ?? 0?.4;
+    const _mix = (params?.mix as number) ?? 0.35;
+    const _decay = (params?.decay as number) ?? 3.0;
+    const _tension = (params?.tension as number) ?? 0.6;
+    const _damping = (params?.damping as number) ?? 0.4;
     const _springs = Math?.floor((params?.springs as number) ?? 3);
-    const _drip = (params?.drip as number) ?? 0?.5;
+    const _drip = (params?.drip as number) ?? 0.5;
 
     const _springDelays = [
       Math?.floor(1500 * tension),
@@ -447,7 +447,7 @@ export class SpringReverbProcessor implements DSPProcessor {
       Math?.floor(2200 * tension),
     ];
 
-    const _feedback = Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 2000));
+    const _feedback = Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 2000));
     this?.lpFilter.setLowpass(3000 + (1 - damping) * 5000, this?.sampleRate);
 
     for (let i = 0; i < 3; i++) {
@@ -459,9 +459,9 @@ export class SpringReverbProcessor implements DSPProcessor {
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
 
-      let signal = mono + this?.feedbackSample * feedback * 0?.3;
+      let signal = mono + this?.feedbackSample * feedback * 0.3;
 
       for (const ap of this?.dispersionFilters) {
         signal = ap?.process(signal);
@@ -477,9 +477,9 @@ export class SpringReverbProcessor implements DSPProcessor {
       }
 
       wet = this?.lpFilter.process(wet);
-      this?.feedbackSample = wet;
+      this.feedbackSample = wet;
 
-      const _chirp = Math?.sin(i * 0?.1) * wet * drip * 0?.1;
+      const _chirp = Math?.sin(i * 0.1) * wet * drip * 0.1;
       wet += chirp;
 
       output?.samples[0][i] = input?.samples[0][i] * (1 - mix) + wet * mix;
@@ -494,7 +494,7 @@ export class SpringReverbProcessor implements DSPProcessor {
     this?.dispersionFilters.forEach((d) => d?.clear());
     this?.lpFilter.clear();
     this?.resonance.forEach((r) => r?.clear());
-    this?.feedbackSample = 0;
+    this.feedbackSample = 0;
   }
 }
 
@@ -512,18 +512,18 @@ export class ShimmerReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(44100);
-    this?.pitchShiftBuffer = new DelayLine(8192);
-    this?.lpFilterL = new OnePoleFilter();
-    this?.lpFilterR = new OnePoleFilter();
-    this?.hpFilter = new BiquadFilter();
-    this?.shimmerBuffer = new Float32Array(4096);
+    this.preDelay = new DelayLine(44100);
+    this.pitchShiftBuffer = new DelayLine(8192);
+    this.lpFilterL = new OnePoleFilter();
+    this.lpFilterR = new OnePoleFilter();
+    this.hpFilter = new BiquadFilter();
+    this.shimmerBuffer = new Float32Array(4096);
 
     for (let i = 0; i < 4; i++) {
-      this?.diffusers.push(new AllPassFilter(Math?.floor(167 + i * 113), 0?.7));
+      this?.diffusers.push(new AllPassFilter(Math?.floor(167 + i * 113), 0.7));
     }
     for (let i = 0; i < 6; i++) {
-      this?.tanks.push(new CombFilter(Math?.floor(2347 + i * 277), 0?.88, 0?.2));
+      this?.tanks.push(new CombFilter(Math?.floor(2347 + i * 277), 0.88, 0.2));
     }
   }
 
@@ -533,24 +533,24 @@ export class ShimmerReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.4;
-    const _decay = (params?.decay as number) ?? 5?.0;
-    const _shimmer = (params?.shimmer as number) ?? 0?.5;
+    const _mix = (params?.mix as number) ?? 0.4;
+    const _decay = (params?.decay as number) ?? 5.0;
+    const _shimmer = (params?.shimmer as number) ?? 0.5;
     const _pitch = (params?.pitch as number) ?? 12;
     const _preDelayMs = (params?.preDelay as number) ?? 20;
-    const _damping = (params?.damping as number) ?? 0?.3;
-    const _modulation = (params?.modulation as number) ?? 0?.4;
+    const _damping = (params?.damping as number) ?? 0.3;
+    const _modulation = (params?.modulation as number) ?? 0.4;
 
     const _preDelaySamples = msToSamples(preDelayMs, this?.sampleRate);
-    const _decayFactor = Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 2500));
+    const _decayFactor = Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 2500));
     const _pitchRatio = Math?.pow(2, pitch / 12);
     const _grainSize = 2048;
 
     this?.lpFilterL.setLowpass(8000 - damping * 5000, this?.sampleRate);
     this?.lpFilterR.setLowpass(8000 - damping * 5000, this?.sampleRate);
-    this?.hpFilter.setHighpass(200, 0?.707, this?.sampleRate);
+    this?.hpFilter.setHighpass(200, 0.707, this?.sampleRate);
 
     for (let i = 0; i < 6; i++) {
       this?.tanks[i].setFeedback(decayFactor);
@@ -558,7 +558,7 @@ export class ShimmerReverbProcessor implements DSPProcessor {
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
       const _filtered = this?.hpFilter.process(mono);
 
       this?.preDelay.write(filtered);
@@ -573,7 +573,7 @@ export class ShimmerReverbProcessor implements DSPProcessor {
         (this?.shimmerIndex - grainSize + this?.shimmerBuffer.length) %
         this?.shimmerBuffer.length;
       const _crossfadePos = this?.pitchPhase / grainSize;
-      const _window = 0?.5 - 0?.5 * Math?.cos(2 * Math?.PI * crossfadePos);
+      const _window = 0.5 - 0.5 * Math?.cos(2 * Math?.PI * crossfadePos);
 
       const _grain1Idx =
         Math?.floor(readPos + this?.pitchPhase * pitchRatio) %
@@ -585,17 +585,17 @@ export class ShimmerReverbProcessor implements DSPProcessor {
       const _grain2 = this?.shimmerBuffer[grain2Idx] * (1 - window);
       const _pitched = (grain1 + grain2) * shimmer;
 
-      this?.pitchPhase = (this?.pitchPhase + 1) % grainSize;
-      this?.shimmerIndex = (this?.shimmerIndex + 1) % this?.shimmerBuffer.length;
+      this.pitchPhase = (this?.pitchPhase + 1) % grainSize;
+      this.shimmerIndex = (this?.shimmerIndex + 1) % this?.shimmerBuffer.length;
 
-      const _modPhase = (2 * Math?.PI * i * 0?.3) / this?.sampleRate;
-      const _mod = Math?.sin(modPhase) * modulation * 0?.02;
+      const _modPhase = (2 * Math?.PI * i * 0.3) / this?.sampleRate;
+      const _mod = Math?.sin(modPhase) * modulation * 0.02;
 
       let wetL = 0,
         wetR = 0;
       for (let t = 0; t < 6; t++) {
-        const _tankInput = (signal + pitched) * 0?.5;
-        const _rawTankOut = this?.tanks[t].process(tankInput * 0?.167);
+        const _tankInput = (signal + pitched) * 0.5;
+        const _rawTankOut = this?.tanks[t].process(tankInput * 0.167);
         if (t % 2 === 0) {
           const _tankOut = this?.lpFilterL.process(rawTankOut);
           wetL += tankOut * (1 + mod);
@@ -621,8 +621,8 @@ export class ShimmerReverbProcessor implements DSPProcessor {
     this?.lpFilterR.clear();
     this?.hpFilter.clear();
     this?.shimmerBuffer.fill(0);
-    this?.shimmerIndex = 0;
-    this?.pitchPhase = 0;
+    this.shimmerIndex = 0;
+    this.pitchPhase = 0;
   }
 }
 
@@ -637,12 +637,12 @@ export class GatedReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(22050);
+    this.preDelay = new DelayLine(22050);
     for (let i = 0; i < 4; i++) {
-      this?.diffusers.push(new AllPassFilter(Math?.floor(113 + i * 67), 0?.6));
+      this?.diffusers.push(new AllPassFilter(Math?.floor(113 + i * 67), 0.6));
     }
     for (let i = 0; i < 6; i++) {
-      this?.combs.push(new CombFilter(Math?.floor(1237 + i * 197), 0?.9, 0?.15));
+      this?.combs.push(new CombFilter(Math?.floor(1237 + i * 197), 0.9, 0.15));
     }
   }
 
@@ -652,9 +652,9 @@ export class GatedReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.5;
+    const _mix = (params?.mix as number) ?? 0.5;
     const _gateTime = (params?.gateTime as number) ?? 300;
     const _holdTime = (params?.holdTime as number) ?? 100;
     const _releaseTime = (params?.releaseTime as number) ?? 50;
@@ -668,31 +668,31 @@ export class GatedReverbProcessor implements DSPProcessor {
     const _releaseSamples = msToSamples(releaseTime, this?.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
       const _inputLevel = Math?.abs(mono);
 
       if (inputLevel > threshold) {
-        this?.gateState = "open";
-        this?.holdCounter = gateSamples;
-        this?.envelope = 1;
+        this.gateState = "open";
+        this.holdCounter = gateSamples;
+        this.envelope = 1;
       } else if (this?.gateState === "open") {
         this?.holdCounter--;
         if (this?.holdCounter <= 0) {
-          this?.gateState = "hold";
-          this?.holdCounter = holdSamples;
+          this.gateState = "hold";
+          this.holdCounter = holdSamples;
         }
       } else if (this?.gateState === "hold") {
         this?.holdCounter--;
         if (this?.holdCounter <= 0) {
-          this?.gateState = "release";
-          this?.releaseCounter = releaseSamples;
+          this.gateState = "release";
+          this.releaseCounter = releaseSamples;
         }
       } else if (this?.gateState === "release") {
         this?.releaseCounter--;
-        this?.envelope = this?.releaseCounter / releaseSamples;
+        this.envelope = this?.releaseCounter / releaseSamples;
         if (this?.releaseCounter <= 0) {
-          this?.gateState = "closed";
-          this?.envelope = 0;
+          this.gateState = "closed";
+          this.envelope = 0;
         }
       }
 
@@ -706,7 +706,7 @@ export class GatedReverbProcessor implements DSPProcessor {
       let wetL = 0,
         wetR = 0;
       for (let c = 0; c < 6; c++) {
-        const _combOut = this?.combs[c].process(signal * 0?.167);
+        const _combOut = this?.combs[c].process(signal * 0.167);
         if (c % 2 === 0) wetL += combOut;
         else wetR += combOut;
       }
@@ -730,10 +730,10 @@ export class GatedReverbProcessor implements DSPProcessor {
     this?.preDelay.clear();
     this?.diffusers.forEach((d) => d?.clear());
     this?.combs.forEach((c) => c?.clear());
-    this?.envelope = 0;
-    this?.gateState = "closed";
-    this?.holdCounter = 0;
-    this?.releaseCounter = 0;
+    this.envelope = 0;
+    this.gateState = "closed";
+    this.holdCounter = 0;
+    this.releaseCounter = 0;
   }
 }
 
@@ -747,16 +747,16 @@ export class AmbientReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(88200);
+    this.preDelay = new DelayLine(88200);
     for (let i = 0; i < 4; i++) {
       this?.modulatedDelays.push(new DelayLine(8820));
       this?.lfoPhases.push((i * Math?.PI) / 2);
     }
     for (let i = 0; i < 6; i++) {
-      this?.allPasses.push(new AllPassFilter(Math?.floor(277 + i * 131), 0?.75));
+      this?.allPasses.push(new AllPassFilter(Math?.floor(277 + i * 131), 0.75));
     }
     for (let i = 0; i < 8; i++) {
-      this?.tanks.push(new CombFilter(Math?.floor(2777 + i * 347), 0?.92, 0?.15));
+      this?.tanks.push(new CombFilter(Math?.floor(2777 + i * 347), 0.92, 0.15));
       this?.lpFilters.push(new OnePoleFilter());
     }
   }
@@ -767,21 +767,21 @@ export class AmbientReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.5;
-    const _decay = (params?.decay as number) ?? 8?.0;
-    const _modRate = (params?.modRate as number) ?? 0?.2;
-    const _modDepth = (params?.modDepth as number) ?? 0?.3;
-    const _diffusion = (params?.diffusion as number) ?? 0?.9;
+    const _mix = (params?.mix as number) ?? 0.5;
+    const _decay = (params?.decay as number) ?? 8.0;
+    const _modRate = (params?.modRate as number) ?? 0.2;
+    const _modDepth = (params?.modDepth as number) ?? 0.3;
+    const _diffusion = (params?.diffusion as number) ?? 0.9;
     const _preDelayMs = (params?.preDelay as number) ?? 50;
     const _freeze = (params?.freeze as boolean) ?? false;
-    const _damping = (params?.damping as number) ?? 0?.2;
+    const _damping = (params?.damping as number) ?? 0.2;
 
     const _preDelaySamples = msToSamples(preDelayMs, this?.sampleRate);
     const _decayFactor = freeze
-      ? 0?.999
-      : Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 3000));
+      ? 0.999
+      : Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 3000));
     const _lfoIncrement = (2 * Math?.PI * modRate) / this?.sampleRate;
 
     for (let i = 0; i < 8; i++) {
@@ -796,7 +796,7 @@ export class AmbientReverbProcessor implements DSPProcessor {
     for (let i = 0; i < input?.samples[0].length; i++) {
       const _mono = freeze
         ? 0
-        : (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+        : (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
 
       this?.preDelay.write(mono);
       let signal = this?.preDelay.read(preDelaySamples);
@@ -818,7 +818,7 @@ export class AmbientReverbProcessor implements DSPProcessor {
         wetR = 0;
       for (let t = 0; t < 8; t++) {
         const _tankOut = this?.lpFilters[t].process(
-          this?.tanks[t].process(signal * 0?.125),
+          this?.tanks[t].process(signal * 0.125),
         );
         const _pan = (t / 7) * Math?.PI;
         wetL += tankOut * Math?.cos(pan);
@@ -838,7 +838,7 @@ export class AmbientReverbProcessor implements DSPProcessor {
     this?.allPasses.forEach((ap) => ap?.clear());
     this?.tanks.forEach((t) => t?.clear());
     this?.lpFilters.forEach((lp) => lp?.clear());
-    this?.lfoPhases = [0, Math?.PI / 2, Math?.PI, (3 * Math?.PI) / 2];
+    this.lfoPhases = [0, Math?.PI / 2, Math?.PI, (3 * Math?.PI) / 2];
   }
 }
 
@@ -854,20 +854,20 @@ export class CathedralReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(176400);
-    this?.crossFeedL = new DelayLine(4410);
-    this?.crossFeedR = new DelayLine(4410);
-    this?.hpFilter = new BiquadFilter();
+    this.preDelay = new DelayLine(176400);
+    this.crossFeedL = new DelayLine(4410);
+    this.crossFeedR = new DelayLine(4410);
+    this.hpFilter = new BiquadFilter();
 
     for (let i = 0; i < 16; i++) {
       this?.earlyReflections.push(new DelayLine(Math?.floor(8820 + i * 551)));
     }
     for (let i = 0; i < 8; i++) {
-      this?.diffusers.push(new AllPassFilter(Math?.floor(353 + i * 179), 0?.7));
+      this?.diffusers.push(new AllPassFilter(Math?.floor(353 + i * 179), 0.7));
     }
     for (let i = 0; i < 12; i++) {
       this?.lateTanks.push(
-        new CombFilter(Math?.floor(3347 + i * 443), 0?.94, 0?.15),
+        new CombFilter(Math?.floor(3347 + i * 443), 0.94, 0.15),
       );
       this?.lpFilters.push(new OnePoleFilter());
     }
@@ -879,21 +879,21 @@ export class CathedralReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.5;
-    const _decay = (params?.decay as number) ?? 12?.0;
-    const _size = (params?.size as number) ?? 0?.9;
+    const _mix = (params?.mix as number) ?? 0.5;
+    const _decay = (params?.decay as number) ?? 12.0;
+    const _size = (params?.size as number) ?? 0.9;
     const _preDelayMs = (params?.preDelay as number) ?? 80;
-    const _diffusion = (params?.diffusion as number) ?? 0?.85;
-    const _damping = (params?.damping as number) ?? 0?.25;
-    const _crossfeed = (params?.crossfeed as number) ?? 0?.3;
-    const _erLevel = (params?.earlyLevel as number) ?? 0?.4;
+    const _diffusion = (params?.diffusion as number) ?? 0.85;
+    const _damping = (params?.damping as number) ?? 0.25;
+    const _crossfeed = (params?.crossfeed as number) ?? 0.3;
+    const _erLevel = (params?.earlyLevel as number) ?? 0.4;
 
     const _preDelaySamples = msToSamples(preDelayMs, this?.sampleRate);
-    const _decayFactor = Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 4000));
+    const _decayFactor = Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 4000));
 
-    this?.hpFilter.setHighpass(60, 0?.707, this?.sampleRate);
+    this?.hpFilter.setHighpass(60, 0.707, this?.sampleRate);
 
     for (let i = 0; i < 12; i++) {
       this?.lateTanks[i].setFeedback(decayFactor);
@@ -907,10 +907,10 @@ export class CathedralReverbProcessor implements DSPProcessor {
     const _erDelays = [
       23, 37, 53, 71, 97, 127, 163, 199, 239, 283, 331, 383, 439, 499, 563, 631,
     ];
-    const _erGains = erDelays?.map((_, i) => 0?.9 * Math?.pow(0?.85, i / 4));
+    const _erGains = erDelays?.map((_, i) => 0.9 * Math?.pow(0.85, i / 4));
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
       const _filtered = this?.hpFilter.process(mono);
 
       this?.preDelay.write(filtered);
@@ -946,7 +946,7 @@ export class CathedralReverbProcessor implements DSPProcessor {
         const _input =
           t < 6 ? signal + cfL * crossfeed : signal + cfR * crossfeed;
         const _tankOut = this?.lpFilters[t].process(
-          this?.lateTanks[t].process(input * 0?.083),
+          this?.lateTanks[t].process(input * 0.083),
         );
         if (t < 6) lateL += tankOut;
         else lateR += tankOut;
@@ -985,16 +985,16 @@ export class VintageReverbProcessor implements DSPProcessor {
   private sampleRate: number = 44100;
 
   constructor() {
-    this?.preDelay = new DelayLine(22050);
-    this?.inputSaturation = new BiquadFilter();
-    this?.outputFilterL = new BiquadFilter();
-    this?.outputFilterR = new BiquadFilter();
+    this.preDelay = new DelayLine(22050);
+    this.inputSaturation = new BiquadFilter();
+    this.outputFilterL = new BiquadFilter();
+    this.outputFilterR = new BiquadFilter();
 
     for (let i = 0; i < 4; i++) {
-      this?.diffusers.push(new AllPassFilter(Math?.floor(127 + i * 79), 0?.6));
+      this?.diffusers.push(new AllPassFilter(Math?.floor(127 + i * 79), 0.6));
     }
     for (let i = 0; i < 6; i++) {
-      this?.tanks.push(new CombFilter(Math?.floor(1777 + i * 263), 0?.88, 0?.35));
+      this?.tanks.push(new CombFilter(Math?.floor(1777 + i * 263), 0.88, 0.35));
     }
   }
 
@@ -1004,37 +1004,37 @@ export class VintageReverbProcessor implements DSPProcessor {
     _context: DSPContext,
   ): AudioBuffer {
     const _output = copyBuffer(input);
-    this?.sampleRate = input?.sampleRate;
+    this.sampleRate = input?.sampleRate;
 
-    const _mix = (params?.mix as number) ?? 0?.35;
-    const _decay = (params?.decay as number) ?? 2?.5;
+    const _mix = (params?.mix as number) ?? 0.35;
+    const _decay = (params?.decay as number) ?? 2.5;
     const _preDelayMs = (params?.preDelay as number) ?? 15;
-    const _character = (params?.character as number) ?? 0?.6;
-    const _warmth = (params?.warmth as number) ?? 0?.7;
-    const _wow = (params?.wow as number) ?? 0?.2;
-    const _flutter = (params?.flutter as number) ?? 0?.15;
+    const _character = (params?.character as number) ?? 0.6;
+    const _warmth = (params?.warmth as number) ?? 0.7;
+    const _wow = (params?.wow as number) ?? 0.2;
+    const _flutter = (params?.flutter as number) ?? 0.15;
 
     const _preDelaySamples = msToSamples(preDelayMs, this?.sampleRate);
-    const _decayFactor = Math?.pow(0?.001, 1 / ((decay * this?.sampleRate) / 2000));
+    const _decayFactor = Math?.pow(0.001, 1 / ((decay * this?.sampleRate) / 2000));
 
     this?.inputSaturation.setLowShelf(500, character * 3, this?.sampleRate);
-    this?.outputFilterL.setLowpass(4000 + warmth * 4000, 0?.707, this?.sampleRate);
-    this?.outputFilterR.setLowpass(4000 + warmth * 4000, 0?.707, this?.sampleRate);
+    this?.outputFilterL.setLowpass(4000 + warmth * 4000, 0.707, this?.sampleRate);
+    this?.outputFilterR.setLowpass(4000 + warmth * 4000, 0.707, this?.sampleRate);
 
     for (let i = 0; i < 6; i++) {
       this?.tanks[i].setFeedback(decayFactor);
-      this?.tanks[i].setDamping(0?.3 + warmth * 0?.3);
+      this?.tanks[i].setDamping(0.3 + warmth * 0.3);
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0?.5;
+      const _mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
 
       let saturated = this?.inputSaturation.process(mono);
       saturated =
-        Math?.tanh(saturated * (1 + character)) / (1 + character * 0?.5);
+        Math?.tanh(saturated * (1 + character)) / (1 + character * 0.5);
 
-      this?.wowFlutter += 0?.0001;
-      const _wowMod = Math?.sin(this?.wowFlutter * 0?.3) * wow * 10;
+      this?.wowFlutter += 0.0001;
+      const _wowMod = Math?.sin(this?.wowFlutter * 0.3) * wow * 10;
       const _flutterMod = Math?.sin(this?.wowFlutter * 5) * flutter * 2;
       const _modulation = wowMod + flutterMod;
 
@@ -1048,7 +1048,7 @@ export class VintageReverbProcessor implements DSPProcessor {
       let wetL = 0,
         wetR = 0;
       for (let t = 0; t < 6; t++) {
-        const _tankOut = this?.tanks[t].process(signal * 0?.167);
+        const _tankOut = this?.tanks[t].process(signal * 0.167);
         if (t % 2 === 0) {
           const _colored = this?.outputFilterL.process(tankOut);
           wetL += colored;
@@ -1058,7 +1058,7 @@ export class VintageReverbProcessor implements DSPProcessor {
         }
       }
 
-      const _noise = (Math?.random() - 0?.5) * 0?.002 * character;
+      const _noise = (Math?.random() - 0.5) * 0.002 * character;
       wetL += noise;
       wetR += noise;
 
@@ -1076,7 +1076,7 @@ export class VintageReverbProcessor implements DSPProcessor {
     this?.inputSaturation.clear();
     this?.outputFilterL.clear();
     this?.outputFilterR.clear();
-    this?.wowFlutter = 0;
+    this.wowFlutter = 0;
   }
 }
 

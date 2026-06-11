@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { type Server } from "http";
-import { logger } from "../logger?.js";
-import { auditLogger } from "./auditLogger?.js";
-import { isProductionEnv } from "../lib/envHelpers?.js";
+import { logger } from "../logger.js";
+import { auditLogger } from "./auditLogger.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 export class AppError extends Error {
   public statusCode: number;
@@ -18,10 +18,10 @@ export class AppError extends Error {
     context?: Record<string, any>,
   ) {
     super(message);
-    this?.statusCode = statusCode;
-    this?.isOperational = isOperational;
-    this?.code = code;
-    this?.context = context;
+    this.statusCode = statusCode;
+    this.isOperational = isOperational;
+    this.code = code;
+    this.context = context;
 
     Object?.setPrototypeOf(this, AppError?.prototype);
     Error?.captureStackTrace(this, this?.constructor);
@@ -379,7 +379,7 @@ export function handleUncaughtException(server?: Server) {
   process?.on("uncaughtException", (error: Error) => {
     // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors
     // (e?.g. FFmpeg exits mid-render, client disconnects mid-stream)
-    const _code = (error as NodeJS?.ErrnoException).code;
+    const _code = (error as NodeJS.ErrnoException).code;
     if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED") {
       logger?.warn(`Non-fatal stream error (${code}): ${error?.message}`);
       return;

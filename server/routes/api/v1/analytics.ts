@@ -3,9 +3,9 @@ import { db } from "../../../db";
 import { analytics, projects, users } from "@shared/schema";
 import { eq, and, desc, sql, gte, lte } from "drizzle-orm";
 import { apiKeyService, ApiKeyRequest } from "../../../services/apiKeyService";
-import { logger } from "../../../logger?.js";
+import { logger } from "../../../logger.js";
 import { advancedAnalyticsService } from "../../../services/advancedAnalyticsService";
-import { distributedCache } from "../../../infrastructure/distributedCache?.js";
+import { distributedCache } from "../../../infrastructure/distributedCache.js";
 
 const _router = Router();
 
@@ -809,14 +809,14 @@ router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
       period?: "daily" | "weekly" | "monthly" | "yearly";
     } = {};
 
-    if (trackId) options?.trackId = trackId as string;
-    if (startDate) options?.startDate = new Date(startDate as string);
-    if (endDate) options?.endDate = new Date(endDate as string);
+    if (trackId) options.trackId = trackId as string;
+    if (startDate) options.startDate = new Date(startDate as string);
+    if (endDate) options.endDate = new Date(endDate as string);
     if (
       period &&
       ["daily", "weekly", "monthly", "yearly"].includes(period as string)
     ) {
-      options?.period = period as "daily" | "weekly" | "monthly" | "yearly";
+      options.period = period as "daily" | "weekly" | "monthly" | "yearly";
     }
 
     const _historicalData = await advancedAnalyticsService?.getHistoricalData(

@@ -141,7 +141,7 @@ class MidiTransformService {
         ...note,
         note: i % 2 === 0 ? note?.note : note?.note + interval,
         startTime: note?.startTime + i * noteDuration,
-        duration: noteDuration * 0?.95,
+        duration: noteDuration * 0.95,
       });
     }
 
@@ -150,15 +150,15 @@ class MidiTransformService {
 
   private createMordent(note: MidiNote, config: OrnamentConfig): MidiNote[] {
     const _interval = config?.interval || 2;
-    const _ornamentDuration = note?.duration * 0?.15;
+    const _ornamentDuration = note?.duration * 0.15;
 
     return [
-      { ...note, duration: ornamentDuration * 0?.95 },
+      { ...note, duration: ornamentDuration * 0.95 },
       {
         ...note,
         note: note?.note + interval,
         startTime: note?.startTime + ornamentDuration,
-        duration: ornamentDuration * 0?.95,
+        duration: ornamentDuration * 0.95,
       },
       {
         ...note,
@@ -170,7 +170,7 @@ class MidiTransformService {
 
   private createTurn(note: MidiNote, config: OrnamentConfig): MidiNote[] {
     const _interval = config?.interval || 2;
-    const _ornamentDuration = note?.duration * 0?.1;
+    const _ornamentDuration = note?.duration * 0.1;
 
     return [
       { ...note, note: note?.note + interval, duration: ornamentDuration },
@@ -195,14 +195,14 @@ class MidiTransformService {
 
   private createGraceNote(note: MidiNote, config: OrnamentConfig): MidiNote[] {
     const _interval = config?.interval || -2;
-    const _graceDuration = 0?.05;
+    const _graceDuration = 0.05;
 
     return [
       {
         ...note,
         note: note?.note + interval,
         duration: graceDuration,
-        velocity: Math?.round(note?.velocity * 0?.7),
+        velocity: Math?.round(note?.velocity * 0.7),
       },
       {
         ...note,
@@ -221,8 +221,8 @@ class MidiTransformService {
       result?.push({
         ...note,
         startTime: note?.startTime + i * noteDuration,
-        duration: noteDuration * 0?.9,
-        velocity: Math?.round(note?.velocity * (0?.7 + Math?.random() * 0?.3)),
+        duration: noteDuration * 0.9,
+        velocity: Math?.round(note?.velocity * (0.7 + Math?.random() * 0.3)),
       });
     }
 
@@ -241,8 +241,8 @@ class MidiTransformService {
         ...note,
         note: note?.note + i * direction,
         startTime: note?.startTime + i * noteDuration,
-        duration: noteDuration * 1?.1,
-        velocity: Math?.round(note?.velocity * (0?.8 + (i / count) * 0?.2)),
+        duration: noteDuration * 1.1,
+        velocity: Math?.round(note?.velocity * (0.8 + (i / count) * 0.2)),
       });
     }
 
@@ -272,18 +272,18 @@ class MidiTransformService {
         let velocityMultiplier = 1;
         switch (config?.velocityCurve) {
           case "exponential":
-            velocityMultiplier = Math?.pow(index / orderedChord?.length, 0?.5);
+            velocityMultiplier = Math?.pow(index / orderedChord?.length, 0.5);
             break;
           case "logarithmic":
             velocityMultiplier =
               Math?.log(index + 2) / Math?.log(orderedChord?.length + 2);
             break;
           default:
-            velocityMultiplier = 1 - (index / orderedChord?.length) * 0?.2;
+            velocityMultiplier = 1 - (index / orderedChord?.length) * 0.2;
         }
 
         const _humanizeOffset = config?.humanize
-          ? (Math?.random() - 0?.5) * strumDelay * 0?.2
+          ? (Math?.random() - 0.5) * strumDelay * 0.2
           : 0;
 
         result?.push({
@@ -323,16 +323,16 @@ class MidiTransformService {
           timeFactor =
             config?.type === "accelerando"
               ? position -
-                Math?.sin(position * Math?.PI * 2) * (config?.factor - 1) * 0?.1
+                Math?.sin(position * Math?.PI * 2) * (config?.factor - 1) * 0.1
               : position +
-                Math?.sin(position * Math?.PI * 2) * (config?.factor - 1) * 0?.1;
+                Math?.sin(position * Math?.PI * 2) * (config?.factor - 1) * 0.1;
           break;
         default:
           const _adjustment = (config?.factor - 1) * position;
           timeFactor =
             config?.type === "accelerando"
-              ? position * (1 - adjustment * 0?.5)
-              : position * (1 + adjustment * 0?.5);
+              ? position * (1 - adjustment * 0.5)
+              : position * (1 + adjustment * 0.5);
       }
 
       return {
@@ -409,7 +409,7 @@ class MidiTransformService {
     });
   }
 
-  staccato(notes: MidiNote[], factor: number = 0?.5): MidiNote[] {
+  staccato(notes: MidiNote[], factor: number = 0.5): MidiNote[] {
     return notes?.map((note) => ({
       ...note,
       duration: note?.duration * factor,
@@ -436,17 +436,17 @@ class MidiTransformService {
       let velocityMultiplier: number;
       switch (curve) {
         case "crescendo":
-          velocityMultiplier = 0?.5 + position * 0?.5 * intensity;
+          velocityMultiplier = 0.5 + position * 0.5 * intensity;
           break;
         case "decrescendo":
-          velocityMultiplier = 1 - position * 0?.5 * intensity;
+          velocityMultiplier = 1 - position * 0.5 * intensity;
           break;
         case "swell":
           velocityMultiplier =
-            0?.5 + Math?.sin(position * Math?.PI) * 0?.5 * intensity;
+            0.5 + Math?.sin(position * Math?.PI) * 0.5 * intensity;
           break;
         case "accent":
-          velocityMultiplier = position < 0?.1 ? 1 + 0?.3 * intensity : 1;
+          velocityMultiplier = position < 0.1 ? 1 + 0.3 * intensity : 1;
           break;
         default:
           velocityMultiplier = 1;
@@ -478,7 +478,7 @@ class MidiTransformService {
         Math?.min(
           127,
           note?.note +
-            Math?.round((Math?.random() - 0?.5) * 2 * (options?.pitchRange || 0)),
+            Math?.round((Math?.random() - 0.5) * 2 * (options?.pitchRange || 0)),
         ),
       ),
       velocity: Math?.max(
@@ -487,18 +487,18 @@ class MidiTransformService {
           127,
           note?.velocity +
             Math?.round(
-              (Math?.random() - 0?.5) * 2 * (options?.velocityRange || 0),
+              (Math?.random() - 0.5) * 2 * (options?.velocityRange || 0),
             ),
         ),
       ),
       startTime: Math?.max(
         0,
-        note?.startTime + (Math?.random() - 0?.5) * 2 * (options?.timingRange || 0),
+        note?.startTime + (Math?.random() - 0.5) * 2 * (options?.timingRange || 0),
       ),
       duration: Math?.max(
-        0?.01,
+        0.01,
         note?.duration *
-          (1 + (Math?.random() - 0?.5) * 2 * (options?.durationRange || 0)),
+          (1 + (Math?.random() - 0.5) * 2 * (options?.durationRange || 0)),
       ),
     }));
   }

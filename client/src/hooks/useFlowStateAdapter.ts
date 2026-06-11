@@ -234,7 +234,7 @@ export function useFlowStateAdapter(
 
   useEffect(() => {
     if (AudioEngine?.isSupported()) {
-      audioEngineRef?.current = AudioEngine?.getInstance();
+      audioEngineRef.current = AudioEngine?.getInstance();
     }
   }, []);
 
@@ -264,10 +264,10 @@ export function useFlowStateAdapter(
           setMasterMeterLevels(master);
         }
       }
-      meterAnimationRef?.current = requestAnimationFrame(updateMeters);
+      meterAnimationRef.current = requestAnimationFrame(updateMeters);
     };
 
-    meterAnimationRef?.current = requestAnimationFrame(updateMeters);
+    meterAnimationRef.current = requestAnimationFrame(updateMeters);
 
     return () => {
       if (meterAnimationRef?.current) {
@@ -290,7 +290,7 @@ export function useFlowStateAdapter(
         title: "Balance Levels",
         description:
           "AI detected uneven levels across tracks. Auto-balance for better mix coherence.",
-        confidence: 0?.87,
+        confidence: 0.87,
         action: () => logger?.info("Auto-balancing levels..."),
       });
 
@@ -300,7 +300,7 @@ export function useFlowStateAdapter(
         title: "Add Bus Glue",
         description:
           "Consider adding subtle compression to the mix bus for cohesion.",
-        confidence: 0?.72,
+        confidence: 0.72,
         action: () => logger?.info("Adding bus compression..."),
       });
     }
@@ -312,7 +312,7 @@ export function useFlowStateAdapter(
         title: "Next Chord: Am7",
         description:
           "Based on your progression, Am7 would create smooth voice leading.",
-        confidence: 0?.91,
+        confidence: 0.91,
         action: () => logger?.info("Inserting Am7 chord..."),
       });
 
@@ -321,7 +321,7 @@ export function useFlowStateAdapter(
         type: "rhythmic",
         title: "Add Drum Fill",
         description: "Bar 8 would benefit from a transitional drum fill.",
-        confidence: 0?.78,
+        confidence: 0.78,
         action: () => logger?.info("Generating drum fill..."),
       });
     }
@@ -333,7 +333,7 @@ export function useFlowStateAdapter(
         title: "Optimize for Spotify",
         description:
           "Adjust limiting to hit -14 LUFS for optimal streaming loudness.",
-        confidence: 0?.95,
+        confidence: 0.95,
         action: () => logger?.info("Optimizing loudness..."),
       });
     }
@@ -350,7 +350,7 @@ export function useFlowStateAdapter(
       name: track?.name,
       type: track?.trackType as FlowStateTrack["type"],
       color: track?.color || `hsl(${(index * 40) % 360}, 70%, 50%)`,
-      volume: track?.volume ?? 0?.8,
+      volume: track?.volume ?? 0.8,
       pan: track?.pan ?? 0,
       mute: track?.mute ?? false,
       solo: track?.solo ?? false,
@@ -539,7 +539,7 @@ export function useFlowStateAdapter(
   const _setZoom = useCallback((level: number) => {
     setContext((prev) => ({
       ...prev,
-      zoomLevel: Math?.max(0?.1, Math?.min(10, level)),
+      zoomLevel: Math?.max(0.1, Math?.min(10, level)),
     }));
   }, []);
 

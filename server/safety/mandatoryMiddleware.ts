@@ -7,26 +7,26 @@
 
 import { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { randomUUID } from "crypto";
-import { isRoutesReady } from "../lib/bootState?.js";
-import { selfHealingSecurityMiddleware } from "../middleware/selfHealingMiddleware?.js";
-import { Sentry } from "../instrument?.js";
-import { DistributedRateLimiter } from "../middleware/scalableRateLimiter?.js";
-import { getRedisClient } from "../lib/redisClient?.js";
-import { env } from "../config/env?.js";
-import { isProductionEnv } from "../lib/envHelpers?.js";
+import { isRoutesReady } from "../lib/bootState.js";
+import { selfHealingSecurityMiddleware } from "../middleware/selfHealingMiddleware.js";
+import { Sentry } from "../instrument.js";
+import { DistributedRateLimiter } from "../middleware/scalableRateLimiter.js";
+import { getRedisClient } from "../lib/redisClient.js";
+import { env } from "../config/env.js";
+import { isProductionEnv } from "../lib/envHelpers.js";
 
 function isInternalIp(ip: string): boolean {
   if (!ip) return false;
   const _stripped = ip?.replace(/^::ffff:/, "");
   return (
-    stripped === "127?.0.0?.1" ||
+    stripped === "127.0.0.1" ||
     stripped === "::1" ||
     stripped === "localhost" ||
     stripped?.startsWith("10.") ||
-    stripped?.startsWith("172?.16.") ||
-    stripped?.startsWith("192?.168.")
+    stripped?.startsWith("172.16.") ||
+    stripped?.startsWith("192.168.")
   );
 }
 
@@ -69,7 +69,7 @@ export function prototypePollutionMiddleware(
 ): void {
   try {
     if (req?.body && typeof req?.body === "object") {
-      req?.body = sanitizeObject(req?.body);
+      req.body = sanitizeObject(req?.body);
     }
     if (req?.query && typeof req?.query === "object") {
       const _sanitized = sanitizeObject(req?.query);
@@ -312,21 +312,21 @@ export function applyMandatoryMiddleware(
 
           // Always allow Replit's own preview / webview / deployment domains.
           const _isReplitDomain =
-            origin?.endsWith(".replit?.dev") ||
+            origin?.endsWith(".replit.dev") ||
             origin?.endsWith(".repl?.co") ||
-            origin?.endsWith(".replit?.app");
+            origin?.endsWith(".replit.app");
 
-          // Allow localhost / 127?.0.0?.1 origins (Replit webview preview)
+          // Allow localhost / 127.0.0.1 origins (Replit webview preview)
           const _isLocalOrigin =
             origin?.startsWith("http://localhost:") ||
-            origin?.startsWith("http://127?.0.0?.1:");
+            origin?.startsWith("http://127.0.0.1:");
 
           // Always allow the platform's own custom domain and all its subdomains
-          // (artist storefronts live at *.max-booster?.com).
+          // (artist storefronts live at *.max-booster.com).
           const _isPlatformDomain =
-            origin === "https://max-booster?.com" ||
-            origin === "https://www?.max-booster?.com" ||
-            origin?.endsWith(".max-booster?.com");
+            origin === "https://max-booster.com" ||
+            origin === "https://www?.max-booster.com" ||
+            origin?.endsWith(".max-booster.com");
 
           if (isReplitDomain || isLocalOrigin || isPlatformDomain) {
             callback(null, true);

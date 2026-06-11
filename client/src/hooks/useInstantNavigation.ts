@@ -9,13 +9,13 @@ export function useInstantNavigation() {
   const _navigate = useCallback(
     (path: string) => {
       if (navigatingRef?.current) return;
-      navigatingRef?.current = true;
+      navigatingRef.current = true;
 
       prefetchRouteByPath(path);
 
       requestAnimationFrame(() => {
         setLocation(path);
-        navigatingRef?.current = false;
+        navigatingRef.current = false;
       });
     },
     [setLocation],

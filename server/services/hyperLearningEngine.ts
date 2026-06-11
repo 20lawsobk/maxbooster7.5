@@ -1,8 +1,8 @@
-import { db } from "../db?.js";
+import { db } from "../db.js";
 import { autopilotLearningData } from "@shared/schema";
 import { and, desc, gte, lte, avg, count } from "drizzle-orm";
-import { logger } from "../logger?.js";
-import { autopilotLearningService } from "./autopilotLearningService?.js";
+import { logger } from "../logger.js";
+import { autopilotLearningService } from "./autopilotLearningService.js";
 import { EventEmitter } from "events";
 
 // ── Process-level TTL cache for HyperLearning DB aggregates ─────────────────
@@ -34,8 +34,8 @@ function _hlKey(id: string): string {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _OWNER_LEARNING_RATE = 24?.0; // 24x faster than average human
-const _OWNER_MULTIPLIER = 3?.0; // 3x owner capacity
+const _OWNER_LEARNING_RATE = 24.0; // 24x faster than average human
+const _OWNER_MULTIPLIER = 3.0; // 3x owner capacity
 const _LEARNING_MULTIPLIER = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
 const _HUMAN_ANALYSIS_DIMENSIONS = 5;
 const _HYPER_ANALYSIS_DIMENSIONS =
@@ -43,7 +43,7 @@ const _HYPER_ANALYSIS_DIMENSIONS =
 
 // Hyper A/B testing — 30 simultaneous variates for signal density
 const _AB_MIN_IMPRESSIONS_PER_VARIATE = 30;
-const _AB_SIGNIFICANCE_THRESHOLD = 0?.8;
+const _AB_SIGNIFICANCE_THRESHOLD = 0.8;
 // AI server for CurriculumTrainer / DiffusionTrainer dispatch
 // PEER_TRAINING_NODE env var is always set to MaxCore — localhost fallback
 // would only apply in an isolated dev environment with no env vars at all.
@@ -171,7 +171,7 @@ interface LearningMetrics {
 
 class HyperLearningEngine extends EventEmitter {
   private isRunning: boolean = false;
-  private learningInterval: NodeJS?.Timeout | null = null;
+  private learningInterval: NodeJS.Timeout | null = null;
   private microPatternCache: Map<string, MicroPattern[]> = new Map();
   private crossPlatformModel: CrossPlatformSynthesis | null = null;
   private predictiveModels: Map<string, PredictiveModel> = new Map();
@@ -181,7 +181,7 @@ class HyperLearningEngine extends EventEmitter {
 
   // Baseline interval — Caffeine Mode compresses this dynamically via applyDeadlinePressure()
   private readonly LEARNING_INTERVAL_MS = 5 * 60 * 1000;
-  private readonly MICRO_PATTERN_THRESHOLD = 0?.15;
+  private readonly MICRO_PATTERN_THRESHOLD = 0.15;
 
   // Caffeine Mode — deadline pressure compresses learning cycles so the engine
   // absorbs feedback faster when the autopilot is behind its posting schedule.
@@ -210,7 +210,7 @@ class HyperLearningEngine extends EventEmitter {
 
   async start(): Promise<void> {
     if (this?.isRunning) return;
-    this?.isRunning = true;
+    this.isRunning = true;
 
     logger?.info("🚀 HyperLearning Engine ACTIVATED");
     logger?.info(`   Learning at ${LEARNING_MULTIPLIER}x human capacity`);
@@ -220,7 +220,7 @@ class HyperLearningEngine extends EventEmitter {
 
     await this?.runLearningCycle();
 
-    this?.learningInterval = setInterval(async () => {
+    this.learningInterval = setInterval(async () => {
       await this?.runLearningCycle();
     }, this?.LEARNING_INTERVAL_MS);
 
@@ -229,11 +229,11 @@ class HyperLearningEngine extends EventEmitter {
 
   async stop(): Promise<void> {
     if (!this?.isRunning) return;
-    this?.isRunning = false;
+    this.isRunning = false;
 
     if (this?.learningInterval) {
       clearInterval(this?.learningInterval);
-      this?.learningInterval = null;
+      this.learningInterval = null;
     }
 
     logger?.info("🛑 HyperLearning Engine stopped");
@@ -245,48 +245,48 @@ class HyperLearningEngine extends EventEmitter {
    * far behind schedule the autonomous autopilot is.
    *
    * pressure = postsStillNeeded / hoursRemaining
-   *   > 1?.5  → CRITICAL  → 75-second cycles   (maximum caffeine — all-nighter mode)
-   *   1–1?.5  → HIGH      → 2-minute cycles
-   *   0?.5–1  → MODERATE  → 3?.5-minute cycles
-   *   ≤ 0?.5  → NORMAL    → restored to 5-minute cycles
+   *   > 1.5  → CRITICAL  → 75-second cycles   (maximum caffeine — all-nighter mode)
+   *   1–1.5  → HIGH      → 2-minute cycles
+   *   0.5–1  → MODERATE  → 3.5-minute cycles
+   *   ≤ 0.5  → NORMAL    → restored to 5-minute cycles
    *
    * Only reschedules if the interval target actually changed by more than a small
    * delta, avoiding a flurry of clearInterval calls from minor pressure fluctuations.
    */
   applyDeadlinePressure(pressure: number): void {
     const _prev = this?._pressureLevel;
-    this?._pressureLevel = Math?.max(0, pressure);
+    this._pressureLevel = Math?.max(0, pressure);
 
     let targetMs: number;
-    if (pressure > 1?.5)
+    if (pressure > 1.5)
       targetMs = 75 * 1000; // 75 s — max caffeine
-    else if (pressure > 1?.0)
+    else if (pressure > 1.0)
       targetMs = 2 * 60 * 1000; // 2 min
-    else if (pressure > 0?.5)
-      targetMs = 3?.5 * 60 * 1000; // 3?.5 min
+    else if (pressure > 0.5)
+      targetMs = 3.5 * 60 * 1000; // 3.5 min
     else targetMs = this?.LEARNING_INTERVAL_MS; // 5 min (normal)
 
     // Determine previous target to avoid unnecessary rescheduling
     let prevTargetMs: number;
-    if (prev > 1?.5) prevTargetMs = 75 * 1000;
-    else if (prev > 1?.0) prevTargetMs = 2 * 60 * 1000;
-    else if (prev > 0?.5) prevTargetMs = 3?.5 * 60 * 1000;
+    if (prev > 1.5) prevTargetMs = 75 * 1000;
+    else if (prev > 1.0) prevTargetMs = 2 * 60 * 1000;
+    else if (prev > 0.5) prevTargetMs = 3.5 * 60 * 1000;
     else prevTargetMs = this?.LEARNING_INTERVAL_MS;
 
     if (targetMs === prevTargetMs) return; // no change needed
 
     if (this?.isRunning && this?.learningInterval) {
       clearInterval(this?.learningInterval);
-      this?.learningInterval = setInterval(async () => {
+      this.learningInterval = setInterval(async () => {
         await this?.runLearningCycle();
       }, targetMs);
 
-      if (pressure > 1?.5) {
+      if (pressure > 1.5) {
         logger?.warn(
           `⚡ [CaffeineMode] HyperLearning TURBO → ${(targetMs / 1000).toFixed(0)}s cycles` +
             ` (was ${(prevTargetMs / 1000).toFixed(0)}s) — pressure: ${pressure?.toFixed(2)}`,
         );
-      } else if (pressure > 0?.5) {
+      } else if (pressure > 0.5) {
         logger?.info(
           `☕ [CaffeineMode] HyperLearning accelerated → ${(targetMs / 1000).toFixed(0)}s cycles` +
             ` — pressure: ${pressure?.toFixed(2)}`,
@@ -501,16 +501,16 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 10) {
         const _bucketAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (bucketAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
-        if (Math?.abs(correlation) > 0?.1) {
+        if (Math?.abs(correlation) > 0.1) {
           patterns?.push({
             id: `char_count_${range}`,
             type: "character_count",
             pattern: `Posts with ${range} characters`,
             correlation,
             sampleSize: stats?.count,
-            confidence: Math?.min(0?.95, 0?.5 + stats?.count / 100),
+            confidence: Math?.min(0.95, 0.5 + stats?.count / 100),
             engagementImpact: correlation * 100,
             platformSpecific: false,
             platforms: ["all"],
@@ -554,7 +554,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 10) {
         const _bucketAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (bucketAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `emoji_density_${density}`,
@@ -562,7 +562,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `${density} emojis per 100 characters`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.9, 0?.4 + stats?.count / 80),
+          confidence: Math?.min(0.9, 0.4 + stats?.count / 80),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "twitter", "tiktok"],
@@ -597,9 +597,9 @@ class HyperLearningEngine extends EventEmitter {
 
       if (position === -1) {
         positionKey = "separate";
-      } else if (position < text?.length * 0?.2) {
+      } else if (position < text?.length * 0.2) {
         positionKey = "start";
-      } else if (position > text?.length * 0?.8) {
+      } else if (position > text?.length * 0.8) {
         positionKey = "end";
       } else {
         positionKey = "middle";
@@ -620,7 +620,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 10) {
         const _posAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (posAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (posAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `hashtag_position_${position}`,
@@ -628,7 +628,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `Hashtags at ${position} of post`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.85, 0?.45 + stats?.count / 100),
+          confidence: Math?.min(0.85, 0.45 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "twitter", "linkedin"],
@@ -666,16 +666,16 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 20) {
         const _bucketAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (bucketAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
-        if (Math?.abs(correlation) > 0?.05) {
+        if (Math?.abs(correlation) > 0.05) {
           patterns?.push({
             id: `timing_minute_${minute}`,
             type: "timing_precision",
             pattern: `Posts at minute :${minute?.toString().padStart(2, "0")}`,
             correlation,
             sampleSize: stats?.count,
-            confidence: Math?.min(0?.8, 0?.4 + stats?.count / 150),
+            confidence: Math?.min(0.8, 0.4 + stats?.count / 150),
             engagementImpact: correlation * 100,
             platformSpecific: false,
             platforms: ["all"],
@@ -746,7 +746,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 10) {
         const _hookAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (hookAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (hookAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `hook_${hookType}`,
@@ -754,7 +754,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `${hookType?.replace(/_/g, " ")} hook`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.9, 0?.5 + stats?.count / 80),
+          confidence: Math?.min(0.9, 0.5 + stats?.count / 80),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -792,7 +792,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 15) {
         const _bucketAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (bucketAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `line_breaks_${breaks}`,
@@ -800,7 +800,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `${breaks} line breaks in post`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.85, 0?.4 + stats?.count / 100),
+          confidence: Math?.min(0.85, 0.4 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "linkedin", "threads"],
@@ -847,7 +847,7 @@ class HyperLearningEngine extends EventEmitter {
         if (stats?.count >= 15) {
           const _bucketAvg = stats?.engagement / stats?.count;
           const _correlation =
-            (bucketAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+            (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
           patterns?.push({
             id: `${pType?.name}_${count}`,
@@ -855,7 +855,7 @@ class HyperLearningEngine extends EventEmitter {
             pattern: `${count} ${pType?.name.replace(/_/g, " ")}`,
             correlation,
             sampleSize: stats?.count,
-            confidence: Math?.min(0?.8, 0?.35 + stats?.count / 100),
+            confidence: Math?.min(0.8, 0.35 + stats?.count / 100),
             engagementImpact: correlation * 100,
             platformSpecific: false,
             platforms: ["all"],
@@ -908,7 +908,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 15) {
         const _typeAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (typeAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (typeAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `number_${type}`,
@@ -916,7 +916,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `${type?.replace(/_/g, " ")} in content`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.85, 0?.4 + stats?.count / 100),
+          confidence: Math?.min(0.85, 0.4 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -960,8 +960,8 @@ class HyperLearningEngine extends EventEmitter {
         const _match = text?.match(cta);
         if (match && match?.index !== undefined) {
           const _position = match?.index / textLength;
-          if (position < 0?.25) ctaPosition = "start";
-          else if (position > 0?.75) ctaPosition = "end";
+          if (position < 0.25) ctaPosition = "start";
+          else if (position > 0.75) ctaPosition = "end";
           else ctaPosition = "middle";
           break;
         }
@@ -982,7 +982,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 15) {
         const _posAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (posAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (posAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `cta_${position}`,
@@ -990,7 +990,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `CTA at ${position} of post`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.85, 0?.45 + stats?.count / 100),
+          confidence: Math?.min(0.85, 0.45 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1082,7 +1082,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 15) {
         const _sentAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (sentAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (sentAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `sentiment_${sentiment}`,
@@ -1090,7 +1090,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `${sentiment} sentiment`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.9, 0?.5 + stats?.count / 80),
+          confidence: Math?.min(0.9, 0.5 + stats?.count / 80),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1204,16 +1204,16 @@ class HyperLearningEngine extends EventEmitter {
     for (const wordData of topWords) {
       const _correlation =
         (wordData?.avgEngagement - avgEngagement) /
-        Math?.max(0?.01, avgEngagement);
+        Math?.max(0.01, avgEngagement);
 
-      if (Math?.abs(correlation) > 0?.15) {
+      if (Math?.abs(correlation) > 0.15) {
         patterns?.push({
           id: `word_${wordData?.word}`,
           type: "word_sentiment",
           pattern: `Using word "${wordData?.word}"`,
           correlation,
           sampleSize: wordData?.count,
-          confidence: Math?.min(0?.8, 0?.4 + wordData?.count / 150),
+          confidence: Math?.min(0.8, 0.4 + wordData?.count / 150),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1274,7 +1274,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 20) {
         const _catAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (catAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (catAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `temporal_${category}`,
@@ -1282,7 +1282,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `Posting during ${category?.replace(/_/g, " ")}`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.75, 0?.35 + stats?.count / 150),
+          confidence: Math?.min(0.75, 0.35 + stats?.count / 150),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1318,7 +1318,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 10) {
         const _typeAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (typeAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (typeAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `media_${type}`,
@@ -1326,7 +1326,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `${type?.replace(/_/g, " ")} content`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.9, 0?.5 + stats?.count / 60),
+          confidence: Math?.min(0.9, 0.5 + stats?.count / 60),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "tiktok", "youtube"],
@@ -1354,11 +1354,11 @@ class HyperLearningEngine extends EventEmitter {
       if (total === 0) continue;
 
       let responseType: string;
-      if (comments / total > 0?.3) {
+      if (comments / total > 0.3) {
         responseType = "high_comment_ratio";
-      } else if (shares / total > 0?.2) {
+      } else if (shares / total > 0.2) {
         responseType = "high_share_ratio";
-      } else if (likes / total > 0?.8) {
+      } else if (likes / total > 0.8) {
         responseType = "like_dominant";
       } else {
         responseType = "balanced";
@@ -1379,7 +1379,7 @@ class HyperLearningEngine extends EventEmitter {
       if (stats?.count >= 15) {
         const _typeAvg = stats?.engagement / stats?.count;
         const _correlation =
-          (typeAvg - avgEngagement) / Math?.max(0?.01, avgEngagement);
+          (typeAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
           id: `response_${type}`,
@@ -1387,7 +1387,7 @@ class HyperLearningEngine extends EventEmitter {
           pattern: `Content with ${type?.replace(/_/g, " ")}`,
           correlation,
           sampleSize: stats?.count,
-          confidence: Math?.min(0?.85, 0?.45 + stats?.count / 100),
+          confidence: Math?.min(0.85, 0.45 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1408,10 +1408,10 @@ class HyperLearningEngine extends EventEmitter {
     );
     const _top10Percent = sortedByEngagement?.slice(
       0,
-      Math?.ceil(data?.length * 0?.1),
+      Math?.ceil(data?.length * 0.1),
     );
     const _bottom50Percent = sortedByEngagement?.slice(
-      Math?.ceil(data?.length * 0?.5),
+      Math?.ceil(data?.length * 0.5),
     );
 
     if (top10Percent?.length < 10) return patterns;
@@ -1466,7 +1466,7 @@ class HyperLearningEngine extends EventEmitter {
         const _nonViral = (nonViralCharacteristics as Record<string, unknown>)[
           key
         ];
-        return Math?.abs(viral - nonViral) / Math?.max(0?.1, nonViral) > 0?.3;
+        return Math?.abs(viral - nonViral) / Math?.max(0.1, nonViral) > 0.3;
       },
     );
 
@@ -1478,7 +1478,7 @@ class HyperLearningEngine extends EventEmitter {
         nonViralCharacteristics as Record<string, unknown>
       )[characteristic];
       const _difference =
-        ((viralValue - nonViralValue) / Math?.max(0?.1, nonViralValue)) * 100;
+        ((viralValue - nonViralValue) / Math?.max(0.1, nonViralValue)) * 100;
 
       patterns?.push({
         id: `viral_precursor_${characteristic}`,
@@ -1486,7 +1486,7 @@ class HyperLearningEngine extends EventEmitter {
         pattern: `Viral content ${characteristic?.replace(/([A-Z])/g, " $1").toLowerCase()}: ${viralValue?.toFixed(1)} vs ${nonViralValue?.toFixed(1)}`,
         correlation: difference / 100,
         sampleSize: top10Percent?.length,
-        confidence: Math?.min(0?.9, 0?.6 + top10Percent?.length / 100),
+        confidence: Math?.min(0.9, 0.6 + top10Percent?.length / 100),
         engagementImpact: difference,
         platformSpecific: false,
         platforms: ["all"],
@@ -1569,7 +1569,7 @@ class HyperLearningEngine extends EventEmitter {
           const _avgConfidence =
             patterns?.reduce((s, p) => s + p?.confidence, 0) / patterns?.length;
 
-          if (avgConfidence > 0?.5 && Math?.abs(avgCorrelation) > 0?.1) {
+          if (avgConfidence > 0.5 && Math?.abs(avgCorrelation) > 0.1) {
             universalPatterns?.push({
               id: `universal_${type}`,
               description: `${type?.replace(/_/g, " ")} pattern works across ${platformMap?.size} platforms`,
@@ -1587,7 +1587,7 @@ class HyperLearningEngine extends EventEmitter {
         const _platformPatternList =
           platformPatterns?.get(platform?.platform) || [];
         const _amplifiers = platformPatternList
-          .filter((p) => p?.correlation > 0?.1)
+          .filter((p) => p?.correlation > 0.1)
           .map((p) => p?.engagementImpact);
         platformAmplifiers?.set(platform?.platform, amplifiers);
       }
@@ -1603,7 +1603,7 @@ class HyperLearningEngine extends EventEmitter {
         audienceBehaviorModel: await this?.buildAudienceBehaviorModel(),
       };
 
-      this?.crossPlatformModel = synthesis;
+      this.crossPlatformModel = synthesis;
       this?.learningMetrics.crossPlatformSyntheses++;
 
       return { synthesisCount: universalPatterns?.length, model: synthesis };
@@ -1642,7 +1642,7 @@ class HyperLearningEngine extends EventEmitter {
           // Off-diagonal: cross-influence weight derived from the relative share
           // of dimension j's impact in the overall pattern landscape.
           // This replaces Math?.random() with a deterministic, data-grounded value.
-          row?.push(Math?.min(0?.3, (dimImpacts[j] / totalImpact) * 0?.6));
+          row?.push(Math?.min(0.3, (dimImpacts[j] / totalImpact) * 0.6));
         }
       }
       weights?.push(row);
@@ -1729,10 +1729,10 @@ class HyperLearningEngine extends EventEmitter {
         const _hour = hourData?.hour || 0;
         const _engagement = parseFloat(String(hourData?.avgEngagement) || "0");
 
-        if (engagement > avgEngagement * 1?.2) {
+        if (engagement > avgEngagement * 1.2) {
           if (currentPeak && hour === currentPeak?.end + 1) {
-            currentPeak?.end = hour;
-            currentPeak?.intensity = Math?.max(
+            currentPeak.end = hour;
+            currentPeak.intensity = Math?.max(
               currentPeak?.intensity,
               engagement / avgEngagement,
             );
@@ -1765,17 +1765,17 @@ class HyperLearningEngine extends EventEmitter {
         const _sortedGaps = gaps?.sort((a, b) => a - b);
         const _pct = (p: number) =>
           sortedGaps[Math?.floor(sortedGaps?.length * p)] ?? 0;
-        [0?.25, 0?.5, 0?.75, 0?.9].forEach((p) => {
+        [0.25, 0.5, 0.75, 0.9].forEach((p) => {
           const _v = pct(p);
           if (v > 0) fatigueCycles?.push(v);
         });
       }
 
       // engagementVelocityCurve: derived from the hourly engagement distribution
-      // normalized so the peak hour = 1?.0.  Only include hours with above-mean engagement.
+      // normalized so the peak hour = 1.0.  Only include hours with above-mean engagement.
       const _maxEng = Math?.max(
         ...hourlyData?.map((h) => parseFloat(String(h?.avgEngagement) || "0")),
-        0?.001,
+        0.001,
       );
       const _velocityCurve = hourlyData
         .filter(
@@ -1801,7 +1801,7 @@ class HyperLearningEngine extends EventEmitter {
         _hlGet<any[]>(crossKey) ?? [];
       const viralityThresholds: Record<string, number> = {};
       for (const row of platformData) {
-        const _p90 = parseFloat(String(row?.avgEngagement) || "0") * 1?.5; // approx 90th pct
+        const _p90 = parseFloat(String(row?.avgEngagement) || "0") * 1.5; // approx 90th pct
         if (row?.platform && p90 > 0)
           viralityThresholds[row?.platform] = Math?.round(p90 * 100) / 100;
       }
@@ -1889,9 +1889,9 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     const _globalMean = globalCount > 0 ? globalSum / globalCount : 0;
-    const _baseEngagement = globalMean > 0 ? globalMean : 3?.0; // industry fallback only when no data at all
+    const _baseEngagement = globalMean > 0 ? globalMean : 3.0; // industry fallback only when no data at all
 
-    // Relative boost for each hour: (hourAvg - globalMean) / globalMean, capped ±1?.0
+    // Relative boost for each hour: (hourAvg - globalMean) / globalMean, capped ±1.0
     const _hourBoost = (hour: number): number => {
       const _s = hourSums?.get(hour);
       if (!s || s?.n === 0 || globalMean === 0) return 0;
@@ -1951,12 +1951,12 @@ class HyperLearningEngine extends EventEmitter {
             : 0;
         const _confidence = hasBehavData
           ? Math?.min(
-              0?.92,
-              0?.35 +
-                (slotDataPoints / 50) * 0?.5 +
-                relevantPatterns?.length * 0?.05,
+              0.92,
+              0.35 +
+                (slotDataPoints / 50) * 0.5 +
+                relevantPatterns?.length * 0.05,
             )
-          : Math?.min(0?.5, 0?.2 + relevantPatterns?.length * 0?.05);
+          : Math?.min(0.5, 0.2 + relevantPatterns?.length * 0.05);
 
         predictions?.push({
           scenario: { hour, dayOfWeek },
@@ -1971,9 +1971,9 @@ class HyperLearningEngine extends EventEmitter {
     // hour×day slots have at least one real observation?
     const _coveredSlots = engVelocity?.length;
     const _coverageRatio = Math?.min(1, coveredSlots / 168);
-    const _patternBonus = Math?.min(0?.15, timingPatterns?.length * 0?.01);
+    const _patternBonus = Math?.min(0.15, timingPatterns?.length * 0.01);
     const _accuracy =
-      Math?.round((0?.35 + coverageRatio * 0?.5 + patternBonus) * 100) / 100;
+      Math?.round((0.35 + coverageRatio * 0.5 + patternBonus) * 100) / 100;
 
     return {
       type: "timing",
@@ -2054,7 +2054,7 @@ class HyperLearningEngine extends EventEmitter {
           contentPatterns?.length
         : 0;
     const _accuracy =
-      Math?.round((0?.3 + patternCoverage * 0?.35 + avgPatternConf * 0?.25) * 100) /
+      Math?.round((0.3 + patternCoverage * 0.35 + avgPatternConf * 0.25) * 100) /
       100;
 
     return {
@@ -2088,7 +2088,7 @@ class HyperLearningEngine extends EventEmitter {
           },
           predictedEngagement:
             ((timing?.predictedEngagement + content?.predictedEngagement) / 2) *
-            1?.1,
+            1.1,
           confidence: (timing?.confidence + content?.confidence) / 2,
           factors: [...timing?.factors, ...content?.factors],
         });
@@ -2206,7 +2206,7 @@ class HyperLearningEngine extends EventEmitter {
       // Insights = combos that beat the mean by ≥15% and have ≥5 posts (statistically meaningful)
       const _insights = benchmarkData?.filter(
         (r: Record<string, unknown>) =>
-          parseFloat(String(r?.avgEngagement) || "0") > overallMean * 1?.15 &&
+          parseFloat(String(r?.avgEngagement) || "0") > overallMean * 1.15 &&
           (r?.postCount ?? 0) >= 5,
       );
 
@@ -2255,9 +2255,9 @@ class HyperLearningEngine extends EventEmitter {
       const _historicalAvg =
         parseFloat(String(olderData[0]?.avgEngagement) || "0") || recentAvg;
       const _trendDirection =
-        recentAvg > historicalAvg * 1?.1
+        recentAvg > historicalAvg * 1.1
           ? "improving"
-          : recentAvg < historicalAvg * 0?.9
+          : recentAvg < historicalAvg * 0.9
             ? "declining"
             : "stable";
 
@@ -2266,9 +2266,9 @@ class HyperLearningEngine extends EventEmitter {
         type: "timing_precision",
         pattern: `Engagement trend: ${trendDirection} (${((recentAvg / historicalAvg - 1) * 100).toFixed(1)}% change)`,
         correlation:
-          (recentAvg - historicalAvg) / Math?.max(0?.01, historicalAvg),
+          (recentAvg - historicalAvg) / Math?.max(0.01, historicalAvg),
         sampleSize: recentData?.length,
-        confidence: 0?.7,
+        confidence: 0.7,
         engagementImpact: (recentAvg / historicalAvg - 1) * 100,
         platformSpecific: false,
         platforms: ["all"],
@@ -2300,8 +2300,8 @@ class HyperLearningEngine extends EventEmitter {
         const _runnerUp = sortedVariants[1];
 
         if (winner?.statisticalSignificance >= AB_SIGNIFICANCE_THRESHOLD) {
-          test?.winner = winner?.id;
-          test?.confidenceLevel = winner?.statisticalSignificance;
+          test.winner = winner?.id;
+          test.confidenceLevel = winner?.statisticalSignificance;
 
           const _upliftPct =
             runnerUp && runnerUp?.engagementRate > 0
@@ -2408,7 +2408,7 @@ class HyperLearningEngine extends EventEmitter {
     try {
       const _topMicroPatterns = [...this?.microPatternCache.values()]
         .flat()
-        .filter((p) => p?.confidence > 0?.7 && p?.engagementImpact > 10)
+        .filter((p) => p?.confidence > 0.7 && p?.engagementImpact > 10)
         .sort((a, b) => b?.engagementImpact - a?.engagementImpact)
         .slice(0, 10);
 
@@ -2433,14 +2433,14 @@ class HyperLearningEngine extends EventEmitter {
     abTests: number,
     adaptations: number,
   ): number {
-    const _microPatternHours = microPatterns * 0?.5;
+    const _microPatternHours = microPatterns * 0.5;
     const _synthesisHours = syntheses * 2;
-    const _predictionHours = predictions * 0?.25;
-    const _behavioralHours = behavioral * 0?.1;
+    const _predictionHours = predictions * 0.25;
+    const _behavioralHours = behavioral * 0.1;
     const _competitiveHours = competitive * 1;
-    const _emergentHours = emergent * 0?.3;
+    const _emergentHours = emergent * 0.3;
     const _abTestHours = abTests * 4;
-    const _adaptationHours = adaptations * 0?.2;
+    const _adaptationHours = adaptations * 0.2;
 
     return (
       microPatternHours +
@@ -2468,7 +2468,7 @@ class HyperLearningEngine extends EventEmitter {
     const insights: HyperInsight[] = [];
 
     for (const pattern of microPatterns
-      .filter((p) => p?.confidence > 0?.7)
+      .filter((p) => p?.confidence > 0.7)
       .slice(0, 10)) {
       insights?.push({
         id: `micro_${pattern?.id}`,
@@ -2477,14 +2477,14 @@ class HyperLearningEngine extends EventEmitter {
         description: `This pattern affects engagement by ${pattern?.engagementImpact.toFixed(1)}% with ${(pattern?.confidence * 100).toFixed(0)}% confidence`,
         confidence: pattern?.confidence,
         impact: Math?.abs(pattern?.engagementImpact),
-        actionability: pattern?.engagementImpact > 0 ? 0?.9 : 0?.7,
+        actionability: pattern?.engagementImpact > 0 ? 0.9 : 0.7,
         automatedActionAvailable: true,
         suggestedAction:
           pattern?.engagementImpact > 0
             ? `Apply this pattern to future content`
             : `Avoid this pattern in future content`,
         data: pattern,
-        humanEquivalentHours: 0?.5,
+        humanEquivalentHours: 0.5,
         actualProcessingMs: 50,
       });
     }
@@ -2499,9 +2499,9 @@ class HyperLearningEngine extends EventEmitter {
           category: "cross_platform",
           title: `Universal Pattern: ${universal?.description}`,
           description: `This pattern works across ${universal?.applicablePlatforms.length} platforms with ${(universal?.effectiveness * 100).toFixed(0)}% effectiveness`,
-          confidence: 0?.8,
+          confidence: 0.8,
           impact: universal?.effectiveness * 100,
-          actionability: 0?.95,
+          actionability: 0.95,
           automatedActionAvailable: true,
           suggestedAction: `Apply this pattern across all connected platforms`,
           data: universal,
@@ -2521,11 +2521,11 @@ class HyperLearningEngine extends EventEmitter {
           description: `Predicted engagement: ${topPrediction?.predictedEngagement.toFixed(2)}% with ${(topPrediction?.confidence * 100).toFixed(0)}% confidence`,
           confidence: topPrediction?.confidence,
           impact: topPrediction?.predictedEngagement,
-          actionability: 0?.85,
+          actionability: 0.85,
           automatedActionAvailable: true,
           suggestedAction: `Apply optimal ${model?.type} configuration`,
           data: topPrediction,
-          humanEquivalentHours: 0?.25,
+          humanEquivalentHours: 0.25,
           actualProcessingMs: 30,
         });
       }
@@ -2541,7 +2541,7 @@ class HyperLearningEngine extends EventEmitter {
 
     const _topMicroPatterns = [...this?.microPatternCache.values()]
       .flat()
-      .filter((p) => p?.confidence > 0?.6)
+      .filter((p) => p?.confidence > 0.6)
       .sort(
         (a, b) => Math?.abs(b?.engagementImpact) - Math?.abs(a?.engagementImpact),
       )
@@ -2555,14 +2555,14 @@ class HyperLearningEngine extends EventEmitter {
         description: `${pattern?.engagementImpact > 0 ? "Boosts" : "Reduces"} engagement by ${Math?.abs(pattern?.engagementImpact).toFixed(1)}%`,
         confidence: pattern?.confidence,
         impact: Math?.abs(pattern?.engagementImpact),
-        actionability: 0?.8,
+        actionability: 0.8,
         automatedActionAvailable: true,
         suggestedAction:
           pattern?.engagementImpact > 0
             ? `Apply this pattern more often`
             : `Reduce usage of this pattern`,
         data: pattern,
-        humanEquivalentHours: 0?.5,
+        humanEquivalentHours: 0.5,
         actualProcessingMs: 50,
       });
     }
@@ -2574,9 +2574,9 @@ class HyperLearningEngine extends EventEmitter {
           category: "cross_platform",
           title: universal?.description,
           description: `Works across ${universal?.applicablePlatforms.length} platforms`,
-          confidence: 0?.75,
+          confidence: 0.75,
           impact: universal?.effectiveness * 100,
-          actionability: 0?.9,
+          actionability: 0.9,
           automatedActionAvailable: true,
           data: universal,
           humanEquivalentHours: 2,
@@ -2595,11 +2595,11 @@ class HyperLearningEngine extends EventEmitter {
           description: `Predicted ${prediction?.predictedEngagement.toFixed(1)}% engagement`,
           confidence: prediction?.confidence,
           impact: prediction?.predictedEngagement,
-          actionability: 0?.85,
+          actionability: 0.85,
           automatedActionAvailable: true,
           suggestedAction: `Use this ${type} configuration`,
           data: prediction,
-          humanEquivalentHours: 0?.25,
+          humanEquivalentHours: 0.25,
           actualProcessingMs: 25,
         });
       }
@@ -2623,7 +2623,7 @@ class HyperLearningEngine extends EventEmitter {
     const _timingModel = this?.predictiveModels.get("timing");
     const _contentModel = this?.predictiveModels.get("content");
 
-    let optimalTiming = { hour: 18, dayOfWeek: 3, confidence: 0?.5 };
+    let optimalTiming = { hour: 18, dayOfWeek: 3, confidence: 0.5 };
     if (timingModel && timingModel?.predictions.length > 0) {
       const _top = timingModel?.predictions[0];
       optimalTiming = {

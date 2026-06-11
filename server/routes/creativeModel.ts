@@ -13,7 +13,7 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import {
   generateCreativePackage,
   planCreative,
@@ -22,7 +22,7 @@ import {
   type CreativeBrief,
   type CreativePlan,
   type EngagementScores,
-} from "../services/creativeModelService?.js";
+} from "../services/creativeModelService.js";
 
 const _router = Router();
 
@@ -166,9 +166,9 @@ router?.post("/feedback", async (req: Request, res: Response) => {
   }
 
   const scores: EngagementScores = {
-    watchTimeScore: Number(rawScores?.watchTimeScore ?? 0?.7),
-    hookStrength: Number(rawScores?.hookStrength ?? 0?.7),
-    conversionScore: Number(rawScores?.conversionScore ?? 0?.7),
+    watchTimeScore: Number(rawScores?.watchTimeScore ?? 0.7),
+    hookStrength: Number(rawScores?.hookStrength ?? 0.7),
+    conversionScore: Number(rawScores?.conversionScore ?? 0.7),
   };
 
   try {

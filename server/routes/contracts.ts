@@ -5,7 +5,7 @@ import {
 } from "../services/contractTemplateService";
 import { invoiceService } from "../services/invoiceService";
 import { taxFormService, TaxpayerInfo } from "../services/taxFormService";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import crypto from "crypto";
 import { db } from "../db";
 import {
@@ -14,7 +14,7 @@ import {
   splitSheets,
 } from "@shared/schema";
 import { eq, and, or, desc, notInArray, sql } from "drizzle-orm";
-import { requireAuth } from "../middleware/auth?.js";
+import { requireAuth } from "../middleware/auth.js";
 
 interface SplitParticipant {
   userId: string;
@@ -1121,7 +1121,7 @@ router?.post("/split-sheets/create", async (req: Request, res: Response) => {
       (sum: number, p: SplitParticipant) => sum + p?.splitPercentage,
       0,
     );
-    if (Math?.abs(totalSplit - 100) > 0?.01) {
+    if (Math?.abs(totalSplit - 100) > 0.01) {
       return res
         .status(400)
         .json({ error: "Split percentages must total 100%" });
@@ -1330,7 +1330,7 @@ router?.post(
           sum + (p?.splitPercentage || 0),
         0,
       );
-      const _isValid = Math?.abs(totalSplit - 100) <= 0?.01;
+      const _isValid = Math?.abs(totalSplit - 100) <= 0.01;
 
       return res?.json({
         valid: isValid,

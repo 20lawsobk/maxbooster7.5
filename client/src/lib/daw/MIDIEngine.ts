@@ -103,9 +103,9 @@ export class MIDIEngine {
   private midiInitialized = false;
 
   constructor(transport: TransportEngine, timeline: TimelineEngine) {
-    this?.transport = transport;
-    this?.timeline = timeline;
-    this?.state = {
+    this.transport = transport;
+    this.timeline = timeline;
+    this.state = {
       clips: [],
       selectedClipId: null,
       selectedNoteIds: [],
@@ -113,7 +113,7 @@ export class MIDIEngine {
       inputChannel: 0,
       outputChannel: 0,
       defaultVelocity: 100,
-      defaultDuration: 0?.25,
+      defaultDuration: 0.25,
       keyboardOctave: 4,
       previewEnabled: true,
       stepRecordEnabled: false,
@@ -128,16 +128,16 @@ export class MIDIEngine {
    */
   async initialize(): Promise<void> {
     if (this?.midiInitialized) return;
-    this?.midiInitialized = true;
+    this.midiInitialized = true;
     await this?.initWebMIDI();
   }
 
   private async initWebMIDI(): Promise<void> {
     if ("requestMIDIAccess" in navigator) {
       try {
-        this?.midiAccess = await navigator?.requestMIDIAccess({ sysex: false });
+        this.midiAccess = await navigator?.requestMIDIAccess({ sysex: false });
         this?.midiAccess.inputs?.forEach((input) => {
-          input?.onmidimessage = this?.handleMIDIMessage.bind(this);
+          input.onmidimessage = this?.handleMIDIMessage.bind(this);
         });
         localStorage?.setItem("midi_access_prompted", "1");
       } catch (err) {
@@ -208,7 +208,7 @@ export class MIDIEngine {
         pitch: event?.data1,
         velocity: event?.data2,
         startBeat: relativeBeat,
-        durationBeats: 0?.25,
+        durationBeats: 0.25,
         channel: event?.channel,
         selected: false,
         muted: false,
@@ -217,7 +217,7 @@ export class MIDIEngine {
     } else if (event?.type === "note-off") {
       const _note = this?.activeNotes.get(event?.data1);
       if (note) {
-        note?.durationBeats = Math?.max(0?.0625, relativeBeat - note?.startBeat);
+        note.durationBeats = Math?.max(0.0625, relativeBeat - note?.startBeat);
         clip?.notes.push(note);
         this?.activeNotes.delete(event?.data1);
         this?.notify();
@@ -359,8 +359,8 @@ export class MIDIEngine {
 
     const _note = clip?.notes.find((n) => n?.id === noteId);
     if (note) {
-      note?.pitch = Math?.max(0, Math?.min(127, newPitch));
-      note?.startBeat = Math?.max(0, newStartBeat);
+      note.pitch = Math?.max(0, Math?.min(127, newPitch));
+      note.startBeat = Math?.max(0, newStartBeat);
       clip?.notes.sort((a, b) => a?.startBeat - b?.startBeat);
       this?.notify();
     }
@@ -372,7 +372,7 @@ export class MIDIEngine {
 
     const _note = clip?.notes.find((n) => n?.id === noteId);
     if (note) {
-      note?.durationBeats = Math?.max(0?.0625, newDuration);
+      note.durationBeats = Math?.max(0.0625, newDuration);
       this?.notify();
     }
   }
@@ -383,7 +383,7 @@ export class MIDIEngine {
 
     const _note = clip?.notes.find((n) => n?.id === noteId);
     if (note) {
-      note?.velocity = Math?.max(1, Math?.min(127, velocity));
+      note.velocity = Math?.max(1, Math?.min(127, velocity));
       this?.notify();
     }
   }
@@ -396,7 +396,7 @@ export class MIDIEngine {
     );
     if (clip) {
       for (const note of clip?.notes) {
-        note?.selected = noteIds?.includes(note?.id);
+        note.selected = noteIds?.includes(note?.id);
       }
     }
 
@@ -409,7 +409,7 @@ export class MIDIEngine {
 
     this?.state.selectedNoteIds = clip?.notes.map((n) => n?.id);
     for (const note of clip?.notes) {
-      note?.selected = true;
+      note.selected = true;
     }
     this?.notify();
   }
@@ -429,17 +429,17 @@ export class MIDIEngine {
 
       if (options?.humanize > 0) {
         const _randomOffset =
-          (Math?.random() - 0?.5) * 2 * options?.humanize * options?.value;
+          (Math?.random() - 0.5) * 2 * options?.humanize * options?.value;
         offset += randomOffset;
       }
 
-      note?.startBeat = Math?.max(0, note?.startBeat + offset);
+      note.startBeat = Math?.max(0, note?.startBeat + offset);
 
       if (!options?.startOnly) {
         const _endBeat = note?.startBeat + note?.durationBeats;
         const _quantizedEnd =
           Math?.round(endBeat / options?.value) * options?.value;
-        note?.durationBeats = Math?.max(0?.0625, quantizedEnd - note?.startBeat);
+        note.durationBeats = Math?.max(0.0625, quantizedEnd - note?.startBeat);
       }
     }
 
@@ -458,11 +458,11 @@ export class MIDIEngine {
       selectedNotes?.length > 0 ? selectedNotes : clip?.notes;
 
     for (const note of notesToHumanize) {
-      const _timeOffset = (Math?.random() - 0?.5) * amount * 0?.1;
-      const _velocityOffset = Math?.round((Math?.random() - 0?.5) * amount * 20);
+      const _timeOffset = (Math?.random() - 0.5) * amount * 0.1;
+      const _velocityOffset = Math?.round((Math?.random() - 0.5) * amount * 20);
 
-      note?.startBeat = Math?.max(0, note?.startBeat + timeOffset);
-      note?.velocity = Math?.max(
+      note.startBeat = Math?.max(0, note?.startBeat + timeOffset);
+      note.velocity = Math?.max(
         1,
         Math?.min(127, note?.velocity + velocityOffset),
       );
@@ -483,28 +483,28 @@ export class MIDIEngine {
     for (const note of notesToEdit) {
       switch (options?.mode) {
         case "set":
-          note?.velocity = options?.value;
+          note.velocity = options?.value;
           break;
         case "add":
           note?.velocity += options?.value;
           break;
         case "scale":
-          note?.velocity = Math?.round(note?.velocity * (options?.value / 100));
+          note.velocity = Math?.round(note?.velocity * (options?.value / 100));
           break;
         case "compress": {
           const _min = options?.min ?? 60;
           const _max = options?.max ?? 100;
           const _range = max - min;
-          note?.velocity = Math?.round(min + (note?.velocity / 127) * range);
+          note.velocity = Math?.round(min + (note?.velocity / 127) * range);
           break;
         }
         case "humanize": {
-          const _offset = Math?.round((Math?.random() - 0?.5) * options?.value);
+          const _offset = Math?.round((Math?.random() - 0.5) * options?.value);
           note?.velocity += offset;
           break;
         }
       }
-      note?.velocity = Math?.max(1, Math?.min(127, note?.velocity));
+      note.velocity = Math?.max(1, Math?.min(127, note?.velocity));
     }
 
     this?.notify();
@@ -521,7 +521,7 @@ export class MIDIEngine {
       selectedNotes?.length > 0 ? selectedNotes : clip?.notes;
 
     for (const note of notesToTranspose) {
-      note?.pitch = Math?.max(0, Math?.min(127, note?.pitch + semitones));
+      note.pitch = Math?.max(0, Math?.min(127, note?.pitch + semitones));
     }
 
     this?.notify();
@@ -544,8 +544,8 @@ export class MIDIEngine {
       const _gap =
         nextNote?.startBeat -
         (currentNote?.startBeat + currentNote?.durationBeats);
-      if (gap > 0 && gap < 0?.5) {
-        currentNote?.durationBeats = nextNote?.startBeat - currentNote?.startBeat;
+      if (gap > 0 && gap < 0.5) {
+        currentNote.durationBeats = nextNote?.startBeat - currentNote?.startBeat;
       }
     }
 
@@ -641,7 +641,7 @@ export class MIDIEngine {
   }
 
   deserialize(state: MIDIEngineState): void {
-    this?.state = structuredClone(state);
+    this.state = structuredClone(state);
     this?.notify();
   }
 }

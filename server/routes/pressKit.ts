@@ -3,7 +3,7 @@ import { db } from "../db";
 import { pressKits, insertPressKitSchema } from "../../shared/schema";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth";
-import { logger } from "../logger?.js";
+import { logger } from "../logger.js";
 import { z } from "zod";
 
 const _router = Router();

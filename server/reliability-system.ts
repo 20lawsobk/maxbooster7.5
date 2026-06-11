@@ -2,12 +2,12 @@
 // Real implementation that actually delivers continuous uptime
 import { EventEmitter } from "events";
 import { reliabilityCoordinator } from "./reliability/reliability-coordinator";
-import { logger } from "./logger?.js";
+import { logger } from "./logger.js";
 
 interface SystemMetrics {
   uptime: number;
-  memory: NodeJS?.MemoryUsage;
-  cpu: NodeJS?.CpuUsage;
+  memory: NodeJS.MemoryUsage;
+  cpu: NodeJS.CpuUsage;
   connections: number;
   requestCount: number;
   errorCount: number;
@@ -17,8 +17,8 @@ interface SystemMetrics {
 
 class MaxBooster247System extends EventEmitter {
   private metrics: SystemMetrics;
-  private healthCheckInterval: NodeJS?.Timeout | null = null;
-  private memoryCheckInterval: NodeJS?.Timeout | null = null;
+  private healthCheckInterval: NodeJS.Timeout | null = null;
+  private memoryCheckInterval: NodeJS.Timeout | null = null;
   private maxRestartAttempts = 3;
   private startTime = Date?.now();
   private isActive = false;
@@ -27,7 +27,7 @@ class MaxBooster247System extends EventEmitter {
   constructor() {
     super();
 
-    this?.metrics = {
+    this.metrics = {
       uptime: 0,
       memory: process?.memoryUsage(),
       cpu: process?.cpuUsage(),
@@ -46,8 +46,8 @@ class MaxBooster247System extends EventEmitter {
 
     logger?.info("🚀 Max Booster 24/7/365 System Starting...");
 
-    this?.isActive = true;
-    this?.startTime = Date?.now();
+    this.isActive = true;
+    this.startTime = Date?.now();
 
     // Start reliability coordinator
     await reliabilityCoordinator?.start();
@@ -101,7 +101,7 @@ class MaxBooster247System extends EventEmitter {
 
   private startHealthMonitoring(): void {
     // Health check every 30 seconds
-    this?.healthCheckInterval = setInterval(() => {
+    this.healthCheckInterval = setInterval(() => {
       this?.performHealthCheck();
     }, 30000);
 
@@ -110,7 +110,7 @@ class MaxBooster247System extends EventEmitter {
 
   private startMemoryManagement(): void {
     // Memory check every 2 minutes
-    this?.memoryCheckInterval = setInterval(() => {
+    this.memoryCheckInterval = setInterval(() => {
       this?.performMemoryCheck();
     }, 120000);
 
@@ -196,14 +196,14 @@ class MaxBooster247System extends EventEmitter {
 
   // ─── Daily self-diagnostic ──────────────────────────────────────────────────
 
-  private _dailyTimer: NodeJS?.Timeout | null = null;
+  private _dailyTimer: NodeJS.Timeout | null = null;
   private _peakMemoryMB = 0;
   private _peakMemorySince = Date?.now();
 
   private scheduleDailyDiagnostic(): void {
     // Fire once per day — staggered so two cluster workers don't log simultaneously.
     const _jitter = Math?.floor(Math?.random() * 30_000);
-    this?._dailyTimer = setInterval(
+    this._dailyTimer = setInterval(
       () => {
         this?.runDailyDiagnostic();
       },
@@ -224,7 +224,7 @@ class MaxBooster247System extends EventEmitter {
   private async resetSuppressedPatterns(): Promise<void> {
     try {
       const { chainErrorAutoFixer } = await import(
-        "./services/chainErrorAutoFixer?.js"
+        "./services/chainErrorAutoFixer.js"
       );
       const _status = chainErrorAutoFixer?.getStatus();
       let reset = 0;
@@ -254,7 +254,7 @@ class MaxBooster247System extends EventEmitter {
 
       // Track peak memory
       if (heapMB > this?._peakMemoryMB) {
-        this?._peakMemoryMB = heapMB;
+        this._peakMemoryMB = heapMB;
       }
 
       const _successRate =
@@ -264,7 +264,7 @@ class MaxBooster247System extends EventEmitter {
                 this?.metrics.requestCount) *
               100
             ).toFixed(2)
-          : "100?.00";
+          : "100.00";
 
       logger?.info(
         `[ReliabilitySystem] ── Daily Diagnostic ──────────────────────\n` +
@@ -292,7 +292,7 @@ class MaxBooster247System extends EventEmitter {
 
       // Keep only last 1000 response times for rolling average
       if (this?.responseTimes.length > 1000) {
-        this?.responseTimes = this?.responseTimes.slice(-1000);
+        this.responseTimes = this?.responseTimes.slice(-1000);
       }
 
       // Log slow requests
@@ -362,7 +362,7 @@ class MaxBooster247System extends EventEmitter {
       status: health?.status === "running" ? "healthy" : "unhealthy",
       checks: {
         memory: health?.performance.memoryMB < 1000 ? "pass" : "warn",
-        uptime: health?.uptime.hours > 0?.01 ? "pass" : "warn",
+        uptime: health?.uptime.hours > 0.01 ? "pass" : "warn",
         errors: health?.performance.successRate > 95 ? "pass" : "fail",
       },
       info: {

@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import { requireAuth } from "../middleware/auth?.js";
-import { requirePremium } from "../middleware/requirePremium?.js";
-import { logger } from "../logger?.js";
-import { socialFanbaseService } from "../services/socialFanbaseService?.js";
-import { organicCompoundingService } from "../services/organicCompoundingService?.js";
-import { bridgeInsightsService } from "../services/bridgeInsightsService?.js";
-import { db } from "../db?.js";
+import { requireAuth } from "../middleware/auth.js";
+import { requirePremium } from "../middleware/requirePremium.js";
+import { logger } from "../logger.js";
+import { socialFanbaseService } from "../services/socialFanbaseService.js";
+import { organicCompoundingService } from "../services/organicCompoundingService.js";
+import { bridgeInsightsService } from "../services/bridgeInsightsService.js";
+import { db } from "../db.js";
 import { fanSegments } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
