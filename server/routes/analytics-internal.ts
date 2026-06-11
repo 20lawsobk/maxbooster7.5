@@ -251,7 +251,7 @@ router.get("/ai/forecast-revenue", async (req: Request, res: Response) => {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     let currentMRR = 0;
-    let growthRate = 0;
+    let _growthRate = 0;
 
     if (isAdmin) {
       // Admin: Calculate platform-wide MRR from actual data

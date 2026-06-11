@@ -179,7 +179,8 @@ let out = '';
 (async () => {
   for (const f of files) {
     try {
-      await esbuild.transform(fs.readFileSync(f,'utf8'), {loader:'ts',target:'node18'});
+      const loader = f.endsWith('.tsx') ? 'tsx' : 'ts';
+      await esbuild.transform(fs.readFileSync(f,'utf8'), {loader,target:'node18'});
     } catch(e) {
       if (e.errors) for (const er of e.errors) {
         const loc = er.location;
@@ -530,7 +531,7 @@ if [[ "$PHASE" == "all" || "$PHASE" == "2" ]]; then
 
     # Store the regex in a variable: [[:space:]] inside an inline =~ pattern can
     # produce a ]] token that confuses bash's [[...]] tokenizer on some versions.
-    _tsc_err_re='^([^(]+\.tsx?)\(([0-9]+),[0-9]+\)[[:space:]]*error[[:space:]]+(TS[0-9]+):[[:space:]]*(.*)'
+    _tsc_err_re='^([^(]+\.tsx?)\(([0-9]+),[0-9]+\):[[:space:]]*error[[:space:]]+(TS[0-9]+):[[:space:]]*(.*)'
     while IFS= read -r line; do
       # Format:  path/file.ts(LINE,COL): error TSxxxx: message
       if [[ "$line" =~ $_tsc_err_re ]]; then

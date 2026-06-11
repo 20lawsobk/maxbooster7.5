@@ -107,7 +107,7 @@ const SAFE_AXIOS_AGENTS = {
 
 // Optional sharp support with graceful fallback
 let sharpModule: typeof import("sharp") | null = null;
-let sharpAvailable = false;
+let _sharpAvailable = false;
 
 async function getSharp() {
   if (sharpModule !== null) return sharpModule;

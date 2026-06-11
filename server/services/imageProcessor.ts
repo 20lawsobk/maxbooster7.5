@@ -6,7 +6,7 @@ import {
 
 // Optional sharp support with graceful fallback
 let sharpModule: Record<string, unknown> | null = null;
-let sharpAvailable = false;
+let _sharpAvailable = false;
 
 async function getSharp() {
   if (sharpModule !== null) return sharpModule;

@@ -37,7 +37,7 @@ import {
 let unifiedAIController:
   | typeof import("../services/unifiedAIController.js").unifiedAIController
   | null = null;
-let contentQualityPipeline:
+let _contentQualityPipeline:
   | typeof import("../services/contentQualityPipeline.js").contentQualityPipeline
   | null = null;
 let competitorBenchmarkService:

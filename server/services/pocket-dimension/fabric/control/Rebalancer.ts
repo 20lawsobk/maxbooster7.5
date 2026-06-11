@@ -50,7 +50,7 @@ export class Rebalancer {
       }
 
       for (const hotNode of hot) {
-        let migratedBytes = 0;
+        let _migratedBytes = 0;
 
         const candidateCold = cold?.filter(
           (n) => n?.costTier === hotNode?.costTier || n?.costTier === "archive",

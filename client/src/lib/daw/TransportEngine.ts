@@ -124,7 +124,7 @@ export class TransportEngine {
   }
 
   secondsToMusical(seconds: number): MusicalPosition {
-    let remainingSeconds = seconds;
+    let _remainingSeconds = seconds;
     let totalBeats = 0;
     let currentBar = 1;
     let currentBeat = 1;

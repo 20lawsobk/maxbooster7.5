@@ -13,7 +13,7 @@ import { isProductionEnv } from "./lib/envHelpers.js";
 const execAsync = promisify(exec);
 
 !isProductionEnv();
-let hasLoggedWarning = false;
+let _hasLoggedWarning = false;
 
 // Scalability Optimization System
 export class ScalabilitySystem {

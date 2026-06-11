@@ -2414,7 +2414,7 @@ class HyperLearningEngine extends EventEmitter {
         .sort((a, b) => b?.engagementImpact - a?.engagementImpact)
         .slice(0, 10);
 
-      for (const pattern of topMicroPatterns) {
+      for (const _pattern of topMicroPatterns) {
         adaptations++;
       }
 

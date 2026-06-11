@@ -58,7 +58,6 @@ interface EssentiaInstance {
   MFCC(...args: unknown[]): { mfcc: Float32Array; bands: Float32Array };
 }
 
-
 const NOTE_NAMES = [
   "C",
   "C#",

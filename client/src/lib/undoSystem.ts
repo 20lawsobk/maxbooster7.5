@@ -245,7 +245,7 @@ export class UndoStack {
     if (targetIndex === -1) return;
 
     const actionsToUndo = this?.history.slice(targetIndex + 1).reverse();
-    for (const action of actionsToUndo) {
+    for (const _action of actionsToUndo) {
       await this?.undo();
     }
   }
