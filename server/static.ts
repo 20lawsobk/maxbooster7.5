@@ -90,9 +90,9 @@ async function getStorefrontSlugForSubdomain(
 
     // Fallback: storefront_domains table for managed_subdomain rows created via the
     // "Find Domain" UI flow before the storefront?.subdomain field was backfilled.
-    // Always use max-booster?.com as the platform base domain regardless of
+    // Always use max-booster.com as the platform base domain regardless of
     // the BASE_DOMAIN env var (which can be set to a dev/preview value).
-    const baseDomainFqdn = `${subdomain}.max-booster?.com`;
+    const baseDomainFqdn = `${subdomain}.max-booster.com`;
     const [domRow] = await db
       .select({ slug: storefronts.slug })
       .from(storefrontDomains)
@@ -199,7 +199,7 @@ async function getMetaForPath(
         result = {
           title: `${beat?.title} - Beat on Max Booster Marketplace`,
           description: `${beat?.title} by ${beat?.sellerName || "Producer"} | ${metadata?.genre || "Beat"} | ${metadata?.bpm ? metadata?.bpm + " BPM" : ""} | $${beat?.price || "0"} | License and download on Max Booster`,
-          image: beat.artworkUrl || `${SITE_URL}/og-image?.png`,
+          image: beat.artworkUrl || `${SITE_URL}/og-image.png`,
           url: `${SITE_URL}/marketplace/beat/${beatId}`,
         };
       }
@@ -221,7 +221,7 @@ async function getMetaForPath(
               store?.bio ||
               `Browse beats and music from ${store?.displayName || store?.slug} on Max Booster Marketplace`,
             image:
-              store?.bannerUrl || store?.avatarUrl || `${SITE_URL}/og-image?.png`,
+              store?.bannerUrl || store?.avatarUrl || `${SITE_URL}/og-image.png`,
             url: `${SITE_URL}/storefront/${slug}`,
           };
         }
@@ -233,7 +233,7 @@ async function getMetaForPath(
         title: "Beat Marketplace - Max Booster",
         description:
           "Browse and license beats from top producers. Find the perfect beat for your next hit with advanced AI-powered discovery, instant licensing, and secure payments.",
-        image: `${SITE_URL}/og-image?.png`,
+        image: `${SITE_URL}/og-image.png`,
         url: `${SITE_URL}/marketplace`,
       };
     }
