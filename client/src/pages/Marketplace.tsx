@@ -1353,7 +1353,7 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/beats"] });
       queryClient.invalidateQueries({
         predicate: (q) => {
-          const k = q.queryKey.[0];
+          const k = q.queryKey[0];
           return (
             typeof k === "string" &&
             (k === "producer-beats" ||
@@ -1387,7 +1387,7 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/beats"] });
       queryClient.invalidateQueries({
         predicate: (q) => {
-          const k = q.queryKey.[0];
+          const k = q.queryKey[0];
           return (
             typeof k === "string" &&
             (k === "producer-beats" ||
