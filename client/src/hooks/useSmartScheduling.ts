@@ -53,7 +53,7 @@ export function useSmartScheduling(
   platform: string = "all",
   contentType: string = "post",
 ) {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   const {
     data: scheduleData,
@@ -70,121 +70,121 @@ export function useSmartScheduling(
     staleTime: 30 * 60 * 1000,
   });
 
-  const applyScheduleMutation = useMutation({
+  const _applyScheduleMutation = useMutation({
     mutationFn: async (suggestion: ScheduleSuggestion) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/personalization/apply-schedule",
         {
-          suggestionId: suggestion.id,
+          suggestionId: suggestion?.id,
           platform,
         },
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/smart-schedule"],
       });
     },
   });
 
-  const bestTime = useMemo(() => {
+  const _bestTime = useMemo(() => {
     return scheduleData?.bestOverallTime || null;
   }, [scheduleData]);
 
-  const topSuggestions = useMemo(() => {
+  const _topSuggestions = useMemo(() => {
     if (!scheduleData?.suggestions) return [];
-    return [...scheduleData.suggestions]
-      .sort((a, b) => b.confidence - a.confidence)
+    return [...scheduleData?.suggestions]
+      .sort((a, b) => b?.confidence - a?.confidence)
       .slice(0, 5);
   }, [scheduleData]);
 
-  const weeklyHeatmap = useMemo(() => {
+  const _weeklyHeatmap = useMemo(() => {
     return scheduleData?.weeklyPattern || {};
   }, [scheduleData]);
 
-  const audienceTimezones = useMemo(() => {
+  const _audienceTimezones = useMemo(() => {
     return scheduleData?.audienceTimezones || [];
   }, [scheduleData]);
 
-  const primaryTimezone = useMemo(() => {
-    if (!audienceTimezones.length) return null;
-    return audienceTimezones.reduce((prev, current) =>
-      prev.percentage > current.percentage ? prev : current,
+  const _primaryTimezone = useMemo(() => {
+    if (!audienceTimezones?.length) return null;
+    return audienceTimezones?.reduce((prev, current) =>
+      prev?.percentage > current?.percentage ? prev : current,
     );
   }, [audienceTimezones]);
 
-  const getSuggestionsForDay = useCallback(
+  const _getSuggestionsForDay = useCallback(
     (day: DayOfWeek): ScheduleSuggestion[] => {
       if (!scheduleData?.suggestions) return [];
-      return scheduleData.suggestions.filter((s) => s.dayOfWeek === day);
+      return scheduleData?.suggestions.filter((s) => s?.dayOfWeek === day);
     },
     [scheduleData],
   );
 
-  const getSuggestionsForPlatform = useCallback(
+  const _getSuggestionsForPlatform = useCallback(
     (platformName: string): ScheduleSuggestion[] => {
       if (!scheduleData?.suggestions) return [];
-      return scheduleData.suggestions.filter((s) =>
-        s.platforms.includes(platformName),
+      return scheduleData?.suggestions.filter((s) =>
+        s?.platforms.includes(platformName),
       );
     },
     [scheduleData],
   );
 
-  const getBestTimeForPlatform = useCallback(
+  const _getBestTimeForPlatform = useCallback(
     (platformName: string): ScheduleSuggestion | null => {
-      const platformSuggestions = getSuggestionsForPlatform(platformName);
-      if (!platformSuggestions.length) return null;
-      return platformSuggestions.reduce((prev, current) =>
-        prev.confidence > current.confidence ? prev : current,
+      const _platformSuggestions = getSuggestionsForPlatform(platformName);
+      if (!platformSuggestions?.length) return null;
+      return platformSuggestions?.reduce((prev, current) =>
+        prev?.confidence > current?.confidence ? prev : current,
       );
     },
     [getSuggestionsForPlatform],
   );
 
-  const getEngagementScore = useCallback(
+  const _getEngagementScore = useCallback(
     (day: DayOfWeek, hour: number): number => {
       if (!engagementPatterns) return 0.5;
-      const patterns = engagementPatterns.filter(
-        (p) => p.dayOfWeek === day && p.hour === hour,
+      const _patterns = engagementPatterns?.filter(
+        (p) => p?.dayOfWeek === day && p?.hour === hour,
       );
-      if (!patterns.length) return 0.5;
+      if (!patterns?.length) return 0.5;
       return (
-        patterns.reduce((sum, p) => sum + p.avgEngagement, 0) / patterns.length
+        patterns?.reduce((sum, p) => sum + p?.avgEngagement, 0) / patterns?.length
       );
     },
     [engagementPatterns],
   );
 
-  const getOptimalTimeRange = useCallback(
+  const _getOptimalTimeRange = useCallback(
     (day: DayOfWeek): { start: string; end: string } | null => {
-      const daySuggestions = getSuggestionsForDay(day);
-      if (!daySuggestions.length) return null;
+      const _daySuggestions = getSuggestionsForDay(day);
+      if (!daySuggestions?.length) return null;
 
-      const times = daySuggestions.map((s) =>
-        parseInt(s.specificTime.split(":")[0]),
+      const _times = daySuggestions?.map((s) =>
+        parseInt(s?.specificTime.split(":")[0]),
       );
-      const minHour = Math.min(...times);
-      const maxHour = Math.max(...times);
+      const _minHour = Math?.min(...times);
+      const _maxHour = Math?.max(...times);
 
       return {
-        start: `${minHour.toString().padStart(2, "0")}:00`,
-        end: `${maxHour.toString().padStart(2, "0")}:00`,
+        start: `${minHour?.toString().padStart(2, "0")}:00`,
+        end: `${maxHour?.toString().padStart(2, "0")}:00`,
       };
     },
     [getSuggestionsForDay],
   );
 
-  const applySchedule = useCallback(
+  const _applySchedule = useCallback(
     async (suggestion: ScheduleSuggestion) => {
-      await applyScheduleMutation.mutateAsync(suggestion);
+      await applyScheduleMutation?.mutateAsync(suggestion);
     },
     [applyScheduleMutation],
   );
 
-  const refreshSuggestions = useCallback(() => {
+  const _refreshSuggestions = useCallback(() => {
     refetch();
   }, [refetch]);
 
@@ -205,7 +205,7 @@ export function useSmartScheduling(
     getOptimalTimeRange,
     applySchedule,
     refreshSuggestions,
-    isApplying: applyScheduleMutation.isPending,
+    isApplying: applyScheduleMutation?.isPending,
     lastUpdated: scheduleData?.lastUpdated,
   };
 }
@@ -213,7 +213,7 @@ export function useSmartScheduling(
 export function useOptimalPostingTime(platform?: string) {
   const { bestTime, getBestTimeForPlatform, isLoading } = useSmartScheduling();
 
-  const optimalTime = useMemo(() => {
+  const _optimalTime = useMemo(() => {
     if (platform) {
       return getBestTimeForPlatform(platform);
     }
@@ -224,7 +224,7 @@ export function useOptimalPostingTime(platform?: string) {
     optimalTime,
     isLoading,
     formattedTime: optimalTime
-      ? `${optimalTime.dayOfWeek.charAt(0).toUpperCase() + optimalTime.dayOfWeek.slice(1)} at ${optimalTime.specificTime}`
+      ? `${optimalTime?.dayOfWeek.charAt(0).toUpperCase() + optimalTime?.dayOfWeek.slice(1)} at ${optimalTime?.specificTime}`
       : null,
     confidence: optimalTime?.confidence || 0,
   };
@@ -238,8 +238,8 @@ export function useAudienceTimezones() {
     timezones: audienceTimezones,
     primaryTimezone,
     isLoading,
-    timezoneCount: audienceTimezones.length,
-    hasInternationalAudience: audienceTimezones.length > 1,
+    timezoneCount: audienceTimezones?.length,
+    hasInternationalAudience: audienceTimezones?.length > 1,
   };
 }
 

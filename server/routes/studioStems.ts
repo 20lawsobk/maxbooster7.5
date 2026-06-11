@@ -19,12 +19,12 @@ import { db } from "../db.js";
 import { projects } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const router = Router();
+const _router = Router();
 
-const startExportSchema = z.object({
-  trackIds: z.array(z.string()).default([]),
-  exportName: z.string().max(255).optional(),
-  format: z.enum(["wav", "flac", "mp3", "aac"]).default("wav"),
+const _startExportSchema = z?.object({
+  trackIds: z?.array(z?.string()).default([]),
+  exportName: z?.string().max(255).optional(),
+  format: z?.enum(["wav", "flac", "mp3", "aac"]).default("wav"),
   sampleRate: z
     .number()
     .refine((val) => [44100, 48000, 96000, 192000].includes(val), {
@@ -37,60 +37,60 @@ const startExportSchema = z.object({
       message: "Bit depth must be 16, 24, or 32",
     })
     .default(24),
-  bitrate: z.enum(["128k", "192k", "256k", "320k"]).default("320k"),
-  normalize: z.boolean().default(false),
-  normalizationType: z.enum(["peak", "rms", "lufs", "none"]).default("none"),
-  normalizeTargetLevel: z.number().min(-60).max(0).default(-14),
-  includeEffects: z.boolean().default(true),
-  includeMasterBus: z.boolean().default(false),
+  bitrate: z?.enum(["128k", "192k", "256k", "320k"]).default("320k"),
+  normalize: z?.boolean().default(false),
+  normalizationType: z?.enum(["peak", "rms", "lufs", "none"]).default("none"),
+  normalizeTargetLevel: z?.number().min(-60).max(0).default(-14),
+  includeEffects: z?.boolean().default(true),
+  includeMasterBus: z?.boolean().default(false),
 });
 
-const listExportsSchema = z.object({
-  limit: z.coerce.number().min(1).max(100).default(20),
-  offset: z.coerce.number().min(0).default(0),
+const _listExportsSchema = z?.object({
+  limit: z?.coerce.number().min(1).max(100).default(20),
+  offset: z?.coerce.number().min(0).default(0),
 });
 
 async function verifyProjectOwnership(
   projectId: string,
   userId: string,
 ): Promise<boolean> {
-  const project = await db.query.projects.findFirst({
-    where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
+  const _project = await db?.query.projects?.findFirst({
+    where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
   });
   return !!project;
 }
 
-router.post(
+router?.post(
   "/projects/:projectId/stems/export",
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId } = req.params;
-      const userId = req.user!.id;
+      const { projectId } = req?.params;
+      const _userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+        return res?.status(404).json({ error: "Project not found" });
       }
 
-      const data = startExportSchema.parse(req.body);
+      const _data = startExportSchema?.parse(req?.body);
 
-      const result = await stemExportService.startStemExport({
+      const _result = await stemExportService?.startStemExport({
         projectId,
         userId,
-        trackIds: data.trackIds,
-        exportName: data.exportName,
-        format: data.format,
-        sampleRate: data.sampleRate as Record<string, unknown>,
-        bitDepth: data.bitDepth as Record<string, unknown>,
-        bitrate: data.bitrate,
-        normalize: data.normalize,
-        normalizationType: data.normalizationType,
-        normalizeTargetLevel: data.normalizeTargetLevel,
-        includeEffects: data.includeEffects,
-        includeMasterBus: data.includeMasterBus,
+        trackIds: data?.trackIds,
+        exportName: data?.exportName,
+        format: data?.format,
+        sampleRate: data?.sampleRate as Record<string, unknown>,
+        bitDepth: data?.bitDepth as Record<string, unknown>,
+        bitrate: data?.bitrate,
+        normalize: data?.normalize,
+        normalizationType: data?.normalizationType,
+        normalizeTargetLevel: data?.normalizeTargetLevel,
+        includeEffects: data?.includeEffects,
+        includeMasterBus: data?.includeMasterBus,
       });
 
-      res.status(202).json({
+      res?.status(202).json({
         success: true,
         message: "Stem export started",
         ...result,
@@ -99,213 +99,213 @@ router.post(
       setImmediate(async () => {
         try {
           const [proj] = await db
-            .select({ title: projects.title })
+            .select({ title: projects?.title })
             .from(projects)
-            .where(eq(projects.id, projectId))
+            .where(eq(projects?.id, projectId))
             .limit(1);
-          const trackCount = data.trackIds?.length || 0;
-          await notificationService.sendStemExportStartedNotification(
+          const _trackCount = data?.trackIds?.length || 0;
+          await notificationService?.sendStemExportStartedNotification(
             userId,
             proj?.title || "Untitled Project",
             trackCount,
           );
         } catch (err) {
-          logger.warn({ err: err }, "[Studio] stem export notification error:");
+          logger?.warn({ err: err }, "[Studio] stem export notification error:");
         }
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error starting stem export:");
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
+      logger?.warn({ err: error }, "Error starting stem export:");
+      if (error instanceof z?.ZodError) {
+        return res?.status(400).json({
           error: "Invalid export options",
-          details: error.issues,
+          details: error?.issues,
         });
       }
-      res.status(500).json({ error: "Failed to start stem export" });
+      res?.status(500).json({ error: "Failed to start stem export" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/projects/:projectId/stems/status/:exportId",
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req.params;
-      const userId = req.user!.id;
+      const { projectId, exportId } = req?.params;
+      const _userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+        return res?.status(404).json({ error: "Project not found" });
       }
 
-      const status = await stemExportService.getExportStatus(exportId, userId);
+      const _status = await stemExportService?.getExportStatus(exportId, userId);
 
-      res.json({
+      res?.json({
         success: true,
         ...status,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching export status:");
-      if (error.message === "Export not found") {
-        return res.status(404).json({ error: "Export not found" });
+      logger?.warn({ err: error }, "Error fetching export status:");
+      if (error?.message === "Export not found") {
+        return res?.status(404).json({ error: "Export not found" });
       }
-      res.status(500).json({ error: "Failed to fetch export status" });
+      res?.status(500).json({ error: "Failed to fetch export status" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/projects/:projectId/stems/download/:exportId",
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req.params;
-      const userId = req.user!.id;
+      const { projectId, exportId } = req?.params;
+      const _userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+        return res?.status(404).json({ error: "Project not found" });
       }
 
-      const download = await stemExportService.getExportDownload(
+      const _download = await stemExportService?.getExportDownload(
         exportId,
         userId,
       );
 
       if (
-        download.downloadUrl.startsWith("/") ||
-        download.downloadUrl.startsWith("./")
+        download?.downloadUrl.startsWith("/") ||
+        download?.downloadUrl.startsWith("./")
       ) {
-        return res.download(download.downloadUrl, download.fileName);
+        return res?.download(download?.downloadUrl, download?.fileName);
       }
 
-      res.json({
+      res?.json({
         success: true,
-        downloadUrl: download.downloadUrl,
-        fileName: download.fileName,
-        fileSize: download.fileSize,
+        downloadUrl: download?.downloadUrl,
+        fileName: download?.fileName,
+        fileSize: download?.fileSize,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error getting export download:");
-      if (error.message === "Export not found") {
-        return res.status(404).json({ error: "Export not found" });
+      logger?.warn({ err: error }, "Error getting export download:");
+      if (error?.message === "Export not found") {
+        return res?.status(404).json({ error: "Export not found" });
       }
-      if (error.message === "Export is not ready for download") {
+      if (error?.message === "Export is not ready for download") {
         return res
           .status(400)
           .json({ error: "Export is not ready for download" });
       }
-      res.status(500).json({ error: "Failed to get export download" });
+      res?.status(500).json({ error: "Failed to get export download" });
     }
   },
 );
 
-router.get("/projects/:projectId/stems/list", requireAuth, async (req, res) => {
+router?.get("/projects/:projectId/stems/list", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req.params;
-    const userId = req.user!.id;
+    const { projectId } = req?.params;
+    const _userId = req?.user!.id;
 
     if (!(await verifyProjectOwnership(projectId, userId))) {
-      return res.status(404).json({ error: "Project not found" });
+      return res?.status(404).json({ error: "Project not found" });
     }
 
-    const queryParams = listExportsSchema.parse(req.query);
+    const _queryParams = listExportsSchema?.parse(req?.query);
 
-    const result = await stemExportService.listExports(projectId, userId, {
-      limit: queryParams.limit,
-      offset: queryParams.offset,
+    const _result = await stemExportService?.listExports(projectId, userId, {
+      limit: queryParams?.limit,
+      offset: queryParams?.offset,
     });
 
-    res.json({
+    res?.json({
       success: true,
-      exports: result.exports,
-      total: result.total,
-      limit: queryParams.limit,
-      offset: queryParams.offset,
+      exports: result?.exports,
+      total: result?.total,
+      limit: queryParams?.limit,
+      offset: queryParams?.offset,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error listing exports:");
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
+    logger?.warn({ err: error }, "Error listing exports:");
+    if (error instanceof z?.ZodError) {
+      return res?.status(400).json({
         error: "Invalid query parameters",
-        details: error.issues,
+        details: error?.issues,
       });
     }
-    res.status(500).json({ error: "Failed to list exports" });
+    res?.status(500).json({ error: "Failed to list exports" });
   }
 });
 
-router.delete(
+router?.delete(
   "/projects/:projectId/stems/:exportId",
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req.params;
-      const userId = req.user!.id;
+      const { projectId, exportId } = req?.params;
+      const _userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+        return res?.status(404).json({ error: "Project not found" });
       }
 
-      await stemExportService.deleteExport(exportId, userId);
+      await stemExportService?.deleteExport(exportId, userId);
 
-      res.json({
+      res?.json({
         success: true,
         message: "Export deleted successfully",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error deleting export:");
-      if (error.message === "Export not found") {
-        return res.status(404).json({ error: "Export not found" });
+      logger?.warn({ err: error }, "Error deleting export:");
+      if (error?.message === "Export not found") {
+        return res?.status(404).json({ error: "Export not found" });
       }
-      res.status(500).json({ error: "Failed to delete export" });
+      res?.status(500).json({ error: "Failed to delete export" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/projects/:projectId/stems/:exportId/cancel",
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req.params;
-      const userId = req.user!.id;
+      const { projectId, exportId } = req?.params;
+      const _userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+        return res?.status(404).json({ error: "Project not found" });
       }
 
-      await stemExportService.cancelExport(exportId, userId);
+      await stemExportService?.cancelExport(exportId, userId);
 
-      res.json({
+      res?.json({
         success: true,
         message: "Export cancelled",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error cancelling export:");
-      if (error.message === "Export not found") {
-        return res.status(404).json({ error: "Export not found" });
+      logger?.warn({ err: error }, "Error cancelling export:");
+      if (error?.message === "Export not found") {
+        return res?.status(404).json({ error: "Export not found" });
       }
-      if (error.message?.includes("Cannot cancel")) {
-        return res.status(400).json({ error: "Invalid stem export request" });
+      if (error?.message?.includes("Cannot cancel")) {
+        return res?.status(400).json({ error: "Invalid stem export request" });
       }
-      res.status(500).json({ error: "Failed to cancel export" });
+      res?.status(500).json({ error: "Failed to cancel export" });
     }
   },
 );
 
-router.get(
+router?.get(
   "/projects/:projectId/stems/formats",
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId } = req.params;
-      const userId = req.user!.id;
+      const { projectId } = req?.params;
+      const _userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res.status(404).json({ error: "Project not found" });
+        return res?.status(404).json({ error: "Project not found" });
       }
 
-      res.json({
+      res?.json({
         success: true,
         formats: [
           {
@@ -385,8 +385,8 @@ router.get(
         ],
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching export formats:");
-      res.status(500).json({ error: "Failed to fetch export formats" });
+      logger?.warn({ err: error }, "Error fetching export formats:");
+      res?.status(500).json({ error: "Failed to fetch export formats" });
     }
   },
 );

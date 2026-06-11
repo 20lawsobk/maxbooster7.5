@@ -57,14 +57,14 @@ interface CreateCampaignData {
 
 export function useAdvertisement() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   // Fetch ad campaigns
   const { data: ads = [], isLoading: isLoadingAds } = useQuery({
     queryKey: ["/api/advertising/campaigns"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/advertising/campaigns");
-      return response.json();
+      const _response = await apiRequest("GET", "/api/advertising/campaigns");
+      return response?.json();
     },
   });
 
@@ -72,20 +72,20 @@ export function useAdvertisement() {
   const { data: aiInsights, isLoading: isLoadingInsights } = useQuery({
     queryKey: ["/api/advertising/ai-insights"],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/advertising/ai-insights");
-      return response.json();
+      const _response = await apiRequest("GET", "/api/advertising/ai-insights");
+      return response?.json();
     },
   });
 
   // Create campaign mutation
-  const createCampaignMutation = useMutation({
+  const _createCampaignMutation = useMutation({
     mutationFn: async (campaignData: CreateCampaignData) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/advertising/campaigns",
         campaignData,
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
       toast({
@@ -93,21 +93,21 @@ export function useAdvertisement() {
         description:
           "Your revolutionary AI advertising campaign has been activated successfully.",
       });
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/advertising/campaigns"],
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to Create Campaign",
-        description: error.message,
+        description: error?.message,
         variant: "destructive",
       });
     },
   });
 
   // Update campaign mutation
-  const updateAdMutation = useMutation({
+  const _updateAdMutation = useMutation({
     mutationFn: async ({
       id,
       updates,
@@ -115,60 +115,60 @@ export function useAdvertisement() {
       id: string;
       updates: Partial<AdCampaign>;
     }) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "PUT",
         `/api/advertising/campaigns/${id}`,
         updates,
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
       toast({
         title: "Campaign Updated",
         description: "Your campaign has been updated successfully.",
       });
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/advertising/campaigns"],
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to Update Campaign",
-        description: error.message,
+        description: error?.message,
         variant: "destructive",
       });
     },
   });
 
   // Delete campaign mutation
-  const deleteAdMutation = useMutation({
+  const _deleteAdMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "DELETE",
         `/api/advertising/campaigns/${id}`,
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
       toast({
         title: "Campaign Deleted",
         description: "Your campaign has been deleted successfully.",
       });
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/advertising/campaigns"],
       });
     },
     onError: (error: Error) => {
       toast({
         title: "Failed to Delete Campaign",
-        description: error.message,
+        description: error?.message,
         variant: "destructive",
       });
     },
   });
 
   // Generate AI content mutation
-  const generateAIContentMutation = useMutation({
+  const _generateAIContentMutation = useMutation({
     mutationFn: async ({
       musicData,
       targetAudience,
@@ -176,7 +176,7 @@ export function useAdvertisement() {
       musicData: Record<string, unknown>;
       targetAudience: Record<string, unknown>;
     }) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/advertising/generate-content",
         {
@@ -184,7 +184,7 @@ export function useAdvertisement() {
           targetAudience,
         },
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
       toast({
@@ -195,14 +195,14 @@ export function useAdvertisement() {
     onError: (error: Error) => {
       toast({
         title: "Failed to Generate AI Content",
-        description: error.message,
+        description: error?.message,
         variant: "destructive",
       });
     },
   });
 
   // Optimize campaign mutation
-  const optimizeCampaignMutation = useMutation({
+  const _optimizeCampaignMutation = useMutation({
     mutationFn: async ({
       campaignId,
       performance,
@@ -210,7 +210,7 @@ export function useAdvertisement() {
       campaignId: string;
       performance: Record<string, unknown>;
     }) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/advertising/optimize-campaign",
         {
@@ -218,7 +218,7 @@ export function useAdvertisement() {
           performance,
         },
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
       toast({
@@ -229,31 +229,31 @@ export function useAdvertisement() {
     onError: (error: Error) => {
       toast({
         title: "Failed to Optimize Campaign",
-        description: error.message,
+        description: error?.message,
         variant: "destructive",
       });
     },
   });
 
   // Helper functions
-  const createCampaign = (campaignData: CreateCampaignData) => {
-    return createCampaignMutation.mutate(campaignData);
+  const _createCampaign = (campaignData: CreateCampaignData) => {
+    return createCampaignMutation?.mutate(campaignData);
   };
 
-  const updateAd = (id: string, updates: Partial<AdCampaign>) => {
-    return updateAdMutation.mutate({ id, updates });
+  const _updateAd = (id: string, updates: Partial<AdCampaign>) => {
+    return updateAdMutation?.mutate({ id, updates });
   };
 
-  const deleteAd = (id: string) => {
-    return deleteAdMutation.mutate(id);
+  const _deleteAd = (id: string) => {
+    return deleteAdMutation?.mutate(id);
   };
 
-  const generateAIContent = (musicData: unknown, targetAudience: unknown) => {
-    return generateAIContentMutation.mutate({ musicData, targetAudience });
+  const _generateAIContent = (musicData: unknown, targetAudience: unknown) => {
+    return generateAIContentMutation?.mutate({ musicData, targetAudience });
   };
 
-  const optimizeCampaign = (campaignId: string, performance: unknown) => {
-    return optimizeCampaignMutation.mutate({ campaignId, performance });
+  const _optimizeCampaign = (campaignId: string, performance: unknown) => {
+    return optimizeCampaignMutation?.mutate({ campaignId, performance });
   };
 
   return {
@@ -273,10 +273,10 @@ export function useAdvertisement() {
     optimizeCampaign,
 
     // Mutation states
-    isCreating: createCampaignMutation.isPending,
-    isUpdating: updateAdMutation.isPending,
-    isDeleting: deleteAdMutation.isPending,
-    isGeneratingAI: generateAIContentMutation.isPending,
-    isOptimizing: optimizeCampaignMutation.isPending,
+    isCreating: createCampaignMutation?.isPending,
+    isUpdating: updateAdMutation?.isPending,
+    isDeleting: deleteAdMutation?.isPending,
+    isGeneratingAI: generateAIContentMutation?.isPending,
+    isOptimizing: optimizeCampaignMutation?.isPending,
   };
 }

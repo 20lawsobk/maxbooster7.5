@@ -55,8 +55,8 @@ interface OfflineQueueDB extends DBSchema {
   };
 }
 
-const DB_NAME = "max-booster-offline-queue";
-const DB_VERSION = 1;
+const _DB_NAME = "max-booster-offline-queue";
+const _DB_VERSION = 1;
 
 const PRIORITY_ORDER: Record<ActionPriority, number> = {
   critical: 0,
@@ -88,29 +88,29 @@ class OfflineQueue {
   private isInitialized = false;
 
   async init(): Promise<void> {
-    if (this.isInitialized) return;
+    if (this?.isInitialized) return;
 
     try {
       this.db = await openDB<OfflineQueueDB>(DB_NAME, DB_VERSION, {
         upgrade(db) {
-          if (!db.objectStoreNames.contains("actions")) {
-            const actionsStore = db.createObjectStore("actions", {
+          if (!db?.objectStoreNames.contains("actions")) {
+            const _actionsStore = db?.createObjectStore("actions", {
               keyPath: "id",
             });
-            actionsStore.createIndex("by-status", "status");
-            actionsStore.createIndex("by-priority", "priority");
-            actionsStore.createIndex("by-type", "type");
-            actionsStore.createIndex("by-created", "createdAt");
+            actionsStore?.createIndex("by-status", "status");
+            actionsStore?.createIndex("by-priority", "priority");
+            actionsStore?.createIndex("by-type", "type");
+            actionsStore?.createIndex("by-created", "createdAt");
           }
 
-          if (!db.objectStoreNames.contains("conflicts")) {
-            db.createObjectStore("conflicts", { keyPath: "actionId" });
+          if (!db?.objectStoreNames.contains("conflicts")) {
+            db?.createObjectStore("conflicts", { keyPath: "actionId" });
           }
         },
       });
       this.isInitialized = true;
     } catch (error) {
-      logger.info(
+      logger?.info(
         "[OfflineQueue] IndexedDB unavailable — offline action queue disabled for this session",
         error,
       );
@@ -119,38 +119,38 @@ class OfflineQueue {
   }
 
   private async ensureDb(): Promise<IDBPDatabase<OfflineQueueDB>> {
-    if (!this.db) {
-      await this.init();
+    if (!this?.db) {
+      await this?.init();
     }
-    return this.db!;
+    return this?.db!;
   }
 
   private emit(event: QueueEvent): void {
-    const listeners = this.listeners.get(event.type);
+    const _listeners = this?.listeners.get(event?.type);
     if (listeners) {
-      listeners.forEach((listener) => {
+      listeners?.forEach((listener) => {
         try {
           listener(event);
         } catch (error) {
-          logger.error("[OfflineQueue] Event listener error:", error);
+          logger?.error("[OfflineQueue] Event listener error:", error);
         }
       });
     }
   }
 
   on(eventType: QueueEventType, listener: QueueEventListener): () => void {
-    if (!this.listeners.has(eventType)) {
-      this.listeners.set(eventType, new Set());
+    if (!this?.listeners.has(eventType)) {
+      this?.listeners.set(eventType, new Set());
     }
-    this.listeners.get(eventType)!.add(listener);
+    this?.listeners.get(eventType)!.add(listener);
 
     return () => {
-      this.listeners.get(eventType)?.delete(listener);
+      this?.listeners.get(eventType)?.delete(listener);
     };
   }
 
   off(eventType: QueueEventType, listener: QueueEventListener): void {
-    this.listeners.get(eventType)?.delete(listener);
+    this?.listeners.get(eventType)?.delete(listener);
   }
 
   async enqueue<T = unknown>(
@@ -164,54 +164,54 @@ class OfflineQueue {
       dependencies?: string[];
     } = {},
   ): Promise<QueuedAction<T>> {
-    const db = await this.ensureDb();
+    const _db = await this?.ensureDb();
 
     const action: QueuedAction<T> = {
-      id: `${type}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+      id: `${type}-${Date?.now()}-${Math?.random().toString(36).substring(2, 9)}`,
       type,
       payload,
-      priority: options.priority ?? "normal",
+      priority: options?.priority ?? "normal",
       status: "pending",
-      conflictStrategy: options.conflictStrategy ?? "local-wins",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      conflictStrategy: options?.conflictStrategy ?? "local-wins",
+      createdAt: Date?.now(),
+      updatedAt: Date?.now(),
       retryCount: 0,
-      maxRetries: options.maxRetries ?? 3,
-      metadata: options.metadata,
-      dependencies: options.dependencies,
+      maxRetries: options?.maxRetries ?? 3,
+      metadata: options?.metadata,
+      dependencies: options?.dependencies,
       localVersion: 1,
     };
 
-    await db.put("actions", action as QueuedAction);
+    await db?.put("actions", action as QueuedAction);
 
-    this.emit({ type: "action-added", action: action as QueuedAction });
+    this?.emit({ type: "action-added", action: action as QueuedAction });
 
     return action;
   }
 
   async dequeue(id: string): Promise<void> {
-    const db = await this.ensureDb();
-    await db.delete("actions", id);
-    this.emit({ type: "action-removed", actionId: id });
+    const _db = await this?.ensureDb();
+    await db?.delete("actions", id);
+    this?.emit({ type: "action-removed", actionId: id });
   }
 
   async updateAction<T = unknown>(
     id: string,
     updates: Partial<QueuedAction<T>>,
   ): Promise<QueuedAction<T> | null> {
-    const db = await this.ensureDb();
-    const existing = await db.get("actions", id);
+    const _db = await this?.ensureDb();
+    const _existing = await db?.get("actions", id);
 
     if (!existing) return null;
 
     const updated: QueuedAction<T> = {
       ...(existing as QueuedAction<T>),
       ...updates,
-      updatedAt: Date.now(),
+      updatedAt: Date?.now(),
     };
 
-    await db.put("actions", updated as QueuedAction);
-    this.emit({ type: "action-updated", action: updated as QueuedAction });
+    await db?.put("actions", updated as QueuedAction);
+    this?.emit({ type: "action-updated", action: updated as QueuedAction });
 
     return updated;
   }
@@ -219,60 +219,60 @@ class OfflineQueue {
   async getAction<T = unknown>(
     id: string,
   ): Promise<QueuedAction<T> | undefined> {
-    const db = await this.ensureDb();
-    return db.get("actions", id) as Promise<QueuedAction<T> | undefined>;
+    const _db = await this?.ensureDb();
+    return db?.get("actions", id) as Promise<QueuedAction<T> | undefined>;
   }
 
   async getAllPending(): Promise<QueuedAction[]> {
-    const db = await this.ensureDb();
-    const actions = await db.getAllFromIndex("actions", "by-status", "pending");
+    const _db = await this?.ensureDb();
+    const _actions = await db?.getAllFromIndex("actions", "by-status", "pending");
 
-    return actions.sort((a, b) => {
-      const priorityDiff =
-        PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+    return actions?.sort((a, b) => {
+      const _priorityDiff =
+        PRIORITY_ORDER[a?.priority] - PRIORITY_ORDER[b?.priority];
       if (priorityDiff !== 0) return priorityDiff;
-      return a.createdAt - b.createdAt;
+      return a?.createdAt - b?.createdAt;
     });
   }
 
   async getByStatus(status: ActionStatus): Promise<QueuedAction[]> {
-    const db = await this.ensureDb();
-    return db.getAllFromIndex("actions", "by-status", status);
+    const _db = await this?.ensureDb();
+    return db?.getAllFromIndex("actions", "by-status", status);
   }
 
   async getByType(type: string): Promise<QueuedAction[]> {
-    const db = await this.ensureDb();
-    return db.getAllFromIndex("actions", "by-type", type);
+    const _db = await this?.ensureDb();
+    return db?.getAllFromIndex("actions", "by-type", type);
   }
 
   async getPendingCount(): Promise<number> {
-    const db = await this.ensureDb();
-    return db.countFromIndex("actions", "by-status", "pending");
+    const _db = await this?.ensureDb();
+    return db?.countFromIndex("actions", "by-status", "pending");
   }
 
   async getTotalCount(): Promise<number> {
-    const db = await this.ensureDb();
-    return db.count("actions");
+    const _db = await this?.ensureDb();
+    return db?.count("actions");
   }
 
   async markSyncing(id: string): Promise<void> {
-    await this.updateAction(id, { status: "syncing" });
-    this.emit({ type: "sync-started", actionId: id });
+    await this?.updateAction(id, { status: "syncing" });
+    this?.emit({ type: "sync-started", actionId: id });
   }
 
   async markCompleted(id: string): Promise<void> {
-    await this.updateAction(id, { status: "completed" });
-    this.emit({ type: "sync-completed", actionId: id });
+    await this?.updateAction(id, { status: "completed" });
+    this?.emit({ type: "sync-completed", actionId: id });
   }
 
   async markFailed(id: string, error: string): Promise<void> {
-    const action = await this.getAction(id);
+    const _action = await this?.getAction(id);
     if (!action) return;
 
-    const newRetryCount = action.retryCount + 1;
-    const shouldRetry = newRetryCount < action.maxRetries;
+    const _newRetryCount = action?.retryCount + 1;
+    const _shouldRetry = newRetryCount < action?.maxRetries;
 
-    await this.updateAction(id, {
+    await this?.updateAction(id, {
       status: shouldRetry ? "pending" : "failed",
       retryCount: newRetryCount,
       error,
@@ -284,19 +284,19 @@ class OfflineQueue {
     localData: unknown,
     serverData: unknown,
   ): Promise<void> {
-    const db = await this.ensureDb();
+    const _db = await this?.ensureDb();
 
-    await db.put("conflicts", {
+    await db?.put("conflicts", {
       actionId,
       localData,
       serverData,
-      detectedAt: Date.now(),
+      detectedAt: Date?.now(),
       resolved: false,
     });
 
-    await this.updateAction(actionId, { status: "conflict" });
+    await this?.updateAction(actionId, { status: "conflict" });
 
-    this.emit({
+    this?.emit({
       type: "conflict-detected",
       actionId,
       conflict: { localData, serverData },
@@ -311,9 +311,9 @@ class OfflineQueue {
       detectedAt: number;
     }>
   > {
-    const db = await this.ensureDb();
-    const conflicts = await db.getAll("conflicts");
-    return conflicts.filter((c) => !c.resolved);
+    const _db = await this?.ensureDb();
+    const _conflicts = await db?.getAll("conflicts");
+    return conflicts?.filter((c) => !c?.resolved);
   }
 
   async resolveConflict(
@@ -321,66 +321,66 @@ class OfflineQueue {
     resolution: "local" | "server" | "merged",
     mergedData?: unknown,
   ): Promise<void> {
-    const db = await this.ensureDb();
-    const conflict = await db.get("conflicts", actionId);
+    const _db = await this?.ensureDb();
+    const _conflict = await db?.get("conflicts", actionId);
 
     if (!conflict) return;
 
-    await db.put("conflicts", { ...conflict, resolved: true });
+    await db?.put("conflicts", { ...conflict, resolved: true });
 
     if (resolution === "local" || resolution === "merged") {
-      const action = await this.getAction(actionId);
+      const _action = await this?.getAction(actionId);
       if (action) {
-        const payload = resolution === "merged" ? mergedData : action.payload;
-        await this.updateAction(actionId, {
+        const _payload = resolution === "merged" ? mergedData : action?.payload;
+        await this?.updateAction(actionId, {
           status: "pending",
           payload,
           retryCount: 0,
         });
       }
     } else {
-      await this.dequeue(actionId);
+      await this?.dequeue(actionId);
     }
   }
 
   async clearCompleted(): Promise<number> {
-    const db = await this.ensureDb();
-    const completed = await db.getAllFromIndex(
+    const _db = await this?.ensureDb();
+    const _completed = await db?.getAllFromIndex(
       "actions",
       "by-status",
       "completed",
     );
 
     for (const action of completed) {
-      await db.delete("actions", action.id);
+      await db?.delete("actions", action?.id);
     }
 
-    return completed.length;
+    return completed?.length;
   }
 
   async clearAll(): Promise<void> {
-    const db = await this.ensureDb();
-    await db.clear("actions");
-    await db.clear("conflicts");
+    const _db = await this?.ensureDb();
+    await db?.clear("actions");
+    await db?.clear("conflicts");
   }
 
   async getNextBatch(batchSize = 10): Promise<QueuedAction[]> {
-    const pending = await this.getAllPending();
+    const _pending = await this?.getAllPending();
     const batch: QueuedAction[] = [];
-    const processing = new Set<string>();
+    const _processing = new Set<string>();
 
     for (const action of pending) {
-      if (batch.length >= batchSize) break;
+      if (batch?.length >= batchSize) break;
 
-      const dependenciesMet =
-        !action.dependencies?.length ||
-        action.dependencies.every(
-          (depId) => !pending.find((p) => p.id === depId),
+      const _dependenciesMet =
+        !action?.dependencies?.length ||
+        action?.dependencies.every(
+          (depId) => !pending?.find((p) => p?.id === depId),
         );
 
-      if (dependenciesMet && !processing.has(action.id)) {
-        batch.push(action);
-        processing.add(action.id);
+      if (dependenciesMet && !processing?.has(action?.id)) {
+        batch?.push(action);
+        processing?.add(action?.id);
       }
     }
 
@@ -395,24 +395,24 @@ class OfflineQueue {
     conflict: number;
     total: number;
   }> {
-    const db = await this.ensureDb();
+    const _db = await this?.ensureDb();
 
     const [pending, syncing, completed, failed, conflict, total] =
-      await Promise.all([
-        db.countFromIndex("actions", "by-status", "pending"),
-        db.countFromIndex("actions", "by-status", "syncing"),
-        db.countFromIndex("actions", "by-status", "completed"),
-        db.countFromIndex("actions", "by-status", "failed"),
-        db.countFromIndex("actions", "by-status", "conflict"),
-        db.count("actions"),
+      await Promise?.all([
+        db?.countFromIndex("actions", "by-status", "pending"),
+        db?.countFromIndex("actions", "by-status", "syncing"),
+        db?.countFromIndex("actions", "by-status", "completed"),
+        db?.countFromIndex("actions", "by-status", "failed"),
+        db?.countFromIndex("actions", "by-status", "conflict"),
+        db?.count("actions"),
       ]);
 
     return { pending, syncing, completed, failed, conflict, total };
   }
 }
 
-export const offlineQueue = new OfflineQueue();
+export const _offlineQueue = new OfflineQueue();
 
 export async function initOfflineQueue(): Promise<void> {
-  await offlineQueue.init();
+  await offlineQueue?.init();
 }

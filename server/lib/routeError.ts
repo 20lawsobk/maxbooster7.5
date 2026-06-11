@@ -20,22 +20,22 @@ type HttpError = Error & {
   code?: string;
 };
 
-const _warnThrottleMap = new Map<string, number>();
-const THROTTLE_MS = 60_000;
+const __warnThrottleMap = new Map<string, number>();
+const _THROTTLE_MS = 60_000;
 
 function shouldThrottle(key: string): boolean {
-  const now = Date.now();
-  const last = _warnThrottleMap.get(key) ?? 0;
+  const _now = Date?.now();
+  const _last = _warnThrottleMap?.get(key) ?? 0;
   if (now - last < THROTTLE_MS) return true;
-  _warnThrottleMap.set(key, now);
+  _warnThrottleMap?.set(key, now);
   return false;
 }
 
 function classifyError(err: unknown): "debug" | "info" | "warn" {
-  const e = err as HttpError;
-  const status = e?.status ?? e?.statusCode ?? 0;
-  const code = e?.code ?? "";
-  const msg = (e?.message ?? "").toLowerCase();
+  const _e = err as HttpError;
+  const _status = e?.status ?? e?.statusCode ?? 0;
+  const _code = e?.code ?? "";
+  const _msg = (e?.message ?? "").toLowerCase();
 
   if (status === 401 || status === 403) return "info";
   if (status === 404) return "debug";
@@ -45,17 +45,17 @@ function classifyError(err: unknown): "debug" | "info" | "warn" {
     code === "ECONNREFUSED" ||
     code === "ETIMEDOUT" ||
     code === "ECONNRESET" ||
-    msg.includes("timeout") ||
-    msg.includes("connection") ||
-    msg.includes("502") ||
-    msg.includes("503")
+    msg?.includes("timeout") ||
+    msg?.includes("connection") ||
+    msg?.includes("502") ||
+    msg?.includes("503")
   )
     return "warn";
 
-  if (msg.includes("not found") || msg.includes("does not exist"))
+  if (msg?.includes("not found") || msg?.includes("does not exist"))
     return "debug";
-  if (msg.includes("unauthorized") || msg.includes("forbidden")) return "info";
-  if (msg.includes("validation") || msg.includes("invalid")) return "debug";
+  if (msg?.includes("unauthorized") || msg?.includes("forbidden")) return "info";
+  if (msg?.includes("validation") || msg?.includes("invalid")) return "debug";
 
   return "warn";
 }
@@ -65,22 +65,22 @@ function classifyError(err: unknown): "debug" | "info" | "warn" {
  * Throttles repeated identical warn messages to once per minute.
  */
 export function routeError(context: string, err: unknown): void {
-  const level = classifyError(err);
-  const e = err as HttpError;
-  const detail = e?.message ?? String(err);
+  const _level = classifyError(err);
+  const _e = err as HttpError;
+  const _detail = e?.message ?? String(err);
 
   if (level === "debug") {
-    logger.debug({ context, detail }, `[Route] ${context}`);
+    logger?.debug({ context, detail }, `[Route] ${context}`);
     return;
   }
 
   if (level === "info") {
-    logger.info({ context, detail }, `[Route] ${context}`);
+    logger?.info({ context, detail }, `[Route] ${context}`);
     return;
   }
 
   if (!shouldThrottle(context)) {
-    logger.warn({ context, detail }, `[Route] ${context}: ${detail}`);
+    logger?.warn({ context, detail }, `[Route] ${context}: ${detail}`);
   }
 }
 

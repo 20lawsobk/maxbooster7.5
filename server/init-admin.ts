@@ -34,14 +34,14 @@ import { DSP_POLICIES } from "./services/dspPolicyChecker";
 
 export async function initializeAdmin() {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.Admin_Email;
-    const adminPassword =
-      process.env.ADMIN_PASSWORD || process.env.Admin_Password;
-    const adminUsername =
-      process.env.ADMIN_USERNAME || process.env.Admin_Username;
+    const _adminEmail = process?.env.ADMIN_EMAIL || process?.env.Admin_Email;
+    const _adminPassword =
+      process?.env.ADMIN_PASSWORD || process?.env.Admin_Password;
+    const _adminUsername =
+      process?.env.ADMIN_USERNAME || process?.env.Admin_Username;
 
     if (!adminEmail) {
-      logger.warn("⚠️ ADMIN_EMAIL not set - skipping admin initialization");
+      logger?.warn("⚠️ ADMIN_EMAIL not set - skipping admin initialization");
       await seedPluginCatalog();
       await seedAchievementsData();
       await seedStatusPageServices();
@@ -52,7 +52,7 @@ export async function initializeAdmin() {
     }
 
     if (!adminPassword) {
-      logger.warn("⚠️ ADMIN_PASSWORD not set - skipping admin initialization");
+      logger?.warn("⚠️ ADMIN_PASSWORD not set - skipping admin initialization");
       await seedPluginCatalog();
       await seedAchievementsData();
       await seedStatusPageServices();
@@ -62,23 +62,23 @@ export async function initializeAdmin() {
       return null;
     }
 
-    logger.info("🔐 Checking for admin account...");
+    logger?.info("🔐 Checking for admin account...");
 
     // Check by email using direct DB query to avoid any caching/case issues
     // LIMIT 1 lets the query planner stop at first match — avoids full-table scan cost
     const [existingAdmin] = await db
       .select()
       .from(users)
-      .where(eq(users.email, adminEmail))
+      .where(eq(users?.email, adminEmail))
       .limit(1);
     let admin = existingAdmin;
     let isNewAdmin = false;
 
     if (admin) {
-      logger.info(`✅ Admin account exists: ${adminEmail}`);
+      logger?.info(`✅ Admin account exists: ${adminEmail}`);
 
       // Sync password, role, subscription, and ensure onboarding is complete
-      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+      const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
       await db
         .update(users)
         .set({
@@ -98,11 +98,11 @@ export async function initializeAdmin() {
             source: "admin_init",
           },
         })
-        .where(eq(users.id, admin.id));
-      logger.info("✅ Admin credentials and subscription synced");
+        .where(eq(users?.id, admin?.id));
+      logger?.info("✅ Admin credentials and subscription synced");
     } else {
       if (!adminUsername) {
-        logger.warn(
+        logger?.warn(
           "⚠️ ADMIN_USERNAME not set - cannot create new admin account",
         );
         await seedPluginCatalog();
@@ -112,12 +112,12 @@ export async function initializeAdmin() {
         return null;
       }
 
-      logger.info("🔐 Creating admin account...");
+      logger?.info("🔐 Creating admin account...");
       isNewAdmin = true;
 
-      const hashedPassword = await bcrypt.hash(adminPassword, 12);
+      const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
 
-      admin = await storage.createUser({
+      admin = await storage?.createUser({
         username: adminUsername,
         email: adminEmail,
         password: hashedPassword,
@@ -142,13 +142,13 @@ export async function initializeAdmin() {
             source: "admin_init",
           },
         })
-        .where(eq(users.id, admin.id));
+        .where(eq(users?.id, admin?.id));
 
-      logger.info(`✅ Admin account created: ${admin.email}`);
+      logger?.info(`✅ Admin account created: ${admin?.email}`);
     }
 
     // Ensure admin has all user resources initialized
-    await initializeAdminResources(admin.id, adminEmail, isNewAdmin);
+    await initializeAdminResources(admin?.id, adminEmail, isNewAdmin);
 
     await seedPluginCatalog();
     await seedDSPProviders();
@@ -161,7 +161,7 @@ export async function initializeAdmin() {
 
     return admin;
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error during admin initialization:");
+    logger?.warn({ err: error }, "Error during admin initialization:");
     throw error;
   }
 }
@@ -180,31 +180,32 @@ async function initializeAdminResources(
     const [existingStorage] = await db
       .select()
       .from(userStorage)
-      .where(eq(userStorage.userId, adminId));
+      .where(eq(userStorage?.userId, adminId));
 
     if (!existingStorage) {
       try {
-        const { userPocketService } =
-          await import("./services/userPocketDimensionService.js");
-        await userPocketService.initializeUserStorage(adminId, adminEmail);
-        logger.info("   ✓ Admin Pocket Dimension storage initialized");
+        const { userPocketService } = await import(
+          "./services/userPocketDimensionService.js"
+        );
+        await userPocketService?.initializeUserStorage(adminId, adminEmail);
+        logger?.info("   ✓ Admin Pocket Dimension storage initialized");
       } catch (error) {
-        logger.warn(
+        logger?.warn(
           "   ⚠️ Admin Pocket Dimension storage initialization skipped (non-critical)",
         );
       }
     } else {
-      logger.info("   ✓ Admin Pocket Dimension storage exists");
+      logger?.info("   ✓ Admin Pocket Dimension storage exists");
     }
 
     // 2. Check and initialize user taste profile for discovery algorithm
     const [existingTasteProfile] = await db
       .select()
       .from(userTasteProfiles)
-      .where(eq(userTasteProfiles.userId, adminId));
+      .where(eq(userTasteProfiles?.userId, adminId));
 
     if (!existingTasteProfile) {
-      await db.insert(userTasteProfiles).values({
+      await db?.insert(userTasteProfiles).values({
         userId: adminId,
         genreScores: { "hip-hop": 0.8, "r&b": 0.7, trap: 0.6, pop: 0.5 },
         moodScores: { energetic: 0.7, chill: 0.6, dark: 0.5, uplifting: 0.5 },
@@ -216,22 +217,22 @@ async function initializeAdminResources(
         totalInteractions: 0,
         purchaseCount: 0,
       });
-      logger.info("   ✓ Admin taste profile initialized");
+      logger?.info("   ✓ Admin taste profile initialized");
     } else {
-      logger.info("   ✓ Admin taste profile exists");
+      logger?.info("   ✓ Admin taste profile exists");
     }
 
     // 3. Check and initialize admin producer storefront
     const [existingStorefront] = await db
       .select()
       .from(storefronts)
-      .where(eq(storefronts.userId, adminId));
+      .where(eq(storefronts?.userId, adminId));
 
     if (!existingStorefront) {
-      const adminUsername = process.env.ADMIN_USERNAME || "blawz";
-      const slug = adminUsername.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const _adminUsername = process?.env.ADMIN_USERNAME || "blawz";
+      const _slug = adminUsername?.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
-      await db.insert(storefronts).values({
+      await db?.insert(storefronts).values({
         userId: adminId,
         name: "B-Lawz Music",
         slug: slug,
@@ -250,7 +251,7 @@ async function initializeAdminResources(
           instagram: "https://instagram.com/blawzmusic",
           twitter: "https://twitter.com/blawzmusic",
           youtube: "https://youtube.com/@blawzmusic",
-          spotify: "https://open.spotify.com/artist/blawzmusic",
+          spotify: "https://open?.spotify.com/artist/blawzmusic",
         },
         seoSettings: {
           title: "B-Lawz Music - Premium Beats & Instrumentals",
@@ -268,19 +269,19 @@ async function initializeAdminResources(
         isPublished: true,
         isVerified: true,
       });
-      logger.info("   ✓ Admin producer storefront initialized");
+      logger?.info("   ✓ Admin producer storefront initialized");
     } else {
-      logger.info("   ✓ Admin producer storefront exists");
+      logger?.info("   ✓ Admin producer storefront exists");
     }
 
     // 4. Check and initialize default license templates
-    const existingLicenses = await db
+    const _existingLicenses = await db
       .select()
       .from(licenseTemplates)
-      .where(eq(licenseTemplates.userId, adminId));
+      .where(eq(licenseTemplates?.userId, adminId));
 
-    if (existingLicenses.length === 0) {
-      const defaultLicenses = [
+    if (existingLicenses?.length === 0) {
+      const _defaultLicenses = [
         {
           userId: adminId,
           name: "Basic Lease",
@@ -346,22 +347,22 @@ async function initializeAdminResources(
           sortOrder: 3,
         },
       ];
-      await db.insert(licenseTemplates).values(defaultLicenses);
-      logger.info("   ✓ Admin license templates seeded (4 templates)");
+      await db?.insert(licenseTemplates).values(defaultLicenses);
+      logger?.info("   ✓ Admin license templates seeded (4 templates)");
     } else {
-      logger.info(
-        `   ✓ Admin license templates exist (${existingLicenses.length} templates)`,
+      logger?.info(
+        `   ✓ Admin license templates exist (${existingLicenses?.length} templates)`,
       );
     }
 
     // 5. Check and initialize default contract templates
-    const existingContractTemplates = await db
+    const _existingContractTemplates = await db
       .select()
       .from(contractTemplates)
-      .where(eq(contractTemplates.userId, adminId));
+      .where(eq(contractTemplates?.userId, adminId));
 
-    if (existingContractTemplates.length === 0) {
-      const defaultContractTemplates = [
+    if (existingContractTemplates?.length === 0) {
+      const _defaultContractTemplates = [
         {
           userId: adminId,
           name: "Non-Exclusive Beat License",
@@ -523,13 +524,13 @@ async function initializeAdminResources(
           isDefault: true,
         },
       ];
-      await db.insert(contractTemplates).values(defaultContractTemplates);
-      logger.info(
-        `   ✓ Admin contract templates seeded (${defaultContractTemplates.length} templates)`,
+      await db?.insert(contractTemplates).values(defaultContractTemplates);
+      logger?.info(
+        `   ✓ Admin contract templates seeded (${defaultContractTemplates?.length} templates)`,
       );
     } else {
-      logger.info(
-        `   ✓ Admin contract templates exist (${existingContractTemplates.length} templates)`,
+      logger?.info(
+        `   ✓ Admin contract templates exist (${existingContractTemplates?.length} templates)`,
       );
     }
 
@@ -537,18 +538,18 @@ async function initializeAdminResources(
     const [adminStorefront] = await db
       .select()
       .from(storefronts)
-      .where(eq(storefronts.userId, adminId));
+      .where(eq(storefronts?.userId, adminId));
 
     if (adminStorefront) {
-      const existingTiers = await db
+      const _existingTiers = await db
         .select()
         .from(membershipTiers)
-        .where(eq(membershipTiers.storefrontId, adminStorefront.id));
+        .where(eq(membershipTiers?.storefrontId, adminStorefront?.id));
 
-      if (existingTiers.length === 0) {
-        const defaultTiers = [
+      if (existingTiers?.length === 0) {
+        const _defaultTiers = [
           {
-            storefrontId: adminStorefront.id,
+            storefrontId: adminStorefront?.id,
             name: "Beat Club",
             description:
               "Access to exclusive beats, 2 free downloads per month, and early access to new releases.",
@@ -565,7 +566,7 @@ async function initializeAdminResources(
             isActive: true,
           },
           {
-            storefrontId: adminStorefront.id,
+            storefrontId: adminStorefront?.id,
             name: "Producer Pro",
             description:
               "Full access to the entire beat catalog with unlimited downloads, stems, and trackouts.",
@@ -584,7 +585,7 @@ async function initializeAdminResources(
             isActive: true,
           },
           {
-            storefrontId: adminStorefront.id,
+            storefrontId: adminStorefront?.id,
             name: "Label Partner",
             description:
               "Enterprise-level access for labels and management companies. Bulk licensing, priority support, and custom terms.",
@@ -604,57 +605,57 @@ async function initializeAdminResources(
             isActive: true,
           },
         ];
-        await db.insert(membershipTiers).values(defaultTiers);
-        logger.info(
-          `   ✓ Admin membership tiers seeded (${defaultTiers.length} tiers)`,
+        await db?.insert(membershipTiers).values(defaultTiers);
+        logger?.info(
+          `   ✓ Admin membership tiers seeded (${defaultTiers?.length} tiers)`,
         );
       } else {
-        logger.info(
-          `   ✓ Admin membership tiers exist (${existingTiers.length} tiers)`,
+        logger?.info(
+          `   ✓ Admin membership tiers exist (${existingTiers?.length} tiers)`,
         );
       }
     }
 
-    logger.info("✅ Admin resources verified/initialized");
+    logger?.info("✅ Admin resources verified/initialized");
   } catch (error) {
-    logger.warn({ err: error }, "Error initializing admin resources:");
+    logger?.warn({ err: error }, "Error initializing admin resources:");
     // Don't throw - admin account is still functional without these
   }
 }
 
 async function seedPluginCatalog() {
   try {
-    logger.info("🎛️ Seeding plugin catalog...");
-    await storage.seedPluginCatalog();
-    logger.info("✅ Plugin catalog seeded");
+    logger?.info("🎛️ Seeding plugin catalog...");
+    await storage?.seedPluginCatalog();
+    logger?.info("✅ Plugin catalog seeded");
   } catch (error) {
-    logger.warn("Plugin catalog seeding skipped");
+    logger?.warn("Plugin catalog seeding skipped");
   }
 
   try {
     await seedStudioTemplates();
   } catch (error) {
-    logger.warn("Template seeding skipped");
+    logger?.warn("Template seeding skipped");
   }
 
   try {
     await seedStorefrontTemplates();
   } catch (error) {
-    logger.warn("Storefront template seeding skipped");
+    logger?.warn("Storefront template seeding skipped");
   }
 }
 
 async function seedStudioTemplates() {
   // Check if templates already exist
-  const existingTemplates = await db.select().from(studioTemplates).limit(1);
-  if (existingTemplates.length > 0) {
-    logger.info("   ✓ Studio templates already seeded");
+  const _existingTemplates = await db?.select().from(studioTemplates).limit(1);
+  if (existingTemplates?.length > 0) {
+    logger?.info("   ✓ Studio templates already seeded");
     return;
   }
 
-  logger.info("📋 Seeding studio templates...");
+  logger?.info("📋 Seeding studio templates...");
 
-  const builtInTemplates = [
+  const _builtInTemplates = [
     {
       id: randomBytes(8).toString("hex"),
       name: "Empty Song",
@@ -830,10 +831,10 @@ async function seedStudioTemplates() {
   ];
 
   for (const template of builtInTemplates) {
-    await db.insert(studioTemplates).values(template);
+    await db?.insert(studioTemplates).values(template);
   }
 
-  logger.info(`   ✓ Seeded ${builtInTemplates.length} built-in templates`);
+  logger?.info(`   ✓ Seeded ${builtInTemplates?.length} built-in templates`);
 }
 
 /**
@@ -842,18 +843,18 @@ async function seedStudioTemplates() {
  */
 async function seedStorefrontTemplates() {
   // Check if templates already exist
-  const existingTemplates = await db
+  const _existingTemplates = await db
     .select()
     .from(storefrontTemplates)
     .limit(1);
-  if (existingTemplates.length > 0) {
-    logger.info("   ✓ Storefront templates already seeded");
+  if (existingTemplates?.length > 0) {
+    logger?.info("   ✓ Storefront templates already seeded");
     return;
   }
 
-  logger.info("🏪 Seeding storefront templates...");
+  logger?.info("🏪 Seeding storefront templates...");
 
-  const marketplaceTemplates = [
+  const _marketplaceTemplates = [
     // === PREMIUM TIER (High-Converting, Pro Designs) ===
     {
       id: randomBytes(8).toString("hex"),
@@ -1552,11 +1553,11 @@ async function seedStorefrontTemplates() {
   ];
 
   for (const template of marketplaceTemplates) {
-    await db.insert(storefrontTemplates).values(template);
+    await db?.insert(storefrontTemplates).values(template);
   }
 
-  logger.info(
-    `   ✓ Seeded ${marketplaceTemplates.length} storefront templates`,
+  logger?.info(
+    `   ✓ Seeded ${marketplaceTemplates?.length} storefront templates`,
   );
 }
 
@@ -1569,12 +1570,12 @@ export async function bootstrapAdmin() {
  */
 export async function seedDSPProviders() {
   try {
-    logger.info("🔧 Syncing DSP providers...");
+    logger?.info("🔧 Syncing DSP providers...");
 
-    const dspList = Object.entries(DSP_POLICIES).map(([slug, policy]) => ({
+    const _dspList = Object?.entries(DSP_POLICIES).map(([slug, policy]) => ({
       id: `dsp_${slug}`,
-      name: policy.name,
-      slug: slug.toLowerCase(),
+      name: policy?.name,
+      slug: slug?.toLowerCase(),
       isActive: true,
       metadata: {
         category: getCategoryFromSlug(slug),
@@ -1583,12 +1584,12 @@ export async function seedDSPProviders() {
         requirements: {
           isrc: true,
           upc: true,
-          metadata: policy.metadata?.requiredFields || ["title", "artist"],
-          audioFormats: policy.audio?.formats || ["WAV", "FLAC"],
+          metadata: policy?.metadata?.requiredFields || ["title", "artist"],
+          audioFormats: policy?.audio?.formats || ["WAV", "FLAC"],
         },
         deliveryMethod: "api",
-        coverArtRequirements: policy.coverArt,
-        audioRequirements: policy.audio,
+        coverArtRequirements: policy?.coverArt,
+        audioRequirements: policy?.audio,
       },
     }));
 
@@ -1597,35 +1598,35 @@ export async function seedDSPProviders() {
         .insert(dspProviders)
         .values(dsp)
         .onConflictDoUpdate({
-          target: dspProviders.id,
-          set: { isActive: true, name: dsp.name, metadata: dsp.metadata },
+          target: dspProviders?.id,
+          set: { isActive: true, name: dsp?.name, metadata: dsp?.metadata },
         });
     }
 
     // Bulk-activate any DSP providers that may have been inserted as inactive
-    // by previous seeding runs (e.g. via onConflictDoNothing).  This ensures ALL
+    // by previous seeding runs (e?.g. via onConflictDoNothing).  This ensures ALL
     // platforms stored in the DB are active and accessible through LabelGrid.
     await db
       .update(dspProviders)
       .set({ isActive: true })
       .where(sql`is_active IS DISTINCT FROM true`);
 
-    logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
+    logger?.info(`✅ Seeded/activated ${dspList?.length} DSP providers`);
   } catch (error) {
-    logger.warn("Failed to seed DSP providers:", error.message);
+    logger?.warn("Failed to seed DSP providers:", error?.message);
   }
 }
 
 function getCategoryFromSlug(slug: string): string {
-  const socialPlatforms = [
+  const _socialPlatforms = [
     "tiktok",
     "instagram",
     "snapchat",
     "facebook",
     "youtube",
   ];
-  const electronicPlatforms = ["beatport", "traxsource", "juno"];
-  const regionalPlatforms = [
+  const _electronicPlatforms = ["beatport", "traxsource", "juno"];
+  const _regionalPlatforms = [
     "netease",
     "qq",
     "jiosaavn",
@@ -1636,27 +1637,28 @@ function getCategoryFromSlug(slug: string): string {
     "vk",
   ];
 
-  if (socialPlatforms.some((p) => slug.toLowerCase().includes(p)))
+  if (socialPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
     return "social";
-  if (electronicPlatforms.some((p) => slug.toLowerCase().includes(p)))
+  if (electronicPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
     return "electronic";
-  if (regionalPlatforms.some((p) => slug.toLowerCase().includes(p)))
+  if (regionalPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
     return "regional";
 
   return "streaming";
 }
 
 /**
- * Seed distribution platforms from the comprehensive distributionPlatforms.ts file
+ * Seed distribution platforms from the comprehensive distributionPlatforms?.ts file
  * This provides 100+ DSP platforms matching DistroKid's full offering
  */
 async function seedDistributionPlatformsFromFile() {
   try {
-    const { seedDistributionPlatforms } =
-      await import("./seed/distributionPlatforms.js");
+    const { seedDistributionPlatforms } = await import(
+      "./seed/distributionPlatforms.js"
+    );
     await seedDistributionPlatforms();
   } catch (error) {
-    logger.warn("Distribution platforms seeding skipped:", error.message);
+    logger?.warn("Distribution platforms seeding skipped:", error?.message);
   }
 }
 
@@ -1664,77 +1666,81 @@ async function seedAchievementsData() {
   try {
     const { seedAchievements } = await import("./seed/seedAchievements.js");
     await seedAchievements();
-    logger.info("   ✓ Achievements seeded");
+    logger?.info("   ✓ Achievements seeded");
   } catch (error) {
-    logger.warn("Achievements seeding skipped:", error.message);
+    logger?.warn("Achievements seeding skipped:", error?.message);
   }
 }
 
 async function seedStatusPageServices() {
   try {
-    const { statusPageService } =
-      await import("./services/statusPageService.js");
-    await statusPageService.initializeDefaultServices();
-    logger.info("   ✓ Status page services initialized");
+    const { statusPageService } = await import(
+      "./services/statusPageService.js"
+    );
+    await statusPageService?.initializeDefaultServices();
+    logger?.info("   ✓ Status page services initialized");
   } catch (error) {
-    logger.warn("Status page services seeding skipped:", error.message);
+    logger?.warn("Status page services seeding skipped:", error?.message);
   }
 }
 
 async function seedAIModels() {
   try {
-    const { initializeAIMusicModels } =
-      await import("./seed/initializeAIMusicModels.js");
+    const { initializeAIMusicModels } = await import(
+      "./seed/initializeAIMusicModels.js"
+    );
     await initializeAIMusicModels();
-    const { initializeAIInsightsModels } =
-      await import("./seed/initializeAIInsightsModels.js");
+    const { initializeAIInsightsModels } = await import(
+      "./seed/initializeAIInsightsModels.js"
+    );
     await initializeAIInsightsModels();
-    const { initializeAIContentModels } =
-      await import("./seed/initializeAIContentModels.js");
+    const { initializeAIContentModels } = await import(
+      "./seed/initializeAIContentModels.js"
+    );
     await initializeAIContentModels();
-    logger.info("   ✓ AI models seeded");
+    logger?.info("   ✓ AI models seeded");
   } catch (error) {
-    logger.warn("AI models seeding skipped:", error.message);
+    logger?.warn("AI models seeding skipped:", error?.message);
   }
 }
 
 async function seedSystemSettings() {
   try {
-    const existing = await db.select().from(systemSettings);
-    if (existing.length > 0) {
-      logger.info("   ✓ System settings already seeded");
+    const _existing = await db?.select().from(systemSettings);
+    if (existing?.length > 0) {
+      logger?.info("   ✓ System settings already seeded");
       return;
     }
 
-    const defaults = [
+    const _defaults = [
       {
         key: "platform_name",
-        value: JSON.stringify("Max Booster"),
+        value: JSON?.stringify("Max Booster"),
         description: "Platform display name",
       },
       {
         key: "maintenance_mode",
-        value: JSON.stringify(false),
+        value: JSON?.stringify(false),
         description: "Enable/disable maintenance mode",
       },
       {
         key: "user_registration_enabled",
-        value: JSON.stringify(true),
+        value: JSON?.stringify(true),
         description: "Allow new user registrations",
       },
       {
         key: "max_upload_size_mb",
-        value: JSON.stringify(500),
+        value: JSON?.stringify(500),
         description: "Maximum file upload size in MB",
       },
       {
         key: "default_currency",
-        value: JSON.stringify("USD"),
+        value: JSON?.stringify("USD"),
         description: "Default platform currency",
       },
       {
         key: "currency_rates",
-        value: JSON.stringify({
+        value: JSON?.stringify({
           USD: 1,
           EUR: 0.92,
           GBP: 0.79,
@@ -1746,94 +1752,94 @@ async function seedSystemSettings() {
       },
       {
         key: "stripe_enabled",
-        value: JSON.stringify(true),
+        value: JSON?.stringify(true),
         description: "Enable Stripe payment processing",
       },
       {
         key: "email_notifications_enabled",
-        value: JSON.stringify(true),
+        value: JSON?.stringify(true),
         description: "Enable email notifications globally",
       },
       {
         key: "api_rate_limit",
-        value: JSON.stringify(1000),
+        value: JSON?.stringify(1000),
         description: "API rate limit per hour per user",
       },
       {
         key: "max_social_accounts",
-        value: JSON.stringify(20),
+        value: JSON?.stringify(20),
         description: "Maximum connected social accounts per user",
       },
       {
         key: "autopilot_enabled",
-        value: JSON.stringify(true),
+        value: JSON?.stringify(true),
         description: "Enable autopilot posting system",
       },
       {
         key: "distribution_auto_submit",
-        value: JSON.stringify(false),
+        value: JSON?.stringify(false),
         description: "Auto-submit releases after validation",
       },
       {
         key: "default_royalty_rate",
-        value: JSON.stringify(0.004),
+        value: JSON?.stringify(0.004),
         description: "Default per-stream royalty rate in USD",
       },
       {
         key: "min_payout_threshold",
-        value: JSON.stringify(10),
+        value: JSON?.stringify(10),
         description: "Minimum balance for payout in USD",
       },
       {
         key: "payout_schedule",
-        value: JSON.stringify("monthly"),
+        value: JSON?.stringify("monthly"),
         description: "Default payout schedule (weekly/monthly/quarterly)",
       },
       {
         key: "max_collaborators_per_release",
-        value: JSON.stringify(20),
+        value: JSON?.stringify(20),
         description: "Maximum collaborators per release",
       },
       {
         key: "ai_features_enabled",
-        value: JSON.stringify(true),
+        value: JSON?.stringify(true),
         description: "Enable AI-powered features",
       },
       {
         key: "analytics_retention_days",
-        value: JSON.stringify(365),
+        value: JSON?.stringify(365),
         description: "Days to retain analytics data",
       },
       {
         key: "session_timeout_hours",
-        value: JSON.stringify(24),
+        value: JSON?.stringify(24),
         description: "User session timeout in hours",
       },
       {
         key: "two_factor_required",
-        value: JSON.stringify(false),
+        value: JSON?.stringify(false),
         description: "Require 2FA for all users",
       },
     ];
 
     for (const setting of defaults) {
-      await db.insert(systemSettings).values(setting).onConflictDoNothing();
+      await db?.insert(systemSettings).values(setting).onConflictDoNothing();
     }
-    logger.info(`   ✓ System settings seeded (${defaults.length} defaults)`);
+    logger?.info(`   ✓ System settings seeded (${defaults?.length} defaults)`);
   } catch (error) {
-    logger.warn("System settings seeding skipped:", error.message);
+    logger?.warn("System settings seeding skipped:", error?.message);
   }
 }
 
 async function seedAlertRules() {
   try {
-    const existing = await db.select().from(alertRules);
-    if (existing.length > 0) {
-      logger.info("   ✓ Alert rules already seeded");
+    const _existing = await db?.select().from(alertRules);
+    if (existing?.length > 0) {
+      logger?.info("   ✓ Alert rules already seeded");
       return;
     }
 
-    const defaults = [
+    const _defaults = [
       {
         name: "High Error Rate",
         condition: "error_rate > threshold",
@@ -1976,10 +1982,10 @@ async function seedAlertRules() {
     ];
 
     for (const rule of defaults) {
-      await db.insert(alertRules).values(rule).onConflictDoNothing();
+      await db?.insert(alertRules).values(rule).onConflictDoNothing();
     }
-    logger.info(`   ✓ Alert rules seeded (${defaults.length} defaults)`);
+    logger?.info(`   ✓ Alert rules seeded (${defaults?.length} defaults)`);
   } catch (error) {
-    logger.warn("Alert rules seeding skipped:", error.message);
+    logger?.warn("Alert rules seeding skipped:", error?.message);
   }
 }

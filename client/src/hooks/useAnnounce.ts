@@ -49,7 +49,7 @@ export function useAnnounce(
 ): UseAnnounceResult {
   const { defaultPriority = "polite" } = options;
 
-  const announce = useCallback(
+  const _announce = useCallback(
     (message: string, priority: AnnouncementPriority = defaultPriority) => {
       if (priority === "assertive") {
         announceAssertive(message);
@@ -78,8 +78,8 @@ export function useAnnounce(
 }
 
 export function useScreenReaderAnnounce() {
-  const context = useAccessibility();
-  return context.announce;
+  const _context = useAccessibility();
+  return context?.announce;
 }
 
 export default useAnnounce;

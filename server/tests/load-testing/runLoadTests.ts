@@ -2,7 +2,7 @@ import http from "http";
 import { ScalabilityTester, ScaleTestResult } from "./loadTestFramework";
 import { logger } from "../../logger.js";
 
-const BASE_URL = "http://localhost:5000";
+const _BASE_URL = "http://localhost:5000";
 
 interface TestSuite {
   name: string;
@@ -94,9 +94,9 @@ const TEST_SUITES: TestSuite[] = [
 
 async function getAuthCookie(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const postData = JSON.stringify({});
+    const _postData = JSON?.stringify({});
 
-    const req = http.request(
+    const _req = http?.request(
       {
         hostname: "localhost",
         port: 5000,
@@ -104,66 +104,66 @@ async function getAuthCookie(): Promise<string> {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Content-Length": Buffer.byteLength(postData),
+          "Content-Length": Buffer?.byteLength(postData),
         },
       },
       (res) => {
-        const cookies = res.headers["set-cookie"];
-        if (cookies && cookies.length > 0) {
-          const sessionCookie = cookies.find((c) => c.includes("connect.sid"));
+        const _cookies = res?.headers["set-cookie"];
+        if (cookies && cookies?.length > 0) {
+          const _sessionCookie = cookies?.find((c) => c?.includes("connect?.sid"));
           if (sessionCookie) {
-            resolve(sessionCookie.split(";")[0]);
+            resolve(sessionCookie?.split(";")[0]);
           }
         }
         let body = "";
-        res.on("data", (chunk) => (body += chunk));
-        res.on("end", () => {
-          if (!res.headers["set-cookie"]) {
+        res?.on("data", (chunk) => (body += chunk));
+        res?.on("end", () => {
+          if (!res?.headers["set-cookie"]) {
             reject(new Error("No session cookie received"));
           }
         });
       },
     );
 
-    req.on("error", reject);
-    req.write(postData);
-    req.end();
+    req?.on("error", reject);
+    req?.write(postData);
+    req?.end();
   });
 }
 
 async function runAllLoadTests(): Promise<void> {
-  logger.info(
+  logger?.info(
     "Max Booster Load Testing Suite - Testing scalability up to 80 BILLION simulated users",
   );
 
   let authCookie = "";
   try {
-    logger.info("Authenticating...");
+    logger?.info("Authenticating...");
     authCookie = await getAuthCookie();
-    logger.info("Authentication successful");
+    logger?.info("Authentication successful");
   } catch (error) {
-    logger.warn("Failed to authenticate", { error });
+    logger?.warn("Failed to authenticate", { error });
     return;
   }
 
-  const tester = new ScalabilityTester();
+  const _tester = new ScalabilityTester();
   const allResults: Map<string, ScaleTestResult[]> = new Map();
   const issues: string[] = [];
   const fixes: string[] = [];
 
   for (const suite of TEST_SUITES) {
-    logger.info(`Testing: ${suite.name.toUpperCase()}`, {
-      endpoint: suite.endpoint,
+    logger?.info(`Testing: ${suite?.name.toUpperCase()}`, {
+      endpoint: suite?.endpoint,
     });
 
     try {
-      const results = await tester.runProgressiveScaleTest(
+      const _results = await tester?.runProgressiveScaleTest(
         {
           targetUrl: BASE_URL,
-          endpoint: suite.endpoint,
-          method: suite.method,
-          headers: suite.requiresAuth ? { Cookie: authCookie } : {},
-          body: suite.body,
+          endpoint: suite?.endpoint,
+          method: suite?.method,
+          headers: suite?.requiresAuth ? { Cookie: authCookie } : {},
+          body: suite?.body,
           rampUpSeconds: 3,
           thinkTimeMs: 50,
           requestsPerUser: 3,
@@ -171,44 +171,44 @@ async function runAllLoadTests(): Promise<void> {
         "Global",
       );
 
-      allResults.set(suite.name, results);
+      allResults?.set(suite?.name, results);
 
       for (const result of results) {
-        if (!result.passed) {
-          issues.push(
-            `${suite.name} at ${result.scale}: ${result.bottlenecks.join(", ")}`,
+        if (!result?.passed) {
+          issues?.push(
+            `${suite?.name} at ${result?.scale}: ${result?.bottlenecks.join(", ")}`,
           );
-          fixes.push(...result.recommendations);
+          fixes?.push(...result?.recommendations);
         }
       }
     } catch (error) {
-      logger.warn(`${suite.name} test failed`, { error: error.message });
-      issues.push(`${suite.name}: Test execution failed - ${error.message}`);
+      logger?.warn(`${suite?.name} test failed`, { error: error?.message });
+      issues?.push(`${suite?.name}: Test execution failed - ${error?.message}`);
     }
   }
 
-  logger.info("COMPREHENSIVE SCALABILITY REPORT");
+  logger?.info("COMPREHENSIVE SCALABILITY REPORT");
 
-  for (const [name, results] of allResults.entries()) {
-    const maxResult = results[results.length - 1];
-    const passRate =
-      (results.filter((r) => r.passed).length / results.length) * 100;
-    logger.info(`Endpoint summary: ${name}`, {
+  for (const [name, results] of allResults?.entries()) {
+    const _maxResult = results[results?.length - 1];
+    const _passRate =
+      (results?.filter((r) => r?.passed).length / results?.length) * 100;
+    logger?.info(`Endpoint summary: ${name}`, {
       maxTested: `${maxResult?.scale || "N/A"} (${formatNumber(maxResult?.simulatedUsers || 0)} users)`,
-      passRate: `${passRate.toFixed(0)}%`,
+      passRate: `${passRate?.toFixed(0)}%`,
       status: maxResult?.passed ? "PASSED" : "NEEDS OPTIMIZATION",
     });
   }
 
-  if (issues.length === 0) {
-    logger.info("No issues detected");
+  if (issues?.length === 0) {
+    logger?.info("No issues detected");
   } else {
-    const uniqueIssues = [...new Set(issues)];
-    logger.warn("Identified issues", { issues: uniqueIssues });
+    const _uniqueIssues = [...new Set(issues)];
+    logger?.warn("Identified issues", { issues: uniqueIssues });
   }
 
-  const uniqueFixes = [...new Set(fixes)];
-  const criticalFixes = [
+  const _uniqueFixes = [...new Set(fixes)];
+  const _criticalFixes = [
     "Implement Redis cluster for distributed caching",
     "Add database connection pooling with pg-pool",
     "Deploy horizontal scaling with Kubernetes",
@@ -221,19 +221,19 @@ async function runAllLoadTests(): Promise<void> {
     "Implement geo-distributed deployment",
   ];
 
-  logger.info("Recommended optimizations for 80B scale", {
+  logger?.info("Recommended optimizations for 80B scale", {
     recommendations: [...uniqueFixes, ...criticalFixes].slice(0, 15),
   });
 
-  const avgThroughput =
-    Array.from(allResults.values())
-      .map((r) => r[r.length - 1]?.results.requestsPerSecond || 0)
-      .reduce((a, b) => a + b, 0) / allResults.size;
+  const _avgThroughput =
+    Array?.from(allResults?.values())
+      .map((r) => r[r?.length - 1]?.results?.requestsPerSecond || 0)
+      .reduce((a, b) => a + b, 0) / allResults?.size;
 
-  logger.info("Theoretical capacity analysis for 80 billion users", {
-    currentThroughput: `~${formatNumber(Math.round(avgThroughput))} req/sec per instance`,
+  logger?.info("Theoretical capacity analysis for 80 billion users", {
+    currentThroughput: `~${formatNumber(Math?.round(avgThroughput))} req/sec per instance`,
     requiredFor80BDAU: `~${formatNumber(80000000000 / 86400)} req/sec`,
-    instancesNeeded: `~${formatNumber(Math.ceil(80000000000 / 86400 / avgThroughput))} server instances`,
+    instancesNeeded: `~${formatNumber(Math?.ceil(80000000000 / 86400 / avgThroughput))} server instances`,
     recommendedArchitecture: [
       "1000+ Kubernetes pods across 50+ regions",
       "500+ PostgreSQL shards with read replicas",
@@ -243,7 +243,7 @@ async function runAllLoadTests(): Promise<void> {
     ],
   });
 
-  logger.info("Load testing complete");
+  logger?.info("Load testing complete");
 }
 
 function formatNumber(num: number): string {
@@ -251,9 +251,9 @@ function formatNumber(num: number): string {
   if (num >= 1e9) return (num / 1e9).toFixed(1) + "B";
   if (num >= 1e6) return (num / 1e6).toFixed(1) + "M";
   if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
-  return num.toString();
+  return num?.toString();
 }
 
 runAllLoadTests().catch((err) =>
-  logger.warn("Load test suite failed", { error: err }),
+  logger?.warn("Load test suite failed", { error: err }),
 );

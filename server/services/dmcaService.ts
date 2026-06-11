@@ -1,14 +1,5 @@
 import { db } from "../db.js";
-import {
-  dmcaNotices,
-  dmcaStrikes,
-  legalHolds,
-  users,
-  projects,
-  type DMCANotice,
-  type DMCAStrike,
-  type LegalHold,
-} from "@shared/schema";
+import { dmcaNotices, dmcaStrikes, legalHolds, users, projects, type DMCANotice, type DMCAStrike, type LegalHold } from "@shared/schema";
 import { eq, and, desc, count } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { emailService } from "./emailService.js";
@@ -67,55 +58,55 @@ export interface LegalHoldRequest {
   dmcaNoticeId?: string;
 }
 
-const MAX_STRIKES = 3;
-const STRIKE_EXPIRATION_DAYS = 365;
-const COUNTER_NOTICE_WAIT_DAYS = 10;
+const _MAX_STRIKES = 3;
+const _STRIKE_EXPIRATION_DAYS = 365;
+const _COUNTER_NOTICE_WAIT_DAYS = 10;
 
 export class DMCAService {
   async submitNotice(submission: DMCANoticeSubmission): Promise<DMCANotice> {
     if (
-      !submission.goodFaithStatement ||
-      !submission.accuracyStatement ||
-      !submission.perjuryStatement
+      !submission?.goodFaithStatement ||
+      !submission?.accuracyStatement ||
+      !submission?.perjuryStatement
     ) {
       throw new Error("All required statements must be affirmed");
     }
 
-    if (!this.isValidEmail(submission.claimantEmail)) {
+    if (!this?.isValidEmail(submission?.claimantEmail)) {
       throw new Error("Invalid claimant email address");
     }
 
-    const contentOwner = await this.findContentOwner(
-      submission.contentId,
-      submission.contentType,
+    const _contentOwner = await this?.findContentOwner(
+      submission?.contentId,
+      submission?.contentType,
     );
 
     const [notice] = await db
       .insert(dmcaNotices)
       .values({
-        type: submission.type,
+        type: submission?.type,
         status: "pending",
-        contentId: submission.contentId,
-        contentType: submission.contentType,
+        contentId: submission?.contentId,
+        contentType: submission?.contentType,
         contentOwnerId: contentOwner?.id,
-        claimantName: submission.claimantName,
-        claimantEmail: submission.claimantEmail,
-        claimantAddress: submission.claimantAddress,
-        claimantPhone: submission.claimantPhone,
-        originalWorkUrl: submission.originalWorkUrl,
-        originalWorkDescription: submission.originalWorkDescription,
-        infringingUrl: submission.infringingUrl,
-        signature: submission.signature,
-        goodFaithStatement: submission.goodFaithStatement,
-        accuracyStatement: submission.accuracyStatement,
-        perjuryStatement: submission.perjuryStatement,
+        claimantName: submission?.claimantName,
+        claimantEmail: submission?.claimantEmail,
+        claimantAddress: submission?.claimantAddress,
+        claimantPhone: submission?.claimantPhone,
+        originalWorkUrl: submission?.originalWorkUrl,
+        originalWorkDescription: submission?.originalWorkDescription,
+        infringingUrl: submission?.infringingUrl,
+        signature: submission?.signature,
+        goodFaithStatement: submission?.goodFaithStatement,
+        accuracyStatement: submission?.accuracyStatement,
+        perjuryStatement: submission?.perjuryStatement,
       })
       .returning();
 
-    logger.info(`DMCA notice submitted: ${notice.id}, type: ${notice.type}`);
+    logger?.info(`DMCA notice submitted: ${notice?.id}, type: ${notice?.type}`);
 
-    await this.notifyContentOwner(notice);
-    await this.notifyAdministrators(notice);
+    await this?.notifyContentOwner(notice);
+    await this?.notifyAdministrators(notice);
 
     return notice;
   }
@@ -123,20 +114,20 @@ export class DMCAService {
   async submitCounterNotice(
     submission: CounterNoticeSubmission,
   ): Promise<DMCANotice> {
-    const originalNotice = await this.getNotice(submission.originalNoticeId);
+    const _originalNotice = await this?.getNotice(submission?.originalNoticeId);
     if (!originalNotice) {
       throw new Error("Original DMCA notice not found");
     }
 
-    if (originalNotice.type !== "takedown") {
+    if (originalNotice?.type !== "takedown") {
       throw new Error("Can only counter a takedown notice");
     }
 
-    if (originalNotice.status !== "processed") {
+    if (originalNotice?.status !== "processed") {
       throw new Error("Can only counter a processed takedown notice");
     }
 
-    if (!submission.goodFaithStatement || !submission.perjuryStatement) {
+    if (!submission?.goodFaithStatement || !submission?.perjuryStatement) {
       throw new Error("All required statements must be affirmed");
     }
 
@@ -145,33 +136,33 @@ export class DMCAService {
       .values({
         type: "counter",
         status: "pending",
-        contentId: originalNotice.contentId,
-        contentType: originalNotice.contentType,
-        contentOwnerId: originalNotice.contentOwnerId,
-        claimantName: submission.claimantName,
-        claimantEmail: submission.claimantEmail,
-        claimantAddress: submission.claimantAddress,
-        originalWorkUrl: originalNotice.originalWorkUrl,
-        signature: submission.signature,
-        goodFaithStatement: submission.goodFaithStatement,
-        perjuryStatement: submission.perjuryStatement,
-        relatedNoticeId: originalNotice.id,
-        counterNoticeReason: submission.counterNoticeReason,
+        contentId: originalNotice?.contentId,
+        contentType: originalNotice?.contentType,
+        contentOwnerId: originalNotice?.contentOwnerId,
+        claimantName: submission?.claimantName,
+        claimantEmail: submission?.claimantEmail,
+        claimantAddress: submission?.claimantAddress,
+        originalWorkUrl: originalNotice?.originalWorkUrl,
+        signature: submission?.signature,
+        goodFaithStatement: submission?.goodFaithStatement,
+        perjuryStatement: submission?.perjuryStatement,
+        relatedNoticeId: originalNotice?.id,
+        counterNoticeReason: submission?.counterNoticeReason,
       })
       .returning();
 
     await db
       .update(dmcaNotices)
       .set({ status: "disputed" })
-      .where(eq(dmcaNotices.id, originalNotice.id));
+      .where(eq(dmcaNotices?.id, originalNotice?.id));
 
-    logger.info(
-      `Counter-notice submitted: ${counterNotice.id} for original: ${originalNotice.id}`,
+    logger?.info(
+      `Counter-notice submitted: ${counterNotice?.id} for original: ${originalNotice?.id}`,
     );
 
-    await this.notifyOriginalClaimant(counterNotice, originalNotice);
-    await this.notifyAdministrators(counterNotice);
-    await this.scheduleContentRestoration(counterNotice);
+    await this?.notifyOriginalClaimant(counterNotice, originalNotice);
+    await this?.notifyAdministrators(counterNotice);
+    await this?.scheduleContentRestoration(counterNotice);
 
     return counterNotice;
   }
@@ -182,31 +173,31 @@ export class DMCAService {
     action: "approve" | "reject",
     notes?: string,
   ): Promise<DMCANotice> {
-    const notice = await this.getNotice(noticeId);
+    const _notice = await this?.getNotice(noticeId);
     if (!notice) {
       throw new Error("Notice not found");
     }
 
-    if (notice.status !== "pending") {
+    if (notice?.status !== "pending") {
       throw new Error("Notice has already been processed");
     }
 
     if (action === "approve") {
-      if (notice.type === "takedown") {
-        await this.executeTakedown(notice);
-        if (notice.contentOwnerId) {
-          await this.addStrike(
-            notice.contentOwnerId,
-            notice.id,
+      if (notice?.type === "takedown") {
+        await this?.executeTakedown(notice);
+        if (notice?.contentOwnerId) {
+          await this?.addStrike(
+            notice?.contentOwnerId,
+            notice?.id,
             "DMCA takedown processed",
           );
         }
       } else {
-        await this.executeRestoration(notice);
+        await this?.executeRestoration(notice);
       }
     }
 
-    const newStatus = action === "approve" ? "processed" : "rejected";
+    const _newStatus = action === "approve" ? "processed" : "rejected";
 
     const [updatedNotice] = await db
       .update(dmcaNotices)
@@ -216,25 +207,25 @@ export class DMCAService {
         processedBy: adminId,
         adminNotes: notes,
       })
-      .where(eq(dmcaNotices.id, noticeId))
+      .where(eq(dmcaNotices?.id, noticeId))
       .returning();
 
-    logger.info(`DMCA notice ${noticeId} ${action}ed by ${adminId}`);
+    logger?.info(`DMCA notice ${noticeId} ${action}ed by ${adminId}`);
 
     return updatedNotice;
   }
 
   async executeTakedown(notice: DMCANotice): Promise<void> {
-    await this.createLegalHold({
-      contentId: notice.contentId,
-      contentType: notice.contentType,
-      holdReason: `DMCA takedown notice ${notice.id}`,
+    await this?.createLegalHold({
+      contentId: notice?.contentId,
+      contentType: notice?.contentType,
+      holdReason: `DMCA takedown notice ${notice?.id}`,
       holdType: "dmca",
-      dmcaNoticeId: notice.id,
+      dmcaNoticeId: notice?.id,
     });
 
-    logger.info(
-      `Content ${notice.contentId} taken down due to DMCA notice ${notice.id}`,
+    logger?.info(
+      `Content ${notice?.contentId} taken down due to DMCA notice ${notice?.id}`,
     );
   }
 
@@ -246,8 +237,8 @@ export class DMCAService {
       })
       .where(
         and(
-          eq(legalHolds.contentId, notice.contentId),
-          eq(legalHolds.status, "active"),
+          eq(legalHolds?.contentId, notice?.contentId),
+          eq(legalHolds?.status, "active"),
         ),
       );
 
@@ -257,18 +248,18 @@ export class DMCAService {
         status: "restored",
         restoredAt: new Date(),
       })
-      .where(eq(dmcaNotices.id, notice.id))
+      .where(eq(dmcaNotices?.id, notice?.id))
       .returning();
 
-    if (notice.relatedNoticeId) {
+    if (notice?.relatedNoticeId) {
       await db
         .update(dmcaNotices)
         .set({ status: "restored" })
-        .where(eq(dmcaNotices.id, notice.relatedNoticeId));
+        .where(eq(dmcaNotices?.id, notice?.relatedNoticeId));
     }
 
-    logger.info(
-      `Content ${notice.contentId} restored after counter-notice ${notice.id}`,
+    logger?.info(
+      `Content ${notice?.contentId} restored after counter-notice ${notice?.id}`,
     );
   }
 
@@ -277,11 +268,11 @@ export class DMCAService {
     noticeId: string,
     reason: string,
   ): Promise<DMCAStrike> {
-    const strikeInfo = await this.getStrikeInfo(userId);
-    const newStrikeNumber = strikeInfo.activeStrikes + 1;
+    const _strikeInfo = await this?.getStrikeInfo(userId);
+    const _newStrikeNumber = strikeInfo?.activeStrikes + 1;
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + STRIKE_EXPIRATION_DAYS);
+    const _expiresAt = new Date();
+    expiresAt?.setDate(expiresAt?.getDate() + STRIKE_EXPIRATION_DAYS);
 
     const [strike] = await db
       .insert(dmcaStrikes)
@@ -295,14 +286,14 @@ export class DMCAService {
       })
       .returning();
 
-    logger.info(
+    logger?.info(
       `Strike ${newStrikeNumber} added for user ${userId}, notice: ${noticeId}`,
     );
 
     if (newStrikeNumber >= MAX_STRIKES) {
-      await this.handleRepeatInfringer(userId);
+      await this?.handleRepeatInfringer(userId);
     } else if (newStrikeNumber === MAX_STRIKES - 1) {
-      await this.sendFinalWarning(userId);
+      await this?.sendFinalWarning(userId);
     }
 
     return strike;
@@ -321,27 +312,27 @@ export class DMCAService {
         revokedBy: adminId,
         revokeReason: reason,
       })
-      .where(eq(dmcaStrikes.id, strikeId))
+      .where(eq(dmcaStrikes?.id, strikeId))
       .returning();
 
-    logger.info(`Strike ${strikeId} revoked by ${adminId}: ${reason}`);
+    logger?.info(`Strike ${strikeId} revoked by ${adminId}: ${reason}`);
 
     return strike;
   }
 
   async getStrikeInfo(userId: string): Promise<StrikeInfo> {
-    const allStrikes = await db
+    const _allStrikes = await db
       .select()
       .from(dmcaStrikes)
-      .where(eq(dmcaStrikes.userId, userId))
-      .orderBy(desc(dmcaStrikes.createdAt));
+      .where(eq(dmcaStrikes?.userId, userId))
+      .orderBy(desc(dmcaStrikes?.createdAt));
 
-    const now = new Date();
-    const activeStrikes = allStrikes.filter(
-      (s) => !s.expiresAt || s.expiresAt > now,
+    const _now = new Date();
+    const _activeStrikes = allStrikes?.filter(
+      (s) => !s?.expiresAt || s?.expiresAt > now,
     );
 
-    const activeCount = activeStrikes.length;
+    const _activeCount = activeStrikes?.length;
     let accountStatus: StrikeInfo["accountStatus"] = "good_standing";
 
     if (activeCount >= MAX_STRIKES) {
@@ -355,7 +346,7 @@ export class DMCAService {
     return {
       userId,
       activeStrikes: activeCount,
-      totalStrikes: allStrikes.length,
+      totalStrikes: allStrikes?.length,
       strikes: allStrikes,
       isRepeatInfringer: activeCount >= MAX_STRIKES,
       accountStatus,
@@ -363,20 +354,20 @@ export class DMCAService {
   }
 
   async handleRepeatInfringer(userId: string): Promise<void> {
-    logger.warn(
+    logger?.warn(
       `User ${userId} is a repeat infringer (3+ strikes). Initiating account termination.`,
     );
 
-    await this.notifyRepeatInfringer(userId);
+    await this?.notifyRepeatInfringer(userId);
 
-    const userProjects = await db
-      .select({ id: projects.id })
+    const _userProjects = await db
+      .select({ id: projects?.id })
       .from(projects)
-      .where(eq(projects.userId, userId));
+      .where(eq(projects?.userId, userId));
 
     for (const project of userProjects) {
-      await this.createLegalHold({
-        contentId: project.id,
+      await this?.createLegalHold({
+        contentId: project?.id,
         contentType: "project",
         holdReason: "Repeat infringer policy - account terminated",
         holdType: "legal",
@@ -388,17 +379,17 @@ export class DMCAService {
     const [hold] = await db
       .insert(legalHolds)
       .values({
-        contentId: request.contentId,
-        contentType: request.contentType,
-        holdReason: request.holdReason,
-        holdType: request.holdType,
-        dmcaNoticeId: request.dmcaNoticeId,
+        contentId: request?.contentId,
+        contentType: request?.contentType,
+        holdReason: request?.holdReason,
+        holdType: request?.holdType,
+        dmcaNoticeId: request?.dmcaNoticeId,
         isActive: true,
       })
       .returning();
 
-    logger.info(
-      `Legal hold created: ${hold.id} for content ${request.contentId}`,
+    logger?.info(
+      `Legal hold created: ${hold?.id} for content ${request?.contentId}`,
     );
 
     return hold;
@@ -412,34 +403,34 @@ export class DMCAService {
         releasedAt: new Date(),
         releasedBy: adminId,
       })
-      .where(eq(legalHolds.id, holdId))
+      .where(eq(legalHolds?.id, holdId))
       .returning();
 
-    logger.info(`Legal hold ${holdId} released by ${adminId}`);
+    logger?.info(`Legal hold ${holdId} released by ${adminId}`);
 
     return hold;
   }
 
   async getActiveLegalHolds(contentId?: string): Promise<LegalHold[]> {
-    const query = contentId
+    const _query = contentId
       ? and(
-          eq(legalHolds.status, "active"),
-          eq(legalHolds.contentId, contentId),
+          eq(legalHolds?.status, "active"),
+          eq(legalHolds?.contentId, contentId),
         )
-      : eq(legalHolds.status, "active");
+      : eq(legalHolds?.status, "active");
 
     return db
       .select()
       .from(legalHolds)
       .where(query)
-      .orderBy(desc(legalHolds.createdAt));
+      .orderBy(desc(legalHolds?.createdAt));
   }
 
   async getNotice(noticeId: string): Promise<DMCANotice | null> {
     const [notice] = await db
       .select()
       .from(dmcaNotices)
-      .where(eq(dmcaNotices.id, noticeId))
+      .where(eq(dmcaNotices?.id, noticeId))
       .limit(1);
 
     return notice || null;
@@ -452,9 +443,9 @@ export class DMCAService {
     try {
       // First get the user's email
       const [user] = await db
-        .select({ email: users.email })
+        .select({ email: users?.email })
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
 
       if (!user) {
@@ -462,42 +453,42 @@ export class DMCAService {
       }
 
       // Return notices where user is the claimant (filed the claim)
-      const noticesAsClaimant = await db
+      const _noticesAsClaimant = await db
         .select()
         .from(dmcaNotices)
-        .where(eq(dmcaNotices.claimantEmail, user.email))
-        .orderBy(desc(dmcaNotices.submittedAt));
+        .where(eq(dmcaNotices?.claimantEmail, user?.email))
+        .orderBy(desc(dmcaNotices?.submittedAt));
 
       // Also get notices where user's content was claimed
       // Join through projects table where contentId matches project id
-      const noticesAgainstContent = await db
+      const _noticesAgainstContent = await db
         .select({
-          id: dmcaNotices.id,
-          contentType: dmcaNotices.contentType,
-          contentId: dmcaNotices.contentId,
-          claimantName: dmcaNotices.claimantName,
-          claimantEmail: dmcaNotices.claimantEmail,
-          description: dmcaNotices.description,
-          status: dmcaNotices.status,
-          submittedAt: dmcaNotices.submittedAt,
-          resolvedAt: dmcaNotices.resolvedAt,
-          createdAt: dmcaNotices.createdAt,
+          id: dmcaNotices?.id,
+          contentType: dmcaNotices?.contentType,
+          contentId: dmcaNotices?.contentId,
+          claimantName: dmcaNotices?.claimantName,
+          claimantEmail: dmcaNotices?.claimantEmail,
+          description: dmcaNotices?.description,
+          status: dmcaNotices?.status,
+          submittedAt: dmcaNotices?.submittedAt,
+          resolvedAt: dmcaNotices?.resolvedAt,
+          createdAt: dmcaNotices?.createdAt,
         })
         .from(dmcaNotices)
-        .innerJoin(projects, eq(dmcaNotices.contentId, projects.id))
-        .where(eq(projects.userId, userId))
-        .orderBy(desc(dmcaNotices.submittedAt));
+        .innerJoin(projects, eq(dmcaNotices?.contentId, projects?.id))
+        .where(eq(projects?.userId, userId))
+        .orderBy(desc(dmcaNotices?.submittedAt));
 
       // Combine and deduplicate
-      const allNotices = [...noticesAsClaimant, ...noticesAgainstContent];
-      const uniqueNotices = allNotices.filter(
+      const _allNotices = [...noticesAsClaimant, ...noticesAgainstContent];
+      const _uniqueNotices = allNotices?.filter(
         (notice, index, self) =>
-          index === self.findIndex((n) => n.id === notice.id),
+          index === self?.findIndex((n) => n?.id === notice?.id),
       );
 
       return uniqueNotices;
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching notices by user:");
+      logger?.warn({ err: error }, "Error fetching notices by user:");
       return [];
     }
   }
@@ -506,8 +497,8 @@ export class DMCAService {
     return db
       .select()
       .from(dmcaNotices)
-      .where(eq(dmcaNotices.status, "pending"))
-      .orderBy(dmcaNotices.submittedAt);
+      .where(eq(dmcaNotices?.status, "pending"))
+      .orderBy(dmcaNotices?.submittedAt);
   }
 
   async getAllNotices(options?: {
@@ -515,28 +506,28 @@ export class DMCAService {
     offset?: number;
     status?: DMCANoticeStatus;
   }): Promise<{ notices: DMCANotice[]; total: number }> {
-    let query = db.select().from(dmcaNotices);
-    let countQuery = db.select({ count: count() }).from(dmcaNotices);
+    let query = db?.select().from(dmcaNotices);
+    let countQuery = db?.select({ count: count() }).from(dmcaNotices);
 
     if (options?.status) {
-      query = query.where(
-        eq(dmcaNotices.status, options.status),
+      query = query?.where(
+        eq(dmcaNotices?.status, options?.status),
       ) as typeof query;
-      countQuery = countQuery.where(
-        eq(dmcaNotices.status, options.status),
+      countQuery = countQuery?.where(
+        eq(dmcaNotices?.status, options?.status),
       ) as typeof countQuery;
     }
 
-    query = query.orderBy(desc(dmcaNotices.submittedAt)) as typeof query;
+    query = query?.orderBy(desc(dmcaNotices?.submittedAt)) as typeof query;
 
     if (options?.limit) {
-      query = query.limit(options.limit) as typeof query;
+      query = query?.limit(options?.limit) as typeof query;
     }
     if (options?.offset) {
-      query = query.offset(options.offset) as typeof query;
+      query = query?.offset(options?.offset) as typeof query;
     }
 
-    const [notices, [{ count: total }]] = await Promise.all([
+    const [notices, [{ count: total }]] = await Promise?.all([
       query,
       countQuery,
     ]);
@@ -555,59 +546,59 @@ export class DMCAService {
         contentType === "video"
       ) {
         const [project] = await db
-          .select({ id: projects.id, userId: projects.userId })
+          .select({ id: projects?.id, userId: projects?.userId })
           .from(projects)
-          .where(eq(projects.id, contentId))
+          .where(eq(projects?.id, contentId))
           .limit(1);
 
         if (project) {
-          return { id: project.userId };
+          return { id: project?.userId };
         }
       }
     } catch (error) {
-      logger.warn({ err: error }, "Error finding content owner:");
+      logger?.warn({ err: error }, "Error finding content owner:");
     }
     return null;
   }
 
   private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    const _emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex?.test(email);
   }
 
   private async notifyContentOwner(notice: DMCANotice): Promise<void> {
-    if (!notice.contentOwnerId) return;
+    if (!notice?.contentOwnerId) return;
 
     try {
       const [user] = await db
-        .select({ email: users.email, firstName: users.firstName })
+        .select({ email: users?.email, firstName: users?.firstName })
         .from(users)
-        .where(eq(users.id, notice.contentOwnerId))
+        .where(eq(users?.id, notice?.contentOwnerId))
         .limit(1);
 
       if (user?.email) {
-        await emailService.sendEmail({
-          to: user.email,
+        await emailService?.sendEmail({
+          to: user?.email,
           subject: "DMCA Notice Received for Your Content",
           html: `
             <h2>DMCA Notice Received</h2>
-            <p>Dear ${user.firstName || "Content Owner"},</p>
+            <p>Dear ${user?.firstName || "Content Owner"},</p>
             <p>We have received a DMCA takedown notice for content associated with your account.</p>
-            <p><strong>Content ID:</strong> ${notice.contentId}</p>
-            <p><strong>Claimant:</strong> ${notice.claimantName}</p>
+            <p><strong>Content ID:</strong> ${notice?.contentId}</p>
+            <p><strong>Claimant:</strong> ${notice?.claimantName}</p>
             <p>You may file a counter-notification if you believe this notice was sent in error.</p>
             <p>Please log in to your account to view the full details and respond.</p>
           `,
         });
       }
     } catch (error) {
-      logger.warn({ err: error }, "Error notifying content owner:");
+      logger?.warn({ err: error }, "Error notifying content owner:");
     }
   }
 
   private async notifyAdministrators(notice: DMCANotice): Promise<void> {
-    logger.info(
-      `Admin notification: New DMCA ${notice.type} notice ${notice.id} requires review`,
+    logger?.info(
+      `Admin notification: New DMCA ${notice?.type} notice ${notice?.id} requires review`,
     );
   }
 
@@ -616,73 +607,73 @@ export class DMCAService {
     originalNotice: DMCANotice,
   ): Promise<void> {
     try {
-      await emailService.sendEmail({
-        to: originalNotice.claimantEmail,
+      await emailService?.sendEmail({
+        to: originalNotice?.claimantEmail,
         subject: "Counter-Notification Received for Your DMCA Claim",
         html: `
           <h2>Counter-Notification Received</h2>
-          <p>Dear ${originalNotice.claimantName},</p>
+          <p>Dear ${originalNotice?.claimantName},</p>
           <p>A counter-notification has been filed in response to your DMCA takedown request.</p>
           <p>Under the DMCA, you have ${COUNTER_NOTICE_WAIT_DAYS} business days to file legal action to prevent restoration of the content.</p>
           <p>If no legal action is filed, the content may be restored after this period.</p>
         `,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error notifying original claimant:");
+      logger?.warn({ err: error }, "Error notifying original claimant:");
     }
   }
 
   private async scheduleContentRestoration(notice: DMCANotice): Promise<void> {
-    const restorationDate = new Date();
-    restorationDate.setDate(
-      restorationDate.getDate() + COUNTER_NOTICE_WAIT_DAYS,
+    const _restorationDate = new Date();
+    restorationDate?.setDate(
+      restorationDate?.getDate() + COUNTER_NOTICE_WAIT_DAYS,
     );
 
-    logger.info(
-      `Content ${notice.contentId} scheduled for restoration on ${restorationDate.toISOString()} unless legal action is filed`,
+    logger?.info(
+      `Content ${notice?.contentId} scheduled for restoration on ${restorationDate?.toISOString()} unless legal action is filed`,
     );
   }
 
   private async sendFinalWarning(userId: string): Promise<void> {
     try {
       const [user] = await db
-        .select({ email: users.email, firstName: users.firstName })
+        .select({ email: users?.email, firstName: users?.firstName })
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
 
       if (user?.email) {
-        await emailService.sendEmail({
-          to: user.email,
+        await emailService?.sendEmail({
+          to: user?.email,
           subject: "Final Warning: Account Termination Risk",
           html: `
             <h2>Final Warning - DMCA Strikes</h2>
-            <p>Dear ${user.firstName || "User"},</p>
+            <p>Dear ${user?.firstName || "User"},</p>
             <p>Your account has received ${MAX_STRIKES - 1} DMCA strikes. One more strike will result in account termination under our repeat infringer policy.</p>
             <p>Please ensure all content you upload is properly licensed or owned by you.</p>
           `,
         });
       }
     } catch (error) {
-      logger.warn({ err: error }, "Error sending final warning:");
+      logger?.warn({ err: error }, "Error sending final warning:");
     }
   }
 
   private async notifyRepeatInfringer(userId: string): Promise<void> {
     try {
       const [user] = await db
-        .select({ email: users.email, firstName: users.firstName })
+        .select({ email: users?.email, firstName: users?.firstName })
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
 
       if (user?.email) {
-        await emailService.sendEmail({
-          to: user.email,
+        await emailService?.sendEmail({
+          to: user?.email,
           subject: "Account Terminated - Repeat Infringer Policy",
           html: `
             <h2>Account Termination Notice</h2>
-            <p>Dear ${user.firstName || "User"},</p>
+            <p>Dear ${user?.firstName || "User"},</p>
             <p>Your account has been terminated due to repeated copyright infringement under our repeat infringer policy.</p>
             <p>All your content has been placed on legal hold and is no longer accessible.</p>
             <p>If you believe this action was taken in error, please contact our legal department.</p>
@@ -690,9 +681,9 @@ export class DMCAService {
         });
       }
     } catch (error) {
-      logger.warn({ err: error }, "Error notifying repeat infringer:");
+      logger?.warn({ err: error }, "Error notifying repeat infringer:");
     }
   }
 }
 
-export const dmcaService = new DMCAService();
+export const _dmcaService = new DMCAService();

@@ -856,7 +856,7 @@ class AlgorithmIntelligenceService {
   };
 
   constructor() {
-    logger.info("✅ Algorithm Intelligence service initialized");
+    logger?.info("✅ Algorithm Intelligence service initialized");
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
@@ -873,38 +873,38 @@ class AlgorithmIntelligenceService {
       hashtagReach: number[];
     },
   ): Promise<AlgorithmHealth> {
-    const cacheKey = `${this.CACHE_PREFIX}health:${platform}:${userId}`;
+    const _cacheKey = `${this?.CACHE_PREFIX}health:${platform}:${userId}`;
 
-    const redis = await this.getRedis();
+    const _redis = await this?.getRedis();
     if (redis) {
       try {
-        const cached = await redis.get(cacheKey);
-        if (cached) return JSON.parse(cached);
+        const _cached = await redis?.get(cacheKey);
+        if (cached) return JSON?.parse(cached);
       } catch {
         /* intentional: Redis cache miss → falls through to live calculation */
       }
     }
 
-    const metrics = this.analyzeMetrics(platform, recentMetrics);
-    const alerts = await this.detectAlerts(platform, metrics, userId);
-    const status = this.determineStatus(metrics, alerts);
-    const recommendations = this.generateRecommendations(
+    const _metrics = this?.analyzeMetrics(platform, recentMetrics);
+    const _alerts = await this?.detectAlerts(platform, metrics, userId);
+    const _status = this?.determineStatus(metrics, alerts);
+    const _recommendations = this?.generateRecommendations(
       platform,
       metrics,
       alerts,
     );
-    const overallScore = this.calculateHealthScore(metrics, alerts, platform);
+    const _overallScore = this?.calculateHealthScore(metrics, alerts, platform);
 
     const result: AlgorithmHealth = {
       platform,
       overallScore,
       status,
       metrics: {
-        reachTrend: metrics.reachTrend,
-        engagementRate: metrics.engagementRate,
-        impressionRatio: metrics.impressionRatio,
-        followerGrowth: metrics.followerGrowth,
-        hashtagReach: metrics.hashtagReach,
+        reachTrend: metrics?.reachTrend,
+        engagementRate: metrics?.engagementRate,
+        impressionRatio: metrics?.impressionRatio,
+        followerGrowth: metrics?.followerGrowth,
+        hashtagReach: metrics?.hashtagReach,
       },
       alerts,
       recommendations,
@@ -913,13 +913,13 @@ class AlgorithmIntelligenceService {
 
     if (redis) {
       try {
-        await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
+        await redis?.setEx(cacheKey, this?.REDIS_TTL, JSON?.stringify(result));
       } catch {
         /* intentional: best-effort Redis cache write */
       }
     }
 
-    logger.info(
+    logger?.info(
       `🔍 Algorithm health check: ${platform} — Score: ${overallScore}/100 — Status: ${status}`,
     );
     return result;
@@ -936,7 +936,7 @@ class AlgorithmIntelligenceService {
       searchVisibility: number;
     },
   ): Promise<ShadowBanCheck> {
-    const metrics = recentMetrics || {
+    const _metrics = recentMetrics || {
       hashtagReach: 58,
       exploreReach: 38,
       nonFollowerReach: 48,
@@ -944,33 +944,33 @@ class AlgorithmIntelligenceService {
       searchVisibility: 65,
     };
 
-    const indicators = {
-      hashtagVisibility: metrics.hashtagReach,
-      explorePageReach: metrics.exploreReach,
-      nonFollowerReach: metrics.nonFollowerReach,
-      engagementFromNew: metrics.newEngagement,
-      searchVisibility: metrics.searchVisibility,
+    const _indicators = {
+      hashtagVisibility: metrics?.hashtagReach,
+      explorePageReach: metrics?.exploreReach,
+      nonFollowerReach: metrics?.nonFollowerReach,
+      engagementFromNew: metrics?.newEngagement,
+      searchVisibility: metrics?.searchVisibility,
     };
 
     const { shadowbanIndicators } = this;
-    const lowFlags = [
-      indicators.hashtagVisibility <
-        shadowbanIndicators.hashtagVisibilityThreshold,
-      indicators.explorePageReach < shadowbanIndicators.exploreReachThreshold,
-      indicators.nonFollowerReach <
-        shadowbanIndicators.nonFollowerReachThreshold,
-      indicators.engagementFromNew < shadowbanIndicators.newEngagementThreshold,
-      indicators.searchVisibility <
-        shadowbanIndicators.searchVisibilityThreshold,
+    const _lowFlags = [
+      indicators?.hashtagVisibility <
+        shadowbanIndicators?.hashtagVisibilityThreshold,
+      indicators?.explorePageReach < shadowbanIndicators?.exploreReachThreshold,
+      indicators?.nonFollowerReach <
+        shadowbanIndicators?.nonFollowerReachThreshold,
+      indicators?.engagementFromNew < shadowbanIndicators?.newEngagementThreshold,
+      indicators?.searchVisibility <
+        shadowbanIndicators?.searchVisibilityThreshold,
     ];
 
-    const lowCount = lowFlags.filter(Boolean).length;
+    const _lowCount = lowFlags?.filter(Boolean).length;
 
     // Require 3+ low flags for shadowban diagnosis (reduces false positives for niche artists)
-    const isShadowbanned = lowCount >= 3;
+    const _isShadowbanned = lowCount >= 3;
 
     // Confidence scales with number of low indicators (calibrated: 3 flags = 65%, 5 flags = 95%)
-    const confidence =
+    const _confidence =
       lowCount === 0
         ? 5
         : lowCount === 1
@@ -987,70 +987,70 @@ class AlgorithmIntelligenceService {
     const remediation: string[] = [];
 
     if (
-      indicators.hashtagVisibility <
-      shadowbanIndicators.hashtagVisibilityThreshold
+      indicators?.hashtagVisibility <
+      shadowbanIndicators?.hashtagVisibilityThreshold
     ) {
-      possibleCauses.push(
+      possibleCauses?.push(
         "Banned, flagged, or overused hashtags limiting discovery reach",
       );
-      remediation.push(
+      remediation?.push(
         "Audit your hashtags — remove any banned tags and rotate to fresh niche hashtags",
       );
     }
     if (
-      indicators.explorePageReach < shadowbanIndicators.exploreReachThreshold
+      indicators?.explorePageReach < shadowbanIndicators?.exploreReachThreshold
     ) {
-      possibleCauses.push(
+      possibleCauses?.push(
         "Content not meeting platform discovery quality threshold",
       );
-      remediation.push(
+      remediation?.push(
         "Increase save-worthy value: tutorials, how-tos, music tips outperform pure promos",
       );
     }
     if (
-      indicators.nonFollowerReach <
-      shadowbanIndicators.nonFollowerReachThreshold
+      indicators?.nonFollowerReach <
+      shadowbanIndicators?.nonFollowerReachThreshold
     ) {
-      possibleCauses.push(
+      possibleCauses?.push(
         "Algorithm has limited distribution — likely from recent content policy signal",
       );
-      remediation.push(
+      remediation?.push(
         "Increase authentic engagement quality (reply to comments, start genuine conversations)",
       );
     }
     if (
-      indicators.engagementFromNew < shadowbanIndicators.newEngagementThreshold
+      indicators?.engagementFromNew < shadowbanIndicators?.newEngagementThreshold
     ) {
-      possibleCauses.push(
+      possibleCauses?.push(
         "Content not resonating with discovery audiences — hook may need strengthening",
       );
-      remediation.push(
+      remediation?.push(
         "A/B test 3 different hook styles — POV, curiosity gap, and question format",
       );
     }
     if (
-      indicators.searchVisibility <
-      shadowbanIndicators.searchVisibilityThreshold
+      indicators?.searchVisibility <
+      shadowbanIndicators?.searchVisibilityThreshold
     ) {
-      possibleCauses.push(
+      possibleCauses?.push(
         "Account or content metadata flagged in search index",
       );
-      remediation.push(
+      remediation?.push(
         "Update bio, ensure no banned terms in profile, and submit account review if available",
       );
     }
 
     if (isShadowbanned) {
-      remediation.push(
+      remediation?.push(
         "Take a 48-72 hour posting break — activity pause often resets distribution limits",
       );
-      remediation.push(
+      remediation?.push(
         "Remove and disconnect any suspicious third-party apps from account settings",
       );
-      remediation.push(
+      remediation?.push(
         "Avoid all engagement pods, mass DM campaigns, or automation tools for 2 weeks",
       );
-      remediation.push(
+      remediation?.push(
         "Post 3-5 pieces of high-quality, policy-compliant content after the break",
       );
     }
@@ -1070,7 +1070,7 @@ class AlgorithmIntelligenceService {
     _userId: string,
   ): Promise<EngagementPattern> {
     return (
-      this.engagementPatterns[platform] || this.engagementPatterns.instagram
+      this?.engagementPatterns[platform] || this?.engagementPatterns.instagram
     );
   }
 
@@ -1080,41 +1080,41 @@ class AlgorithmIntelligenceService {
   ): Promise<AlgorithmChange[]> {
     const changes: AlgorithmChange[] = [];
 
-    if (!historicalData || historicalData.length < 7) {
-      return this.getRecentPlatformChanges(platform);
+    if (!historicalData || historicalData?.length < 7) {
+      return this?.getRecentPlatformChanges(platform);
     }
 
-    const recentReach = this.calculateAverage(
-      historicalData.slice(-7).map((d) => d.reach),
+    const _recentReach = this?.calculateAverage(
+      historicalData?.slice(-7).map((d) => d?.reach),
     );
-    const previousReach = this.calculateAverage(
-      historicalData.slice(-14, -7).map((d) => d.reach),
+    const _previousReach = this?.calculateAverage(
+      historicalData?.slice(-14, -7).map((d) => d?.reach),
     );
-    const recentEngagement = this.calculateAverage(
-      historicalData.slice(-7).map((d) => d.engagement),
+    const _recentEngagement = this?.calculateAverage(
+      historicalData?.slice(-7).map((d) => d?.engagement),
     );
-    const previousEngagement = this.calculateAverage(
-      historicalData.slice(-14, -7).map((d) => d.engagement),
+    const _previousEngagement = this?.calculateAverage(
+      historicalData?.slice(-14, -7).map((d) => d?.engagement),
     );
 
-    const reachChangePercent =
+    const _reachChangePercent =
       previousReach > 0
         ? ((recentReach - previousReach) / previousReach) * 100
         : 0;
-    const engagementChangePercent =
+    const _engagementChangePercent =
       previousEngagement > 0
         ? ((recentEngagement - previousEngagement) / previousEngagement) * 100
         : 0;
 
     // Significant reach change detection (threshold: 15% — meaningful but not noise)
-    if (Math.abs(reachChangePercent) > 15) {
-      changes.push({
+    if (Math?.abs(reachChangePercent) > 15) {
+      changes?.push({
         id: randomBytes(8).toString("hex"),
         platform,
         detectedAt: new Date(),
         changeType: "reach",
         impact: reachChangePercent > 0 ? "positive" : "negative",
-        description: `Reach ${reachChangePercent > 0 ? "increased" : "decreased"} ${Math.abs(reachChangePercent).toFixed(1)}% over the last 7 days vs prior week`,
+        description: `Reach ${reachChangePercent > 0 ? "increased" : "decreased"} ${Math?.abs(reachChangePercent).toFixed(1)}% over the last 7 days vs prior week`,
         adaptations:
           reachChangePercent < 0
             ? [
@@ -1133,14 +1133,14 @@ class AlgorithmIntelligenceService {
     }
 
     // Significant engagement change detection
-    if (Math.abs(engagementChangePercent) > 20) {
-      changes.push({
+    if (Math?.abs(engagementChangePercent) > 20) {
+      changes?.push({
         id: randomBytes(8).toString("hex"),
         platform,
         detectedAt: new Date(),
         changeType: "engagement",
         impact: engagementChangePercent > 0 ? "positive" : "negative",
-        description: `Engagement ${engagementChangePercent > 0 ? "up" : "down"} ${Math.abs(engagementChangePercent).toFixed(1)}% vs prior week`,
+        description: `Engagement ${engagementChangePercent > 0 ? "up" : "down"} ${Math?.abs(engagementChangePercent).toFixed(1)}% vs prior week`,
         adaptations:
           engagementChangePercent < 0
             ? [
@@ -1162,7 +1162,7 @@ class AlgorithmIntelligenceService {
     platform: string,
   ): Promise<PlatformAlgorithmProfile> {
     return (
-      this.platformAlgorithms[platform] || this.platformAlgorithms.instagram
+      this?.platformAlgorithms[platform] || this?.platformAlgorithms.instagram
     );
   }
 
@@ -1176,33 +1176,33 @@ class AlgorithmIntelligenceService {
     const strategies: string[] = [];
     let priority: "immediate" | "short_term" | "long_term" = "short_term";
 
-    if (change.impact === "negative") {
+    if (change?.impact === "negative") {
       priority = "immediate";
-      strategies.push(
+      strategies?.push(
         "Pause scheduled content for 24 hours to analyze the shift",
       );
-      strategies.push(
+      strategies?.push(
         "Pull your last 7 days of analytics — identify the first post that underperformed",
       );
-      strategies.push("Review hashtag health via platform insights");
-      strategies.push(
+      strategies?.push("Review hashtag health via platform insights");
+      strategies?.push(
         "Increase direct audience engagement: reply to every comment and DM today",
       );
-      strategies.push(
+      strategies?.push(
         'Create a high-quality "reset" piece of content to re-establish algorithm trust',
       );
     } else {
       priority = "short_term";
-      strategies.push(
+      strategies?.push(
         "Increase posting frequency 20-25% for the next 2 weeks while algorithm favor is high",
       );
-      strategies.push(
+      strategies?.push(
         "Repurpose top-performing content across formats (video → carousel → thread)",
       );
-      strategies.push(
+      strategies?.push(
         "Launch a series based on what's working — algorithm rewards consistent formats",
       );
-      strategies.push(
+      strategies?.push(
         "Test a slightly higher production quality version of your best content type",
       );
     }
@@ -1223,8 +1223,8 @@ class AlgorithmIntelligenceService {
     }>;
     benchmarks: { userAvg: number; platformAvg: number; topCreators: number };
   }> {
-    const health = await this.checkAlgorithmHealth(platform, userId);
-    const benchmarks = this.platformBenchmarks[platform] || {
+    const _health = await this?.checkAlgorithmHealth(platform, userId);
+    const _benchmarks = this?.platformBenchmarks[platform] || {
       userAvg: 2.5,
       good: 5.0,
       topCreators: 9.0,
@@ -1273,21 +1273,21 @@ class AlgorithmIntelligenceService {
     ];
 
     // Sort by impact-to-effort ratio (ROI sort)
-    const effortScore = { low: 1, medium: 2, high: 3 };
-    topActions.sort(
+    const _effortScore = { low: 1, medium: 2, high: 3 };
+    topActions?.sort(
       (a, b) =>
-        b.expectedImpact / effortScore[b.effort] -
-        a.expectedImpact / effortScore[a.effort],
+        b?.expectedImpact / effortScore[b?.effort] -
+        a?.expectedImpact / effortScore[a?.effort],
     );
 
     return {
       currentState: health,
-      optimizationScore: health.overallScore,
+      optimizationScore: health?.overallScore,
       topActions,
       benchmarks: {
-        userAvg: health.metrics.engagementRate,
-        platformAvg: benchmarks.userAvg,
-        topCreators: benchmarks.topCreators,
+        userAvg: health?.metrics.engagementRate,
+        platformAvg: benchmarks?.userAvg,
+        topCreators: benchmarks?.topCreators,
       },
     };
   }
@@ -1307,7 +1307,7 @@ class AlgorithmIntelligenceService {
     followerGrowth: number;
     hashtagReach: number;
   } {
-    const benchmark = this.platformBenchmarks[platform] || {
+    const _benchmark = this?.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
@@ -1316,7 +1316,7 @@ class AlgorithmIntelligenceService {
     if (!recentMetrics) {
       return {
         reachTrend: "stable",
-        engagementRate: benchmark.userAvg,
+        engagementRate: benchmark?.userAvg,
         impressionRatio: 62,
         followerGrowth: 0.6,
         hashtagReach: 48,
@@ -1326,26 +1326,26 @@ class AlgorithmIntelligenceService {
     const { impressions, engagement, followers, hashtagReach } = recentMetrics;
 
     // Compare recent half vs earlier half for trend
-    const mid = Math.floor(impressions.length / 2);
-    const recentImp = this.calculateAverage(impressions.slice(mid));
-    const previousImp = this.calculateAverage(impressions.slice(0, mid));
-    const impChange =
+    const _mid = Math?.floor(impressions?.length / 2);
+    const _recentImp = this?.calculateAverage(impressions?.slice(mid));
+    const _previousImp = this?.calculateAverage(impressions?.slice(0, mid));
+    const _impChange =
       previousImp > 0 ? ((recentImp - previousImp) / previousImp) * 100 : 0;
 
     let reachTrend: "increasing" | "stable" | "declining" = "stable";
     if (impChange > 8) reachTrend = "increasing";
     else if (impChange < -8) reachTrend = "declining";
 
-    const totalImp = this.calculateSum(impressions);
-    const totalEng = this.calculateSum(engagement);
-    const engagementRate =
-      totalImp > 0 ? Math.round((totalEng / totalImp) * 1000) / 10 : 0;
+    const _totalImp = this?.calculateSum(impressions);
+    const _totalEng = this?.calculateSum(engagement);
+    const _engagementRate =
+      totalImp > 0 ? Math?.round((totalEng / totalImp) * 1000) / 10 : 0;
 
-    const followerGrowth =
-      followers.length >= 2
-        ? Math.round(
-            ((followers[followers.length - 1] - followers[0]) /
-              Math.max(1, followers[0])) *
+    const _followerGrowth =
+      followers?.length >= 2
+        ? Math?.round(
+            ((followers[followers?.length - 1] - followers[0]) /
+              Math?.max(1, followers[0])) *
               1000,
           ) / 10
         : 0;
@@ -1353,31 +1353,31 @@ class AlgorithmIntelligenceService {
     return {
       reachTrend,
       engagementRate,
-      impressionRatio: Math.min(
+      impressionRatio: Math?.min(
         95,
-        Math.round(
-          55 + (recentImp / Math.max(1, totalImp / impressions.length)) * 20,
+        Math?.round(
+          55 + (recentImp / Math?.max(1, totalImp / impressions?.length)) * 20,
         ),
       ),
       followerGrowth,
-      hashtagReach: this.calculateAverage(hashtagReach),
+      hashtagReach: this?.calculateAverage(hashtagReach),
     };
   }
 
   private async detectAlerts(
     platform: string,
-    metrics: ReturnType<typeof this.analyzeMetrics>,
+    metrics: ReturnType<typeof this?.analyzeMetrics>,
     _userId: string,
   ): Promise<AlgorithmAlert[]> {
     const alerts: AlgorithmAlert[] = [];
-    const benchmark = this.platformBenchmarks[platform] || {
+    const _benchmark = this?.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
     };
 
-    if (metrics.reachTrend === "declining") {
-      alerts.push({
+    if (metrics?.reachTrend === "declining") {
+      alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "reach_decline",
         severity: "medium",
@@ -1390,7 +1390,7 @@ class AlgorithmIntelligenceService {
     }
 
     // Platform-specific engagement thresholds — music artists have lower baseline on some platforms
-    const lowEngagementThreshold =
+    const _lowEngagementThreshold =
       platform === "facebook"
         ? 1.0
         : platform === "twitter"
@@ -1401,15 +1401,15 @@ class AlgorithmIntelligenceService {
               ? 1.8
               : 2.0;
 
-    if (metrics.engagementRate < lowEngagementThreshold) {
-      alerts.push({
+    if (metrics?.engagementRate < lowEngagementThreshold) {
+      alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "engagement_drop",
         severity:
-          metrics.engagementRate < lowEngagementThreshold * 0.5
+          metrics?.engagementRate < lowEngagementThreshold * 0.5
             ? "critical"
             : "high",
-        message: `Engagement rate ${metrics.engagementRate}% is below platform baseline of ${benchmark.userAvg}%`,
+        message: `Engagement rate ${metrics?.engagementRate}% is below platform baseline of ${benchmark?.userAvg}%`,
         detectedAt: new Date(),
         suggestedAction:
           "Create more interactive content — ask direct questions, use polls, and strengthen your CTA",
@@ -1418,13 +1418,13 @@ class AlgorithmIntelligenceService {
     }
 
     if (
-      metrics.hashtagReach < this.shadowbanIndicators.hashtagVisibilityThreshold
+      metrics?.hashtagReach < this?.shadowbanIndicators.hashtagVisibilityThreshold
     ) {
-      alerts.push({
+      alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "shadowban",
-        severity: metrics.hashtagReach < 15 ? "critical" : "high",
-        message: `Hashtag visibility at ${Math.round(metrics.hashtagReach)}% — possible reach restriction active`,
+        severity: metrics?.hashtagReach < 15 ? "critical" : "high",
+        message: `Hashtag visibility at ${Math?.round(metrics?.hashtagReach)}% — possible reach restriction active`,
         detectedAt: new Date(),
         suggestedAction:
           "Run full shadowban check and audit hashtag strategy immediately",
@@ -1432,12 +1432,12 @@ class AlgorithmIntelligenceService {
       });
     }
 
-    if (metrics.followerGrowth < -0.5) {
-      alerts.push({
+    if (metrics?.followerGrowth < -0.5) {
+      alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "reach_decline",
         severity: "medium",
-        message: `Net follower loss detected (${metrics.followerGrowth}%) — check for bot purges or content misalignment`,
+        message: `Net follower loss detected (${metrics?.followerGrowth}%) — check for bot purges or content misalignment`,
         detectedAt: new Date(),
         suggestedAction:
           "Review recent content relevance and audience targeting — focus on value-driven posts",
@@ -1449,186 +1449,186 @@ class AlgorithmIntelligenceService {
   }
 
   private determineStatus(
-    metrics: ReturnType<typeof this.analyzeMetrics>,
+    metrics: ReturnType<typeof this?.analyzeMetrics>,
     alerts: AlgorithmAlert[],
   ): AlgorithmHealth["status"] {
-    const criticalAlerts = alerts.filter(
-      (a) => a.severity === "critical",
+    const _criticalAlerts = alerts?.filter(
+      (a) => a?.severity === "critical",
     ).length;
-    const highAlerts = alerts.filter((a) => a.severity === "high").length;
-    const shadowbanAlert = alerts.find((a) => a.type === "shadowban");
+    const _highAlerts = alerts?.filter((a) => a?.severity === "high").length;
+    const _shadowbanAlert = alerts?.find((a) => a?.type === "shadowban");
 
     if (
       shadowbanAlert &&
-      (shadowbanAlert.severity === "critical" ||
-        shadowbanAlert.severity === "high")
+      (shadowbanAlert?.severity === "critical" ||
+        shadowbanAlert?.severity === "high")
     ) {
-      if (metrics.hashtagReach < 15) return "shadowbanned";
+      if (metrics?.hashtagReach < 15) return "shadowbanned";
     }
     if (criticalAlerts > 0 || highAlerts >= 2) return "critical";
-    if (highAlerts > 0 || metrics.reachTrend === "declining") return "warning";
+    if (highAlerts > 0 || metrics?.reachTrend === "declining") return "warning";
     return "healthy";
   }
 
   private generateRecommendations(
     platform: string,
-    metrics: ReturnType<typeof this.analyzeMetrics>,
+    metrics: ReturnType<typeof this?.analyzeMetrics>,
     alerts: AlgorithmAlert[],
   ): string[] {
     const recommendations: string[] = [];
-    const profile = this.platformAlgorithms[platform];
-    const benchmark = this.platformBenchmarks[platform] || {
+    const _profile = this?.platformAlgorithms[platform];
+    const _benchmark = this?.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
     };
-    const hasShadowbanAlert = alerts.some((a) => a.type === "shadowban");
+    const _hasShadowbanAlert = alerts?.some((a) => a?.type === "shadowban");
 
     // === Reach trend recommendations ===
-    if (metrics.reachTrend === "declining") {
-      recommendations.push(
+    if (metrics?.reachTrend === "declining") {
+      recommendations?.push(
         "Pull your last 10 posts' analytics — find the exact first post that underperformed and identify what changed (hook, format, length, time posted)",
       );
       if (platform === "tiktok") {
-        recommendations.push(
+        recommendations?.push(
           "Shift from promo content to authentic BTS (behind-the-scenes studio, songwriting process) — these outperform music promo 2:1 when reach drops",
         );
       } else if (platform === "instagram") {
-        recommendations.push(
+        recommendations?.push(
           "Switch to carousel format for your next 3 posts — Instagram resurfaces carousels to non-engagers, doubling impressions during a reach dip",
         );
       } else if (platform === "youtube") {
-        recommendations.push(
+        recommendations?.push(
           "Publish a Community tab post and a Short this week to rebuild algorithm signals without committing to a full long-form upload",
         );
       } else if (platform === "spotify" || platform === "apple_music") {
-        recommendations.push(
+        recommendations?.push(
           "Release an acoustic, remix, or live version of an existing track — this triggers a fresh Release Radar cycle and revives catalogue streams",
         );
       } else {
-        recommendations.push(
+        recommendations?.push(
           "Temporarily shift from promotional content to value-first content (tips, BTS, personal story) to rebuild engagement signals",
         );
       }
     }
 
     // === Low engagement recommendations ===
-    if (metrics.engagementRate < benchmark.userAvg) {
+    if (metrics?.engagementRate < benchmark?.userAvg) {
       if (platform === "tiktok") {
-        recommendations.push(
+        recommendations?.push(
           'Strengthen your hook: the first 1-2 seconds decide 75% of watch-through. Try "Here\'s why your favorite song sounds like this" over "New music out now"',
         );
-        recommendations.push(
+        recommendations?.push(
           'Add a timed call-to-action: "Drop a 🔥 at 0:15 when the beat hits" — timestamped engagement spikes trigger extra distribution',
         );
       } else if (platform === "instagram") {
-        recommendations.push(
+        recommendations?.push(
           'Rewrite your last post\'s CTA: instead of "stream now" try asking a genuine question related to the music ("What does this track remind you of?")',
         );
-        recommendations.push(
+        recommendations?.push(
           "Post a poll or question sticker in Stories immediately after publishing a Reel — warm followers push up the Reel's engagement rate",
         );
       } else if (platform === "twitter" || platform === "linkedin") {
-        recommendations.push(
+        recommendations?.push(
           'Start your next post with a polarizing or curiosity-gap opener — first line determines whether readers hit "See more" which drives dwell-time signals',
         );
       } else if (platform === "soundcloud") {
-        recommendations.push(
+        recommendations?.push(
           "Ask listeners to leave a timestamped comment at their favorite moment — SoundCloud's timed comments uniquely amplify discovery for that track",
         );
       } else {
-        recommendations.push(
+        recommendations?.push(
           'Rewrite your CTA: instead of "listen now" try asking a question that invites a reaction directly tied to the emotional content',
         );
-        recommendations.push(
+        recommendations?.push(
           "Post an engagement-first piece (poll, question, reaction) to restart your engagement rate signals with the algorithm",
         );
       }
     }
 
     // === Shadowban / hashtag reach recommendations ===
-    if (hasShadowbanAlert || metrics.hashtagReach < 25) {
-      recommendations.push(
+    if (hasShadowbanAlert || metrics?.hashtagReach < 25) {
+      recommendations?.push(
         "Audit all hashtags — remove any flagged or overused tags, take a 48-72h posting break, then return with 3 fresh niche-specific hashtags maximum",
       );
     }
 
     // === Growth momentum recommendations ===
-    if (metrics.followerGrowth > 2) {
-      recommendations.push(
+    if (metrics?.followerGrowth > 2) {
+      recommendations?.push(
         "Growth momentum detected — now is the ideal time to test a new content format. The algorithm gives preference to growing accounts when they experiment",
       );
-    } else if (metrics.followerGrowth < -0.5) {
-      recommendations.push(
+    } else if (metrics?.followerGrowth < -0.5) {
+      recommendations?.push(
         "Net follower loss detected — shift focus from promotional posts to value content that showcases personality and artistry, not just releases",
       );
     }
 
     // === Platform-specific boost opportunities (always include top 2) ===
     if (profile) {
-      const boosts = profile.boostOpportunities.slice(0, 2);
-      recommendations.push(...boosts);
+      const _boosts = profile?.boostOpportunities.slice(0, 2);
+      recommendations?.push(...boosts);
     }
 
     // === Streaming platform specific ===
     if (platform === "spotify") {
-      recommendations.push(
+      recommendations?.push(
         "Pitch your next release to Spotify editorial via Spotify for Artists — submit at least 7 days before release date for Release Radar eligibility",
       );
     } else if (platform === "apple_music") {
-      recommendations.push(
+      recommendations?.push(
         "Submit your next release for Apple Music editorial consideration via Apple Music for Artists at least 10 days before release",
       );
     }
 
-    return recommendations.slice(0, 6);
+    return recommendations?.slice(0, 6);
   }
 
   private calculateHealthScore(
-    metrics: ReturnType<typeof this.analyzeMetrics>,
+    metrics: ReturnType<typeof this?.analyzeMetrics>,
     alerts: AlgorithmAlert[],
     platform: string,
   ): number {
     let score = 65; // Start at 65 (above baseline, room to go both ways)
-    const benchmark = this.platformBenchmarks[platform] || {
+    const _benchmark = this?.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
     };
 
     // Reach trend impact
-    if (metrics.reachTrend === "increasing") score += 12;
-    else if (metrics.reachTrend === "declining") score -= 18;
+    if (metrics?.reachTrend === "increasing") score += 12;
+    else if (metrics?.reachTrend === "declining") score -= 18;
 
     // Engagement rate scoring (relative to platform benchmark)
-    if (metrics.engagementRate >= benchmark.topCreators) score += 20;
-    else if (metrics.engagementRate >= benchmark.good) score += 12;
-    else if (metrics.engagementRate >= benchmark.userAvg) score += 5;
-    else if (metrics.engagementRate >= benchmark.userAvg * 0.5) score -= 8;
+    if (metrics?.engagementRate >= benchmark?.topCreators) score += 20;
+    else if (metrics?.engagementRate >= benchmark?.good) score += 12;
+    else if (metrics?.engagementRate >= benchmark?.userAvg) score += 5;
+    else if (metrics?.engagementRate >= benchmark?.userAvg * 0.5) score -= 8;
     else score -= 15;
 
     // Follower growth impact
-    if (metrics.followerGrowth > 3) score += 10;
-    else if (metrics.followerGrowth > 1) score += 6;
-    else if (metrics.followerGrowth > 0) score += 2;
-    else if (metrics.followerGrowth < -1) score -= 8;
+    if (metrics?.followerGrowth > 3) score += 10;
+    else if (metrics?.followerGrowth > 1) score += 6;
+    else if (metrics?.followerGrowth > 0) score += 2;
+    else if (metrics?.followerGrowth < -1) score -= 8;
 
     // Hashtag reach
-    if (metrics.hashtagReach > 60) score += 6;
+    if (metrics?.hashtagReach > 60) score += 6;
     else if (
-      metrics.hashtagReach < this.shadowbanIndicators.hashtagVisibilityThreshold
+      metrics?.hashtagReach < this?.shadowbanIndicators.hashtagVisibilityThreshold
     )
       score -= 12;
 
     // Alert penalties (calibrated)
     for (const alert of alerts) {
-      if (alert.severity === "critical") score -= 28;
-      else if (alert.severity === "high") score -= 16;
-      else if (alert.severity === "medium") score -= 8;
+      if (alert?.severity === "critical") score -= 28;
+      else if (alert?.severity === "high") score -= 16;
+      else if (alert?.severity === "medium") score -= 8;
       else score -= 3;
     }
 
-    return Math.max(0, Math.min(100, Math.round(score)));
+    return Math?.max(0, Math?.min(100, Math?.round(score)));
   }
 
   private getRecentPlatformChanges(platform: string): AlgorithmChange[] {
@@ -1812,13 +1812,13 @@ class AlgorithmIntelligenceService {
   }
 
   private calculateAverage(arr: number[]): number {
-    if (arr.length === 0) return 0;
-    return Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10;
+    if (arr?.length === 0) return 0;
+    return Math?.round((arr?.reduce((a, b) => a + b, 0) / arr?.length) * 10) / 10;
   }
 
   private calculateSum(arr: number[]): number {
-    return arr.reduce((a, b) => a + b, 0);
+    return arr?.reduce((a, b) => a + b, 0);
   }
 }
 
-export const algorithmIntelligenceService = new AlgorithmIntelligenceService();
+export const _algorithmIntelligenceService = new AlgorithmIntelligenceService();

@@ -77,7 +77,7 @@ export function useRecommendedActions(options?: {
   artistType?: ArtistType;
   category?: ActionCategory;
 }) {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const { limit = 10, careerStage, artistType, category } = options || {};
 
   const {
@@ -95,114 +95,114 @@ export function useRecommendedActions(options?: {
     staleTime: 15 * 60 * 1000,
   });
 
-  const completeActionMutation = useMutation({
+  const _completeActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         `/api/personalization/complete-action/${actionId}`,
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/recommendations"],
       });
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/next-action"],
       });
     },
   });
 
-  const dismissActionMutation = useMutation({
+  const _dismissActionMutation = useMutation({
     mutationFn: async (actionId: string) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         `/api/personalization/dismiss-action/${actionId}`,
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/recommendations"],
       });
     },
   });
 
-  const filteredActions = useMemo(() => {
-    let actions = allActions.filter((a) => !a.completed && !a.dismissed);
+  const _filteredActions = useMemo(() => {
+    let actions = allActions?.filter((a) => !a?.completed && !a?.dismissed);
 
     if (careerStage) {
-      actions = actions.filter(
-        (a) => !a.careerStages || a.careerStages.includes(careerStage),
+      actions = actions?.filter(
+        (a) => !a?.careerStages || a?.careerStages.includes(careerStage),
       );
     }
     if (artistType) {
-      actions = actions.filter(
-        (a) => !a.artistTypes || a.artistTypes.includes(artistType),
+      actions = actions?.filter(
+        (a) => !a?.artistTypes || a?.artistTypes.includes(artistType),
       );
     }
     if (category) {
-      actions = actions.filter((a) => a.category === category);
+      actions = actions?.filter((a) => a?.category === category);
     }
 
-    return actions.slice(0, limit);
+    return actions?.slice(0, limit);
   }, [allActions, careerStage, artistType, category, limit]);
 
-  const highPriorityActions = useMemo(() => {
-    return filteredActions.filter((a) => a.priority === "high");
+  const _highPriorityActions = useMemo(() => {
+    return filteredActions?.filter((a) => a?.priority === "high");
   }, [filteredActions]);
 
-  const contextualActions = useMemo(() => {
-    return filteredActions.filter((a) => a.contextual);
+  const _contextualActions = useMemo(() => {
+    return filteredActions?.filter((a) => a?.contextual);
   }, [filteredActions]);
 
-  const nextAction = useMemo(() => {
+  const _nextAction = useMemo(() => {
     return highPriorityActions[0] || filteredActions[0] || null;
   }, [highPriorityActions, filteredActions]);
 
-  const getActionsByCategory = useCallback(
+  const _getActionsByCategory = useCallback(
     (cat: ActionCategory): RecommendedAction[] => {
-      return filteredActions.filter((a) => a.category === cat);
+      return filteredActions?.filter((a) => a?.category === cat);
     },
     [filteredActions],
   );
 
-  const getActionsByType = useCallback(
+  const _getActionsByType = useCallback(
     (type: ActionType): RecommendedAction[] => {
-      return filteredActions.filter((a) => a.type === type);
+      return filteredActions?.filter((a) => a?.type === type);
     },
     [filteredActions],
   );
 
-  const getActionProgress = useCallback(
+  const _getActionProgress = useCallback(
     (actionId: string): number => {
-      const action = allActions.find((a) => a.id === actionId);
+      const _action = allActions?.find((a) => a?.id === actionId);
       return action?.progress || 0;
     },
     [allActions],
   );
 
-  const completeAction = useCallback(
+  const _completeAction = useCallback(
     async (actionId: string) => {
-      await completeActionMutation.mutateAsync(actionId);
+      await completeActionMutation?.mutateAsync(actionId);
     },
     [completeActionMutation],
   );
 
-  const dismissAction = useCallback(
+  const _dismissAction = useCallback(
     async (actionId: string) => {
-      await dismissActionMutation.mutateAsync(actionId);
+      await dismissActionMutation?.mutateAsync(actionId);
     },
     [dismissActionMutation],
   );
 
-  const refreshActions = useCallback(() => {
+  const _refreshActions = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  const pendingCount = useMemo(() => filteredActions.length, [filteredActions]);
-  const highPriorityCount = useMemo(
-    () => highPriorityActions.length,
+  const _pendingCount = useMemo(() => filteredActions?.length, [filteredActions]);
+  const _highPriorityCount = useMemo(
+    () => highPriorityActions?.length,
     [highPriorityActions],
   );
 
@@ -223,7 +223,7 @@ export function useRecommendedActions(options?: {
     pendingCount,
     highPriorityCount,
     isUpdating:
-      completeActionMutation.isPending || dismissActionMutation.isPending,
+      completeActionMutation?.isPending || dismissActionMutation?.isPending,
   };
 }
 
@@ -233,8 +233,8 @@ export function useNextAction() {
 
   return {
     action: nextAction,
-    complete: nextAction ? () => completeAction(nextAction.id) : undefined,
-    dismiss: nextAction ? () => dismissAction(nextAction.id) : undefined,
+    complete: nextAction ? () => completeAction(nextAction?.id) : undefined,
+    dismiss: nextAction ? () => dismissAction(nextAction?.id) : undefined,
     isLoading,
     isUpdating,
   };
@@ -249,15 +249,15 @@ export function usePersonalizedTips(
     staleTime: 30 * 60 * 1000,
   });
 
-  const filteredTips = useMemo(() => {
+  const _filteredTips = useMemo(() => {
     return tips
       .filter((tip) => {
-        if (careerStage && !tip.forCareerStage.includes(careerStage))
+        if (careerStage && !tip?.forCareerStage.includes(careerStage))
           return false;
-        if (artistType && !tip.forArtistType.includes(artistType)) return false;
+        if (artistType && !tip?.forArtistType.includes(artistType)) return false;
         return true;
       })
-      .sort((a, b) => b.relevanceScore - a.relevanceScore);
+      .sort((a, b) => b?.relevanceScore - a?.relevanceScore);
   }, [tips, careerStage, artistType]);
 
   return {

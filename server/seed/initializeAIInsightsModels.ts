@@ -4,10 +4,10 @@ import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export async function initializeAIInsightsModels() {
-  logger.info("📊 Initializing AI Insights Engine Models...");
+  logger?.info("📊 Initializing AI Insights Engine Models...");
 
   try {
-    const models = [
+    const _models = [
       {
         modelName: "time_series_predictor_v1",
         modelType: "insights",
@@ -85,24 +85,24 @@ export async function initializeAIInsightsModels() {
       const [existing] = await db
         .select()
         .from(aiModels)
-        .where(eq(aiModels.modelName, modelData.modelName))
+        .where(eq(aiModels?.modelName, modelData?.modelName))
         .limit(1);
 
       let modelId: string;
       if (existing) {
-        modelId = existing.id;
-        logger.info(`   ✓ AI Model ${modelData.modelName} already exists`);
+        modelId = existing?.id;
+        logger?.info(`   ✓ AI Model ${modelData?.modelName} already exists`);
       } else {
-        const [model] = await db.insert(aiModels).values(modelData).returning();
-        modelId = model.id;
-        logger.info(`   ✓ Created AI Model: ${model.modelName}`);
+        const [model] = await db?.insert(aiModels).values(modelData).returning();
+        modelId = model?.id;
+        logger?.info(`   ✓ Created AI Model: ${model?.modelName}`);
       }
 
-      const versionHash = `${modelData.modelName}_init`;
+      const _versionHash = `${modelData?.modelName}_init`;
       const [existingVersion] = await db
         .select()
         .from(aiModelVersions)
-        .where(eq(aiModelVersions.versionHash, versionHash))
+        .where(eq(aiModelVersions?.versionHash, versionHash))
         .limit(1);
       if (!existingVersion) {
         await db
@@ -112,20 +112,20 @@ export async function initializeAIInsightsModels() {
             versionNumber: 1,
             versionHash,
             status: "production",
-            accuracy: (modelData.performance as Record<string, unknown>)
+            accuracy: (modelData?.performance as Record<string, unknown>)
               .accuracy,
-            parameters: modelData.parameters,
+            parameters: modelData?.parameters,
             changelog: "Initial release with professional-grade analytics",
             deployedAt: new Date(),
           })
           .returning();
-        logger.info(`   ✓ Created version for ${modelData.modelName}`);
+        logger?.info(`   ✓ Created version for ${modelData?.modelName}`);
       }
     }
 
-    logger.info("✅ AI Insights Engine Models initialized");
+    logger?.info("✅ AI Insights Engine Models initialized");
   } catch (error: unknown) {
-    logger.warn({ err: error }, "❌ Failed to initialize AI Insights Models:");
+    logger?.warn({ err: error }, "❌ Failed to initialize AI Insights Models:");
     throw error;
   }
 }

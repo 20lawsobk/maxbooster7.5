@@ -22,10 +22,10 @@
  * Typical GPU latency: 2–8ms for 512×512 output (vs ~300ms Python PIL).
  *
  * Usage:
- *   const bridge = new DigitalGPUInferenceBridge({ width: 512, height: 512 });
- *   await bridge.init();
- *   const result = await bridge.process(base64Frame, { scene: 'concert_stage' });
- *   canvas.getContext('2d')!.putImageData(result, 0, 0);
+ *   const _bridge = new DigitalGPUInferenceBridge({ width: 512, height: 512 });
+ *   await bridge?.init();
+ *   const _result = await bridge?.process(base64Frame, { scene: 'concert_stage' });
+ *   canvas?.getContext('2d')!.putImageData(result, 0, 0);
  */
 
 import { WebGLRenderer } from "./WebGLRenderer";
@@ -246,21 +246,21 @@ export class DigitalGPUInferenceBridge {
 
   constructor(config: InferenceConfig) {
     this.config = {
-      width: config.width || 512,
-      height: config.height || 512,
-      scene: config.scene || "default",
-      audioReactivity: config.audioReactivity ?? 0,
-      bass: config.bass ?? 0,
-      mid: config.mid ?? 0,
-      treble: config.treble ?? 0,
+      width: config?.width || 512,
+      height: config?.height || 512,
+      scene: config?.scene || "default",
+      audioReactivity: config?.audioReactivity ?? 0,
+      bass: config?.bass ?? 0,
+      mid: config?.mid ?? 0,
+      treble: config?.treble ?? 0,
     };
   }
 
   async init(): Promise<void> {
     try {
       this.renderer = new WebGLRenderer({
-        width: this.config.width,
-        height: this.config.height,
+        width: this?.config.width,
+        height: this?.config.height,
         antialias: false,
         alpha: false,
         powerPreference: "high-performance",
@@ -268,58 +268,58 @@ export class DigitalGPUInferenceBridge {
         useOffscreen: typeof OffscreenCanvas !== "undefined",
       });
 
-      this.renderer.getContext();
-      this.renderer.createShaderProgram(
+      this?.renderer.getContext();
+      this?.renderer.createShaderProgram(
         "bloom",
-        BLOOM_SHADER.vertex,
-        BLOOM_SHADER.fragment,
+        BLOOM_SHADER?.vertex,
+        BLOOM_SHADER?.fragment,
       );
-      this.renderer.createShaderProgram(
+      this?.renderer.createShaderProgram(
         "colorGrade",
-        COLOR_GRADING_SHADER.vertex,
-        COLOR_GRADING_SHADER.fragment,
+        COLOR_GRADING_SHADER?.vertex,
+        COLOR_GRADING_SHADER?.fragment,
       );
-      this.renderer.createShaderProgram(
+      this?.renderer.createShaderProgram(
         "chromaAb",
-        CHROMATIC_ABERRATION_SHADER.vertex,
-        CHROMATIC_ABERRATION_SHADER.fragment,
+        CHROMATIC_ABERRATION_SHADER?.vertex,
+        CHROMATIC_ABERRATION_SHADER?.fragment,
       );
-      this.renderer.createShaderProgram(
+      this?.renderer.createShaderProgram(
         "vignette",
-        VIGNETTE_SHADER.vertex,
-        VIGNETTE_SHADER.fragment,
+        VIGNETTE_SHADER?.vertex,
+        VIGNETTE_SHADER?.fragment,
       );
 
-      this.renderer.createFramebuffer(
+      this?.renderer.createFramebuffer(
         "pingA",
-        this.config.width,
-        this.config.height,
+        this?.config.width,
+        this?.config.height,
       );
-      this.renderer.createFramebuffer(
+      this?.renderer.createFramebuffer(
         "pingB",
-        this.config.width,
-        this.config.height,
+        this?.config.width,
+        this?.config.height,
       );
-      this.renderer.createFramebuffer(
+      this?.renderer.createFramebuffer(
         "bloom0",
-        this.config.width,
-        this.config.height,
+        this?.config.width,
+        this?.config.height,
       );
-      this.renderer.createFramebuffer(
+      this?.renderer.createFramebuffer(
         "bloom1",
-        this.config.width,
-        this.config.height,
+        this?.config.width,
+        this?.config.height,
       );
 
       this.ready = true;
     } catch (err) {
-      console.warn("[DigitalGPUInferenceBridge] WebGL2 init failed:", err);
+      console?.warn("[DigitalGPUInferenceBridge] WebGL2 init failed:", err);
       this.ready = false;
     }
   }
 
   get isReady(): boolean {
-    return this.ready;
+    return this?.ready;
   }
 
   /**
@@ -327,184 +327,184 @@ export class DigitalGPUInferenceBridge {
    *
    * @param imageSource - ImageBitmap, HTMLCanvasElement, or ImageData from Python inference
    * @param sceneOverride - Override the scene preset for this frame
-   * @returns ImageData with GPU-enhanced frame, ready for canvas.putImageData()
+   * @returns ImageData with GPU-enhanced frame, ready for canvas?.putImageData()
    */
   async process(
     imageSource: ImageBitmap | HTMLCanvasElement | ImageData,
     sceneOverride?: string,
   ): Promise<ImageData> {
-    if (!this.ready || !this.renderer) {
-      return this._fallbackToSource(imageSource);
+    if (!this?.ready || !this?.renderer) {
+      return this?._fallbackToSource(imageSource);
     }
 
-    const scene = sceneOverride || this.config.scene || "default";
-    const preset = SCENE_PRESETS[scene] || SCENE_PRESETS["default"];
-    const t = this.frameCount * 0.016;
-    this.frameCount++;
+    const _scene = sceneOverride || this?.config.scene || "default";
+    const _preset = SCENE_PRESETS[scene] || SCENE_PRESETS["default"];
+    const _t = this?.frameCount * 0.016;
+    this?.frameCount++;
 
-    this.renderer.getContext();
-    const { width, height } = this.config;
-    const res = new Float32Array([width, height]);
+    this?.renderer.getContext();
+    const { width, height } = this?.config;
+    const _res = new Float32Array([width, height]);
 
-    const srcTex = this.renderer.createTexture(
+    const _srcTex = this?.renderer.createTexture(
       "src_frame",
       imageSource as Record<string, unknown>,
     );
-    const fbA = this.renderer.getFramebuffer("pingA")!;
-    const fbB = this.renderer.getFramebuffer("pingB")!;
-    const fbBl0 = this.renderer.getFramebuffer("bloom0")!;
-    const fbBl1 = this.renderer.getFramebuffer("bloom1")!;
+    const _fbA = this?.renderer.getFramebuffer("pingA")!;
+    const _fbB = this?.renderer.getFramebuffer("pingB")!;
+    const _fbBl0 = this?.renderer.getFramebuffer("bloom0")!;
+    const _fbBl1 = this?.renderer.getFramebuffer("bloom1")!;
 
     // ── Pass 1: Color Grading ──────────────────────────────────────────────
-    const gradeProg = this.renderer.getProgram("colorGrade")!;
-    this.renderer.bindFramebuffer(fbA);
-    this.renderer.clear();
-    this.renderer.useProgram(gradeProg);
-    this.renderer.bindTexture(srcTex, 0);
-    this.renderer.setUniform(gradeProg, "u_texture", 0);
-    this.renderer.setUniform(
+    const _gradeProg = this?.renderer.getProgram("colorGrade")!;
+    this?.renderer.bindFramebuffer(fbA);
+    this?.renderer.clear();
+    this?.renderer.useProgram(gradeProg);
+    this?.renderer.bindTexture(srcTex, 0);
+    this?.renderer.setUniform(gradeProg, "u_texture", 0);
+    this?.renderer.setUniform(
       gradeProg,
       "u_brightness",
-      preset.colorGrading.brightness,
+      preset?.colorGrading.brightness,
     );
-    this.renderer.setUniform(
+    this?.renderer.setUniform(
       gradeProg,
       "u_contrast",
-      preset.colorGrading.contrast,
+      preset?.colorGrading.contrast,
     );
-    this.renderer.setUniform(
+    this?.renderer.setUniform(
       gradeProg,
       "u_saturation",
-      preset.colorGrading.saturation,
+      preset?.colorGrading.saturation,
     );
-    this.renderer.setUniform(gradeProg, "u_hue", preset.colorGrading.hue);
-    this.renderer.setUniform(
+    this?.renderer.setUniform(gradeProg, "u_hue", preset?.colorGrading.hue);
+    this?.renderer.setUniform(
       gradeProg,
       "u_exposure",
-      preset.colorGrading.exposure,
+      preset?.colorGrading.exposure,
     );
-    this.renderer.setUniform(gradeProg, "u_gamma", preset.colorGrading.gamma);
-    this.renderer.setUniform(
+    this?.renderer.setUniform(gradeProg, "u_gamma", preset?.colorGrading.gamma);
+    this?.renderer.setUniform(
       gradeProg,
       "u_shadows",
-      preset.colorGrading.shadows,
+      preset?.colorGrading.shadows,
     );
-    this.renderer.setUniform(
+    this?.renderer.setUniform(
       gradeProg,
       "u_midtones",
-      preset.colorGrading.midtones,
+      preset?.colorGrading.midtones,
     );
-    this.renderer.setUniform(
+    this?.renderer.setUniform(
       gradeProg,
       "u_highlights",
-      preset.colorGrading.highlights,
+      preset?.colorGrading.highlights,
     );
-    this.renderer.setUniform(
+    this?.renderer.setUniform(
       gradeProg,
       "u_temperature",
-      preset.colorGrading.temperature,
+      preset?.colorGrading.temperature,
     );
-    this.renderer.setUniform(gradeProg, "u_tint", preset.colorGrading.tint);
-    this.renderer.setUniform(
+    this?.renderer.setUniform(gradeProg, "u_tint", preset?.colorGrading.tint);
+    this?.renderer.setUniform(
       gradeProg,
       "u_vibrance",
-      preset.colorGrading.vibrance,
+      preset?.colorGrading.vibrance,
     );
-    this.renderer.setUniform(gradeProg, "u_lift", [0, 0, 0]);
-    this.renderer.setUniform(gradeProg, "u_gain", [1, 1, 1]);
-    this.renderer.setUniform(
+    this?.renderer.setUniform(gradeProg, "u_lift", [0, 0, 0]);
+    this?.renderer.setUniform(gradeProg, "u_gain", [1, 1, 1]);
+    this?.renderer.setUniform(
       gradeProg,
       "u_filmGrain",
-      preset.colorGrading.filmGrain,
+      preset?.colorGrading.filmGrain,
     );
-    this.renderer.setUniform(gradeProg, "u_time", t);
-    this.renderer.drawQuad(gradeProg);
+    this?.renderer.setUniform(gradeProg, "u_time", t);
+    this?.renderer.drawQuad(gradeProg);
 
     // ── Pass 2–4: Bloom (3 passes: extract bright → blur H → blur V → merge) ─
-    const bloomProg = this.renderer.getProgram("bloom")!;
+    const _bloomProg = this?.renderer.getProgram("bloom")!;
 
     // Pass 2a: Extract bright regions
-    this.renderer.bindFramebuffer(fbBl0);
-    this.renderer.clear();
-    this.renderer.useProgram(bloomProg);
-    this.renderer.bindTexture(fbA, 0);
-    this.renderer.setUniform(bloomProg, "u_texture", 0);
-    this.renderer.setUniform(bloomProg, "u_resolution", res);
-    this.renderer.setUniform(bloomProg, "u_threshold", preset.bloom.threshold);
-    this.renderer.setUniform(bloomProg, "u_intensity", preset.bloom.intensity);
-    this.renderer.setUniform(bloomProg, "u_radius", preset.bloom.radius);
-    this.renderer.setUniform(bloomProg, "u_pass", 0);
-    this.renderer.drawQuad(bloomProg);
+    this?.renderer.bindFramebuffer(fbBl0);
+    this?.renderer.clear();
+    this?.renderer.useProgram(bloomProg);
+    this?.renderer.bindTexture(fbA, 0);
+    this?.renderer.setUniform(bloomProg, "u_texture", 0);
+    this?.renderer.setUniform(bloomProg, "u_resolution", res);
+    this?.renderer.setUniform(bloomProg, "u_threshold", preset?.bloom.threshold);
+    this?.renderer.setUniform(bloomProg, "u_intensity", preset?.bloom.intensity);
+    this?.renderer.setUniform(bloomProg, "u_radius", preset?.bloom.radius);
+    this?.renderer.setUniform(bloomProg, "u_pass", 0);
+    this?.renderer.drawQuad(bloomProg);
 
     // Pass 2b: Horizontal Gaussian blur
-    this.renderer.bindFramebuffer(fbBl1);
-    this.renderer.clear();
-    this.renderer.bindTexture(fbBl0, 0);
-    this.renderer.setUniform(bloomProg, "u_pass", 1);
-    this.renderer.drawQuad(bloomProg);
+    this?.renderer.bindFramebuffer(fbBl1);
+    this?.renderer.clear();
+    this?.renderer.bindTexture(fbBl0, 0);
+    this?.renderer.setUniform(bloomProg, "u_pass", 1);
+    this?.renderer.drawQuad(bloomProg);
 
     // Pass 2c: Vertical Gaussian blur + merge with original
-    this.renderer.bindFramebuffer(fbB);
-    this.renderer.clear();
-    this.renderer.bindTexture(fbBl1, 0);
-    this.renderer.setUniform(bloomProg, "u_pass", 2);
-    this.renderer.drawQuad(bloomProg);
+    this?.renderer.bindFramebuffer(fbB);
+    this?.renderer.clear();
+    this?.renderer.bindTexture(fbBl1, 0);
+    this?.renderer.setUniform(bloomProg, "u_pass", 2);
+    this?.renderer.drawQuad(bloomProg);
 
     // Pass 2d: Composite bloom over color-graded image
-    this.renderer.bindFramebuffer(fbA);
-    this.renderer.clear();
-    this.renderer.bindTexture(fbB, 0);
-    this.renderer.setUniform(bloomProg, "u_pass", 3);
-    this.renderer.drawQuad(bloomProg);
+    this?.renderer.bindFramebuffer(fbA);
+    this?.renderer.clear();
+    this?.renderer.bindTexture(fbB, 0);
+    this?.renderer.setUniform(bloomProg, "u_pass", 3);
+    this?.renderer.drawQuad(bloomProg);
 
     // ── Pass 3: Chromatic Aberration ──────────────────────────────────────
-    const chromaProg = this.renderer.getProgram("chromaAb")!;
-    this.renderer.bindFramebuffer(fbB);
-    this.renderer.clear();
-    this.renderer.useProgram(chromaProg);
-    this.renderer.bindTexture(fbA, 0);
-    this.renderer.setUniform(chromaProg, "u_texture", 0);
-    this.renderer.setUniform(chromaProg, "u_amount", preset.chromaticAb.amount);
-    this.renderer.setUniform(chromaProg, "u_angle", 0.0);
-    this.renderer.setUniform(chromaProg, "u_center", [0.5, 0.5]);
-    this.renderer.setUniform(
+    const _chromaProg = this?.renderer.getProgram("chromaAb")!;
+    this?.renderer.bindFramebuffer(fbB);
+    this?.renderer.clear();
+    this?.renderer.useProgram(chromaProg);
+    this?.renderer.bindTexture(fbA, 0);
+    this?.renderer.setUniform(chromaProg, "u_texture", 0);
+    this?.renderer.setUniform(chromaProg, "u_amount", preset?.chromaticAb.amount);
+    this?.renderer.setUniform(chromaProg, "u_angle", 0.0);
+    this?.renderer.setUniform(chromaProg, "u_center", [0.5, 0.5]);
+    this?.renderer.setUniform(
       chromaProg,
       "u_radial",
-      preset.chromaticAb.radial ? 1 : 0,
+      preset?.chromaticAb.radial ? 1 : 0,
     );
-    this.renderer.setUniform(
+    this?.renderer.setUniform(
       chromaProg,
       "u_audioReactivity",
-      this.config.audioReactivity ?? 0,
+      this?.config.audioReactivity ?? 0,
     );
-    this.renderer.setUniform(chromaProg, "u_bass", this.config.bass ?? 0);
-    this.renderer.drawQuad(chromaProg);
+    this?.renderer.setUniform(chromaProg, "u_bass", this?.config.bass ?? 0);
+    this?.renderer.drawQuad(chromaProg);
 
     // ── Pass 4: Vignette (final pass → screen) ────────────────────────────
-    const vignetteProg = this.renderer.getProgram("vignette")!;
-    this.renderer.bindFramebuffer(null); // render to screen
-    this.renderer.clear();
-    this.renderer.useProgram(vignetteProg);
-    this.renderer.bindTexture(fbB, 0);
-    this.renderer.setUniform(vignetteProg, "u_texture", 0);
-    this.renderer.setUniform(
+    const _vignetteProg = this?.renderer.getProgram("vignette")!;
+    this?.renderer.bindFramebuffer(null); // render to screen
+    this?.renderer.clear();
+    this?.renderer.useProgram(vignetteProg);
+    this?.renderer.bindTexture(fbB, 0);
+    this?.renderer.setUniform(vignetteProg, "u_texture", 0);
+    this?.renderer.setUniform(
       vignetteProg,
       "u_intensity",
-      preset.vignette.intensity,
+      preset?.vignette.intensity,
     );
-    this.renderer.setUniform(vignetteProg, "u_radius", preset.vignette.radius);
-    this.renderer.setUniform(
+    this?.renderer.setUniform(vignetteProg, "u_radius", preset?.vignette.radius);
+    this?.renderer.setUniform(
       vignetteProg,
       "u_softness",
-      preset.vignette.softness,
+      preset?.vignette.softness,
     );
-    this.renderer.setUniform(vignetteProg, "u_center", [0.5, 0.5]);
-    this.renderer.setUniform(vignetteProg, "u_color", [0, 0, 0, 1]);
-    this.renderer.setUniform(vignetteProg, "u_type", 0);
-    this.renderer.drawQuad(vignetteProg);
+    this?.renderer.setUniform(vignetteProg, "u_center", [0.5, 0.5]);
+    this?.renderer.setUniform(vignetteProg, "u_color", [0, 0, 0, 1]);
+    this?.renderer.setUniform(vignetteProg, "u_type", 0);
+    this?.renderer.drawQuad(vignetteProg);
 
     // ── Readback ──────────────────────────────────────────────────────────
-    return this.renderer.getImageData();
+    return this?.renderer.getImageData();
   }
 
   /**
@@ -512,18 +512,18 @@ export class DigitalGPUInferenceBridge {
    * Affects bloom radius, chromatic aberration amount, and wave distortion.
    */
   setAudioParams(bass: number, mid: number, treble: number): void {
-    this.config.bass = bass;
-    this.config.mid = mid;
-    this.config.treble = treble;
-    this.config.audioReactivity = bass * 0.5 + mid * 0.3 + treble * 0.2;
+    this?.config.bass = bass;
+    this?.config.mid = mid;
+    this?.config.treble = treble;
+    this?.config.audioReactivity = bass * 0.5 + mid * 0.3 + treble * 0.2;
   }
 
   setScene(scene: string): void {
-    this.config.scene = scene;
+    this?.config.scene = scene;
   }
 
   getCanvas(): HTMLCanvasElement | OffscreenCanvas | null {
-    return this.renderer?.getCanvas() ?? null;
+    return this?.renderer?.getCanvas() ?? null;
   }
 
   destroy(): void {
@@ -535,20 +535,20 @@ export class DigitalGPUInferenceBridge {
     src: ImageBitmap | HTMLCanvasElement | ImageData,
   ): Promise<ImageData> {
     if (src instanceof ImageData) return src;
-    const canvas = document.createElement("canvas");
-    canvas.width = this.config.width;
-    canvas.height = this.config.height;
-    const ctx = canvas.getContext("2d")!;
+    const _canvas = document?.createElement("canvas");
+    canvas.width = this?.config.width;
+    canvas.height = this?.config.height;
+    const _ctx = canvas?.getContext("2d")!;
     if (src instanceof HTMLCanvasElement) {
-      ctx.drawImage(src, 0, 0, canvas.width, canvas.height);
+      ctx?.drawImage(src, 0, 0, canvas?.width, canvas?.height);
     } else {
-      ctx.drawImage(src, 0, 0);
+      ctx?.drawImage(src, 0, 0);
     }
-    return ctx.getImageData(0, 0, canvas.width, canvas.height);
+    return ctx?.getImageData(0, 0, canvas?.width, canvas?.height);
   }
 
   static getSceneNames(): string[] {
-    return Object.keys(SCENE_PRESETS);
+    return Object?.keys(SCENE_PRESETS);
   }
 
   static getPreset(scene: string): ScenePostConfig {

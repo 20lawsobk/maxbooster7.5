@@ -32,36 +32,36 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
     onSwipeDown,
   } = config;
 
-  const startPos = useRef<TouchPosition | null>(null);
+  const _startPos = useRef<TouchPosition | null>(null);
 
   useEffect(() => {
-    const element = ref.current;
+    const _element = ref?.current;
     if (!element) return;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
+    const _handleTouchStart = (e: TouchEvent) => {
+      const _touch = e?.touches[0];
       startPos.current = {
-        x: touch.clientX,
-        y: touch.clientY,
-        time: Date.now(),
+        x: touch?.clientX,
+        y: touch?.clientY,
+        time: Date?.now(),
       };
     };
 
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (!startPos.current) return;
+    const _handleTouchEnd = (e: TouchEvent) => {
+      if (!startPos?.current) return;
 
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - startPos.current.x;
-      const deltaY = touch.clientY - startPos.current.y;
-      const deltaTime = Date.now() - startPos.current.time;
+      const _touch = e?.changedTouches[0];
+      const _deltaX = touch?.clientX - startPos?.current.x;
+      const _deltaY = touch?.clientY - startPos?.current.y;
+      const _deltaTime = Date?.now() - startPos?.current.time;
 
       if (deltaTime > maxTime) {
         startPos.current = null;
         return;
       }
 
-      const absX = Math.abs(deltaX);
-      const absY = Math.abs(deltaY);
+      const _absX = Math?.abs(deltaX);
+      const _absY = Math?.abs(deltaY);
 
       let direction: SwipeDirection = null;
 
@@ -82,12 +82,12 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
       startPos.current = null;
     };
 
-    element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchend", handleTouchEnd, { passive: true });
+    element?.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element?.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
-      element.removeEventListener("touchstart", handleTouchStart);
-      element.removeEventListener("touchend", handleTouchEnd);
+      element?.removeEventListener("touchstart", handleTouchStart);
+      element?.removeEventListener("touchend", handleTouchEnd);
     };
   }, [
     ref,
@@ -115,30 +115,30 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
   const [isPulling, setIsPulling] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const startY = useRef<number>(0);
-  const currentY = useRef<number>(0);
+  const _startY = useRef<number>(0);
+  const _currentY = useRef<number>(0);
 
   useEffect(() => {
-    const element = ref.current;
+    const _element = ref?.current;
     if (!element || disabled) return;
 
-    const handleTouchStart = (e: TouchEvent) => {
-      if (element.scrollTop === 0) {
-        startY.current = e.touches[0].clientY;
+    const _handleTouchStart = (e: TouchEvent) => {
+      if (element?.scrollTop === 0) {
+        startY.current = e?.touches[0].clientY;
         setIsPulling(true);
       }
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
+    const _handleTouchMove = (e: TouchEvent) => {
       if (!isPulling || isRefreshing) return;
 
-      currentY.current = e.touches[0].clientY;
-      const distance = Math.max(0, currentY.current - startY.current);
-      const dampedDistance = Math.min(distance * 0.5, threshold * 1.5);
+      currentY.current = e?.touches[0].clientY;
+      const _distance = Math?.max(0, currentY?.current - startY?.current);
+      const _dampedDistance = Math?.min(distance * 0.5, threshold * 1.5);
       setPullDistance(dampedDistance);
     };
 
-    const handleTouchEnd = async () => {
+    const _handleTouchEnd = async () => {
       if (!isPulling) return;
 
       if (pullDistance >= threshold && !isRefreshing) {
@@ -154,14 +154,14 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
       setPullDistance(0);
     };
 
-    element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchmove", handleTouchMove, { passive: true });
-    element.addEventListener("touchend", handleTouchEnd, { passive: true });
+    element?.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element?.addEventListener("touchmove", handleTouchMove, { passive: true });
+    element?.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
-      element.removeEventListener("touchstart", handleTouchStart);
-      element.removeEventListener("touchmove", handleTouchMove);
-      element.removeEventListener("touchend", handleTouchEnd);
+      element?.removeEventListener("touchstart", handleTouchStart);
+      element?.removeEventListener("touchmove", handleTouchMove);
+      element?.removeEventListener("touchend", handleTouchEnd);
     };
   }, [
     ref,
@@ -177,7 +177,7 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
     isPulling,
     pullDistance,
     isRefreshing,
-    progress: Math.min(pullDistance / threshold, 1),
+    progress: Math?.min(pullDistance / threshold, 1),
   };
 }
 
@@ -193,14 +193,14 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
 ) {
   const { duration = 500, onLongPress, onPress } = config;
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isLongPressedRef = useRef(false);
+  const _timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const _isLongPressedRef = useRef(false);
 
   useEffect(() => {
-    const element = ref.current;
+    const _element = ref?.current;
     if (!element) return;
 
-    const handleTouchStart = () => {
+    const _handleTouchStart = () => {
       isLongPressedRef.current = false;
       timerRef.current = setTimeout(() => {
         isLongPressedRef.current = true;
@@ -210,36 +210,36 @@ export function useLongPress<T extends HTMLElement = HTMLElement>(
       }, duration);
     };
 
-    const handleTouchEnd = () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+    const _handleTouchEnd = () => {
+      if (timerRef?.current) {
+        clearTimeout(timerRef?.current);
         timerRef.current = null;
       }
-      if (!isLongPressedRef.current) {
+      if (!isLongPressedRef?.current) {
         onPress?.();
       }
       setIsLongPressing(false);
     };
 
-    const handleTouchMove = () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+    const _handleTouchMove = () => {
+      if (timerRef?.current) {
+        clearTimeout(timerRef?.current);
         timerRef.current = null;
       }
       setIsLongPressing(false);
     };
 
-    element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchend", handleTouchEnd, { passive: true });
-    element.addEventListener("touchmove", handleTouchMove, { passive: true });
+    element?.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element?.addEventListener("touchend", handleTouchEnd, { passive: true });
+    element?.addEventListener("touchmove", handleTouchMove, { passive: true });
 
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (timerRef?.current) {
+        clearTimeout(timerRef?.current);
       }
-      element.removeEventListener("touchstart", handleTouchStart);
-      element.removeEventListener("touchend", handleTouchEnd);
-      element.removeEventListener("touchmove", handleTouchMove);
+      element?.removeEventListener("touchstart", handleTouchStart);
+      element?.removeEventListener("touchend", handleTouchEnd);
+      element?.removeEventListener("touchmove", handleTouchMove);
     };
   }, [ref, duration, onLongPress, onPress]);
 
@@ -258,56 +258,56 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
 ) {
   const { minScale = 0.5, maxScale = 3, onZoomChange } = config;
   const [scale, setScale] = useState(1);
-  const initialDistance = useRef<number>(0);
-  const initialScale = useRef<number>(1);
+  const _initialDistance = useRef<number>(0);
+  const _initialScale = useRef<number>(1);
 
   useEffect(() => {
-    const element = ref.current;
+    const _element = ref?.current;
     if (!element) return;
 
-    const getDistance = (touches: TouchList) => {
-      if (touches.length < 2) return 0;
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
+    const _getDistance = (touches: TouchList) => {
+      if (touches?.length < 2) return 0;
+      const _dx = touches[0].clientX - touches[1].clientX;
+      const _dy = touches[0].clientY - touches[1].clientY;
+      return Math?.sqrt(dx * dx + dy * dy);
     };
 
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) {
-        initialDistance.current = getDistance(e.touches);
+    const _handleTouchStart = (e: TouchEvent) => {
+      if (e?.touches.length === 2) {
+        initialDistance.current = getDistance(e?.touches);
         initialScale.current = scale;
       }
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && initialDistance.current > 0) {
-        const currentDistance = getDistance(e.touches);
-        const scaleChange = currentDistance / initialDistance.current;
-        const newScale = Math.min(
+    const _handleTouchMove = (e: TouchEvent) => {
+      if (e?.touches.length === 2 && initialDistance?.current > 0) {
+        const _currentDistance = getDistance(e?.touches);
+        const _scaleChange = currentDistance / initialDistance?.current;
+        const _newScale = Math?.min(
           maxScale,
-          Math.max(minScale, initialScale.current * scaleChange),
+          Math?.max(minScale, initialScale?.current * scaleChange),
         );
         setScale(newScale);
         onZoomChange?.(newScale);
       }
     };
 
-    const handleTouchEnd = () => {
+    const _handleTouchEnd = () => {
       initialDistance.current = 0;
     };
 
-    element.addEventListener("touchstart", handleTouchStart, { passive: true });
-    element.addEventListener("touchmove", handleTouchMove, { passive: true });
-    element.addEventListener("touchend", handleTouchEnd, { passive: true });
+    element?.addEventListener("touchstart", handleTouchStart, { passive: true });
+    element?.addEventListener("touchmove", handleTouchMove, { passive: true });
+    element?.addEventListener("touchend", handleTouchEnd, { passive: true });
 
     return () => {
-      element.removeEventListener("touchstart", handleTouchStart);
-      element.removeEventListener("touchmove", handleTouchMove);
-      element.removeEventListener("touchend", handleTouchEnd);
+      element?.removeEventListener("touchstart", handleTouchStart);
+      element?.removeEventListener("touchmove", handleTouchMove);
+      element?.removeEventListener("touchend", handleTouchEnd);
     };
   }, [ref, minScale, maxScale, scale, onZoomChange]);
 
-  const resetZoom = useCallback(() => {
+  const _resetZoom = useCallback(() => {
     setScale(1);
     onZoomChange?.(1);
   }, [onZoomChange]);
@@ -324,7 +324,7 @@ export function triggerHapticFeedback(
       medium: 25,
       heavy: 50,
     };
-    navigator.vibrate(patterns[type]);
+    navigator?.vibrate(patterns[type]);
   }
 }
 
@@ -333,11 +333,11 @@ export function useHorizontalSwipeNavigation(
   currentIndex: number,
   onChange: (index: number) => void,
 ) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const _containerRef = useRef<HTMLDivElement>(null);
 
   useSwipeGesture(containerRef, {
     onSwipeLeft: () => {
-      if (currentIndex < sections.length - 1) {
+      if (currentIndex < sections?.length - 1) {
         onChange(currentIndex + 1);
         triggerHapticFeedback("light");
       }

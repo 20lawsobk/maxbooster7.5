@@ -10,51 +10,51 @@ export class CapacityMonitor {
   static startMonitoring() {
     setInterval(async () => {
       try {
-        await CapacityMonitor.checkCapacity();
+        await CapacityMonitor?.checkCapacity();
       } catch {
         /* non-fatal */
       }
-    }, CapacityMonitor.CHECK_INTERVAL);
+    }, CapacityMonitor?.CHECK_INTERVAL);
 
-    logger.info("📊 Capacity monitoring started (checks every 5 minutes)");
+    logger?.info("📊 Capacity monitoring started (checks every 5 minutes)");
   }
 
   private static async checkCapacity() {
     try {
       // Check database pool
-      const poolUtilization = pool.totalCount / 20;
-      if (poolUtilization >= CapacityMonitor.ALERT_THRESHOLD) {
-        logger.warn(
+      const _poolUtilization = pool?.totalCount / 20;
+      if (poolUtilization >= CapacityMonitor?.ALERT_THRESHOLD) {
+        logger?.warn(
           `⚠️ CAPACITY ALERT: Database pool at ${(poolUtilization * 100).toFixed(1)}% capacity`,
         );
       }
 
       // Check active sessions (within last 24 hours) - Use approximate count for performance
-      const sessionResult = await db.execute(
+      const _sessionResult = await db?.execute(
         sql`SELECT reltuples::bigint AS count FROM pg_class WHERE relname = 'sessions'`,
       );
-      const totalSessions = parseInt(sessionResult.rows[0].count as string);
+      const _totalSessions = parseInt(sessionResult?.rows[0].count as string);
       // Approximate active sessions (assume 80% active within 24h for monitoring purposes)
-      const activeSessions = Math.floor(totalSessions * 0.8);
-      const sessionUtilization = activeSessions / 50000;
+      const _activeSessions = Math?.floor(totalSessions * 0.8);
+      const _sessionUtilization = activeSessions / 50000;
 
-      if (sessionUtilization >= CapacityMonitor.ALERT_THRESHOLD) {
-        logger.warn(
+      if (sessionUtilization >= CapacityMonitor?.ALERT_THRESHOLD) {
+        logger?.warn(
           `⚠️ CAPACITY ALERT: ${activeSessions} active sessions (${(sessionUtilization * 100).toFixed(1)}% of max)`,
         );
       }
 
       // Log health status
       if (
-        poolUtilization < CapacityMonitor.ALERT_THRESHOLD &&
-        sessionUtilization < CapacityMonitor.ALERT_THRESHOLD
+        poolUtilization < CapacityMonitor?.ALERT_THRESHOLD &&
+        sessionUtilization < CapacityMonitor?.ALERT_THRESHOLD
       ) {
-        logger.info(
+        logger?.info(
           `✅ Capacity healthy: Pool ${(poolUtilization * 100).toFixed(1)}%, Sessions ${activeSessions}`,
         );
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Capacity monitoring error:");
+      logger?.warn({ err: error }, "Capacity monitoring error:");
     }
   }
 }

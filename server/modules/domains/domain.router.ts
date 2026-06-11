@@ -6,17 +6,17 @@ import {
   verifyCustomDomain,
   listDomains,
   deleteDomain,
-} from "./domain.controller.js";
+} from "./domain?.controller.js";
 
-const router = Router();
+const _router = Router();
 
-router.post("/managed/check", checkManaged);
-router.post("/managed/reserve", reserveManaged);
+router?.post("/managed/check", checkManaged);
+router?.post("/managed/reserve", reserveManaged);
 
-router.post("/custom/request", requestCustomDomain);
-router.post("/custom/verify", verifyCustomDomain);
+router?.post("/custom/request", requestCustomDomain);
+router?.post("/custom/verify", verifyCustomDomain);
 
-router.get("/storefront/:storefrontId", listDomains);
-router.delete("/:domainId", deleteDomain);
+router?.get("/storefront/:storefrontId", listDomains);
+router?.delete("/:domainId", deleteDomain);
 
 export default router;

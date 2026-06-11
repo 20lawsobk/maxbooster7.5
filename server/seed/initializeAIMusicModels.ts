@@ -4,10 +4,10 @@ import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export async function initializeAIMusicModels() {
-  logger.info("🎵 Initializing AI Music Intelligence Models...");
+  logger?.info("🎵 Initializing AI Music Intelligence Models...");
 
   try {
-    const models = [
+    const _models = [
       {
         modelName: "stem_separator_v1",
         modelType: "music_processing",
@@ -56,7 +56,7 @@ export async function initializeAIMusicModels() {
       {
         modelName: "lufs_meter_v1",
         modelType: "music_analysis",
-        description: "ITU-R BS.1770-4 compliant LUFS loudness measurement",
+        description: "ITU-R BS?.1770-4 compliant LUFS loudness measurement",
         version: "1.0.0",
         status: "active",
         capabilities: ["lufs_measurement", "true_peak", "dynamic_range"],
@@ -154,24 +154,24 @@ export async function initializeAIMusicModels() {
       const [existing] = await db
         .select()
         .from(aiModels)
-        .where(eq(aiModels.modelName, modelData.modelName))
+        .where(eq(aiModels?.modelName, modelData?.modelName))
         .limit(1);
 
       let modelId: string;
       if (existing) {
-        modelId = existing.id;
-        logger.info(`   ✓ AI Model ${modelData.modelName} already exists`);
+        modelId = existing?.id;
+        logger?.info(`   ✓ AI Model ${modelData?.modelName} already exists`);
       } else {
-        const [model] = await db.insert(aiModels).values(modelData).returning();
-        modelId = model.id;
-        logger.info(`   ✓ Created AI Model: ${model.modelName}`);
+        const [model] = await db?.insert(aiModels).values(modelData).returning();
+        modelId = model?.id;
+        logger?.info(`   ✓ Created AI Model: ${model?.modelName}`);
       }
 
-      const versionHash = `${modelData.modelName}_init`;
+      const _versionHash = `${modelData?.modelName}_init`;
       const [existingVersion] = await db
         .select()
         .from(aiModelVersions)
-        .where(eq(aiModelVersions.versionHash, versionHash))
+        .where(eq(aiModelVersions?.versionHash, versionHash))
         .limit(1);
       if (!existingVersion) {
         await db
@@ -181,21 +181,21 @@ export async function initializeAIMusicModels() {
             versionNumber: 1,
             versionHash,
             status: "production",
-            accuracy: (modelData.performance as Record<string, unknown>)
+            accuracy: (modelData?.performance as Record<string, unknown>)
               .accuracy,
-            parameters: modelData.parameters,
+            parameters: modelData?.parameters,
             changelog:
               "Initial release with professional-grade audio processing",
             deployedAt: new Date(),
           })
           .returning();
-        logger.info(`   ✓ Created version for ${modelData.modelName}`);
+        logger?.info(`   ✓ Created version for ${modelData?.modelName}`);
       }
     }
 
-    logger.info("✅ AI Music Intelligence Models initialized");
+    logger?.info("✅ AI Music Intelligence Models initialized");
   } catch (error: unknown) {
-    logger.warn({ err: error }, "❌ Failed to initialize AI Music Models:");
+    logger?.warn({ err: error }, "❌ Failed to initialize AI Music Models:");
     throw error;
   }
 }

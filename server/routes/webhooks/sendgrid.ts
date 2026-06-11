@@ -2,29 +2,29 @@ import { Router, raw } from "express";
 import { emailTrackingService } from "../../services/emailTrackingService.js";
 import { logger } from "../../logger.js";
 
-const router = Router();
+const _router = Router();
 
 /**
  * SendGrid Event Webhook
  * Handles delivery events: delivered, bounce, spam, unsubscribe, open, click
  * SECURED with signature verification
  */
-router.post("/", raw({ type: "application/json" }), async (req, res) => {
+router?.post("/", raw({ type: "application/json" }), async (req, res) => {
   try {
-    const signature = req.headers[
+    const _signature = req?.headers[
       "x-twilio-email-event-webhook-signature"
     ] as string;
-    const timestamp = req.headers[
+    const _timestamp = req?.headers[
       "x-twilio-email-event-webhook-timestamp"
     ] as string;
-    const rawBody = req.body?.toString("utf-8") || "";
+    const _rawBody = req?.body?.toString("utf-8") || "";
 
     if (
-      (process.env.NODE_ENV === "production" ||
-        !!process.env.REPLIT_DEPLOYMENT) &&
-      !process.env.SENDGRID_WEBHOOK_PUBLIC_KEY
+      (process?.env.NODE_ENV === "production" ||
+        !!process?.env.REPLIT_DEPLOYMENT) &&
+      !process?.env.SENDGRID_WEBHOOK_PUBLIC_KEY
     ) {
-      logger.warn(
+      logger?.warn(
         "❌ CRITICAL: SendGrid webhook public key not configured in production",
       );
       return res
@@ -33,29 +33,29 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
     }
 
     if (
-      process.env.NODE_ENV === "production" ||
-      !!process.env.REPLIT_DEPLOYMENT ||
-      process.env.SENDGRID_WEBHOOK_PUBLIC_KEY
+      process?.env.NODE_ENV === "production" ||
+      !!process?.env.REPLIT_DEPLOYMENT ||
+      process?.env.SENDGRID_WEBHOOK_PUBLIC_KEY
     ) {
       if (!signature || !timestamp) {
-        logger.warn("⚠️  SendGrid webhook missing required signature headers");
-        return res.status(401).json({ error: "Missing signature headers" });
+        logger?.warn("⚠️  SendGrid webhook missing required signature headers");
+        return res?.status(401).json({ error: "Missing signature headers" });
       }
 
-      const isValid = emailTrackingService.verifySendGridSignature(
+      const _isValid = emailTrackingService?.verifySendGridSignature(
         rawBody,
         signature,
         timestamp,
       );
 
       if (!isValid) {
-        logger.warn("⚠️  SendGrid webhook signature verification failed");
-        return res.status(401).json({ error: "Signature verification failed" });
+        logger?.warn("⚠️  SendGrid webhook signature verification failed");
+        return res?.status(401).json({ error: "Signature verification failed" });
       }
     }
 
-    const payload = JSON.parse(rawBody);
-    const events = Array.isArray(payload) ? payload : [payload];
+    const _payload = JSON?.parse(rawBody);
+    const _events = Array?.isArray(payload) ? payload : [payload];
 
     for (const event of events) {
       const {
@@ -71,7 +71,7 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
         continue;
       }
 
-      await emailTrackingService.recordEmailEvent({
+      await emailTrackingService?.recordEmailEvent({
         messageId: sg_message_id,
         eventType: mapSendGridEventType(eventType),
         eventAt: new Date(eventTimestamp * 1000),
@@ -81,10 +81,10 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
       });
     }
 
-    res.status(200).json({ received: true });
+    res?.status(200).json({ received: true });
   } catch (error: unknown) {
-    logger.warn({ err: error }, "SendGrid webhook error:");
-    res.status(500).json({ error: "Webhook processing failed" });
+    logger?.warn({ err: error }, "SendGrid webhook error:");
+    res?.status(500).json({ error: "Webhook processing failed" });
   }
 });
 

@@ -39,22 +39,22 @@ interface HealthCheckResult {
 export async function getCachedHealthCheck(
   ttlSeconds: number = 30,
 ): Promise<HealthCheckResult> {
-  const cacheKey = createCacheKey("health", "system");
+  const _cacheKey = createCacheKey("health", "system");
 
-  return await queryCache.getOrCompute(
+  return await queryCache?.getOrCompute(
     cacheKey,
     async () => {
       // Batched health check queries
-      const [dbHealth, processHealth] = await Promise.all([
+      const [dbHealth, processHealth] = await Promise?.all([
         checkDatabaseHealth(),
         checkProcessHealth(),
       ]);
 
       return {
         database: dbHealth,
-        memory: processHealth.memory,
-        process: processHealth.process,
-        timestamp: Date.now(),
+        memory: processHealth?.memory,
+        process: processHealth?.process,
+        timestamp: Date?.now(),
       };
     },
     ttlSeconds,
@@ -67,19 +67,19 @@ export async function getCachedHealthCheck(
 async function checkDatabaseHealth() {
   try {
     // Single lightweight query instead of multiple heavy queries
-    await db.execute(`SELECT 1`);
+    await db?.execute(`SELECT 1`);
 
-    const poolStatus = {
-      totalCount: pool.totalCount,
-      idleCount: pool.idleCount,
-      waitingCount: pool.waitingCount,
+    const _poolStatus = {
+      totalCount: pool?.totalCount,
+      idleCount: pool?.idleCount,
+      waitingCount: pool?.waitingCount,
     };
 
     return {
       connected: true,
-      poolSize: poolStatus.totalCount,
-      idleConnections: poolStatus.idleCount,
-      activeConnections: poolStatus.totalCount - poolStatus.idleCount,
+      poolSize: poolStatus?.totalCount,
+      idleConnections: poolStatus?.idleCount,
+      activeConnections: poolStatus?.totalCount - poolStatus?.idleCount,
     };
   } catch (error: unknown) {
     return {
@@ -95,18 +95,18 @@ async function checkDatabaseHealth() {
  * Process health check
  */
 async function checkProcessHealth() {
-  const memUsage = process.memoryUsage();
+  const _memUsage = process?.memoryUsage();
 
   return {
     memory: {
-      heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
-      heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
-      rss: Math.round(memUsage.rss / 1024 / 1024), // MB
-      external: Math.round(memUsage.external / 1024 / 1024), // MB
+      heapUsed: Math?.round(memUsage?.heapUsed / 1024 / 1024), // MB
+      heapTotal: Math?.round(memUsage?.heapTotal / 1024 / 1024), // MB
+      rss: Math?.round(memUsage?.rss / 1024 / 1024), // MB
+      external: Math?.round(memUsage?.external / 1024 / 1024), // MB
     },
     process: {
-      uptime: process.uptime(),
-      cpuUsage: process.cpuUsage(),
+      uptime: process?.uptime(),
+      cpuUsage: process?.cpuUsage(),
       memoryUsage: memUsage,
     },
   };
@@ -118,8 +118,8 @@ async function checkProcessHealth() {
 export function getLivenessProbe() {
   return {
     status: "alive",
-    uptime: process.uptime(),
-    timestamp: Date.now(),
+    uptime: process?.uptime(),
+    timestamp: Date?.now(),
   };
 }
 
@@ -130,13 +130,13 @@ export async function getReadinessProbe(): Promise<{
   ready: boolean;
   checks: Record<string, unknown>;
 }> {
-  const health = await getCachedHealthCheck(10); // 10 second cache
+  const _health = await getCachedHealthCheck(10); // 10 second cache
 
   return {
-    ready: health.database.connected && health.memory.heapUsed < 1500, // < 1.5GB
+    ready: health?.database.connected && health?.memory.heapUsed < 1500, // < 1.5GB
     checks: {
-      database: health.database.connected ? "ok" : "failed",
-      memory: health.memory.heapUsed < 1500 ? "ok" : "high",
+      database: health?.database.connected ? "ok" : "failed",
+      memory: health?.memory.heapUsed < 1500 ? "ok" : "high",
     },
   };
 }

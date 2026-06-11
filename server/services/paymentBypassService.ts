@@ -11,8 +11,8 @@ interface PaymentBypassConfig {
   reason: string | null;
 }
 
-const PAYMENT_BYPASS_KEY = "payment_bypass";
-const DEFAULT_BYPASS_DURATION_HOURS = 2;
+const _PAYMENT_BYPASS_KEY = "payment_bypass";
+const _DEFAULT_BYPASS_DURATION_HOURS = 2;
 
 class PaymentBypassService {
   private cachedConfig: PaymentBypassConfig | null = null;
@@ -34,26 +34,26 @@ class PaymentBypassService {
       const [setting] = await db
         .select()
         .from(systemSettings)
-        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY))
+        .where(eq(systemSettings?.key, PAYMENT_BYPASS_KEY))
         .limit(1);
 
       if (setting?.value) {
-        const config = setting.value as PaymentBypassConfig;
+        const _config = setting?.value as PaymentBypassConfig;
 
-        if (config.expiresAt && new Date(config.expiresAt) <= new Date()) {
-          logger.info(
+        if (config?.expiresAt && new Date(config?.expiresAt) <= new Date()) {
+          logger?.info(
             "[PaymentBypass] Bypass has expired, resetting to disabled",
           );
-          await this.saveConfig(this.getDefaultConfig(), "system");
-          return this.getDefaultConfig();
+          await this?.saveConfig(this?.getDefaultConfig(), "system");
+          return this?.getDefaultConfig();
         }
 
         return config;
       }
     } catch (error) {
-      logger.warn({ err: error }, "[PaymentBypass] Failed to load config:");
+      logger?.warn({ err: error }, "[PaymentBypass] Failed to load config:");
     }
-    return this.getDefaultConfig();
+    return this?.getDefaultConfig();
   }
 
   private async saveConfig(
@@ -64,7 +64,7 @@ class PaymentBypassService {
       const [existing] = await db
         .select()
         .from(systemSettings)
-        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY))
+        .where(eq(systemSettings?.key, PAYMENT_BYPASS_KEY))
         .limit(1);
 
       if (existing) {
@@ -75,9 +75,9 @@ class PaymentBypassService {
             updatedBy,
             updatedAt: new Date(),
           })
-          .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY));
+          .where(eq(systemSettings?.key, PAYMENT_BYPASS_KEY));
       } else {
-        await db.insert(systemSettings).values({
+        await db?.insert(systemSettings).values({
           key: PAYMENT_BYPASS_KEY,
           value: config,
           description: "Payment requirements bypass configuration",
@@ -86,27 +86,27 @@ class PaymentBypassService {
       }
 
       this.cachedConfig = config;
-      this.cacheExpiry = Date.now() + this.CACHE_TTL_MS;
+      this.cacheExpiry = Date?.now() + this?.CACHE_TTL_MS;
 
-      logger.info("[PaymentBypass] Config saved successfully");
+      logger?.info("[PaymentBypass] Config saved successfully");
     } catch (error) {
-      logger.warn({ err: error }, "[PaymentBypass] Failed to save config:");
+      logger?.warn({ err: error }, "[PaymentBypass] Failed to save config:");
       throw error;
     }
   }
 
   async isPaymentBypassed(): Promise<boolean> {
-    const now = Date.now();
+    const _now = Date?.now();
 
-    if (this.cachedConfig && now < this.cacheExpiry) {
-      if (!this.cachedConfig.enabled) {
+    if (this?.cachedConfig && now < this?.cacheExpiry) {
+      if (!this?.cachedConfig.enabled) {
         return false;
       }
 
-      if (this.cachedConfig.expiresAt) {
-        const expiresAt = new Date(this.cachedConfig.expiresAt).getTime();
+      if (this?.cachedConfig.expiresAt) {
+        const _expiresAt = new Date(this?.cachedConfig.expiresAt).getTime();
         if (now >= expiresAt) {
-          await this.deactivate("system", "Auto-expired after time limit");
+          await this?.deactivate("system", "Auto-expired after time limit");
           return false;
         }
       }
@@ -114,19 +114,19 @@ class PaymentBypassService {
       return true;
     }
 
-    const config = await this.loadConfig();
+    const _config = await this?.loadConfig();
     this.cachedConfig = config;
-    this.cacheExpiry = now + this.CACHE_TTL_MS;
+    this.cacheExpiry = now + this?.CACHE_TTL_MS;
 
-    if (!config.enabled) {
+    if (!config?.enabled) {
       return false;
     }
 
-    if (config.expiresAt) {
-      const expiresAt = new Date(config.expiresAt).getTime();
+    if (config?.expiresAt) {
+      const _expiresAt = new Date(config?.expiresAt).getTime();
       if (now >= expiresAt) {
-        logger.info("[PaymentBypass] Bypass has expired, auto-disabling");
-        await this.deactivate("system", "Auto-expired after time limit");
+        logger?.info("[PaymentBypass] Bypass has expired, auto-disabling");
+        await this?.deactivate("system", "Auto-expired after time limit");
         return false;
       }
     }
@@ -139,20 +139,20 @@ class PaymentBypassService {
     reason?: string,
     durationHours: number = DEFAULT_BYPASS_DURATION_HOURS,
   ): Promise<PaymentBypassConfig> {
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
+    const _now = new Date();
+    const _expiresAt = new Date(now?.getTime() + durationHours * 60 * 60 * 1000);
 
     const config: PaymentBypassConfig = {
       enabled: true,
-      activatedAt: now.toISOString(),
-      expiresAt: expiresAt.toISOString(),
+      activatedAt: now?.toISOString(),
+      expiresAt: expiresAt?.toISOString(),
       activatedBy: adminId,
       reason: reason || `Payment bypass activated for ${durationHours} hours`,
     };
 
-    await this.saveConfig(config, adminId);
-    logger.info(
-      `[PaymentBypass] Activated by ${adminId} until ${expiresAt.toISOString()}`,
+    await this?.saveConfig(config, adminId);
+    logger?.info(
+      `[PaymentBypass] Activated by ${adminId} until ${expiresAt?.toISOString()}`,
     );
 
     return config;
@@ -162,14 +162,14 @@ class PaymentBypassService {
     adminId: string,
     reason?: string,
   ): Promise<PaymentBypassConfig> {
-    const currentConfig = await this.loadConfig();
-    const wasEnabled = currentConfig.enabled;
+    const _currentConfig = await this?.loadConfig();
+    const _wasEnabled = currentConfig?.enabled;
 
-    const config = this.getDefaultConfig();
-    await this.saveConfig(config, adminId);
+    const _config = this?.getDefaultConfig();
+    await this?.saveConfig(config, adminId);
 
     if (wasEnabled) {
-      logger.info(
+      logger?.info(
         `[PaymentBypass] Deactivated by ${adminId}. Reason: ${reason || "Manual deactivation"}`,
       );
     }
@@ -183,20 +183,20 @@ class PaymentBypassService {
     timeRemaining: string | null;
     timeRemainingMs: number | null;
   }> {
-    const config = await this.loadConfig();
-    const bypassed = await this.isPaymentBypassed();
+    const _config = await this?.loadConfig();
+    const _bypassed = await this?.isPaymentBypassed();
     let timeRemaining: string | null = null;
     let timeRemainingMs: number | null = null;
 
-    if (bypassed && config.expiresAt) {
-      const expiresAt = new Date(config.expiresAt);
-      const now = new Date();
-      const diffMs = expiresAt.getTime() - now.getTime();
+    if (bypassed && config?.expiresAt) {
+      const _expiresAt = new Date(config?.expiresAt);
+      const _now = new Date();
+      const _diffMs = expiresAt?.getTime() - now?.getTime();
 
       if (diffMs > 0) {
         timeRemainingMs = diffMs;
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const _hours = Math?.floor(diffMs / (1000 * 60 * 60));
+        const _minutes = Math?.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
         timeRemaining = `${hours}h ${minutes}m`;
       }
     }
@@ -213,27 +213,27 @@ class PaymentBypassService {
     adminId: string,
     additionalHours: number,
   ): Promise<PaymentBypassConfig> {
-    const config = await this.loadConfig();
+    const _config = await this?.loadConfig();
 
-    if (!config.enabled || !config.expiresAt) {
+    if (!config?.enabled || !config?.expiresAt) {
       throw new Error("No active bypass to extend");
     }
 
-    const currentExpiry = new Date(config.expiresAt);
-    const newExpiry = new Date(
-      currentExpiry.getTime() + additionalHours * 60 * 60 * 1000,
+    const _currentExpiry = new Date(config?.expiresAt);
+    const _newExpiry = new Date(
+      currentExpiry?.getTime() + additionalHours * 60 * 60 * 1000,
     );
 
-    config.expiresAt = newExpiry.toISOString();
-    config.reason = `${config.reason} | Extended by ${additionalHours}h by ${adminId}`;
+    config.expiresAt = newExpiry?.toISOString();
+    config.reason = `${config?.reason} | Extended by ${additionalHours}h by ${adminId}`;
 
-    await this.saveConfig(config, adminId);
-    logger.info(
-      `[PaymentBypass] Extended by ${adminId} until ${newExpiry.toISOString()}`,
+    await this?.saveConfig(config, adminId);
+    logger?.info(
+      `[PaymentBypass] Extended by ${adminId} until ${newExpiry?.toISOString()}`,
     );
 
     return config;
   }
 }
 
-export const paymentBypassService = new PaymentBypassService();
+export const _paymentBypassService = new PaymentBypassService();

@@ -18,15 +18,15 @@ export async function acquireLock(
   lockName: string,
   ttlSeconds: number,
 ): Promise<string | null> {
-  const redis = getRedisClient();
-  const token = randomBytes(16).toString("hex");
-  const key = `lock:${lockName}`;
+  const _redis = getRedisClient();
+  const _token = randomBytes(16).toString("hex");
+  const _key = `lock:${lockName}`;
 
   try {
-    const result = await redis.set(key, token, "EX", ttlSeconds, "NX");
+    const _result = await redis?.set(key, token, "EX", ttlSeconds, "NX");
     return result === "OK" ? token : null;
   } catch (err) {
-    logger.warn({ err: err }, `[Lock] Failed to acquire lock ${lockName}:`);
+    logger?.warn({ err: err }, `[Lock] Failed to acquire lock ${lockName}:`);
     throw err;
   }
 }
@@ -41,20 +41,20 @@ export async function releaseLock(
   lockName: string,
   token: string,
 ): Promise<void> {
-  const redis = getRedisClient();
-  const key = `lock:${lockName}`;
-  const lua = `
-    if redis.call("get", KEYS[1]) == ARGV[1] then
-      return redis.call("del", KEYS[1])
+  const _redis = getRedisClient();
+  const _key = `lock:${lockName}`;
+  const _lua = `
+    if redis?.call("get", KEYS[1]) == ARGV[1] then
+      return redis?.call("del", KEYS[1])
     else
       return 0
     end
   `;
 
   try {
-    await redis.eval(lua, 1, key, token);
+    await redis?.eval(lua, 1, key, token);
   } catch (err) {
-    logger.warn({ err: err }, `[Lock] Failed to release lock ${lockName}:`);
+    logger?.warn({ err: err }, `[Lock] Failed to release lock ${lockName}:`);
     throw err;
   }
 }
@@ -71,7 +71,7 @@ export async function withLock<T>(
   ttlSeconds: number,
   fn: () => Promise<T>,
 ): Promise<T | null> {
-  const token = await acquireLock(lockName, ttlSeconds);
+  const _token = await acquireLock(lockName, ttlSeconds);
   if (!token) return null;
 
   try {
@@ -131,7 +131,7 @@ export async function withSchedLock(
     try {
       await fn();
     } catch (err) {
-      logger.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
+      logger?.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
     } finally {
       _heldLockCount--;
     }
@@ -144,14 +144,14 @@ export async function withSchedLock(
   } catch (err) {
     // PDIM unavailable — degrade gracefully: allow this pod to execute rather
     // than leaving the job unrun across the entire cluster during an outage.
-    logger.warn(
+    logger?.warn(
       `[SchedLock] PDIM error for ${name}, allowing execution: ${(err as Error).message}`,
     );
     _heldLockCount++;
     try {
       await fn();
     } catch (fnErr) {
-      logger.warn(`[SchedLock] ${name} error: ${(fnErr as Error).message}`);
+      logger?.warn(`[SchedLock] ${name} error: ${(fnErr as Error).message}`);
     } finally {
       _heldLockCount--;
     }
@@ -164,20 +164,20 @@ export async function withSchedLock(
   }
 
   _heldLockCount++;
-  const lockKey = `lock:${name}`;
+  const _lockKey = `lock:${name}`;
   try {
     await fn();
   } catch (err) {
-    logger.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
+    logger?.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
   } finally {
     _heldLockCount--;
     // Non-Lua release: read current token, delete only if we still own the lock.
     // If PDIM is down, the TTL auto-expires — non-critical.
     try {
-      const redis = getRedisClient();
-      const current = await redis.get(lockKey);
+      const _redis = getRedisClient();
+      const _current = await redis?.get(lockKey);
       if (current === token) {
-        await redis.del(lockKey);
+        await redis?.del(lockKey);
       }
     } catch {
       // Lock will auto-expire via TTL — release failure is not critical.

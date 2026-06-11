@@ -84,7 +84,7 @@ export function useGlobalUndo(
 ): UseGlobalUndoReturn {
   const { syncToBackend = false, autoSync = false } = options;
 
-  const undoContext = useUndo();
+  const _undoContext = useUndo();
   const { history, redoStack } = useUndoHistory();
   const { undo, redo, canUndo, canRedo, clearHistory } = useUndoActions();
   const { lastAction, showUndoToast, dismissUndoToast } = useLastAction();
@@ -96,18 +96,18 @@ export function useGlobalUndo(
       redoStack,
       canUndo,
       canRedo,
-      isUndoing: undoContext.state.isUndoing,
-      isRedoing: undoContext.state.isRedoing,
+      isUndoing: undoContext?.state.isUndoing,
+      isRedoing: undoContext?.state.isRedoing,
       lastAction,
       showUndoToast,
-      historyLength: history.length,
+      historyLength: history?.length,
     }),
     [
       history,
       redoStack,
       canUndo,
       canRedo,
-      undoContext.state,
+      undoContext?.state,
       lastAction,
       showUndoToast,
     ],
@@ -123,34 +123,34 @@ export function useGlobalUndo(
     [undo, redo, clearHistory, dismissUndoToast],
   );
 
-  const syncActionToBackend = useCallback(
+  const _syncActionToBackend = useCallback(
     async (action: UndoableAction) => {
       if (!syncToBackend) return;
 
       try {
         await apiRequest("POST", "/api/undo/track-action", {
-          type: action.type,
-          category: action.metadata.category,
-          module: action.metadata.module,
-          description: action.metadata.description,
-          entityId: action.metadata.entityId,
-          entityType: action.metadata.entityType,
-          previousState: action.metadata.previousState,
-          newState: action.metadata.newState,
-          isDestructive: action.metadata.isDestructive,
+          type: action?.type,
+          category: action?.metadata.category,
+          module: action?.metadata.module,
+          description: action?.metadata.description,
+          entityId: action?.metadata.entityId,
+          entityType: action?.metadata.entityType,
+          previousState: action?.metadata.previousState,
+          newState: action?.metadata.newState,
+          isDestructive: action?.metadata.isDestructive,
         });
       } catch (error) {
-        logger.warn("Failed to sync action to backend:", error);
+        logger?.warn("Failed to sync action to backend:", error);
       }
     },
     [syncToBackend],
   );
 
-  const executeAction = useCallback(
+  const _executeAction = useCallback(
     async <T>(
       action: Omit<UndoableAction<T>, "id" | "isUndone" | "result">,
     ): Promise<T> => {
-      const result = await undoContext.executeAction(action);
+      const _result = await undoContext?.executeAction(action);
 
       if (autoSync) {
         const fullAction: UndoableAction<T> = {
@@ -164,10 +164,10 @@ export function useGlobalUndo(
 
       return result;
     },
-    [undoContext.executeAction, autoSync, syncActionToBackend],
+    [undoContext?.executeAction, autoSync, syncActionToBackend],
   );
 
-  const createUndoableAction = useCallback(
+  const _createUndoableAction = useCallback(
     async <T>(
       type: ActionType,
       metadata: Omit<ActionMetadata, "timestamp">,
@@ -179,8 +179,8 @@ export function useGlobalUndo(
         type,
         metadata: {
           ...metadata,
-          timestamp: Date.now(),
-          isDestructive: metadata.isDestructive ?? isDestructiveAction(type),
+          timestamp: Date?.now(),
+          isDestructive: metadata?.isDestructive ?? isDestructiveAction(type),
         },
         execute,
         undo: undoFn,
@@ -194,10 +194,10 @@ export function useGlobalUndo(
     [executeAction],
   );
 
-  const createRestorePoint = useCallback(
+  const _createRestorePoint = useCallback(
     async (name: string, description?: string): Promise<string> => {
       try {
-        const response = await apiRequest(
+        const _response = await apiRequest(
           "POST",
           "/api/undo/create-restore-point",
           {
@@ -205,42 +205,42 @@ export function useGlobalUndo(
             description,
           },
         );
-        const data = await response.json();
-        return data.restorePointId;
+        const _data = await response?.json();
+        return data?.restorePointId;
       } catch (error) {
-        logger.error("Failed to create restore point:", error);
+        logger?.error("Failed to create restore point:", error);
         throw error;
       }
     },
     [],
   );
 
-  const getRestorePoints = useCallback(async (): Promise<RestorePoint[]> => {
+  const _getRestorePoints = useCallback(async (): Promise<RestorePoint[]> => {
     try {
-      const response = await apiRequest("GET", "/api/undo/restore-points");
-      const data = await response.json();
-      return data.restorePoints || [];
+      const _response = await apiRequest("GET", "/api/undo/restore-points");
+      const _data = await response?.json();
+      return data?.restorePoints || [];
     } catch (error) {
-      logger.error("Failed to get restore points:", error);
+      logger?.error("Failed to get restore points:", error);
       return [];
     }
   }, []);
 
-  const restoreToPoint = useCallback(async (pointId: string): Promise<void> => {
+  const _restoreToPoint = useCallback(async (pointId: string): Promise<void> => {
     try {
       await apiRequest("POST", `/api/undo/restore/${pointId}`);
     } catch (error) {
-      logger.error("Failed to restore to point:", error);
+      logger?.error("Failed to restore to point:", error);
       throw error;
     }
   }, []);
 
-  const deleteRestorePoint = useCallback(
+  const _deleteRestorePoint = useCallback(
     async (pointId: string): Promise<void> => {
       try {
         await apiRequest("DELETE", `/api/undo/restore-points/${pointId}`);
       } catch (error) {
-        logger.error("Failed to delete restore point:", error);
+        logger?.error("Failed to delete restore point:", error);
         throw error;
       }
     },
@@ -257,20 +257,20 @@ export function useGlobalUndo(
     [createRestorePoint, getRestorePoints, restoreToPoint, deleteRestorePoint],
   );
 
-  const jumpToAction = useCallback(
+  const _jumpToAction = useCallback(
     async (actionId: string) => {
-      const actionIndex = history.findIndex((a) => a.id === actionId);
+      const _actionIndex = history?.findIndex((a) => a?.id === actionId);
       if (actionIndex === -1) return;
 
-      const currentIndex = history.length - 1;
-      const stepsToUndo = currentIndex - actionIndex;
+      const _currentIndex = history?.length - 1;
+      const _stepsToUndo = currentIndex - actionIndex;
 
       if (stepsToUndo > 0) {
         for (let i = 0; i < stepsToUndo; i++) {
           await undo();
         }
       } else if (stepsToUndo < 0) {
-        const stepsToRedo = Math.abs(stepsToUndo);
+        const _stepsToRedo = Math?.abs(stepsToUndo);
         for (let i = 0; i < stepsToRedo; i++) {
           await redo();
         }
@@ -285,13 +285,13 @@ export function useGlobalUndo(
     recovery,
     executeAction,
     createUndoableAction,
-    startGroup: undoContext.startGroup,
-    endGroup: undoContext.endGroup,
-    undoGroup: undoContext.undoGroup,
+    startGroup: undoContext?.startGroup,
+    endGroup: undoContext?.endGroup,
+    undoGroup: undoContext?.undoGroup,
     jumpToAction,
-    getActionById: undoContext.getActionById,
-    getHistory: undoContext.getHistory,
-    getRedoStack: undoContext.getRedoStack,
+    getActionById: undoContext?.getActionById,
+    getHistory: undoContext?.getHistory,
+    getRedoStack: undoContext?.getRedoStack,
     syncActionToBackend,
   };
 }

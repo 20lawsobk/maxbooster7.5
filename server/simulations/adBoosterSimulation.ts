@@ -65,7 +65,7 @@ interface CampaignConfig {
 /**
  * Baseline Paid Advertising Metrics (Industry Standards)
  */
-const PAID_AD_BENCHMARKS = {
+const _PAID_AD_BENCHMARKS = {
   facebook: {
     cpm: 12.0, // Cost per 1000 impressions
     reach_per_100: 10000, // $100 = 10,000 impressions
@@ -102,7 +102,7 @@ const PAID_AD_BENCHMARKS = {
  * AI Booster Organic Amplification Metrics
  * Based on real organic social media performance research
  */
-const AI_BOOSTER_ORGANIC = {
+const _AI_BOOSTER_ORGANIC = {
   facebook: {
     baseline_reach: 500, // Organic reach to followers
     engagement_rate: 0.064, // 6.4% organic engagement (4x paid)
@@ -184,9 +184,9 @@ function calculateViralCoefficient(
   audienceSize: number,
   crossPlatformBoost: number,
 ): number {
-  const qualityBonus = (contentQuality / 100) * 0.5;
-  const networkBonus = Math.log10(audienceSize) * 0.2;
-  const crossPlatformBonus = crossPlatformBoost * 0.3;
+  const _qualityBonus = (contentQuality / 100) * 0.5;
+  const _networkBonus = Math?.log10(audienceSize) * 0.2;
+  const _crossPlatformBonus = crossPlatformBoost * 0.3;
 
   return baseCoefficient + qualityBonus + networkBonus + crossPlatformBonus;
 }
@@ -197,19 +197,19 @@ function calculateViralCoefficient(
 function simulatePaidAdvertising(
   campaign: CampaignConfig,
 ): SimulationResult["paidAdvertising"] {
-  const budgetPerPlatform = campaign.budget / campaign.platforms.length;
+  const _budgetPerPlatform = campaign?.budget / campaign?.platforms.length;
 
   let totalReach = 0;
   let totalEngagement = 0;
   const platformBreakdown: Record<string, unknown> = {};
 
-  for (const platform of campaign.platforms) {
-    const benchmark =
+  for (const platform of campaign?.platforms) {
+    const _benchmark =
       PAID_AD_BENCHMARKS[platform as keyof typeof PAID_AD_BENCHMARKS];
     if (!benchmark) continue;
 
-    const reach = (budgetPerPlatform / 100) * benchmark.reach_per_100;
-    const engagement = reach * benchmark.engagement_rate;
+    const _reach = (budgetPerPlatform / 100) * benchmark?.reach_per_100;
+    const _engagement = reach * benchmark?.engagement_rate;
 
     totalReach += reach;
     totalEngagement += engagement;
@@ -217,10 +217,10 @@ function simulatePaidAdvertising(
   }
 
   return {
-    totalSpend: campaign.budget,
-    estimatedReach: Math.round(totalReach),
-    estimatedEngagement: Math.round(totalEngagement),
-    costPerImpression: campaign.budget / totalReach,
+    totalSpend: campaign?.budget,
+    estimatedReach: Math?.round(totalReach),
+    estimatedEngagement: Math?.round(totalEngagement),
+    costPerImpression: campaign?.budget / totalReach,
     platformBreakdown,
   };
 }
@@ -232,87 +232,87 @@ function simulateAIBoosterOrganic(
   campaign: CampaignConfig,
 ): SimulationResult["aiBoosterOrganic"] {
   const { followerCount, multiplier } = getAudienceSizeMultiplier(
-    campaign.audienceSize,
+    campaign?.audienceSize,
   );
-  const qualityMultiplier = getContentQualityMultiplier(
-    campaign.contentQuality,
+  const _qualityMultiplier = getContentQualityMultiplier(
+    campaign?.contentQuality,
   );
-  Math.sqrt(campaign.duration); // Compounding effects over time
+  Math?.sqrt(campaign?.duration); // Compounding effects over time
 
   // Cross-platform synergy: posting on multiple platforms creates amplification
-  const crossPlatformBoost = 1 + (campaign.platforms.length - 1) * 0.15;
+  const _crossPlatformBoost = 1 + (campaign?.platforms.length - 1) * 0.15;
 
   let totalReach = 0;
   let totalEngagement = 0;
   const platformBreakdown: PlatformMetrics[] = [];
   let avgViralCoefficient = 0;
 
-  for (const platform of campaign.platforms) {
-    const organic =
+  for (const platform of campaign?.platforms) {
+    const _organic =
       AI_BOOSTER_ORGANIC[platform as keyof typeof AI_BOOSTER_ORGANIC];
     if (!organic) continue;
 
     // Calculate organic reach with all multipliers
-    const baseReach = organic.baseline_reach * (followerCount / 1000);
-    const optimizedReach =
+    const _baseReach = organic?.baseline_reach * (followerCount / 1000);
+    const _optimizedReach =
       baseReach *
       multiplier *
       qualityMultiplier *
-      organic.algorithm_boost *
-      organic.optimal_timing_boost *
+      organic?.algorithm_boost *
+      organic?.optimal_timing_boost *
       crossPlatformBoost;
 
     // Add viral amplification over duration
-    const viralCoefficient = calculateViralCoefficient(
-      organic.viral_coefficient,
-      campaign.contentQuality,
+    const _viralCoefficient = calculateViralCoefficient(
+      organic?.viral_coefficient,
+      campaign?.contentQuality,
       followerCount,
       crossPlatformBoost,
     );
 
     // Viral reach compounds over time
-    const viralReach =
+    const _viralReach =
       optimizedReach *
-      Math.pow(viralCoefficient, Math.log2(campaign.duration + 1));
+      Math?.pow(viralCoefficient, Math?.log2(campaign?.duration + 1));
 
-    const totalPlatformReach = optimizedReach + viralReach;
-    const engagement = totalPlatformReach * organic.engagement_rate;
-    const clicks = engagement * 0.4; // 40% of engagement = clicks
-    const shares = totalPlatformReach * organic.share_rate;
+    const _totalPlatformReach = optimizedReach + viralReach;
+    const _engagement = totalPlatformReach * organic?.engagement_rate;
+    const _clicks = engagement * 0.4; // 40% of engagement = clicks
+    const _shares = totalPlatformReach * organic?.share_rate;
 
     // Calculate cost savings (what they would have paid for this reach)
-    const benchmark =
+    const _benchmark =
       PAID_AD_BENCHMARKS[platform as keyof typeof PAID_AD_BENCHMARKS];
-    const costSavings = benchmark
-      ? (totalPlatformReach / 1000) * benchmark.cpm
+    const _costSavings = benchmark
+      ? (totalPlatformReach / 1000) * benchmark?.cpm
       : 0;
 
     totalReach += totalPlatformReach;
     totalEngagement += engagement;
     avgViralCoefficient += viralCoefficient;
 
-    platformBreakdown.push({
+    platformBreakdown?.push({
       platform,
-      organicReach: Math.round(totalPlatformReach),
-      organicEngagement: Math.round(engagement),
-      organicClicks: Math.round(clicks),
-      organicShares: Math.round(shares),
-      costSavings: Math.round(costSavings),
-      viralCoefficient: Number(viralCoefficient.toFixed(2)),
-      algorithmBoost: Number(organic.algorithm_boost.toFixed(2)),
+      organicReach: Math?.round(totalPlatformReach),
+      organicEngagement: Math?.round(engagement),
+      organicClicks: Math?.round(clicks),
+      organicShares: Math?.round(shares),
+      costSavings: Math?.round(costSavings),
+      viralCoefficient: Number(viralCoefficient?.toFixed(2)),
+      algorithmBoost: Number(organic?.algorithm_boost.toFixed(2)),
     });
   }
 
   return {
     totalCost: 0, // Zero cost - pure organic
-    estimatedReach: Math.round(totalReach),
-    estimatedEngagement: Math.round(totalEngagement),
+    estimatedReach: Math?.round(totalReach),
+    estimatedEngagement: Math?.round(totalEngagement),
     platformBreakdown,
     viralCoefficient: Number(
-      (avgViralCoefficient / campaign.platforms.length).toFixed(2),
+      (avgViralCoefficient / campaign?.platforms.length).toFixed(2),
     ),
-    networkEffectMultiplier: Number(multiplier.toFixed(2)),
-    crossPlatformSynergy: Number(crossPlatformBoost.toFixed(2)),
+    networkEffectMultiplier: Number(multiplier?.toFixed(2)),
+    crossPlatformSynergy: Number(crossPlatformBoost?.toFixed(2)),
   };
 }
 
@@ -323,32 +323,32 @@ export async function simulateAdBooster(
   campaign: CampaignConfig,
 ): Promise<SimulationResult> {
   // Simulate paid advertising baseline
-  const paidAd = simulatePaidAdvertising(campaign);
+  const _paidAd = simulatePaidAdvertising(campaign);
 
   // Simulate AI Booster organic amplification
-  const aiBooster = simulateAIBoosterOrganic(campaign);
+  const _aiBooster = simulateAIBoosterOrganic(campaign);
 
   // Calculate amplification factor
-  const amplificationFactor = aiBooster.estimatedReach / paidAd.estimatedReach;
+  const _amplificationFactor = aiBooster?.estimatedReach / paidAd?.estimatedReach;
 
   // Calculate comparison metrics
-  const reachIncrease = (
-    ((aiBooster.estimatedReach - paidAd.estimatedReach) /
-      paidAd.estimatedReach) *
+  const _reachIncrease = (
+    ((aiBooster?.estimatedReach - paidAd?.estimatedReach) /
+      paidAd?.estimatedReach) *
     100
   ).toFixed(1);
-  const engagementIncrease = (
-    ((aiBooster.estimatedEngagement - paidAd.estimatedEngagement) /
-      paidAd.estimatedEngagement) *
+  const _engagementIncrease = (
+    ((aiBooster?.estimatedEngagement - paidAd?.estimatedEngagement) /
+      paidAd?.estimatedEngagement) *
     100
   ).toFixed(1);
-  const costSavings = paidAd.totalSpend;
-  const roi = (aiBooster.estimatedReach / paidAd.totalSpend).toFixed(0);
+  const _costSavings = paidAd?.totalSpend;
+  const _roi = (aiBooster?.estimatedReach / paidAd?.totalSpend).toFixed(0);
 
   return {
     paidAdvertising: paidAd,
     aiBoosterOrganic: aiBooster,
-    amplificationFactor: Number(amplificationFactor.toFixed(2)),
+    amplificationFactor: Number(amplificationFactor?.toFixed(2)),
     comparison: {
       reachIncrease: `+${reachIncrease}%`,
       engagementIncrease: `+${engagementIncrease}%`,
@@ -356,9 +356,9 @@ export async function simulateAdBooster(
       roi: `${roi} impressions per $1 saved`,
     },
     scenarioDetails: {
-      campaignType: campaign.type,
-      audienceSize: campaign.audienceSize,
-      duration: `${campaign.duration} days`,
+      campaignType: campaign?.type,
+      audienceSize: campaign?.audienceSize,
+      duration: `${campaign?.duration} days`,
       confidence: 0.87, // 87% confidence based on organic performance research
     },
   };
@@ -380,7 +380,7 @@ export async function runComprehensiveSimulation(): Promise<{
   const scenarios: SimulationResult[] = [];
 
   // Scenario 1: Short-term product launch (small audience)
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "Short-term Product Launch",
       type: "product_launch",
@@ -393,7 +393,7 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Scenario 2: Short-term brand awareness (medium audience)
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "Short-term Brand Awareness",
       type: "brand_awareness",
@@ -406,7 +406,7 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Scenario 3: Short-term event promotion (large audience)
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "Short-term Event Promotion",
       type: "event_promotion",
@@ -419,7 +419,7 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Scenario 4: Long-term product launch (small audience)
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "Long-term Product Launch",
       type: "product_launch",
@@ -432,7 +432,7 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Scenario 5: Long-term brand awareness (medium audience)
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "Long-term Brand Awareness",
       type: "brand_awareness",
@@ -445,7 +445,7 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Scenario 6: Long-term event promotion (large audience)
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "Long-term Event Promotion",
       type: "event_promotion",
@@ -458,7 +458,7 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Scenario 7: Multi-platform small audience
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "Multi-platform Small Audience",
       type: "product_launch",
@@ -471,7 +471,7 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Scenario 8: TikTok-focused viral campaign
-  scenarios.push(
+  scenarios?.push(
     await simulateAdBooster({
       name: "TikTok Viral Campaign",
       type: "brand_awareness",
@@ -484,15 +484,15 @@ export async function runComprehensiveSimulation(): Promise<{
   );
 
   // Calculate summary statistics
-  const amplifications = scenarios.map((s) => s.amplificationFactor);
-  const averageAmplification =
-    amplifications.reduce((a, b) => a + b, 0) / amplifications.length;
-  const minAmplification = Math.min(...amplifications);
-  const maxAmplification = Math.max(...amplifications);
-  const allScenariosPass = amplifications.every((amp) => amp >= 2.0);
+  const _amplifications = scenarios?.map((s) => s?.amplificationFactor);
+  const _averageAmplification =
+    amplifications?.reduce((a, b) => a + b, 0) / amplifications?.length;
+  const _minAmplification = Math?.min(...amplifications);
+  const _maxAmplification = Math?.max(...amplifications);
+  const _allScenariosPass = amplifications?.every((amp) => amp >= 2.0);
 
-  const totalCostSavings = scenarios.reduce((sum, s) => {
-    const savings = parseFloat(s.comparison.costSavings.replace("$", ""));
+  const _totalCostSavings = scenarios?.reduce((sum, s) => {
+    const _savings = parseFloat(s?.comparison.costSavings?.replace("$", ""));
     return sum + savings;
   }, 0);
 
@@ -500,10 +500,10 @@ export async function runComprehensiveSimulation(): Promise<{
     scenarios,
     summary: {
       allScenariosPass,
-      averageAmplification: Number(averageAmplification.toFixed(2)),
-      totalCostSavings: Math.round(totalCostSavings),
-      minAmplification: Number(minAmplification.toFixed(2)),
-      maxAmplification: Number(maxAmplification.toFixed(2)),
+      averageAmplification: Number(averageAmplification?.toFixed(2)),
+      totalCostSavings: Math?.round(totalCostSavings),
+      minAmplification: Number(minAmplification?.toFixed(2)),
+      maxAmplification: Number(maxAmplification?.toFixed(2)),
     },
   };
 }
@@ -516,56 +516,56 @@ export function generateSimulationReport(
 ): string {
   let report = "# Ad System AI Booster Simulation Results\n\n";
   report += "## Executive Summary\n\n";
-  report += `- **All Scenarios Pass**: ${results.summary.allScenariosPass ? "✅ YES" : "❌ NO"}\n`;
-  report += `- **Average Amplification Factor**: ${results.summary.averageAmplification}x (${((results.summary.averageAmplification - 1) * 100).toFixed(0)}% boost)\n`;
-  report += `- **Minimum Amplification**: ${results.summary.minAmplification}x\n`;
-  report += `- **Maximum Amplification**: ${results.summary.maxAmplification}x\n`;
-  report += `- **Total Cost Savings**: $${results.summary.totalCostSavings.toLocaleString()}\n\n`;
+  report += `- **All Scenarios Pass**: ${results?.summary.allScenariosPass ? "✅ YES" : "❌ NO"}\n`;
+  report += `- **Average Amplification Factor**: ${results?.summary.averageAmplification}x (${((results?.summary.averageAmplification - 1) * 100).toFixed(0)}% boost)\n`;
+  report += `- **Minimum Amplification**: ${results?.summary.minAmplification}x\n`;
+  report += `- **Maximum Amplification**: ${results?.summary.maxAmplification}x\n`;
+  report += `- **Total Cost Savings**: $${results?.summary.totalCostSavings?.toLocaleString()}\n\n`;
 
   report += "---\n\n";
   report += "## Detailed Scenario Results\n\n";
 
-  results.scenarios.forEach((scenario, index) => {
-    report += `### Scenario ${index + 1}: ${scenario.scenarioDetails.campaignType.replace(/_/g, " ").toUpperCase()}\n\n`;
+  results?.scenarios.forEach((scenario, index) => {
+    report += `### Scenario ${index + 1}: ${scenario?.scenarioDetails.campaignType?.replace(/_/g, " ").toUpperCase()}\n\n`;
     report += `**Configuration:**\n`;
-    report += `- Campaign Type: ${scenario.scenarioDetails.campaignType.replace(/_/g, " ")}\n`;
-    report += `- Audience Size: ${scenario.scenarioDetails.audienceSize}\n`;
-    report += `- Duration: ${scenario.scenarioDetails.duration}\n`;
-    report += `- Confidence: ${(scenario.scenarioDetails.confidence * 100).toFixed(0)}%\n\n`;
+    report += `- Campaign Type: ${scenario?.scenarioDetails.campaignType?.replace(/_/g, " ")}\n`;
+    report += `- Audience Size: ${scenario?.scenarioDetails.audienceSize}\n`;
+    report += `- Duration: ${scenario?.scenarioDetails.duration}\n`;
+    report += `- Confidence: ${(scenario?.scenarioDetails.confidence * 100).toFixed(0)}%\n\n`;
 
-    report += `**Paid Advertising Baseline ($${scenario.paidAdvertising.totalSpend}):**\n`;
-    report += `- Total Reach: ${scenario.paidAdvertising.estimatedReach.toLocaleString()} impressions\n`;
-    report += `- Total Engagement: ${scenario.paidAdvertising.estimatedEngagement.toLocaleString()}\n`;
-    report += `- Cost Per Impression: $${scenario.paidAdvertising.costPerImpression.toFixed(4)}\n\n`;
+    report += `**Paid Advertising Baseline ($${scenario?.paidAdvertising.totalSpend}):**\n`;
+    report += `- Total Reach: ${scenario?.paidAdvertising.estimatedReach?.toLocaleString()} impressions\n`;
+    report += `- Total Engagement: ${scenario?.paidAdvertising.estimatedEngagement?.toLocaleString()}\n`;
+    report += `- Cost Per Impression: $${scenario?.paidAdvertising.costPerImpression?.toFixed(4)}\n\n`;
 
     report += `**AI Booster Organic (Zero Cost):**\n`;
-    report += `- Total Reach: ${scenario.aiBoosterOrganic.estimatedReach.toLocaleString()} impressions\n`;
-    report += `- Total Engagement: ${scenario.aiBoosterOrganic.estimatedEngagement.toLocaleString()}\n`;
-    report += `- Viral Coefficient: ${scenario.aiBoosterOrganic.viralCoefficient}\n`;
-    report += `- Network Effect Multiplier: ${scenario.aiBoosterOrganic.networkEffectMultiplier}x\n`;
-    report += `- Cross-Platform Synergy: ${scenario.aiBoosterOrganic.crossPlatformSynergy}x\n\n`;
+    report += `- Total Reach: ${scenario?.aiBoosterOrganic.estimatedReach?.toLocaleString()} impressions\n`;
+    report += `- Total Engagement: ${scenario?.aiBoosterOrganic.estimatedEngagement?.toLocaleString()}\n`;
+    report += `- Viral Coefficient: ${scenario?.aiBoosterOrganic.viralCoefficient}\n`;
+    report += `- Network Effect Multiplier: ${scenario?.aiBoosterOrganic.networkEffectMultiplier}x\n`;
+    report += `- Cross-Platform Synergy: ${scenario?.aiBoosterOrganic.crossPlatformSynergy}x\n\n`;
 
     report += `**Amplification Analysis:**\n`;
-    report += `- 🚀 **Amplification Factor: ${scenario.amplificationFactor}x** (${scenario.amplificationFactor >= 2.0 ? "✅ PASS" : "❌ FAIL"})\n`;
-    report += `- Reach Increase: ${scenario.comparison.reachIncrease}\n`;
-    report += `- Engagement Increase: ${scenario.comparison.engagementIncrease}\n`;
-    report += `- Cost Savings: ${scenario.comparison.costSavings}\n`;
-    report += `- ROI: ${scenario.comparison.roi}\n\n`;
+    report += `- 🚀 **Amplification Factor: ${scenario?.amplificationFactor}x** (${scenario?.amplificationFactor >= 2.0 ? "✅ PASS" : "❌ FAIL"})\n`;
+    report += `- Reach Increase: ${scenario?.comparison.reachIncrease}\n`;
+    report += `- Engagement Increase: ${scenario?.comparison.engagementIncrease}\n`;
+    report += `- Cost Savings: ${scenario?.comparison.costSavings}\n`;
+    report += `- ROI: ${scenario?.comparison.roi}\n\n`;
 
     report += `**Platform Breakdown:**\n\n`;
     report += `| Platform | Organic Reach | Engagement | Clicks | Shares | Cost Savings | Viral Coefficient |\n`;
     report += `|----------|--------------|------------|--------|--------|--------------|-------------------|\n`;
-    scenario.aiBoosterOrganic.platformBreakdown.forEach((platform) => {
-      report += `| ${platform.platform} | ${platform.organicReach.toLocaleString()} | ${platform.organicEngagement.toLocaleString()} | ${platform.organicClicks.toLocaleString()} | ${platform.organicShares.toLocaleString()} | $${platform.costSavings.toLocaleString()} | ${platform.viralCoefficient} |\n`;
+    scenario?.aiBoosterOrganic.platformBreakdown?.forEach((platform) => {
+      report += `| ${platform?.platform} | ${platform?.organicReach.toLocaleString()} | ${platform?.organicEngagement.toLocaleString()} | ${platform?.organicClicks.toLocaleString()} | ${platform?.organicShares.toLocaleString()} | $${platform?.costSavings.toLocaleString()} | ${platform?.viralCoefficient} |\n`;
     });
     report += "\n---\n\n";
   });
 
   report += "## Statistical Analysis\n\n";
   report += `### Verification Checklist\n\n`;
-  report += `- [${results.summary.allScenariosPass ? "x" : " "}] All scenarios achieve ≥ 2.0x amplification factor (100%+ boost)\n`;
-  report += `- [${results.summary.minAmplification >= 2.0 ? "x" : " "}] Minimum amplification meets threshold: ${results.summary.minAmplification}x\n`;
-  report += `- [${results.summary.averageAmplification >= 2.5 ? "x" : " "}] Average amplification exceeds 2.5x: ${results.summary.averageAmplification}x\n`;
+  report += `- [${results?.summary.allScenariosPass ? "x" : " "}] All scenarios achieve ≥ 2.0x amplification factor (100%+ boost)\n`;
+  report += `- [${results?.summary.minAmplification >= 2.0 ? "x" : " "}] Minimum amplification meets threshold: ${results?.summary.minAmplification}x\n`;
+  report += `- [${results?.summary.averageAmplification >= 2.5 ? "x" : " "}] Average amplification exceeds 2.5x: ${results?.summary.averageAmplification}x\n`;
   report += `- [x] Short-term scenarios verified (1 week)\n`;
   report += `- [x] Long-term scenarios verified (30 days)\n`;
   report += `- [x] Multiple campaign types tested\n`;
@@ -573,7 +573,7 @@ export function generateSimulationReport(
   report += `- [x] Platform coverage confirmed (5+ platforms)\n\n`;
 
   report += "### Key Findings\n\n";
-  report += `1. **100%+ Amplification Verified**: All scenarios show at least ${((results.summary.minAmplification - 1) * 100).toFixed(0)}% amplification\n`;
+  report += `1. **100%+ Amplification Verified**: All scenarios show at least ${((results?.summary.minAmplification - 1) * 100).toFixed(0)}% amplification\n`;
   report += `2. **Zero Cost**: AI Booster achieves this reach with $0 advertising spend\n`;
   report += `3. **Higher Engagement**: Organic engagement rates 3-7x higher than paid ads\n`;
   report += `4. **Viral Amplification**: Content continues to spread beyond initial posting\n`;
@@ -582,11 +582,11 @@ export function generateSimulationReport(
 
   report += "## Conclusion\n\n";
 
-  if (results.summary.allScenariosPass) {
-    report += `✅ **VERIFIED**: The Ad System AI Booster achieves **${((results.summary.averageAmplification - 1) * 100).toFixed(0)}% average organic amplification** vs traditional paid advertising.\n\n`;
+  if (results?.summary.allScenariosPass) {
+    report += `✅ **VERIFIED**: The Ad System AI Booster achieves **${((results?.summary.averageAmplification - 1) * 100).toFixed(0)}% average organic amplification** vs traditional paid advertising.\n\n`;
     report += `The AI Booster successfully:\n`;
-    report += `- Eliminates all advertising costs ($${results.summary.totalCostSavings.toLocaleString()} saved across scenarios)\n`;
-    report += `- Achieves ${results.summary.minAmplification}x - ${results.summary.maxAmplification}x amplification across all scenarios\n`;
+    report += `- Eliminates all advertising costs ($${results?.summary.totalCostSavings?.toLocaleString()} saved across scenarios)\n`;
+    report += `- Achieves ${results?.summary.minAmplification}x - ${results?.summary.maxAmplification}x amplification across all scenarios\n`;
     report += `- Delivers superior engagement quality through authentic organic reach\n`;
     report += `- Distributes content across 5+ platforms simultaneously\n`;
     report += `- Creates compounding viral effects over time\n\n`;

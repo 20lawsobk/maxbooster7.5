@@ -33,22 +33,22 @@ export interface PlatformInfo {
 }
 
 function detect(): PlatformInfo {
-  const isElectron =
-    typeof window !== "undefined" && !!window.electronAPI?.isElectron;
+  const _isElectron =
+    typeof window !== "undefined" && !!window?.electronAPI?.isElectron;
 
-  const isCapacitorNative =
+  const _isCapacitorNative =
     typeof window !== "undefined" &&
-    typeof window.Capacitor !== "undefined" &&
-    window.Capacitor.isNativePlatform();
+    typeof window?.Capacitor !== "undefined" &&
+    window?.Capacitor.isNativePlatform();
 
-  const capacitorPlatform =
-    isCapacitorNative && window.Capacitor
-      ? window.Capacitor.getPlatform()
+  const _capacitorPlatform =
+    isCapacitorNative && window?.Capacitor
+      ? window?.Capacitor.getPlatform()
       : null;
 
-  const isAndroid = capacitorPlatform === "android";
-  const isIOS = capacitorPlatform === "ios";
-  const isMobile = isAndroid || isIOS;
+  const _isAndroid = capacitorPlatform === "android";
+  const _isIOS = capacitorPlatform === "ios";
+  const _isMobile = isAndroid || isIOS;
 
   let type: PlatformType = "web";
   if (isElectron) type = "electron";
@@ -64,7 +64,7 @@ function detect(): PlatformInfo {
     isMobile,
     isDesktop: isElectron,
     electronOS: isElectron
-      ? ((window.electronAPI?.platform as string) ?? null)
+      ? ((window?.electronAPI?.platform as string) ?? null)
       : null,
   };
 }

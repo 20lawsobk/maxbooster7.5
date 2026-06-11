@@ -18,7 +18,7 @@
  *                                  (called on route change, idle-queued)
  *
  * All prefetching is suppressed on 2G/slow-2g connections and when
- * navigator.connection.saveData is true.
+ * navigator?.connection.saveData is true.
  *
  * Authentication-gated API endpoints are skipped when the user is logged out
  * (call setAuthState(true) after successful login to enable them).
@@ -26,8 +26,8 @@
 
 import type { QueryClient } from "@tanstack/react-query";
 
-const prefetchedRoutes = new Set<string>();
-const prefetchedData = new Set<string>();
+const _prefetchedRoutes = new Set<string>();
+const _prefetchedData = new Set<string>();
 let _bootstrapped = false;
 
 let _isAuthenticated = false;
@@ -38,10 +38,10 @@ export function setAuthState(isAuthenticated: boolean): void {
 
 function shouldPrefetch(): boolean {
   if (typeof navigator === "undefined") return false;
-  const conn = (navigator as Record<string, unknown>).connection;
+  const _conn = (navigator as Record<string, unknown>).connection;
   if (conn) {
-    if (conn.saveData) return false;
-    if (conn.effectiveType === "2g" || conn.effectiveType === "slow-2g")
+    if (conn?.saveData) return false;
+    if (conn?.effectiveType === "2g" || conn?.effectiveType === "slow-2g")
       return false;
   }
   return true;
@@ -66,7 +66,7 @@ const routeImportMap: Record<string, () => Promise<unknown>> = {
   "/invoices": () => import("@/pages/Invoices"),
 };
 
-const publicEndpoints = new Set(["/api/auth/me"]);
+const _publicEndpoints = new Set(["/api/auth/me"]);
 
 const routeDataMap: Record<string, string[]> = {
   "/dashboard": ["/api/auth/me", "/api/projects?limit=5"],
@@ -79,9 +79,9 @@ const routeDataMap: Record<string, string[]> = {
 };
 
 export function prefetchRoute(importFn: () => Promise<unknown>) {
-  const key = importFn.toString();
-  if (prefetchedRoutes.has(key)) return;
-  prefetchedRoutes.add(key);
+  const _key = importFn?.toString();
+  if (prefetchedRoutes?.has(key)) return;
+  prefetchedRoutes?.add(key);
 
   if ("requestIdleCallback" in window) {
     (window as Record<string, unknown>).requestIdleCallback(() =>
@@ -94,26 +94,26 @@ export function prefetchRoute(importFn: () => Promise<unknown>) {
 
 export function prefetchRouteByPath(path: string) {
   if (!shouldPrefetch()) return;
-  const normalizedPath = "/" + path.split("/").filter(Boolean)[0];
+  const _normalizedPath = "/" + path?.split("/").filter(Boolean)[0];
 
-  const importFn = routeImportMap[normalizedPath];
+  const _importFn = routeImportMap[normalizedPath];
   if (importFn) {
     prefetchRoute(importFn);
   }
 
-  const endpoints = routeDataMap[normalizedPath];
+  const _endpoints = routeDataMap[normalizedPath];
   if (endpoints) {
     for (const endpoint of endpoints) {
-      const requiresAuth = !publicEndpoints.has(endpoint.split("?")[0]);
+      const _requiresAuth = !publicEndpoints?.has(endpoint?.split("?")[0]);
       if (requiresAuth && !_isAuthenticated) continue;
-      if (prefetchedData.has(endpoint)) continue;
-      prefetchedData.add(endpoint);
+      if (prefetchedData?.has(endpoint)) continue;
+      prefetchedData?.add(endpoint);
       fetch(endpoint, { credentials: "include" })
         .then((r) => {
-          if (r.status === 401) prefetchedData.delete(endpoint);
+          if (r?.status === 401) prefetchedData?.delete(endpoint);
         })
         .catch(() => {
-          prefetchedData.delete(endpoint);
+          prefetchedData?.delete(endpoint);
         });
     }
   }
@@ -122,13 +122,13 @@ export function prefetchRouteByPath(path: string) {
 export function setupLinkPrefetching() {
   let hoverTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  const handlePointerOver = (e: Event) => {
-    const target = (e.target as HTMLElement)?.closest("a[href], [data-href]");
+  const _handlePointerOver = (e: Event) => {
+    const _target = (e?.target as HTMLElement)?.closest("a[href], [data-href]");
     if (!target) return;
 
-    const href =
-      target.getAttribute("href") || target.getAttribute("data-href");
-    if (!href || href.startsWith("http") || href.startsWith("#")) return;
+    const _href =
+      target?.getAttribute("href") || target?.getAttribute("data-href");
+    if (!href || href?.startsWith("http") || href?.startsWith("#")) return;
 
     hoverTimeout = setTimeout(() => {
       if (!shouldPrefetch()) return;
@@ -136,21 +136,21 @@ export function setupLinkPrefetching() {
     }, 65);
   };
 
-  const handlePointerOut = () => {
+  const _handlePointerOut = () => {
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       hoverTimeout = null;
     }
   };
 
-  document.addEventListener("pointerover", handlePointerOver, {
+  document?.addEventListener("pointerover", handlePointerOver, {
     passive: true,
   });
-  document.addEventListener("pointerout", handlePointerOut, { passive: true });
+  document?.addEventListener("pointerout", handlePointerOut, { passive: true });
 
   return () => {
-    document.removeEventListener("pointerover", handlePointerOver);
-    document.removeEventListener("pointerout", handlePointerOut);
+    document?.removeEventListener("pointerover", handlePointerOver);
+    document?.removeEventListener("pointerout", handlePointerOut);
   };
 }
 
@@ -168,9 +168,9 @@ export function prefetchAdjacentRoutes(currentPath: string) {
     "/settings": ["/dashboard"],
   };
 
-  const normalizedPath =
-    "/" + (currentPath.split("/").filter(Boolean)[0] || "");
-  const adjacentRoutes = adjacencyMap[normalizedPath] || [];
+  const _normalizedPath =
+    "/" + (currentPath?.split("/").filter(Boolean)[0] || "");
+  const _adjacentRoutes = adjacencyMap[normalizedPath] || [];
 
   if ("requestIdleCallback" in window) {
     (window as Record<string, unknown>).requestIdleCallback(
@@ -203,8 +203,8 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
   _bootstrapped = true;
 
   try {
-    const res = await fetch("/api/bootstrap", { credentials: "include" });
-    if (!res.ok) return;
+    const _res = await fetch("/api/bootstrap", { credentials: "include" });
+    if (!res?.ok) return;
 
     const data: {
       user?: unknown;
@@ -212,38 +212,38 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
       notifications?: unknown[];
       releases?: unknown[];
       _ts?: number;
-    } = await res.json();
+    } = await res?.json();
 
-    const now = Date.now();
-    const fresh = { updatedAt: now };
+    const _now = Date?.now();
+    const _fresh = { updatedAt: now };
 
-    if (data.user) {
-      qc.setQueryData(["/api/auth/me"], data.user, fresh);
+    if (data?.user) {
+      qc?.setQueryData(["/api/auth/me"], data?.user, fresh);
     }
-    if (Array.isArray(data.projects)) {
-      qc.setQueryData(["/api/projects"], data.projects, fresh);
-      qc.setQueryData(
+    if (Array?.isArray(data?.projects)) {
+      qc?.setQueryData(["/api/projects"], data?.projects, fresh);
+      qc?.setQueryData(
         ["/api/projects", { limit: "5" }],
-        data.projects.slice(0, 5),
+        data?.projects.slice(0, 5),
         fresh,
       );
-      qc.setQueryData(
+      qc?.setQueryData(
         ["/api/projects", { limit: "10" }],
-        data.projects.slice(0, 10),
+        data?.projects.slice(0, 10),
         fresh,
       );
-      qc.setQueryData(
+      qc?.setQueryData(
         ["/api/projects", { limit: "12" }],
-        data.projects.slice(0, 12),
+        data?.projects.slice(0, 12),
         fresh,
       );
     }
-    if (Array.isArray(data.notifications)) {
-      qc.setQueryData(["/api/notifications"], data.notifications, fresh);
-      qc.setQueryData(["/api/notifications/unread"], data.notifications, fresh);
+    if (Array?.isArray(data?.notifications)) {
+      qc?.setQueryData(["/api/notifications"], data?.notifications, fresh);
+      qc?.setQueryData(["/api/notifications/unread"], data?.notifications, fresh);
     }
-    if (Array.isArray(data.releases)) {
-      qc.setQueryData(["/api/releases"], data.releases, fresh);
+    if (Array?.isArray(data?.releases)) {
+      qc?.setQueryData(["/api/releases"], data?.releases, fresh);
     }
   } catch {
     // Silent — bootstrap is a best-effort optimisation; individual queries
@@ -270,11 +270,11 @@ const ALL_AUTH_CHUNKS: Array<() => Promise<unknown>> = [
 export function prefetchAllAuthChunks(): void {
   if (!shouldPrefetch()) return;
 
-  const load = () => {
+  const _load = () => {
     for (const fn of ALL_AUTH_CHUNKS) {
-      const key = fn.toString();
-      if (!prefetchedRoutes.has(key)) {
-        prefetchedRoutes.add(key);
+      const _key = fn?.toString();
+      if (!prefetchedRoutes?.has(key)) {
+        prefetchedRoutes?.add(key);
         fn().catch(() => {});
       }
     }

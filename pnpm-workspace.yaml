@@ -1,0 +1,13 @@
+allowBuilds:
+  '@sentry-internal/node-cpu-profiler': set this to true or false
+  '@tensorflow/tfjs-node': set this to true or false
+  bcrypt: set this to true or false
+  bufferutil: set this to true or false
+  core-js: set this to true or false
+  electron: set this to true or false
+  electron-winstaller: set this to true or false
+  es5-ext: set this to true or false
+  esbuild: set this to true or false
+  msgpackr-extract: set this to true or false
+  protobufjs: set this to true or false
+  sharp: set this to true or false

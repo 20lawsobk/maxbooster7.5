@@ -4,7 +4,7 @@
  * Creates a fully-featured admin account with all related data
  * exactly like a real paid user would have.
  *
- * Run: npx tsx server/scripts/setupAdmin.ts
+ * Run: npx tsx server/scripts/setupAdmin?.ts
  *
  * Environment variables:
  * - ADMIN_EMAIL (required)
@@ -32,42 +32,42 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 async function setupAdmin() {
-  const adminEmail = process.env.ADMIN_EMAIL;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const _adminEmail = process?.env.ADMIN_EMAIL;
+  const _adminPassword = process?.env.ADMIN_PASSWORD;
 
   if (!adminEmail || !adminPassword) {
-    console.error(
+    console?.error(
       "❌ ADMIN_EMAIL and ADMIN_PASSWORD environment variables must be set",
     );
-    console.error(
+    console?.error(
       "   Example: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=yourSecurePassword npx tsx server/scripts/setupAdmin.ts",
     );
-    process.exit(1);
+    process?.exit(1);
   }
 
-  console.log(
+  console?.log(
     "═══════════════════════════════════════════════════════════════════════",
   );
-  console.log("🔐 COMPREHENSIVE ADMIN ACCOUNT SETUP");
-  console.log(
+  console?.log("🔐 COMPREHENSIVE ADMIN ACCOUNT SETUP");
+  console?.log(
     "═══════════════════════════════════════════════════════════════════════",
   );
-  console.log(`   Email: ${adminEmail}`);
-  console.log("");
+  console?.log(`   Email: ${adminEmail}`);
+  console?.log("");
 
   try {
     let adminId: string;
-    const hashedPassword = await bcrypt.hash(adminPassword, 12);
+    const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
 
     // Check if admin already exists
-    const existingAdmin = await db
+    const _existingAdmin = await db
       .select()
       .from(users)
-      .where(eq(users.email, adminEmail))
+      .where(eq(users?.email, adminEmail))
       .limit(1);
 
-    if (existingAdmin.length > 0) {
-      console.log("⚠️  Admin account already exists. Updating...");
+    if (existingAdmin?.length > 0) {
+      console?.log("⚠️  Admin account already exists. Updating...");
       adminId = existingAdmin[0].id;
 
       await db
@@ -81,11 +81,11 @@ async function setupAdmin() {
           firstName: "B-Lawz",
           lastName: "Music",
         })
-        .where(eq(users.email, adminEmail));
+        .where(eq(users?.email, adminEmail));
 
-      console.log("✅ Admin account updated");
+      console?.log("✅ Admin account updated");
     } else {
-      console.log("Creating new admin account...");
+      console?.log("Creating new admin account...");
 
       const [newAdmin] = await db
         .insert(users)
@@ -101,24 +101,24 @@ async function setupAdmin() {
         })
         .returning();
 
-      adminId = newAdmin.id;
-      console.log("✅ Admin account created");
+      adminId = newAdmin?.id;
+      console?.log("✅ Admin account created");
     }
 
-    console.log("");
-    console.log("📦 Setting up complete user profile data...");
-    console.log("");
+    console?.log("");
+    console?.log("📦 Setting up complete user profile data...");
+    console?.log("");
 
     // ========================================================================
     // STOREFRONT
     // ========================================================================
-    const existingStorefront = await db
+    const _existingStorefront = await db
       .select()
       .from(storefronts)
-      .where(eq(storefronts.userId, adminId))
+      .where(eq(storefronts?.userId, adminId))
       .limit(1);
-    if (existingStorefront.length === 0) {
-      await db.insert(storefronts).values({
+    if (existingStorefront?.length === 0) {
+      await db?.insert(storefronts).values({
         userId: adminId,
         name: "B-Lawz Music Official Store",
         slug: "blawz-music",
@@ -133,27 +133,27 @@ async function setupAdmin() {
             instagram: "https://instagram.com/blawzmusic",
             twitter: "https://twitter.com/blawzmusic",
             youtube: "https://youtube.com/@blawzmusic",
-            spotify: "https://open.spotify.com/artist/blawzmusic",
+            spotify: "https://open?.spotify.com/artist/blawzmusic",
           },
           bio: "Official store for B-Lawz Music. Premium beats, exclusive content, and more.",
         },
         isActive: true,
       });
-      console.log("   ✓ Storefront created");
+      console?.log("   ✓ Storefront created");
     } else {
-      console.log("   ✓ Storefront exists");
+      console?.log("   ✓ Storefront exists");
     }
 
     // ========================================================================
     // WORKSPACE
     // ========================================================================
-    const existingWorkspace = await db
+    const _existingWorkspace = await db
       .select()
       .from(workspaces)
-      .where(eq(workspaces.ownerId, adminId))
+      .where(eq(workspaces?.ownerId, adminId))
       .limit(1);
     let workspaceId: string;
-    if (existingWorkspace.length === 0) {
+    if (existingWorkspace?.length === 0) {
       const [workspace] = await db
         .insert(workspaces)
         .values({
@@ -170,30 +170,30 @@ async function setupAdmin() {
           },
         })
         .returning();
-      workspaceId = workspace.id;
+      workspaceId = workspace?.id;
 
       // Add admin as workspace owner
-      await db.insert(workspaceMembers).values({
+      await db?.insert(workspaceMembers).values({
         workspaceId: workspaceId,
         userId: adminId,
         role: "owner",
       });
-      console.log("   ✓ Workspace created");
+      console?.log("   ✓ Workspace created");
     } else {
       workspaceId = existingWorkspace[0].id;
-      console.log("   ✓ Workspace exists");
+      console?.log("   ✓ Workspace exists");
     }
 
     // ========================================================================
     // PROJECTS (Studio)
     // ========================================================================
-    const existingProjects = await db
+    const _existingProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.userId, adminId))
+      .where(eq(projects?.userId, adminId))
       .limit(1);
-    if (existingProjects.length === 0) {
-      await db.insert(projects).values([
+    if (existingProjects?.length === 0) {
+      await db?.insert(projects).values([
         {
           userId: adminId,
           title: "Summer Vibes EP",
@@ -236,21 +236,21 @@ async function setupAdmin() {
           metadata: { tracks: 3 },
         },
       ]);
-      console.log("   ✓ Projects created (3)");
+      console?.log("   ✓ Projects created (3)");
     } else {
-      console.log("   ✓ Projects exist");
+      console?.log("   ✓ Projects exist");
     }
 
     // ========================================================================
     // RELEASES
     // ========================================================================
-    const existingReleases = await db
+    const _existingReleases = await db
       .select()
       .from(releases)
-      .where(eq(releases.userId, adminId))
+      .where(eq(releases?.userId, adminId))
       .limit(1);
-    if (existingReleases.length === 0) {
-      await db.insert(releases).values([
+    if (existingReleases?.length === 0) {
+      await db?.insert(releases).values([
         {
           userId: adminId,
           title: "Midnight Sessions",
@@ -297,21 +297,21 @@ async function setupAdmin() {
           },
         },
       ]);
-      console.log("   ✓ Releases created (3)");
+      console?.log("   ✓ Releases created (3)");
     } else {
-      console.log("   ✓ Releases exist");
+      console?.log("   ✓ Releases exist");
     }
 
     // ========================================================================
     // SOCIAL ACCOUNTS
     // ========================================================================
-    const existingSocial = await db
+    const _existingSocial = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, adminId))
+      .where(eq(socialAccounts?.userId, adminId))
       .limit(1);
-    if (existingSocial.length === 0) {
-      await db.insert(socialAccounts).values([
+    if (existingSocial?.length === 0) {
+      await db?.insert(socialAccounts).values([
         {
           userId: adminId,
           platform: "instagram",
@@ -357,7 +357,7 @@ async function setupAdmin() {
           platform: "spotify",
           platformUserId: "artist_blawz",
           username: "B-Lawz Music",
-          profileUrl: "https://open.spotify.com/artist/blawzmusic",
+          profileUrl: "https://open?.spotify.com/artist/blawzmusic",
           followerCount: 12500,
           isActive: true,
           metadata: { verified: true, monthlyListeners: 45000 },
@@ -373,38 +373,38 @@ async function setupAdmin() {
           metadata: { pageType: "musician" },
         },
       ]);
-      console.log("   ✓ Social accounts created (6 platforms)");
+      console?.log("   ✓ Social accounts created (6 platforms)");
     } else {
-      console.log("   ✓ Social accounts exist");
+      console?.log("   ✓ Social accounts exist");
     }
 
     // ========================================================================
     // ANALYTICS DATA (Last 30 days)
     // ========================================================================
-    const existingAnalytics = await db
+    const _existingAnalytics = await db
       .select()
       .from(analytics)
-      .where(eq(analytics.userId, adminId))
+      .where(eq(analytics?.userId, adminId))
       .limit(1);
-    if (existingAnalytics.length === 0) {
-      const analyticsData = [];
-      const today = new Date();
+    if (existingAnalytics?.length === 0) {
+      const _analyticsData = [];
+      const _today = new Date();
 
       for (let i = 30; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
+        const _date = new Date(today);
+        date?.setDate(date?.getDate() - i);
 
         // Generate realistic varying data
-        const baseStreams = 1500 + Math.floor(Math.random() * 500);
-        const weekendBoost =
-          date.getDay() === 0 || date.getDay() === 6 ? 1.3 : 1;
+        const _baseStreams = 1500 + Math?.floor(Math?.random() * 500);
+        const _weekendBoost =
+          date?.getDay() === 0 || date?.getDay() === 6 ? 1.3 : 1;
 
-        analyticsData.push({
+        analyticsData?.push({
           userId: adminId,
           date: date,
-          streams: Math.floor(baseStreams * weekendBoost),
+          streams: Math?.floor(baseStreams * weekendBoost),
           revenue: parseFloat((baseStreams * weekendBoost * 0.004).toFixed(2)),
-          totalListeners: Math.floor(baseStreams * weekendBoost * 0.7),
+          totalListeners: Math?.floor(baseStreams * weekendBoost * 0.7),
           followers: 12500 + (30 - i) * 15,
           platform: "all",
           metadata: {
@@ -415,22 +415,22 @@ async function setupAdmin() {
         });
       }
 
-      await db.insert(analytics).values(analyticsData);
-      console.log("   ✓ Analytics data created (31 days)");
+      await db?.insert(analytics).values(analyticsData);
+      console?.log("   ✓ Analytics data created (31 days)");
     } else {
-      console.log("   ✓ Analytics data exists");
+      console?.log("   ✓ Analytics data exists");
     }
 
     // ========================================================================
     // BEATS (Marketplace Listings)
     // ========================================================================
-    const existingBeats = await db
+    const _existingBeats = await db
       .select()
       .from(beats)
-      .where(eq(beats.userId, adminId))
+      .where(eq(beats?.userId, adminId))
       .limit(1);
-    if (existingBeats.length === 0) {
-      await db.insert(beats).values([
+    if (existingBeats?.length === 0) {
+      await db?.insert(beats).values([
         {
           userId: adminId,
           title: "Trap Symphony",
@@ -474,21 +474,21 @@ async function setupAdmin() {
           downloads: 67,
         },
       ]);
-      console.log("   ✓ Beats created (3)");
+      console?.log("   ✓ Beats created (3)");
     } else {
-      console.log("   ✓ Beats exist");
+      console?.log("   ✓ Beats exist");
     }
 
     // ========================================================================
     // LISTINGS (Products)
     // ========================================================================
-    const existingListings = await db
+    const _existingListings = await db
       .select()
       .from(listings)
-      .where(eq(listings.userId, adminId))
+      .where(eq(listings?.userId, adminId))
       .limit(1);
-    if (existingListings.length === 0) {
-      await db.insert(listings).values([
+    if (existingListings?.length === 0) {
+      await db?.insert(listings).values([
         {
           userId: adminId,
           title: "Producer Sample Pack Vol. 1",
@@ -521,21 +521,21 @@ async function setupAdmin() {
           },
         },
       ]);
-      console.log("   ✓ Listings created (2)");
+      console?.log("   ✓ Listings created (2)");
     } else {
-      console.log("   ✓ Listings exist");
+      console?.log("   ✓ Listings exist");
     }
 
     // ========================================================================
     // BRAND VOICE
     // ========================================================================
-    const existingVoice = await db
+    const _existingVoice = await db
       .select()
       .from(userBrandVoices)
-      .where(eq(userBrandVoices.userId, adminId))
+      .where(eq(userBrandVoices?.userId, adminId))
       .limit(1);
-    if (existingVoice.length === 0) {
-      await db.insert(userBrandVoices).values({
+    if (existingVoice?.length === 0) {
+      await db?.insert(userBrandVoices).values({
         userId: adminId,
         voiceName: "B-Lawz Official",
         description:
@@ -549,56 +549,56 @@ async function setupAdmin() {
         ],
         isDefault: true,
       } as Record<string, unknown>);
-      console.log("   ✓ Brand voice created");
+      console?.log("   ✓ Brand voice created");
     } else {
-      console.log("   ✓ Brand voice exists");
+      console?.log("   ✓ Brand voice exists");
     }
 
     // ========================================================================
     // HYPERFOLLOW PAGE
     // ========================================================================
-    const existingHyperFollow = await db
+    const _existingHyperFollow = await db
       .select()
       .from(hyperFollowPages)
-      .where(eq(hyperFollowPages.userId, adminId))
+      .where(eq(hyperFollowPages?.userId, adminId))
       .limit(1);
-    if (existingHyperFollow.length === 0) {
-      await db.insert(hyperFollowPages).values({
+    if (existingHyperFollow?.length === 0) {
+      await db?.insert(hyperFollowPages).values({
         userId: adminId,
         title: "B-Lawz Music - Midnight Sessions",
         slug: "blawz-midnight-sessions",
         imageUrl: "/assets/releases/midnight-sessions.jpg",
         links: {
-          spotify: "https://open.spotify.com/album/midnight-sessions",
-          appleMusic: "https://music.apple.com/album/midnight-sessions",
+          spotify: "https://open?.spotify.com/album/midnight-sessions",
+          appleMusic: "https://music?.apple.com/album/midnight-sessions",
           youtubeMusic:
-            "https://music.youtube.com/playlist?list=midnight-sessions",
+            "https://music?.youtube.com/playlist?list=midnight-sessions",
           tidal: "https://tidal.com/album/midnight-sessions",
-          amazonMusic: "https://music.amazon.com/albums/midnight-sessions",
+          amazonMusic: "https://music?.amazon.com/albums/midnight-sessions",
           soundcloud:
             "https://soundcloud.com/blawzmusic/sets/midnight-sessions",
         },
       });
-      console.log("   ✓ HyperFollow page created");
+      console?.log("   ✓ HyperFollow page created");
     } else {
-      console.log("   ✓ HyperFollow page exists");
+      console?.log("   ✓ HyperFollow page exists");
     }
 
     // ========================================================================
     // CONTENT CALENDAR
     // ========================================================================
-    const existingCalendar = await db
+    const _existingCalendar = await db
       .select()
       .from(contentCalendar)
-      .where(eq(contentCalendar.userId, adminId))
+      .where(eq(contentCalendar?.userId, adminId))
       .limit(1);
-    if (existingCalendar.length === 0) {
-      const futureDate1 = new Date();
-      futureDate1.setDate(futureDate1.getDate() + 3);
-      const futureDate2 = new Date();
-      futureDate2.setDate(futureDate2.getDate() + 7);
+    if (existingCalendar?.length === 0) {
+      const _futureDate1 = new Date();
+      futureDate1?.setDate(futureDate1?.getDate() + 3);
+      const _futureDate2 = new Date();
+      futureDate2?.setDate(futureDate2?.getDate() + 7);
 
-      await db.insert(contentCalendar).values([
+      await db?.insert(contentCalendar).values([
         {
           userId: adminId,
           title: "Studio Session BTS",
@@ -627,21 +627,21 @@ async function setupAdmin() {
           tags: ["announcement", "single"],
         },
       ]);
-      console.log("   ✓ Content calendar entries created (2)");
+      console?.log("   ✓ Content calendar entries created (2)");
     } else {
-      console.log("   ✓ Content calendar exists");
+      console?.log("   ✓ Content calendar exists");
     }
 
     // ========================================================================
     // WELCOME NOTIFICATION
     // ========================================================================
-    const existingNotification = await db
+    const _existingNotification = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, adminId))
+      .where(eq(notifications?.userId, adminId))
       .limit(1);
-    if (existingNotification.length === 0) {
-      await db.insert(notifications).values([
+    if (existingNotification?.length === 0) {
+      await db?.insert(notifications).values([
         {
           userId: adminId,
           type: "welcome",
@@ -661,51 +661,51 @@ async function setupAdmin() {
           actionUrl: "/analytics",
         },
       ]);
-      console.log("   ✓ Notifications created (2)");
+      console?.log("   ✓ Notifications created (2)");
     } else {
-      console.log("   ✓ Notifications exist");
+      console?.log("   ✓ Notifications exist");
     }
 
-    console.log("");
-    console.log(
+    console?.log("");
+    console?.log(
       "═══════════════════════════════════════════════════════════════════════",
     );
-    console.log("✅ ADMIN SETUP COMPLETE");
-    console.log(
+    console?.log("✅ ADMIN SETUP COMPLETE");
+    console?.log(
       "═══════════════════════════════════════════════════════════════════════",
     );
-    console.log("");
-    console.log("   Account Details:");
-    console.log(`   ├── Email: ${adminEmail}`);
-    console.log("   ├── Username: blawzmusic");
-    console.log("   ├── Name: B-Lawz Music");
-    console.log("   ├── Role: admin");
-    console.log("   ├── Subscription: lifetime");
-    console.log("   └── Status: active");
-    console.log("");
-    console.log("   Seeded Data:");
-    console.log("   ├── 1 Storefront");
-    console.log("   ├── 1 Workspace");
-    console.log("   ├── 3 Projects");
-    console.log("   ├── 3 Releases");
-    console.log("   ├── 6 Social Accounts");
-    console.log("   ├── 31 Days Analytics");
-    console.log("   ├── 3 Beats");
-    console.log("   ├── 2 Listings");
-    console.log("   ├── 1 Brand Voice");
-    console.log("   ├── 1 HyperFollow Page");
-    console.log("   ├── 2 Content Calendar Items");
-    console.log("   └── 2 Notifications");
-    console.log("");
-    console.log(
+    console?.log("");
+    console?.log("   Account Details:");
+    console?.log(`   ├── Email: ${adminEmail}`);
+    console?.log("   ├── Username: blawzmusic");
+    console?.log("   ├── Name: B-Lawz Music");
+    console?.log("   ├── Role: admin");
+    console?.log("   ├── Subscription: lifetime");
+    console?.log("   └── Status: active");
+    console?.log("");
+    console?.log("   Seeded Data:");
+    console?.log("   ├── 1 Storefront");
+    console?.log("   ├── 1 Workspace");
+    console?.log("   ├── 3 Projects");
+    console?.log("   ├── 3 Releases");
+    console?.log("   ├── 6 Social Accounts");
+    console?.log("   ├── 31 Days Analytics");
+    console?.log("   ├── 3 Beats");
+    console?.log("   ├── 2 Listings");
+    console?.log("   ├── 1 Brand Voice");
+    console?.log("   ├── 1 HyperFollow Page");
+    console?.log("   ├── 2 Content Calendar Items");
+    console?.log("   └── 2 Notifications");
+    console?.log("");
+    console?.log(
       "═══════════════════════════════════════════════════════════════════════",
     );
 
-    process.exit(0);
+    process?.exit(0);
   } catch (error) {
-    console.error("❌ Failed to setup admin account:", error.message);
-    console.error(error.stack);
-    process.exit(1);
+    console?.error("❌ Failed to setup admin account:", error?.message);
+    console?.error(error?.stack);
+    process?.exit(1);
   }
 }
 

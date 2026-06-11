@@ -38,52 +38,52 @@ export function useRecoverable<T, R = void>(
   options: RecoverableOptions<T>,
 ): RecoverableResult<T, R> {
   const { executeAction } = useUndo();
-  const lastDataRef = useRef<T | null>(null);
-  const lastResultRef = useRef<R | null>(null);
+  const _lastDataRef = useRef<T | null>(null);
+  const _lastResultRef = useRef<R | null>(null);
 
-  const executeWithRecovery = useCallback(
+  const _executeWithRecovery = useCallback(
     async (
       data: T,
       executeFn: (data: T) => Promise<R>,
       undoFn: (data: T, result: R) => Promise<void>,
       redoFn?: (data: T) => Promise<R>,
     ): Promise<R> => {
-      const description =
-        typeof options.description === "function"
-          ? options.description(data)
-          : options.description || `${options.type} action`;
+      const _description =
+        typeof options?.description === "function"
+          ? options?.description(data)
+          : options?.description || `${options?.type} action`;
 
       const metadata: ActionMetadata = {
-        timestamp: Date.now(),
-        module: options.module,
+        timestamp: Date?.now(),
+        module: options?.module,
         description,
-        category: options.category || "other",
-        entityType: options.entityType,
-        isDestructive: options.isDestructive ?? false,
-        requiresConfirmation: options.requiresConfirmation ?? false,
+        category: options?.category || "other",
+        entityType: options?.entityType,
+        isDestructive: options?.isDestructive ?? false,
+        requiresConfirmation: options?.requiresConfirmation ?? false,
         previousState: data,
       };
 
       let result: R;
 
       const action: Omit<UndoableAction<R>, "id" | "isUndone" | "result"> = {
-        type: options.type,
+        type: options?.type,
         metadata,
         execute: async () => {
           result = await executeFn(data);
           lastDataRef.current = data;
           lastResultRef.current = result;
-          options.onExecute?.(data);
+          options?.onExecute?.(data);
           return result;
         },
         undo: async () => {
           await undoFn(data, result);
-          options.onUndo?.(data);
+          options?.onUndo?.(data);
         },
         redo: redoFn
           ? async () => {
               result = await redoFn(data);
-              options.onRedo?.(data);
+              options?.onRedo?.(data);
               return result;
             }
           : undefined,
@@ -96,7 +96,7 @@ export function useRecoverable<T, R = void>(
     [executeAction, options],
   );
 
-  const execute = useCallback(
+  const _execute = useCallback(
     async (data: T): Promise<R> => {
       return executeWithRecovery(
         data,
@@ -110,9 +110,9 @@ export function useRecoverable<T, R = void>(
   return {
     execute,
     executeWithRecovery,
-    lastData: lastDataRef.current,
-    lastResult: lastResultRef.current,
-    canRecover: lastDataRef.current !== null,
+    lastData: lastDataRef?.current,
+    lastResult: lastResultRef?.current,
+    canRecover: lastDataRef?.current !== null,
   };
 }
 
@@ -127,11 +127,11 @@ export function useRecoverableDelete<T extends { id: string }>(
   return useCallback(
     async (item: T, description?: string): Promise<void> => {
       const metadata: ActionMetadata = {
-        timestamp: Date.now(),
+        timestamp: Date?.now(),
         module,
         description: description || `Delete ${entityType}`,
         category: "CRUD",
-        entityId: item.id,
+        entityId: item?.id,
         entityType,
         isDestructive: true,
         requiresConfirmation: true,
@@ -176,7 +176,7 @@ export function useRecoverableUpdate<T extends { id: string }>(
       description?: string,
     ): Promise<T> => {
       const metadata: ActionMetadata = {
-        timestamp: Date.now(),
+        timestamp: Date?.now(),
         module,
         description: description || `Update ${entityType}`,
         category: "CRUD",
@@ -225,7 +225,7 @@ export function useRecoverableCreate<T extends { id: string }>(
       let createdItem: T;
 
       const metadata: ActionMetadata = {
-        timestamp: Date.now(),
+        timestamp: Date?.now(),
         module,
         description: description || `Create ${entityType}`,
         category: "CRUD",
@@ -242,7 +242,7 @@ export function useRecoverableCreate<T extends { id: string }>(
         },
         undo: async () => {
           if (createdItem) {
-            await deleteFn(createdItem.id);
+            await deleteFn(createdItem?.id);
           }
         },
         redo: async () => {
@@ -273,7 +273,7 @@ export function useRecoverableSettingsChange<T extends Record<string, unknown>>(
       description?: string,
     ): Promise<T> => {
       const metadata: ActionMetadata = {
-        timestamp: Date.now(),
+        timestamp: Date?.now(),
         module,
         description: description || "Settings changed",
         category: "settings",
@@ -300,35 +300,35 @@ export function useRecoverableSettingsChange<T extends Record<string, unknown>>(
 export function useRecoverableBatch(module: string) {
   const { startGroup, endGroup, undoGroup } = useUndo();
 
-  const startBatch = useCallback(
+  const _startBatch = useCallback(
     (name: string): string => {
       return startGroup(`${module}: ${name}`);
     },
     [startGroup, module],
   );
 
-  const endBatch = useCallback(
+  const _endBatch = useCallback(
     (batchId: string): void => {
       endGroup(batchId);
     },
     [endGroup],
   );
 
-  const undoBatch = useCallback(
+  const _undoBatch = useCallback(
     async (batchId: string): Promise<void> => {
       await undoGroup(batchId);
     },
     [undoGroup],
   );
 
-  const executeBatch = useCallback(
+  const _executeBatch = useCallback(
     async <T>(name: string, operations: (() => Promise<T>)[]): Promise<T[]> => {
-      const batchId = startBatch(name);
+      const _batchId = startBatch(name);
       try {
         const results: T[] = [];
         for (const operation of operations) {
-          const result = await operation();
-          results.push(result);
+          const _result = await operation();
+          results?.push(result);
         }
         return results;
       } finally {

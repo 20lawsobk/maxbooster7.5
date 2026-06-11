@@ -81,7 +81,7 @@ const SCALE_PATTERNS: Record<string, number[]> = {
   blues: [0, 3, 5, 6, 7, 10],
 };
 
-const NOTE_NAMES = [
+const _NOTE_NAMES = [
   "C",
   "C#",
   "D",
@@ -116,7 +116,7 @@ export class MusicalIntelligenceEngine {
     this.state = {
       currentKey: "C",
       currentMode: "major",
-      currentScale: SCALE_PATTERNS.major,
+      currentScale: SCALE_PATTERNS?.major,
       detectedChords: [],
       suggestions: [],
       arrangementSections: [],
@@ -124,7 +124,7 @@ export class MusicalIntelligenceEngine {
   }
 
   getState(): Readonly<MusicalIntelligenceState> {
-    return { ...this.state };
+    return { ...this?.state };
   }
 
   detectKey(notes: MIDINote[]): {
@@ -132,12 +132,12 @@ export class MusicalIntelligenceEngine {
     mode: "major" | "minor";
     confidence: number;
   } {
-    if (notes.length === 0) {
+    if (notes?.length === 0) {
       return { key: "C", mode: "major", confidence: 0 };
     }
 
-    const pitchClasses = notes.map((n) => n.pitch % 12);
-    const histogram = new Array(12).fill(0);
+    const _pitchClasses = notes?.map((n) => n?.pitch % 12);
+    const _histogram = new Array(12).fill(0);
 
     for (const pitch of pitchClasses) {
       histogram[pitch]++;
@@ -149,11 +149,11 @@ export class MusicalIntelligenceEngine {
 
     for (let root = 0; root < 12; root++) {
       for (const mode of ["major", "minor"] as const) {
-        const pattern = SCALE_PATTERNS[mode];
+        const _pattern = SCALE_PATTERNS[mode];
         let score = 0;
 
         for (const interval of pattern) {
-          const pc = (root + interval) % 12;
+          const _pc = (root + interval) % 12;
           score += histogram[pc] * (interval === 0 ? 2 : 1);
         }
 
@@ -165,34 +165,34 @@ export class MusicalIntelligenceEngine {
       }
     }
 
-    const totalNotes = notes.length;
-    const confidence = Math.min(1, bestScore / (totalNotes * 1.5));
+    const _totalNotes = notes?.length;
+    const _confidence = Math?.min(1, bestScore / (totalNotes * 1.5));
 
-    this.state.currentKey = NOTE_NAMES[bestKey];
-    this.state.currentMode = bestMode;
-    this.state.currentScale = SCALE_PATTERNS[bestMode].map(
+    this?.state.currentKey = NOTE_NAMES[bestKey];
+    this?.state.currentMode = bestMode;
+    this?.state.currentScale = SCALE_PATTERNS[bestMode].map(
       (i) => (bestKey + i) % 12,
     );
-    this.notify();
+    this?.notify();
 
     return { key: NOTE_NAMES[bestKey], mode: bestMode, confidence };
   }
 
   detectChord(notes: number[]): Chord | null {
-    if (notes.length < 3) return null;
+    if (notes?.length < 3) return null;
 
-    const sortedNotes = [...notes].sort((a, b) => a - b);
-    const bass = sortedNotes[0] % 12;
-    const pitchClasses = [...new Set(sortedNotes.map((n) => n % 12))].sort(
+    const _sortedNotes = [...notes].sort((a, b) => a - b);
+    const _bass = sortedNotes[0] % 12;
+    const _pitchClasses = [...new Set(sortedNotes?.map((n) => n % 12))].sort(
       (a, b) => a - b,
     );
 
     for (let root = 0; root < 12; root++) {
-      for (const [quality, pattern] of Object.entries(CHORD_PATTERNS)) {
-        const chordNotes = pattern.map((i) => (root + i) % 12);
-        const matches = pitchClasses.every((pc) => chordNotes.includes(pc));
+      for (const [quality, pattern] of Object?.entries(CHORD_PATTERNS)) {
+        const _chordNotes = pattern?.map((i) => (root + i) % 12);
+        const _matches = pitchClasses?.every((pc) => chordNotes?.includes(pc));
 
-        if (matches && pitchClasses.length >= pattern.length - 1) {
+        if (matches && pitchClasses?.length >= pattern?.length - 1) {
           return {
             root,
             quality: quality as ChordQuality,
@@ -210,13 +210,13 @@ export class MusicalIntelligenceEngine {
     mode: "major" | "minor",
     count: number = 4,
   ): Chord[] {
-    const rootNote = NOTE_NAMES.indexOf(key);
+    const _rootNote = NOTE_NAMES?.indexOf(key);
     if (rootNote === -1) return [];
 
-    const scale = SCALE_PATTERNS[mode];
+    const _scale = SCALE_PATTERNS[mode];
     const chords: Chord[] = [];
 
-    const progressions =
+    const _progressions =
       mode === "major"
         ? [
             [0, 3, 4, 4],
@@ -231,17 +231,17 @@ export class MusicalIntelligenceEngine {
             [0, 6, 3, 4],
           ];
 
-    const progression =
-      progressions[Math.floor(Math.random() * progressions.length)];
-    const chordQualities =
+    const _progression =
+      progressions[Math?.floor(Math?.random() * progressions?.length)];
+    const _chordQualities =
       mode === "major"
         ? ["major", "minor", "minor", "major", "major", "minor", "diminished"]
         : ["minor", "diminished", "major", "minor", "minor", "major", "major"];
 
     for (let i = 0; i < count; i++) {
-      const degree = progression[i % progression.length];
-      const chordRoot = (rootNote + scale[degree]) % 12;
-      chords.push({
+      const _degree = progression[i % progression?.length];
+      const _chordRoot = (rootNote + scale[degree]) % 12;
+      chords?.push({
         root: chordRoot,
         quality: chordQualities[degree] as ChordQuality,
       });
@@ -256,34 +256,34 @@ export class MusicalIntelligenceEngine {
     bars: number = 4,
     baseOctave: number = 4,
   ): MIDINote[] {
-    const rootNote = NOTE_NAMES.indexOf(key);
+    const _rootNote = NOTE_NAMES?.indexOf(key);
     if (rootNote === -1) return [];
 
-    const scale = SCALE_PATTERNS[mode];
+    const _scale = SCALE_PATTERNS[mode];
     const notes: MIDINote[] = [];
 
-    const beatsPerBar = 4;
-    const totalBeats = bars * beatsPerBar;
+    const _beatsPerBar = 4;
+    const _totalBeats = bars * beatsPerBar;
     let currentBeat = 0;
 
     while (currentBeat < totalBeats) {
-      const rhythmPatterns = [0.25, 0.5, 0.5, 1, 1, 2];
-      const duration =
-        rhythmPatterns[Math.floor(Math.random() * rhythmPatterns.length)];
+      const _rhythmPatterns = [0.25, 0.5, 0.5, 1, 1, 2];
+      const _duration =
+        rhythmPatterns[Math?.floor(Math?.random() * rhythmPatterns?.length)];
 
       if (currentBeat + duration > totalBeats) break;
 
-      const scaleIndex = Math.floor(Math.random() * scale.length);
-      const octaveOffset = Math.floor(Math.random() * 2) - 0.5;
-      const pitch =
+      const _scaleIndex = Math?.floor(Math?.random() * scale?.length);
+      const _octaveOffset = Math?.floor(Math?.random() * 2) - 0.5;
+      const _pitch =
         rootNote +
         scale[scaleIndex] +
-        (baseOctave + Math.round(octaveOffset)) * 12;
+        (baseOctave + Math?.round(octaveOffset)) * 12;
 
-      notes.push({
-        id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      notes?.push({
+        id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
         pitch,
-        velocity: 80 + Math.floor(Math.random() * 40),
+        velocity: 80 + Math?.floor(Math?.random() * 40),
         startBeat: currentBeat,
         durationBeats: duration * 0.9,
         channel: 0,
@@ -299,29 +299,29 @@ export class MusicalIntelligenceEngine {
 
   suggestBassline(chords: Chord[], barsPerChord: number = 1): MIDINote[] {
     const notes: MIDINote[] = [];
-    const beatsPerBar = 4;
+    const _beatsPerBar = 4;
     let currentBeat = 0;
 
     for (const chord of chords) {
-      const barsForThisChord = barsPerChord;
-      const totalBeats = barsForThisChord * beatsPerBar;
+      const _barsForThisChord = barsPerChord;
+      const _totalBeats = barsForThisChord * beatsPerBar;
 
       for (let beat = 0; beat < totalBeats; beat++) {
         let pitch: number;
 
         if (beat === 0) {
-          pitch = chord.root + 36;
+          pitch = chord?.root + 36;
         } else if (beat === 2) {
-          pitch = chord.root + CHORD_PATTERNS[chord.quality][2] + 36;
+          pitch = chord?.root + CHORD_PATTERNS[chord?.quality][2] + 36;
         } else {
           pitch =
-            chord.root +
-            CHORD_PATTERNS[chord.quality][Math.floor(Math.random() * 3)] +
+            chord?.root +
+            CHORD_PATTERNS[chord?.quality][Math?.floor(Math?.random() * 3)] +
             36;
         }
 
-        notes.push({
-          id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        notes?.push({
+          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
           pitch,
           velocity: beat === 0 ? 100 : 80,
           startBeat: currentBeat + beat,
@@ -343,20 +343,20 @@ export class MusicalIntelligenceEngine {
     style: "basic" | "funk" | "electronic" = "basic",
   ): MIDINote[] {
     const notes: MIDINote[] = [];
-    const beatsPerBar = 4;
-    const totalBeats = bars * beatsPerBar;
+    const _beatsPerBar = 4;
+    const _totalBeats = bars * beatsPerBar;
 
-    const KICK = 36;
-    const SNARE = 38;
-    const HIHAT = 42;
+    const _KICK = 36;
+    const _SNARE = 38;
+    const _HIHAT = 42;
 
     for (let beat = 0; beat < totalBeats; beat += 0.25) {
-      const beatInBar = beat % 4;
-      const sixteenth = (beat * 4) % 4;
+      const _beatInBar = beat % 4;
+      const _sixteenth = (beat * 4) % 4;
 
       if (beatInBar === 0 || beatInBar === 2.5) {
-        notes.push({
-          id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        notes?.push({
+          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
           pitch: KICK,
           velocity: 100,
           startBeat: beat,
@@ -368,8 +368,8 @@ export class MusicalIntelligenceEngine {
       }
 
       if (beatInBar === 1 || beatInBar === 3) {
-        notes.push({
-          id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        notes?.push({
+          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
           pitch: SNARE,
           velocity: 100,
           startBeat: beat,
@@ -382,8 +382,8 @@ export class MusicalIntelligenceEngine {
 
       if (style === "basic" || style === "funk") {
         if (sixteenth === 0 || sixteenth === 2) {
-          notes.push({
-            id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          notes?.push({
+            id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
             pitch: HIHAT,
             velocity: sixteenth === 0 ? 90 : 70,
             startBeat: beat,
@@ -394,10 +394,10 @@ export class MusicalIntelligenceEngine {
           });
         }
       } else {
-        notes.push({
-          id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        notes?.push({
+          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
           pitch: HIHAT,
-          velocity: 70 + Math.floor(Math.random() * 30),
+          velocity: 70 + Math?.floor(Math?.random() * 30),
           startBeat: beat,
           durationBeats: 0.2,
           channel: 9,
@@ -416,22 +416,22 @@ export class MusicalIntelligenceEngine {
     const suggestions: MixSuggestion[] = [];
 
     for (const track of tracks) {
-      if (track.type === "drums" || track.type === "bass") {
-        if (Math.abs(track.pan) > 0.2) {
-          suggestions.push({
+      if (track?.type === "drums" || track?.type === "bass") {
+        if (Math?.abs(track?.pan) > 0.2) {
+          suggestions?.push({
             type: "pan",
-            trackId: track.id,
-            description: `Consider centering the ${track.type} track for a more balanced mix`,
+            trackId: track?.id,
+            description: `Consider centering the ${track?.type} track for a more balanced mix`,
             parameters: { pan: 0 },
             confidence: 0.8,
           });
         }
       }
 
-      if (track.volume > 0 && track.type !== "master") {
-        suggestions.push({
+      if (track?.volume > 0 && track?.type !== "master") {
+        suggestions?.push({
           type: "volume",
-          trackId: track.id,
+          trackId: track?.id,
           description: `Track volume is above unity. Consider reducing to prevent clipping`,
           parameters: { volume: 0 },
           confidence: 0.7,
@@ -439,17 +439,17 @@ export class MusicalIntelligenceEngine {
       }
     }
 
-    this.state.suggestions = suggestions;
-    this.notify();
+    this?.state.suggestions = suggestions;
+    this?.notify();
 
     return suggestions;
   }
 
   suggestArrangement(totalBars: number): ArrangementSuggestion[] {
     const sections: ArrangementSuggestion[] = [];
-    const beatsPerBar = 4;
+    const _beatsPerBar = 4;
 
-    const structure = [
+    const _structure = [
       { type: "intro" as const, bars: 4 },
       { type: "verse" as const, bars: 8 },
       { type: "chorus" as const, bars: 8 },
@@ -464,19 +464,19 @@ export class MusicalIntelligenceEngine {
     for (const section of structure) {
       if (currentBeat >= totalBars * beatsPerBar) break;
 
-      sections.push({
-        type: section.type,
+      sections?.push({
+        type: section?.type,
         startBeat: currentBeat,
-        durationBeats: section.bars * beatsPerBar,
-        description: `${section.type.charAt(0).toUpperCase() + section.type.slice(1)} section`,
-        suggestedActions: this.getSectionSuggestions(section.type),
+        durationBeats: section?.bars * beatsPerBar,
+        description: `${section?.type.charAt(0).toUpperCase() + section?.type.slice(1)} section`,
+        suggestedActions: this?.getSectionSuggestions(section?.type),
       });
 
-      currentBeat += section.bars * beatsPerBar;
+      currentBeat += section?.bars * beatsPerBar;
     }
 
-    this.state.arrangementSections = sections;
-    this.notify();
+    this?.state.arrangementSections = sections;
+    this?.notify();
 
     return sections;
   }
@@ -523,7 +523,7 @@ export class MusicalIntelligenceEngine {
   }
 
   chordToName(chord: Chord): string {
-    const rootName = NOTE_NAMES[chord.root];
+    const _rootName = NOTE_NAMES[chord?.root];
     const qualitySuffix: Record<ChordQuality, string> = {
       major: "",
       minor: "m",
@@ -536,19 +536,19 @@ export class MusicalIntelligenceEngine {
       sus4: "sus4",
     };
 
-    let name = rootName + qualitySuffix[chord.quality];
-    if (chord.bass !== undefined && chord.bass !== chord.root) {
-      name += `/${NOTE_NAMES[chord.bass]}`;
+    let name = rootName + qualitySuffix[chord?.quality];
+    if (chord?.bass !== undefined && chord?.bass !== chord?.root) {
+      name += `/${NOTE_NAMES[chord?.bass]}`;
     }
     return name;
   }
 
   getScaleNotes(key: string, scaleType: string = "major"): number[] {
-    const rootNote = NOTE_NAMES.indexOf(key);
+    const _rootNote = NOTE_NAMES?.indexOf(key);
     if (rootNote === -1) return [];
 
-    const pattern = SCALE_PATTERNS[scaleType] || SCALE_PATTERNS.major;
-    return pattern.map((interval) => (rootNote + interval) % 12);
+    const _pattern = SCALE_PATTERNS[scaleType] || SCALE_PATTERNS?.major;
+    return pattern?.map((interval) => (rootNote + interval) % 12);
   }
 
   isNoteInScale(
@@ -556,18 +556,18 @@ export class MusicalIntelligenceEngine {
     key: string,
     mode: "major" | "minor" = "major",
   ): boolean {
-    const scaleNotes = this.getScaleNotes(key, mode);
-    return scaleNotes.includes(pitch % 12);
+    const _scaleNotes = this?.getScaleNotes(key, mode);
+    return scaleNotes?.includes(pitch % 12);
   }
 
   subscribe(listener: () => void): () => void {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
+    this?.listeners.add(listener);
+    return () => this?.listeners.delete(listener);
   }
 
   private notify(): void {
-    this.listeners.forEach((l) => l());
+    this?.listeners.forEach((l) => l());
   }
 }
 
-export const musicalIntelligence = new MusicalIntelligenceEngine();
+export const _musicalIntelligence = new MusicalIntelligenceEngine();

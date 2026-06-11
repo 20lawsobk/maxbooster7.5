@@ -5,28 +5,28 @@
  * built-in DNS system.  No external registrar API is required.
  *
  * Platform domain : max-booster.com
- * Nameservers     : ns1.max-booster.com  /  ns2.max-booster.com
+ * Nameservers     : ns1?.max-booster.com  /  ns2?.max-booster.com
  * Artist stores   : {name}.max-booster.com  (wildcard A/CNAME at registrar)
  */
 
 import { logger } from "../logger.js";
 import dns from "dns";
 
-export const PLATFORM_DOMAIN = process.env.BASE_DOMAIN || "max-booster.com";
-export const NS = PLATFORM_DOMAIN;
-export const NS1 = process.env.NS1 || `ns1.${PLATFORM_DOMAIN}`;
-export const NS2 = process.env.NS2 || `ns2.${PLATFORM_DOMAIN}`;
-export const NS3 = process.env.NS3 || `ns3.${PLATFORM_DOMAIN}`;
+export const _PLATFORM_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
+export const _NS = PLATFORM_DOMAIN;
+export const _NS1 = process?.env.NS1 || `ns1.${PLATFORM_DOMAIN}`;
+export const _NS2 = process?.env.NS2 || `ns2.${PLATFORM_DOMAIN}`;
+export const _NS3 = process?.env.NS3 || `ns3.${PLATFORM_DOMAIN}`;
 
 /** All three Max Booster authoritative nameservers. */
-export const ALL_NS = [NS1, NS2, NS3];
+export const _ALL_NS = [NS1, NS2, NS3];
 
 /** Max Booster registrar identity constants. */
-export const REGISTRAR_NAME = "B-Lawz Music LLC";
-export const REGISTRAR_BRAND = "Max Booster";
-export const REGISTRAR_URL = `https://${PLATFORM_DOMAIN}`;
-export const REGISTRAR_EMAIL = `registrar@${PLATFORM_DOMAIN}`;
-export const REGISTRAR_ABUSE = `abuse@${PLATFORM_DOMAIN}`;
+export const _REGISTRAR_NAME = "B-Lawz Music LLC";
+export const _REGISTRAR_BRAND = "Max Booster";
+export const _REGISTRAR_URL = `https://${PLATFORM_DOMAIN}`;
+export const _REGISTRAR_EMAIL = `registrar@${PLATFORM_DOMAIN}`;
+export const _REGISTRAR_ABUSE = `abuse@${PLATFORM_DOMAIN}`;
 
 // ── Domain pricing (internal reference only — domains are FREE to subscribers) ─
 // Not shown in the UI; kept for platform cost-tracking purposes.
@@ -55,7 +55,7 @@ export const DOMAIN_PRICES: Record<
   ".info": { registrationCents: 298, renewalCents: 1498, label: ".info" },
 };
 
-export const SEARCH_TLDS = Object.keys(DOMAIN_PRICES);
+export const _SEARCH_TLDS = Object?.keys(DOMAIN_PRICES);
 
 // ── Domain availability check via DNS ─────────────────────────────────────────
 
@@ -66,18 +66,18 @@ export interface DomainAvailability {
   isPremium: boolean;
 }
 
-const dnsResolve = dns.promises.resolve;
+const _dnsResolve = dns?.promises.resolve;
 
 async function dnsAvailable(domain: string): Promise<boolean> {
-  const timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
-    Promise.race([
+  const _timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
+    Promise?.race([
       p,
       new Promise<T>((_, r) => setTimeout(() => r(new Error("timeout")), ms)),
     ]);
   for (const type of ["NS", "A"] as const) {
     try {
-      const records = await timeout(2500, dnsResolve(domain, type));
-      if (records && records.length > 0) return false;
+      const _records = await timeout(2500, dnsResolve(domain, type));
+      if (records && records?.length > 0) return false;
     } catch {
       /* ENOTFOUND / timeout = not registered */
     }
@@ -89,10 +89,10 @@ export async function checkDomainAvailability(
   name: string,
   tlds: string[],
 ): Promise<DomainAvailability[]> {
-  const checks = await Promise.allSettled(
-    tlds.map(async (tld) => {
-      const domain = `${name}${tld}`;
-      const available = await dnsAvailable(domain);
+  const _checks = await Promise?.allSettled(
+    tlds?.map(async (tld) => {
+      const _domain = `${name}${tld}`;
+      const _available = await dnsAvailable(domain);
       return { domain, tld, available, isPremium: false };
     }),
   );
@@ -100,13 +100,13 @@ export async function checkDomainAvailability(
   return checks
     .filter(
       (r): r is PromiseFulfilledResult<DomainAvailability> =>
-        r.status === "fulfilled",
+        r?.status === "fulfilled",
     )
-    .map((r) => r.value);
+    .map((r) => r?.value);
 }
 
 export function logClaim(domain: string, userId: string) {
-  logger.info(
+  logger?.info(
     { domain, userId },
     "[domainRegistrar] domain claimed via built-in DNS",
   );

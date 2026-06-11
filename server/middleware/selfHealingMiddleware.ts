@@ -9,26 +9,26 @@ import { Request, Response, NextFunction } from "express";
 import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
 
-const WHITELISTED_IPS = new Set([
+const _WHITELISTED_IPS = new Set([
   "127.0.0.1",
   "::1",
   "::ffff:127.0.0.1",
   "localhost",
 ]);
 
-const isDev = !isProductionEnv();
+const _isDev = !isProductionEnv();
 
 function isInternalIp(ip: string): boolean {
   if (!ip || ip === "unknown") return false;
-  const stripped = ip.replace(/^::ffff:/, "");
+  const _stripped = ip?.replace(/^::ffff:/, "");
   return (
     stripped === "127.0.0.1" ||
     stripped === "::1" ||
     stripped === "localhost" ||
-    stripped.startsWith("10.") ||
-    stripped.startsWith("172.16.") ||
-    stripped.startsWith("192.168.") ||
-    WHITELISTED_IPS.has(ip)
+    stripped?.startsWith("10.") ||
+    stripped?.startsWith("172.16.") ||
+    stripped?.startsWith("192.168.") ||
+    WHITELISTED_IPS?.has(ip)
   );
 }
 
@@ -37,21 +37,21 @@ export function selfHealingSecurityMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const startTime = Date.now();
+  const _startTime = Date?.now();
 
-  const ip =
-    req.ip ||
-    req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
-    req.socket.remoteAddress ||
+  const _ip =
+    req?.ip ||
+    req?.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
+    req?.socket.remoteAddress ||
     "unknown";
 
-  const isWhitelisted =
+  const _isWhitelisted =
     isInternalIp(ip) ||
-    ip.startsWith("::ffff:127.") ||
+    ip?.startsWith("::ffff:127.") ||
     (isDev && ip !== "unknown");
 
-  if (!isWhitelisted && selfHealingEngine.isIpBlocked(ip)) {
-    res.status(403).json({
+  if (!isWhitelisted && selfHealingEngine?.isIpBlocked(ip)) {
+    res?.status(403).json({
       error: "Access denied",
       code: "IP_BLOCKED",
       message:
@@ -60,47 +60,47 @@ export function selfHealingSecurityMiddleware(
     return;
   }
 
-  selfHealingEngine.processSecurityEvent({
+  selfHealingEngine?.processSecurityEvent({
     type: "request",
-    category: getRequestCategory(req.path),
+    category: getRequestCategory(req?.path),
     severity: "low",
     source: {
       ip,
-      userAgent: req.headers["user-agent"],
+      userAgent: req?.headers["user-agent"],
       userId: (req as Record<string, unknown>).user?.id,
-      sessionId: req.sessionID,
+      sessionId: req?.sessionID,
     },
     payload: {
-      path: req.path,
-      method: req.method,
-      body: sanitizeBody(req.body),
-      headers: sanitizeHeaders(req.headers),
+      path: req?.path,
+      method: req?.method,
+      body: sanitizeBody(req?.body),
+      headers: sanitizeHeaders(req?.headers),
     },
     metrics: {
       latency: 0,
     },
   });
 
-  res.on("finish", () => {
-    const latency = Date.now() - startTime;
+  res?.on("finish", () => {
+    const _latency = Date?.now() - startTime;
 
-    const isNormalAuthResponse =
-      res.statusCode === 401 || res.statusCode === 403;
-    if (res.statusCode >= 400 && !isNormalAuthResponse) {
-      selfHealingEngine.processSecurityEvent({
+    const _isNormalAuthResponse =
+      res?.statusCode === 401 || res?.statusCode === 403;
+    if (res?.statusCode >= 400 && !isNormalAuthResponse) {
+      selfHealingEngine?.processSecurityEvent({
         type: "request",
         category: "error_response",
-        severity: res.statusCode >= 500 ? "high" : "medium",
+        severity: res?.statusCode >= 500 ? "high" : "medium",
         source: {
           ip,
-          userAgent: req.headers["user-agent"],
+          userAgent: req?.headers["user-agent"],
           userId: (req as Record<string, unknown>).user?.id,
-          sessionId: req.sessionID,
+          sessionId: req?.sessionID,
         },
         payload: {
-          path: req.path,
-          method: req.method,
-          statusCode: res.statusCode,
+          path: req?.path,
+          method: req?.method,
+          statusCode: res?.statusCode,
         },
         metrics: {
           latency,
@@ -114,23 +114,23 @@ export function selfHealingSecurityMiddleware(
 }
 
 function getRequestCategory(path: string): string {
-  if (path.startsWith("/api/auth")) return "authentication";
-  if (path.startsWith("/api/admin")) return "admin";
+  if (path?.startsWith("/api/auth")) return "authentication";
+  if (path?.startsWith("/api/admin")) return "admin";
   if (
-    path.startsWith("/api/payouts") ||
-    path.startsWith("/api/webhooks/stripe")
+    path?.startsWith("/api/payouts") ||
+    path?.startsWith("/api/webhooks/stripe")
   )
     return "payment";
-  if (path.startsWith("/api/distribution")) return "distribution";
-  if (path.startsWith("/api/developer")) return "developer_api";
-  if (path.startsWith("/api")) return "api";
+  if (path?.startsWith("/api/distribution")) return "distribution";
+  if (path?.startsWith("/api/developer")) return "developer_api";
+  if (path?.startsWith("/api")) return "api";
   return "general";
 }
 
 function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   if (!body || typeof body !== "object") return body;
 
-  const sensitiveFields = [
+  const _sensitiveFields = [
     "password",
     "token",
     "secret",
@@ -139,7 +139,7 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
     "cvv",
     "ssn",
   ];
-  const sanitized = { ...body };
+  const _sanitized = { ...body };
 
   for (const field of sensitiveFields) {
     if (field in sanitized) {
@@ -151,7 +151,7 @@ function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
 }
 
 function sanitizeHeaders(headers: Record<string, any>): Record<string, string> {
-  const sensitiveHeaders = [
+  const _sensitiveHeaders = [
     "authorization",
     "cookie",
     "x-api-key",
@@ -159,8 +159,8 @@ function sanitizeHeaders(headers: Record<string, any>): Record<string, string> {
   ];
   const sanitized: Record<string, string> = {};
 
-  for (const [key, value] of Object.entries(headers)) {
-    if (sensitiveHeaders.includes(key.toLowerCase())) {
+  for (const [key, value] of Object?.entries(headers)) {
+    if (sensitiveHeaders?.includes(key?.toLowerCase())) {
       sanitized[key] = "[REDACTED]";
     } else if (typeof value === "string") {
       sanitized[key] = value;
@@ -171,9 +171,9 @@ function sanitizeHeaders(headers: Record<string, any>): Record<string, string> {
 }
 
 export function getSelfHealingStatus() {
-  return selfHealingEngine.getStatus();
+  return selfHealingEngine?.getStatus();
 }
 
 export function getSelfHealingMetrics() {
-  return selfHealingEngine.getMetrics();
+  return selfHealingEngine?.getMetrics();
 }

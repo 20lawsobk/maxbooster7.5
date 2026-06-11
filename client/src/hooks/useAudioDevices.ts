@@ -39,8 +39,8 @@ export function useAudioDevices() {
    * Enumerate all available audio devices
    * This provides the foundation for device selection in the DAW
    */
-  const enumerateDevices = useCallback(async () => {
-    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+  const _enumerateDevices = useCallback(async () => {
+    if (!navigator?.mediaDevices || !navigator?.mediaDevices.enumerateDevices) {
       setState((prev) => ({
         ...prev,
         error: "Media devices API not supported in this browser",
@@ -52,31 +52,31 @@ export function useAudioDevices() {
 
     try {
       // Request permission first to get labeled devices
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const _stream = await navigator?.mediaDevices.getUserMedia({ audio: true });
 
       // Stop the stream immediately (we just needed permission)
-      stream.getTracks().forEach((track) => track.stop());
+      stream?.getTracks().forEach((track) => track?.stop());
 
       // Now enumerate with labels
-      const devices = await navigator.mediaDevices.enumerateDevices();
+      const _devices = await navigator?.mediaDevices.enumerateDevices();
 
       const inputs: AudioDeviceInfo[] = [];
       const outputs: AudioDeviceInfo[] = [];
 
-      devices.forEach((device) => {
-        if (device.kind === "audioinput") {
-          inputs.push({
-            deviceId: device.deviceId,
-            groupId: device.groupId,
+      devices?.forEach((device) => {
+        if (device?.kind === "audioinput") {
+          inputs?.push({
+            deviceId: device?.deviceId,
+            groupId: device?.groupId,
             kind: "audioinput",
-            label: device.label || `Microphone ${inputs.length + 1}`,
+            label: device?.label || `Microphone ${inputs?.length + 1}`,
           });
-        } else if (device.kind === "audiooutput") {
-          outputs.push({
-            deviceId: device.deviceId,
-            groupId: device.groupId,
+        } else if (device?.kind === "audiooutput") {
+          outputs?.push({
+            deviceId: device?.deviceId,
+            groupId: device?.groupId,
             kind: "audiooutput",
-            label: device.label || `Speaker ${outputs.length + 1}`,
+            label: device?.label || `Speaker ${outputs?.length + 1}`,
           });
         }
       });
@@ -89,10 +89,10 @@ export function useAudioDevices() {
         permissionGranted: true,
         // Auto-select first device if none selected
         selectedInput:
-          prev.selectedInput || (inputs.length > 0 ? inputs[0].deviceId : null),
+          prev?.selectedInput || (inputs?.length > 0 ? inputs[0].deviceId : null),
         selectedOutput:
-          prev.selectedOutput ||
-          (outputs.length > 0 ? outputs[0].deviceId : null),
+          prev?.selectedOutput ||
+          (outputs?.length > 0 ? outputs[0].deviceId : null),
       }));
     } catch (error: unknown) {
       setState((prev) => ({
@@ -101,7 +101,7 @@ export function useAudioDevices() {
         permissionGranted: false,
         error:
           error instanceof Error
-            ? error.message
+            ? error?.message
             : "Failed to enumerate audio devices",
       }));
     }
@@ -110,33 +110,33 @@ export function useAudioDevices() {
   /**
    * Select an input device
    */
-  const selectInput = useCallback((deviceId: string) => {
+  const _selectInput = useCallback((deviceId: string) => {
     setState((prev) => ({ ...prev, selectedInput: deviceId }));
   }, []);
 
   /**
    * Select an output device
    */
-  const selectOutput = useCallback((deviceId: string) => {
+  const _selectOutput = useCallback((deviceId: string) => {
     setState((prev) => ({ ...prev, selectedOutput: deviceId }));
   }, []);
 
   /**
    * Get audio stream from selected input device
    */
-  const getInputStream = useCallback(
+  const _getInputStream = useCallback(
     async (
       deviceId?: string,
       constraints?: MediaTrackConstraints,
     ): Promise<MediaStream | null> => {
       try {
-        const targetDevice = deviceId || state.selectedInput;
+        const _targetDevice = deviceId || state?.selectedInput;
 
         if (!targetDevice) {
           throw new Error("No input device selected");
         }
 
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const _stream = await navigator?.mediaDevices.getUserMedia({
           audio: {
             deviceId: { exact: targetDevice },
             echoCancellation: true,
@@ -150,32 +150,32 @@ export function useAudioDevices() {
 
         return stream;
       } catch (error: unknown) {
-        logger.error("Failed to get input stream:", error);
+        logger?.error("Failed to get input stream:", error);
         return null;
       }
     },
-    [state.selectedInput],
+    [state?.selectedInput],
   );
 
   /**
    * Get device capabilities (sample rate, channel count, etc.)
    */
-  const getDeviceCapabilities = useCallback(
+  const _getDeviceCapabilities = useCallback(
     async (deviceId: string): Promise<MediaTrackCapabilities | null> => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
+        const _stream = await navigator?.mediaDevices.getUserMedia({
           audio: { deviceId: { exact: deviceId } },
         });
 
-        const audioTrack = stream.getAudioTracks()[0];
-        const capabilities = audioTrack.getCapabilities();
+        const _audioTrack = stream?.getAudioTracks()[0];
+        const _capabilities = audioTrack?.getCapabilities();
 
         // Clean up
-        stream.getTracks().forEach((track) => track.stop());
+        stream?.getTracks().forEach((track) => track?.stop());
 
         return capabilities;
       } catch (error: unknown) {
-        logger.error("Failed to get device capabilities:", error);
+        logger?.error("Failed to get device capabilities:", error);
         return null;
       }
     },
@@ -185,8 +185,8 @@ export function useAudioDevices() {
   /**
    * Handle device changes (hot-plugging)
    */
-  const handleDeviceChange = useCallback(() => {
-    logger.info("Audio device configuration changed, re-enumerating...");
+  const _handleDeviceChange = useCallback(() => {
+    logger?.info("Audio device configuration changed, re-enumerating...");
     enumerateDevices();
   }, [enumerateDevices]);
 
@@ -197,16 +197,16 @@ export function useAudioDevices() {
     enumerateDevices();
 
     // Listen for device changes (hot-plugging)
-    if (navigator.mediaDevices) {
-      navigator.mediaDevices.addEventListener(
+    if (navigator?.mediaDevices) {
+      navigator?.mediaDevices.addEventListener(
         "devicechange",
         handleDeviceChange,
       );
     }
 
     return () => {
-      if (navigator.mediaDevices) {
-        navigator.mediaDevices.removeEventListener(
+      if (navigator?.mediaDevices) {
+        navigator?.mediaDevices.removeEventListener(
           "devicechange",
           handleDeviceChange,
         );

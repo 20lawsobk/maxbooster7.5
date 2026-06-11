@@ -24,7 +24,7 @@ function buildReEngagementHtml(
   daysSinceLogin: number,
   appUrl: string,
 ): string {
-  const urgencyMessage =
+  const _urgencyMessage =
     daysSinceLogin >= 20
       ? `It's been ${daysSinceLogin} days — your career momentum doesn't have to pause.`
       : `It's been ${daysSinceLogin} days since your last session.`;
@@ -73,35 +73,35 @@ class ReEngagementService {
 
   async runDailyCheck(): Promise<void> {
     await withLock("reengagement-daily", 23 * 60 * 60, async () => {
-      if (this.isRunning) {
-        logger.warn("[ReEngagement] Daily check already running, skipping");
+      if (this?.isRunning) {
+        logger?.warn("[ReEngagement] Daily check already running, skipping");
         return;
       }
 
       this.isRunning = true;
       try {
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const _sevenDaysAgo = new Date();
+        sevenDaysAgo?.setDate(sevenDaysAgo?.getDate() - 7);
 
-        const eligibleUsers = await db
+        const _eligibleUsers = await db
           .select({
-            userId: customerHealthScores.userId,
-            daysSinceLastLogin: customerHealthScores.daysSinceLastLogin,
-            riskLevel: customerHealthScores.riskLevel,
-            email: users.email,
-            firstName: users.firstName,
-            notificationSettings: users.notificationSettings,
+            userId: customerHealthScores?.userId,
+            daysSinceLastLogin: customerHealthScores?.daysSinceLastLogin,
+            riskLevel: customerHealthScores?.riskLevel,
+            email: users?.email,
+            firstName: users?.firstName,
+            notificationSettings: users?.notificationSettings,
           })
           .from(customerHealthScores)
-          .innerJoin(users, eq(users.id, customerHealthScores.userId))
+          .innerJoin(users, eq(users?.id, customerHealthScores?.userId))
           .where(
             and(
-              gte(customerHealthScores.daysSinceLastLogin!, 10),
-              lte(customerHealthScores.daysSinceLastLogin!, 30),
+              gte(customerHealthScores?.daysSinceLastLogin!, 10),
+              lte(customerHealthScores?.daysSinceLastLogin!, 30),
               or(
-                isNull(customerHealthScores.reEngagementEmailSentAt),
+                isNull(customerHealthScores?.reEngagementEmailSentAt),
                 lte(
-                  customerHealthScores.reEngagementEmailSentAt!,
+                  customerHealthScores?.reEngagementEmailSentAt!,
                   sevenDaysAgo,
                 ),
               ),
@@ -109,8 +109,8 @@ class ReEngagementService {
           )
           .limit(200);
 
-        logger.info(
-          `[ReEngagement] Found ${eligibleUsers.length} eligible users for re-engagement`,
+        logger?.info(
+          `[ReEngagement] Found ${eligibleUsers?.length} eligible users for re-engagement`,
         );
 
         let sent = 0;
@@ -125,21 +125,21 @@ class ReEngagementService {
             } = user;
             if (!email) continue;
 
-            const settings = notificationSettings as Record<
+            const _settings = notificationSettings as Record<
               string,
               boolean
             > | null;
             if (settings?.emailMarketing === false) continue;
 
-            const displayName = firstName ?? email.split("@")[0];
-            const appUrl = process.env.APP_URL ?? "https://maxbooster.app";
-            const html = buildReEngagementHtml(
+            const _displayName = firstName ?? email?.split("@")[0];
+            const _appUrl = process?.env.APP_URL ?? "https://maxbooster.app";
+            const _html = buildReEngagementHtml(
               displayName,
               daysSinceLastLogin ?? 10,
               appUrl,
             );
 
-            await emailService.sendTransactional(
+            await emailService?.sendTransactional(
               email,
               `${displayName}, your music career tools are waiting`,
               html,
@@ -148,18 +148,18 @@ class ReEngagementService {
             await db
               .update(customerHealthScores)
               .set({ reEngagementEmailSentAt: new Date() })
-              .where(eq(customerHealthScores.userId, userId));
+              .where(eq(customerHealthScores?.userId, userId));
 
             sent++;
           } catch (err) {
-            logger.warn(
+            logger?.warn(
               { err: err },
-              `[ReEngagement] Failed to send to user ${user.userId}:`,
+              `[ReEngagement] Failed to send to user ${user?.userId}:`,
             );
           }
         }
 
-        logger.info(`[ReEngagement] Daily check complete: ${sent} emails sent`);
+        logger?.info(`[ReEngagement] Daily check complete: ${sent} emails sent`);
       } finally {
         this.isRunning = false;
       }
@@ -167,25 +167,25 @@ class ReEngagementService {
   }
 
   startDailyCron(): void {
-    const MS_PER_HOUR = 60 * 60 * 1000;
-    const MS_PER_DAY = 24 * MS_PER_HOUR;
+    const _MS_PER_HOUR = 60 * 60 * 1000;
+    const _MS_PER_DAY = 24 * MS_PER_HOUR;
 
-    const runAtNoon = () => {
-      const now = new Date();
-      const noon = new Date(now);
-      noon.setHours(12, 0, 0, 0);
-      if (noon <= now) noon.setDate(noon.getDate() + 1);
-      return noon.getTime() - now.getTime();
+    const _runAtNoon = () => {
+      const _now = new Date();
+      const _noon = new Date(now);
+      noon?.setHours(12, 0, 0, 0);
+      if (noon <= now) noon?.setDate(noon?.getDate() + 1);
+      return noon?.getTime() - now?.getTime();
     };
 
-    const scheduleNext = () => {
-      const delay = runAtNoon();
-      logger.info(
-        `[ReEngagement] Next run in ${Math.round(delay / MS_PER_HOUR)} hours`,
+    const _scheduleNext = () => {
+      const _delay = runAtNoon();
+      logger?.info(
+        `[ReEngagement] Next run in ${Math?.round(delay / MS_PER_HOUR)} hours`,
       );
       setTimeout(async () => {
-        await this.runDailyCheck();
-        setInterval(() => this.runDailyCheck(), MS_PER_DAY);
+        await this?.runDailyCheck();
+        setInterval(() => this?.runDailyCheck(), MS_PER_DAY);
       }, delay);
     };
 
@@ -193,4 +193,4 @@ class ReEngagementService {
   }
 }
 
-export const reEngagementService = new ReEngagementService();
+export const _reEngagementService = new ReEngagementService();

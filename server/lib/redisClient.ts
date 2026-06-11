@@ -22,7 +22,7 @@ export function getRedisClient(): RedisClient {
     );
   }
   if (!_redis) {
-    logger.info(
+    logger?.info(
       "[Redis] PDIM active — routing all Redis operations through PDIM",
     );
     _redis = getPdimClient();
@@ -42,14 +42,14 @@ export function newBullMQRedisConnection(): RedisClient {
       "[Redis/BullMQ] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set",
     );
   }
-  logger.info(
+  logger?.info(
     "[Redis/BullMQ] PDIM active — BullMQ using PDIM via wasmoon LuaExecutor",
   );
   return getPdimClient().duplicate() as unknown as RedisClient;
 }
 
 export async function closeRedisClient(): Promise<void> {
-  logger.info(
+  logger?.info(
     "[Redis] PDIM manages its own lifecycle — no shutdown action needed",
   );
   _redis = null;

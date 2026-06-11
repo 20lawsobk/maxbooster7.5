@@ -8,9 +8,9 @@ import { logger } from "../logger.js";
 import { queryCache, createCacheKey } from "../lib/queryCache.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
-const router = Router();
+const _router = Router();
 
-const CURATORS = [
+const _CURATORS = [
   {
     id: "1",
     name: "Indie Mono",
@@ -32,7 +32,7 @@ const CURATORS = [
     name: "SubmitHub",
     genre: "All Genres",
     followers: "5M+",
-    submissionUrl: "https://www.submithub.com/",
+    submissionUrl: "https://www?.submithub.com/",
     email: "support@submithub.com",
   },
   {
@@ -72,7 +72,7 @@ const CURATORS = [
     name: "Majestic Casual",
     genre: "Electronic, Indie, R&B",
     followers: "4M",
-    submissionUrl: "https://www.majesticcasual.com/submit",
+    submissionUrl: "https://www?.majesticcasual.com/submit",
     email: "majestic@casual.com",
   },
   {
@@ -85,11 +85,11 @@ const CURATORS = [
   },
   {
     id: "10",
-    name: "Birp.fm",
+    name: "Birp?.fm",
     genre: "Indie",
     followers: "200K",
-    submissionUrl: "https://www.birp.fm/submit",
-    email: "hello@birp.fm",
+    submissionUrl: "https://www?.birp.fm/submit",
+    email: "hello@birp?.fm",
   },
   {
     id: "11",
@@ -112,7 +112,7 @@ const CURATORS = [
     name: "Selected.",
     genre: "Deep House, House",
     followers: "2M",
-    submissionUrl: "https://www.selected-music.com/demo",
+    submissionUrl: "https://www?.selected-music.com/demo",
     email: "demo@selected-music.com",
   },
   {
@@ -128,7 +128,7 @@ const CURATORS = [
     name: "Proximity",
     genre: "EDM, Progressive House",
     followers: "8M",
-    submissionUrl: "https://proximity.wetransfer.com/",
+    submissionUrl: "https://proximity?.wetransfer.com/",
     email: "proximity@proximity.com",
   },
   {
@@ -144,8 +144,8 @@ const CURATORS = [
     name: "Nice Guys",
     genre: "Indie, Dream Pop",
     followers: "100K",
-    submissionUrl: "https://niceguys.fm/submit",
-    email: "hello@niceguys.fm",
+    submissionUrl: "https://niceguys?.fm/submit",
+    email: "hello@niceguys?.fm",
   },
   {
     id: "18",
@@ -160,7 +160,7 @@ const CURATORS = [
     name: "AlexRainbirdMusic",
     genre: "Indie Rock, Folk",
     followers: "1.2M",
-    submissionUrl: "https://www.alexrainbirdmusic.com/submit",
+    submissionUrl: "https://www?.alexrainbirdmusic.com/submit",
     email: "alex@rainbirdmusic.com",
   },
   {
@@ -173,93 +173,93 @@ const CURATORS = [
   },
 ];
 
-router.get("/curators", (_req, res) => {
-  res.json(CURATORS);
+router?.get("/curators", (_req, res) => {
+  res?.json(CURATORS);
 });
 
-router.get("/", requireAuth, async (req, res) => {
+router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const pitches = await db
+    const _pitches = await db
       .select()
       .from(playlistPitches)
-      .where(eq(playlistPitches.userId, req.user!.id))
-      .orderBy(desc(playlistPitches.createdAt))
+      .where(eq(playlistPitches?.userId, req?.user!.id))
+      .orderBy(desc(playlistPitches?.createdAt))
       .limit(limit)
       .offset(offset);
-    res.json(pitches);
+    res?.json(pitches);
   } catch (error) {
-    logger.warn({ err: error }, "[PlaylistPitching] Failed to list pitches:");
-    res.status(500).json({ error: "Failed to fetch playlist pitches" });
+    logger?.warn({ err: error }, "[PlaylistPitching] Failed to list pitches:");
+    res?.status(500).json({ error: "Failed to fetch playlist pitches" });
   }
 });
 
-router.post("/", requireAuth, async (req, res) => {
+router?.post("/", requireAuth, async (req, res) => {
   try {
-    const validatedData = insertPlaylistPitchSchema.parse({
-      ...req.body,
-      userId: req.user!.id,
+    const _validatedData = insertPlaylistPitchSchema?.parse({
+      ...req?.body,
+      userId: req?.user!.id,
     });
     const [newPitch] = await db
       .insert(playlistPitches)
       .values(validatedData)
       .returning();
-    await queryCache.invalidate(
-      createCacheKey("stats:playlistPitches", req.user!.id),
+    await queryCache?.invalidate(
+      createCacheKey("stats:playlistPitches", req?.user!.id),
     );
-    res.status(201).json(newPitch);
+    res?.status(201).json(newPitch);
   } catch (error) {
-    logger.warn({ err: error }, "[PlaylistPitching] Failed to create pitch:");
-    if (error instanceof z.ZodError) {
+    logger?.warn({ err: error }, "[PlaylistPitching] Failed to create pitch:");
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.flatten() });
+        .json({ error: "Validation error", details: error?.flatten() });
     }
-    res.status(500).json({ error: "Failed to create playlist pitch" });
+    res?.status(500).json({ error: "Failed to create playlist pitch" });
   }
 });
 
-router.put("/:id", requireAuth, async (req, res) => {
+router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const validatedData = insertPlaylistPitchSchema
+    const _validatedData = insertPlaylistPitchSchema
       .partial()
       .omit({ userId: true })
-      .parse(req.body);
+      .parse(req?.body);
     const [updatedPitch] = await db
       .update(playlistPitches)
       .set({ ...validatedData, updatedAt: new Date() })
       .where(
         and(
-          eq(playlistPitches.id, req.params.id),
-          eq(playlistPitches.userId, req.user!.id),
+          eq(playlistPitches?.id, req?.params.id),
+          eq(playlistPitches?.userId, req?.user!.id),
         ),
       )
       .returning();
 
     if (!updatedPitch)
-      return res.status(404).json({ error: "Pitch not found" });
-    await queryCache.invalidate(
-      createCacheKey("stats:playlistPitches", req.user!.id),
+      return res?.status(404).json({ error: "Pitch not found" });
+    await queryCache?.invalidate(
+      createCacheKey("stats:playlistPitches", req?.user!.id),
     );
-    res.json(updatedPitch);
+    res?.json(updatedPitch);
   } catch (error) {
-    logger.warn({ err: error }, "[PlaylistPitching] Failed to update pitch:");
-    if (error instanceof z.ZodError) {
+    logger?.warn({ err: error }, "[PlaylistPitching] Failed to update pitch:");
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.flatten() });
+        .json({ error: "Validation error", details: error?.flatten() });
     }
-    res.status(500).json({ error: "Failed to update playlist pitch" });
+    res?.status(500).json({ error: "Failed to update playlist pitch" });
   }
 });
 
 // PATCH /api/playlist-pitching/:id/status — record pitch outcome (placed, rejected, etc.)
-router.patch("/:id/status", requireAuth, async (req, res) => {
+router?.patch("/:id/status", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const { id } = req.params;
-    const statusSchema = z.object({
-      status: z.enum([
+    const _userId = req?.user!.id;
+    const { id } = req?.params;
+    const _statusSchema = z?.object({
+      status: z?.enum([
         "draft",
         "submitted",
         "under_review",
@@ -268,9 +268,9 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
         "placed",
         "following_up",
       ]),
-      responseNote: z.string().max(2000).optional(),
+      responseNote: z?.string().max(2000).optional(),
     });
-    const { status, responseNote } = statusSchema.parse(req.body);
+    const { status, responseNote } = statusSchema?.parse(req?.body);
 
     const setFields: Record<string, unknown> = {
       status,
@@ -285,68 +285,68 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
       .update(playlistPitches)
       .set(setFields)
       .where(
-        and(eq(playlistPitches.id, id), eq(playlistPitches.userId, userId)),
+        and(eq(playlistPitches?.id, id), eq(playlistPitches?.userId, userId)),
       )
       .returning();
 
-    if (!updated) return res.status(404).json({ error: "Pitch not found" });
-    await queryCache.invalidate(
+    if (!updated) return res?.status(404).json({ error: "Pitch not found" });
+    await queryCache?.invalidate(
       createCacheKey("stats:playlistPitches", userId),
     );
-    res.json(updated);
+    res?.json(updated);
   } catch (error) {
-    logger.warn({ err: error }, "[PlaylistPitching] Failed to update status:");
-    if (error instanceof z.ZodError) {
+    logger?.warn({ err: error }, "[PlaylistPitching] Failed to update status:");
+    if (error instanceof z?.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error.flatten() });
+        .json({ error: "Validation error", details: error?.flatten() });
     }
-    res.status(500).json({ error: "Failed to update pitch status" });
+    res?.status(500).json({ error: "Failed to update pitch status" });
   }
 });
 
-router.delete("/:id", requireAuth, async (req, res) => {
+router?.delete("/:id", requireAuth, async (req, res) => {
   try {
     const [deletedPitch] = await db
       .delete(playlistPitches)
       .where(
         and(
-          eq(playlistPitches.id, req.params.id),
-          eq(playlistPitches.userId, req.user!.id),
+          eq(playlistPitches?.id, req?.params.id),
+          eq(playlistPitches?.userId, req?.user!.id),
         ),
       )
       .returning();
 
     if (!deletedPitch)
-      return res.status(404).json({ error: "Pitch not found" });
-    await queryCache.invalidate(
-      createCacheKey("stats:playlistPitches", req.user!.id),
+      return res?.status(404).json({ error: "Pitch not found" });
+    await queryCache?.invalidate(
+      createCacheKey("stats:playlistPitches", req?.user!.id),
     );
-    res.json({ success: true });
+    res?.json({ success: true });
   } catch (error) {
-    logger.warn({ err: error }, "[PlaylistPitching] Failed to delete pitch:");
-    res.status(500).json({ error: "Failed to delete playlist pitch" });
+    logger?.warn({ err: error }, "[PlaylistPitching] Failed to delete pitch:");
+    res?.status(500).json({ error: "Failed to delete playlist pitch" });
   }
 });
 
-router.get("/stats", requireAuth, async (req, res) => {
+router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id;
-    const cacheKey = createCacheKey("stats:playlistPitches", userId);
+    const _userId = req?.user!.id;
+    const _cacheKey = createCacheKey("stats:playlistPitches", userId);
 
-    const result = await queryCache.getOrCompute(
+    const _result = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
-        const stats = await db
+        const _stats = await db
           .select({
-            status: playlistPitches.status,
+            status: playlistPitches?.status,
             count: sql<number>`count(*)`,
           })
           .from(playlistPitches)
-          .where(eq(playlistPitches.userId, userId))
-          .groupBy(playlistPitches.status);
+          .where(eq(playlistPitches?.userId, userId))
+          .groupBy(playlistPitches?.status);
 
-        const r = {
+        const _r = {
           total: 0,
           accepted: 0,
           placed: 0,
@@ -354,51 +354,51 @@ router.get("/stats", requireAuth, async (req, res) => {
           rejected: 0,
           conversionRate: 0,
         };
-        stats.forEach((s) => {
-          r.total += Number(s.count);
-          if (s.status === "accepted") r.accepted = Number(s.count);
-          if (s.status === "placed") r.placed = Number(s.count);
+        stats?.forEach((s) => {
+          r?.total += Number(s?.count);
+          if (s?.status === "accepted") r.accepted = Number(s?.count);
+          if (s?.status === "placed") r.placed = Number(s?.count);
           if (
-            s.status === "submitted" ||
-            s.status === "under_review" ||
-            s.status === "following_up"
+            s?.status === "submitted" ||
+            s?.status === "under_review" ||
+            s?.status === "following_up"
           )
-            r.pending += Number(s.count);
-          if (s.status === "rejected") r.rejected = Number(s.count);
+            r?.pending += Number(s?.count);
+          if (s?.status === "rejected") r.rejected = Number(s?.count);
         });
         // Conversion = accepted + placed (both represent successful pitches)
-        const converted = r.accepted + r.placed;
-        if (r.total > 0) r.conversionRate = (converted / r.total) * 100;
+        const _converted = r?.accepted + r?.placed;
+        if (r?.total > 0) r.conversionRate = (converted / r?.total) * 100;
         return r;
       },
       300,
     );
 
-    res.json(result);
+    res?.json(result);
   } catch (error) {
-    logger.warn({ err: error }, "[PlaylistPitching] Failed to fetch stats:");
-    res.status(500).json({ error: "Failed to fetch stats" });
+    logger?.warn({ err: error }, "[PlaylistPitching] Failed to fetch stats:");
+    res?.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
 // GET /:id must come after /stats to prevent route shadowing
-router.get("/:id", requireAuth, async (req, res) => {
+router?.get("/:id", requireAuth, async (req, res) => {
   try {
     const [item] = await db
       .select()
       .from(playlistPitches)
       .where(
         and(
-          eq(playlistPitches.id, req.params.id),
-          eq(playlistPitches.userId, req.user!.id),
+          eq(playlistPitches?.id, req?.params.id),
+          eq(playlistPitches?.userId, req?.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res.status(404).json({ error: "Pitch not found" });
-    res.json(item);
+    if (!item) return res?.status(404).json({ error: "Pitch not found" });
+    res?.json(item);
   } catch (error) {
-    logger.warn({ err: error }, "[PlaylistPitching] Failed to fetch pitch:");
-    res.status(500).json({ error: "Failed to fetch playlist pitch" });
+    logger?.warn({ err: error }, "[PlaylistPitching] Failed to fetch pitch:");
+    res?.status(500).json({ error: "Failed to fetch playlist pitch" });
   }
 });
 

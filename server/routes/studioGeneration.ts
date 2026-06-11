@@ -21,7 +21,7 @@ import { execFile } from "child_process";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { promisify } from "util";
 
-const execFileAsync = promisify(execFile);
+const _execFileAsync = promisify(execFile);
 
 async function persistGeneratedSample(opts: {
   name: string;
@@ -35,30 +35,30 @@ async function persistGeneratedSample(opts: {
   userId: string;
 }) {
   try {
-    await db.insert(studioSamples).values({
+    await db?.insert(studioSamples).values({
       id: `ai_${randomBytes(8).toString("hex")}`,
-      name: opts.name,
-      category: opts.category,
-      subcategory: opts.subcategory,
-      tags: opts.tags,
-      duration: opts.duration,
-      tempo: opts.tempo,
-      key: opts.key,
-      audioUrl: opts.audioUrl,
+      name: opts?.name,
+      category: opts?.category,
+      subcategory: opts?.subcategory,
+      tags: opts?.tags,
+      duration: opts?.duration,
+      tempo: opts?.tempo,
+      key: opts?.key,
+      audioUrl: opts?.audioUrl,
       isBuiltIn: false,
-      userId: opts.userId,
+      userId: opts?.userId,
     });
   } catch (err) {
-    logger.warn(
+    logger?.warn(
       { err: err },
       "[Studio Generation] Could not persist sample to library:",
     );
   }
 }
 
-const router = Router();
+const _router = Router();
 
-const upload = createHardenedUpload({
+const _upload = createHardenedUpload({
   maxFileSize: 50 * 1024 * 1024,
   maxFiles: 1,
   allowedMimes: [
@@ -96,273 +96,273 @@ const upload = createHardenedUpload({
   label: "studio audio",
 });
 
-const textGenerationSchema = z.object({
-  text: z.string().max(500).optional().default(""), // fed to AI — cap to prevent prompt injection
-  projectId: z.string().max(64).optional(),
-  duration: z.number().positive().optional(),
-  bars: z.number().int().positive().optional(),
-  instrumentType: z.string().max(64).optional(),
-  instrumentCategory: z.enum(["melodic", "drums", "percussion"]).optional(),
-  genre: z.string().max(64).optional(),
-  genreCategory: z.string().max(64).optional(),
-  style: z.string().max(64).optional(),
-  tempo: z.number().int().min(40).max(240).optional(),
-  key: z.string().max(8).optional(),
-  scale: z.string().max(32).optional(),
-  complexity: z.number().min(0).max(1).optional(),
-  swing: z.number().min(0).max(1).optional(),
-  humanize: z.number().min(0).max(1).optional(),
+const _textGenerationSchema = z?.object({
+  text: z?.string().max(500).optional().default(""), // fed to AI — cap to prevent prompt injection
+  projectId: z?.string().max(64).optional(),
+  duration: z?.number().positive().optional(),
+  bars: z?.number().int().positive().optional(),
+  instrumentType: z?.string().max(64).optional(),
+  instrumentCategory: z?.enum(["melodic", "drums", "percussion"]).optional(),
+  genre: z?.string().max(64).optional(),
+  genreCategory: z?.string().max(64).optional(),
+  style: z?.string().max(64).optional(),
+  tempo: z?.number().int().min(40).max(240).optional(),
+  key: z?.string().max(8).optional(),
+  scale: z?.string().max(32).optional(),
+  complexity: z?.number().min(0).max(1).optional(),
+  swing: z?.number().min(0).max(1).optional(),
+  humanize: z?.number().min(0).max(1).optional(),
 });
 
-const audioGenerationSchema = z.object({
-  targetType: z.string().max(64).optional(),
-  text: z.string().max(500).optional(), // fed to AI — cap to prevent prompt injection / cost abuse
-  projectId: z.string().max(64).optional(),
-  bars: z.number().int().positive().optional(),
+const _audioGenerationSchema = z?.object({
+  targetType: z?.string().max(64).optional(),
+  text: z?.string().max(500).optional(), // fed to AI — cap to prevent prompt injection / cost abuse
+  projectId: z?.string().max(64).optional(),
+  bars: z?.number().int().positive().optional(),
 });
 
-router.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
+router?.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validatedData = textGenerationSchema.parse(req.body);
+    const _validatedData = textGenerationSchema?.parse(req?.body);
 
-    let userText = (validatedData.text || "").trim();
+    let userText = (validatedData?.text || "").trim();
 
-    if (validatedData.tempo) {
-      userText = userText.replace(/\b\d+\s*bpm\b/gi, "").trim();
+    if (validatedData?.tempo) {
+      userText = userText?.replace(/\b\d+\s*bpm\b/gi, "").trim();
     }
 
-    const textLower = userText.toLowerCase();
+    const _textLower = userText?.toLowerCase();
     const parts: string[] = [];
 
-    if (validatedData.instrumentType) {
-      const instrumentId = validatedData.instrumentType.toLowerCase();
-      const friendlyName = instrumentId.replace(/_/g, " ");
+    if (validatedData?.instrumentType) {
+      const _instrumentId = validatedData?.instrumentType.toLowerCase();
+      const _friendlyName = instrumentId?.replace(/_/g, " ");
       if (
-        !textLower.includes(friendlyName) &&
-        !textLower.includes(instrumentId)
+        !textLower?.includes(friendlyName) &&
+        !textLower?.includes(instrumentId)
       ) {
-        parts.push(friendlyName);
+        parts?.push(friendlyName);
       }
     }
     if (
-      validatedData.genre &&
-      !textLower.includes(validatedData.genre.toLowerCase())
+      validatedData?.genre &&
+      !textLower?.includes(validatedData?.genre.toLowerCase())
     ) {
-      parts.push(validatedData.genre);
+      parts?.push(validatedData?.genre);
     }
 
     if (userText) {
-      parts.push(userText);
+      parts?.push(userText);
     }
 
-    if (validatedData.tempo) {
-      parts.push(`at ${validatedData.tempo}bpm`);
-    }
-    if (
-      validatedData.key &&
-      !textLower.includes(` ${validatedData.key.toLowerCase()} `) &&
-      !textLower.includes(`in ${validatedData.key.toLowerCase()}`)
-    ) {
-      parts.push(`in ${validatedData.key}`);
+    if (validatedData?.tempo) {
+      parts?.push(`at ${validatedData?.tempo}bpm`);
     }
     if (
-      validatedData.scale &&
-      !textLower.includes(validatedData.scale.toLowerCase())
+      validatedData?.key &&
+      !textLower?.includes(` ${validatedData?.key.toLowerCase()} `) &&
+      !textLower?.includes(`in ${validatedData?.key.toLowerCase()}`)
     ) {
-      parts.push(validatedData.scale);
+      parts?.push(`in ${validatedData?.key}`);
+    }
+    if (
+      validatedData?.scale &&
+      !textLower?.includes(validatedData?.scale.toLowerCase())
+    ) {
+      parts?.push(validatedData?.scale);
     }
 
-    const enhancedText = parts.join(" ").trim() || "drums trap";
+    const _enhancedText = parts?.join(" ").trim() || "drums trap";
 
-    logger.info(`[Studio Generation] Text-to-audio request: "${enhancedText}"`);
+    logger?.info(`[Studio Generation] Text-to-audio request: "${enhancedText}"`);
 
-    const result = await generateFromText({
+    const _result = await generateFromText({
       text: enhancedText,
-      duration: validatedData.duration,
-      bars: validatedData.bars,
-      tempo: validatedData.tempo,
-      projectId: validatedData.projectId,
+      duration: validatedData?.duration,
+      bars: validatedData?.bars,
+      tempo: validatedData?.tempo,
+      projectId: validatedData?.projectId,
     });
 
-    const userId = req.user?.id || "unknown";
-    const category =
-      validatedData.instrumentCategory === "drums"
+    const _userId = req?.user?.id || "unknown";
+    const _category =
+      validatedData?.instrumentCategory === "drums"
         ? "drums"
-        : validatedData.instrumentCategory === "percussion"
+        : validatedData?.instrumentCategory === "percussion"
           ? "percussion"
-          : validatedData.genre
-            ? validatedData.genre.toLowerCase()
+          : validatedData?.genre
+            ? validatedData?.genre.toLowerCase()
             : "synths";
-    const tags = [
-      validatedData.genre,
-      validatedData.instrumentType,
-      validatedData.key,
-      validatedData.scale,
+    const _tags = [
+      validatedData?.genre,
+      validatedData?.instrumentType,
+      validatedData?.key,
+      validatedData?.scale,
     ].filter(Boolean) as string[];
 
     await persistGeneratedSample({
-      name: `AI: ${enhancedText.slice(0, 48)}`,
+      name: `AI: ${enhancedText?.slice(0, 48)}`,
       category,
-      subcategory: validatedData.instrumentType || undefined,
+      subcategory: validatedData?.instrumentType || undefined,
       tags,
-      duration: result.duration,
-      tempo: validatedData.tempo,
-      key: validatedData.key,
-      audioUrl: result.audioFilePath,
+      duration: result?.duration,
+      tempo: validatedData?.tempo,
+      key: validatedData?.key,
+      audioUrl: result?.audioFilePath,
       userId,
     });
 
-    res.json({
+    res?.json({
       success: true,
-      audioFilePath: result.audioFilePath,
-      parameters: result.parameters,
-      duration: result.duration,
-      sourceType: result.sourceType,
-      generatedNotes: result.generatedNotes || [],
-      generatedChords: result.generatedChords || [],
+      audioFilePath: result?.audioFilePath,
+      parameters: result?.parameters,
+      duration: result?.duration,
+      sourceType: result?.sourceType,
+      generatedNotes: result?.generatedNotes || [],
+      generatedChords: result?.generatedChords || [],
     });
   } catch (error) {
-    logger.warn({ err: error }, "[Studio Generation] Text generation failed:");
+    logger?.warn({ err: error }, "[Studio Generation] Text generation failed:");
 
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
+    if (error instanceof z?.ZodError) {
+      return res?.status(400).json({
         success: false,
         message: "Invalid request parameters",
-        errors: error.issues,
+        errors: error?.issues,
       });
     }
 
-    res.status(500).json({
+    res?.status(500).json({
       success: false,
-      message: error.message || "Failed to generate audio from text",
+      message: error?.message || "Failed to generate audio from text",
     });
   }
 });
 
-router.post(
+router?.post(
   "/audio",
   requireAuth,
   aiRateLimiter,
-  upload.single("audio"),
+  upload?.single("audio"),
   async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({
+      if (!req?.file) {
+        return res?.status(400).json({
           success: false,
           message: "No audio file provided",
         });
       }
 
-      const bodyData = {
-        targetType: req.body.targetType,
-        text: req.body.text,
-        projectId: req.body.projectId,
-        bars: req.body.bars ? parseInt(req.body.bars, 10) : undefined,
+      const _bodyData = {
+        targetType: req?.body.targetType,
+        text: req?.body.text,
+        projectId: req?.body.projectId,
+        bars: req?.body.bars ? parseInt(req?.body.bars, 10) : undefined,
       };
 
-      const validatedData = audioGenerationSchema.parse(bodyData);
+      const _validatedData = audioGenerationSchema?.parse(bodyData);
 
-      logger.info(
-        `[Studio Generation] Audio-to-audio request, file size: ${req.file.size} bytes`,
+      logger?.info(
+        `[Studio Generation] Audio-to-audio request, file size: ${req?.file.size} bytes`,
       );
 
-      const result = await generateFromReference({
-        audioBuffer: req.file.buffer,
-        targetType: validatedData.targetType || "drums",
-        text: validatedData.text,
-        bars: validatedData.bars,
-        projectId: validatedData.projectId,
+      const _result = await generateFromReference({
+        audioBuffer: req?.file.buffer,
+        targetType: validatedData?.targetType || "drums",
+        text: validatedData?.text,
+        bars: validatedData?.bars,
+        projectId: validatedData?.projectId,
       });
 
-      const userId2 = req.user?.id || "unknown";
+      const _userId2 = req?.user?.id || "unknown";
       await persistGeneratedSample({
-        name: `AI Style Transfer: ${validatedData.targetType || "drums"}`,
-        category: validatedData.targetType === "drums" ? "drums" : "synths",
-        subcategory: validatedData.targetType || undefined,
-        tags: ["style-transfer", validatedData.targetType || "drums"].filter(
+        name: `AI Style Transfer: ${validatedData?.targetType || "drums"}`,
+        category: validatedData?.targetType === "drums" ? "drums" : "synths",
+        subcategory: validatedData?.targetType || undefined,
+        tags: ["style-transfer", validatedData?.targetType || "drums"].filter(
           Boolean,
         ) as string[],
-        duration: result.duration,
-        audioUrl: result.audioFilePath,
+        duration: result?.duration,
+        audioUrl: result?.audioFilePath,
         userId: userId2,
       });
 
-      res.json({
+      res?.json({
         success: true,
-        audioFilePath: result.audioFilePath,
-        parameters: result.parameters,
-        duration: result.duration,
-        sourceType: result.sourceType,
-        generatedNotes: result.generatedNotes || [],
-        generatedChords: result.generatedChords || [],
+        audioFilePath: result?.audioFilePath,
+        parameters: result?.parameters,
+        duration: result?.duration,
+        sourceType: result?.sourceType,
+        generatedNotes: result?.generatedNotes || [],
+        generatedChords: result?.generatedChords || [],
       });
     } catch (error) {
-      logger.warn(
+      logger?.warn(
         { err: error },
         "[Studio Generation] Audio generation failed:",
       );
 
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({
+      if (error instanceof z?.ZodError) {
+        return res?.status(400).json({
           success: false,
           message: "Invalid request parameters",
-          errors: error.issues,
+          errors: error?.issues,
         });
       }
 
-      res.status(500).json({
+      res?.status(500).json({
         success: false,
-        message: error.message || "Failed to generate audio from reference",
+        message: error?.message || "Failed to generate audio from reference",
       });
     }
   },
 );
 
-router.get("/presets", requireAuth, async (_req, res) => {
+router?.get("/presets", requireAuth, async (_req, res) => {
   try {
-    const instruments = melodyPatternService.getAvailableInstruments();
-    const genres = melodyPatternService.getAvailableGenres();
-    const styles = melodyPatternService.getAvailableStyles();
-    const scales = melodyPatternService.getAvailableScales();
+    const _instruments = melodyPatternService?.getAvailableInstruments();
+    const _genres = melodyPatternService?.getAvailableGenres();
+    const _styles = melodyPatternService?.getAvailableStyles();
+    const _scales = melodyPatternService?.getAvailableScales();
 
-    const presets = {
-      genres: Object.entries(genres).flatMap(([category, data]) =>
-        data.genres.map((g) => ({
+    const _presets = {
+      genres: Object?.entries(genres).flatMap(([category, data]) =>
+        data?.genres.map((g) => ({
           id: g,
-          name: g.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+          name: g?.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category,
-          tempoRange: data.tempoRange,
-          characteristics: data.characteristics,
+          tempoRange: data?.tempoRange,
+          characteristics: data?.characteristics,
         })),
       ),
       instrumentTypes: [
-        ...instruments.melodic.map((i) => ({
+        ...instruments?.melodic.map((i) => ({
           id: i,
-          name: i.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+          name: i?.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category: "melodic",
-          description: `${i.replace(/_/g, " ")} instrument`,
+          description: `${i?.replace(/_/g, " ")} instrument`,
         })),
-        ...instruments.drums.map((i) => ({
+        ...instruments?.drums.map((i) => ({
           id: i,
-          name: i.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+          name: i?.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category: "drums",
-          description: `${i.replace(/_/g, " ")} drum kit`,
+          description: `${i?.replace(/_/g, " ")} drum kit`,
         })),
-        ...instruments.percussion.map((i) => ({
+        ...instruments?.percussion.map((i) => ({
           id: i,
-          name: i.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+          name: i?.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
           category: "percussion",
-          description: `${i.replace(/_/g, " ")} percussion`,
+          description: `${i?.replace(/_/g, " ")} percussion`,
         })),
       ],
       keys: ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"],
-      scales: scales.map((s) => ({
+      scales: scales?.map((s) => ({
         id: s,
-        name: s.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        name: s?.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
       })),
-      styles: styles.map((s) => ({
+      styles: styles?.map((s) => ({
         id: s,
-        name: s.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        name: s?.replace(/_/g, " ").replace(/\b\w/g, (l) => l?.toUpperCase()),
       })),
       moods: [
         "dark",
@@ -378,218 +378,218 @@ router.get("/presets", requireAuth, async (_req, res) => {
       ],
     };
 
-    res.json(presets);
+    res?.json(presets);
   } catch (error) {
-    logger.warn({ err: error }, "[Studio Generation] Failed to get presets:");
-    res.status(500).json({
+    logger?.warn({ err: error }, "[Studio Generation] Failed to get presets:");
+    res?.status(500).json({
       success: false,
       message: "Failed to get presets",
     });
   }
 });
 
-const patternGenerationSchema = z.object({
-  instrument: z.string().min(1),
-  genre: z.string().min(1),
-  style: z.string().optional().default("melodic"),
-  key: z.string().min(1).max(2).default("C"),
-  scale: z.string().min(1).default("minor"),
-  tempo: z.number().min(20).max(300).default(120),
-  bars: z.number().min(1).max(64).default(4),
-  complexity: z.number().min(0).max(1).default(0.5),
-  swing: z.number().min(0).max(1).default(0),
-  humanize: z.number().min(0).max(1).default(0.2),
+const _patternGenerationSchema = z?.object({
+  instrument: z?.string().min(1),
+  genre: z?.string().min(1),
+  style: z?.string().optional().default("melodic"),
+  key: z?.string().min(1).max(2).default("C"),
+  scale: z?.string().min(1).default("minor"),
+  tempo: z?.number().min(20).max(300).default(120),
+  bars: z?.number().min(1).max(64).default(4),
+  complexity: z?.number().min(0).max(1).default(0.5),
+  swing: z?.number().min(0).max(1).default(0),
+  humanize: z?.number().min(0).max(1).default(0.2),
 });
 
-router.get("/pattern/instruments", requireAuth, async (_req, res) => {
+router?.get("/pattern/instruments", requireAuth, async (_req, res) => {
   try {
-    const instruments = melodyPatternService.getAvailableInstruments();
-    res.json(instruments);
+    const _instruments = melodyPatternService?.getAvailableInstruments();
+    res?.json(instruments);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching instruments:");
-    res.status(500).json({ error: "Failed to fetch instruments" });
+    logger?.warn({ err: error }, "Error fetching instruments:");
+    res?.status(500).json({ error: "Failed to fetch instruments" });
   }
 });
 
-router.get("/pattern/genres", requireAuth, async (_req, res) => {
+router?.get("/pattern/genres", requireAuth, async (_req, res) => {
   try {
-    const genres = melodyPatternService.getAvailableGenres();
-    res.json(genres);
+    const _genres = melodyPatternService?.getAvailableGenres();
+    res?.json(genres);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching genres:");
-    res.status(500).json({ error: "Failed to fetch genres" });
+    logger?.warn({ err: error }, "Error fetching genres:");
+    res?.status(500).json({ error: "Failed to fetch genres" });
   }
 });
 
-router.get("/pattern/styles", requireAuth, async (_req, res) => {
+router?.get("/pattern/styles", requireAuth, async (_req, res) => {
   try {
-    const styles = melodyPatternService.getAvailableStyles();
-    res.json(styles);
+    const _styles = melodyPatternService?.getAvailableStyles();
+    res?.json(styles);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching styles:");
-    res.status(500).json({ error: "Failed to fetch styles" });
+    logger?.warn({ err: error }, "Error fetching styles:");
+    res?.status(500).json({ error: "Failed to fetch styles" });
   }
 });
 
-router.get("/pattern/scales", requireAuth, async (_req, res) => {
+router?.get("/pattern/scales", requireAuth, async (_req, res) => {
   try {
-    const scales = melodyPatternService.getAvailableScales();
-    res.json(scales);
+    const _scales = melodyPatternService?.getAvailableScales();
+    res?.json(scales);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching scales:");
-    res.status(500).json({ error: "Failed to fetch scales" });
+    logger?.warn({ err: error }, "Error fetching scales:");
+    res?.status(500).json({ error: "Failed to fetch scales" });
   }
 });
 
-router.get("/pattern/stats", requireAuth, async (_req, res) => {
+router?.get("/pattern/stats", requireAuth, async (_req, res) => {
   try {
-    const stats = melodyPatternService.getPatternCount();
-    const instruments = melodyPatternService.getAvailableInstruments();
-    const genres = melodyPatternService.getAvailableGenres();
+    const _stats = melodyPatternService?.getPatternCount();
+    const _instruments = melodyPatternService?.getAvailableInstruments();
+    const _genres = melodyPatternService?.getAvailableGenres();
 
-    res.json({
+    res?.json({
       ...stats,
-      totalPatterns: stats.melody + stats.drums,
+      totalPatterns: stats?.melody + stats?.drums,
       instruments: {
-        melodic: instruments.melodic.length,
-        drums: instruments.drums.length,
-        percussion: instruments.percussion.length,
+        melodic: instruments?.melodic.length,
+        drums: instruments?.drums.length,
+        percussion: instruments?.percussion.length,
         total:
-          instruments.melodic.length +
-          instruments.drums.length +
-          instruments.percussion.length,
+          instruments?.melodic.length +
+          instruments?.drums.length +
+          instruments?.percussion.length,
       },
-      genres: Object.entries(genres).reduce(
+      genres: Object?.entries(genres).reduce(
         (acc, [key, data]) => {
-          acc[key] = data.genres.length;
+          acc[key] = data?.genres.length;
           return acc;
         },
         {} as Record<string, number>,
       ),
-      totalGenres: Object.values(genres).reduce(
-        (sum, data) => sum + data.genres.length,
+      totalGenres: Object?.values(genres).reduce(
+        (sum, data) => sum + data?.genres.length,
         0,
       ),
-      styles: melodyPatternService.getAvailableStyles().length,
-      scales: melodyPatternService.getAvailableScales().length,
+      styles: melodyPatternService?.getAvailableStyles().length,
+      scales: melodyPatternService?.getAvailableScales().length,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching stats:");
-    res.status(500).json({ error: "Failed to fetch stats" });
+    logger?.warn({ err: error }, "Error fetching stats:");
+    res?.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
-router.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => {
+router?.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validation = patternGenerationSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.message });
+    const _validation = patternGenerationSchema?.safeParse(req?.body);
+    if (!validation?.success) {
+      return res?.status(400).json({ error: validation?.error.message });
     }
 
-    const params: GenerationParams = validation.data;
-    const pattern = melodyPatternService.generateMelody(params);
+    const params: GenerationParams = validation?.data;
+    const _pattern = melodyPatternService?.generateMelody(params);
 
-    logger.info(
-      `[Generation] Generated melody: ${params.instrument} in ${params.genre} style`,
+    logger?.info(
+      `[Generation] Generated melody: ${params?.instrument} in ${params?.genre} style`,
     );
 
-    res.json({
+    res?.json({
       success: true,
       pattern,
       params,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error generating melody:");
-    res.status(500).json({ error: "Failed to generate melody" });
+    logger?.warn({ err: error }, "Error generating melody:");
+    res?.status(500).json({ error: "Failed to generate melody" });
   }
 });
 
-router.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
+router?.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validation = patternGenerationSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.message });
+    const _validation = patternGenerationSchema?.safeParse(req?.body);
+    if (!validation?.success) {
+      return res?.status(400).json({ error: validation?.error.message });
     }
 
-    const params: GenerationParams = validation.data;
-    const pattern = melodyPatternService.generateDrums(params);
+    const params: GenerationParams = validation?.data;
+    const _pattern = melodyPatternService?.generateDrums(params);
 
-    logger.info(
-      `[Generation] Generated drums: ${params.instrument} in ${params.genre} style`,
+    logger?.info(
+      `[Generation] Generated drums: ${params?.instrument} in ${params?.genre} style`,
     );
 
-    res.json({
+    res?.json({
       success: true,
       pattern,
       params,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error generating drums:");
-    res.status(500).json({ error: "Failed to generate drums" });
+    logger?.warn({ err: error }, "Error generating drums:");
+    res?.status(500).json({ error: "Failed to generate drums" });
   }
 });
 
-router.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => {
+router?.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validation = patternGenerationSchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({ error: validation.error.message });
+    const _validation = patternGenerationSchema?.safeParse(req?.body);
+    if (!validation?.success) {
+      return res?.status(400).json({ error: validation?.error.message });
     }
 
-    const params: GenerationParams = validation.data;
-    const progression = melodyPatternService.generateChordProgression(params);
+    const params: GenerationParams = validation?.data;
+    const _progression = melodyPatternService?.generateChordProgression(params);
 
-    logger.info(
-      `[Generation] Generated chords: ${params.key} ${params.scale} in ${params.genre} style`,
+    logger?.info(
+      `[Generation] Generated chords: ${params?.key} ${params?.scale} in ${params?.genre} style`,
     );
 
-    res.json({
+    res?.json({
       success: true,
       progression,
       params,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error generating chords:");
-    res.status(500).json({ error: "Failed to generate chords" });
+    logger?.warn({ err: error }, "Error generating chords:");
+    res?.status(500).json({ error: "Failed to generate chords" });
   }
 });
 
-router.post(
+router?.post(
   "/pattern/arrangement",
   requireAuth,
   aiRateLimiter,
   async (req, res) => {
     try {
-      const validation = patternGenerationSchema.safeParse(req.body);
-      if (!validation.success) {
-        return res.status(400).json({ error: validation.error.message });
+      const _validation = patternGenerationSchema?.safeParse(req?.body);
+      if (!validation?.success) {
+        return res?.status(400).json({ error: validation?.error.message });
       }
 
-      const params: GenerationParams = validation.data;
+      const params: GenerationParams = validation?.data;
 
-      const melody = melodyPatternService.generateMelody({
+      const _melody = melodyPatternService?.generateMelody({
         ...params,
         instrument: "synth_lead",
       });
-      const bass = melodyPatternService.generateMelody({
+      const _bass = melodyPatternService?.generateMelody({
         ...params,
         instrument: "bass_synth",
       });
-      const pad = melodyPatternService.generateMelody({
+      const _pad = melodyPatternService?.generateMelody({
         ...params,
         instrument: "synth_pad",
       });
-      const drums = melodyPatternService.generateDrums({
+      const _drums = melodyPatternService?.generateDrums({
         ...params,
         instrument: "trap_kit",
       });
-      const chords = melodyPatternService.generateChordProgression(params);
+      const _chords = melodyPatternService?.generateChordProgression(params);
 
-      logger.info(
-        `[Generation] Generated full arrangement in ${params.genre} style`,
+      logger?.info(
+        `[Generation] Generated full arrangement in ${params?.genre} style`,
       );
 
-      res.json({
+      res?.json({
         success: true,
         arrangement: {
           melody,
@@ -601,59 +601,61 @@ router.post(
         params,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error generating full arrangement:");
-      res.status(500).json({ error: "Failed to generate arrangement" });
+      logger?.warn({ err: error }, "Error generating full arrangement:");
+      res?.status(500).json({ error: "Failed to generate arrangement" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/audio-to-melody",
   requireAuth,
   aiRateLimiter,
-  upload.single("audio"),
+  upload?.single("audio"),
   async (req, res) => {
-    const file = req.file;
+    const _file = req?.file;
     if (!file) {
-      return res.status(400).json({ error: "No audio file provided" });
+      return res?.status(400).json({ error: "No audio file provided" });
     }
 
-    const rawExt = (file.originalname.split(".").pop() || "wav")
+    const _rawExt = (file?.originalname.split(".").pop() || "wav")
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");
-    const ext = rawExt || "wav";
-    const tmpPath = path.join(os.tmpdir(), `pitch_${Date.now()}.${ext}`);
+    const _ext = rawExt || "wav";
+    const _tmpPath = path?.join(os?.tmpdir(), `pitch_${Date?.now()}.${ext}`);
 
     try {
-      await fsPromises.writeFile(tmpPath, file.buffer);
+      await fsPromises?.writeFile(tmpPath, file?.buffer);
 
       let stdout = "";
       let stderr = "";
       try {
-        const out = await execFileAsync(
+        const _out = await execFileAsync(
           "python3",
           ["server/services/audioAnalyzer.py", tmpPath, "pitch_track"],
           { timeout: 45_000 },
         );
-        stdout = out.stdout;
-        stderr = out.stderr;
+        stdout = out?.stdout;
+        stderr = out?.stderr;
       } catch (execErr: Record<string, unknown>) {
-        const msg =
+        const _msg =
           execErr?.stderr?.trim() ||
           execErr?.message ||
           "Pitch tracking process failed";
-        logger.warn("[audio-to-melody] execFile error:", msg);
-        return res.status(500).json({
-          error:
-            "Pitch tracking failed. Make sure the audio contains a clear melody.",
-        });
+        logger?.warn("[audio-to-melody] execFile error:", msg);
+        return res
+          .status(500)
+          .json({
+            error:
+              "Pitch tracking failed. Make sure the audio contains a clear melody.",
+          });
       }
 
       let result: Record<string, unknown>;
       try {
-        result = JSON.parse(stdout.trim());
+        result = JSON?.parse(stdout?.trim());
       } catch {
-        logger.warn(
+        logger?.warn(
           "[audio-to-melody] Invalid JSON from pitch tracker. stderr:",
           stderr,
         );
@@ -662,11 +664,11 @@ router.post(
           .json({ error: "Pitch tracker returned unexpected output." });
       }
 
-      if (result.error) {
-        return res.status(422).json({ error: result.error });
+      if (result?.error) {
+        return res?.status(422).json({ error: result?.error });
       }
 
-      const NOTES = [
+      const _NOTES = [
         "C",
         "C#",
         "D",
@@ -680,28 +682,28 @@ router.post(
         "A#",
         "B",
       ];
-      const melodyNotes = (result.notes as Record<string, unknown>[]).map(
+      const _melodyNotes = (result?.notes as Record<string, unknown>[]).map(
         (n: Record<string, unknown>) => ({
-          pitch: n.midi,
-          noteName: NOTES[n.midi % 12] + n.octave,
-          duration: n.duration_beats,
+          pitch: n?.midi,
+          noteName: NOTES[n?.midi % 12] + n?.octave,
+          duration: n?.duration_beats,
           syllable: "",
-          stress: n.position_beats % 1 < 0.1,
+          stress: n?.position_beats % 1 < 0.1,
         }),
       );
 
-      res.json({
+      res?.json({
         success: true,
         notes: melodyNotes,
-        detected_key: result.detected_key,
-        bpm: result.bpm,
-        note_count: result.note_count,
+        detected_key: result?.detected_key,
+        bpm: result?.bpm,
+        note_count: result?.note_count,
       });
     } catch (err) {
-      logger.warn({ err: err }, "[audio-to-melody] Error:");
-      res.status(500).json({ error: "Pitch tracking failed" });
+      logger?.warn({ err: err }, "[audio-to-melody] Error:");
+      res?.status(500).json({ error: "Pitch tracking failed" });
     } finally {
-      fsPromises.unlink(tmpPath).catch(() => {
+      fsPromises?.unlink(tmpPath).catch(() => {
         /* intentional: temp-file cleanup */
       });
     }

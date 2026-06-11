@@ -15,110 +15,110 @@ function generateContentHash(buffer: Buffer): string {
     .substring(0, 16);
 }
 
-const router = Router();
+const _router = Router();
 
 // File-upload endpoints require authentication — prevents unauthenticated CPU abuse.
 // Static info routes (loudness-targets, supported-formats) remain public.
 
-router.post(
+router?.post(
   "/analyze-metadata",
   requireAuth,
-  audioUpload.single("audio"),
+  audioUpload?.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No audio file provided" });
+      if (!req?.file) {
+        return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const metadata = await audioMetadataService.extractMetadata(
-        req.file.buffer,
-        req.file.mimetype,
+      const _metadata = await audioMetadataService?.extractMetadata(
+        req?.file.buffer,
+        req?.file.mimetype,
       );
 
-      const formatInfo = audioMetadataService.analyzeFormat(metadata);
-      const distributionCheck =
-        audioMetadataService.isDistributionReady(metadata);
-      const recommendations =
-        audioMetadataService.getFormatRecommendations(metadata);
+      const _formatInfo = audioMetadataService?.analyzeFormat(metadata);
+      const _distributionCheck =
+        audioMetadataService?.isDistributionReady(metadata);
+      const _recommendations =
+        audioMetadataService?.getFormatRecommendations(metadata);
 
       const { coverArt, ...metadataWithoutCoverArt } = metadata;
 
-      res.json({
+      res?.json({
         success: true,
         metadata: metadataWithoutCoverArt,
         formatInfo,
-        distributionReady: distributionCheck.ready,
-        distributionIssues: distributionCheck.issues,
+        distributionReady: distributionCheck?.ready,
+        distributionIssues: distributionCheck?.issues,
         recommendations,
-        hasCoverArt: metadata.hasCoverArt,
+        hasCoverArt: metadata?.hasCoverArt,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error analyzing audio metadata:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Error analyzing audio metadata:");
+      res?.status(500).json({
         error: "Failed to analyze audio metadata",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error?.message : "Unknown error",
       });
     }
   },
 );
 
-router.post(
+router?.post(
   "/analyze-loudness",
   requireAuth,
-  audioUpload.single("audio"),
+  audioUpload?.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No audio file provided" });
+      if (!req?.file) {
+        return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const metadata = await audioMetadataService.extractMetadata(
-        req.file.buffer,
-        req.file.mimetype,
+      const _metadata = await audioMetadataService?.extractMetadata(
+        req?.file.buffer,
+        req?.file.mimetype,
       );
 
-      const targetPlatform = (req.body.platform as string) || "spotify";
-      const targetLufs =
-        LOUDNESS_TARGETS.STREAMING[
-          targetPlatform as keyof typeof LOUDNESS_TARGETS.STREAMING
+      const _targetPlatform = (req?.body.platform as string) || "spotify";
+      const _targetLufs =
+        LOUDNESS_TARGETS?.STREAMING[
+          targetPlatform as keyof typeof LOUDNESS_TARGETS?.STREAMING
         ] || -14;
 
-      const bitrateKbps = metadata.bitrate ? metadata.bitrate / 1000 : 128;
-      const channels = metadata.channels || 2;
-      const sampleRate = metadata.sampleRate || 44100;
+      const _bitrateKbps = metadata?.bitrate ? metadata?.bitrate / 1000 : 128;
+      const _channels = metadata?.channels || 2;
+      const _sampleRate = metadata?.sampleRate || 44100;
 
       let estimatedLufs: number;
-      if (metadata.lossless) {
+      if (metadata?.lossless) {
         estimatedLufs =
           -14 + (sampleRate > 48000 ? -1.0 : 0) + (channels > 2 ? -0.5 : 0);
       } else {
-        const compressionPenalty =
+        const _compressionPenalty =
           bitrateKbps < 192 ? 2.0 : bitrateKbps < 256 ? 1.0 : 0.5;
         estimatedLufs = -12 + compressionPenalty + (channels > 2 ? -0.5 : 0);
       }
 
-      const gainNeeded = targetLufs - estimatedLufs;
-      const estimatedTruePeak = metadata.lossless ? -1.5 : -0.5;
+      const _gainNeeded = targetLufs - estimatedLufs;
+      const _estimatedTruePeak = metadata?.lossless ? -1.5 : -0.5;
 
-      res.json({
+      res?.json({
         success: true,
         analysis: {
-          estimatedIntegratedLoudness: Math.round(estimatedLufs * 10) / 10,
+          estimatedIntegratedLoudness: Math?.round(estimatedLufs * 10) / 10,
           targetLoudness: targetLufs,
-          gainAdjustmentNeeded: Math.round(gainNeeded * 10) / 10,
+          gainAdjustmentNeeded: Math?.round(gainNeeded * 10) / 10,
           estimatedTruePeak: estimatedTruePeak,
-          meetsTarget: Math.abs(estimatedLufs - targetLufs) <= 1,
+          meetsTarget: Math?.abs(estimatedLufs - targetLufs) <= 1,
           note: "Estimated values based on format analysis. For precise LUFS measurement, use the AI Studio with decoded PCM audio.",
         },
         metadata: {
-          format: metadata.codec,
-          sampleRate: metadata.sampleRate,
-          channels: metadata.channels,
-          duration: metadata.duration,
-          bitrate: metadata.bitrate,
-          lossless: metadata.lossless,
+          format: metadata?.codec,
+          sampleRate: metadata?.sampleRate,
+          channels: metadata?.channels,
+          duration: metadata?.duration,
+          bitrate: metadata?.bitrate,
+          lossless: metadata?.lossless,
         },
-        platformTargets: LOUDNESS_TARGETS.STREAMING,
+        platformTargets: LOUDNESS_TARGETS?.STREAMING,
         recommendations: {
           spotify:
             estimatedLufs > -14
@@ -139,96 +139,96 @@ router.post(
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error analyzing loudness:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Error analyzing loudness:");
+      res?.status(500).json({
         error: "Failed to analyze loudness",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error?.message : "Unknown error",
       });
     }
   },
 );
 
-router.post(
+router?.post(
   "/generate-waveform",
   requireAuth,
-  audioUpload.single("audio"),
+  audioUpload?.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No audio file provided" });
+      if (!req?.file) {
+        return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const resolution = parseInt(req.body.resolution as string) || 800;
-      const clampedResolution = Math.min(2000, Math.max(100, resolution));
+      const _resolution = parseInt(req?.body.resolution as string) || 800;
+      const _clampedResolution = Math?.min(2000, Math?.max(100, resolution));
 
-      const contentHash = generateContentHash(req.file.buffer);
-      const cacheKey = `audio:${contentHash}`;
+      const _contentHash = generateContentHash(req?.file.buffer);
+      const _cacheKey = `audio:${contentHash}`;
 
-      const metadata = await audioMetadataService.extractMetadata(
-        req.file.buffer,
-        req.file.mimetype,
+      const _metadata = await audioMetadataService?.extractMetadata(
+        req?.file.buffer,
+        req?.file.mimetype,
       );
-      const isWav =
-        metadata.container === "WAVE" || req.file.mimetype === "audio/wav";
+      const _isWav =
+        metadata?.container === "WAVE" || req?.file.mimetype === "audio/wav";
 
       if (!isWav) {
-        return res.json({
+        return res?.json({
           success: true,
           waveform: null,
           message:
             "Waveform generation for non-WAV formats requires client-side decoding via Web Audio API. Use the generateWaveformFromPCM method with decoded audio data.",
           metadata: {
-            format: metadata.codec,
-            duration: metadata.duration,
-            sampleRate: metadata.sampleRate,
-            channels: metadata.channels,
+            format: metadata?.codec,
+            duration: metadata?.duration,
+            sampleRate: metadata?.sampleRate,
+            channels: metadata?.channels,
           },
           recommendation:
             "For accurate waveforms, upload WAV files or use client-side decoding.",
         });
       }
 
-      const waveformData = await waveformCacheService.getWaveform(
+      const _waveformData = await waveformCacheService?.getWaveform(
         cacheKey,
-        req.file.buffer,
+        req?.file.buffer,
         clampedResolution,
       );
 
-      res.json({
+      res?.json({
         success: true,
         waveform: waveformData,
         cached: false,
         contentHash,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error generating waveform:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Error generating waveform:");
+      res?.status(500).json({
         error: "Failed to generate waveform",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error?.message : "Unknown error",
       });
     }
   },
 );
 
-router.post(
+router?.post(
   "/validate-distribution",
   requireAuth,
-  audioUpload.single("audio"),
+  audioUpload?.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No audio file provided" });
+      if (!req?.file) {
+        return res?.status(400).json({ error: "No audio file provided" });
       }
 
-      const platforms = (req.body.platforms as string)?.split(",") || [
+      const _platforms = (req?.body.platforms as string)?.split(",") || [
         "spotify",
         "appleMusic",
         "youtube",
       ];
 
-      const metadata = await audioMetadataService.extractMetadata(
-        req.file.buffer,
-        req.file.mimetype,
+      const _metadata = await audioMetadataService?.extractMetadata(
+        req?.file.buffer,
+        req?.file.mimetype,
       );
 
       const platformValidation: Record<
@@ -236,52 +236,52 @@ router.post(
         { valid: boolean; issues: string[] }
       > = {};
       for (const platform of platforms) {
-        platformValidation[platform] = audioMetadataService.validateForPlatform(
+        platformValidation[platform] = audioMetadataService?.validateForPlatform(
           metadata,
           platform,
         );
       }
 
-      const generalCheck = audioMetadataService.isDistributionReady(metadata);
-      const formatInfo = audioMetadataService.analyzeFormat(metadata);
-      const recommendations =
-        audioMetadataService.getFormatRecommendations(metadata);
+      const _generalCheck = audioMetadataService?.isDistributionReady(metadata);
+      const _formatInfo = audioMetadataService?.analyzeFormat(metadata);
+      const _recommendations =
+        audioMetadataService?.getFormatRecommendations(metadata);
 
-      res.json({
+      res?.json({
         success: true,
         overallReady:
-          generalCheck.ready &&
-          Object.values(platformValidation).every((v) => v.valid),
+          generalCheck?.ready &&
+          Object?.values(platformValidation).every((v) => v?.valid),
         generalValidation: generalCheck,
         platformValidation,
         formatInfo,
         recommendations,
         metadata: {
-          title: metadata.title,
-          artist: metadata.artist,
-          album: metadata.album,
-          duration: metadata.duration,
-          format: metadata.codec,
-          sampleRate: metadata.sampleRate,
-          bitDepth: metadata.bitDepth,
-          lossless: metadata.lossless,
-          hasCoverArt: metadata.hasCoverArt,
-          hasISRC: !!metadata.isrc,
+          title: metadata?.title,
+          artist: metadata?.artist,
+          album: metadata?.album,
+          duration: metadata?.duration,
+          format: metadata?.codec,
+          sampleRate: metadata?.sampleRate,
+          bitDepth: metadata?.bitDepth,
+          lossless: metadata?.lossless,
+          hasCoverArt: metadata?.hasCoverArt,
+          hasISRC: !!metadata?.isrc,
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Error validating for distribution:");
-      res.status(500).json({
+      logger?.warn({ err: error }, "Error validating for distribution:");
+      res?.status(500).json({
         error: "Failed to validate audio for distribution",
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error?.message : "Unknown error",
       });
     }
   },
 );
 
 // Static info endpoints — intentionally public (no file upload, no user data)
-router.get("/loudness-targets", (_req: Request, res: Response) => {
-  res.json({
+router?.get("/loudness-targets", (_req: Request, res: Response) => {
+  res?.json({
     success: true,
     targets: LOUDNESS_TARGETS,
     description: {
@@ -299,8 +299,8 @@ router.get("/loudness-targets", (_req: Request, res: Response) => {
   });
 });
 
-router.get("/supported-formats", (_req: Request, res: Response) => {
-  res.json({
+router?.get("/supported-formats", (_req: Request, res: Response) => {
+  res?.json({
     success: true,
     formats: {
       lossless: {

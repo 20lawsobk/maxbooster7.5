@@ -538,7 +538,7 @@ class TimingOptimizerService {
   };
 
   constructor() {
-    logger.info("✅ Timing Optimizer service initialized");
+    logger?.info("✅ Timing Optimizer service initialized");
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
@@ -550,28 +550,28 @@ class TimingOptimizerService {
   // if the Intl API cannot parse the timezone.
   private getDynamicTimezoneOffset(timezone: string): number {
     try {
-      const now = new Date();
+      const _now = new Date();
       // Use Intl to format in the target timezone, extracting the GMT offset
-      const formatter = new Intl.DateTimeFormat("en-US", {
+      const _formatter = new Intl.DateTimeFormat("en-US", {
         timeZone: timezone,
         hour: "numeric",
         hour12: false,
         timeZoneName: "shortOffset",
       });
-      const parts = formatter.formatToParts(now);
-      const tzPart = parts.find((p) => p.type === "timeZoneName")?.value ?? "";
+      const _parts = formatter?.formatToParts(now);
+      const _tzPart = parts?.find((p) => p?.type === "timeZoneName")?.value ?? "";
       // tzPart examples: "GMT+5:30", "GMT-4", "GMT+0"
-      const match = tzPart.match(/GMT([+-])(\d+)(?::(\d+))?/);
+      const _match = tzPart?.match(/GMT([+-])(\d+)(?::(\d+))?/);
       if (match) {
-        const sign = match[1] === "+" ? 1 : -1;
-        const hours = parseInt(match[2], 10);
-        const minutes = parseInt(match[3] ?? "0", 10);
+        const _sign = match[1] === "+" ? 1 : -1;
+        const _hours = parseInt(match[2], 10);
+        const _minutes = parseInt(match[3] ?? "0", 10);
         return sign * (hours + minutes / 60);
       }
     } catch {
       // Fallback to static table for any timezone not recognized by Intl
     }
-    return this.timezoneOffsets[timezone] ?? 0;
+    return this?.timezoneOffsets[timezone] ?? 0;
   }
 
   async getOptimalTiming(
@@ -579,20 +579,20 @@ class TimingOptimizerService {
     timezone: string = "America/New_York",
     _userId?: string,
   ): Promise<OptimalTiming> {
-    const cacheKey = `${this.CACHE_PREFIX}optimal:${platform}:${timezone}`;
+    const _cacheKey = `${this?.CACHE_PREFIX}optimal:${platform}:${timezone}`;
 
-    const redis = await this.getRedis();
+    const _redis = await this?.getRedis();
     if (redis) {
       try {
-        const cached = await redis.get(cacheKey);
-        if (cached) return JSON.parse(cached);
+        const _cached = await redis?.get(cacheKey);
+        if (cached) return JSON?.parse(cached);
       } catch {
         /* intentional: Redis cache miss → falls through to live calculation */
       }
     }
 
-    const bestTimes = this.calculateBestTimes(platform, timezone);
-    const nextOptimalSlot = this.findNextOptimalSlot(bestTimes, timezone);
+    const _bestTimes = this?.calculateBestTimes(platform, timezone);
+    const _nextOptimalSlot = this?.findNextOptimalSlot(bestTimes, timezone);
 
     const result: OptimalTiming = {
       platform,
@@ -603,13 +603,13 @@ class TimingOptimizerService {
 
     if (redis) {
       try {
-        await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
+        await redis?.setEx(cacheKey, this?.REDIS_TTL, JSON?.stringify(result));
       } catch {
         /* intentional: best-effort Redis cache write */
       }
     }
 
-    logger.info(`🕐 Optimal timing calculated for ${platform} in ${timezone}`);
+    logger?.info(`🕐 Optimal timing calculated for ${platform} in ${timezone}`);
     return result;
   }
 
@@ -617,46 +617,46 @@ class TimingOptimizerService {
     platform: string,
     timezone: string,
   ): OptimalTiming["bestTimes"] {
-    const platformData =
-      this.platformEngagement[platform] || this.platformEngagement.instagram;
-    const tzOffset = this.getDynamicTimezoneOffset(timezone);
+    const _platformData =
+      this?.platformEngagement[platform] || this?.platformEngagement.instagram;
+    const _tzOffset = this?.getDynamicTimezoneOffset(timezone);
     const bestTimes: OptimalTiming["bestTimes"] = [];
 
     for (let day = 0; day < 7; day++) {
       for (let hour = 0; hour < 24; hour++) {
         // Adjust for timezone: content posted at local `hour` = UTC `hour - tzOffset`
-        const utcHour = (((hour - tzOffset) % 24) + 24) % 24;
-        const hourMultiplier =
-          platformData.hourlyMultipliers[Math.round(utcHour)] ?? 1.0;
-        const dayMultiplier = platformData.dayMultipliers[day] ?? 1.0;
+        const _utcHour = (((hour - tzOffset) % 24) + 24) % 24;
+        const _hourMultiplier =
+          platformData?.hourlyMultipliers[Math?.round(utcHour)] ?? 1.0;
+        const _dayMultiplier = platformData?.dayMultipliers[day] ?? 1.0;
 
         // Base score from multipliers
-        const baseScore = hourMultiplier * dayMultiplier * 52;
+        const _baseScore = hourMultiplier * dayMultiplier * 52;
 
         // Optimal window bonus — fine-tuned per platform
-        const windowMatch = platformData.optimalWindows.find(
-          (w) => w.day === day && hour >= w.startHour && hour <= w.endHour,
+        const _windowMatch = platformData?.optimalWindows.find(
+          (w) => w?.day === day && hour >= w?.startHour && hour <= w?.endHour,
         );
-        const windowBonus = windowMatch ? (windowMatch.score - 70) * 0.5 : 0;
+        const _windowBonus = windowMatch ? (windowMatch?.score - 70) * 0.5 : 0;
 
         // Competition penalty — smarter than flat penalty
-        const competitionPenalty = this.estimateCompetition(
+        const _competitionPenalty = this?.estimateCompetition(
           day,
           hour,
           platform,
         );
-        const competitionScore = baseScore - competitionPenalty * 3.5;
+        const _competitionScore = baseScore - competitionPenalty * 3.5;
 
-        const finalScore = Math.min(
+        const _finalScore = Math?.min(
           100,
-          Math.max(0, Math.round(competitionScore + windowBonus)),
+          Math?.max(0, Math?.round(competitionScore + windowBonus)),
         );
-        const audienceActive = Math.min(
+        const _audienceActive = Math?.min(
           100,
-          Math.round(hourMultiplier * dayMultiplier * 85),
+          Math?.round(hourMultiplier * dayMultiplier * 85),
         );
 
-        bestTimes.push({
+        bestTimes?.push({
           dayOfWeek: day,
           hour,
           score: finalScore,
@@ -667,7 +667,7 @@ class TimingOptimizerService {
     }
 
     // Return top 21 slots (3 per day) sorted by score
-    return bestTimes.sort((a, b) => b.score - a.score).slice(0, 21);
+    return bestTimes?.sort((a, b) => b?.score - a?.score).slice(0, 21);
   }
 
   private estimateCompetition(
@@ -676,16 +676,16 @@ class TimingOptimizerService {
     platform: string,
   ): number {
     // Peak posting hours — when everyone else is posting too
-    const highCompetitionHours = [9, 10, 11, 12, 13, 18, 19, 20];
-    const mediumCompetitionHours = [8, 14, 15, 16, 17, 21];
-    const highCompetitionDays = [2, 3, 4]; // Tue-Thu
+    const _highCompetitionHours = [9, 10, 11, 12, 13, 18, 19, 20];
+    const _mediumCompetitionHours = [8, 14, 15, 16, 17, 21];
+    const _highCompetitionDays = [2, 3, 4]; // Tue-Thu
 
     let competition = 2; // Baseline
 
-    if (highCompetitionHours.includes(hour)) competition += 5;
-    else if (mediumCompetitionHours.includes(hour)) competition += 3;
+    if (highCompetitionHours?.includes(hour)) competition += 5;
+    else if (mediumCompetitionHours?.includes(hour)) competition += 3;
 
-    if (highCompetitionDays.includes(day)) competition += 2;
+    if (highCompetitionDays?.includes(day)) competition += 2;
 
     // Platform-specific competition patterns
     if (platform === "linkedin" && (day === 0 || day === 6)) competition = 1;
@@ -700,42 +700,42 @@ class TimingOptimizerService {
       competition += 2;
 
     // Cap at 10
-    return Math.min(10, competition);
+    return Math?.min(10, competition);
   }
 
   private findNextOptimalSlot(
     bestTimes: OptimalTiming["bestTimes"],
     timezone: string,
   ): Date {
-    const now = new Date();
-    const tzOffsetHours = this.getDynamicTimezoneOffset(timezone);
-    const tzOffsetMs = tzOffsetHours * 60 * 60 * 1000;
+    const _now = new Date();
+    const _tzOffsetHours = this?.getDynamicTimezoneOffset(timezone);
+    const _tzOffsetMs = tzOffsetHours * 60 * 60 * 1000;
 
-    const localNow = new Date(now.getTime() + tzOffsetMs);
-    const currentDay = localNow.getUTCDay();
-    const currentHour = localNow.getUTCHours();
+    const _localNow = new Date(now?.getTime() + tzOffsetMs);
+    const _currentDay = localNow?.getUTCDay();
+    const _currentHour = localNow?.getUTCHours();
 
-    const sortedByScore = [...bestTimes].sort((a, b) => b.score - a.score);
+    const _sortedByScore = [...bestTimes].sort((a, b) => b?.score - a?.score);
 
     for (const slot of sortedByScore) {
-      let daysUntil = slot.dayOfWeek - currentDay;
-      if (daysUntil < 0 || (daysUntil === 0 && slot.hour <= currentHour + 1)) {
+      let daysUntil = slot?.dayOfWeek - currentDay;
+      if (daysUntil < 0 || (daysUntil === 0 && slot?.hour <= currentHour + 1)) {
         daysUntil += 7;
       }
 
-      const nextSlot = new Date(localNow);
-      nextSlot.setUTCDate(nextSlot.getUTCDate() + daysUntil);
-      nextSlot.setUTCHours(slot.hour, 0, 0, 0);
+      const _nextSlot = new Date(localNow);
+      nextSlot?.setUTCDate(nextSlot?.getUTCDate() + daysUntil);
+      nextSlot?.setUTCHours(slot?.hour, 0, 0, 0);
 
       // Convert back to UTC
-      const utcSlot = new Date(nextSlot.getTime() - tzOffsetMs);
+      const _utcSlot = new Date(nextSlot?.getTime() - tzOffsetMs);
 
       if (utcSlot > now) return utcSlot;
     }
 
     // Fallback: next hour
-    const nextSlot = new Date(now);
-    nextSlot.setHours(nextSlot.getHours() + 1, 0, 0, 0);
+    const _nextSlot = new Date(now);
+    nextSlot?.setHours(nextSlot?.getHours() + 1, 0, 0, 0);
     return nextSlot;
   }
 
@@ -750,26 +750,26 @@ class TimingOptimizerService {
     for (let h = 0; h < 24; h++) engagementByHour[h] = [];
     for (let d = 0; d < 7; d++) engagementByDay[d] = [];
 
-    if (historicalData && historicalData.length >= 5) {
+    if (historicalData && historicalData?.length >= 5) {
       for (const post of historicalData) {
-        const hour = new Date(post.postedAt).getHours();
-        const day = new Date(post.postedAt).getDay();
-        engagementByHour[hour].push(post.engagement);
-        engagementByDay[day].push(post.engagement);
+        const _hour = new Date(post?.postedAt).getHours();
+        const _day = new Date(post?.postedAt).getDay();
+        engagementByHour[hour].push(post?.engagement);
+        engagementByDay[day].push(post?.engagement);
       }
     } else {
       // Fall back to platform defaults with added noise for realism
-      const platformData =
-        this.platformEngagement[platform] || this.platformEngagement.instagram;
+      const _platformData =
+        this?.platformEngagement[platform] || this?.platformEngagement.instagram;
       for (let h = 0; h < 24; h++) {
-        const jitter = 0.9 + Math.random() * 0.2; // ±10% noise
+        const _jitter = 0.9 + Math?.random() * 0.2; // ±10% noise
         engagementByHour[h] = [
-          platformData.hourlyMultipliers[h] * 100 * jitter,
+          platformData?.hourlyMultipliers[h] * 100 * jitter,
         ];
       }
       for (let d = 0; d < 7; d++) {
-        const jitter = 0.9 + Math.random() * 0.2;
-        engagementByDay[d] = [platformData.dayMultipliers[d] * 100 * jitter];
+        const _jitter = 0.9 + Math?.random() * 0.2;
+        engagementByDay[d] = [platformData?.dayMultipliers[d] * 100 * jitter];
       }
     }
 
@@ -777,27 +777,27 @@ class TimingOptimizerService {
     const avgEngagementByDay: Record<number, number> = {};
 
     for (let h = 0; h < 24; h++) {
-      const values = engagementByHour[h];
+      const _values = engagementByHour[h];
       avgEngagementByHour[h] =
-        values.length > 0
-          ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
+        values?.length > 0
+          ? Math?.round(values?.reduce((a, b) => a + b, 0) / values?.length)
           : 50;
     }
 
     for (let d = 0; d < 7; d++) {
-      const values = engagementByDay[d];
+      const _values = engagementByDay[d];
       avgEngagementByDay[d] =
-        values.length > 0
-          ? Math.round(values.reduce((a, b) => a + b, 0) / values.length)
+        values?.length > 0
+          ? Math?.round(values?.reduce((a, b) => a + b, 0) / values?.length)
           : 50;
     }
 
-    const peakHours = Object.entries(avgEngagementByHour)
+    const _peakHours = Object?.entries(avgEngagementByHour)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .map(([h]) => parseInt(h));
 
-    const peakDays = Object.entries(avgEngagementByDay)
+    const _peakDays = Object?.entries(avgEngagementByDay)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
       .map(([d]) => parseInt(d));
@@ -854,30 +854,30 @@ class TimingOptimizerService {
       },
     };
 
-    const config = saturationMap[platform] || saturationMap.instagram;
+    const _config = saturationMap[platform] || saturationMap?.instagram;
 
-    for (const day of config.days) {
-      for (const hour of config.highHours) {
-        saturatedHours.push({ dayOfWeek: day, hour, level: "high" });
+    for (const day of config?.days) {
+      for (const hour of config?.highHours) {
+        saturatedHours?.push({ dayOfWeek: day, hour, level: "high" });
       }
-      for (const hour of config.medHours) {
-        saturatedHours.push({ dayOfWeek: day, hour, level: "medium" });
+      for (const hour of config?.medHours) {
+        saturatedHours?.push({ dayOfWeek: day, hour, level: "medium" });
       }
     }
 
     // Low-competition opportunity gaps — typically early morning and off-peak weekdays
-    const gapHours = [6, 7, 14, 15, 16, 21, 22];
+    const _gapHours = [6, 7, 14, 15, 16, 21, 22];
     for (let day = 0; day < 7; day++) {
       for (const hour of gapHours) {
-        const platformData =
-          this.platformEngagement[platform] ||
-          this.platformEngagement.instagram;
-        const baseEngagement =
-          (platformData.hourlyMultipliers[hour] || 0.5) *
-          (platformData.dayMultipliers[day] || 1.0);
-        const opportunity = Math.min(95, Math.round(baseEngagement * 65));
+        const _platformData =
+          this?.platformEngagement[platform] ||
+          this?.platformEngagement.instagram;
+        const _baseEngagement =
+          (platformData?.hourlyMultipliers[hour] || 0.5) *
+          (platformData?.dayMultipliers[day] || 1.0);
+        const _opportunity = Math?.min(95, Math?.round(baseEngagement * 65));
 
-        optimalGaps.push({ dayOfWeek: day, hour, opportunity });
+        optimalGaps?.push({ dayOfWeek: day, hour, opportunity });
       }
     }
 
@@ -885,7 +885,7 @@ class TimingOptimizerService {
       platform,
       saturatedHours,
       optimalGaps: optimalGaps
-        .sort((a, b) => b.opportunity - a.opportunity)
+        .sort((a, b) => b?.opportunity - a?.opportunity)
         .slice(0, 15),
     };
   }
@@ -895,23 +895,23 @@ class TimingOptimizerService {
     targetDate: Date,
     timezone: string = "America/New_York",
   ): Promise<TimingRecommendation> {
-    const optimalTiming = await this.getOptimalTiming(platform, timezone);
-    const targetDay = targetDate.getDay();
-    const targetHour = targetDate.getHours();
+    const _optimalTiming = await this?.getOptimalTiming(platform, timezone);
+    const _targetDay = targetDate?.getDay();
+    const _targetHour = targetDate?.getHours();
 
-    const sameDay = optimalTiming.bestTimes.filter(
-      (t) => t.dayOfWeek === targetDay,
+    const _sameDay = optimalTiming?.bestTimes.filter(
+      (t) => t?.dayOfWeek === targetDay,
     );
-    const nearestSlot = sameDay.sort(
-      (a, b) => Math.abs(a.hour - targetHour) - Math.abs(b.hour - targetHour),
+    const _nearestSlot = sameDay?.sort(
+      (a, b) => Math?.abs(a?.hour - targetHour) - Math?.abs(b?.hour - targetHour),
     )[0];
 
     const reasoning: string[] = [];
     let score = 50;
 
     if (nearestSlot) {
-      score = nearestSlot.score;
-      const dayNames = [
+      score = nearestSlot?.score;
+      const _dayNames = [
         "Sunday",
         "Monday",
         "Tuesday",
@@ -920,34 +920,34 @@ class TimingOptimizerService {
         "Friday",
         "Saturday",
       ];
-      reasoning.push(
-        `${dayNames[targetDay]} at ${targetHour}:00 — audience activity ${nearestSlot.audienceActive}% of peak`,
+      reasoning?.push(
+        `${dayNames[targetDay]} at ${targetHour}:00 — audience activity ${nearestSlot?.audienceActive}% of peak`,
       );
-      reasoning.push(`Competition level: ${nearestSlot.competitionLevel}/10`);
+      reasoning?.push(`Competition level: ${nearestSlot?.competitionLevel}/10`);
 
-      if (nearestSlot.score >= 85) {
-        reasoning.push("Excellent timing window — peak engagement expected");
-      } else if (nearestSlot.score >= 70) {
-        reasoning.push("Good timing — above-average engagement expected");
-      } else if (nearestSlot.score >= 55) {
-        reasoning.push(
+      if (nearestSlot?.score >= 85) {
+        reasoning?.push("Excellent timing window — peak engagement expected");
+      } else if (nearestSlot?.score >= 70) {
+        reasoning?.push("Good timing — above-average engagement expected");
+      } else if (nearestSlot?.score >= 55) {
+        reasoning?.push(
           "Acceptable timing — consider alternatives for maximum reach",
         );
       } else {
-        reasoning.push(
+        reasoning?.push(
           "Suboptimal window — strongly recommend rescheduling to a top slot",
         );
       }
     }
 
-    const alternatives = optimalTiming.bestTimes
-      .filter((t) => t.score > score + 5) // Only suggest meaningfully better alternatives
+    const _alternatives = optimalTiming?.bestTimes
+      .filter((t) => t?.score > score + 5) // Only suggest meaningfully better alternatives
       .slice(0, 3)
       .map((t) => {
-        const alt = new Date(targetDate);
-        const dayDiff = t.dayOfWeek - targetDay;
-        alt.setDate(alt.getDate() + (dayDiff >= 0 ? dayDiff : dayDiff + 7));
-        alt.setHours(t.hour, 0, 0, 0);
+        const _alt = new Date(targetDate);
+        const _dayDiff = t?.dayOfWeek - targetDay;
+        alt?.setDate(alt?.getDate() + (dayDiff >= 0 ? dayDiff : dayDiff + 7));
+        alt?.setHours(t?.hour, 0, 0, 0);
         return alt;
       });
 
@@ -964,7 +964,7 @@ class TimingOptimizerService {
   async getOptimalTimingForAllPlatforms(
     timezone: string = "America/New_York",
   ): Promise<Record<string, OptimalTiming>> {
-    const platforms = [
+    const _platforms = [
       "tiktok",
       "instagram",
       "youtube",
@@ -977,9 +977,9 @@ class TimingOptimizerService {
     ];
     const results: Record<string, OptimalTiming> = {};
 
-    await Promise.all(
-      platforms.map(async (platform) => {
-        results[platform] = await this.getOptimalTiming(platform, timezone);
+    await Promise?.all(
+      platforms?.map(async (platform) => {
+        results[platform] = await this?.getOptimalTiming(platform, timezone);
       }),
     );
 
@@ -996,40 +996,40 @@ class TimingOptimizerService {
       scheduledTime: Date;
       score: number;
     }> = [];
-    const now = new Date();
-    const tzOffset = this.getDynamicTimezoneOffset(timezone) * 60 * 60 * 1000;
+    const _now = new Date();
+    const _tzOffset = this?.getDynamicTimezoneOffset(timezone) * 60 * 60 * 1000;
 
-    const allTimings = await this.getOptimalTimingForAllPlatforms(timezone);
-    const postsPerPlatform = Math.max(
+    const _allTimings = await this?.getOptimalTimingForAllPlatforms(timezone);
+    const _postsPerPlatform = Math?.max(
       1,
-      Math.ceil(postsPerWeek / platforms.length),
+      Math?.ceil(postsPerWeek / platforms?.length),
     );
 
     // Compute the local day-of-week using the DST-aware offset so scheduling
     // doesn't recommend slots that already passed in the user's timezone
-    const localNow = new Date(now.getTime() + tzOffset);
-    const localDay = localNow.getUTCDay();
+    const _localNow = new Date(now?.getTime() + tzOffset);
+    const _localDay = localNow?.getUTCDay();
 
     for (const platform of platforms) {
-      const timing = allTimings[platform];
-      const topSlots = timing.bestTimes.slice(0, postsPerPlatform);
+      const _timing = allTimings[platform];
+      const _topSlots = timing?.bestTimes.slice(0, postsPerPlatform);
 
       for (const slot of topSlots) {
-        let daysUntil = slot.dayOfWeek - localDay;
+        let daysUntil = slot?.dayOfWeek - localDay;
         if (daysUntil <= 0) daysUntil += 7;
 
-        const scheduledTime = new Date(now);
-        scheduledTime.setDate(scheduledTime.getDate() + daysUntil);
-        scheduledTime.setHours(slot.hour, 0, 0, 0);
+        const _scheduledTime = new Date(now);
+        scheduledTime?.setDate(scheduledTime?.getDate() + daysUntil);
+        scheduledTime?.setHours(slot?.hour, 0, 0, 0);
 
-        schedule.push({ platform, scheduledTime, score: slot.score });
+        schedule?.push({ platform, scheduledTime, score: slot?.score });
       }
     }
 
-    return schedule.sort(
-      (a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime(),
+    return schedule?.sort(
+      (a, b) => a?.scheduledTime.getTime() - b?.scheduledTime.getTime(),
     );
   }
 }
 
-export const timingOptimizerService = new TimingOptimizerService();
+export const _timingOptimizerService = new TimingOptimizerService();

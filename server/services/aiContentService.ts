@@ -7,9 +7,9 @@ import { db } from "../db";
 function seededIndex(seed: string, length: number): number {
   if (length <= 0) return 0;
   let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+  for (let i = 0; i < seed?.length; i++) {
+    h ^= seed?.charCodeAt(i);
+    h = Math?.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;
@@ -35,11 +35,7 @@ import * as path from "path";
 // Sharp-based image generation (production-ready, replaces Canvas)
 import { sharpImageService } from "./sharpImageService.js";
 
-import {
-  synthesizeToWAV,
-  generateChordProgression,
-  generateMelody,
-} from "./musicGenerationService.js";
+import { synthesizeToWAV, generateChordProgression, generateMelody } from "./musicGenerationService.js";
 
 import { dynamicTrendsService } from "./dynamicTrendsService";
 
@@ -126,7 +122,7 @@ export class AIContentService {
   } = {};
 
   constructor() {
-    this.initializeAIModels();
+    this?.initializeAIModels();
   }
 
   async getUserAutopilotPreferences(
@@ -136,11 +132,11 @@ export class AIContentService {
       const [preferences] = await db
         .select()
         .from(autopilotPreferences)
-        .where(eq(autopilotPreferences.userId, userId))
+        .where(eq(autopilotPreferences?.userId, userId))
         .limit(1);
       return preferences || null;
     } catch (error) {
-      logger.warn({ err: error }, "Error fetching user autopilot preferences:");
+      logger?.warn({ err: error }, "Error fetching user autopilot preferences:");
       return null;
     }
   }
@@ -149,11 +145,11 @@ export class AIContentService {
     userId: string,
     options: ContentGenerationOptions,
   ): Promise<GeneratedContent> {
-    const preferences = await this.getUserAutopilotPreferences(userId);
+    const _preferences = await this?.getUserAutopilotPreferences(userId);
 
-    const enrichedOptions = {
+    const _enrichedOptions = {
       ...options,
-      tone: (preferences?.contentTone as unknown) || options.tone || "casual",
+      tone: (preferences?.contentTone as unknown) || options?.tone || "casual",
       artistName: preferences?.artistName,
       genre: preferences?.genre,
       brandVoice: preferences?.brandVoice,
@@ -162,30 +158,30 @@ export class AIContentService {
       customInstructions: preferences?.customInstructions,
     };
 
-    return this.generateContent(enrichedOptions as ContentGenerationOptions);
+    return this?.generateContent(enrichedOptions as ContentGenerationOptions);
   }
 
   private async initializeAIModels() {
     try {
-      const models = await db
+      const _models = await db
         .select()
         .from(aiModels)
         .where(
-          sql`${aiModels.modelName} IN ('content_multilingual_v1', 'brand_voice_analyzer_v1', 'trend_detector_v1', 'hashtag_optimizer_v1')`,
+          sql`${aiModels?.modelName} IN ('content_multilingual_v1', 'brand_voice_analyzer_v1', 'trend_detector_v1', 'hashtag_optimizer_v1')`,
         );
 
-      models.forEach((model) => {
-        if (model.modelName === "content_multilingual_v1")
-          this.modelIds.multilingual = model.id;
-        if (model.modelName === "brand_voice_analyzer_v1")
-          this.modelIds.brandVoice = model.id;
-        if (model.modelName === "trend_detector_v1")
-          this.modelIds.trendDetector = model.id;
-        if (model.modelName === "hashtag_optimizer_v1")
-          this.modelIds.hashtagOptimizer = model.id;
+      models?.forEach((model) => {
+        if (model?.modelName === "content_multilingual_v1")
+          this?.modelIds.multilingual = model?.id;
+        if (model?.modelName === "brand_voice_analyzer_v1")
+          this?.modelIds.brandVoice = model?.id;
+        if (model?.modelName === "trend_detector_v1")
+          this?.modelIds.trendDetector = model?.id;
+        if (model?.modelName === "hashtag_optimizer_v1")
+          this?.modelIds.hashtagOptimizer = model?.id;
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to load AI models:");
+      logger?.warn({ err: error }, "Failed to load AI models:");
     }
   }
 
@@ -197,21 +193,21 @@ export class AIContentService {
     executionTimeMs: number = 0,
   ): Promise<string | null> {
     try {
-      if (!this.modelIds[modelName as keyof typeof this.modelIds]) return null;
+      if (!this?.modelIds[modelName as keyof typeof this?.modelIds]) return null;
 
-      const modelId = this.modelIds[modelName as keyof typeof this.modelIds]!;
-      const versions = await db
+      const _modelId = this?.modelIds[modelName as keyof typeof this?.modelIds]!;
+      const _versions = await db
         .select()
         .from(aiModelVersions)
         .where(
           and(
-            eq(aiModelVersions.modelId, modelId),
-            eq(aiModelVersions.status, "production"),
+            eq(aiModelVersions?.modelId, modelId),
+            eq(aiModelVersions?.status, "production"),
           ),
         )
         .limit(1);
 
-      if (!versions.length) return null;
+      if (!versions?.length) return null;
 
       const [inference] = await db
         .insert(inferenceRuns)
@@ -222,40 +218,40 @@ export class AIContentService {
           inferenceType: "generation",
           inputData,
           outputData,
-          confidenceScore: outputData.confidence || 0.85,
+          confidenceScore: outputData?.confidence || 0.85,
           executionTimeMs,
           success: true,
           requestId: randomBytes(8).toString("hex"),
         })
         .returning();
 
-      return inference.id;
+      return inference?.id;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to log inference:");
+      logger?.warn({ err: error }, "Failed to log inference:");
       return null;
     }
   }
 
   private async logExplanation(inferenceId: string, explanation: unknown) {
     try {
-      await db.insert(explanationLogs).values({
+      await db?.insert(explanationLogs).values({
         inferenceId,
         explanationType: "feature_importance",
-        featureImportance: explanation.features || {},
-        decisionPath: explanation.path || {},
-        confidence: explanation.confidence || 0.85,
-        humanReadable: explanation.text || "Content generated using AI model",
-        visualizationData: explanation.viz || {},
+        featureImportance: explanation?.features || {},
+        decisionPath: explanation?.path || {},
+        confidence: explanation?.confidence || 0.85,
+        humanReadable: explanation?.text || "Content generated using AI model",
+        visualizationData: explanation?.viz || {},
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to log explanation:");
+      logger?.warn({ err: error }, "Failed to log explanation:");
     }
   }
 
   async generateText(
     options: ContentGenerationOptions,
   ): Promise<GeneratedContent> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
     try {
       const {
         prompt,
@@ -266,7 +262,7 @@ export class AIContentService {
 
       // Route through the full advanced AI pipeline:
       // MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
-      const aiResult = await unifiedAIController.generateContent({
+      const _aiResult = await unifiedAIController?.generateContent({
         platform: platform as Record<string, unknown>,
         tone: tone as Record<string, unknown>,
         topic: prompt || "new music",
@@ -275,34 +271,34 @@ export class AIContentService {
         includeEmojis: true,
       });
 
-      const executionTimeMs = Date.now() - startTime;
+      const _executionTimeMs = Date?.now() - startTime;
 
       let content: string[];
-      if (aiResult.success && aiResult.data) {
-        const d = aiResult.data as Record<string, unknown>;
-        const caption =
-          d.caption || [d.hook, d.body, d.cta].filter(Boolean).join("\n\n");
-        content = caption ? [caption] : d.content || [];
+      if (aiResult?.success && aiResult?.data) {
+        const _d = aiResult?.data as Record<string, unknown>;
+        const _caption =
+          d?.caption || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
+        content = caption ? [caption] : d?.content || [];
       } else {
-        logger.debug(
+        logger?.debug(
           "[AIContentService] MaxCore returned no content — local fallback",
         );
         content = [];
       }
 
-      const inferenceId = await this.logInference(
+      const _inferenceId = await this?.logInference(
         "multilingual",
         { prompt, platform, tone, length },
-        { content, confidence: aiResult.confidence || 0.9 },
+        { content, confidence: aiResult?.confidence || 0.9 },
         undefined,
         executionTimeMs,
       );
 
       if (inferenceId) {
-        await this.logExplanation(inferenceId, {
-          text: `Generated ${platform} content via ${aiResult.source || "AI"} with ${tone} tone`,
+        await this?.logExplanation(inferenceId, {
+          text: `Generated ${platform} content via ${aiResult?.source || "AI"} with ${tone} tone`,
           features: { platform: 0.3, tone: 0.4, length: 0.3 },
-          confidence: aiResult.confidence || 0.9,
+          confidence: aiResult?.confidence || 0.9,
         });
       }
 
@@ -315,12 +311,12 @@ export class AIContentService {
           tone,
           length,
           executionTimeMs,
-          source: aiResult.source,
+          source: aiResult?.source,
         },
         createdAt: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error generating text:");
+      logger?.warn({ err: error }, "Error generating text:");
       throw new Error("Failed to generate text content");
     }
   }
@@ -330,7 +326,7 @@ export class AIContentService {
     targetLanguages: string[],
     options?: { headline?: string; hashtags?: string[]; platform?: string },
   ): Promise<MultilingualContent[]> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
 
     const LANGUAGE_NAMES: Record<string, string> = {
       en: "English",
@@ -345,10 +341,10 @@ export class AIContentService {
       ar: "Arabic",
     };
 
-    const results = await Promise.all(
-      targetLanguages.map(async (lang) => {
-        const langName = LANGUAGE_NAMES[lang] || lang;
-        const aiResult = await unifiedAIController.generateContent({
+    const _results = await Promise?.all(
+      targetLanguages?.map(async (lang) => {
+        const _langName = LANGUAGE_NAMES[lang] || lang;
+        const _aiResult = await unifiedAIController?.generateContent({
           platform: (options?.platform || "instagram") as Record<
             string,
             unknown
@@ -361,13 +357,13 @@ export class AIContentService {
           extraContext: `Generate this content fully in ${langName}. Apply cultural adaptations and music marketing language appropriate for ${langName}-speaking audiences.`,
         });
 
-        const d =
-          aiResult.success && aiResult.data
-            ? (aiResult.data as Record<string, unknown>)
+        const _d =
+          aiResult?.success && aiResult?.data
+            ? (aiResult?.data as Record<string, unknown>)
             : null;
-        const content = d
-          ? d.caption ||
-            [d.hook, d.body, d.cta].filter(Boolean).join("\n\n") ||
+        const _content = d
+          ? d?.caption ||
+            [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n") ||
             prompt
           : prompt;
 
@@ -381,11 +377,11 @@ export class AIContentService {
       }),
     );
 
-    const executionTimeMs = Date.now() - startTime;
-    await this.logInference(
+    const _executionTimeMs = Date?.now() - startTime;
+    await this?.logInference(
       "multilingual",
       { prompt, targetLanguages },
-      { results, count: results.length },
+      { results, count: results?.length },
       undefined,
       executionTimeMs,
     );
@@ -397,49 +393,49 @@ export class AIContentService {
     userId: string,
     historicalPosts: string[],
   ): Promise<BrandVoiceProfile> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
 
-    const emojiRegex = new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu");
-    const hashtagRegex = /#\w+/g;
+    const _emojiRegex = new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu");
+    const _hashtagRegex = /#\w+/g;
 
-    const totalEmojis = historicalPosts.reduce(
-      (sum, post) => sum + (post.match(emojiRegex) || []).length,
+    const _totalEmojis = historicalPosts?.reduce(
+      (sum, post) => sum + (post?.match(emojiRegex) || []).length,
       0,
     );
-    const totalHashtags = historicalPosts.reduce(
-      (sum, post) => sum + (post.match(hashtagRegex) || []).length,
+    const _totalHashtags = historicalPosts?.reduce(
+      (sum, post) => sum + (post?.match(hashtagRegex) || []).length,
       0,
     );
-    const totalSentences = historicalPosts.reduce(
-      (sum, post) => sum + post.split(/[.!?]+/).filter((s) => s.trim()).length,
+    const _totalSentences = historicalPosts?.reduce(
+      (sum, post) => sum + post?.split(/[.!?]+/).filter((s) => s?.trim()).length,
       0,
     );
-    const totalWords = historicalPosts.reduce(
-      (sum, post) => sum + post.split(/\s+/).length,
+    const _totalWords = historicalPosts?.reduce(
+      (sum, post) => sum + post?.split(/\s+/).length,
       0,
     );
 
-    const avgSentenceLength = totalWords / Math.max(totalSentences, 1);
-    const emojiPerPost = totalEmojis / historicalPosts.length;
-    const hashtagPerPost = totalHashtags / historicalPosts.length;
+    const _avgSentenceLength = totalWords / Math?.max(totalSentences, 1);
+    const _emojiPerPost = totalEmojis / historicalPosts?.length;
+    const _hashtagPerPost = totalHashtags / historicalPosts?.length;
 
-    const formalWords = [
+    const _formalWords = [
       "moreover",
       "furthermore",
       "additionally",
       "consequently",
     ];
-    const casualWords = ["yeah", "cool", "awesome", "hey", "lol"];
+    const _casualWords = ["yeah", "cool", "awesome", "hey", "lol"];
 
     let formalCount = 0;
     let casualCount = 0;
-    historicalPosts.forEach((post) => {
-      const lower = post.toLowerCase();
-      formalWords.forEach((word) => {
-        if (lower.includes(word)) formalCount++;
+    historicalPosts?.forEach((post) => {
+      const _lower = post?.toLowerCase();
+      formalWords?.forEach((word) => {
+        if (lower?.includes(word)) formalCount++;
       });
-      casualWords.forEach((word) => {
-        if (lower.includes(word)) casualCount++;
+      casualWords?.forEach((word) => {
+        if (lower?.includes(word)) casualCount++;
       });
     });
 
@@ -466,8 +462,8 @@ export class AIContentService {
           ? "moderate"
           : "advanced";
 
-    const commonPhrases = this.extractCommonPhrases(historicalPosts);
-    const confidenceScore = Math.min(100, 50 + historicalPosts.length * 2);
+    const _commonPhrases = this?.extractCommonPhrases(historicalPosts);
+    const _confidenceScore = Math?.min(100, 50 + historicalPosts?.length * 2);
 
     const profile: BrandVoiceProfile = {
       tone,
@@ -480,50 +476,50 @@ export class AIContentService {
     };
 
     try {
-      const existing = await db
+      const _existing = await db
         .select()
         .from(userBrandVoices)
-        .where(eq(userBrandVoices.userId, userId))
+        .where(eq(userBrandVoices?.userId, userId))
         .limit(1);
 
-      if (existing.length > 0) {
+      if (existing?.length > 0) {
         await db
           .update(userBrandVoices)
           .set({
             voiceProfile: profile as Record<string, unknown>,
-            confidenceScore: profile.confidenceScore,
-            postsAnalyzed: historicalPosts.length,
+            confidenceScore: profile?.confidenceScore,
+            postsAnalyzed: historicalPosts?.length,
             lastAnalyzedAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(userBrandVoices.userId, userId));
+          .where(eq(userBrandVoices?.userId, userId));
       } else {
-        await db.insert(userBrandVoices).values({
+        await db?.insert(userBrandVoices).values({
           userId,
           voiceProfile: profile as Record<string, unknown>,
-          confidenceScore: profile.confidenceScore,
-          postsAnalyzed: historicalPosts.length,
+          confidenceScore: profile?.confidenceScore,
+          postsAnalyzed: historicalPosts?.length,
           lastAnalyzedAt: new Date(),
         });
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to save brand voice:");
+      logger?.warn({ err: error }, "Failed to save brand voice:");
     }
 
-    const executionTimeMs = Date.now() - startTime;
-    const inferenceId = await this.logInference(
+    const _executionTimeMs = Date?.now() - startTime;
+    const _inferenceId = await this?.logInference(
       "brandVoice",
-      { userId, postsCount: historicalPosts.length },
-      { profile, confidence: profile.confidenceScore / 100 },
+      { userId, postsCount: historicalPosts?.length },
+      { profile, confidence: profile?.confidenceScore / 100 },
       userId,
       executionTimeMs,
     );
 
     if (inferenceId) {
-      await this.logExplanation(inferenceId, {
-        text: `Analyzed ${historicalPosts.length} posts to extract brand voice with ${confidenceScore}% confidence`,
+      await this?.logExplanation(inferenceId, {
+        text: `Analyzed ${historicalPosts?.length} posts to extract brand voice with ${confidenceScore}% confidence`,
         features: { tone: 0.3, emoji: 0.2, hashtags: 0.2, vocabulary: 0.3 },
-        confidence: profile.confidenceScore / 100,
+        confidence: profile?.confidenceScore / 100,
       });
     }
 
@@ -533,15 +529,15 @@ export class AIContentService {
   private extractCommonPhrases(posts: string[]): string[] {
     const phrases: Record<string, number> = {};
 
-    posts.forEach((post) => {
-      const words = post.toLowerCase().split(/\s+/);
-      for (let i = 0; i < words.length - 1; i++) {
-        const phrase = `${words[i]} ${words[i + 1]}`;
+    posts?.forEach((post) => {
+      const _words = post?.toLowerCase().split(/\s+/);
+      for (let i = 0; i < words?.length - 1; i++) {
+        const _phrase = `${words[i]} ${words[i + 1]}`;
         phrases[phrase] = (phrases[phrase] || 0) + 1;
       }
     });
 
-    return Object.entries(phrases)
+    return Object?.entries(phrases)
       .filter(([_, count]) => count >= 2)
       .sort(([_, a], [__, b]) => b - a)
       .slice(0, 10)
@@ -552,66 +548,66 @@ export class AIContentService {
     prompt: string,
     userId: string,
   ): Promise<string> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
 
     try {
       const [brandVoice] = await db
         .select()
         .from(userBrandVoices)
-        .where(eq(userBrandVoices.userId, userId))
+        .where(eq(userBrandVoices?.userId, userId))
         .limit(1);
 
       if (!brandVoice) {
-        return await this.generateText({
+        return await this?.generateText({
           prompt,
           platform: "instagram",
           format: "text",
-        }).then((r) => (Array.isArray(r.content) ? r.content[0] : r.content));
+        }).then((r) => (Array?.isArray(r?.content) ? r?.content[0] : r?.content));
       }
 
-      const profile = brandVoice.voiceProfile as unknown as BrandVoiceProfile;
+      const _profile = brandVoice?.voiceProfile as unknown as BrandVoiceProfile;
       let content = prompt;
 
-      if (profile.tone === "casual") {
-        content = content.replace(/\bhowever\b/gi, "but");
-        content = content.replace(/\badditionally\b/gi, "also");
-      } else if (profile.tone === "formal") {
-        content = content.replace(/\bbut\b/gi, "however");
-        content = content.replace(/\balso\b/gi, "additionally");
+      if (profile?.tone === "casual") {
+        content = content?.replace(/\bhowever\b/gi, "but");
+        content = content?.replace(/\badditionally\b/gi, "also");
+      } else if (profile?.tone === "formal") {
+        content = content?.replace(/\bbut\b/gi, "however");
+        content = content?.replace(/\balso\b/gi, "additionally");
       }
 
-      if (profile.emojiUsage === "moderate" || profile.emojiUsage === "heavy") {
-        const emojis = ["🎵", "🎶", "✨", "🔥", "💯", "🎧", "🎤"];
-        const emojiCount = profile.emojiUsage === "heavy" ? 3 : 2;
+      if (profile?.emojiUsage === "moderate" || profile?.emojiUsage === "heavy") {
+        const _emojis = ["🎵", "🎶", "✨", "🔥", "💯", "🎧", "🎤"];
+        const _emojiCount = profile?.emojiUsage === "heavy" ? 3 : 2;
         for (let i = 0; i < emojiCount; i++) {
-          const emoji =
+          const _emoji =
             emojis[
               seededIndex(
-                `${userId}:${prompt.slice(0, 32)}:emoji:${i}`,
-                emojis.length,
+                `${userId}:${prompt?.slice(0, 32)}:emoji:${i}`,
+                emojis?.length,
               )
             ];
           content += ` ${emoji}`;
         }
       }
 
-      const phraseGateSeed = seededIndex(
-        `${userId}:${prompt.slice(0, 32)}:phrasegate`,
+      const _phraseGateSeed = seededIndex(
+        `${userId}:${prompt?.slice(0, 32)}:phrasegate`,
         1000,
       );
-      if (profile.commonPhrases.length > 0 && phraseGateSeed >= 500) {
-        const phrase =
-          profile.commonPhrases[
+      if (profile?.commonPhrases.length > 0 && phraseGateSeed >= 500) {
+        const _phrase =
+          profile?.commonPhrases[
             seededIndex(
-              `${userId}:${prompt.slice(0, 32)}:phrase`,
-              profile.commonPhrases.length,
+              `${userId}:${prompt?.slice(0, 32)}:phrase`,
+              profile?.commonPhrases.length,
             )
           ];
         content = `${phrase}! ${content}`;
       }
 
-      const executionTimeMs = Date.now() - startTime;
-      const inferenceId = await this.logInference(
+      const _executionTimeMs = Date?.now() - startTime;
+      const _inferenceId = await this?.logInference(
         "brandVoice",
         { prompt, userId, profile },
         { content, applied: true },
@@ -620,16 +616,16 @@ export class AIContentService {
       );
 
       if (inferenceId) {
-        await this.logExplanation(inferenceId, {
-          text: `Applied ${profile.tone} tone with ${profile.emojiUsage} emoji usage`,
+        await this?.logExplanation(inferenceId, {
+          text: `Applied ${profile?.tone} tone with ${profile?.emojiUsage} emoji usage`,
           features: { tone: 0.4, emoji: 0.3, phrases: 0.3 },
-          confidence: profile.confidenceScore / 100,
+          confidence: profile?.confidenceScore / 100,
         });
       }
 
       return content;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error generating with brand voice:");
+      logger?.warn({ err: error }, "Error generating with brand voice:");
       throw new Error("Failed to generate content with brand voice");
     }
   }
@@ -639,35 +635,35 @@ export class AIContentService {
     region?: string,
     genre?: string,
   ): Promise<TrendingTopic[]> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
 
     try {
-      const dynamicTrends = await dynamicTrendsService.getTrendingTopics(
+      const _dynamicTrends = await dynamicTrendsService?.getTrendingTopics(
         platform,
         genre,
         region,
       );
 
-      const trends: TrendingTopic[] = dynamicTrends.map((t) => ({
-        topic: t.topic,
-        category: t.category,
-        popularity: t.popularity,
-        hashtags: t.hashtags,
-        region: t.region,
+      const trends: TrendingTopic[] = dynamicTrends?.map((t) => ({
+        topic: t?.topic,
+        category: t?.category,
+        popularity: t?.popularity,
+        hashtags: t?.hashtags,
+        region: t?.region,
       }));
 
-      const executionTimeMs = Date.now() - startTime;
-      const inferenceId = await this.logInference(
+      const _executionTimeMs = Date?.now() - startTime;
+      const _inferenceId = await this?.logInference(
         "trendDetector",
         { platform, region, genre },
-        { trends, count: trends.length, source: "dynamicTrendsService" },
+        { trends, count: trends?.length, source: "dynamicTrendsService" },
         undefined,
         executionTimeMs,
       );
 
       if (inferenceId) {
-        await this.logExplanation(inferenceId, {
-          text: `Detected ${trends.length} trending topics for ${platform}${genre ? ` in ${genre}` : ""} using dynamic trends engine`,
+        await this?.logExplanation(inferenceId, {
+          text: `Detected ${trends?.length} trending topics for ${platform}${genre ? ` in ${genre}` : ""} using dynamic trends engine`,
           features: {
             platform: 0.25,
             genre: 0.25,
@@ -680,8 +676,8 @@ export class AIContentService {
 
       return trends;
     } catch (error) {
-      const msg = (error as Error)?.message ?? String(error);
-      logger.warn(`[AIContent] Dynamic trends engine failed (${msg})`);
+      const _msg = (error as Error)?.message ?? String(error);
+      logger?.warn(`[AIContent] Dynamic trends engine failed (${msg})`);
       throw error;
     }
   }
@@ -690,15 +686,15 @@ export class AIContentService {
     topic: string,
     platform: string,
   ): Promise<string> {
-    const trends = await this.getTrendingTopics(platform);
-    const matchedTrend = trends.find((t) =>
-      t.topic.toLowerCase().includes(topic.toLowerCase()),
+    const _trends = await this?.getTrendingTopics(platform);
+    const _matchedTrend = trends?.find((t) =>
+      t?.topic.toLowerCase().includes(topic?.toLowerCase()),
     );
-    const trendContext = matchedTrend
-      ? `Trending topic: ${matchedTrend.topic}. Suggested hashtags: ${matchedTrend.hashtags.join(", ")}.`
+    const _trendContext = matchedTrend
+      ? `Trending topic: ${matchedTrend?.topic}. Suggested hashtags: ${matchedTrend?.hashtags.join(", ")}.`
       : "";
 
-    const aiResult = await unifiedAIController.generateContent({
+    const _aiResult = await unifiedAIController?.generateContent({
       platform: platform as Record<string, unknown>,
       tone: "energetic" as Record<string, unknown>,
       topic,
@@ -708,11 +704,11 @@ export class AIContentService {
       extraContext: trendContext || undefined,
     });
 
-    if (aiResult.success && aiResult.data) {
-      const d = aiResult.data as Record<string, unknown>;
+    if (aiResult?.success && aiResult?.data) {
+      const _d = aiResult?.data as Record<string, unknown>;
       return (
-        d.caption ||
-        [d.hook, d.body, d.cta].filter(Boolean).join("\n\n") ||
+        d?.caption ||
+        [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n") ||
         topic
       );
     }
@@ -724,7 +720,7 @@ export class AIContentService {
     platform: string,
     goal: "reach" | "engagement" | "niche" = "engagement",
   ): Promise<HashtagSuggestion[]> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
 
     const platformLimits: Record<string, number> = {
       instagram: 30,
@@ -735,10 +731,10 @@ export class AIContentService {
       youtube: 15,
     };
 
-    const limit = platformLimits[platform] || 10;
+    const _limit = platformLimits[platform] || 10;
 
     // Route through MaxCore — it knows platform-specific hashtag strategy from 8TB of data
-    const aiResult = await unifiedAIController.generateContent({
+    const _aiResult = await unifiedAIController?.generateContent({
       platform: platform as Record<string, unknown>,
       tone: "energetic" as Record<string, unknown>,
       topic: content || "music promotion",
@@ -749,8 +745,8 @@ export class AIContentService {
     });
 
     const rawHashtags: string[] =
-      aiResult.success && aiResult.data
-        ? (aiResult.data as Record<string, unknown>).hashtags || []
+      aiResult?.success && aiResult?.data
+        ? (aiResult?.data as Record<string, unknown>).hashtags || []
         : [];
 
     const suggestions: HashtagSuggestion[] = rawHashtags
@@ -765,55 +761,55 @@ export class AIContentService {
                 ? "medium-reach"
                 : "niche";
         return {
-          hashtag: tag.startsWith("#") ? tag : `#${tag}`,
+          hashtag: tag?.startsWith("#") ? tag : `#${tag}`,
           category: cat,
-          popularity: Math.max(30, 95 - i * 7),
-          competition: Math.max(20, 90 - i * 7),
+          popularity: Math?.max(30, 95 - i * 7),
+          competition: Math?.max(20, 90 - i * 7),
           avgEngagement: parseFloat((4.2 + i * 0.6).toFixed(1)),
           trending: i < 2,
         };
       });
 
     try {
-      for (const suggestion of suggestions.slice(0, 5)) {
-        const existing = await db
+      for (const suggestion of suggestions?.slice(0, 5)) {
+        const _existing = await db
           .select()
           .from(hashtagResearch)
           .where(
             and(
-              eq(hashtagResearch.hashtag, suggestion.hashtag),
-              eq(hashtagResearch.platform, platform),
+              eq(hashtagResearch?.hashtag, suggestion?.hashtag),
+              eq(hashtagResearch?.platform, platform),
             ),
           )
           .limit(1);
 
-        if (existing.length === 0) {
-          await db.insert(hashtagResearch).values({
+        if (existing?.length === 0) {
+          await db?.insert(hashtagResearch).values({
             userId: "system",
-            hashtag: suggestion.hashtag,
+            hashtag: suggestion?.hashtag,
             platform,
-            category: suggestion.category,
-            popularity: suggestion.popularity,
-            competition: suggestion.competition,
-            avgEngagement: suggestion.avgEngagement,
-            trending: suggestion.trending,
+            category: suggestion?.category,
+            popularity: suggestion?.popularity,
+            competition: suggestion?.competition,
+            avgEngagement: suggestion?.avgEngagement,
+            trending: suggestion?.trending,
             relatedTags: suggestions
-              .filter((h) => h.category === suggestion.category)
-              .map((h) => h.hashtag)
+              .filter((h) => h?.category === suggestion?.category)
+              .map((h) => h?.hashtag)
               .slice(0, 5),
             lastUpdated: new Date(),
           });
         }
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to save hashtag research:");
+      logger?.warn({ err: error }, "Failed to save hashtag research:");
     }
 
-    const executionTimeMs = Date.now() - startTime;
-    await this.logInference(
+    const _executionTimeMs = Date?.now() - startTime;
+    await this?.logInference(
       "hashtagOptimizer",
       { content, platform, goal, limit },
-      { suggestions, count: suggestions.length, source: aiResult.source },
+      { suggestions, count: suggestions?.length, source: aiResult?.source },
       undefined,
       executionTimeMs,
     );
@@ -826,7 +822,7 @@ export class AIContentService {
     platform: string,
     timezone: string = "UTC",
   ): Promise<PostingTimeRecommendation[]> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
 
     const platformPatterns: Record<
       string,
@@ -856,11 +852,11 @@ export class AIContentService {
       ],
     };
 
-    const patterns = platformPatterns[platform] || platformPatterns.instagram;
+    const _patterns = platformPatterns[platform] || platformPatterns?.instagram;
     const recommendations: PostingTimeRecommendation[] = [];
 
     for (const pattern of patterns) {
-      const dayNames = [
+      const _dayNames = [
         "Sunday",
         "Monday",
         "Tuesday",
@@ -869,57 +865,57 @@ export class AIContentService {
         "Friday",
         "Saturday",
       ];
-      const reasoning = `${dayNames[pattern.day]} at ${pattern.hour}:00 ${timezone} has ${pattern.score}% engagement based on ${platform} algorithm and audience activity patterns`;
+      const _reasoning = `${dayNames[pattern?.day]} at ${pattern?.hour}:00 ${timezone} has ${pattern?.score}% engagement based on ${platform} algorithm and audience activity patterns`;
 
-      recommendations.push({
-        dayOfWeek: pattern.day,
-        hour: pattern.hour,
-        score: pattern.score,
+      recommendations?.push({
+        dayOfWeek: pattern?.day,
+        hour: pattern?.hour,
+        score: pattern?.score,
         reasoning,
       });
 
       try {
-        const existing = await db
+        const _existing = await db
           .select()
           .from(bestPostingTimes)
           .where(
             and(
-              eq(bestPostingTimes.userId, userId),
-              eq(bestPostingTimes.platform, platform),
-              eq(bestPostingTimes.dayOfWeek, pattern.day),
-              eq(bestPostingTimes.hour, pattern.hour),
+              eq(bestPostingTimes?.userId, userId),
+              eq(bestPostingTimes?.platform, platform),
+              eq(bestPostingTimes?.dayOfWeek, pattern?.day),
+              eq(bestPostingTimes?.hour, pattern?.hour),
             ),
           )
           .limit(1);
 
-        if (existing.length === 0) {
-          await db.insert(bestPostingTimes).values({
+        if (existing?.length === 0) {
+          await db?.insert(bestPostingTimes).values({
             userId,
             platform,
-            dayOfWeek: pattern.day,
-            hour: pattern.hour,
-            engagementScore: pattern.score,
+            dayOfWeek: pattern?.day,
+            hour: pattern?.hour,
+            engagementScore: pattern?.score,
             sampleSize: 100,
             lastCalculated: new Date(),
           });
         }
       } catch (error: unknown) {
-        logger.warn({ err: error }, "Failed to save posting time:");
+        logger?.warn({ err: error }, "Failed to save posting time:");
       }
     }
 
-    const executionTimeMs = Date.now() - startTime;
-    const inferenceId = await this.logInference(
+    const _executionTimeMs = Date?.now() - startTime;
+    const _inferenceId = await this?.logInference(
       "hashtagOptimizer",
       { userId, platform, timezone },
-      { recommendations, count: recommendations.length },
+      { recommendations, count: recommendations?.length },
       userId,
       executionTimeMs,
     );
 
     if (inferenceId) {
-      await this.logExplanation(inferenceId, {
-        text: `Suggested ${recommendations.length} optimal posting times for ${platform}`,
+      await this?.logExplanation(inferenceId, {
+        text: `Suggested ${recommendations?.length} optimal posting times for ${platform}`,
         features: { platform: 0.3, historical: 0.4, algorithm: 0.3 },
         confidence: 0.89,
       });
@@ -932,7 +928,7 @@ export class AIContentService {
     baseContent: string,
     variationType: "headline" | "CTA" | "emoji" | "length" | "tone" = "tone",
   ): Promise<ABVariant[]> {
-    const startTime = Date.now();
+    const _startTime = Date?.now();
 
     // For all variant types, call the full AI pipeline (MaxCore → Python AI → in-house)
     // with different tone parameters to produce real AI-generated alternatives.
@@ -1010,15 +1006,15 @@ export class AIContentService {
       ],
     };
 
-    const variantSpecs = toneMap[variationType] || toneMap.tone;
+    const _variantSpecs = toneMap[variationType] || toneMap?.tone;
 
     // Call AI in parallel for every variant
-    const variantResults = await Promise.all(
-      variantSpecs.map(async (spec) => {
+    const _variantResults = await Promise?.all(
+      variantSpecs?.map(async (spec) => {
         try {
-          const aiResult = await unifiedAIController.generateContent({
+          const _aiResult = await unifiedAIController?.generateContent({
             platform: "instagram" as Record<string, unknown>,
-            tone: spec.tone as Record<string, unknown>,
+            tone: spec?.tone as Record<string, unknown>,
             topic: baseContent,
             contentType: "engagement",
             includeHashtags: true,
@@ -1026,44 +1022,44 @@ export class AIContentService {
           });
 
           let generatedText = baseContent;
-          if (aiResult.success && aiResult.data) {
-            const d = aiResult.data as Record<string, unknown>;
+          if (aiResult?.success && aiResult?.data) {
+            const _d = aiResult?.data as Record<string, unknown>;
             generatedText =
-              d.caption ||
-              [d.hook, d.body, d.cta].filter(Boolean).join("\n\n") ||
+              d?.caption ||
+              [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n") ||
               baseContent;
           }
 
           return {
             id: randomBytes(8).toString("hex"),
             content: generatedText,
-            variationType: spec.label,
-            predictedPerformance: aiResult.confidence
-              ? Math.round(aiResult.confidence * 100)
+            variationType: spec?.label,
+            predictedPerformance: aiResult?.confidence
+              ? Math?.round(aiResult?.confidence * 100)
               : 80,
-            changes: [spec.desc, `Source: ${aiResult.source || "AI"}`],
+            changes: [spec?.desc, `Source: ${aiResult?.source || "AI"}`],
           } as ABVariant;
         } catch (err) {
-          logger.debug(
-            `[AIContentService] generateABVariants MaxCore call used local fallback for tone=${spec.tone}: ${(err as Error)?.message ?? String(err)}`,
+          logger?.debug(
+            `[AIContentService] generateABVariants MaxCore call used local fallback for tone=${spec?.tone}: ${(err as Error)?.message ?? String(err)}`,
           );
           throw err;
         }
       }),
     );
 
-    const executionTimeMs = Date.now() - startTime;
-    const inferenceId = await this.logInference(
+    const _executionTimeMs = Date?.now() - startTime;
+    const _inferenceId = await this?.logInference(
       "multilingual",
       { baseContent, variationType },
-      { variants: variantResults, count: variantResults.length },
+      { variants: variantResults, count: variantResults?.length },
       undefined,
       executionTimeMs,
     );
 
     if (inferenceId) {
-      await this.logExplanation(inferenceId, {
-        text: `Generated ${variantResults.length} AI A/B test variants for ${variationType}`,
+      await this?.logExplanation(inferenceId, {
+        text: `Generated ${variantResults?.length} AI A/B test variants for ${variationType}`,
         features: { variationType: 0.5, baseContent: 0.3, count: 0.2 },
         confidence: 0.9,
       });
@@ -1083,15 +1079,15 @@ export class AIContentService {
 
     switch (format) {
       case "text":
-        return this.generateTextContent(prompt, platform, tone, length);
+        return this?.generateTextContent(prompt, platform, tone, length);
       case "image":
-        return this.generateImageContent(prompt, platform, tone);
+        return this?.generateImageContent(prompt, platform, tone);
       case "video":
-        return this.generateVideoContent(prompt, platform, tone);
+        return this?.generateVideoContent(prompt, platform, tone);
       case "audio":
-        return this.generateAudioContent(prompt, platform, tone);
+        return this?.generateAudioContent(prompt, platform, tone);
       default:
-        return this.generateTextContent(prompt, platform, tone, length);
+        return this?.generateTextContent(prompt, platform, tone, length);
     }
   }
 
@@ -1105,7 +1101,7 @@ export class AIContentService {
     tone?: string,
     length?: string,
   ): Promise<GeneratedContent> {
-    const aiResult = await unifiedAIController.generateContent({
+    const _aiResult = await unifiedAIController?.generateContent({
       platform: platform as Record<string, unknown>,
       tone: (tone || "energetic") as Record<string, unknown>,
       topic: prompt || "new music",
@@ -1115,13 +1111,13 @@ export class AIContentService {
     });
 
     let content: string[];
-    if (aiResult.success && aiResult.data) {
-      const d = aiResult.data as Record<string, unknown>;
-      const caption =
-        d.caption || [d.hook, d.body, d.cta].filter(Boolean).join("\n\n");
-      content = caption ? [caption] : d.content || [];
+    if (aiResult?.success && aiResult?.data) {
+      const _d = aiResult?.data as Record<string, unknown>;
+      const _caption =
+        d?.caption || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
+      content = caption ? [caption] : d?.content || [];
     } else {
-      logger.debug(
+      logger?.debug(
         "[AIContentService] MaxCore returned no content — local fallback",
       );
       content = [];
@@ -1131,7 +1127,7 @@ export class AIContentService {
       id: `txt_${randomBytes(8).toString("hex")}`,
       type: "text",
       content,
-      metadata: { platform, tone, length, source: aiResult.source },
+      metadata: { platform, tone, length, source: aiResult?.source },
       createdAt: new Date(),
     };
   }
@@ -1147,7 +1143,7 @@ export class AIContentService {
   ): Promise<GeneratedContent> {
     try {
       // Use Sharp-based image generation service
-      const result = await sharpImageService.generateImage({
+      const _result = await sharpImageService?.generateImage({
         prompt,
         platform,
         tone: (tone as Record<string, unknown>) || "creative",
@@ -1157,18 +1153,18 @@ export class AIContentService {
         id: `img_${randomBytes(8).toString("hex")}`,
         type: "image",
         content: prompt,
-        url: result.publicUrl,
+        url: result?.publicUrl,
         metadata: {
           platform,
-          dimensions: result.dimensions,
+          dimensions: result?.dimensions,
           tone,
-          fileSize: result.buffer.length,
+          fileSize: result?.buffer.length,
           generator: "sharp",
         },
         createdAt: new Date(),
       };
     } catch (error) {
-      logger.warn(`Image generation failed: ${error.message}`);
+      logger?.warn(`Image generation failed: ${error?.message}`);
       throw error;
     }
   }
@@ -1188,7 +1184,7 @@ export class AIContentService {
     let body = "";
     let cta = "";
     try {
-      const scriptResult = await unifiedAIController.generateContent({
+      const _scriptResult = await unifiedAIController?.generateContent({
         platform: platform as Record<string, unknown>,
         tone: (tone || "energetic") as Record<string, unknown>,
         topic: prompt || "new music",
@@ -1196,21 +1192,21 @@ export class AIContentService {
         includeHashtags: false,
         includeEmojis: false,
       });
-      if (scriptResult.success && scriptResult.data) {
-        const d = scriptResult.data as Record<string, unknown>;
-        hook = (d.hook || d.caption || "").slice(0, 80);
-        body = (d.body || d.caption || "").split("\n")[0].slice(0, 120);
-        cta = (d.cta || "").slice(0, 60);
+      if (scriptResult?.success && scriptResult?.data) {
+        const _d = scriptResult?.data as Record<string, unknown>;
+        hook = (d?.hook || d?.caption || "").slice(0, 80);
+        body = (d?.body || d?.caption || "").split("\n")[0].slice(0, 120);
+        cta = (d?.cta || "").slice(0, 60);
       }
     } catch (scriptErr) {
-      logger.warn(
+      logger?.warn(
         "[ContentService] Video script generation failed, renderer will use topic as script:",
         scriptErr,
       );
     }
 
     // Step 2 — Render through MaxCore (the only renderer)
-    const result = await renderAdvancedVideo({
+    const _result = await renderAdvancedVideo({
       topic: prompt || "new music",
       platform: platform || "tiktok",
       tone: tone || "energetic",
@@ -1221,20 +1217,20 @@ export class AIContentService {
       quality: "cinematic",
     });
 
-    if (!result.success || !result.url) {
-      throw new Error(result.error || "Video generation failed");
+    if (!result?.success || !result?.url) {
+      throw new Error(result?.error || "Video generation failed");
     }
 
     return {
       id: `vid_${randomBytes(8).toString("hex")}`,
       type: "video",
       content: prompt,
-      url: result.url,
+      url: result?.url,
       metadata: {
         platform,
         tone,
-        source: result.source,
-        processingTimeMs: result.processing_time_ms,
+        source: result?.source,
+        processingTimeMs: result?.processing_time_ms,
       },
       createdAt: new Date(),
     };
@@ -1249,40 +1245,40 @@ export class AIContentService {
     platform: string,
     tone?: string,
   ): Promise<GeneratedContent> {
-    const filename = `${randomBytes(8).toString("hex")}.wav`;
-    const outputDir = path.join(
-      process.cwd(),
+    const _filename = `${randomBytes(8).toString("hex")}.wav`;
+    const _outputDir = path?.join(
+      process?.cwd(),
       "public",
       "generated-content",
       "audio",
     );
-    const outputPath = path.join(outputDir, filename);
-    const publicUrl = `/generated-content/audio/${filename}`;
+    const _outputPath = path?.join(outputDir, filename);
+    const _publicUrl = `/generated-content/audio/${filename}`;
 
     try {
-      await fs.mkdir(outputDir, { recursive: true });
+      await fs?.mkdir(outputDir, { recursive: true });
 
       // Use in-house music generation service
-      const musicParams = this.promptToMusicParams(prompt, tone);
-      const chords = generateChordProgression(musicParams);
-      const melody = generateMelody(musicParams, chords);
+      const _musicParams = this?.promptToMusicParams(prompt, tone);
+      const _chords = generateChordProgression(musicParams);
+      const _melody = generateMelody(musicParams, chords);
       // synthesizeToWAV signature: (notes, chords, params)
-      const audioPath = await synthesizeToWAV(melody, chords, musicParams);
+      const _audioPath = await synthesizeToWAV(melody, chords, musicParams);
 
       // synthesizeToWAV returns a public URL path, get the full filesystem path
-      const generatedPath = path.join(process.cwd(), "public", audioPath);
+      const _generatedPath = path?.join(process?.cwd(), "public", audioPath);
 
       // Verify the file was generated before copying
       try {
-        await fs.access(generatedPath);
-        await fs.copyFile(generatedPath, outputPath);
+        await fs?.access(generatedPath);
+        await fs?.copyFile(generatedPath, outputPath);
       } catch (accessError) {
-        logger.warn(`Generated audio file not found: ${generatedPath}`);
+        logger?.warn(`Generated audio file not found: ${generatedPath}`);
         throw new Error("Audio generation failed: output file not created");
       }
 
-      const stats = await fs.stat(outputPath);
-      logger.info(`✅ Generated audio: ${publicUrl} (${stats.size} bytes)`);
+      const _stats = await fs?.stat(outputPath);
+      logger?.info(`✅ Generated audio: ${publicUrl} (${stats?.size} bytes)`);
 
       return {
         id: `aud_${randomBytes(8).toString("hex")}`,
@@ -1292,12 +1288,12 @@ export class AIContentService {
         metadata: {
           platform,
           musicParams,
-          fileSize: stats.size,
+          fileSize: stats?.size,
         },
         createdAt: new Date(),
       };
     } catch (error) {
-      logger.warn(`Audio generation failed: ${error.message}`);
+      logger?.warn(`Audio generation failed: ${error?.message}`);
       throw error;
     }
   }
@@ -1322,7 +1318,7 @@ export class AIContentService {
       promotional: "energetic",
     };
 
-    const mood = moodMap[tone || "creative"] || "happy";
+    const _mood = moodMap[tone || "creative"] || "happy";
 
     return {
       key: "C",
@@ -1341,10 +1337,10 @@ export class AIContentService {
     style?: string;
     dimensions?: { width: number; height: number };
   }): Promise<GeneratedContent> {
-    return this.generateImageContent(
-      options.prompt,
-      options.platform,
-      options.style,
+    return this?.generateImageContent(
+      options?.prompt,
+      options?.platform,
+      options?.style,
     );
   }
 
@@ -1354,10 +1350,10 @@ export class AIContentService {
     duration?: number;
     style?: string;
   }): Promise<GeneratedContent> {
-    return this.generateVideoContent(
-      options.prompt,
-      options.platform,
-      options.style,
+    return this?.generateVideoContent(
+      options?.prompt,
+      options?.platform,
+      options?.style,
     );
   }
 
@@ -1367,7 +1363,7 @@ export class AIContentService {
     language?: string;
     speed?: number;
   }): Promise<GeneratedContent> {
-    return this.generateAudioContent(options.text, "instagram", "creative");
+    return this?.generateAudioContent(options?.text, "instagram", "creative");
   }
 
   async generateVariations(
@@ -1375,8 +1371,8 @@ export class AIContentService {
     _platform: string,
     count: number = 3,
   ): Promise<string[]> {
-    const abVariants = await this.generateABVariants(baseContent, "tone");
-    return abVariants.slice(0, count).map((v) => v.content);
+    const _abVariants = await this?.generateABVariants(baseContent, "tone");
+    return abVariants?.slice(0, count).map((v) => v?.content);
   }
 
   async optimizeForPlatform(
@@ -1392,28 +1388,28 @@ export class AIContentService {
       youtube: { maxLength: 5000, hashtagLimit: 15, emojiRecommended: false },
     };
 
-    const rules = platformRules[platform] || platformRules.instagram;
+    const _rules = platformRules[platform] || platformRules?.instagram;
     let optimized = content;
     const suggestions: string[] = [];
 
-    if (content.length > rules.maxLength) {
-      optimized = content.substring(0, rules.maxLength - 3) + "...";
-      suggestions.push(
-        `Content trimmed to ${rules.maxLength} characters for ${platform}`,
+    if (content?.length > rules?.maxLength) {
+      optimized = content?.substring(0, rules?.maxLength - 3) + "...";
+      suggestions?.push(
+        `Content trimmed to ${rules?.maxLength} characters for ${platform}`,
       );
     }
 
-    if (rules.hashtagLimit > 0) {
-      suggestions.push(
-        `Consider adding ${rules.hashtagLimit} relevant hashtags`,
+    if (rules?.hashtagLimit > 0) {
+      suggestions?.push(
+        `Consider adding ${rules?.hashtagLimit} relevant hashtags`,
       );
     }
 
     if (
-      rules.emojiRecommended &&
-      !content.match(new RegExp("[\\u{1F300}-\\u{1F9FF}]", "u"))
+      rules?.emojiRecommended &&
+      !content?.match(new RegExp("[\\u{1F300}-\\u{1F9FF}]", "u"))
     ) {
-      suggestions.push("Consider adding emojis to increase engagement");
+      suggestions?.push("Consider adding emojis to increase engagement");
     }
 
     return { optimized, suggestions };
@@ -1422,7 +1418,7 @@ export class AIContentService {
   async getOptimalPostingTimes(
     _userId: string,
   ): Promise<PostingTimeRecommendation[]> {
-    const dayNames = [
+    const _dayNames = [
       "Sunday",
       "Monday",
       "Tuesday",
@@ -1483,8 +1479,8 @@ export class AIContentService {
           "Sunday afternoon: relaxed browsing produces longer session times and saves",
       },
     ];
-    return industryOptimal.sort((a, b) => b.score - a.score);
+    return industryOptimal?.sort((a, b) => b?.score - a?.score);
   }
 }
 
-export const aiContentService = new AIContentService();
+export const _aiContentService = new AIContentService();

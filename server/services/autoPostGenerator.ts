@@ -22,7 +22,7 @@ async function translateViaMaxCore(
 ): Promise<TranslatedContent[]> {
   const results: TranslatedContent[] = [];
   for (const lang of targetLanguages) {
-    const mcResult = await MaxCoreAIClient.generate<{
+    const _mcResult = await MaxCoreAIClient?.generate<{
       caption?: string;
       hook?: string;
       body?: string;
@@ -39,21 +39,21 @@ async function translateViaMaxCore(
       extra_context: `Translate and culturally adapt the following music social media post to ${lang}. Maintain the artist's voice, energy, and promotional intent. Adapt hashtags for ${lang}-speaking audiences where appropriate. Return the translated post content.`,
     });
 
-    const translatedBody =
+    const _translatedBody =
       mcResult?.caption ||
       mcResult?.content ||
       mcResult?.body ||
       mcResult?.text ||
       content;
-    const translatedHeadline = mcResult?.headline || headline;
+    const _translatedHeadline = mcResult?.headline || headline;
     const translatedHashtags: string[] =
-      mcResult?.hashtags && mcResult.hashtags.length > 0
-        ? mcResult.hashtags
+      mcResult?.hashtags && mcResult?.hashtags.length > 0
+        ? mcResult?.hashtags
         : hashtags;
 
-    results.push({
+    results?.push({
       language: lang,
-      languageCode: lang.toLowerCase().slice(0, 2),
+      languageCode: lang?.toLowerCase().slice(0, 2),
       content: translatedBody,
       headline: translatedHeadline,
       hashtags: translatedHashtags,
@@ -113,7 +113,7 @@ class AutoPostGenerator {
    * Uses aiModelManager to prevent cross-tenant data leakage.
    */
   private async getAdvertisingAI(userId: string) {
-    return await aiModelManager.getAdvertisingAutopilot(userId);
+    return await aiModelManager?.getAdvertisingAutopilot(userId);
   }
 
   /**
@@ -127,17 +127,17 @@ class AutoPostGenerator {
     userId: string,
     request: ContentGenerationRequest,
   ): Promise<GeneratedContent> {
-    const platforms = request.platforms || ["instagram"];
-    const primaryPlatform = platforms[0];
+    const _platforms = request?.platforms || ["instagram"];
+    const _primaryPlatform = platforms[0];
 
     try {
-      const gateResult = await contentQualityGate.run(userId, {
-        topic: request.topic || "new music",
-        objective: request.objective || "engagement",
+      const _gateResult = await contentQualityGate?.run(userId, {
+        topic: request?.topic || "new music",
+        objective: request?.objective || "engagement",
         platform: primaryPlatform,
-        tone: request.tone,
-        targetAudience: request.targetAudience,
-        genre: request.genre,
+        tone: request?.tone,
+        targetAudience: request?.targetAudience,
+        genre: request?.genre,
       });
 
       if (!gateResult) {
@@ -146,89 +146,89 @@ class AutoPostGenerator {
         );
       }
 
-      const selected = gateResult.winner;
-      const variants = [selected, ...gateResult.rejectedVariants];
+      const _selected = gateResult?.winner;
+      const _variants = [selected, ...gateResult?.rejectedVariants];
 
-      if (gateResult.passedOnAttempt > 1) {
-        logger.info(
-          `[AutoPost] Quality gate: passed on attempt ${gateResult.passedOnAttempt}/${10}, ` +
-            `tried ${gateResult.totalVariantsTried} variants, ` +
-            `score=${selected.scores.overall.toFixed(1)}, threshold=${gateResult.thresholdUsed}, ` +
-            `archived=${gateResult.storedKey ?? "no"}`,
+      if (gateResult?.passedOnAttempt > 1) {
+        logger?.info(
+          `[AutoPost] Quality gate: passed on attempt ${gateResult?.passedOnAttempt}/${10}, ` +
+            `tried ${gateResult?.totalVariantsTried} variants, ` +
+            `score=${selected?.scores.overall?.toFixed(1)}, threshold=${gateResult?.thresholdUsed}, ` +
+            `archived=${gateResult?.storedKey ?? "no"}`,
         );
       }
 
-      const trendingHashtags = await dynamicTrendsService.getOptimizedHashtags(
+      const _trendingHashtags = await dynamicTrendsService?.getOptimizedHashtags(
         primaryPlatform,
-        request.genre,
-        request.objective,
-        request.includeHashtags !== false ? 8 : 0,
+        request?.genre,
+        request?.objective,
+        request?.includeHashtags !== false ? 8 : 0,
       );
 
-      const combinedHashtags =
-        request.includeHashtags !== false
+      const _combinedHashtags =
+        request?.includeHashtags !== false
           ? [
               ...new Set([
-                ...selected.hashtags,
-                ...trendingHashtags.map((h) => h.hashtag),
+                ...selected?.hashtags,
+                ...trendingHashtags?.map((h) => h?.hashtag),
               ]),
             ].slice(0, 12)
           : [];
 
       let translations: TranslatedContent[] | undefined;
-      if (request.targetLanguages && request.targetLanguages.length > 0) {
+      if (request?.targetLanguages && request?.targetLanguages.length > 0) {
         translations = await translateViaMaxCore(
-          selected.content,
-          selected.headline,
+          selected?.content,
+          selected?.headline,
           combinedHashtags,
-          request.targetLanguages,
+          request?.targetLanguages,
           primaryPlatform,
         );
       }
 
-      const now = new Date();
-      const optimalHour = this.getOptimalPostingHour(platforms);
-      const optimalTime = new Date(now);
-      optimalTime.setHours(optimalHour, 0, 0, 0);
+      const _now = new Date();
+      const _optimalHour = this?.getOptimalPostingHour(platforms);
+      const _optimalTime = new Date(now);
+      optimalTime?.setHours(optimalHour, 0, 0, 0);
       if (optimalTime < now) {
-        optimalTime.setDate(optimalTime.getDate() + 1);
+        optimalTime?.setDate(optimalTime?.getDate() + 1);
       }
 
-      const mediaType = this.normalizeMediaType(request.mediaType || "image");
-      const mediaGuidance = this.generateMediaGuidance(
+      const _mediaType = this?.normalizeMediaType(request?.mediaType || "image");
+      const _mediaGuidance = this?.generateMediaGuidance(
         mediaType,
-        request.topic || "new music",
-        request.objective || "engagement",
+        request?.topic || "new music",
+        request?.objective || "engagement",
       );
 
-      logger.info(
-        `Generated enhanced content for ${userId}: score=${selected.scores.overall.toFixed(1)}, variants=${variants.length}`,
+      logger?.info(
+        `Generated enhanced content for ${userId}: score=${selected?.scores.overall?.toFixed(1)}, variants=${variants?.length}`,
       );
 
       return {
-        headline: selected.headline,
-        body: selected.content,
+        headline: selected?.headline,
+        body: selected?.content,
         hashtags: combinedHashtags,
         mentions: [],
         mediaType,
-        callToAction: selected.callToAction,
-        viralScore: selected.scores.engagement / 100,
-        expectedReach: Math.round(selected.scores.overall * 100),
-        expectedEngagement: selected.scores.engagement,
+        callToAction: selected?.callToAction,
+        viralScore: selected?.scores.engagement / 100,
+        expectedReach: Math?.round(selected?.scores.overall * 100),
+        expectedEngagement: selected?.scores.engagement,
         generatedBy: "quality_pipeline",
         platforms,
         optimalPostingTime: optimalTime,
         mediaGuidance,
-        qualityScores: selected.scores,
+        qualityScores: selected?.scores,
         variants,
         translations,
       };
     } catch (error) {
-      logger.warn(
+      logger?.warn(
         { err: error },
         "Enhanced content generation failed, falling back:",
       );
-      return this.generateSocialContent(userId, request);
+      return this?.generateSocialContent(userId, request);
     }
   }
 
@@ -244,17 +244,17 @@ class AutoPostGenerator {
     variants: ContentVariant[];
     recommended: ContentVariant | null;
   }> {
-    const primaryPlatform = (request.platforms || ["instagram"])[0];
+    const _primaryPlatform = (request?.platforms || ["instagram"])[0];
 
     const { selected, variants } =
-      await contentQualityPipeline.generateAndSelect(
+      await contentQualityPipeline?.generateAndSelect(
         userId,
         {
-          topic: request.topic || "new music",
-          objective: request.objective || "engagement",
+          topic: request?.topic || "new music",
+          objective: request?.objective || "engagement",
           platform: primaryPlatform,
-          tone: request.tone,
-          genre: request.genre,
+          tone: request?.tone,
+          genre: request?.genre,
         },
         variantCount,
         50,
@@ -271,12 +271,12 @@ class AutoPostGenerator {
     request: ContentGenerationRequest,
     languages: string[],
   ): Promise<{ primary: GeneratedContent; translations: TranslatedContent[] }> {
-    const primary = await this.generateEnhancedContent(userId, request);
+    const _primary = await this?.generateEnhancedContent(userId, request);
 
-    const translations = await translateViaMaxCore(
-      primary.body,
-      primary.headline,
-      primary.hashtags,
+    const _translations = await translateViaMaxCore(
+      primary?.body,
+      primary?.headline,
+      primary?.hashtags,
       languages,
     );
 
@@ -290,9 +290,9 @@ class AutoPostGenerator {
     platform: string,
     genre?: string,
   ): Promise<{ topics: unknown[]; hashtags: unknown[] }> {
-    const [topics, hashtags] = await Promise.all([
-      dynamicTrendsService.getTrendingTopics(platform, genre),
-      dynamicTrendsService.getOptimizedHashtags(platform, genre, undefined, 15),
+    const [topics, hashtags] = await Promise?.all([
+      dynamicTrendsService?.getTrendingTopics(platform, genre),
+      dynamicTrendsService?.getOptimizedHashtags(platform, genre, undefined, 15),
     ]);
 
     return { topics, hashtags };
@@ -306,13 +306,13 @@ class AutoPostGenerator {
     userId: string,
     request: ContentGenerationRequest,
   ): Promise<GeneratedContent> {
-    const user = await storage.getUserById(userId);
-    const artistName = user?.firstName || "Artist";
-    const topic = request.topic || "new music release";
-    const tone = request.tone || "inspirational";
-    const platforms = request.platforms || ["instagram", "facebook", "twitter"];
+    const _user = await storage?.getUserById(userId);
+    const _artistName = user?.firstName || "Artist";
+    const _topic = request?.topic || "new music release";
+    const _tone = request?.tone || "inspirational";
+    const _platforms = request?.platforms || ["instagram", "facebook", "twitter"];
 
-    const mc = await MaxCoreAIClient.generate<{
+    const _mc = await MaxCoreAIClient?.generate<{
       caption?: string;
       hook?: string;
       body?: string;
@@ -331,28 +331,28 @@ class AutoPostGenerator {
       );
     }
 
-    const headline = mc.hook ?? mc.caption?.split("\n")[0] ?? "";
-    const body =
-      mc.caption ?? [mc.hook, mc.body, mc.cta].filter(Boolean).join("\n\n");
-    const callToAction = mc.cta ?? "Check it out!";
-    const hashtags =
-      request.includeHashtags !== false
-        ? mc.hashtags?.length
-          ? mc.hashtags
-          : this.generateHashtags(topic, platforms)
+    const _headline = mc?.hook ?? mc?.caption?.split("\n")[0] ?? "";
+    const _body =
+      mc?.caption ?? [mc?.hook, mc?.body, mc?.cta].filter(Boolean).join("\n\n");
+    const _callToAction = mc?.cta ?? "Check it out!";
+    const _hashtags =
+      request?.includeHashtags !== false
+        ? mc?.hashtags?.length
+          ? mc?.hashtags
+          : this?.generateHashtags(topic, platforms)
         : [];
 
-    const now = new Date();
-    const optimalHour = this.getOptimalPostingHour(platforms);
-    const optimalTime = new Date(now);
-    optimalTime.setHours(optimalHour, 0, 0, 0);
-    if (optimalTime < now) optimalTime.setDate(optimalTime.getDate() + 1);
+    const _now = new Date();
+    const _optimalHour = this?.getOptimalPostingHour(platforms);
+    const _optimalTime = new Date(now);
+    optimalTime?.setHours(optimalHour, 0, 0, 0);
+    if (optimalTime < now) optimalTime?.setDate(optimalTime?.getDate() + 1);
 
-    const mediaType = this.normalizeMediaType(request.mediaType || "image");
-    const mediaGuidance = this.generateMediaGuidance(
+    const _mediaType = this?.normalizeMediaType(request?.mediaType || "image");
+    const _mediaGuidance = this?.generateMediaGuidance(
       mediaType,
       topic,
-      request.objective || "engagement",
+      request?.objective || "engagement",
     );
 
     return {
@@ -377,19 +377,19 @@ class AutoPostGenerator {
     userId: string,
     request: ContentGenerationRequest,
   ): Promise<GeneratedContent> {
-    const ai = await this.getAdvertisingAI(userId);
+    const _ai = await this?.getAdvertisingAI(userId);
 
-    const user = await storage.getUserById(userId);
-    const artistName = user?.firstName || "Artist";
-    const topic = request.topic || "new music";
-    const platforms = request.platforms || [
+    const _user = await storage?.getUserById(userId);
+    const _artistName = user?.firstName || "Artist";
+    const _topic = request?.topic || "new music";
+    const _platforms = request?.platforms || [
       "instagram",
       "tiktok",
       "youtube",
       "facebook",
     ];
 
-    const mc = await MaxCoreAIClient.generate<{
+    const _mc = await MaxCoreAIClient?.generate<{
       caption?: string;
       hook?: string;
       body?: string;
@@ -398,7 +398,7 @@ class AutoPostGenerator {
     }>("/api/generate/content", {
       topic,
       platform: platforms[0],
-      tone: request.tone || "energetic",
+      tone: request?.tone || "energetic",
       artist_name: artistName,
     });
 
@@ -408,48 +408,48 @@ class AutoPostGenerator {
       );
     }
 
-    const headline = mc.hook ?? mc.caption?.split("\n")[0] ?? "";
-    const body =
-      mc.caption ?? [mc.hook, mc.body, mc.cta].filter(Boolean).join("\n\n");
-    const callToAction = mc.cta ?? "Share with someone who needs to hear this!";
-    const hashtags = mc.hashtags ?? [];
+    const _headline = mc?.hook ?? mc?.caption?.split("\n")[0] ?? "";
+    const _body =
+      mc?.caption ?? [mc?.hook, mc?.body, mc?.cta].filter(Boolean).join("\n\n");
+    const _callToAction = mc?.cta ?? "Share with someone who needs to hear this!";
+    const _hashtags = mc?.hashtags ?? [];
 
     // Get AI prediction for this content
-    const prediction = await ai.predictViralContent({
+    const _prediction = await ai?.predictViralContent({
       headline,
       body,
       hashtags,
       mentions: [],
-      mediaType: request.mediaType || "video",
+      mediaType: request?.mediaType || "video",
       callToAction,
       platforms,
       scheduledTime: new Date(),
     });
 
     // Get optimal distribution plan
-    const distributionPlan = await ai.generateContentDistributionPlan(
+    const _distributionPlan = await ai?.generateContentDistributionPlan(
       {
         headline,
         body,
         hashtags,
         mentions: [],
-        mediaType: request.mediaType || "video",
+        mediaType: request?.mediaType || "video",
         callToAction,
       },
       platforms,
     );
 
     // Use the optimal posting time from the highest priority platform
-    const optimalTime = distributionPlan[0]?.optimalPostingTime || new Date();
+    const _optimalTime = distributionPlan[0]?.optimalPostingTime || new Date();
 
     // Normalize mediaType (photo -> image)
-    const mediaType = this.normalizeMediaType(request.mediaType || "video");
+    const _mediaType = this?.normalizeMediaType(request?.mediaType || "video");
 
     // Generate media guidance
-    const mediaGuidance = this.generateMediaGuidance(
+    const _mediaGuidance = this?.generateMediaGuidance(
       mediaType,
       topic,
-      request.objective || "viral",
+      request?.objective || "viral",
     );
 
     return {
@@ -459,11 +459,11 @@ class AutoPostGenerator {
       mentions: [],
       mediaType,
       callToAction,
-      viralScore: prediction.predictions.viralityScore,
-      expectedReach: prediction.predictions.expectedReach,
-      expectedEngagement: prediction.predictions.expectedEngagement,
+      viralScore: prediction?.predictions.viralityScore,
+      expectedReach: prediction?.predictions.expectedReach,
+      expectedEngagement: prediction?.predictions.expectedEngagement,
       generatedBy: "advertising_autopilot",
-      platforms: distributionPlan.map((p) => p.platform),
+      platforms: distributionPlan?.map((p) => p?.platform),
       optimalPostingTime: optimalTime,
       mediaGuidance,
     };
@@ -482,27 +482,27 @@ class AutoPostGenerator {
       lyrics?: string;
     },
   ): Promise<string[]> {
-    if (content.mediaType !== "video" || !trackInfo) return [];
+    if (content?.mediaType !== "video" || !trackInfo) return [];
 
     try {
-      const result = await veoMusicService.generateCampaign({
-        title: trackInfo.title,
-        artist: trackInfo.artist,
-        mood: trackInfo.mood || "energetic",
-        story: trackInfo.story || content.headline,
-        lyrics: trackInfo.lyrics,
-        primary_platforms: content.platforms,
+      const _result = await veoMusicService?.generateCampaign({
+        title: trackInfo?.title,
+        artist: trackInfo?.artist,
+        mood: trackInfo?.mood || "energetic",
+        story: trackInfo?.story || content?.headline,
+        lyrics: trackInfo?.lyrics,
+        primary_platforms: content?.platforms,
       });
 
-      if (result.success && result.campaign) {
-        const mediaUrls = result.campaign.assets.map((a) => a.video_url);
-        logger.info(
-          `[VeoMusic] Generated ${mediaUrls.length} video assets for auto-post`,
+      if (result?.success && result?.campaign) {
+        const _mediaUrls = result?.campaign.assets?.map((a) => a?.video_url);
+        logger?.info(
+          `[VeoMusic] Generated ${mediaUrls?.length} video assets for auto-post`,
         );
         return mediaUrls;
       }
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         "[VeoMusic] Veo campaign generation failed for auto-post, falling back to standard video guidance",
       );
     }
@@ -528,32 +528,32 @@ class AutoPostGenerator {
     results?: Record<string, unknown>;
     veoAssets?: string[];
   }> {
-    const content = await this.generateEnhancedContent(userId, request);
+    const _content = await this?.generateEnhancedContent(userId, request);
 
-    logger.info(
-      `Generated social content for user ${userId}: "${content.headline}" (score=${content.qualityScores?.overall?.toFixed(1) ?? "N/A"})`,
+    logger?.info(
+      `Generated social content for user ${userId}: "${content?.headline}" (score=${content?.qualityScores?.overall?.toFixed(1) ?? "N/A"})`,
     );
 
     let veoAssets: string[] = [];
-    if (content.mediaType === "video" && trackInfo) {
-      veoAssets = await this.generateVeoVideoForContent(content, trackInfo);
+    if (content?.mediaType === "video" && trackInfo) {
+      veoAssets = await this?.generateVeoVideoForContent(content, trackInfo);
     }
 
     const postContent: PostContent = {
-      text: content.body,
-      headline: content.headline,
-      hashtags: content.hashtags,
-      mentions: content.mentions,
-      mediaType: content.mediaType,
+      text: content?.body,
+      headline: content?.headline,
+      hashtags: content?.hashtags,
+      mentions: content?.mentions,
+      mediaType: content?.mediaType,
     };
 
     // Post or schedule
     if (scheduleOptimal) {
-      const scheduledPost = await autoPostingService.schedulePost(
+      const _scheduledPost = await autoPostingService?.schedulePost(
         userId,
-        content.platforms,
+        content?.platforms,
         postContent,
-        content.optimalPostingTime,
+        content?.optimalPostingTime,
         "social_autopilot",
       );
 
@@ -564,9 +564,9 @@ class AutoPostGenerator {
         veoAssets,
       };
     } else {
-      const postResults = await autoPostingService.postNow(
+      const _postResults = await autoPostingService?.postNow(
         userId,
-        content.platforms,
+        content?.platforms,
         postContent,
         "social_autopilot",
       );
@@ -593,36 +593,36 @@ class AutoPostGenerator {
     scheduled?: boolean;
     results?: Record<string, unknown>;
   }> {
-    const content = await this.generateEnhancedContent(userId, {
+    const _content = await this?.generateEnhancedContent(userId, {
       ...request,
       objective: "viral",
     });
 
-    logger.info(
-      `Generated viral content for user ${userId}: "${content.headline}" (score=${content.qualityScores?.overall?.toFixed(1) ?? "N/A"})`,
+    logger?.info(
+      `Generated viral content for user ${userId}: "${content?.headline}" (score=${content?.qualityScores?.overall?.toFixed(1) ?? "N/A"})`,
     );
 
     // Prepare post content
     const postContent: PostContent = {
-      text: content.body,
-      headline: content.headline,
-      hashtags: content.hashtags,
-      mentions: content.mentions,
-      mediaType: content.mediaType,
+      text: content?.body,
+      headline: content?.headline,
+      hashtags: content?.hashtags,
+      mentions: content?.mentions,
+      mediaType: content?.mediaType,
     };
 
     // Post or schedule
     if (scheduleOptimal) {
-      const scheduledPost = await autoPostingService.schedulePost(
+      const _scheduledPost = await autoPostingService?.schedulePost(
         userId,
-        content.platforms,
+        content?.platforms,
         postContent,
-        content.optimalPostingTime,
+        content?.optimalPostingTime,
         "advertising_autopilot",
         {
-          viralityScore: content.viralScore,
-          expectedReach: content.expectedReach,
-          expectedEngagement: content.expectedEngagement,
+          viralityScore: content?.viralScore,
+          expectedReach: content?.expectedReach,
+          expectedEngagement: content?.expectedEngagement,
         },
       );
 
@@ -632,9 +632,9 @@ class AutoPostGenerator {
         results: scheduledPost,
       };
     } else {
-      const postResults = await autoPostingService.postNow(
+      const _postResults = await autoPostingService?.postNow(
         userId,
-        content.platforms,
+        content?.platforms,
         postContent,
         "advertising_autopilot",
       );
@@ -648,28 +648,28 @@ class AutoPostGenerator {
   }
 
   private generateHashtags(topic: string, platforms: string[]): string[] {
-    const baseHashtags = ["#music", "#newmusic", "#artist"];
+    const _baseHashtags = ["#music", "#newmusic", "#artist"];
 
     // Platform-specific hashtags
-    if (platforms.includes("instagram")) {
-      baseHashtags.push("#instamusic", "#musicproduction");
+    if (platforms?.includes("instagram")) {
+      baseHashtags?.push("#instamusic", "#musicproduction");
     }
-    if (platforms.includes("tiktok")) {
-      baseHashtags.push("#fyp", "#viral", "#musictok");
+    if (platforms?.includes("tiktok")) {
+      baseHashtags?.push("#fyp", "#viral", "#musictok");
     }
-    if (platforms.includes("twitter")) {
-      baseHashtags.push("#NowPlaying", "#MusicTwitter");
+    if (platforms?.includes("twitter")) {
+      baseHashtags?.push("#NowPlaying", "#MusicTwitter");
     }
 
     // Topic-based hashtags
-    const topicWords = topic.toLowerCase().split(" ");
+    const _topicWords = topic?.toLowerCase().split(" ");
     for (const word of topicWords) {
-      if (word.length > 3) {
-        baseHashtags.push(`#${word}`);
+      if (word?.length > 3) {
+        baseHashtags?.push(`#${word}`);
       }
     }
 
-    return baseHashtags.slice(0, 7); // Max 7 hashtags for optimal performance
+    return baseHashtags?.slice(0, 7); // Max 7 hashtags for optimal performance
   }
 
   /**
@@ -730,10 +730,10 @@ class AutoPostGenerator {
     };
 
     // Return average optimal hour across platforms
-    const hours = platforms.map((p) => optimalHours[p] || 12);
-    return Math.round(hours.reduce((a, b) => a + b, 0) / hours.length);
+    const _hours = platforms?.map((p) => optimalHours[p] || 12);
+    return Math?.round(hours?.reduce((a, b) => a + b, 0) / hours?.length);
   }
 }
 
 // Export singleton instance
-export const autoPostGenerator = new AutoPostGenerator();
+export const _autoPostGenerator = new AutoPostGenerator();

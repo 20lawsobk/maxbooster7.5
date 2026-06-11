@@ -22,21 +22,21 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
   }
 
   const types: FilePickerAcceptType[] = [];
-  const parts = accept.split(",").map((p) => p.trim());
+  const _parts = accept?.split(",").map((p) => p?.trim());
 
   const audioExtensions: string[] = [];
   const mimeTypes: Record<string, string[]> = {};
 
   for (const part of parts) {
-    if (part.startsWith(".")) {
-      audioExtensions.push(part);
-    } else if (part.includes("/")) {
-      const [category] = part.split("/");
+    if (part?.startsWith(".")) {
+      audioExtensions?.push(part);
+    } else if (part?.includes("/")) {
+      const [category] = part?.split("/");
       if (!mimeTypes[part]) {
         mimeTypes[part] = [];
       }
       if (category === "audio") {
-        const ext = part.split("/")[1];
+        const _ext = part?.split("/")[1];
         if (ext && ext !== "*") {
           mimeTypes[part].push(`.${ext}`);
         }
@@ -44,23 +44,23 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
     }
   }
 
-  if (audioExtensions.length > 0 || Object.keys(mimeTypes).length > 0) {
+  if (audioExtensions?.length > 0 || Object?.keys(mimeTypes).length > 0) {
     const acceptObj: Record<string, string[]> = {};
 
-    if (audioExtensions.length > 0) {
+    if (audioExtensions?.length > 0) {
       acceptObj["audio/*"] = audioExtensions;
     }
 
-    for (const [mime, exts] of Object.entries(mimeTypes)) {
-      if (exts.length > 0) {
+    for (const [mime, exts] of Object?.entries(mimeTypes)) {
+      if (exts?.length > 0) {
         acceptObj[mime] = exts;
       } else {
-        acceptObj[mime] = audioExtensions.length > 0 ? audioExtensions : [];
+        acceptObj[mime] = audioExtensions?.length > 0 ? audioExtensions : [];
       }
     }
 
-    if (Object.keys(acceptObj).length > 0) {
-      types.push({
+    if (Object?.keys(acceptObj).length > 0) {
+      types?.push({
         description: "Audio Files",
         accept: acceptObj,
       });
@@ -74,34 +74,34 @@ export function useFullscreenFileUpload(
   options: UseFullscreenFileUploadOptions = {},
 ) {
   const { onFilesSelected, accept = "*", multiple = true } = options;
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const wasFullscreenRef = useRef(false);
-  const fullscreenElementRef = useRef<Element | null>(null);
+  const _fileInputRef = useRef<HTMLInputElement | null>(null);
+  const _wasFullscreenRef = useRef(false);
+  const _fullscreenElementRef = useRef<Element | null>(null);
 
   useEffect(() => {
-    if (!fileInputRef.current) {
-      const input = document.createElement("input");
+    if (!fileInputRef?.current) {
+      const _input = document?.createElement("input");
       input.type = "file";
-      input.style.display = "none";
+      input?.style.display = "none";
       input.accept = accept;
       input.multiple = multiple;
-      document.body.appendChild(input);
+      document?.body.appendChild(input);
       fileInputRef.current = input;
     }
 
-    const input = fileInputRef.current;
+    const _input = fileInputRef?.current;
 
-    const handleChange = () => {
-      if (input.files && input.files.length > 0) {
-        onFilesSelected?.(Array.from(input.files));
+    const _handleChange = () => {
+      if (input?.files && input?.files.length > 0) {
+        onFilesSelected?.(Array?.from(input?.files));
       }
 
-      if (wasFullscreenRef.current && fullscreenElementRef.current) {
+      if (wasFullscreenRef?.current && fullscreenElementRef?.current) {
         setTimeout(() => {
           try {
-            fullscreenElementRef.current?.requestFullscreen?.();
+            fullscreenElementRef?.current?.requestFullscreen?.();
           } catch (e) {
-            logger.warn("Could not re-enter fullscreen:", e);
+            logger?.warn("Could not re-enter fullscreen:", e);
           }
           wasFullscreenRef.current = false;
           fullscreenElementRef.current = null;
@@ -111,74 +111,74 @@ export function useFullscreenFileUpload(
       input.value = "";
     };
 
-    input.addEventListener("change", handleChange);
+    input?.addEventListener("change", handleChange);
 
     return () => {
-      input.removeEventListener("change", handleChange);
+      input?.removeEventListener("change", handleChange);
     };
   }, [accept, multiple, onFilesSelected]);
 
-  const openFilePicker = useCallback(async () => {
-    const isInFullscreen = isInFullscreenMode();
+  const _openFilePicker = useCallback(async () => {
+    const _isInFullscreen = isInFullscreenMode();
 
     if (supportsFileSystemAccess() && isInFullscreen) {
       try {
-        const fileTypes = parseAcceptToFileTypes(accept);
-        const handles = await window.showOpenFilePicker({
+        const _fileTypes = parseAcceptToFileTypes(accept);
+        const _handles = await window?.showOpenFilePicker({
           multiple,
-          types: fileTypes.length > 0 ? fileTypes : undefined,
+          types: fileTypes?.length > 0 ? fileTypes : undefined,
           excludeAcceptAllOption: false,
         });
 
         const files: File[] = [];
         for (const handle of handles) {
-          const file = await handle.getFile();
-          files.push(file);
+          const _file = await handle?.getFile();
+          files?.push(file);
         }
 
-        if (files.length > 0) {
+        if (files?.length > 0) {
           onFilesSelected?.(files);
         }
         return;
       } catch (e) {
-        if (e instanceof Error && e.name === "AbortError") {
+        if (e instanceof Error && e?.name === "AbortError") {
           return;
         }
-        logger.warn("File System Access API failed, falling back:", e);
+        logger?.warn("File System Access API failed, falling back:", e);
       }
     }
 
-    if (!fileInputRef.current) return;
+    if (!fileInputRef?.current) return;
 
     if (isInFullscreen) {
       wasFullscreenRef.current = true;
-      fullscreenElementRef.current = document.fullscreenElement;
+      fullscreenElementRef.current = document?.fullscreenElement;
 
       try {
-        if (document.exitFullscreen) {
-          await document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          await document.webkitExitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-          await document.mozCancelFullScreen();
-        } else if (document.msExitFullscreen) {
-          await document.msExitFullscreen();
+        if (document?.exitFullscreen) {
+          await document?.exitFullscreen();
+        } else if (document?.webkitExitFullscreen) {
+          await document?.webkitExitFullscreen();
+        } else if (document?.mozCancelFullScreen) {
+          await document?.mozCancelFullScreen();
+        } else if (document?.msExitFullscreen) {
+          await document?.msExitFullscreen();
         }
       } catch (e) {
-        logger.warn("Could not exit fullscreen:", e);
+        logger?.warn("Could not exit fullscreen:", e);
       }
 
       setTimeout(() => {
-        fileInputRef.current?.click();
+        fileInputRef?.current?.click();
       }, 150);
     } else {
-      fileInputRef.current.click();
+      fileInputRef?.current.click();
     }
   }, [accept, multiple, onFilesSelected]);
 
-  const cleanup = useCallback(() => {
-    if (fileInputRef.current && document.body.contains(fileInputRef.current)) {
-      document.body.removeChild(fileInputRef.current);
+  const _cleanup = useCallback(() => {
+    if (fileInputRef?.current && document?.body.contains(fileInputRef?.current)) {
+      document?.body.removeChild(fileInputRef?.current);
       fileInputRef.current = null;
     }
   }, []);
@@ -196,34 +196,34 @@ export function useFullscreenFileUpload(
 
 export function isInFullscreenMode(): boolean {
   return !!(
-    document.fullscreenElement ||
-    document.webkitFullscreenElement ||
-    document.mozFullScreenElement ||
-    document.msFullscreenElement
+    document?.fullscreenElement ||
+    document?.webkitFullscreenElement ||
+    document?.mozFullScreenElement ||
+    document?.msFullscreenElement
   );
 }
 
 export async function exitFullscreenForUpload(): Promise<Element | null> {
-  const fullscreenElement =
-    document.fullscreenElement ||
-    document.webkitFullscreenElement ||
-    document.mozFullScreenElement ||
-    document.msFullscreenElement;
+  const _fullscreenElement =
+    document?.fullscreenElement ||
+    document?.webkitFullscreenElement ||
+    document?.mozFullScreenElement ||
+    document?.msFullscreenElement;
 
   if (!fullscreenElement) return null;
 
   try {
-    if (document.exitFullscreen) {
-      await document.exitFullscreen();
-    } else if (document.webkitExitFullscreen) {
-      await document.webkitExitFullscreen();
-    } else if (document.mozCancelFullScreen) {
-      await document.mozCancelFullScreen();
-    } else if (document.msExitFullscreen) {
-      await document.msExitFullscreen();
+    if (document?.exitFullscreen) {
+      await document?.exitFullscreen();
+    } else if (document?.webkitExitFullscreen) {
+      await document?.webkitExitFullscreen();
+    } else if (document?.mozCancelFullScreen) {
+      await document?.mozCancelFullScreen();
+    } else if (document?.msExitFullscreen) {
+      await document?.msExitFullscreen();
     }
   } catch (e) {
-    logger.warn("Could not exit fullscreen:", e);
+    logger?.warn("Could not exit fullscreen:", e);
   }
 
   return fullscreenElement;
@@ -235,17 +235,17 @@ export async function reenterFullscreen(
   if (!element) return;
 
   try {
-    if (element.requestFullscreen) {
-      await element.requestFullscreen();
-    } else if (element.webkitRequestFullscreen) {
-      await element.webkitRequestFullscreen();
-    } else if (element.mozRequestFullScreen) {
-      await element.mozRequestFullScreen();
-    } else if (element.msRequestFullscreen) {
-      await element.msRequestFullscreen();
+    if (element?.requestFullscreen) {
+      await element?.requestFullscreen();
+    } else if (element?.webkitRequestFullscreen) {
+      await element?.webkitRequestFullscreen();
+    } else if (element?.mozRequestFullScreen) {
+      await element?.mozRequestFullScreen();
+    } else if (element?.msRequestFullscreen) {
+      await element?.msRequestFullscreen();
     }
   } catch (e) {
-    logger.warn("Could not re-enter fullscreen:", e);
+    logger?.warn("Could not re-enter fullscreen:", e);
   }
 }
 
@@ -257,21 +257,21 @@ export async function openFilePickerInFullscreen(options: {
 
   if (supportsFileSystemAccess()) {
     try {
-      const fileTypes = parseAcceptToFileTypes(accept);
-      const handles = await window.showOpenFilePicker({
+      const _fileTypes = parseAcceptToFileTypes(accept);
+      const _handles = await window?.showOpenFilePicker({
         multiple,
-        types: fileTypes.length > 0 ? fileTypes : undefined,
+        types: fileTypes?.length > 0 ? fileTypes : undefined,
         excludeAcceptAllOption: false,
       });
 
       const files: File[] = [];
       for (const handle of handles) {
-        const file = await handle.getFile();
-        files.push(file);
+        const _file = await handle?.getFile();
+        files?.push(file);
       }
       return files;
     } catch (e) {
-      if (e instanceof Error && e.name === "AbortError") {
+      if (e instanceof Error && e?.name === "AbortError") {
         return [];
       }
       throw e;

@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-const ANALYTICS_PREFIXES = [
+const _ANALYTICS_PREFIXES = [
   "/api/analytics/",
   "/api/analytics-alerts/",
   "/api/dashboard/",
@@ -10,7 +10,7 @@ const ANALYTICS_PREFIXES = [
   "/api/admin/analytics",
 ];
 
-const DASHBOARD_KEYS = [
+const _DASHBOARD_KEYS = [
   "/api/dashboard/comprehensive",
   "/api/analytics/dashboard",
   "/api/ai/insights",
@@ -18,15 +18,15 @@ const DASHBOARD_KEYS = [
   "/api/artist-progress/dashboard",
 ];
 
-const REVENUE_KEYS = ["/api/marketplace/sales-analytics", "/api/royalties"];
+const _REVENUE_KEYS = ["/api/marketplace/sales-analytics", "/api/royalties"];
 
-const DISTRIBUTION_KEYS = [
+const _DISTRIBUTION_KEYS = [
   "/api/distribution/analytics/growth",
   "/api/distribution/hyperfollow/analytics",
   "/api/distribution/streaming-trends",
 ];
 
-const ADVERTISING_KEYS = [
+const _ADVERTISING_KEYS = [
   "/api/advertising/audience-segments",
   "/api/advertising/lookalike-audiences",
   "/api/advertising/roas/audience-segments",
@@ -35,64 +35,64 @@ const ADVERTISING_KEYS = [
 ];
 
 export function useAnalyticsInvalidation() {
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
-  const invalidateByPrefixes = useCallback(
+  const _invalidateByPrefixes = useCallback(
     (prefixes: string[]) => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         predicate: (query) => {
-          const key = query.queryKey[0];
+          const _key = query?.queryKey[0];
           if (typeof key !== "string") return false;
-          return prefixes.some((prefix) => key.startsWith(prefix));
+          return prefixes?.some((prefix) => key?.startsWith(prefix));
         },
       });
     },
     [queryClient],
   );
 
-  const invalidateKeys = useCallback(
+  const _invalidateKeys = useCallback(
     (keys: string[]) => {
-      keys.forEach((key) => {
-        queryClient.invalidateQueries({ queryKey: [key], exact: false });
+      keys?.forEach((key) => {
+        queryClient?.invalidateQueries({ queryKey: [key], exact: false });
       });
     },
     [queryClient],
   );
 
-  const invalidateDashboard = useCallback(() => {
+  const _invalidateDashboard = useCallback(() => {
     invalidateKeys(DASHBOARD_KEYS);
     invalidateByPrefixes(["/api/analytics/dashboard", "/api/dashboard/"]);
   }, [invalidateKeys, invalidateByPrefixes]);
 
-  const invalidateOnProjectChange = useCallback(() => {
+  const _invalidateOnProjectChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
   }, [invalidateByPrefixes]);
 
-  const invalidateOnDistributionChange = useCallback(() => {
+  const _invalidateOnDistributionChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(DISTRIBUTION_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const invalidateOnSocialChange = useCallback(() => {
+  const _invalidateOnSocialChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
   }, [invalidateByPrefixes]);
 
-  const invalidateOnMarketplaceChange = useCallback(() => {
+  const _invalidateOnMarketplaceChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(REVENUE_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const invalidateOnRevenueChange = useCallback(() => {
+  const _invalidateOnRevenueChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(REVENUE_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const invalidateOnCampaignChange = useCallback(() => {
+  const _invalidateOnCampaignChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(ADVERTISING_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const invalidateAll = useCallback(() => {
+  const _invalidateAll = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys([
       ...REVENUE_KEYS,

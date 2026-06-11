@@ -37,19 +37,19 @@ import { randomBytes } from "crypto";
 import { contentQualityPipeline } from "./contentQualityPipeline.js";
 import { logger } from "../logger.js";
 
-const execFileAsync = promisify(execFile);
+const _execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
-  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
   try {
-    const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
+    const _p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
       .trim();
     if (p) return p;
   } catch {
     /* intentional: shell which-lookup fails → falls through to hardcoded candidates */
   }
-  const candidates = [
+  const _candidates = [
     "/run/current-system/sw/bin/ffmpeg",
     "/usr/bin/ffmpeg",
     "/usr/local/bin/ffmpeg",
@@ -61,24 +61,29 @@ function resolveFFmpegPath(): string {
   return "ffmpeg";
 }
 
-const FFMPEG = resolveFFmpegPath();
-const OUTPUT_DIR = path.join(process.cwd(), "uploads", "videos");
-const TEMP_DIR = path.join(process.cwd(), "uploads", "video_temp");
-const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
-path.join(process.cwd(), "server", "services", "frameGenerator.py");
+const _FFMPEG = resolveFFmpegPath();
+const _OUTPUT_DIR = path?.join(process?.cwd(), "uploads", "videos");
+const _TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
+const _FONT_DIR = "/usr/share/fonts/truetype/dejavu";
+path?.join(
+  process?.cwd(),
+  "server",
+  "services",
+  "frameGenerator.py",
+);
 
 // Maps legacy FFmpeg bgType names → Python frame generator style names
 
 // ── FONTS ─────────────────────────────────────────────────────────────────────
-const FONTS = {
-  bold: `${FONT_DIR}/DejaVuSans-Bold.ttf`,
-  regular: `${FONT_DIR}/DejaVuSans.ttf`,
-  italic: `${FONT_DIR}/DejaVuSans-Oblique.ttf`,
-  boldItalic: `${FONT_DIR}/DejaVuSansMono-BoldOblique.ttf`,
-  serif: `${FONT_DIR}/DejaVuSerif-Bold.ttf`,
-  serifReg: `${FONT_DIR}/DejaVuSerif.ttf`,
-  mono: `${FONT_DIR}/DejaVuSansMono-Bold.ttf`,
-  monoLight: `${FONT_DIR}/DejaVuSansMono.ttf`,
+const _FONTS = {
+  bold: `${FONT_DIR}/DejaVuSans-Bold?.ttf`,
+  regular: `${FONT_DIR}/DejaVuSans?.ttf`,
+  italic: `${FONT_DIR}/DejaVuSans-Oblique?.ttf`,
+  boldItalic: `${FONT_DIR}/DejaVuSansMono-BoldOblique?.ttf`,
+  serif: `${FONT_DIR}/DejaVuSerif-Bold?.ttf`,
+  serifReg: `${FONT_DIR}/DejaVuSerif?.ttf`,
+  mono: `${FONT_DIR}/DejaVuSansMono-Bold?.ttf`,
+  monoLight: `${FONT_DIR}/DejaVuSansMono?.ttf`,
 } as const;
 
 type FontKey = keyof typeof FONTS;
@@ -132,7 +137,7 @@ type BgType =
  * motion. Each channel has 3 contributing waves at different frequencies and drift
  * speeds so colors evolve independently — no geometric grid artifacts.
  *
- * @param ac  Optional accent color hex (e.g. '0xe94560'). When supplied the
+ * @param ac  Optional accent color hex (e?.g. '0xe94560'). When supplied the
  *            animation morphs between bg and ac; otherwise bg → bright.
  */
 function getBgVfPrefix(
@@ -142,26 +147,26 @@ function getBgVfPrefix(
   iH: number,
   ac?: string,
 ): string {
-  const parseHex = (s: string) => {
-    const h = s.replace("0x", "").replace("#", "");
+  const _parseHex = (s: string) => {
+    const _h = s?.replace("0x", "").replace("#", "");
     return [
-      parseInt(h.slice(0, 2), 16),
-      parseInt(h.slice(2, 4), 16),
-      parseInt(h.slice(4, 6), 16),
+      parseInt(h?.slice(0, 2), 16),
+      parseInt(h?.slice(2, 4), 16),
+      parseInt(h?.slice(4, 6), 16),
     ] as const;
   };
   const [R, G, B] = parseHex(bg);
   const [AR, AG, AB] = ac ? parseHex(ac) : [255, 255, 255];
-  const aR = AR - R;
-  const aG = AG - G;
-  const aB = AB - B;
+  const _aR = AR - R;
+  const _aG = AG - G;
+  const _aB = AB - B;
 
   // Spatial frequency divisors (pixels per full sine cycle ÷ 2π)
-  const dX1 = Math.round(iW / 6.28); // 1 cycle across width
-  const dX2 = Math.round(iW / 12.57); // 2 cycles across width
-  const dY1 = Math.round(iH / 6.28); // 1 cycle across height
-  const dY2 = Math.round(iH / 12.57); // 2 cycles across height
-  const dD1 = Math.round(Math.hypot(iW, iH) / 6.28); // 1 cycle across diagonal
+  const _dX1 = Math?.round(iW / 6.28); // 1 cycle across width
+  const _dX2 = Math?.round(iW / 12.57); // 2 cycles across width
+  const _dY1 = Math?.round(iH / 6.28); // 1 cycle across height
+  const _dY2 = Math?.round(iH / 12.57); // 2 cycles across height
+  const _dD1 = Math?.round(Math?.hypot(iW, iH) / 6.28); // 1 cycle across diagonal
 
   switch (bgType) {
     case "plasma": {
@@ -177,9 +182,9 @@ function getBgVfPrefix(
 
     case "aurora": {
       // Tall horizontal curtains with luminance shimmer and subtle R accent.
-      const gAmp = Math.min(aG, 180);
-      const bAmp = Math.min(aB, 200);
-      const rAmp = Math.min(aR, 60);
+      const _gAmp = Math?.min(aG, 180);
+      const _bAmp = Math?.min(aB, 200);
+      const _rAmp = Math?.min(aR, 60);
       return (
         `geq=` +
         `r='${R}+${rAmp}*(0.65*sin(X/${dX1}+T*0.3)*sin(X/${dX1}+T*0.3)*sin(Y/${dY2}*0.3)*sin(Y/${dY2}*0.3)+0.35*sin(Y/${dY1}+T*0.2)*sin(Y/${dY1}+T*0.2))':` +
@@ -220,8 +225,8 @@ function getBgVfPrefix(
 
     case "fire": {
       // Upward rolling heat with multiple hot columns — orange inferno.
-      const rAmp = Math.min(220, 255 - R);
-      const gAmp = Math.min(80, 255 - G);
+      const _rAmp = Math?.min(220, 255 - R);
+      const _gAmp = Math?.min(80, 255 - G);
       return (
         `geq=` +
         `r='${R}+${rAmp}*(0.55*sin(X/${dX2}+T*3.2)*sin(X/${dX2}+T*3.2)+0.30*sin(X/${dX1}*1.3+T*2.8)*sin(X/${dX1}*1.3+T*2.8)+0.15*sin(X/${dX2}*1.7+T*3.8)*sin(X/${dX2}*1.7+T*3.8))*(${iH}-Y)/${iH}':` +
@@ -243,8 +248,8 @@ function getBgVfPrefix(
     case "galaxy": {
       // Radial vortex from center — cosmic swirl with depth layers.
       // hypot(a,b) = sqrt(a²+b²) is native to FFmpeg's geq evaluator.
-      const cx = Math.round(iW / 2);
-      const cy = Math.round(iH / 2);
+      const _cx = Math?.round(iW / 2);
+      const _cy = Math?.round(iH / 2);
       return (
         `geq=` +
         `r='${R}+${aR}*(0.60*sin(hypot(X-${cx},Y-${cy})/${dD1}*3-T*1.2)*sin(hypot(X-${cx},Y-${cy})/${dD1}*3-T*1.2)+0.30*sin((X-${cx})/${dX1}+(Y-${cy})/${dY1}+T*0.8)*sin((X-${cx})/${dX1}+(Y-${cy})/${dY1}+T*0.8)+0.10*sin(T*2.0)*sin(T*2.0))':` +
@@ -268,8 +273,8 @@ function getBgVfPrefix(
       // Prismatic rainbow sweep — hue channels staggered by 120° (2.09 rad).
       // Each channel sweeps through the full amplitude independently.
       // bg is treated as a dark offset; rainbow pop is amplitude-driven.
-      const amp = 185;
-      const wave = `X/${dX1}+Y/${dY1}*0.3+T*0.55`;
+      const _amp = 185;
+      const _wave = `X/${dX1}+Y/${dY1}*0.3+T*0.55`;
       return (
         `geq=` +
         `r='${R}+${amp}*sin(${wave})*sin(${wave})':` +
@@ -281,13 +286,13 @@ function getBgVfPrefix(
     case "sunrise": {
       // Warm upward gradient: deep red/orange at bottom → purple twilight at top.
       // Subtle cloud variation via horizontal sine on G channel.
-      const rAmp = Math.min(210, 255 - R);
-      const gAmp = Math.min(110, 255 - G);
-      const bAmp = Math.min(90, 255 - B);
+      const _rAmp = Math?.min(210, 255 - R);
+      const _gAmp = Math?.min(110, 255 - G);
+      const _bAmp = Math?.min(90, 255 - B);
       return (
         `geq=` +
-        `r='${R}+${rAmp}*(${iH}-Y)/${iH}+${Math.floor(rAmp * 0.2)}*sin(X/${dX1}+T*0.25)*sin(X/${dX1}+T*0.25)':` +
-        `g='${G}+${gAmp}*(${iH}-Y)*(${iH}-Y)/(${iH}*${iH})+${Math.floor(gAmp * 0.3)}*sin(X/${dX1}*0.7+T*0.20)*sin(X/${dX1}*0.7+T*0.20)*(${iH}-Y)/${iH}':` +
+        `r='${R}+${rAmp}*(${iH}-Y)/${iH}+${Math?.floor(rAmp * 0.2)}*sin(X/${dX1}+T*0.25)*sin(X/${dX1}+T*0.25)':` +
+        `g='${G}+${gAmp}*(${iH}-Y)*(${iH}-Y)/(${iH}*${iH})+${Math?.floor(gAmp * 0.3)}*sin(X/${dX1}*0.7+T*0.20)*sin(X/${dX1}*0.7+T*0.20)*(${iH}-Y)/${iH}':` +
         `b='${B}+${bAmp}*sin(X/${dX1}+Y/${dY1}*0.5+T*0.18)*sin(X/${dX1}+Y/${dY1}*0.5+T*0.18)*(1-0.9*(${iH}-Y)/${iH})'`
       );
     }
@@ -791,7 +796,7 @@ export const TEMPLATE_STYLES: Record<string, TemplateStyle> = {
  * single quotes/apostrophes, and pipe chars. Collapses extra whitespace.
  */
 function sanitizeVideoText(text: string, maxLen = 120): string {
-  const clean = text
+  const _clean = text
     .replace(/https?:\/\/\S+/g, "") // strip URLs
     .replace(/#\w+/g, "") // strip hashtags
     .replace(/@\w+/g, "") // strip @mentions
@@ -800,7 +805,7 @@ function sanitizeVideoText(text: string, maxLen = 120): string {
     .replace(/[|]/g, "-") // replace pipes with dashes
     .replace(/\s+/g, " ") // collapse whitespace
     .trim();
-  return clean.length > maxLen ? clean.slice(0, maxLen).trim() : clean;
+  return clean?.length > maxLen ? clean?.slice(0, maxLen).trim() : clean;
 }
 
 function escFFmpeg(text: string): string {
@@ -817,38 +822,38 @@ function escFFmpeg(text: string): string {
 }
 
 function wrap(text: string, maxChars = 28): string {
-  const words = text.split(/\s+/);
+  const _words = text?.split(/\s+/);
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
-    if (cur && cur.length + w.length + 1 > maxChars) {
-      lines.push(cur);
+    if (cur && cur?.length + w?.length + 1 > maxChars) {
+      lines?.push(cur);
       cur = w;
     } else {
       cur = cur ? `${cur} ${w}` : w;
     }
   }
-  if (cur) lines.push(cur);
-  return lines.join("\n");
+  if (cur) lines?.push(cur);
+  return lines?.join("\n");
 }
 
 function scaleFonts(style: TemplateStyle, width: number, platform?: string) {
   let s = width >= 1080 ? 1 : width / 1080;
   // TikTok & Reels: 12% larger hook text — thumb-stopping impact
-  const hookBoost =
+  const _hookBoost =
     platform === "tiktok" || platform === "instagram_reels" ? 1.12 : 1.0;
   // LinkedIn & YouTube: slightly smaller, more professional
-  const shrink = platform === "linkedin" ? 0.94 : 1.0;
+  const _shrink = platform === "linkedin" ? 0.94 : 1.0;
   s *= shrink;
   return {
-    hs: Math.floor(style.hs * s * hookBoost),
-    bs: Math.floor(style.bs * s),
-    cs: Math.floor(style.cs * s),
+    hs: Math?.floor(style?.hs * s * hookBoost),
+    bs: Math?.floor(style?.bs * s),
+    cs: Math?.floor(style?.cs * s),
   };
 }
 
 function tempPath(tag: string): string {
-  return path.join(
+  return path?.join(
     TEMP_DIR,
     `tmp_${tag}_${randomBytes(4).toString("hex")}.mp4`,
   );
@@ -897,119 +902,119 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     outPath,
     platform,
   } = spec;
-  (spec.genre || "default").toLowerCase();
-  const mc = Math.max(16, Math.floor(width / (style.bs * 0.58)));
+  ((spec?.genre || "default").toLowerCase());
+  const _mc = Math?.max(16, Math?.floor(width / (style?.bs * 0.58)));
   const { hs, bs, cs } = scaleFonts(style, width, platform);
-  const font = FONTS[style.font];
-  const barH = Math.floor(height * 0.085);
-  const isSolid = style.bgType === "solid";
+  const _font = FONTS[style?.font];
+  const _barH = Math?.floor(height * 0.085);
+  const _isSolid = style?.bgType === "solid";
 
   // Build text/graphics VF parts (independent of background source)
   const textVfParts: string[] = [];
 
   // ── Accent bars (top + bottom) ─────────────────────────────────────────────
-  textVfParts.push(
-    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
+  textVfParts?.push(
+    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style?.ac}@0.30:t=fill`,
   );
-  textVfParts.push(
-    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
+  textVfParts?.push(
+    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style?.ac}@0.30:t=fill`,
   );
 
   // ── Artist name (uppercase, monospace, accent-colored) ─────────────────────
   if (artistName) {
-    const at = escFFmpeg(sanitizeVideoText(artistName).toUpperCase());
-    const atSize = Math.floor(bs * 0.62);
+    const _at = escFFmpeg(sanitizeVideoText(artistName).toUpperCase());
+    const _atSize = Math?.floor(bs * 0.62);
     // Shadow layer for artist name
-    textVfParts.push(
-      `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=black@0.45:fontsize=${atSize}` +
+    textVfParts?.push(
+      `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=black@0.45:fontsize=${atSize}` +
         `:x=(w-text_w)/2+3:y=h*0.05+3:alpha='min(1\\,t*5)'`,
     );
-    textVfParts.push(
-      `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=${style.ac}:fontsize=${atSize}` +
+    textVfParts?.push(
+      `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=${style?.ac}:fontsize=${atSize}` +
         `:x=(w-text_w)/2:y=h*0.05:alpha='min(1\\,t*5)'`,
     );
   }
 
-  switch (spec.type) {
+  switch (spec?.type) {
     case "hook": {
-      const ht = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc));
-      const yBase = `(h-text_h)/4`;
+      const _ht = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc));
+      const _yBase = `(h-text_h)/4`;
       // Slide-up: text drops in 30px and slides up as it fades
-      const slideY = `(${yBase})+30*(1-min(1\\,t*3))`;
+      const _slideY = `(${yBase})+30*(1-min(1\\,t*3))`;
       // Drop shadow on hook text
-      textVfParts.push(
+      textVfParts?.push(
         `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0.50:fontsize=${hs}` +
           `:x=(w-text_w)/2+4:y=${slideY}+4:alpha='min(1\\,t*3)'`,
       );
       // Main hook text with outline
-      textVfParts.push(
-        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style.tc}:fontsize=${hs}` +
+      textVfParts?.push(
+        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style?.tc}:fontsize=${hs}` +
           `:x=(w-text_w)/2:y=${slideY}:alpha='min(1\\,t*3)'` +
-          `:bordercolor=${style.ac}:borderw=2`,
+          `:bordercolor=${style?.ac}:borderw=2`,
       );
       // Animated accent line that expands from center (width grows 0→50% over 0.6s)
-      const acLineY = Math.floor(height * 0.44);
-      textVfParts.push(
+      const _acLineY = Math?.floor(height * 0.44);
+      textVfParts?.push(
         `drawbox=x=(iw-iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50)/2` +
           `:y=${acLineY}:w=iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50:h=4` +
-          `:color=${style.ac}:t=fill:enable='gte(t\\,0.3)'`,
+          `:color=${style?.ac}:t=fill:enable='gte(t\\,0.3)'`,
       );
       break;
     }
     case "body": {
-      const bt = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 4));
-      const yBase = `(h-text_h)/2`;
-      const slideY = `(${yBase})+25*(1-min(1\\,t*3))`;
+      const _bt = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 4));
+      const _yBase = `(h-text_h)/2`;
+      const _slideY = `(${yBase})+25*(1-min(1\\,t*3))`;
       // Shadow
-      textVfParts.push(
+      textVfParts?.push(
         `drawtext=fontfile=${font}:text='${bt}':fontcolor=black@0.40:fontsize=${bs}` +
           `:x=(w-text_w)/2+3:y=${slideY}+3:alpha='min(1\\,t*3)'`,
       );
       // Main body text
-      textVfParts.push(
-        `drawtext=fontfile=${font}:text='${bt}':fontcolor=${style.tc}:fontsize=${bs}` +
+      textVfParts?.push(
+        `drawtext=fontfile=${font}:text='${bt}':fontcolor=${style?.tc}:fontsize=${bs}` +
           `:x=(w-text_w)/2:y=${slideY}:alpha='min(1\\,t*3)'`,
       );
       if (secondaryText) {
-        const st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 8));
-        const stSlide = `h*0.66+20*(1-min(1\\,max(0\\,(t-0.4)*3)))`;
-        textVfParts.push(
-          `drawtext=fontfile=${FONTS.regular}:text='${st}':fontcolor=${style.tc}@0.72:fontsize=${Math.floor(bs * 0.72)}` +
+        const _st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 8));
+        const _stSlide = `h*0.66+20*(1-min(1\\,max(0\\,(t-0.4)*3)))`;
+        textVfParts?.push(
+          `drawtext=fontfile=${FONTS?.regular}:text='${st}':fontcolor=${style?.tc}@0.72:fontsize=${Math?.floor(bs * 0.72)}` +
             `:x=(w-text_w)/2:y=${stSlide}:alpha='min(1\\,max(0\\,(t-0.4)*3))'`,
         );
       }
       break;
     }
     case "cta": {
-      const boxW = Math.floor(width * 0.82);
-      const boxX = Math.floor((width - boxW) / 2);
-      const boxY = Math.floor(height * 0.68);
-      const boxH = cs + 44;
-      const ct = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 2));
+      const _boxW = Math?.floor(width * 0.82);
+      const _boxX = Math?.floor((width - boxW) / 2);
+      const _boxY = Math?.floor(height * 0.68);
+      const _boxH = cs + 44;
+      const _ct = escFFmpeg(wrap(sanitizeVideoText(primaryText), mc + 2));
       // CTA pill box with dual accent stripes (top + bottom)
-      textVfParts.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style.cta_bg}@0.94:t=fill` +
+      textVfParts?.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style?.cta_bg}@0.94:t=fill` +
           `:enable='gte(t\\,0.2)'`,
       );
-      textVfParts.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style.ac}:t=fill` +
+      textVfParts?.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style?.ac}:t=fill` +
           `:enable='gte(t\\,0.2)'`,
       );
-      textVfParts.push(
-        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style.ac}@0.55:t=fill` +
+      textVfParts?.push(
+        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style?.ac}@0.55:t=fill` +
           `:enable='gte(t\\,0.2)'`,
       );
       // CTA text (slide-up + fast fade-in)
-      const ctSlide = `h*0.70+20*(1-min(1\\,t*5))`;
-      textVfParts.push(
+      const _ctSlide = `h*0.70+20*(1-min(1\\,t*5))`;
+      textVfParts?.push(
         `drawtext=fontfile=${font}:text='${ct}':fontcolor=white:fontsize=${cs}` +
           `:x=(w-text_w)/2:y=${ctSlide}:alpha='min(1\\,t*5)'`,
       );
       if (secondaryText) {
-        const st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 4));
-        const stSlide = `(h-text_h)/2+22*(1-min(1\\,max(0\\,(t-0.3)*3)))`;
-        textVfParts.push(
-          `drawtext=fontfile=${FONTS.regular}:text='${st}':fontcolor=${style.tc}:fontsize=${bs}` +
+        const _st = escFFmpeg(wrap(sanitizeVideoText(secondaryText), mc + 4));
+        const _stSlide = `(h-text_h)/2+22*(1-min(1\\,max(0\\,(t-0.3)*3)))`;
+        textVfParts?.push(
+          `drawtext=fontfile=${FONTS?.regular}:text='${st}':fontcolor=${style?.tc}:fontsize=${bs}` +
             `:x=(w-text_w)/2:y=${stSlide}:alpha='min(1\\,max(0\\,(t-0.3)*3))'`,
         );
       }
@@ -1019,7 +1024,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
 
   if (isSolid) {
     // Solid background — fast FFmpeg color source, add vignette for cinematic depth
-    const vf = [
+    const _vf = [
       "format=yuv420p",
       "vignette=angle=PI/5:mode=forward:eval=init",
       ...textVfParts,
@@ -1031,7 +1036,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
         "-f",
         "lavfi",
         "-i",
-        `color=c=${style.bg}:s=${width}x${height}:d=${dur}:r=30`,
+        `color=c=${style?.bg}:s=${width}x${height}:d=${dur}:r=30`,
         "-vf",
         vf,
         "-c:v",
@@ -1053,10 +1058,10 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     );
   } else {
     // Animated background — pure FFmpeg geq at half-res, lanczos upscale, then vignette
-    const iW = Math.floor(width / 2);
-    const iH = Math.floor(height / 2);
-    const bgGeq = getBgVfPrefix(style.bgType, style.bg, iW, iH, style.ac);
-    const vf = [
+    const _iW = Math?.floor(width / 2);
+    const _iH = Math?.floor(height / 2);
+    const _bgGeq = getBgVfPrefix(style?.bgType, style?.bg, iW, iH, style?.ac);
+    const _vf = [
       bgGeq,
       `scale=${width}:${height}:flags=lanczos`,
       "format=yuv420p",
@@ -1101,28 +1106,28 @@ async function combineScenes(
   transition: string,
   transitionDur = 0.4,
 ): Promise<void> {
-  if (scenePaths.length === 1) {
+  if (scenePaths?.length === 1) {
     await execFileAsync("cp", [scenePaths[0], outputPath]);
     return;
   }
 
-  const inputs = scenePaths.flatMap((p) => ["-i", p]);
+  const _inputs = scenePaths?.flatMap((p) => ["-i", p]);
 
   // Build xfade filter chain — accumulate offsets accounting for overlap
   let filterComplex = "";
   let prevLabel = "[0:v]";
   let cumOffset = 0;
 
-  for (let i = 0; i < scenePaths.length - 1; i++) {
+  for (let i = 0; i < scenePaths?.length - 1; i++) {
     cumOffset += sceneDurations[i] - transitionDur;
-    const nextIn = `[${i + 1}:v]`;
-    const outLbl = i === scenePaths.length - 2 ? "[vout]" : `[v${i}]`;
-    filterComplex += `${prevLabel}${nextIn}xfade=transition=${transition}:duration=${transitionDur}:offset=${cumOffset.toFixed(2)}${outLbl};`;
+    const _nextIn = `[${i + 1}:v]`;
+    const _outLbl = i === scenePaths?.length - 2 ? "[vout]" : `[v${i}]`;
+    filterComplex += `${prevLabel}${nextIn}xfade=transition=${transition}:duration=${transitionDur}:offset=${cumOffset?.toFixed(2)}${outLbl};`;
     prevLabel = outLbl;
   }
-  filterComplex = filterComplex.replace(/;$/, "");
+  filterComplex = filterComplex?.replace(/;$/, "");
 
-  const ffmpegArgs = [
+  const _ffmpegArgs = [
     "-y",
     ...inputs,
     "-filter_complex",
@@ -1156,7 +1161,7 @@ async function generateVoiceover(
   totalDur: number,
 ): Promise<string | null> {
   try {
-    const spoken = [hook, body, cta]
+    const _spoken = [hook, body, cta]
       .map((t) => sanitizeVideoText(t, 300))
       .map((t) =>
         t
@@ -1167,8 +1172,8 @@ async function generateVoiceover(
       .filter(Boolean)
       .join(" ... ");
 
-    const outPath = path.join(
-      os.tmpdir(),
+    const _outPath = path?.join(
+      os?.tmpdir(),
       `vo_${randomBytes(6).toString("hex")}.wav`,
     );
 
@@ -1179,7 +1184,7 @@ async function generateVoiceover(
         "-f",
         "lavfi",
         "-i",
-        `flite=text='${spoken.replace(/'/g, "")}':voice=kal16`,
+        `flite=text='${spoken?.replace(/'/g, "")}':voice=kal16`,
         "-af",
         "highpass=f=120,acompressor=threshold=0.4:ratio=3:attack=5:release=50,volume=1.3",
         "-t",
@@ -1195,8 +1200,8 @@ async function generateVoiceover(
 
     return existsSync(outPath) ? outPath : null;
   } catch (e) {
-    const msg = e?.stderr || e?.message || String(e);
-    logger.warn(`[VideoGen] Voiceover generation failed, skipping: ${msg}`);
+    const _msg = e?.stderr || e?.message || String(e);
+    logger?.warn(`[VideoGen] Voiceover generation failed, skipping: ${msg}`);
     return null;
   }
 }
@@ -1210,35 +1215,35 @@ async function applyAudioAndLogo(
   userAudioPath?: string,
   voiceoverText?: { hook: string; body: string; cta: string },
 ): Promise<void> {
-  const fadeDur = Math.min(1.5, totalDur * 0.1);
-  const fadeOut = Math.max(0, totalDur - fadeDur);
-  const fd = fadeDur.toFixed(2);
-  const fo = fadeOut.toFixed(2);
+  const _fadeDur = Math?.min(1.5, totalDur * 0.1);
+  const _fadeOut = Math?.max(0, totalDur - fadeDur);
+  const _fd = fadeDur?.toFixed(2);
+  const _fo = fadeOut?.toFixed(2);
 
   // ── Three lavfi sources for layered synthesis ──────────────────────────────
-  const src1 = `aevalsrc=${audioProfile.bass}|${audioProfile.bass}:sample_rate=44100:channel_layout=stereo`;
-  const src2 = `aevalsrc=${audioProfile.beat}|${audioProfile.beat}:sample_rate=44100:channel_layout=stereo`;
-  const src3 = `aevalsrc=${audioProfile.pad}|${audioProfile.pad}:sample_rate=44100:channel_layout=stereo`;
+  const _src1 = `aevalsrc=${audioProfile?.bass}|${audioProfile?.bass}:sample_rate=44100:channel_layout=stereo`;
+  const _src2 = `aevalsrc=${audioProfile?.beat}|${audioProfile?.beat}:sample_rate=44100:channel_layout=stereo`;
+  const _src3 = `aevalsrc=${audioProfile?.pad}|${audioProfile?.pad}:sample_rate=44100:channel_layout=stereo`;
 
-  const hasLogo = !!(logoPath && existsSync(logoPath));
-  const hasUser = !!(userAudioPath && existsSync(userAudioPath));
+  const _hasLogo = !!(logoPath && existsSync(logoPath));
+  const _hasUser = !!(userAudioPath && existsSync(userAudioPath));
 
   let voiceoverPath: string | null = null;
   if (voiceoverText) {
     voiceoverPath = await generateVoiceover(
-      voiceoverText.hook,
-      voiceoverText.body,
-      voiceoverText.cta,
+      voiceoverText?.hook,
+      voiceoverText?.body,
+      voiceoverText?.cta,
       totalDur,
     );
   }
-  const hasVoiceover = !!(voiceoverPath && existsSync(voiceoverPath));
+  const _hasVoiceover = !!(voiceoverPath && existsSync(voiceoverPath));
 
   // Build input list: [0]=video, [1]=bass, [2]=beat, [3]=pad, [4?]=logo, [5?]=user audio, [6?]=voiceover
   const inputs: string[] = ["-i", videoPath];
-  inputs.push("-f", "lavfi", "-i", src1);
-  inputs.push("-f", "lavfi", "-i", src2);
-  inputs.push("-f", "lavfi", "-i", src3);
+  inputs?.push("-f", "lavfi", "-i", src1);
+  inputs?.push("-f", "lavfi", "-i", src2);
+  inputs?.push("-f", "lavfi", "-i", src3);
 
   let logoIdx = -1;
   let userIdx = -1;
@@ -1247,15 +1252,15 @@ async function applyAudioAndLogo(
 
   if (hasLogo) {
     logoIdx = nextIdx++;
-    inputs.push("-i", logoPath!);
+    inputs?.push("-i", logoPath!);
   }
   if (hasUser) {
     userIdx = nextIdx++;
-    inputs.push("-i", userAudioPath!);
+    inputs?.push("-i", userAudioPath!);
   }
   if (hasVoiceover) {
     voIdx = nextIdx++;
-    inputs.push("-i", voiceoverPath!);
+    inputs?.push("-i", voiceoverPath!);
   }
 
   // ── filter_complex ─────────────────────────────────────────────────────────
@@ -1265,7 +1270,7 @@ async function applyAudioAndLogo(
 
   // Video chain — only needed when overlaying the logo
   if (hasLogo) {
-    parts.push(
+    parts?.push(
       `[${logoIdx}:v]scale=iw*0.14:ih*0.14[logo]`,
       `[0:v][logo]overlay=W-w-24:24:enable='between(t\\,0\\,${totalDur})'[vfinal]`,
     );
@@ -1273,53 +1278,53 @@ async function applyAudioAndLogo(
 
   // Procedural synth mix (bass=1, beat=2, pad=3)
   // amix weights: bass at 1.25 (dominant), beat at 1.0, pad at 0.55
-  parts.push(
+  parts?.push(
     `[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.25 1.0 0.55[synth_raw]`,
   );
   // Full EQ + stereo widening chain
-  parts.push(
-    `[synth_raw]${audioProfile.filters},` +
+  parts?.push(
+    `[synth_raw]${audioProfile?.filters},` +
       `extrastereo=m=1.4,` +
       `afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[synth]`,
   );
 
   if (hasVoiceover && hasUser) {
-    parts.push(
+    parts?.push(
       `[${voIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=1.1,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
     );
-    parts.push(
+    parts?.push(
       `[${userIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=0.55,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
-    parts.push(
+    parts?.push(
       `[vo_a][user_a][synth]amix=inputs=3:normalize=0:weights=1.1 0.55 0.18[afinal]`,
     );
   } else if (hasVoiceover) {
-    parts.push(
+    parts?.push(
       `[${voIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=1.2,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[vo_a]`,
     );
-    parts.push(
+    parts?.push(
       `[vo_a][synth]amix=inputs=2:normalize=0:weights=1.2 0.20[afinal]`,
     );
   } else if (hasUser) {
-    parts.push(
+    parts?.push(
       `[${userIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=0.88,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
-    parts.push(
+    parts?.push(
       `[user_a][synth]amix=inputs=2:normalize=0:weights=1.0 0.22[afinal]`,
     );
   } else {
-    parts.push(`[synth]volume=1.0[afinal]`);
+    parts?.push(`[synth]volume=1.0[afinal]`);
   }
 
-  const ffmpegArgs = [
+  const _ffmpegArgs = [
     "-y",
     ...inputs,
     "-filter_complex",
-    parts.join(";"),
+    parts?.join(";"),
     ...outputLabels,
     "-c:v",
     hasLogo ? "libx264" : "copy",
@@ -1342,33 +1347,33 @@ async function applyAudioAndLogo(
   } catch (ffmpegErr) {
     // Some FFmpeg builds don't support equalizer/extrastereo/dynaudnorm.
     // Retry with a safe filter chain (volume + afade only) so audio is always present.
-    const errMsg =
-      ffmpegErr instanceof Error ? ffmpegErr.message : String(ffmpegErr);
+    const _errMsg =
+      ffmpegErr instanceof Error ? ffmpegErr?.message : String(ffmpegErr);
     if (
-      /No such filter|Invalid option|filter.*not found|option.*not found/i.test(
+      /No such filter|Invalid option|filter.*not found|option.*not found/i?.test(
         errMsg,
       )
     ) {
-      logger.warn(
+      logger?.warn(
         "[VideoGen] Complex audio filters unavailable, retrying with safe fallback chain:",
-        errMsg.slice(0, 120),
+        errMsg?.slice(0, 120),
       );
-      const safeParts = parts.map((p) =>
+      const _safeParts = parts?.map((p) =>
         p
           .replace(
-            `[synth_raw]${audioProfile.filters},extrastereo=m=1.4,`,
+            `[synth_raw]${audioProfile?.filters},extrastereo=m=1.4,`,
             "[synth_raw]volume=0.9,",
           )
           .replace(
-            `[synth_raw]${audioProfile.filters},`,
+            `[synth_raw]${audioProfile?.filters},`,
             "[synth_raw]volume=0.9,",
           ),
       );
-      const safeArgs = [
+      const _safeArgs = [
         "-y",
         ...inputs,
         "-filter_complex",
-        safeParts.join(";"),
+        safeParts?.join(";"),
         ...outputLabels,
         "-c:v",
         hasLogo ? "libx264" : "copy",
@@ -1449,20 +1454,20 @@ export interface VideoGenResult {
 export async function generateVideo(
   opts: VideoGenOptions,
 ): Promise<VideoGenResult> {
-  const startMs = Date.now();
+  const _startMs = Date?.now();
 
   mkdirSync(OUTPUT_DIR, { recursive: true });
   mkdirSync(TEMP_DIR, { recursive: true });
 
-  const platform = opts.platform || "tiktok";
-  const templateKey =
-    opts.template && TEMPLATE_STYLES[opts.template]
-      ? opts.template
+  const _platform = opts?.platform || "tiktok";
+  const _templateKey =
+    opts?.template && TEMPLATE_STYLES[opts?.template]
+      ? opts?.template
       : "cinematic_promo";
-  const baseStyle = TEMPLATE_STYLES[templateKey];
-  const normalizeHex = (c?: string) => (c ? c.replace(/^#/, "0x") : undefined);
-  const customBg = normalizeHex(opts.bg_color);
-  const customAc = normalizeHex(opts.accent_color);
+  const _baseStyle = TEMPLATE_STYLES[templateKey];
+  const _normalizeHex = (c?: string) => (c ? c?.replace(/^#/, "0x") : undefined);
+  const _customBg = normalizeHex(opts?.bg_color);
+  const _customAc = normalizeHex(opts?.accent_color);
   const style: TemplateStyle =
     customBg || customAc
       ? {
@@ -1471,94 +1476,94 @@ export async function generateVideo(
           ...(customAc ? { ac: customAc } : {}),
         }
       : baseStyle;
-  const ratio = opts.aspect_ratio || PLATFORM_RATIOS[platform] || "9:16";
+  const _ratio = opts?.aspect_ratio || PLATFORM_RATIOS[platform] || "9:16";
   const [width, height] = ASPECT_RATIOS[ratio] || [1080, 1920];
-  const totalDur = Math.max(6, Math.min(opts.duration || 15, 30));
-  const genre = (opts.genre || "default").toLowerCase();
-  const audioProfile = AUDIO_PROFILES[genre] || AUDIO_PROFILES.default;
+  const _totalDur = Math?.max(6, Math?.min(opts?.duration || 15, 30));
+  const _genre = (opts?.genre || "default").toLowerCase();
+  const _audioProfile = AUDIO_PROFILES[genre] || AUDIO_PROFILES?.default;
 
-  const scenePrompt =
-    opts.scene_prompt?.trim() ||
-    (opts.topic ? `${opts.topic} ${genre} music` : undefined);
+  const _scenePrompt =
+    opts?.scene_prompt?.trim() ||
+    (opts?.topic ? `${opts?.topic} ${genre} music` : undefined);
 
   // ── AI content generation via Advanced Content Pipeline ──────────────────
-  let hook = opts.hook || "";
-  let body = opts.body || "";
-  let cta = opts.cta || "";
+  let hook = opts?.hook || "";
+  let body = opts?.body || "";
+  let cta = opts?.cta || "";
   let aiSource = "provided";
 
-  if (!hook && !body && !cta && opts.topic) {
+  if (!hook && !body && !cta && opts?.topic) {
     try {
-      const userId = opts.userId || "anonymous";
-      const pipelineResult =
-        await contentQualityPipeline.generateWithAdvancedAI(
+      const _userId = opts?.userId || "anonymous";
+      const _pipelineResult =
+        await contentQualityPipeline?.generateWithAdvancedAI(
           userId,
           {
-            topic: opts.topic,
+            topic: opts?.topic,
             platform,
             genre: genre !== "default" ? genre : undefined,
-            artistName: opts.artist_name || "",
-            tone: opts.tone || "energetic",
+            artistName: opts?.artist_name || "",
+            tone: opts?.tone || "energetic",
             objective:
-              opts.goal === "sales" || opts.goal === "traffic"
+              opts?.goal === "sales" || opts?.goal === "traffic"
                 ? "conversions"
-                : opts.goal === "viral"
+                : opts?.goal === "viral"
                   ? "viral"
                   : "engagement",
           },
           5,
         );
-      const best = pipelineResult.selected;
+      const _best = pipelineResult?.selected;
       if (best) {
-        hook = best.headline.slice(0, 80);
-        body = best.content.split("\n")[0].slice(0, 120);
-        cta = best.callToAction.slice(0, 60);
-        const score = best.scores.overall;
-        aiSource = `pipeline_${score.toFixed(0)}`;
-        logger.info(
-          `[VideoGen] Pipeline content — score=${score.toFixed(1)} ` +
-            `algoAlign=${(best.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
+        hook = best?.headline.slice(0, 80);
+        body = best?.content.split("\n")[0].slice(0, 120);
+        cta = best?.callToAction.slice(0, 60);
+        const _score = best?.scores.overall;
+        aiSource = `pipeline_${score?.toFixed(0)}`;
+        logger?.info(
+          `[VideoGen] Pipeline content — score=${score?.toFixed(1)} ` +
+            `algoAlign=${(best?.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
             `${score < 81 ? "⚠ below 81 threshold" : "✅ gate passed"}`,
         );
       }
     } catch (e) {
-      logger.warn(
+      logger?.warn(
         { err: e },
         "[VideoGen] Pipeline content generation failed, using defaults:",
       );
     }
   }
 
-  if (!hook) hook = opts.topic?.slice(0, 60) || "New Music Drop";
+  if (!hook) hook = opts?.topic?.slice(0, 60) || "New Music Drop";
   if (!body) body = "Stream now on all platforms";
   if (!cta) cta = "Follow for more";
 
   // ── Scene duration split ──────────────────────────────────────────────────
   // Multi-scene: hook 40% | body 35% | CTA 25%  (minimum 3s per scene)
-  const multiScene = totalDur >= 9;
-  const sceneDurations = multiScene
+  const _multiScene = totalDur >= 9;
+  const _sceneDurations = multiScene
     ? [
-        Math.max(3, Math.round(totalDur * 0.4)),
-        Math.max(3, Math.round(totalDur * 0.35)),
-        Math.max(3, Math.round(totalDur * 0.25)),
+        Math?.max(3, Math?.round(totalDur * 0.4)),
+        Math?.max(3, Math?.round(totalDur * 0.35)),
+        Math?.max(3, Math?.round(totalDur * 0.25)),
       ]
     : [totalDur];
 
-  const renderStart = Date.now();
+  const _renderStart = Date?.now();
   const tempFiles: string[] = [];
 
   try {
     if (multiScene) {
       // ── Render 3 scenes sequentially ──────────────────────────────────────
-      const hookPath = tempPath("hook");
-      const bodyPath = tempPath("body");
-      const ctaPath = tempPath("cta");
-      tempFiles.push(hookPath, bodyPath, ctaPath);
+      const _hookPath = tempPath("hook");
+      const _bodyPath = tempPath("body");
+      const _ctaPath = tempPath("cta");
+      tempFiles?.push(hookPath, bodyPath, ctaPath);
 
       await renderScene({
         type: "hook",
         primaryText: hook,
-        artistName: opts.artist_name,
+        artistName: opts?.artist_name,
         duration: sceneDurations[0],
         style,
         width,
@@ -1571,7 +1576,7 @@ export async function generateVideo(
       await renderScene({
         type: "body",
         primaryText: body,
-        artistName: opts.artist_name,
+        artistName: opts?.artist_name,
         duration: sceneDurations[1],
         style,
         width,
@@ -1585,7 +1590,7 @@ export async function generateVideo(
         type: "cta",
         primaryText: cta,
         secondaryText: body,
-        artistName: opts.artist_name,
+        artistName: opts?.artist_name,
         duration: sceneDurations[2],
         style,
         width,
@@ -1597,36 +1602,36 @@ export async function generateVideo(
       });
 
       // ── Combine with xfade ────────────────────────────────────────────────
-      const combinedPath = tempPath("combined");
-      tempFiles.push(combinedPath);
+      const _combinedPath = tempPath("combined");
+      tempFiles?.push(combinedPath);
       await combineScenes(
         [hookPath, bodyPath, ctaPath],
         sceneDurations,
         combinedPath,
-        style.transition,
+        style?.transition,
       );
 
       // ── Add audio (+ logo if provided) ────────────────────────────────────
-      const filename = `video_${randomBytes(6).toString("hex")}.mp4`;
-      const finalPath = path.join(OUTPUT_DIR, filename);
-      const transitionDur = 0.4;
-      const combinedDur =
-        sceneDurations.reduce((a, b) => a + b, 0) - 2 * transitionDur;
+      const _filename = `video_${randomBytes(6).toString("hex")}.mp4`;
+      const _finalPath = path?.join(OUTPUT_DIR, filename);
+      const _transitionDur = 0.4;
+      const _combinedDur =
+        sceneDurations?.reduce((a, b) => a + b, 0) - 2 * transitionDur;
       await applyAudioAndLogo(
         combinedPath,
         finalPath,
         combinedDur,
         audioProfile,
-        opts.logo_path,
-        opts.user_audio_path,
-        opts.voiceover ? { hook, body, cta } : undefined,
+        opts?.logo_path,
+        opts?.user_audio_path,
+        opts?.voiceover ? { hook, body, cta } : undefined,
       );
 
-      const renderMs = Date.now() - renderStart;
+      const _renderMs = Date?.now() - renderStart;
       cleanup(...tempFiles);
 
-      logger.info(
-        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | 3 scenes | ${style.bgType} bg | ${genre} audio | ${renderMs}ms`,
+      logger?.info(
+        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | 3 scenes | ${style?.bgType} bg | ${genre} audio | ${renderMs}ms`,
       );
 
       return {
@@ -1635,14 +1640,14 @@ export async function generateVideo(
         filename,
         width,
         height,
-        duration: Math.round(combinedDur),
+        duration: Math?.round(combinedDur),
         hook,
         body,
         cta,
         template: templateKey,
-        template_name: style.name,
+        template_name: style?.name,
         scenes_rendered: 3,
-        processing_time_ms: Date.now() - startMs,
+        processing_time_ms: Date?.now() - startMs,
         render_time_ms: renderMs,
         source: aiSource,
         quality: "cinematic",
@@ -1654,98 +1659,98 @@ export async function generateVideo(
           "multi_scene",
           "audio_track",
           "multi_font",
-          ...(opts.logo_path ? ["logo_overlay"] : []),
+          ...(opts?.logo_path ? ["logo_overlay"] : []),
         ],
       };
     } else {
       // ── Single-scene (short videos < 9s) ──────────────────────────────────
-      const scenePath = tempPath("single");
-      tempFiles.push(scenePath);
+      const _scenePath = tempPath("single");
+      tempFiles?.push(scenePath);
 
-      const mc = Math.max(16, Math.floor(width / (style.bs * 0.58)));
+      const _mc = Math?.max(16, Math?.floor(width / (style?.bs * 0.58)));
       const { hs, bs, cs } = scaleFonts(style, width, platform);
-      const font = FONTS[style.font];
-      const barH = Math.floor(height * 0.085);
-      const hookEnd = totalDur * 0.45;
-      const bodyStart = totalDur * 0.25;
-      const bodyEnd = totalDur * 0.75;
-      const ctaStart = totalDur * 0.62;
-      const boxW = Math.floor(width * 0.82);
-      const boxX = Math.floor((width - boxW) / 2);
-      const boxY = Math.floor(height * 0.7);
-      const boxH = cs + 44;
+      const _font = FONTS[style?.font];
+      const _barH = Math?.floor(height * 0.085);
+      const _hookEnd = totalDur * 0.45;
+      const _bodyStart = totalDur * 0.25;
+      const _bodyEnd = totalDur * 0.75;
+      const _ctaStart = totalDur * 0.62;
+      const _boxW = Math?.floor(width * 0.82);
+      const _boxX = Math?.floor((width - boxW) / 2);
+      const _boxY = Math?.floor(height * 0.7);
+      const _boxH = cs + 44;
 
       const vfParts: string[] = [];
 
       // Accent bars
-      vfParts.push(
-        `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
+      vfParts?.push(
+        `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style?.ac}@0.30:t=fill`,
       );
-      vfParts.push(
-        `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style.ac}@0.30:t=fill`,
+      vfParts?.push(
+        `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style?.ac}@0.30:t=fill`,
       );
 
-      if (opts.artist_name) {
-        const at = escFFmpeg(sanitizeVideoText(opts.artist_name).toUpperCase());
-        const atSize = Math.floor(bs * 0.62);
-        vfParts.push(
-          `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=black@0.40:fontsize=${atSize}` +
+      if (opts?.artist_name) {
+        const _at = escFFmpeg(sanitizeVideoText(opts?.artist_name).toUpperCase());
+        const _atSize = Math?.floor(bs * 0.62);
+        vfParts?.push(
+          `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=black@0.40:fontsize=${atSize}` +
             `:x=(w-text_w)/2+3:y=h*0.05+3`,
         );
-        vfParts.push(
-          `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=${style.ac}:fontsize=${atSize}` +
+        vfParts?.push(
+          `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=${style?.ac}:fontsize=${atSize}` +
             `:x=(w-text_w)/2:y=h*0.05`,
         );
       }
 
       // Hook text with shadow + slide-up
-      const ht = escFFmpeg(wrap(sanitizeVideoText(hook), mc));
-      vfParts.push(
+      const _ht = escFFmpeg(wrap(sanitizeVideoText(hook), mc));
+      vfParts?.push(
         `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0.45:fontsize=${hs}` +
           `:x=(w-text_w)/2+4:y=(h-text_h)/4+4` +
-          `:enable='between(t\\,0.3\\,${hookEnd.toFixed(1)})'` +
-          `:alpha='if(lt(t\\,0.8)\\,min(1\\,(t-0.3)*2)\\,if(gt(t\\,${(hookEnd - 0.5).toFixed(1)})\\,max(0\\,(${hookEnd.toFixed(1)}-t)*2)\\,1))'`,
+          `:enable='between(t\\,0.3\\,${hookEnd?.toFixed(1)})'` +
+          `:alpha='if(lt(t\\,0.8)\\,min(1\\,(t-0.3)*2)\\,if(gt(t\\,${(hookEnd - 0.5).toFixed(1)})\\,max(0\\,(${hookEnd?.toFixed(1)}-t)*2)\\,1))'`,
       );
-      vfParts.push(
-        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style.tc}:fontsize=${hs}` +
+      vfParts?.push(
+        `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style?.tc}:fontsize=${hs}` +
           `:x=(w-text_w)/2:y=(h-text_h)/4` +
-          `:enable='between(t\\,0.3\\,${hookEnd.toFixed(1)})'` +
-          `:alpha='if(lt(t\\,0.8)\\,min(1\\,(t-0.3)*2)\\,if(gt(t\\,${(hookEnd - 0.5).toFixed(1)})\\,max(0\\,(${hookEnd.toFixed(1)}-t)*2)\\,1))'` +
-          `:bordercolor=${style.ac}:borderw=2`,
+          `:enable='between(t\\,0.3\\,${hookEnd?.toFixed(1)})'` +
+          `:alpha='if(lt(t\\,0.8)\\,min(1\\,(t-0.3)*2)\\,if(gt(t\\,${(hookEnd - 0.5).toFixed(1)})\\,max(0\\,(${hookEnd?.toFixed(1)}-t)*2)\\,1))'` +
+          `:bordercolor=${style?.ac}:borderw=2`,
       );
 
       // Body text
-      const bt = escFFmpeg(wrap(sanitizeVideoText(body), mc));
-      vfParts.push(
-        `drawtext=fontfile=${FONTS.regular}:text='${bt}':fontcolor=${style.tc}:fontsize=${bs}` +
+      const _bt = escFFmpeg(wrap(sanitizeVideoText(body), mc));
+      vfParts?.push(
+        `drawtext=fontfile=${FONTS?.regular}:text='${bt}':fontcolor=${style?.tc}:fontsize=${bs}` +
           `:x=(w-text_w)/2:y=(h-text_h)/2` +
-          `:enable='between(t\\,${bodyStart.toFixed(1)}\\,${bodyEnd.toFixed(1)})'` +
-          `:alpha='if(lt(t\\,${(bodyStart + 0.5).toFixed(1)})\\,min(1\\,(t-${bodyStart.toFixed(1)})*2)\\,if(gt(t\\,${(bodyEnd - 0.5).toFixed(1)})\\,max(0\\,(${bodyEnd.toFixed(1)}-t)*2)\\,1))'`,
+          `:enable='between(t\\,${bodyStart?.toFixed(1)}\\,${bodyEnd?.toFixed(1)})'` +
+          `:alpha='if(lt(t\\,${(bodyStart + 0.5).toFixed(1)})\\,min(1\\,(t-${bodyStart?.toFixed(1)})*2)\\,if(gt(t\\,${(bodyEnd - 0.5).toFixed(1)})\\,max(0\\,(${bodyEnd?.toFixed(1)}-t)*2)\\,1))'`,
       );
 
       // CTA pill with dual accent lines
-      vfParts.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style.cta_bg}@0.94:t=fill` +
-          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'`,
+      vfParts?.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style?.cta_bg}@0.94:t=fill` +
+          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'`,
       );
-      vfParts.push(
-        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style.ac}:t=fill` +
-          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'`,
+      vfParts?.push(
+        `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style?.ac}:t=fill` +
+          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'`,
       );
-      vfParts.push(
-        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style.ac}@0.55:t=fill` +
-          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'`,
+      vfParts?.push(
+        `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style?.ac}@0.55:t=fill` +
+          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'`,
       );
-      const ct = escFFmpeg(wrap(sanitizeVideoText(cta), mc));
-      vfParts.push(
+      const _ct = escFFmpeg(wrap(sanitizeVideoText(cta), mc));
+      vfParts?.push(
         `drawtext=fontfile=${font}:text='${ct}':fontcolor=white:fontsize=${cs}` +
           `:x=(w-text_w)/2:y=h*0.72` +
-          `:enable='between(t\\,${ctaStart.toFixed(1)}\\,${totalDur})'` +
-          `:alpha='if(lt(t\\,${(ctaStart + 0.3).toFixed(1)})\\,min(1\\,(t-${ctaStart.toFixed(1)})*3)\\,1)'`,
+          `:enable='between(t\\,${ctaStart?.toFixed(1)}\\,${totalDur})'` +
+          `:alpha='if(lt(t\\,${(ctaStart + 0.3).toFixed(1)})\\,min(1\\,(t-${ctaStart?.toFixed(1)})*3)\\,1)'`,
       );
 
-      if (style.bgType === "solid") {
-        const vf = [
+      if (style?.bgType === "solid") {
+        const _vf = [
           "format=yuv420p",
           "vignette=angle=PI/5:mode=forward:eval=init",
           ...vfParts,
@@ -1757,7 +1762,7 @@ export async function generateVideo(
             "-f",
             "lavfi",
             "-i",
-            `color=c=${style.bg}:s=${width}x${height}:d=${totalDur}:r=30`,
+            `color=c=${style?.bg}:s=${width}x${height}:d=${totalDur}:r=30`,
             "-vf",
             vf,
             "-c:v",
@@ -1778,10 +1783,10 @@ export async function generateVideo(
           { timeout: 300_000 },
         );
       } else {
-        const iW = Math.floor(width / 2);
-        const iH = Math.floor(height / 2);
-        const bgGeq = getBgVfPrefix(style.bgType, style.bg, iW, iH, style.ac);
-        const vfAnim = [
+        const _iW = Math?.floor(width / 2);
+        const _iH = Math?.floor(height / 2);
+        const _bgGeq = getBgVfPrefix(style?.bgType, style?.bg, iW, iH, style?.ac);
+        const _vfAnim = [
           bgGeq,
           `scale=${width}:${height}:flags=lanczos`,
           "format=yuv420p",
@@ -1817,23 +1822,23 @@ export async function generateVideo(
         );
       }
 
-      const filename = `video_${randomBytes(6).toString("hex")}.mp4`;
-      const finalPath = path.join(OUTPUT_DIR, filename);
+      const _filename = `video_${randomBytes(6).toString("hex")}.mp4`;
+      const _finalPath = path?.join(OUTPUT_DIR, filename);
       await applyAudioAndLogo(
         scenePath,
         finalPath,
         totalDur,
         audioProfile,
-        opts.logo_path,
-        opts.user_audio_path,
-        opts.voiceover ? { hook, body, cta } : undefined,
+        opts?.logo_path,
+        opts?.user_audio_path,
+        opts?.voiceover ? { hook, body, cta } : undefined,
       );
 
-      const renderMs = Date.now() - renderStart;
+      const _renderMs = Date?.now() - renderStart;
       cleanup(...tempFiles);
 
-      logger.info(
-        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | single scene | ${style.bgType} bg | ${genre} audio | ${renderMs}ms`,
+      logger?.info(
+        `[VideoGen] ✅ ${filename} — ${width}x${height} ${totalDur}s | single scene | ${style?.bgType} bg | ${genre} audio | ${renderMs}ms`,
       );
 
       return {
@@ -1847,9 +1852,9 @@ export async function generateVideo(
         body,
         cta,
         template: templateKey,
-        template_name: style.name,
+        template_name: style?.name,
         scenes_rendered: 1,
-        processing_time_ms: Date.now() - startMs,
+        processing_time_ms: Date?.now() - startMs,
         render_time_ms: renderMs,
         source: aiSource,
         quality: "cinematic",
@@ -1860,13 +1865,13 @@ export async function generateVideo(
           "text_outline",
           "audio_track",
           "multi_font",
-          ...(opts.logo_path ? ["logo_overlay"] : []),
+          ...(opts?.logo_path ? ["logo_overlay"] : []),
         ],
       };
     }
   } catch (err) {
     cleanup(...tempFiles);
-    logger.warn("[VideoGen] Render failed:", err?.stderr || err?.message);
+    logger?.warn("[VideoGen] Render failed:", err?.stderr || err?.message);
     return {
       success: false,
       error: `Video render failed: ${err?.message || "FFmpeg error"}`,

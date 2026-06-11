@@ -28,8 +28,8 @@ export function createGracefulRedisClient(
     );
   }
 
-  const pdim = getPdimClient();
-  logger.info(`✅ ${serviceName}: Connected via PDIM`);
+  const _pdim = getPdimClient();
+  logger?.info(`✅ ${serviceName}: Connected via PDIM`);
 
   return {
     client: pdim,
@@ -38,32 +38,32 @@ export function createGracefulRedisClient(
     },
 
     async get(key: string): Promise<string | null> {
-      return pdim.get(key);
+      return pdim?.get(key);
     },
 
     async set(key: string, value: string, ttl?: number): Promise<void> {
       if (ttl) {
-        await pdim.setex(key, ttl, value);
+        await pdim?.setex(key, ttl, value);
       } else {
-        await pdim.set(key, value);
+        await pdim?.set(key, value);
       }
     },
 
     async del(key: string): Promise<void> {
-      await pdim.del(key);
+      await pdim?.del(key);
     },
 
     async exists(key: string): Promise<boolean> {
-      const result = await pdim.exists(key);
+      const _result = await pdim?.exists(key);
       return result === 1;
     },
 
     async incr(key: string): Promise<number> {
-      return pdim.incr(key);
+      return pdim?.incr(key);
     },
 
     async expire(key: string, seconds: number): Promise<void> {
-      await pdim.expire(key, seconds);
+      await pdim?.expire(key, seconds);
     },
   };
 }

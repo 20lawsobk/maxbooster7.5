@@ -3,16 +3,16 @@ import { apiKeyService } from "../services/apiKeyService";
 import { z } from "zod";
 import { logger } from "../logger.js";
 
-const router = Router();
+const _router = Router();
 
 // Schema for API key creation
-const createApiKeySchema = z.object({
-  keyName: z.string().min(1).max(255),
-  tier: z.enum(["free", "pro", "enterprise"]).optional().default("free"),
+const _createApiKeySchema = z?.object({
+  keyName: z?.string().min(1).max(255),
+  tier: z?.enum(["free", "pro", "enterprise"]).optional().default("free"),
 });
 
 // Schema for query parameters
-const usageQuerySchema = z.object({
+const _usageQuerySchema = z?.object({
   days: z
     .string()
     .optional()
@@ -23,68 +23,68 @@ const usageQuerySchema = z.object({
  * POST /api/developer/keys/create
  * Generate a new API key for the authenticated user
  */
-router.post("/keys/create", async (req: Request, res: Response) => {
+router?.post("/keys/create", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
-    if (!req.user?.id) {
-      return res.status(401).json({
+    if (!req?.user?.id) {
+      return res?.status(401).json({
         error: "Unauthorized",
         message: "You must be logged in to create API keys",
       });
     }
 
     // Validate request body
-    const validation = createApiKeySchema.safeParse(req.body);
-    if (!validation.success) {
-      return res.status(400).json({
+    const _validation = createApiKeySchema?.safeParse(req?.body);
+    if (!validation?.success) {
+      return res?.status(400).json({
         error: "Bad Request",
         message: "Invalid request body",
-        details: validation.error.issues,
+        details: validation?.error.issues,
       });
     }
 
-    const { keyName, tier } = validation.data;
-    const userId = req.user.id;
+    const { keyName, tier } = validation?.data;
+    const _userId = req?.user.id;
 
     // Check subscription tier for premium API keys
     if (
       tier === "pro" &&
-      req.user.subscriptionTier !== "premium" &&
-      req.user.subscriptionTier !== "pro"
+      req?.user.subscriptionTier !== "premium" &&
+      req?.user.subscriptionTier !== "pro"
     ) {
-      return res.status(403).json({
+      return res?.status(403).json({
         error: "Forbidden",
         message: "Pro API keys require a Premium or Pro subscription",
       });
     }
 
-    if (tier === "enterprise" && req.user.subscriptionTier !== "enterprise") {
-      return res.status(403).json({
+    if (tier === "enterprise" && req?.user.subscriptionTier !== "enterprise") {
+      return res?.status(403).json({
         error: "Forbidden",
         message: "Enterprise API keys require an Enterprise subscription",
       });
     }
 
     // Generate API key
-    const apiKey = await apiKeyService.generateApiKey(userId, keyName, tier);
+    const _apiKey = await apiKeyService?.generateApiKey(userId, keyName, tier);
 
-    return res.status(201).json({
+    return res?.status(201).json({
       success: true,
       message: "API key created successfully",
       apiKey: {
-        id: apiKey.id,
-        keyName: apiKey.keyName,
-        apiKey: apiKey.apiKey, // Full key shown only once
-        tier: apiKey.tier,
-        rateLimit: apiKey.rateLimit,
-        createdAt: apiKey.createdAt,
+        id: apiKey?.id,
+        keyName: apiKey?.keyName,
+        apiKey: apiKey?.apiKey, // Full key shown only once
+        tier: apiKey?.tier,
+        rateLimit: apiKey?.rateLimit,
+        createdAt: apiKey?.createdAt,
       },
       warning:
         "Save this API key securely. You will not be able to view it again.",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error creating API key:");
-    return res.status(500).json({
+    logger?.warn({ err: error }, "Error creating API key:");
+    return res?.status(500).json({
       error: "Internal Server Error",
       message: "Failed to create API key",
     });
@@ -95,39 +95,39 @@ router.post("/keys/create", async (req: Request, res: Response) => {
  * GET /api/developer/keys
  * List all API keys for the authenticated user
  */
-router.get("/keys", async (req: Request, res: Response) => {
+router?.get("/keys", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
-    if (!req.user?.id) {
-      return res.status(401).json({
+    if (!req?.user?.id) {
+      return res?.status(401).json({
         error: "Unauthorized",
         message: "You must be logged in to view API keys",
       });
     }
 
-    const userId = req.user.id;
+    const _userId = req?.user.id;
 
     // Get user's API keys
-    const apiKeys = await apiKeyService.listApiKeys(userId);
+    const _apiKeys = await apiKeyService?.listApiKeys(userId);
 
-    return res.json({
+    return res?.json({
       success: true,
-      total: apiKeys.length,
-      apiKeys: apiKeys.map((key) => ({
-        id: key.id,
-        keyName: key.keyName,
-        apiKeyPreview: key.apiKeyPreview,
-        tier: key.tier,
-        rateLimit: key.rateLimit,
-        isActive: key.isActive,
-        lastUsedAt: key.lastUsedAt,
-        createdAt: key.createdAt,
-        expiresAt: key.expiresAt,
+      total: apiKeys?.length,
+      apiKeys: apiKeys?.map((key) => ({
+        id: key?.id,
+        keyName: key?.keyName,
+        apiKeyPreview: key?.apiKeyPreview,
+        tier: key?.tier,
+        rateLimit: key?.rateLimit,
+        isActive: key?.isActive,
+        lastUsedAt: key?.lastUsedAt,
+        createdAt: key?.createdAt,
+        expiresAt: key?.expiresAt,
       })),
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error listing API keys:");
-    return res.status(500).json({
+    logger?.warn({ err: error }, "Error listing API keys:");
+    return res?.status(500).json({
       error: "Internal Server Error",
       message: "Failed to list API keys",
     });
@@ -138,44 +138,44 @@ router.get("/keys", async (req: Request, res: Response) => {
  * DELETE /api/developer/keys/:keyId
  * Revoke an API key
  */
-router.delete("/keys/:keyId", async (req: Request, res: Response) => {
+router?.delete("/keys/:keyId", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
-    if (!req.user?.id) {
-      return res.status(401).json({
+    if (!req?.user?.id) {
+      return res?.status(401).json({
         error: "Unauthorized",
         message: "You must be logged in to revoke API keys",
       });
     }
 
-    const userId = req.user.id;
-    const keyId = req.params.keyId;
+    const _userId = req?.user.id;
+    const _keyId = req?.params.keyId;
 
     if (!keyId) {
-      return res.status(400).json({
+      return res?.status(400).json({
         error: "Bad Request",
         message: "API key ID is required",
       });
     }
 
     // Revoke the API key
-    await apiKeyService.revokeApiKey(keyId, userId);
+    await apiKeyService?.revokeApiKey(keyId, userId);
 
-    return res.json({
+    return res?.json({
       success: true,
       message: "API key revoked successfully",
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error revoking API key:");
+    logger?.warn({ err: error }, "Error revoking API key:");
 
-    if (error.message === "API key not found or unauthorized") {
-      return res.status(404).json({
+    if (error?.message === "API key not found or unauthorized") {
+      return res?.status(404).json({
         error: "Not Found",
         message: "API key not found or you do not have permission to revoke it",
       });
     }
 
-    return res.status(500).json({
+    return res?.status(500).json({
       error: "Internal Server Error",
       message: "Failed to revoke API key",
     });
@@ -186,54 +186,54 @@ router.delete("/keys/:keyId", async (req: Request, res: Response) => {
  * GET /api/developer/usage
  * Get usage statistics for all user's API keys
  */
-router.get("/usage", async (req: Request, res: Response) => {
+router?.get("/usage", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
-    if (!req.user?.id) {
-      return res.status(401).json({
+    if (!req?.user?.id) {
+      return res?.status(401).json({
         error: "Unauthorized",
         message: "You must be logged in to view API usage",
       });
     }
 
-    const userId = req.user.id;
+    const _userId = req?.user.id;
 
     // Validate query parameters
-    const validation = usageQuerySchema.safeParse(req.query);
-    if (!validation.success) {
-      return res.status(400).json({
+    const _validation = usageQuerySchema?.safeParse(req?.query);
+    if (!validation?.success) {
+      return res?.status(400).json({
         error: "Bad Request",
         message: "Invalid query parameters",
-        details: validation.error.issues,
+        details: validation?.error.issues,
       });
     }
 
-    const { days } = validation.data;
+    const { days } = validation?.data;
 
     // Get usage statistics
-    const usageStats = await apiKeyService.getUserApiUsageStats(userId, days);
+    const _usageStats = await apiKeyService?.getUserApiUsageStats(userId, days);
 
     // Calculate total usage across all keys
-    const totalUsage = usageStats.reduce(
+    const _totalUsage = usageStats?.reduce(
       (acc, key) => ({
-        totalRequests: acc.totalRequests + (key.totalRequests || 0),
+        totalRequests: acc?.totalRequests + (key?.totalRequests || 0),
       }),
       { totalRequests: 0 },
     );
 
-    return res.json({
+    return res?.json({
       success: true,
       timeRange: {
         days,
-        start: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
+        start: new Date(Date?.now() - days * 24 * 60 * 60 * 1000).toISOString(),
         end: new Date().toISOString(),
       },
       totalUsage,
       byApiKey: usageStats,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error fetching API usage:");
-    return res.status(500).json({
+    logger?.warn({ err: error }, "Error fetching API usage:");
+    return res?.status(500).json({
       error: "Internal Server Error",
       message: "Failed to fetch API usage statistics",
     });
@@ -244,61 +244,61 @@ router.get("/usage", async (req: Request, res: Response) => {
  * GET /api/developer/usage/:keyId
  * Get detailed usage statistics for a specific API key
  */
-router.get("/usage/:keyId", async (req: Request, res: Response) => {
+router?.get("/usage/:keyId", async (req: Request, res: Response) => {
   try {
     // Check if user is authenticated
-    if (!req.user?.id) {
-      return res.status(401).json({
+    if (!req?.user?.id) {
+      return res?.status(401).json({
         error: "Unauthorized",
         message: "You must be logged in to view API usage",
       });
     }
 
-    const userId = req.user.id;
-    const keyId = req.params.keyId;
+    const _userId = req?.user.id;
+    const _keyId = req?.params.keyId;
 
     // Validate query parameters
-    const validation = usageQuerySchema.safeParse(req.query);
-    if (!validation.success) {
-      return res.status(400).json({
+    const _validation = usageQuerySchema?.safeParse(req?.query);
+    if (!validation?.success) {
+      return res?.status(400).json({
         error: "Bad Request",
         message: "Invalid query parameters",
-        details: validation.error.issues,
+        details: validation?.error.issues,
       });
     }
 
-    const { days } = validation.data;
+    const { days } = validation?.data;
 
     // Verify the API key belongs to the user
-    const apiKey = await apiKeyService.getApiKeyById(keyId);
-    if (!apiKey || apiKey.userId !== userId) {
-      return res.status(404).json({
+    const _apiKey = await apiKeyService?.getApiKeyById(keyId);
+    if (!apiKey || apiKey?.userId !== userId) {
+      return res?.status(404).json({
         error: "Not Found",
         message: "API key not found or you do not have permission to view it",
       });
     }
 
     // Get usage statistics
-    const usageStats = await apiKeyService.getApiKeyUsageStats(keyId, days);
+    const _usageStats = await apiKeyService?.getApiKeyUsageStats(keyId, days);
 
-    return res.json({
+    return res?.json({
       success: true,
       apiKey: {
-        id: apiKey.id,
-        keyName: apiKey.keyName,
-        tier: apiKey.tier,
-        rateLimit: apiKey.rateLimit,
+        id: apiKey?.id,
+        keyName: apiKey?.keyName,
+        tier: apiKey?.tier,
+        rateLimit: apiKey?.rateLimit,
       },
       timeRange: {
         days,
-        start: new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString(),
+        start: new Date(Date?.now() - days * 24 * 60 * 60 * 1000).toISOString(),
         end: new Date().toISOString(),
       },
       usage: usageStats,
     });
   } catch (error: unknown) {
-    logger.warn({ err: error }, "Error fetching API key usage:");
-    return res.status(500).json({
+    logger?.warn({ err: error }, "Error fetching API key usage:");
+    return res?.status(500).json({
       error: "Internal Server Error",
       message: "Failed to fetch API key usage statistics",
     });
@@ -309,9 +309,9 @@ router.get("/usage/:keyId", async (req: Request, res: Response) => {
  * GET /api/developer/docs
  * Get API documentation metadata
  */
-router.get("/docs", async (_req: Request, res: Response) => {
+router?.get("/docs", async (_req: Request, res: Response) => {
   try {
-    return res.json({
+    return res?.json({
       success: true,
       version: "1.0.0",
       baseUrl: "/api/v1",
@@ -352,7 +352,7 @@ router.get("/docs", async (_req: Request, res: Response) => {
             startDate: "Optional - Start date (ISO 8601)",
             endDate: "Optional - End date (ISO 8601)",
             platform: "Optional - Filter by platform",
-            timeRange: "Optional - Time range (e.g., 30d, 7d)",
+            timeRange: "Optional - Time range (e?.g., 30d, 7d)",
           },
         },
         {
@@ -393,9 +393,9 @@ fetch('https://your-domain.com/api/v1/analytics/streams', {
     'Authorization': 'Bearer mb_live_...'
   }
 })
-.then(response => response.json())
+.then(response => response?.json())
 .then(data => { /* process data */ })
-.catch(error => console.error('Error:', error));
+.catch(error => console?.error('Error:', error));
       `.trim(),
         python: `
 import requests
@@ -404,15 +404,15 @@ headers = {
     'Authorization': 'Bearer mb_live_...'
 }
 
-response = requests.get('https://your-domain.com/api/v1/analytics/streams', headers=headers)
-data = response.json()
+response = requests?.get('https://your-domain.com/api/v1/analytics/streams', headers=headers)
+data = response?.json()
 print(data)
       `.trim(),
       },
     });
   } catch (error) {
-    logger.warn("Error in developer docs:", error?.message);
-    res.status(500).json({ error: "Failed to process request" });
+    logger?.warn("Error in developer docs:", error?.message);
+    res?.status(500).json({ error: "Failed to process request" });
   }
 });
 

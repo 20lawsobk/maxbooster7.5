@@ -42,21 +42,21 @@ let _provider: RegistrarProvider | null = null;
 export function getRegistrarProvider(): RegistrarProvider {
   if (_provider) return _provider;
 
-  const requested = (
-    process.env.REGISTRAR_PROVIDER ?? "maxbooster"
+  const _requested = (
+    process?.env.REGISTRAR_PROVIDER ?? "maxbooster"
   ).toLowerCase();
 
   switch (requested) {
     case "epp":
       _provider = new EppRegistrarProvider();
-      logger.info("[RegistrarFactory] Using EPP provider (external registrar)");
+      logger?.info("[RegistrarFactory] Using EPP provider (external registrar)");
       break;
 
     case "maxbooster":
     case "internal":
     default:
       _provider = new MaxBoosterRegistrarProvider();
-      logger.info(
+      logger?.info(
         "[RegistrarFactory] Using Max Booster registrar (built-in DNS + DB)",
       );
       break;
@@ -68,8 +68,8 @@ export function getRegistrarProvider(): RegistrarProvider {
 /** Replace the provider at runtime (useful for tests or hot-swapping). */
 export function setRegistrarProvider(provider: RegistrarProvider): void {
   _provider = provider;
-  logger.info(
-    { provider: provider.name },
+  logger?.info(
+    { provider: provider?.name },
     "[RegistrarFactory] Provider overridden",
   );
 }

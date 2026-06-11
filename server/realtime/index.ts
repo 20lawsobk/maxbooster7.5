@@ -31,15 +31,15 @@ const userConnections: Map<string, Set<WebSocket>> = new Map();
 
 // Connection limits — prevent FD exhaustion and memory runaway at scale.
 // At 90M registered users even a modest over-connection rate causes problems.
-const MAX_GLOBAL_WS_CONNECTIONS = 50_000; // per process; multiply by # replicas
-const MAX_WS_CONNECTIONS_PER_USER = 5; // tabs + mobile + desktop
+const _MAX_GLOBAL_WS_CONNECTIONS = 50_000; // per process; multiply by # replicas
+const _MAX_WS_CONNECTIONS_PER_USER = 5; // tabs + mobile + desktop
 
 // Session store reference - set by main server during initialization
 let sessionStore: Record<string, unknown> | null = null;
 
 export function setSessionStore(store: Record<string, unknown>): void {
   sessionStore = store;
-  logger.info("WebSocket session store configured");
+  logger?.info("WebSocket session store configured");
 }
 
 interface AuthenticatedWebSocket extends WebSocket {
@@ -51,8 +51,8 @@ async function authenticateFromSession(
   request: IncomingMessage,
 ): Promise<string | null> {
   try {
-    const cookies = parseCookie(request.headers.cookie || "");
-    const sessionId = cookies.sessionId;
+    const _cookies = parseCookie(request?.headers.cookie || "");
+    const _sessionId = cookies?.sessionId;
 
     if (!sessionId || !sessionStore) {
       return null;
@@ -60,12 +60,12 @@ async function authenticateFromSession(
 
     // Parse the signed session ID (format: s:<sessionId>.<signature> or just sessionId)
     let rawSessionId = sessionId;
-    if (sessionId.startsWith("s:")) {
-      rawSessionId = sessionId.slice(2).split(".")[0];
+    if (sessionId?.startsWith("s:")) {
+      rawSessionId = sessionId?.slice(2).split(".")[0];
     }
 
     return new Promise((resolve) => {
-      sessionStore.get(
+      sessionStore?.get(
         rawSessionId,
         (err: Record<string, unknown>, session: Record<string, unknown>) => {
           if (err || !session) {
@@ -73,13 +73,13 @@ async function authenticateFromSession(
             return;
           }
 
-          const userId = session.passport?.user || session.userId;
+          const _userId = session?.passport?.user || session?.userId;
           resolve(userId || null);
         },
       );
     });
   } catch (error) {
-    logger.warn({ err: error }, "WebSocket session auth error:");
+    logger?.warn({ err: error }, "WebSocket session auth error:");
     return null;
   }
 }
@@ -95,41 +95,41 @@ function initializeNotificationServer(httpServer: HttpServer): void {
 
   // Server-level error handler: prevents protocol/handshake errors from becoming
   // uncaughtExceptions that crash the process.
-  notificationWss.on("error", (err: Error) => {
-    logger.warn("[WS] Notification server error:", err.message);
+  notificationWss?.on("error", (err: Error) => {
+    logger?.warn("[WS] Notification server error:", err?.message);
   });
 
-  httpServer.on("upgrade", async (request, socket, head) => {
-    const pathname = parseUrl(request.url || "").pathname;
+  httpServer?.on("upgrade", async (request, socket, head) => {
+    const _pathname = parseUrl(request?.url || "").pathname;
 
     // Handle general /ws path for notifications
     if (pathname === "/ws") {
       // Global connection cap — reject before paying the upgrade cost
-      if (notificationClients.size >= MAX_GLOBAL_WS_CONNECTIONS) {
-        logger.warn(
+      if (notificationClients?.size >= MAX_GLOBAL_WS_CONNECTIONS) {
+        logger?.warn(
           `[WS] Global connection limit reached (${MAX_GLOBAL_WS_CONNECTIONS}) — rejecting upgrade`,
         );
-        socket.write(
+        socket?.write(
           "HTTP/1.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n",
         );
-        socket.destroy();
+        socket?.destroy();
         return;
       }
 
       // Authenticate using session cookie before upgrading
-      const userId = await authenticateFromSession(request);
+      const _userId = await authenticateFromSession(request);
 
       // Per-user connection cap — prevent one account from monopolising FDs
       if (userId) {
-        const existing = userConnections.get(userId);
-        if (existing && existing.size >= MAX_WS_CONNECTIONS_PER_USER) {
-          logger.warn(
+        const _existing = userConnections?.get(userId);
+        if (existing && existing?.size >= MAX_WS_CONNECTIONS_PER_USER) {
+          logger?.warn(
             `[WS] Per-user connection limit reached for user ${userId} (${MAX_WS_CONNECTIONS_PER_USER} max)`,
           );
-          socket.write(
+          socket?.write(
             "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n",
           );
-          socket.destroy();
+          socket?.destroy();
           return;
         }
       }
@@ -139,38 +139,38 @@ function initializeNotificationServer(httpServer: HttpServer): void {
         socket,
         head,
         (ws: AuthenticatedWebSocket) => {
-          notificationClients.add(ws);
+          notificationClients?.add(ws);
 
           // Set authenticated user from server-side session validation
           if (userId) {
             ws.userId = userId;
             ws.isAuthenticated = true;
 
-            if (!userConnections.has(userId)) {
-              userConnections.set(userId, new Set());
+            if (!userConnections?.has(userId)) {
+              userConnections?.set(userId, new Set());
             }
-            userConnections.get(userId)!.add(ws);
+            userConnections?.get(userId)!.add(ws);
 
-            ws.send(JSON.stringify({ type: "auth_success", userId }));
-            logger.info(
+            ws?.send(JSON?.stringify({ type: "auth_success", userId }));
+            logger?.info(
               `WebSocket authenticated via session for user: ${userId}`,
             );
           }
 
-          ws.on("message", (data) => {
+          ws?.on("message", (data) => {
             try {
-              const message = JSON.parse(data.toString());
+              const _message = JSON?.parse(data?.toString());
               // Echo back pings with pong
-              if (message.type === "ping") {
-                ws.send(
-                  JSON.stringify({ type: "pong", timestamp: Date.now() }),
+              if (message?.type === "ping") {
+                ws?.send(
+                  JSON?.stringify({ type: "pong", timestamp: Date?.now() }),
                 );
               }
               // Ignore client-side auth attempts - authentication is server-side only
-              if (message.type === "auth") {
-                if (!ws.isAuthenticated) {
-                  ws.send(
-                    JSON.stringify({
+              if (message?.type === "auth") {
+                if (!ws?.isAuthenticated) {
+                  ws?.send(
+                    JSON?.stringify({
                       type: "auth_error",
                       message:
                         "Authentication failed. Please refresh the page.",
@@ -183,39 +183,39 @@ function initializeNotificationServer(httpServer: HttpServer): void {
             }
           });
 
-          ws.on("close", () => {
-            notificationClients.delete(ws);
-            if (ws.userId) {
-              const connections = userConnections.get(ws.userId);
+          ws?.on("close", () => {
+            notificationClients?.delete(ws);
+            if (ws?.userId) {
+              const _connections = userConnections?.get(ws?.userId);
               if (connections) {
-                connections.delete(ws);
-                if (connections.size === 0) {
-                  userConnections.delete(ws.userId);
+                connections?.delete(ws);
+                if (connections?.size === 0) {
+                  userConnections?.delete(ws?.userId);
                 }
               }
             }
           });
 
-          ws.on("error", () => {
-            notificationClients.delete(ws);
-            if (ws.userId) {
-              const connections = userConnections.get(ws.userId);
+          ws?.on("error", () => {
+            notificationClients?.delete(ws);
+            if (ws?.userId) {
+              const _connections = userConnections?.get(ws?.userId);
               if (connections) {
-                connections.delete(ws);
-                if (connections.size === 0) {
-                  userConnections.delete(ws.userId);
+                connections?.delete(ws);
+                if (connections?.size === 0) {
+                  userConnections?.delete(ws?.userId);
                 }
               }
             }
           });
 
           // Send welcome message
-          ws.send(
-            JSON.stringify({
+          ws?.send(
+            JSON?.stringify({
               type: "connected",
               message: "Connected to Max Booster notifications",
               authenticated: !!userId,
-              timestamp: Date.now(),
+              timestamp: Date?.now(),
             }),
           );
         },
@@ -227,7 +227,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   (global as Record<string, unknown>).broadcastNotification =
     sendNotificationToUser;
 
-  logger.info("General notification WebSocket server initialized at /ws");
+  logger?.info("General notification WebSocket server initialized at /ws");
 }
 
 // Deliver a notification to connections on THIS instance only
@@ -235,25 +235,25 @@ function deliverLocalUserNotification(
   userId: string,
   notification: object,
 ): void {
-  const connections = userConnections.get(userId);
-  if (connections && connections.size > 0) {
-    const message = JSON.stringify({
+  const _connections = userConnections?.get(userId);
+  if (connections && connections?.size > 0) {
+    const _message = JSON?.stringify({
       type: "notification",
       data: notification,
     });
-    connections.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
+    connections?.forEach((client) => {
+      if (client?.readyState === WebSocket?.OPEN) {
+        client?.send(message);
       }
     });
   }
 }
 
 function deliverLocalBroadcast(notification: object): void {
-  const message = JSON.stringify({ type: "notification", data: notification });
-  notificationClients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
+  const _message = JSON?.stringify({ type: "notification", data: notification });
+  notificationClients?.forEach((client) => {
+    if (client?.readyState === WebSocket?.OPEN) {
+      client?.send(message);
     }
   });
 }
@@ -270,7 +270,7 @@ export function sendNotificationToUser(
   });
   // Also deliver locally without waiting for the Redis round-trip
   deliverLocalUserNotification(userId, notification);
-  logger.info(`Sent notification to user ${userId}`);
+  logger?.info(`Sent notification to user ${userId}`);
 }
 
 // Broadcast to all notification clients on all instances
@@ -298,21 +298,21 @@ export async function initializeRealtimeServer(
     // Initialize the collaboration server with the HTTP server for WebSocket upgrades
     if (
       studioCollabServer &&
-      typeof studioCollabServer.initialize === "function"
+      typeof studioCollabServer?.initialize === "function"
     ) {
-      await studioCollabServer.initialize(httpServer);
-      logger.info("Studio collaboration WebSocket server initialized");
+      await studioCollabServer?.initialize(httpServer);
+      logger?.info("Studio collaboration WebSocket server initialized");
     } else {
       // The collaboration server may auto-initialize, just log status
-      logger.info("Studio collaboration server ready");
+      logger?.info("Studio collaboration server ready");
     }
 
     // Initialize presence manager
     const { presenceManager } = await import("./presenceManager.js");
     if (presenceManager) {
-      logger.info("Presence manager ready");
+      logger?.info("Presence manager ready");
     }
   } catch (error) {
-    logger.warn({ err: error }, "Failed to initialize realtime server:");
+    logger?.warn({ err: error }, "Failed to initialize realtime server:");
   }
 }

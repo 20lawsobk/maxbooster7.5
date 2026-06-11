@@ -7,7 +7,7 @@ import { users, projects, releases } from "../../shared/schema.js";
 import { count, eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
-const router = Router();
+const _router = Router();
 
 /**
  * POST /api/testing/setup-stripe-customer
@@ -15,14 +15,14 @@ const router = Router();
  * authenticated user directly in the DB so integration tests can exercise the
  * full billing-webhook tier-update flow without a live Stripe connection.
  */
-router.post("/setup-stripe-customer", async (req, res) => {
-  if (process.env.NODE_ENV === "production") {
-    return res.status(404).json({ error: "Not found" });
+router?.post("/setup-stripe-customer", async (req, res) => {
+  if (process?.env.NODE_ENV === "production") {
+    return res?.status(404).json({ error: "Not found" });
   }
-  if (!req.isAuthenticated?.() || !req.user?.id) {
-    return res.status(401).json({ error: "Authentication required" });
+  if (!req?.isAuthenticated?.() || !req?.user?.id) {
+    return res?.status(401).json({ error: "Authentication required" });
   }
-  const { stripeCustomerId } = req.body as Record<string, unknown>;
+  const { stripeCustomerId } = req?.body as Record<string, unknown>;
   if (typeof stripeCustomerId !== "string" || !stripeCustomerId) {
     return res
       .status(400)
@@ -31,8 +31,8 @@ router.post("/setup-stripe-customer", async (req, res) => {
   await db
     .update(users)
     .set({ stripeCustomerId })
-    .where(eq(users.id, req.user.id));
-  return res.json({ success: true });
+    .where(eq(users?.id, req?.user.id));
+  return res?.json({ success: true });
 });
 
 /**
@@ -42,33 +42,33 @@ router.post("/setup-stripe-customer", async (req, res) => {
  * no caching.  Used by billing integration tests to verify webhook-driven
  * tier updates without interference from the Stripe subscription-sync logic.
  */
-router.get("/user-tier", async (req, res) => {
-  if (process.env.NODE_ENV === "production") {
-    return res.status(404).json({ error: "Not found" });
+router?.get("/user-tier", async (req, res) => {
+  if (process?.env.NODE_ENV === "production") {
+    return res?.status(404).json({ error: "Not found" });
   }
-  if (!req.isAuthenticated?.() || !req.user?.id) {
-    return res.status(401).json({ error: "Authentication required" });
+  if (!req?.isAuthenticated?.() || !req?.user?.id) {
+    return res?.status(401).json({ error: "Authentication required" });
   }
   const [row] = await db
-    .select({ subscriptionTier: users.subscriptionTier })
+    .select({ subscriptionTier: users?.subscriptionTier })
     .from(users)
-    .where(eq(users.id, req.user.id))
+    .where(eq(users?.id, req?.user.id))
     .limit(1);
-  return res.json({ tier: row?.subscriptionTier ?? "free" });
+  return res?.json({ tier: row?.subscriptionTier ?? "free" });
 });
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return res.status(401).json({ error: "Authentication required" });
+  if (!req?.isAuthenticated || !req?.isAuthenticated()) {
+    return res?.status(401).json({ error: "Authentication required" });
   }
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
+  if (req?.user?.role !== "admin") {
+    return res?.status(403).json({ error: "Admin access required" });
   }
   next();
 };
 
-router.use(requireAdmin);
-router.use(require2FA);
+router?.use(requireAdmin);
+router?.use(require2FA);
 
 interface TestSuiteSummary {
   name: string;
@@ -90,16 +90,16 @@ interface TestRunArtifact {
   };
 }
 
-const RESULTS_PATH = path.resolve(process.cwd(), "logs", "test-results.json");
+const _RESULTS_PATH = path?.resolve(process?.cwd(), "logs", "test-results.json");
 
 async function loadStoredRun(): Promise<TestRunArtifact | null> {
   try {
-    const raw = await fs.readFile(RESULTS_PATH, "utf-8");
-    const parsed = JSON.parse(raw) as TestRunArtifact;
+    const _raw = await fs?.readFile(RESULTS_PATH, "utf-8");
+    const _parsed = JSON?.parse(raw) as TestRunArtifact;
     if (
       !parsed ||
       typeof parsed !== "object" ||
-      !Array.isArray(parsed.suites)
+      !Array?.isArray(parsed?.suites)
     ) {
       return null;
     }
@@ -109,9 +109,9 @@ async function loadStoredRun(): Promise<TestRunArtifact | null> {
   }
 }
 
-router.get("/results", async (_req, res) => {
+router?.get("/results", async (_req, res) => {
   try {
-    const stored = await loadStoredRun();
+    const _stored = await loadStoredRun();
 
     if (!stored) {
       const [{ value: userCount }] = await db
@@ -124,7 +124,7 @@ router.get("/results", async (_req, res) => {
         .select({ value: count() })
         .from(releases);
 
-      return res.json({
+      return res?.json({
         overallScore: null,
         lastRunDate: null,
         summary: {
@@ -142,21 +142,21 @@ router.get("/results", async (_req, res) => {
           releases: releaseCount,
         },
         message:
-          "No test runs recorded yet. Use POST /api/testing/run to trigger a suite, or write a TestRunArtifact JSON to logs/test-results.json from your CI pipeline.",
+          "No test runs recorded yet. Use POST /api/testing/run to trigger a suite, or write a TestRunArtifact JSON to logs/test-results?.json from your CI pipeline.",
       });
     }
 
-    const totalPassed = stored.suites.reduce((sum, s) => sum + s.passed, 0);
-    const totalFailed = stored.suites.reduce((sum, s) => sum + s.failed, 0);
-    const totalSkipped = stored.suites.reduce((sum, s) => sum + s.skipped, 0);
-    const totalTests = totalPassed + totalFailed + totalSkipped;
-    const totalDuration = stored.suites.reduce((sum, s) => sum + s.duration, 0);
-    const overallScore =
-      totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
+    const _totalPassed = stored?.suites.reduce((sum, s) => sum + s?.passed, 0);
+    const _totalFailed = stored?.suites.reduce((sum, s) => sum + s?.failed, 0);
+    const _totalSkipped = stored?.suites.reduce((sum, s) => sum + s?.skipped, 0);
+    const _totalTests = totalPassed + totalFailed + totalSkipped;
+    const _totalDuration = stored?.suites.reduce((sum, s) => sum + s?.duration, 0);
+    const _overallScore =
+      totalTests > 0 ? Math?.round((totalPassed / totalTests) * 100) : 0;
 
-    return res.json({
+    return res?.json({
       overallScore,
-      lastRunDate: stored.ranAt,
+      lastRunDate: stored?.ranAt,
       summary: {
         total: totalTests,
         passed: totalPassed,
@@ -164,36 +164,36 @@ router.get("/results", async (_req, res) => {
         skipped: totalSkipped,
         duration: (totalDuration / 1000).toFixed(1),
       },
-      testSuites: stored.suites,
-      coverage: stored.coverage ?? null,
+      testSuites: stored?.suites,
+      coverage: stored?.coverage ?? null,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching test results");
-    return res.status(500).json({ error: "Failed to fetch test results" });
+    logger?.warn({ err: error }, "Error fetching test results");
+    return res?.status(500).json({ error: "Failed to fetch test results" });
   }
 });
 
-router.post("/run", async (req, res) => {
+router?.post("/run", async (req, res) => {
   try {
-    const { suite } = req.body ?? {};
-    const requested =
-      typeof suite === "string" && suite.length > 0 ? suite : "all";
+    const { suite } = req?.body ?? {};
+    const _requested =
+      typeof suite === "string" && suite?.length > 0 ? suite : "all";
 
-    logger.info(
-      { requested, requestedBy: req.user?.id },
+    logger?.info(
+      { requested, requestedBy: req?.user?.id },
       "Test run requested via admin API",
     );
 
-    return res.status(202).json({
+    return res?.status(202).json({
       accepted: true,
       suite: requested,
       message:
-        "Test runs are not executed by the API server. Trigger your CI pipeline (e.g. GitHub Actions test-runner.yml) and write logs/test-results.json on completion to surface results in this dashboard.",
+        "Test runs are not executed by the API server. Trigger your CI pipeline (e?.g. GitHub Actions test-runner.yml) and write logs/test-results?.json on completion to surface results in this dashboard.",
       docsUrl: "/docs/testing",
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error handling test run request");
-    return res.status(500).json({ error: "Failed to handle test run request" });
+    logger?.warn({ err: error }, "Error handling test run request");
+    return res?.status(500).json({ error: "Failed to handle test run request" });
   }
 });
 

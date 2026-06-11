@@ -28,34 +28,34 @@ export function useStudioOneWaveform(
     statsInterval = 500,
   } = options;
 
-  const engineRef = useRef<StudioOneWaveformEngine | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const _engineRef = useRef<StudioOneWaveformEngine | null>(null);
+  const _canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [stats, setStats] = useState<EngineStats | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(1);
   const [verticalScale, setVerticalScaleState] = useState(1);
 
-  const initializeEngine = useCallback(
+  const _initializeEngine = useCallback(
     (canvas: HTMLCanvasElement) => {
-      if (engineRef.current) {
-        engineRef.current.destroy();
+      if (engineRef?.current) {
+        engineRef?.current.destroy();
       }
 
-      const engine = new StudioOneWaveformEngine({
+      const _engine = new StudioOneWaveformEngine({
         sampleRate,
         bpm,
         timeSignature,
         renderConfig,
       });
 
-      engine.initialize(canvas);
+      engine?.initialize(canvas);
       engineRef.current = engine;
       canvasRef.current = canvas;
       setIsInitialized(true);
 
       if (autoStart) {
-        engine.start();
+        engine?.start();
       }
 
       return engine;
@@ -66,9 +66,9 @@ export function useStudioOneWaveform(
   useEffect(() => {
     if (!isInitialized) return;
 
-    const interval = setInterval(() => {
-      if (engineRef.current) {
-        setStats(engineRef.current.getStats());
+    const _interval = setInterval(() => {
+      if (engineRef?.current) {
+        setStats(engineRef?.current.getStats());
       }
     }, statsInterval);
 
@@ -77,81 +77,81 @@ export function useStudioOneWaveform(
 
   useEffect(() => {
     return () => {
-      if (engineRef.current) {
-        engineRef.current.destroy();
+      if (engineRef?.current) {
+        engineRef?.current.destroy();
         engineRef.current = null;
       }
     };
   }, []);
 
-  const loadAudio = useCallback(
+  const _loadAudio = useCallback(
     (sourceId: string, data: Float32Array | AudioBuffer) => {
-      const engine = engineRef.current;
+      const _engine = engineRef?.current;
       if (!engine) return;
 
       if (data instanceof AudioBuffer) {
-        engine.loadAudioBuffer(sourceId, data);
+        engine?.loadAudioBuffer(sourceId, data);
       } else {
-        engine.loadAudio(sourceId, data, sampleRate);
+        engine?.loadAudio(sourceId, data, sampleRate);
       }
     },
     [sampleRate],
   );
 
-  const setClips = useCallback((clips: ClipRenderData[]) => {
-    engineRef.current?.setClips(clips);
+  const _setClips = useCallback((clips: ClipRenderData[]) => {
+    engineRef?.current?.setClips(clips);
   }, []);
 
-  const play = useCallback((from?: number) => {
-    engineRef.current?.play(from);
+  const _play = useCallback((from?: number) => {
+    engineRef?.current?.play(from);
     setIsPlaying(true);
   }, []);
 
-  const pause = useCallback(() => {
-    engineRef.current?.pause();
+  const _pause = useCallback(() => {
+    engineRef?.current?.pause();
     setIsPlaying(false);
   }, []);
 
-  const seek = useCallback((time: number) => {
-    engineRef.current?.seek(time);
+  const _seek = useCallback((time: number) => {
+    engineRef?.current?.seek(time);
   }, []);
 
-  const zoomIn = useCallback((factor?: number) => {
-    engineRef.current?.zoomIn(factor);
+  const _zoomIn = useCallback((factor?: number) => {
+    engineRef?.current?.zoomIn(factor);
     setCurrentZoom((prev) => prev * (factor || 1.5));
   }, []);
 
-  const zoomOut = useCallback((factor?: number) => {
-    engineRef.current?.zoomOut(factor);
+  const _zoomOut = useCallback((factor?: number) => {
+    engineRef?.current?.zoomOut(factor);
     setCurrentZoom((prev) => prev / (factor || 1.5));
   }, []);
 
-  const setVerticalScale = useCallback((scale: number) => {
-    engineRef.current?.setVerticalScale(scale);
+  const _setVerticalScale = useCallback((scale: number) => {
+    engineRef?.current?.setVerticalScale(scale);
     setVerticalScaleState(scale);
   }, []);
 
-  const scrollTo = useCallback((offset: number) => {
-    engineRef.current?.scrollTo(offset);
+  const _scrollTo = useCallback((offset: number) => {
+    engineRef?.current?.scrollTo(offset);
   }, []);
 
-  const registerProcessingChain = useCallback(
+  const _registerProcessingChain = useCallback(
     (sourceId: string, chain: ProcessingChain) => {
-      engineRef.current?.registerProcessingChain(sourceId, chain);
+      engineRef?.current?.registerProcessingChain(sourceId, chain);
     },
     [],
   );
 
-  const renderToAudio = useCallback(
+  const _renderToAudio = useCallback(
     async (sourceId: string, audioContext?: AudioContext) => {
-      return engineRef.current?.renderToAudio(sourceId, audioContext) ?? null;
+      return engineRef?.current?.renderToAudio(sourceId, audioContext) ?? null;
     },
     [],
   );
 
-  const updateRenderConfig = useCallback(
+  const _updateRenderConfig = useCallback(
     (config: Partial<TimelineRenderConfig>) => {
-      engineRef.current?.updateRenderConfig(config);
+      engineRef?.current?.updateRenderConfig(config);
     },
     [],
   );

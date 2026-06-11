@@ -10,9 +10,9 @@ import { isProductionEnv } from "../lib/envHelpers.js";
 
 // SECURITY: Must use isProductionEnv() (not bare NODE_ENV check) because
 // Reserved VM deployments have REPLIT_DEPLOYMENT=1 but NODE_ENV=undefined.
-const WEBHOOK_SECRET =
-  process.env.WEBHOOK_SECRET ||
-  env.STRIPE_WEBHOOK_SECRET ||
+const _WEBHOOK_SECRET =
+  process?.env.WEBHOOK_SECRET ||
+  env?.STRIPE_WEBHOOK_SECRET ||
   (isProductionEnv()
     ? (() => {
         throw new Error(
@@ -20,8 +20,8 @@ const WEBHOOK_SECRET =
         );
       })()
     : "dev_webhook_secret_fallback_32_chars");
-const MAX_RETRIES = 5;
-const RETRY_DELAYS = [1000, 5000, 25000, 125000, 625000]; // Exponential backoff with jitter
+const _MAX_RETRIES = 5;
+const _RETRY_DELAYS = [1000, 5000, 25000, 125000, 625000]; // Exponential backoff with jitter
 
 interface WebhookDispatchResult {
   success: boolean;
@@ -32,7 +32,7 @@ interface WebhookDispatchResult {
 
 export class WebhookReliabilityService {
   private generateSignature(payload: unknown): string {
-    const payloadString = JSON.stringify(payload);
+    const _payloadString = JSON?.stringify(payload);
     return crypto
       .createHmac("sha256", WEBHOOK_SECRET)
       .update(payloadString)
@@ -44,12 +44,12 @@ export class WebhookReliabilityService {
       return null;
     }
 
-    const baseDelay =
-      RETRY_DELAYS[attemptNumber] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
-    const jitter = Math.random() * 1000;
-    const delay = baseDelay + jitter;
+    const _baseDelay =
+      RETRY_DELAYS[attemptNumber] || RETRY_DELAYS[RETRY_DELAYS?.length - 1];
+    const _jitter = Math?.random() * 1000;
+    const _delay = baseDelay + jitter;
 
-    return new Date(Date.now() + delay);
+    return new Date(Date?.now() + delay);
   }
 
   async dispatchWebhook(
@@ -58,14 +58,14 @@ export class WebhookReliabilityService {
     payload: unknown,
     attemptNumber: number = 1,
   ): Promise<WebhookDispatchResult> {
-    const signature = this.generateSignature(payload);
+    const _signature = this?.generateSignature(payload);
 
     try {
-      const response = await axios.post(url, payload, {
+      const _response = await axios?.post(url, payload, {
         headers: {
           "Content-Type": "application/json",
           "X-Webhook-Signature": signature,
-          "X-Webhook-Event-Id": eventId.toString(),
+          "X-Webhook-Event-Id": eventId?.toString(),
         },
         timeout: 30000,
         validateStatus: () => true,
@@ -75,67 +75,67 @@ export class WebhookReliabilityService {
         webhookEventId: eventId,
         attempt: attemptNumber,
         status:
-          response.status >= 200 && response.status < 300
+          response?.status >= 200 && response?.status < 300
             ? "success"
             : "failed",
-        responseCode: response.status,
-        responseBody: JSON.stringify(response.data).substring(0, 5000),
+        responseCode: response?.status,
+        responseBody: JSON?.stringify(response?.data).substring(0, 5000),
         error:
-          response.status >= 200 && response.status < 300
+          response?.status >= 200 && response?.status < 300
             ? null
-            : `HTTP ${response.status}`,
+            : `HTTP ${response?.status}`,
         url,
         payload,
         nextRetryAt:
-          response.status >= 200 && response.status < 300
+          response?.status >= 200 && response?.status < 300
             ? null
-            : this.calculateNextRetry(attemptNumber),
+            : this?.calculateNextRetry(attemptNumber),
       };
 
-      const attempt = await storage.createWebhookAttempt(attemptData);
+      const _attempt = await storage?.createWebhookAttempt(attemptData);
 
-      if (response.status >= 200 && response.status < 300) {
+      if (response?.status >= 200 && response?.status < 300) {
         return {
           success: true,
-          attemptId: attempt.id,
-          statusCode: response.status,
+          attemptId: attempt?.id,
+          statusCode: response?.status,
         };
       }
 
       if (attemptNumber >= MAX_RETRIES) {
-        await this.moveToDeadLetterQueue(
+        await this?.moveToDeadLetterQueue(
           eventId,
           attemptNumber,
-          `Max retries exceeded. Last status: ${response.status}`,
+          `Max retries exceeded. Last status: ${response?.status}`,
           payload,
         );
       }
 
       return {
         success: false,
-        attemptId: attempt.id,
-        statusCode: response.status,
-        error: `HTTP ${response.status}`,
+        attemptId: attempt?.id,
+        statusCode: response?.status,
+        error: `HTTP ${response?.status}`,
       };
     } catch (error: unknown) {
-      const errorMessage = error.message || "Unknown error";
+      const _errorMessage = error?.message || "Unknown error";
 
       const attemptData: InsertWebhookAttempt = {
         webhookEventId: eventId,
         attempt: attemptNumber,
         status: "failed",
-        responseCode: error.response?.status || null,
+        responseCode: error?.response?.status || null,
         responseBody: null,
-        error: errorMessage.substring(0, 1000),
+        error: errorMessage?.substring(0, 1000),
         url,
         payload,
-        nextRetryAt: this.calculateNextRetry(attemptNumber),
+        nextRetryAt: this?.calculateNextRetry(attemptNumber),
       };
 
-      const attempt = await storage.createWebhookAttempt(attemptData);
+      const _attempt = await storage?.createWebhookAttempt(attemptData);
 
       if (attemptNumber >= MAX_RETRIES) {
-        await this.moveToDeadLetterQueue(
+        await this?.moveToDeadLetterQueue(
           eventId,
           attemptNumber,
           errorMessage,
@@ -145,24 +145,24 @@ export class WebhookReliabilityService {
 
       return {
         success: false,
-        attemptId: attempt.id,
+        attemptId: attempt?.id,
         error: errorMessage,
       };
     }
   }
 
   async retryWebhook(attemptId: string): Promise<WebhookDispatchResult> {
-    const attempt = await storage.getWebhookAttempt(attemptId);
+    const _attempt = await storage?.getWebhookAttempt(attemptId);
     if (!attempt) {
       throw new Error("Webhook attempt not found");
     }
 
-    const nextAttemptNumber = attempt.attempt + 1;
+    const _nextAttemptNumber = attempt?.attempt + 1;
 
-    return this.dispatchWebhook(
-      attempt.webhookEventId,
-      attempt.url,
-      attempt.payload,
+    return this?.dispatchWebhook(
+      attempt?.webhookEventId,
+      attempt?.url,
+      attempt?.payload,
       nextAttemptNumber,
     );
   }
@@ -176,34 +176,34 @@ export class WebhookReliabilityService {
     const dlqData: InsertWebhookDeadLetterQueue = {
       webhookEventId: eventId,
       attempts,
-      lastError: lastError.substring(0, 5000),
+      lastError: lastError?.substring(0, 5000),
       payload,
       status: "queued",
       processedAt: null,
     };
 
-    await storage.addToDeadLetterQueue(dlqData);
+    await storage?.addToDeadLetterQueue(dlqData);
   }
 
   async reprocessDeadLetter(dlqId: string): Promise<void> {
-    const item = await storage.getDeadLetterQueueItem(dlqId);
+    const _item = await storage?.getDeadLetterQueueItem(dlqId);
     if (!item) {
       throw new Error("Dead letter queue item not found");
     }
 
-    const webhookEvent = await storage.getWebhookEvent(item.webhookEventId);
+    const _webhookEvent = await storage?.getWebhookEvent(item?.webhookEventId);
     if (!webhookEvent) {
       throw new Error("Webhook event not found");
     }
 
-    await storage.reprocessDeadLetter(dlqId);
+    await storage?.reprocessDeadLetter(dlqId);
 
-    const url = webhookEvent.raw?.url || webhookEvent.raw?.webhook_url || "";
+    const _url = webhookEvent?.raw?.url || webhookEvent?.raw?.webhook_url || "";
     if (!url) {
       throw new Error("Webhook URL not found in event data");
     }
 
-    await this.dispatchWebhook(item.webhookEventId, url, item.payload, 1);
+    await this?.dispatchWebhook(item?.webhookEventId, url, item?.payload, 1);
   }
 
   async scheduleRetries(): Promise<void> {
@@ -212,4 +212,4 @@ export class WebhookReliabilityService {
   }
 }
 
-export const webhookReliabilityService = new WebhookReliabilityService();
+export const _webhookReliabilityService = new WebhookReliabilityService();

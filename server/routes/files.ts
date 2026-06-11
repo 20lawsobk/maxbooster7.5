@@ -11,32 +11,32 @@ import {
   requireSafeParam,
 } from "../middleware/requestValidation.js";
 
-const PERMANENT_DELETE_DAYS = 30;
+const _PERMANENT_DELETE_DAYS = 30;
 
-const transcodeJobs = new Map<
+const _transcodeJobs = new Map<
   string,
   { startedAt: number; estimatedDurationMs: number; userId: string }
 >();
 
 // Evict transcode jobs whose clients never polled for completion.
 // Grace window = max(3× the job's estimated duration, 10 min).
-const TRANSCODE_MIN_TTL_MS = 10 * 60 * 1000;
+const _TRANSCODE_MIN_TTL_MS = 10 * 60 * 1000;
 setInterval(
   () => {
-    const now = Date.now();
+    const _now = Date?.now();
     for (const [jobId, job] of transcodeJobs) {
-      const ttl = Math.max(job.estimatedDurationMs * 3, TRANSCODE_MIN_TTL_MS);
-      if (now - job.startedAt > ttl) {
-        transcodeJobs.delete(jobId);
+      const _ttl = Math?.max(job?.estimatedDurationMs * 3, TRANSCODE_MIN_TTL_MS);
+      if (now - job?.startedAt > ttl) {
+        transcodeJobs?.delete(jobId);
       }
     }
   },
   5 * 60 * 1000,
 );
 
-const router = Router();
+const _router = Router();
 
-const upload = createHardenedUpload({
+const _upload = createHardenedUpload({
   maxFileSize: 500 * 1024 * 1024,
   maxFiles: 10,
   label: "file",
@@ -44,13 +44,13 @@ const upload = createHardenedUpload({
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
+  const _k = 1024;
+  const _sizes = ["B", "KB", "MB", "GB", "TB"];
+  const _i = Math?.floor(Math?.log(bytes) / Math?.log(k));
+  return parseFloat((bytes / Math?.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
 
-const ALLOWED_AUDIO_TYPES = [
+const _ALLOWED_AUDIO_TYPES = [
   "audio/wav",
   "audio/x-wav",
   "audio/wave",
@@ -65,27 +65,27 @@ const ALLOWED_AUDIO_TYPES = [
   "audio/aac",
 ];
 
-const ALLOWED_IMAGE_TYPES = [
+const _ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
 ];
 
-const ALL_ALLOWED_TYPES = [...ALLOWED_AUDIO_TYPES, ...ALLOWED_IMAGE_TYPES];
+const _ALL_ALLOWED_TYPES = [...ALLOWED_AUDIO_TYPES, ...ALLOWED_IMAGE_TYPES];
 
 async function getOrCreateUserStorage(userId: string) {
-  const existing = await db
+  const _existing = await db
     .select()
     .from(userStorage)
-    .where(eq(userStorage.userId, userId))
+    .where(eq(userStorage?.userId, userId))
     .limit(1);
 
-  if (existing.length > 0) {
+  if (existing?.length > 0) {
     return existing[0];
   }
 
-  const storagePrefix = `user-${userId}`;
+  const _storagePrefix = `user-${userId}`;
   const [newStorage] = await db
     .insert(userStorage)
     .values({
@@ -100,37 +100,37 @@ async function getOrCreateUserStorage(userId: string) {
   return newStorage;
 }
 
-router.post(
+router?.post(
   "/upload",
-  upload.single("file"),
+  upload?.single("file"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({
+      if (!req?.user) {
+        return res?.status(401).json({
           success: false,
           error: "Authentication required",
           outcome: "auth_required",
         });
       }
 
-      if (!req.file) {
-        return res.status(400).json({
+      if (!req?.file) {
+        return res?.status(400).json({
           success: false,
           error: "No file provided",
           outcome: "no_file",
         });
       }
 
-      const { category = "files", folder = "/" } = req.body;
-      const file = req.file;
+      const { category = "files", folder = "/" } = req?.body;
+      const _file = req?.file;
 
-      if (!ALL_ALLOWED_TYPES.includes(file.mimetype)) {
-        return res.status(400).json({
+      if (!ALL_ALLOWED_TYPES?.includes(file?.mimetype)) {
+        return res?.status(400).json({
           success: false,
-          error: `Invalid file type: ${file.mimetype}`,
+          error: `Invalid file type: ${file?.mimetype}`,
           outcome: "invalid_type",
           details: {
-            providedType: file.mimetype,
+            providedType: file?.mimetype,
             allowedTypes: ALL_ALLOWED_TYPES,
             allowedFormats: [
               "WAV",
@@ -147,63 +147,63 @@ router.post(
         });
       }
 
-      const maxSize = 500 * 1024 * 1024;
-      if (file.size > maxSize) {
-        return res.status(413).json({
+      const _maxSize = 500 * 1024 * 1024;
+      if (file?.size > maxSize) {
+        return res?.status(413).json({
           success: false,
-          error: `File too large: ${formatBytes(file.size)}`,
+          error: `File too large: ${formatBytes(file?.size)}`,
           outcome: "file_too_large",
           details: {
-            fileSize: file.size,
-            fileSizeFormatted: formatBytes(file.size),
+            fileSize: file?.size,
+            fileSizeFormatted: formatBytes(file?.size),
             maxSize: maxSize,
             maxSizeFormatted: formatBytes(maxSize),
           },
         });
       }
 
-      const storage = await getOrCreateUserStorage(req.user.id);
+      const _storage = await getOrCreateUserStorage(req?.user.id);
 
-      if (storage.totalBytes + file.size > storage.quotaBytes) {
-        const usedPercent = Math.round(
-          (storage.totalBytes / storage.quotaBytes) * 100,
+      if (storage?.totalBytes + file?.size > storage?.quotaBytes) {
+        const _usedPercent = Math?.round(
+          (storage?.totalBytes / storage?.quotaBytes) * 100,
         );
-        return res.status(507).json({
+        return res?.status(507).json({
           success: false,
           error: "Storage quota exceeded",
           outcome: "quota_exceeded",
           details: {
-            used: storage.totalBytes,
-            usedFormatted: formatBytes(storage.totalBytes),
-            quota: storage.quotaBytes,
-            quotaFormatted: formatBytes(storage.quotaBytes),
+            used: storage?.totalBytes,
+            usedFormatted: formatBytes(storage?.totalBytes),
+            quota: storage?.quotaBytes,
+            quotaFormatted: formatBytes(storage?.quotaBytes),
             usedPercent,
-            needed: file.size,
-            neededFormatted: formatBytes(file.size),
-            available: storage.quotaBytes - storage.totalBytes,
+            needed: file?.size,
+            neededFormatted: formatBytes(file?.size),
+            available: storage?.quotaBytes - storage?.totalBytes,
             availableFormatted: formatBytes(
-              storage.quotaBytes - storage.totalBytes,
+              storage?.quotaBytes - storage?.totalBytes,
             ),
           },
         });
       }
 
-      const existingFile = await db
+      const _existingFile = await db
         .select()
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles.userId, req.user.id),
-            eq(userStorageFiles.fileName, file.originalname),
-            eq(userStorageFiles.folder, folder),
+            eq(userStorageFiles?.userId, req?.user.id),
+            eq(userStorageFiles?.fileName, file?.originalname),
+            eq(userStorageFiles?.folder, folder),
           ),
         )
         .limit(1);
 
-      if (existingFile.length > 0) {
-        return res.status(409).json({
+      if (existingFile?.length > 0) {
+        return res?.status(409).json({
           success: false,
-          error: `File "${file.originalname}" already exists in this location`,
+          error: `File "${file?.originalname}" already exists in this location`,
           outcome: "duplicate_file",
           details: {
             existingFile: {
@@ -217,25 +217,25 @@ router.post(
         });
       }
 
-      const fileKey = await storageService.uploadFile(
-        file.buffer,
-        `${storage.storagePrefix}/${category}`,
-        file.originalname,
-        file.mimetype,
+      const _fileKey = await storageService?.uploadFile(
+        file?.buffer,
+        `${storage?.storagePrefix}/${category}`,
+        file?.originalname,
+        file?.mimetype,
       );
 
       const [storedFile] = await db
         .insert(userStorageFiles)
         .values({
-          userId: req.user.id,
-          storageId: storage.id,
-          fileName: file.originalname,
+          userId: req?.user.id,
+          storageId: storage?.id,
+          fileName: file?.originalname,
           fileKey,
-          mimeType: file.mimetype,
-          sizeBytes: file.size,
+          mimeType: file?.mimetype,
+          sizeBytes: file?.size,
           folder,
           metadata: {
-            originalName: file.originalname,
+            originalName: file?.originalname,
             category,
             uploadedAt: new Date().toISOString(),
           },
@@ -245,42 +245,42 @@ router.post(
       await db
         .update(userStorage)
         .set({
-          totalBytes: sql`${userStorage.totalBytes} + ${file.size}`,
-          fileCount: sql`${userStorage.fileCount} + 1`,
+          totalBytes: sql`${userStorage?.totalBytes} + ${file?.size}`,
+          fileCount: sql`${userStorage?.fileCount} + 1`,
           lastAccessedAt: new Date(),
         })
-        .where(eq(userStorage.id, storage.id));
+        .where(eq(userStorage?.id, storage?.id));
 
-      return res.status(201).json({
+      return res?.status(201).json({
         success: true,
         outcome: "upload_complete",
         file: {
-          id: storedFile.id,
-          name: storedFile.fileName,
-          size: storedFile.sizeBytes,
-          sizeFormatted: formatBytes(storedFile.sizeBytes || 0),
-          type: storedFile.mimeType,
-          folder: storedFile.folder,
-          uploadedAt: storedFile.uploadedAt,
+          id: storedFile?.id,
+          name: storedFile?.fileName,
+          size: storedFile?.sizeBytes,
+          sizeFormatted: formatBytes(storedFile?.sizeBytes || 0),
+          type: storedFile?.mimeType,
+          folder: storedFile?.folder,
+          uploadedAt: storedFile?.uploadedAt,
         },
         storage: {
-          used: storage.totalBytes + file.size,
-          usedFormatted: formatBytes(storage.totalBytes + file.size),
-          quota: storage.quotaBytes,
-          quotaFormatted: formatBytes(storage.quotaBytes),
-          usedPercent: Math.round(
-            ((storage.totalBytes + file.size) / storage.quotaBytes) * 100,
+          used: storage?.totalBytes + file?.size,
+          usedFormatted: formatBytes(storage?.totalBytes + file?.size),
+          quota: storage?.quotaBytes,
+          quotaFormatted: formatBytes(storage?.quotaBytes),
+          usedPercent: Math?.round(
+            ((storage?.totalBytes + file?.size) / storage?.quotaBytes) * 100,
           ),
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Upload error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Upload error:");
+      return res?.status(500).json({
         success: false,
         error: "Upload failed due to server error",
         outcome: "upload_failed",
         details: {
-          reason: error instanceof Error ? error.message : "Unknown error",
+          reason: error instanceof Error ? error?.message : "Unknown error",
           canRetry: true,
         },
       });
@@ -288,48 +288,52 @@ router.post(
   },
 );
 
-router.post(
+router?.post(
   "/upload/chunk",
-  upload.single("chunk"),
+  upload?.single("chunk"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
+      if (!req?.user) {
         return res
           .status(401)
           .json({ success: false, error: "Authentication required" });
       }
 
-      const { chunkIndex, totalChunks, fileId } = req.body;
+      const {
+        chunkIndex,
+        totalChunks,
+        fileId,
+      } = req?.body;
 
-      if (!req.file) {
+      if (!req?.file) {
         return res
           .status(400)
           .json({ success: false, error: "No chunk provided" });
       }
 
-      const chunkKey = `chunks/${req.user.id}/${fileId}/chunk_${chunkIndex}`;
-      await storageService.uploadFile(
-        req.file.buffer,
+      const _chunkKey = `chunks/${req?.user.id}/${fileId}/chunk_${chunkIndex}`;
+      await storageService?.uploadFile(
+        req?.file.buffer,
         "temp",
         chunkKey,
         "application/octet-stream",
       );
 
-      const isLastChunk = parseInt(chunkIndex) === parseInt(totalChunks) - 1;
+      const _isLastChunk = parseInt(chunkIndex) === parseInt(totalChunks) - 1;
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: "chunk_uploaded",
         chunkIndex: parseInt(chunkIndex),
         totalChunks: parseInt(totalChunks),
         isLastChunk,
-        progress: Math.round(
+        progress: Math?.round(
           ((parseInt(chunkIndex) + 1) / parseInt(totalChunks)) * 100,
         ),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Chunk upload error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Chunk upload error:");
+      return res?.status(500).json({
         success: false,
         error: "Chunk upload failed",
         outcome: "chunk_failed",
@@ -339,116 +343,116 @@ router.post(
   },
 );
 
-router.get("/trash", async (req: Request, res: Response) => {
+router?.get("/trash", async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+    if (!req?.user) {
+      return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const rawLimit = Number(req.query.limit ?? 50);
-    const rawOffset = Number(req.query.offset ?? 0);
-    const limit = Math.min(
-      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50,
+    const _rawLimit = Number(req?.query.limit ?? 50);
+    const _rawOffset = Number(req?.query.offset ?? 0);
+    const _limit = Math?.min(
+      Number?.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50,
       500,
     );
-    const offset = Math.min(
-      Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
+    const _offset = Math?.min(
+      Number?.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
       100_000,
     );
 
-    const deletedFiles = await db
+    const _deletedFiles = await db
       .select()
       .from(userStorageFiles)
       .where(
         and(
-          eq(userStorageFiles.userId, req.user.id),
-          isNotNull(userStorageFiles.deletedAt),
+          eq(userStorageFiles?.userId, req?.user.id),
+          isNotNull(userStorageFiles?.deletedAt),
         ),
       )
-      .orderBy(desc(userStorageFiles.deletedAt))
+      .orderBy(desc(userStorageFiles?.deletedAt))
       .limit(limit)
       .offset(offset);
 
     // Calculate expiry dates for each file
-    const cutoffMs = PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000;
+    const _cutoffMs = PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000;
 
-    return res.json({
+    return res?.json({
       success: true,
-      files: deletedFiles.map((f) => ({
-        id: f.id,
-        name: f.fileName,
-        size: f.sizeBytes,
-        sizeFormatted: formatBytes(f.sizeBytes || 0),
-        type: f.mimeType,
-        folder: f.folder,
-        deletedAt: f.deletedAt,
-        expiresAt: f.deletedAt
-          ? new Date(f.deletedAt.getTime() + cutoffMs)
+      files: deletedFiles?.map((f) => ({
+        id: f?.id,
+        name: f?.fileName,
+        size: f?.sizeBytes,
+        sizeFormatted: formatBytes(f?.sizeBytes || 0),
+        type: f?.mimeType,
+        folder: f?.folder,
+        deletedAt: f?.deletedAt,
+        expiresAt: f?.deletedAt
+          ? new Date(f?.deletedAt.getTime() + cutoffMs)
           : null,
-        canRestore: f.deletedAt
-          ? Date.now() - f.deletedAt.getTime() < cutoffMs
+        canRestore: f?.deletedAt
+          ? Date?.now() - f?.deletedAt.getTime() < cutoffMs
           : false,
       })),
       retentionDays: PERMANENT_DELETE_DAYS,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Trash list error:");
-    return res.status(500).json({ error: "Failed to list trash" });
+    logger?.warn({ err: error }, "Trash list error:");
+    return res?.status(500).json({ error: "Failed to list trash" });
   }
 });
 
-router.post("/bulk-restore", async (req: Request, res: Response) => {
+router?.post("/bulk-restore", async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+    if (!req?.user) {
+      return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const { fileIds } = req.body;
+    const { fileIds } = req?.body;
 
-    if (!Array.isArray(fileIds) || fileIds.length === 0) {
-      return res.status(400).json({ error: "No files specified" });
+    if (!Array?.isArray(fileIds) || fileIds?.length === 0) {
+      return res?.status(400).json({ error: "No files specified" });
     }
     // Cap: each fileId causes a DB round-trip. Without a limit a single request
     // could spawn thousands of parallel queries and exhaust the pool.
-    if (fileIds.length > 500) {
+    if (fileIds?.length > 500) {
       return res
         .status(400)
         .json({ error: "Too many files in one request (max 500)" });
     }
 
-    const results = {
+    const _results = {
       success: [] as string[],
       failed: [] as { id: string; error: string }[],
     };
 
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS);
+    const _cutoffDate = new Date();
+    cutoffDate?.setDate(cutoffDate?.getDate() - PERMANENT_DELETE_DAYS);
 
-    await Promise.allSettled(
-      fileIds.map(async (fileId: string) => {
+    await Promise?.allSettled(
+      fileIds?.map(async (fileId: string) => {
         try {
           const [file] = await db
             .select()
             .from(userStorageFiles)
             .where(
               and(
-                eq(userStorageFiles.id, fileId),
-                eq(userStorageFiles.userId, req.user!.id),
-                isNotNull(userStorageFiles.deletedAt),
+                eq(userStorageFiles?.id, fileId),
+                eq(userStorageFiles?.userId, req?.user!.id),
+                isNotNull(userStorageFiles?.deletedAt),
               ),
             )
             .limit(1);
 
           if (!file) {
-            results.failed.push({
+            results?.failed.push({
               id: fileId,
               error: "File not found in trash",
             });
             return;
           }
 
-          if (file.deletedAt && file.deletedAt < cutoffDate) {
-            results.failed.push({
+          if (file?.deletedAt && file?.deletedAt < cutoffDate) {
+            results?.failed.push({
               id: fileId,
               error: "Restoration window expired",
             });
@@ -458,61 +462,61 @@ router.post("/bulk-restore", async (req: Request, res: Response) => {
           await db
             .update(userStorageFiles)
             .set({ deletedAt: null })
-            .where(eq(userStorageFiles.id, fileId));
+            .where(eq(userStorageFiles?.id, fileId));
 
-          results.success.push(fileId);
+          results?.success.push(fileId);
         } catch (err) {
-          results.failed.push({
+          results?.failed.push({
             id: fileId,
-            error: err instanceof Error ? err.message : "Unknown error",
+            error: err instanceof Error ? err?.message : "Unknown error",
           });
         }
       }),
     );
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: "bulk_restore_complete",
       results,
-      totalRequested: fileIds.length,
-      totalRestored: results.success.length,
-      totalFailed: results.failed.length,
+      totalRequested: fileIds?.length,
+      totalRestored: results?.success.length,
+      totalFailed: results?.failed.length,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Bulk restore error:");
-    return res.status(500).json({ error: "Bulk restore failed" });
+    logger?.warn({ err: error }, "Bulk restore error:");
+    return res?.status(500).json({ error: "Bulk restore failed" });
   }
 });
 
-router.get("/storage-usage", async (req: Request, res: Response) => {
+router?.get("/storage-usage", async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+    if (!req?.user) {
+      return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const storage = await getOrCreateUserStorage(req.user.id);
+    const _storage = await getOrCreateUserStorage(req?.user.id);
 
     // Use SQL aggregates for storage usage by category — avoids loading all file rows into JS
     const [catAgg] = await db
       .select({
-        audioUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} LIKE 'audio/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
-        audioCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} LIKE 'audio/%' THEN 1 END)`,
-        imagesUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} LIKE 'image/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
-        imagesCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} LIKE 'image/%' THEN 1 END)`,
-        videoUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} LIKE 'video/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
-        videoCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} LIKE 'video/%' THEN 1 END)`,
-        otherUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} NOT LIKE 'audio/%' AND ${userStorageFiles.mimeType} NOT LIKE 'image/%' AND ${userStorageFiles.mimeType} NOT LIKE 'video/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
-        otherCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} NOT LIKE 'audio/%' AND ${userStorageFiles.mimeType} NOT LIKE 'image/%' AND ${userStorageFiles.mimeType} NOT LIKE 'video/%' THEN 1 END)`,
+        audioUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles?.mimeType} LIKE 'audio/%' THEN ${userStorageFiles?.sizeBytes} ELSE 0 END), 0)`,
+        audioCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles?.mimeType} LIKE 'audio/%' THEN 1 END)`,
+        imagesUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles?.mimeType} LIKE 'image/%' THEN ${userStorageFiles?.sizeBytes} ELSE 0 END), 0)`,
+        imagesCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles?.mimeType} LIKE 'image/%' THEN 1 END)`,
+        videoUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles?.mimeType} LIKE 'video/%' THEN ${userStorageFiles?.sizeBytes} ELSE 0 END), 0)`,
+        videoCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles?.mimeType} LIKE 'video/%' THEN 1 END)`,
+        otherUsed: sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles?.mimeType} NOT LIKE 'audio/%' AND ${userStorageFiles?.mimeType} NOT LIKE 'image/%' AND ${userStorageFiles?.mimeType} NOT LIKE 'video/%' THEN ${userStorageFiles?.sizeBytes} ELSE 0 END), 0)`,
+        otherCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles?.mimeType} NOT LIKE 'audio/%' AND ${userStorageFiles?.mimeType} NOT LIKE 'image/%' AND ${userStorageFiles?.mimeType} NOT LIKE 'video/%' THEN 1 END)`,
       })
       .from(userStorageFiles)
       .where(
         and(
-          eq(userStorageFiles.userId, req.user.id),
-          isNull(userStorageFiles.deletedAt),
+          eq(userStorageFiles?.userId, req?.user.id),
+          isNull(userStorageFiles?.deletedAt),
         ),
       );
 
-    const categories = {
+    const _categories = {
       audio: {
         name: "Audio",
         used: Number(catAgg?.audioUsed || 0),
@@ -535,8 +539,8 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
       },
     };
 
-    const usedPercent = Math.round(
-      (storage.totalBytes / storage.quotaBytes) * 100,
+    const _usedPercent = Math?.round(
+      (storage?.totalBytes / storage?.quotaBytes) * 100,
     );
 
     let warningLevel: "none" | "low" | "medium" | "critical" | "exceeded" =
@@ -546,30 +550,30 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
     else if (usedPercent >= 90) warningLevel = "medium";
     else if (usedPercent >= 80) warningLevel = "low";
 
-    return res.json({
+    return res?.json({
       success: true,
       storage: {
-        used: storage.totalBytes,
-        usedFormatted: formatBytes(storage.totalBytes),
-        quota: storage.quotaBytes,
-        quotaFormatted: formatBytes(storage.quotaBytes),
-        available: storage.quotaBytes - storage.totalBytes,
+        used: storage?.totalBytes,
+        usedFormatted: formatBytes(storage?.totalBytes),
+        quota: storage?.quotaBytes,
+        quotaFormatted: formatBytes(storage?.quotaBytes),
+        available: storage?.quotaBytes - storage?.totalBytes,
         availableFormatted: formatBytes(
-          storage.quotaBytes - storage.totalBytes,
+          storage?.quotaBytes - storage?.totalBytes,
         ),
         usedPercent,
-        fileCount: storage.fileCount,
+        fileCount: storage?.fileCount,
         warningLevel,
       },
-      categories: Object.entries(categories).map(([key, value]) => ({
+      categories: Object?.entries(categories).map(([key, value]) => ({
         id: key,
-        name: value.name,
-        used: value.used,
-        usedFormatted: formatBytes(value.used),
-        count: value.count,
+        name: value?.name,
+        used: value?.used,
+        usedFormatted: formatBytes(value?.used),
+        count: value?.count,
         percentage:
-          storage.totalBytes > 0
-            ? Math.round((value.used / storage.totalBytes) * 100)
+          storage?.totalBytes > 0
+            ? Math?.round((value?.used / storage?.totalBytes) * 100)
             : 0,
       })),
       thresholds: {
@@ -580,98 +584,104 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Storage usage error:");
-    return res.status(500).json({ error: "Failed to get storage usage" });
+    logger?.warn({ err: error }, "Storage usage error:");
+    return res?.status(500).json({ error: "Failed to get storage usage" });
   }
 });
 
-router.get("/list", async (req: Request, res: Response) => {
+router?.get("/list", async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+    if (!req?.user) {
+      return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const { includeDeleted = "false" } = req.query;
-    const rawLimit2 = Number(req.query.limit ?? 50);
-    const rawOffset2 = Number(req.query.offset ?? 0);
-    const limit = Math.min(
-      Number.isFinite(rawLimit2) && rawLimit2 > 0 ? rawLimit2 : 50,
+    const {
+      
+      
+      
+      
+      includeDeleted = "false",
+    } = req?.query;
+    const _rawLimit2 = Number(req?.query.limit ?? 50);
+    const _rawOffset2 = Number(req?.query.offset ?? 0);
+    const _limit = Math?.min(
+      Number?.isFinite(rawLimit2) && rawLimit2 > 0 ? rawLimit2 : 50,
       500,
     );
-    const offset = Math.min(
-      Number.isFinite(rawOffset2) && rawOffset2 >= 0 ? rawOffset2 : 0,
+    const _offset = Math?.min(
+      Number?.isFinite(rawOffset2) && rawOffset2 >= 0 ? rawOffset2 : 0,
       100_000,
     );
 
     // Filter out soft-deleted files unless explicitly requested
-    const baseConditions =
+    const _baseConditions =
       includeDeleted === "true"
-        ? eq(userStorageFiles.userId, req.user.id)
+        ? eq(userStorageFiles?.userId, req?.user.id)
         : and(
-            eq(userStorageFiles.userId, req.user.id),
-            isNull(userStorageFiles.deletedAt),
+            eq(userStorageFiles?.userId, req?.user.id),
+            isNull(userStorageFiles?.deletedAt),
           );
 
-    const files = await db
+    const _files = await db
       .select()
       .from(userStorageFiles)
       .where(baseConditions)
-      .orderBy(desc(userStorageFiles.uploadedAt))
+      .orderBy(desc(userStorageFiles?.uploadedAt))
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return res.json({
+    return res?.json({
       success: true,
-      files: files.map((f) => ({
-        id: f.id,
-        name: f.fileName,
-        size: f.sizeBytes,
-        sizeFormatted: formatBytes(f.sizeBytes || 0),
-        type: f.mimeType,
-        folder: f.folder,
-        isPublic: f.isPublic,
-        uploadedAt: f.uploadedAt,
-        deletedAt: f.deletedAt,
-        metadata: f.metadata,
+      files: files?.map((f) => ({
+        id: f?.id,
+        name: f?.fileName,
+        size: f?.sizeBytes,
+        sizeFormatted: formatBytes(f?.sizeBytes || 0),
+        type: f?.mimeType,
+        folder: f?.folder,
+        isPublic: f?.isPublic,
+        uploadedAt: f?.uploadedAt,
+        deletedAt: f?.deletedAt,
+        metadata: f?.metadata,
       })),
       pagination: {
         limit: Number(limit),
         offset: Number(offset),
-        total: files.length,
+        total: files?.length,
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "List files error:");
-    return res.status(500).json({ error: "Failed to list files" });
+    logger?.warn({ err: error }, "List files error:");
+    return res?.status(500).json({ error: "Failed to list files" });
   }
 });
 
-router.delete(
+router?.delete(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.user) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req.params;
-      const { permanent = "false" } = req.query;
+      const { id } = req?.params;
+      const { permanent = "false" } = req?.query;
 
       const [file] = await db
         .select()
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles.id, id),
-            eq(userStorageFiles.userId, req.user.id),
-            isNull(userStorageFiles.deletedAt),
+            eq(userStorageFiles?.id, id),
+            eq(userStorageFiles?.userId, req?.user.id),
+            isNull(userStorageFiles?.deletedAt),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
@@ -680,25 +690,25 @@ router.delete(
 
       if (permanent === "true") {
         // Permanent delete: remove from storage and database
-        await storageService.deleteFile(file.fileKey);
-        await db.delete(userStorageFiles).where(eq(userStorageFiles.id, id));
+        await storageService?.deleteFile(file?.fileKey);
+        await db?.delete(userStorageFiles).where(eq(userStorageFiles?.id, id));
 
         // Update storage usage
         await db
           .update(userStorage)
           .set({
-            totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
-            fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
+            totalBytes: sql`GREATEST(${userStorage?.totalBytes} - ${file?.sizeBytes || 0}, 0)`,
+            fileCount: sql`GREATEST(${userStorage?.fileCount} - 1, 0)`,
           })
-          .where(eq(userStorage.userId, req.user.id));
+          .where(eq(userStorage?.userId, req?.user.id));
 
-        return res.json({
+        return res?.json({
           success: true,
           outcome: "file_permanently_deleted",
           file: {
-            id: file.id,
-            name: file.fileName,
-            size: file.sizeBytes,
+            id: file?.id,
+            name: file?.fileName,
+            size: file?.sizeBytes,
           },
           canUndo: false,
         });
@@ -707,23 +717,23 @@ router.delete(
         await db
           .update(userStorageFiles)
           .set({ deletedAt: new Date() })
-          .where(eq(userStorageFiles.id, id));
+          .where(eq(userStorageFiles?.id, id));
 
-        return res.json({
+        return res?.json({
           success: true,
           outcome: "file_deleted",
           file: {
-            id: file.id,
-            name: file.fileName,
-            size: file.sizeBytes,
+            id: file?.id,
+            name: file?.fileName,
+            size: file?.sizeBytes,
           },
           canUndo: true,
           undoExpiresIn: PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000,
         });
       }
     } catch (error) {
-      logger.warn({ err: error }, "Delete file error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Delete file error:");
+      return res?.status(500).json({
         success: false,
         error: "Failed to delete file",
         outcome: "delete_failed",
@@ -732,146 +742,146 @@ router.delete(
   },
 );
 
-router.post("/bulk-delete", async (req: Request, res: Response) => {
+router?.post("/bulk-delete", async (req: Request, res: Response) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Authentication required" });
+    if (!req?.user) {
+      return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const { fileIds, permanent = false } = req.body;
+    const { fileIds, permanent = false } = req?.body;
 
-    if (!Array.isArray(fileIds) || fileIds.length === 0) {
-      return res.status(400).json({ error: "No files specified" });
+    if (!Array?.isArray(fileIds) || fileIds?.length === 0) {
+      return res?.status(400).json({ error: "No files specified" });
     }
-    if (fileIds.length > 500) {
+    if (fileIds?.length > 500) {
       return res
         .status(400)
         .json({ error: "Too many files in one request (max 500)" });
     }
 
-    const results = {
+    const _results = {
       success: [] as string[],
       failed: [] as { id: string; error: string }[],
     };
 
-    await Promise.allSettled(
-      fileIds.map(async (fileId: string) => {
+    await Promise?.allSettled(
+      fileIds?.map(async (fileId: string) => {
         try {
           const [file] = await db
             .select()
             .from(userStorageFiles)
             .where(
               and(
-                eq(userStorageFiles.id, fileId),
-                eq(userStorageFiles.userId, req.user!.id),
-                isNull(userStorageFiles.deletedAt),
+                eq(userStorageFiles?.id, fileId),
+                eq(userStorageFiles?.userId, req?.user!.id),
+                isNull(userStorageFiles?.deletedAt),
               ),
             )
             .limit(1);
 
           if (!file) {
-            results.failed.push({ id: fileId, error: "File not found" });
+            results?.failed.push({ id: fileId, error: "File not found" });
             return;
           }
 
           if (permanent) {
-            await storageService.deleteFile(file.fileKey);
+            await storageService?.deleteFile(file?.fileKey);
             await db
               .delete(userStorageFiles)
-              .where(eq(userStorageFiles.id, fileId));
+              .where(eq(userStorageFiles?.id, fileId));
             await db
               .update(userStorage)
               .set({
-                totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
-                fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
+                totalBytes: sql`GREATEST(${userStorage?.totalBytes} - ${file?.sizeBytes || 0}, 0)`,
+                fileCount: sql`GREATEST(${userStorage?.fileCount} - 1, 0)`,
               })
-              .where(eq(userStorage.userId, req.user!.id));
+              .where(eq(userStorage?.userId, req?.user!.id));
           } else {
             await db
               .update(userStorageFiles)
               .set({ deletedAt: new Date() })
-              .where(eq(userStorageFiles.id, fileId));
+              .where(eq(userStorageFiles?.id, fileId));
           }
 
-          results.success.push(fileId);
+          results?.success.push(fileId);
         } catch (err) {
-          results.failed.push({
+          results?.failed.push({
             id: fileId,
-            error: err instanceof Error ? err.message : "Unknown error",
+            error: err instanceof Error ? err?.message : "Unknown error",
           });
         }
       }),
     );
 
-    return res.json({
+    return res?.json({
       success: true,
       outcome: "bulk_delete_complete",
       results,
-      totalRequested: fileIds.length,
-      totalDeleted: results.success.length,
-      totalFailed: results.failed.length,
+      totalRequested: fileIds?.length,
+      totalDeleted: results?.success.length,
+      totalFailed: results?.failed.length,
       canUndo: !permanent,
       undoExpiresIn: !permanent
         ? PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000
         : 0,
     });
   } catch (error) {
-    logger.warn({ err: error }, "Bulk delete error:");
-    return res.status(500).json({ error: "Bulk delete failed" });
+    logger?.warn({ err: error }, "Bulk delete error:");
+    return res?.status(500).json({ error: "Bulk delete failed" });
   }
 });
 
-router.get(
+router?.get(
   "/:id/download",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.user) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req.params;
+      const { id } = req?.params;
 
       const [file] = await db
         .select()
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles.id, id),
-            eq(userStorageFiles.userId, req.user.id),
+            eq(userStorageFiles?.id, id),
+            eq(userStorageFiles?.userId, req?.user.id),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
         });
       }
 
-      const downloadUrl = await storageService.getDownloadUrl(
-        file.fileKey,
+      const _downloadUrl = await storageService?.getDownloadUrl(
+        file?.fileKey,
         3600,
       );
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: "download_ready",
         file: {
-          id: file.id,
-          name: file.fileName,
-          size: file.sizeBytes,
-          sizeFormatted: formatBytes(file.sizeBytes || 0),
-          type: file.mimeType,
+          id: file?.id,
+          name: file?.fileName,
+          size: file?.sizeBytes,
+          sizeFormatted: formatBytes(file?.sizeBytes || 0),
+          type: file?.mimeType,
         },
         downloadUrl,
         expiresIn: 3600,
       });
     } catch (error) {
-      logger.warn({ err: error }, "Download error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Download error:");
+      return res?.status(500).json({
         success: false,
         error: "Failed to generate download link",
         outcome: "download_failed",
@@ -881,20 +891,20 @@ router.get(
   },
 );
 
-router.post(
+router?.post(
   "/validate",
-  upload.single("file"),
+  upload?.single("file"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.user) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      if (!req.file) {
-        return res.status(400).json({ error: "No file provided" });
+      if (!req?.file) {
+        return res?.status(400).json({ error: "No file provided" });
       }
 
-      const file = req.file;
+      const _file = req?.file;
       const validationResults: {
         check: string;
         status: "pass" | "fail" | "warning";
@@ -902,42 +912,42 @@ router.post(
         value?: string | number;
       }[] = [];
 
-      const maxSize = 500 * 1024 * 1024;
-      if (file.size <= maxSize) {
-        validationResults.push({
+      const _maxSize = 500 * 1024 * 1024;
+      if (file?.size <= maxSize) {
+        validationResults?.push({
           check: "File Size",
           status: "pass",
           message: "Within size limits",
-          value: formatBytes(file.size),
+          value: formatBytes(file?.size),
         });
       } else {
-        validationResults.push({
+        validationResults?.push({
           check: "File Size",
           status: "fail",
           message: `File exceeds ${formatBytes(maxSize)} limit`,
-          value: formatBytes(file.size),
+          value: formatBytes(file?.size),
         });
       }
 
-      const isAllowedType = ALL_ALLOWED_TYPES.includes(file.mimetype);
+      const _isAllowedType = ALL_ALLOWED_TYPES?.includes(file?.mimetype);
       if (isAllowedType) {
-        validationResults.push({
+        validationResults?.push({
           check: "File Type",
           status: "pass",
           message: "Supported file format",
-          value: file.mimetype,
+          value: file?.mimetype,
         });
       } else {
-        validationResults.push({
+        validationResults?.push({
           check: "File Type",
           status: "fail",
           message: "Unsupported file format",
-          value: file.mimetype,
+          value: file?.mimetype,
         });
       }
 
-      if (file.mimetype.startsWith("audio/")) {
-        const AUDIO_MAGIC = {
+      if (file?.mimetype.startsWith("audio/")) {
+        const _AUDIO_MAGIC = {
           "audio/wav": [0x52, 0x49, 0x46, 0x46],
           "audio/mp3": [0xff, 0xfb],
           "audio/mpeg": [0xff, 0xfb],
@@ -945,52 +955,52 @@ router.post(
           "audio/ogg": [0x4f, 0x67, 0x67, 0x53],
         };
 
-        const magicBytes =
-          AUDIO_MAGIC[file.mimetype as keyof typeof AUDIO_MAGIC];
-        const headerBytes = new Uint8Array(file.buffer.slice(0, 12));
+        const _magicBytes =
+          AUDIO_MAGIC[file?.mimetype as keyof typeof AUDIO_MAGIC];
+        const _headerBytes = new Uint8Array(file?.buffer.slice(0, 12));
 
         let headerValid = true;
         if (magicBytes) {
-          if (file.mimetype === "audio/mp3" || file.mimetype === "audio/mpeg") {
+          if (file?.mimetype === "audio/mp3" || file?.mimetype === "audio/mpeg") {
             headerValid =
               (headerBytes[0] === 0xff && (headerBytes[1] & 0xe0) === 0xe0) ||
               (headerBytes[0] === 0x49 &&
                 headerBytes[1] === 0x44 &&
                 headerBytes[2] === 0x33);
           } else {
-            headerValid = magicBytes.every(
+            headerValid = magicBytes?.every(
               (byte, i) => headerBytes[i] === byte,
             );
           }
         }
 
         if (headerValid) {
-          validationResults.push({
+          validationResults?.push({
             check: "Audio Integrity",
             status: "pass",
             message: "Audio file header verified",
           });
 
-          validationResults.push({
+          validationResults?.push({
             check: "Audio Format",
             status: "pass",
             message: "Supported audio codec",
-            value: file.mimetype,
+            value: file?.mimetype,
           });
 
-          validationResults.push({
+          validationResults?.push({
             check: "Metadata",
             status: "pass",
             message: "Metadata extraction successful",
           });
 
-          validationResults.push({
+          validationResults?.push({
             check: "Waveform",
             status: "pass",
             message: "Waveform can be generated",
           });
         } else {
-          validationResults.push({
+          validationResults?.push({
             check: "Audio Integrity",
             status: "fail",
             message: "Audio file appears corrupted or invalid",
@@ -998,28 +1008,28 @@ router.post(
         }
       }
 
-      const storage = await getOrCreateUserStorage(req.user.id);
-      const quotaAfterUpload = storage.totalBytes + file.size;
-      if (quotaAfterUpload <= storage.quotaBytes) {
-        validationResults.push({
+      const _storage = await getOrCreateUserStorage(req?.user.id);
+      const _quotaAfterUpload = storage?.totalBytes + file?.size;
+      if (quotaAfterUpload <= storage?.quotaBytes) {
+        validationResults?.push({
           check: "Storage Quota",
           status: "pass",
           message: "Sufficient storage available",
-          value: formatBytes(storage.quotaBytes - storage.totalBytes),
+          value: formatBytes(storage?.quotaBytes - storage?.totalBytes),
         });
       } else {
-        validationResults.push({
+        validationResults?.push({
           check: "Storage Quota",
           status: "fail",
           message: "Insufficient storage space",
-          value: `${formatBytes(storage.quotaBytes - storage.totalBytes)} available`,
+          value: `${formatBytes(storage?.quotaBytes - storage?.totalBytes)} available`,
         });
       }
 
-      const hasFailures = validationResults.some((r) => r.status === "fail");
-      const hasWarnings = validationResults.some((r) => r.status === "warning");
+      const _hasFailures = validationResults?.some((r) => r?.status === "fail");
+      const _hasWarnings = validationResults?.some((r) => r?.status === "warning");
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: hasFailures
           ? "validation_failed"
@@ -1028,22 +1038,22 @@ router.post(
             : "validation_passed",
         valid: !hasFailures,
         file: {
-          name: file.originalname,
-          size: file.size,
-          sizeFormatted: formatBytes(file.size),
-          type: file.mimetype,
+          name: file?.originalname,
+          size: file?.size,
+          sizeFormatted: formatBytes(file?.size),
+          type: file?.mimetype,
         },
         results: validationResults,
         summary: {
-          passed: validationResults.filter((r) => r.status === "pass").length,
-          failed: validationResults.filter((r) => r.status === "fail").length,
-          warnings: validationResults.filter((r) => r.status === "warning")
+          passed: validationResults?.filter((r) => r?.status === "pass").length,
+          failed: validationResults?.filter((r) => r?.status === "fail").length,
+          warnings: validationResults?.filter((r) => r?.status === "warning")
             .length,
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Validation error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Validation error:");
+      return res?.status(500).json({
         success: false,
         error: "Validation failed",
         outcome: "validation_error",
@@ -1052,16 +1062,16 @@ router.post(
   },
 );
 
-router.post(
+router?.post(
   "/:id/restore",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.user) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req.params;
+      const { id } = req?.params;
 
       // Find the soft-deleted file
       const [deletedFile] = await db
@@ -1069,15 +1079,15 @@ router.post(
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles.id, id),
-            eq(userStorageFiles.userId, req.user.id),
-            isNotNull(userStorageFiles.deletedAt),
+            eq(userStorageFiles?.id, id),
+            eq(userStorageFiles?.userId, req?.user.id),
+            isNotNull(userStorageFiles?.deletedAt),
           ),
         )
         .limit(1);
 
       if (!deletedFile) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           error: "File not found or has already been permanently deleted.",
           outcome: "not_found",
@@ -1085,10 +1095,10 @@ router.post(
       }
 
       // Check if file is older than 30 days
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS);
-      if (deletedFile.deletedAt && deletedFile.deletedAt < cutoffDate) {
-        return res.status(410).json({
+      const _cutoffDate = new Date();
+      cutoffDate?.setDate(cutoffDate?.getDate() - PERMANENT_DELETE_DAYS);
+      if (deletedFile?.deletedAt && deletedFile?.deletedAt < cutoffDate) {
+        return res?.status(410).json({
           success: false,
           error:
             "Restoration window has expired. The file can no longer be recovered.",
@@ -1100,22 +1110,22 @@ router.post(
       await db
         .update(userStorageFiles)
         .set({ deletedAt: null })
-        .where(eq(userStorageFiles.id, id));
+        .where(eq(userStorageFiles?.id, id));
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: "file_restored",
         message: "File has been restored from trash",
         file: {
-          id: deletedFile.id,
-          name: deletedFile.fileName,
-          size: deletedFile.sizeBytes,
-          type: deletedFile.mimeType,
+          id: deletedFile?.id,
+          name: deletedFile?.fileName,
+          size: deletedFile?.sizeBytes,
+          type: deletedFile?.mimeType,
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Restore error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Restore error:");
+      return res?.status(500).json({
         success: false,
         error: "Failed to restore file",
         outcome: "restore_failed",
@@ -1124,63 +1134,63 @@ router.post(
   },
 );
 
-router.post(
+router?.post(
   "/:id/transcode",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.user) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req.params;
-      const { targetFormat = "mp3", quality = "high" } = req.body;
+      const { id } = req?.params;
+      const { targetFormat = "mp3", quality = "high" } = req?.body;
 
       const [file] = await db
         .select()
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles.id, id),
-            eq(userStorageFiles.userId, req.user.id),
+            eq(userStorageFiles?.id, id),
+            eq(userStorageFiles?.userId, req?.user.id),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
         });
       }
 
-      const jobId = crypto.randomUUID();
-      const fileSizeMB = (file.sizeBytes || 0) / (1024 * 1024);
-      const estimatedDurationMs = Math.max(5000, Math.ceil(fileSizeMB * 2000));
+      const _jobId = crypto?.randomUUID();
+      const _fileSizeMB = (file?.sizeBytes || 0) / (1024 * 1024);
+      const _estimatedDurationMs = Math?.max(5000, Math?.ceil(fileSizeMB * 2000));
 
-      transcodeJobs.set(jobId, {
-        startedAt: Date.now(),
+      transcodeJobs?.set(jobId, {
+        startedAt: Date?.now(),
         estimatedDurationMs,
-        userId: req.user!.id,
+        userId: req?.user!.id,
       });
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: "transcoding_started",
         jobId,
         file: {
-          id: file.id,
-          name: file.fileName,
-          originalFormat: file.mimeType,
+          id: file?.id,
+          name: file?.fileName,
+          originalFormat: file?.mimeType,
         },
         targetFormat,
         quality,
-        estimatedTime: Math.ceil(estimatedDurationMs / 1000),
+        estimatedTime: Math?.ceil(estimatedDurationMs / 1000),
       });
     } catch (error) {
-      logger.warn({ err: error }, "Transcode error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Transcode error:");
+      return res?.status(500).json({
         success: false,
         error: "Transcoding failed to start",
         outcome: "transcode_failed",
@@ -1189,20 +1199,20 @@ router.post(
   },
 );
 
-router.get(
+router?.get(
   "/transcode/:jobId/status",
   requireSafeParam("jobId"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.user) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const jobId = req.params.jobId;
-      const tracked = transcodeJobs.get(jobId);
+      const _jobId = req?.params.jobId;
+      const _tracked = transcodeJobs?.get(jobId);
 
       if (!tracked) {
-        return res.json({
+        return res?.json({
           success: true,
           jobId,
           status: "complete",
@@ -1211,24 +1221,24 @@ router.get(
         });
       }
 
-      if (tracked.userId !== req.user!.id) {
-        return res.status(404).json({ error: "Job not found" });
+      if (tracked?.userId !== req?.user!.id) {
+        return res?.status(404).json({ error: "Job not found" });
       }
 
-      const elapsedMs = Date.now() - tracked.startedAt;
-      const estimatedDurationMs = tracked.estimatedDurationMs || 30000;
-      const progress = Math.min(
+      const _elapsedMs = Date?.now() - tracked?.startedAt;
+      const _estimatedDurationMs = tracked?.estimatedDurationMs || 30000;
+      const _progress = Math?.min(
         100,
-        Math.floor((elapsedMs / estimatedDurationMs) * 100),
+        Math?.floor((elapsedMs / estimatedDurationMs) * 100),
       );
-      const status =
+      const _status =
         progress >= 100 ? "complete" : progress > 0 ? "processing" : "queued";
 
       if (progress >= 100) {
-        transcodeJobs.delete(jobId);
+        transcodeJobs?.delete(jobId);
       }
 
-      return res.json({
+      return res?.json({
         success: true,
         jobId,
         status,
@@ -1239,64 +1249,64 @@ router.get(
             : "transcode_in_progress",
       });
     } catch (error) {
-      logger.warn({ err: error }, "Transcode status error:");
-      return res.status(500).json({ error: "Failed to get transcode status" });
+      logger?.warn({ err: error }, "Transcode status error:");
+      return res?.status(500).json({ error: "Failed to get transcode status" });
     }
   },
 );
 
-router.post(
+router?.post(
   "/:id/preview",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req.user) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.user) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req.params;
+      const { id } = req?.params;
 
       const [file] = await db
         .select()
         .from(userStorageFiles)
         .where(
           and(
-            eq(userStorageFiles.id, id),
-            eq(userStorageFiles.userId, req.user.id),
+            eq(userStorageFiles?.id, id),
+            eq(userStorageFiles?.userId, req?.user.id),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res.status(404).json({
+        return res?.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
         });
       }
 
-      return res.json({
+      return res?.json({
         success: true,
         outcome: "preview_generated",
         file: {
-          id: file.id,
-          name: file.fileName,
+          id: file?.id,
+          name: file?.fileName,
         },
         preview: {
-          waveformUrl: `/api/files/${file.id}/waveform`,
-          thumbnailUrl: file.mimeType?.startsWith("image/")
-            ? `/api/files/${file.id}/thumbnail`
+          waveformUrl: `/api/files/${file?.id}/waveform`,
+          thumbnailUrl: file?.mimeType?.startsWith("image/")
+            ? `/api/files/${file?.id}/thumbnail`
             : null,
-          duration: file.mimeType?.startsWith("audio/")
-            ? file.size
-              ? Math.floor(file.size / 16000)
+          duration: file?.mimeType?.startsWith("audio/")
+            ? file?.size
+              ? Math?.floor(file?.size / 16000)
               : null
             : null,
         },
       });
     } catch (error) {
-      logger.warn({ err: error }, "Preview generation error:");
-      return res.status(500).json({
+      logger?.warn({ err: error }, "Preview generation error:");
+      return res?.status(500).json({
         success: false,
         error: "Failed to generate preview",
         outcome: "preview_failed",

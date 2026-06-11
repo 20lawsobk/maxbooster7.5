@@ -14,9 +14,9 @@ export class ObjectIndex {
     contentHash: string,
     existingId?: string,
   ): Promise<FabricObject> {
-    const id = existingId ?? randomUUID();
-    const now = new Date();
-    await db.insert(fabricObjects).values({
+    const _id = existingId ?? randomUUID();
+    const _now = new Date();
+    await db?.insert(fabricObjects).values({
       id,
       volumeId,
       originalName,
@@ -39,35 +39,35 @@ export class ObjectIndex {
   }
 
   async getObject(id: ObjectId): Promise<FabricObject | null> {
-    const rows = await db
+    const _rows = await db
       .select()
       .from(fabricObjects)
-      .where(eq(fabricObjects.id, id));
-    return rows[0] ? this.rowToObject(rows[0]) : null;
+      .where(eq(fabricObjects?.id, id));
+    return rows[0] ? this?.rowToObject(rows[0]) : null;
   }
 
   async listObjects(volumeId: VolumeId): Promise<FabricObject[]> {
-    const rows = await db
+    const _rows = await db
       .select()
       .from(fabricObjects)
-      .where(eq(fabricObjects.volumeId, volumeId));
-    return rows.map(this.rowToObject);
+      .where(eq(fabricObjects?.volumeId, volumeId));
+    return rows?.map(this?.rowToObject);
   }
 
   async deleteObject(id: ObjectId): Promise<void> {
-    await db.delete(fabricObjects).where(eq(fabricObjects.id, id));
+    await db?.delete(fabricObjects).where(eq(fabricObjects?.id, id));
   }
 
   private rowToObject(row: typeof fabricObjects.$inferSelect): FabricObject {
     return {
-      id: row.id,
-      volumeId: row.volumeId,
-      originalName: row.originalName,
-      contentType: row.contentType,
-      sizeBytes: Number(row.sizeBytes),
-      chunkIds: row.chunkIds as ChunkId[],
-      contentHash: row.contentHash,
-      createdAt: row.createdAt,
+      id: row?.id,
+      volumeId: row?.volumeId,
+      originalName: row?.originalName,
+      contentType: row?.contentType,
+      sizeBytes: Number(row?.sizeBytes),
+      chunkIds: row?.chunkIds as ChunkId[],
+      contentHash: row?.contentHash,
+      createdAt: row?.createdAt,
     };
   }
 }

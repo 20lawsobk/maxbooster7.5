@@ -28,29 +28,29 @@ export function useKeyboardShortcut(
     preventDefault = true,
   } = options;
 
-  const handlerRef = useRef(handler);
+  const _handlerRef = useRef(handler);
   handlerRef.current = handler;
 
-  const handleKeyDown = useCallback(
+  const _handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (!enabled) return;
 
-      const target = event.target as HTMLElement;
+      const _target = event?.target as HTMLElement;
       if (
         !allowInInput &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.contentEditable === "true")
+        (target?.tagName === "INPUT" ||
+          target?.tagName === "TEXTAREA" ||
+          target?.contentEditable === "true")
       ) {
         return;
       }
 
       if (matchesShortcut(event, key, modifiers)) {
         if (preventDefault) {
-          event.preventDefault();
-          event.stopPropagation();
+          event?.preventDefault();
+          event?.stopPropagation();
         }
-        handlerRef.current();
+        handlerRef?.current();
       }
     },
     [key, modifiers, enabled, allowInInput, preventDefault],
@@ -59,58 +59,58 @@ export function useKeyboardShortcut(
   useEffect(() => {
     if (!enabled) return;
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window?.addEventListener("keydown", handleKeyDown);
+    return () => window?.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown, enabled]);
 }
 
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
-  const shortcutsRef = useRef(shortcuts);
+  const _shortcutsRef = useRef(shortcuts);
   shortcutsRef.current = shortcuts;
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    const target = event.target as HTMLElement;
-    const isInput =
-      target.tagName === "INPUT" ||
-      target.tagName === "TEXTAREA" ||
-      target.contentEditable === "true";
+  const _handleKeyDown = useCallback((event: KeyboardEvent) => {
+    const _target = event?.target as HTMLElement;
+    const _isInput =
+      target?.tagName === "INPUT" ||
+      target?.tagName === "TEXTAREA" ||
+      target?.contentEditable === "true";
 
-    for (const shortcut of shortcutsRef.current) {
-      if (shortcut.enabled === false) continue;
-      if (isInput && !shortcut.allowInInput) continue;
+    for (const shortcut of shortcutsRef?.current) {
+      if (shortcut?.enabled === false) continue;
+      if (isInput && !shortcut?.allowInInput) continue;
 
-      if (matchesShortcut(event, shortcut.key, shortcut.modifiers || [])) {
-        if (shortcut.preventDefault !== false) {
-          event.preventDefault();
-          event.stopPropagation();
+      if (matchesShortcut(event, shortcut?.key, shortcut?.modifiers || [])) {
+        if (shortcut?.preventDefault !== false) {
+          event?.preventDefault();
+          event?.stopPropagation();
         }
-        shortcut.handler();
+        shortcut?.handler();
         return;
       }
     }
   }, []);
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window?.addEventListener("keydown", handleKeyDown);
+    return () => window?.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 }
 
 export function useHotkey(combo: string, handler: () => void, enabled = true) {
-  const parts = combo
+  const _parts = combo
     .toLowerCase()
     .split("+")
-    .map((p) => p.trim());
-  const key = parts[parts.length - 1];
+    .map((p) => p?.trim());
+  const _key = parts[parts?.length - 1];
   const modifiers: ShortcutModifier[] = [];
 
-  parts.slice(0, -1).forEach((mod) => {
+  parts?.slice(0, -1).forEach((mod) => {
     if (mod === "cmd" || mod === "ctrl" || mod === "mod" || mod === "meta") {
-      modifiers.push("cmd");
+      modifiers?.push("cmd");
     } else if (mod === "shift") {
-      modifiers.push("shift");
+      modifiers?.push("shift");
     } else if (mod === "alt" || mod === "option") {
-      modifiers.push("alt");
+      modifiers?.push("alt");
     }
   });
 
@@ -130,45 +130,45 @@ export function useArrowKeys(
   },
   enabled = true,
 ) {
-  const handlersRef = useRef(handlers);
+  const _handlersRef = useRef(handlers);
   handlersRef.current = handlers;
 
-  const handleKeyDown = useCallback(
+  const _handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (!enabled) return;
 
-      const target = event.target as HTMLElement;
+      const _target = event?.target as HTMLElement;
       if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.contentEditable === "true"
+        target?.tagName === "INPUT" ||
+        target?.tagName === "TEXTAREA" ||
+        target?.contentEditable === "true"
       ) {
         return;
       }
 
-      switch (event.key) {
+      switch (event?.key) {
         case "ArrowUp":
-          if (handlersRef.current.up) {
-            event.preventDefault();
-            handlersRef.current.up();
+          if (handlersRef?.current.up) {
+            event?.preventDefault();
+            handlersRef?.current.up();
           }
           break;
         case "ArrowDown":
-          if (handlersRef.current.down) {
-            event.preventDefault();
-            handlersRef.current.down();
+          if (handlersRef?.current.down) {
+            event?.preventDefault();
+            handlersRef?.current.down();
           }
           break;
         case "ArrowLeft":
-          if (handlersRef.current.left) {
-            event.preventDefault();
-            handlersRef.current.left();
+          if (handlersRef?.current.left) {
+            event?.preventDefault();
+            handlersRef?.current.left();
           }
           break;
         case "ArrowRight":
-          if (handlersRef.current.right) {
-            event.preventDefault();
-            handlersRef.current.right();
+          if (handlersRef?.current.right) {
+            event?.preventDefault();
+            handlersRef?.current.right();
           }
           break;
       }
@@ -177,8 +177,8 @@ export function useArrowKeys(
   );
 
   useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window?.addEventListener("keydown", handleKeyDown);
+    return () => window?.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 }
 
@@ -186,24 +186,24 @@ export function useKeyPress(targetKey: string) {
   const [isPressed, setIsPressed] = useState(false);
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === targetKey) {
+    const _handleKeyDown = (event: KeyboardEvent) => {
+      if (event?.key === targetKey) {
         setIsPressed(true);
       }
     };
 
-    const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === targetKey) {
+    const _handleKeyUp = (event: KeyboardEvent) => {
+      if (event?.key === targetKey) {
         setIsPressed(false);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window?.addEventListener("keydown", handleKeyDown);
+    window?.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window?.removeEventListener("keydown", handleKeyDown);
+      window?.removeEventListener("keyup", handleKeyUp);
     };
   }, [targetKey]);
 
@@ -219,30 +219,30 @@ export function useModifierKeys() {
   });
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+    const _handleKeyDown = (event: KeyboardEvent) => {
       setModifiers({
-        ctrl: event.ctrlKey,
-        shift: event.shiftKey,
-        alt: event.altKey,
-        meta: event.metaKey,
+        ctrl: event?.ctrlKey,
+        shift: event?.shiftKey,
+        alt: event?.altKey,
+        meta: event?.metaKey,
       });
     };
 
-    const handleKeyUp = (event: KeyboardEvent) => {
+    const _handleKeyUp = (event: KeyboardEvent) => {
       setModifiers({
-        ctrl: event.ctrlKey,
-        shift: event.shiftKey,
-        alt: event.altKey,
-        meta: event.metaKey,
+        ctrl: event?.ctrlKey,
+        shift: event?.shiftKey,
+        alt: event?.altKey,
+        meta: event?.metaKey,
       });
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window?.addEventListener("keydown", handleKeyDown);
+    window?.addEventListener("keyup", handleKeyUp);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window?.removeEventListener("keydown", handleKeyDown);
+      window?.removeEventListener("keyup", handleKeyUp);
     };
   }, []);
 

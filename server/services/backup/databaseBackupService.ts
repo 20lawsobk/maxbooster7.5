@@ -5,11 +5,11 @@ import fsPromises from "fs/promises";
 import { storageService } from "../storageService.js";
 import { env } from "../../config/env.js";
 
-const BACKUP_PREFIX = "database-backups";
-const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index.json`;
-const MAX_BACKUPS = 7;
-const RPO_TARGET = 24;
-const RTO_TARGET = 30;
+const _BACKUP_PREFIX = "database-backups";
+const _BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index?.json`;
+const _MAX_BACKUPS = 7;
+const _RPO_TARGET = 24;
+const _RTO_TARGET = 30;
 
 interface BackupEntry {
   name: string;
@@ -20,84 +20,84 @@ interface BackupEntry {
 
 async function loadIndex(): Promise<BackupEntry[]> {
   try {
-    const buf = await storageService.downloadFile(BACKUP_INDEX_KEY);
-    return JSON.parse(buf.toString("utf-8")) as BackupEntry[];
+    const _buf = await storageService?.downloadFile(BACKUP_INDEX_KEY);
+    return JSON?.parse(buf?.toString("utf-8")) as BackupEntry[];
   } catch {
     return [];
   }
 }
 
 async function saveIndex(entries: BackupEntry[]): Promise<void> {
-  await storageService.uploadFile(
-    Buffer.from(JSON.stringify(entries, null, 2), "utf-8"),
+  await storageService?.uploadFile(
+    Buffer?.from(JSON?.stringify(entries, null, 2), "utf-8"),
     BACKUP_INDEX_KEY,
     "application/json",
   );
 }
 
 export class DatabaseBackupService {
-  private backupSchedule: cron.ScheduledTask | null = null;
+  private backupSchedule: cron?.ScheduledTask | null = null;
   private isInitialized = false;
 
   async initialize() {
-    if (!env.DATABASE_URL) {
-      logger.warn("⚠️  DATABASE_URL not configured - backup service disabled");
+    if (!env?.DATABASE_URL) {
+      logger?.warn("⚠️  DATABASE_URL not configured - backup service disabled");
       return;
     }
 
     if (
-      process.env.NODE_ENV !== "production" &&
-      !process.env.REPLIT_DEPLOYMENT &&
-      process.env.ENABLE_BACKUPS !== "true"
+      process?.env.NODE_ENV !== "production" &&
+      !process?.env.REPLIT_DEPLOYMENT &&
+      process?.env.ENABLE_BACKUPS !== "true"
     ) {
-      logger.info("ℹ️  Database backups disabled (not in production)");
-      logger.info("   Set ENABLE_BACKUPS=true to enable in development");
+      logger?.info("ℹ️  Database backups disabled (not in production)");
+      logger?.info("   Set ENABLE_BACKUPS=true to enable in development");
       return;
     }
 
-    this.scheduleBackups();
+    this?.scheduleBackups();
     this.isInitialized = true;
 
-    logger.info(
+    logger?.info(
       "✅ Database Backup Service initialized (Pocket Dimension storage)",
     );
-    logger.info(`   RPO Target: ${RPO_TARGET} hours`);
-    logger.info(`   RTO Target: ${RTO_TARGET} minutes`);
-    logger.info(`   Backup Schedule: Daily at 2 AM UTC`);
-    logger.info(`   Retention: ${MAX_BACKUPS} days`);
+    logger?.info(`   RPO Target: ${RPO_TARGET} hours`);
+    logger?.info(`   RTO Target: ${RTO_TARGET} minutes`);
+    logger?.info(`   Backup Schedule: Daily at 2 AM UTC`);
+    logger?.info(`   Retention: ${MAX_BACKUPS} days`);
   }
 
   private scheduleBackups() {
-    this.backupSchedule = cron.schedule("0 2 * * *", async () => {
-      logger.info("🔄 Starting scheduled database backup...");
+    this.backupSchedule = cron?.schedule("0 2 * * *", async () => {
+      logger?.info("🔄 Starting scheduled database backup...");
       try {
-        await this.createBackup();
-        await this.cleanOldBackups();
-        logger.info("✅ Scheduled backup completed successfully");
+        await this?.createBackup();
+        await this?.cleanOldBackups();
+        logger?.info("✅ Scheduled backup completed successfully");
       } catch (error: unknown) {
-        logger.warn({ err: error }, "❌ Scheduled backup failed:");
+        logger?.warn({ err: error }, "❌ Scheduled backup failed:");
       }
     });
 
-    logger.info("📅 Database backups scheduled (daily at 2 AM UTC)");
+    logger?.info("📅 Database backups scheduled (daily at 2 AM UTC)");
   }
 
   async createBackup(): Promise<string> {
-    if (!env.DATABASE_URL) {
+    if (!env?.DATABASE_URL) {
       throw new Error("DATABASE_URL not configured");
     }
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const name = `backup-${timestamp}.sql`;
-    const key = `${BACKUP_PREFIX}/${name}`;
+    const _timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const _name = `backup-${timestamp}.sql`;
+    const _key = `${BACKUP_PREFIX}/${name}`;
 
-    const tmpPath = `/tmp/${name}`;
+    const _tmpPath = `/tmp/${name}`;
 
     await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn("pg_dump", [env.DATABASE_URL!], {
-        env: process.env,
+      const _pgDump = spawn("pg_dump", [env?.DATABASE_URL!], {
+        env: process?.env,
       });
-      const writeStream = fs.createWriteStream(tmpPath);
+      const _writeStream = fs?.createWriteStream(tmpPath);
       let errorOutput = "";
       let pipelineDone = false;
       let exited = false;
@@ -109,34 +109,34 @@ export class DatabaseBackupService {
       function fail(err: Error) {
         if (settled) return;
         settled = true;
-        writeStream.destroy();
+        writeStream?.destroy();
         reject(err);
       }
 
-      pgDump.stderr.on("data", (d) => {
-        errorOutput += d.toString();
+      pgDump?.stderr.on("data", (d) => {
+        errorOutput += d?.toString();
       });
 
-      writeStream.on("finish", () => {
+      writeStream?.on("finish", () => {
         pipelineDone = true;
         check();
       });
-      writeStream.on("error", (err) => fail(err));
+      writeStream?.on("error", (err) => fail(err));
 
       // Absorb EPIPE on pgDump stdout in case writeStream closes early
-      pgDump.stdout.on("error", (e: NodeJS.ErrnoException) => {
-        if (e.code !== "EPIPE" && e.code !== "ECONNRESET") fail(e);
+      pgDump?.stdout.on("error", (e: NodeJS.ErrnoException) => {
+        if (e?.code !== "EPIPE" && e?.code !== "ECONNRESET") fail(e);
       });
 
-      pgDump.stdout.pipe(writeStream);
+      pgDump?.stdout.pipe(writeStream);
 
-      pgDump.on("close", (code) => {
+      pgDump?.on("close", (code) => {
         exited = true;
         exitCode = code;
         check();
       });
 
-      pgDump.on("error", (err) => fail(err));
+      pgDump?.on("error", (err) => fail(err));
 
       function check() {
         if (!pipelineDone || !exited) return;
@@ -153,16 +153,16 @@ export class DatabaseBackupService {
     // Production-grade: stat the file first, refuse if it would OOM the box,
     // and use async readFile so we don't block the event loop. The hard cap
     // protects the process — once dumps approach this size, the upload path
-    // must be migrated to multipart/streaming via storageService.uploadStream.
-    const stats = await fs.promises.stat(tmpPath);
-    const sizeBytes = stats.size;
-    const sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
+    // must be migrated to multipart/streaming via storageService?.uploadStream.
+    const _stats = await fs?.promises.stat(tmpPath);
+    const _sizeBytes = stats?.size;
+    const _sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
 
     // Hard guard: anything bigger than 1 GiB will likely OOM Replit
     // containers. Better to fail loudly than silently kill the process.
-    const HARD_CAP_BYTES = 1024 * 1024 * 1024;
+    const _HARD_CAP_BYTES = 1024 * 1024 * 1024;
     if (sizeBytes > HARD_CAP_BYTES) {
-      await fs.promises.unlink(tmpPath).catch(() => undefined);
+      await fs?.promises.unlink(tmpPath).catch(() => undefined);
       throw new Error(
         `Backup ${name} is ${sizeMB} MB which exceeds the 1 GiB single-shot cap. ` +
           `Implement multipart streaming in storageService before retrying.`,
@@ -171,21 +171,21 @@ export class DatabaseBackupService {
 
     // Heap headroom warning at 256 MB so ops have lead time.
     if (sizeBytes > 256 * 1024 * 1024) {
-      logger.warn(
+      logger?.warn(
         `⚠️  Backup ${name} is ${sizeMB} MB — approaching memory limit. ` +
           `Plan for streaming upload before the next doubling.`,
       );
     }
 
-    const sqlBuffer = await fs.promises.readFile(tmpPath);
-    await fs.promises.unlink(tmpPath).catch(() => undefined);
+    const _sqlBuffer = await fs?.promises.readFile(tmpPath);
+    await fs?.promises.unlink(tmpPath).catch(() => undefined);
 
-    await storageService.uploadFile(sqlBuffer, key, "application/sql");
+    await storageService?.uploadFile(sqlBuffer, key, "application/sql");
 
-    logger.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
+    logger?.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
 
-    const index = await loadIndex();
-    index.push({ name, key, date: new Date().toISOString(), size: sizeBytes });
+    const _index = await loadIndex();
+    index?.push({ name, key, date: new Date().toISOString(), size: sizeBytes });
     await saveIndex(index);
 
     return key;
@@ -193,56 +193,56 @@ export class DatabaseBackupService {
 
   private async cleanOldBackups(): Promise<void> {
     try {
-      const index = await loadIndex();
-      const sorted = [...index].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      const _index = await loadIndex();
+      const _sorted = [...index].sort(
+        (a, b) => new Date(b?.date).getTime() - new Date(a?.date).getTime(),
       );
 
-      if (sorted.length > MAX_BACKUPS) {
-        const toDelete = sorted.slice(MAX_BACKUPS);
+      if (sorted?.length > MAX_BACKUPS) {
+        const _toDelete = sorted?.slice(MAX_BACKUPS);
         for (const entry of toDelete) {
           try {
-            await storageService.deleteFile(entry.key);
-            logger.info(`🗑️  Deleted old backup: ${entry.name}`);
+            await storageService?.deleteFile(entry?.key);
+            logger?.info(`🗑️  Deleted old backup: ${entry?.name}`);
           } catch {
-            logger.warn(`Could not delete backup ${entry.name} from storage`);
+            logger?.warn(`Could not delete backup ${entry?.name} from storage`);
           }
         }
-        await saveIndex(sorted.slice(0, MAX_BACKUPS));
-        logger.info(`✅ Cleaned ${toDelete.length} old backup(s)`);
+        await saveIndex(sorted?.slice(0, MAX_BACKUPS));
+        logger?.info(`✅ Cleaned ${toDelete?.length} old backup(s)`);
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error cleaning old backups:");
+      logger?.warn({ err: error }, "Error cleaning old backups:");
     }
   }
 
   async restoreBackup(key: string): Promise<void> {
-    const tmpPath = `/tmp/restore-${Date.now()}.sql`;
+    const _tmpPath = `/tmp/restore-${Date?.now()}.sql`;
     try {
-      const buf = await storageService.downloadFile(key);
-      await fsPromises.writeFile(tmpPath, buf);
+      const _buf = await storageService?.downloadFile(key);
+      await fsPromises?.writeFile(tmpPath, buf);
 
       await new Promise<void>((resolve, reject) => {
-        const psql = spawn("psql", [env.DATABASE_URL || "", "-f", tmpPath], {
-          env: process.env,
+        const _psql = spawn("psql", [env?.DATABASE_URL || "", "-f", tmpPath], {
+          env: process?.env,
         });
         let errorOutput = "";
-        psql.stderr.on("data", (d) => {
-          errorOutput += d.toString();
+        psql?.stderr.on("data", (d) => {
+          errorOutput += d?.toString();
         });
-        psql.on("close", (code) => {
+        psql?.on("close", (code) => {
           if (code === 0) {
-            logger.info("✅ Database restored successfully");
+            logger?.info("✅ Database restored successfully");
             resolve();
           } else {
             reject(new Error(`Restore failed (code ${code}): ${errorOutput}`));
           }
         });
-        psql.on("error", reject);
+        psql?.on("error", reject);
       });
     } finally {
       try {
-        await fsPromises.unlink(tmpPath);
+        await fsPromises?.unlink(tmpPath);
       } catch {
         /* ignore */
       }
@@ -253,17 +253,17 @@ export class DatabaseBackupService {
     { name: string; date: Date; size: number; key: string }[]
   > {
     try {
-      const index = await loadIndex();
+      const _index = await loadIndex();
       return index
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .sort((a, b) => new Date(b?.date).getTime() - new Date(a?.date).getTime())
         .map((e) => ({
-          name: e.name,
-          date: new Date(e.date),
-          size: e.size,
-          key: e.key,
+          name: e?.name,
+          date: new Date(e?.date),
+          size: e?.size,
+          key: e?.key,
         }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error listing backups:");
+      logger?.warn({ err: error }, "Error listing backups:");
       return [];
     }
   }
@@ -279,11 +279,11 @@ export class DatabaseBackupService {
   }
 
   stop() {
-    if (this.backupSchedule) {
-      this.backupSchedule.stop();
-      logger.info("🛑 Database backup schedule stopped");
+    if (this?.backupSchedule) {
+      this?.backupSchedule.stop();
+      logger?.info("🛑 Database backup schedule stopped");
     }
   }
 }
 
-export const databaseBackupService = new DatabaseBackupService();
+export const _databaseBackupService = new DatabaseBackupService();

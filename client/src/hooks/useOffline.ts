@@ -55,11 +55,11 @@ export interface UseOfflineReturn extends OfflineState {
 
 export function useOffline(): UseOfflineReturn {
   const [state, setState] = useState<OfflineState>({
-    isOnline: navigator.onLine,
-    isOffline: !navigator.onLine,
+    isOnline: navigator?.onLine,
+    isOffline: !navigator?.onLine,
     isReconnecting: false,
     isSyncing: false,
-    connectionQuality: navigator.onLine ? "good" : "offline",
+    connectionQuality: navigator?.onLine ? "good" : "offline",
     syncStatus: "idle",
     syncProgress: {
       total: 0,
@@ -75,24 +75,24 @@ export function useOffline(): UseOfflineReturn {
     lastSyncAt: null,
   });
 
-  const loadStats = useCallback(async () => {
+  const _loadStats = useCallback(async () => {
     try {
-      const stats = await offlineQueue.getStats();
+      const _stats = await offlineQueue?.getStats();
       setState((prev) => ({
         ...prev,
-        pendingCount: stats.pending + stats.syncing,
-        failedCount: stats.failed,
-        conflictCount: stats.conflict,
+        pendingCount: stats?.pending + stats?.syncing,
+        failedCount: stats?.failed,
+        conflictCount: stats?.conflict,
       }));
     } catch (error) {
-      logger.error("[useOffline] Failed to load stats:", error);
+      logger?.error("[useOffline] Failed to load stats:", error);
     }
   }, []);
 
   useEffect(() => {
     loadStats();
 
-    const handleOnline = () => {
+    const _handleOnline = () => {
       setState((prev) => ({
         ...prev,
         isOnline: true,
@@ -101,13 +101,13 @@ export function useOffline(): UseOfflineReturn {
         isReconnecting: true,
       }));
 
-      syncManager.sync().finally(() => {
+      syncManager?.sync().finally(() => {
         setState((prev) => ({ ...prev, isReconnecting: false }));
         loadStats();
       });
     };
 
-    const handleOffline = () => {
+    const _handleOffline = () => {
       setState((prev) => ({
         ...prev,
         isOnline: false,
@@ -117,15 +117,15 @@ export function useOffline(): UseOfflineReturn {
       }));
     };
 
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
+    window?.addEventListener("online", handleOnline);
+    window?.addEventListener("offline", handleOffline);
 
-    const connection = (navigator as Record<string, unknown>).connection;
+    const _connection = (navigator as Record<string, unknown>).connection;
     if (connection) {
-      const handleConnectionChange = () => {
-        const effectiveType = connection.effectiveType;
+      const _handleConnectionChange = () => {
+        const _effectiveType = connection?.effectiveType;
         let quality: "excellent" | "good" | "slow" | "offline";
-        if (!navigator.onLine) {
+        if (!navigator?.onLine) {
           quality = "offline";
         } else if (effectiveType === "4g") {
           quality = "excellent";
@@ -136,37 +136,37 @@ export function useOffline(): UseOfflineReturn {
         }
         setState((prev) => ({ ...prev, connectionQuality: quality }));
       };
-      connection.addEventListener("change", handleConnectionChange);
+      connection?.addEventListener("change", handleConnectionChange);
     }
 
-    const unsubStatusChange = syncManager.on("status-change", (event) => {
-      if (event.status) {
+    const _unsubStatusChange = syncManager?.on("status-change", (event) => {
+      if (event?.status) {
         setState((prev) => ({
           ...prev,
-          syncStatus: event.status!,
-          isSyncing: event.status === "syncing",
+          syncStatus: event?.status!,
+          isSyncing: event?.status === "syncing",
         }));
       }
     });
 
-    const unsubProgress = syncManager.on("progress-update", (event) => {
-      if (event.progress) {
-        setState((prev) => ({ ...prev, syncProgress: event.progress! }));
+    const _unsubProgress = syncManager?.on("progress-update", (event) => {
+      if (event?.progress) {
+        setState((prev) => ({ ...prev, syncProgress: event?.progress! }));
       }
     });
 
-    const unsubComplete = syncManager.on("sync-complete", () => {
-      setState((prev) => ({ ...prev, lastSyncAt: Date.now() }));
+    const _unsubComplete = syncManager?.on("sync-complete", () => {
+      setState((prev) => ({ ...prev, lastSyncAt: Date?.now() }));
       loadStats();
     });
 
-    const unsubQueueChange = offlineQueue.on("action-added", loadStats);
-    const unsubQueueRemove = offlineQueue.on("action-removed", loadStats);
-    const unsubQueueUpdate = offlineQueue.on("action-updated", loadStats);
+    const _unsubQueueChange = offlineQueue?.on("action-added", loadStats);
+    const _unsubQueueRemove = offlineQueue?.on("action-removed", loadStats);
+    const _unsubQueueUpdate = offlineQueue?.on("action-updated", loadStats);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+      window?.removeEventListener("online", handleOnline);
+      window?.removeEventListener("offline", handleOffline);
       unsubStatusChange();
       unsubProgress();
       unsubComplete();
@@ -176,15 +176,15 @@ export function useOffline(): UseOfflineReturn {
     };
   }, [loadStats]);
 
-  const sync = useCallback(async () => {
-    await syncManager.sync();
+  const _sync = useCallback(async () => {
+    await syncManager?.sync();
   }, []);
 
-  const retryFailed = useCallback(async () => {
-    await syncManager.retryFailed();
+  const _retryFailed = useCallback(async () => {
+    await syncManager?.retryFailed();
   }, []);
 
-  const queueAction = useCallback(
+  const _queueAction = useCallback(
     async <T>(
       type: string,
       payload: T,
@@ -193,28 +193,28 @@ export function useOffline(): UseOfflineReturn {
         conflictStrategy?: "local-wins" | "server-wins" | "merge" | "manual";
       },
     ): Promise<QueuedAction<T>> => {
-      return offlineQueue.enqueue(type, payload, options);
+      return offlineQueue?.enqueue(type, payload, options);
     },
     [],
   );
 
-  const getConflicts = useCallback(async () => {
-    return offlineQueue.getConflicts();
+  const _getConflicts = useCallback(async () => {
+    return offlineQueue?.getConflicts();
   }, []);
 
-  const resolveConflict = useCallback(
+  const _resolveConflict = useCallback(
     async (
       actionId: string,
       resolution: "local" | "server" | "merged",
       mergedData?: unknown,
     ) => {
-      await offlineQueue.resolveConflict(actionId, resolution, mergedData);
+      await offlineQueue?.resolveConflict(actionId, resolution, mergedData);
       await loadStats();
     },
     [loadStats],
   );
 
-  const cacheData = useCallback(
+  const _cacheData = useCallback(
     async <T>(
       key: string,
       data: T,
@@ -225,26 +225,26 @@ export function useOffline(): UseOfflineReturn {
         | "user"
         | "general" = "general",
     ) => {
-      await offlineCache.set(key, data, { category });
+      await offlineCache?.set(key, data, { category });
     },
     [],
   );
 
-  const getCachedData = useCallback(
+  const _getCachedData = useCallback(
     async <T>(key: string): Promise<T | null> => {
-      return offlineCache.get<T>(key);
+      return offlineCache?.get<T>(key);
     },
     [],
   );
 
-  const invalidateCache = useCallback(
+  const _invalidateCache = useCallback(
     async (
       category?: "analytics" | "dashboard" | "ui" | "user" | "general",
     ) => {
       if (category) {
-        await offlineCache.invalidateCategory(category);
+        await offlineCache?.invalidateCategory(category);
       } else {
-        await offlineCache.clear();
+        await offlineCache?.clear();
       }
     },
     [],

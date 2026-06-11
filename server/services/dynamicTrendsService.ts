@@ -7,9 +7,9 @@ import { eq, and } from "drizzle-orm";
 function seededIndex(seed: string, length: number): number {
   if (length <= 0) return 0;
   let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+  for (let i = 0; i < seed?.length; i++) {
+    h ^= seed?.charCodeAt(i);
+    h = Math?.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;
@@ -119,21 +119,21 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "platform",
       popularity: 95,
       hashtags: ["#TrendingSound", "#ViralSound", "#FYP"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
     {
       topic: "Dance Challenges",
       category: "social",
       popularity: 92,
       hashtags: ["#DanceChallenge", "#TikTokDance", "#Viral"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
     {
       topic: "Music Discovery",
       category: "music",
       popularity: 88,
       hashtags: ["#MusicTok", "#NewSong", "#Discover"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   instagram: [
@@ -142,21 +142,21 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "platform",
       popularity: 90,
       hashtags: ["#Reels", "#ReelsMusic", "#Explore"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
     {
       topic: "Artist Spotlight",
       category: "industry",
       popularity: 85,
       hashtags: ["#ArtistSpotlight", "#MusicCreator", "#IndieArtist"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
     {
       topic: "Behind The Music",
       category: "music",
       popularity: 82,
       hashtags: ["#BTS", "#MakingOf", "#StudioLife"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   twitter: [
@@ -165,14 +165,14 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "social",
       popularity: 85,
       hashtags: ["#MusicTwitter", "#NowPlaying", "#NewMusicAlert"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
     {
       topic: "Album Drops",
       category: "music",
       popularity: 88,
       hashtags: ["#AlbumDrop", "#OutNow", "#Streaming"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   youtube: [
@@ -181,14 +181,14 @@ const PLATFORM_SPECIFIC_TRENDS: Record<string, TrendingTopic[]> = {
       category: "music",
       popularity: 90,
       hashtags: ["#Premiere", "#MusicVideo", "#Subscribe"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
     {
       topic: "Shorts Music",
       category: "platform",
       popularity: 88,
       hashtags: ["#Shorts", "#YouTubeShorts", "#ShortMusic"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
 };
@@ -200,7 +200,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "holiday",
       popularity: 90,
       hashtags: ["#NewYear", "#2026Music", "#FreshStart"],
-      expiresAt: new Date(Date.now() + 86400000 * 15),
+      expiresAt: new Date(Date?.now() + 86400000 * 15),
     },
   ],
   1: [
@@ -209,7 +209,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "holiday",
       popularity: 88,
       hashtags: ["#ValentinesDay", "#LoveSongs", "#Romantic"],
-      expiresAt: new Date(Date.now() + 86400000 * 14),
+      expiresAt: new Date(Date?.now() + 86400000 * 14),
     },
   ],
   5: [
@@ -218,7 +218,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 92,
       hashtags: ["#SummerVibes", "#SummerPlaylist", "#SummerHits"],
-      expiresAt: new Date(Date.now() + 86400000 * 30),
+      expiresAt: new Date(Date?.now() + 86400000 * 30),
     },
   ],
   6: [
@@ -227,7 +227,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 94,
       hashtags: ["#FestivalSeason", "#MusicFestival", "#LiveMusic"],
-      expiresAt: new Date(Date.now() + 86400000 * 30),
+      expiresAt: new Date(Date?.now() + 86400000 * 30),
     },
   ],
   9: [
@@ -236,7 +236,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 85,
       hashtags: ["#FallVibes", "#AutumnPlaylist", "#CozyMusic"],
-      expiresAt: new Date(Date.now() + 86400000 * 30),
+      expiresAt: new Date(Date?.now() + 86400000 * 30),
     },
   ],
   10: [
@@ -245,7 +245,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "holiday",
       popularity: 87,
       hashtags: ["#Halloween", "#SpookyVibes", "#HalloweenPlaylist"],
-      expiresAt: new Date(Date.now() + 86400000 * 10),
+      expiresAt: new Date(Date?.now() + 86400000 * 10),
     },
   ],
   11: [
@@ -254,7 +254,7 @@ const SEASONAL_TRENDS: Record<number, TrendingTopic[]> = {
       category: "cultural",
       popularity: 95,
       hashtags: ["#Wrapped", "#TopSongs", "#YearInReview"],
-      expiresAt: new Date(Date.now() + 86400000 * 30),
+      expiresAt: new Date(Date?.now() + 86400000 * 30),
     },
   ],
 };
@@ -266,7 +266,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 80,
       hashtags: ["#SundayVibes", "#SundayFunday", "#ChillSunday"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   1: [
@@ -275,7 +275,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 82,
       hashtags: ["#MondayMotivation", "#NewWeek", "#MusicMotivation"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   2: [
@@ -284,7 +284,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "music",
       popularity: 78,
       hashtags: ["#TuesdayTunes", "#MusicTuesday"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   3: [
@@ -293,7 +293,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 75,
       hashtags: ["#WednesdayVibes", "#HumpDay"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   4: [
@@ -302,7 +302,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 88,
       hashtags: ["#TBT", "#ThrowbackThursday", "#ClassicHits"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   5: [
@@ -311,7 +311,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "music",
       popularity: 95,
       hashtags: ["#NewMusicFriday", "#NMF", "#FridayMusic", "#OutNow"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
   6: [
@@ -320,7 +320,7 @@ const DAY_OF_WEEK_TRENDS: Record<number, TrendingTopic[]> = {
       category: "social",
       popularity: 90,
       hashtags: ["#WeekendVibes", "#SaturdayNight", "#PartyTime"],
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(Date?.now() + 86400000),
     },
   ],
 };
@@ -338,8 +338,8 @@ class DynamicTrendsService {
   }
 
   private isCacheValid(): boolean {
-    if (!this.trendCache) return false;
-    return this.trendCache.expiresAt > new Date();
+    if (!this?.trendCache) return false;
+    return this?.trendCache.expiresAt > new Date();
   }
 
   async getTrendingTopics(
@@ -347,37 +347,37 @@ class DynamicTrendsService {
     genre?: string,
     region?: string,
   ): Promise<TrendingTopic[]> {
-    const cacheKey = this.getCacheKey(platform, genre, region);
+    const _cacheKey = this?.getCacheKey(platform, genre, region);
 
-    if (this.isCacheValid() && this.trendCache) {
-      const cached = this.trendCache.data.filter(
+    if (this?.isCacheValid() && this?.trendCache) {
+      const _cached = this?.trendCache.data?.filter(
         (t) =>
-          (!t.platform || t.platform === platform) &&
-          (!t.region || t.region === region),
+          (!t?.platform || t?.platform === platform) &&
+          (!t?.region || t?.region === region),
       );
-      if (cached.length > 0) {
-        logger.debug(
-          `Returning ${cached.length} cached trends for ${cacheKey}`,
+      if (cached?.length > 0) {
+        logger?.debug(
+          `Returning ${cached?.length} cached trends for ${cacheKey}`,
         );
-        return cached.slice(0, 10);
+        return cached?.slice(0, 10);
       }
     }
 
     const trends: TrendingTopic[] = [];
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const month = now.getMonth();
+    const _now = new Date();
+    const _dayOfWeek = now?.getDay();
+    const _month = now?.getMonth();
 
     if (DAY_OF_WEEK_TRENDS[dayOfWeek]) {
-      trends.push(...DAY_OF_WEEK_TRENDS[dayOfWeek]);
+      trends?.push(...DAY_OF_WEEK_TRENDS[dayOfWeek]);
     }
 
     if (SEASONAL_TRENDS[month]) {
-      trends.push(...SEASONAL_TRENDS[month]);
+      trends?.push(...SEASONAL_TRENDS[month]);
     }
 
     if (PLATFORM_SPECIFIC_TRENDS[platform]) {
-      trends.push(...PLATFORM_SPECIFIC_TRENDS[platform]);
+      trends?.push(...PLATFORM_SPECIFIC_TRENDS[platform]);
     }
 
     if (genre && MUSIC_GENRE_TRENDS[genre]) {
@@ -386,25 +386,25 @@ class DynamicTrendsService {
         category: "music",
         popularity: 85,
         hashtags: MUSIC_GENRE_TRENDS[genre].hashtags,
-        expiresAt: new Date(Date.now() + 86400000),
+        expiresAt: new Date(Date?.now() + 86400000),
       };
-      trends.push(genreTrend);
+      trends?.push(genreTrend);
 
-      MUSIC_GENRE_TRENDS[genre].relatedTopics.forEach((topic) => {
-        trends.push({
+      MUSIC_GENRE_TRENDS[genre].relatedTopics?.forEach((topic) => {
+        trends?.push({
           topic,
           category: "music",
           popularity: 70 + seededIndex(topic + ":popularity", 20),
           hashtags: [
-            `#${topic.replace(/\s+/g, "")}`,
-            ...MUSIC_GENRE_TRENDS[genre].hashtags.slice(0, 2),
+            `#${topic?.replace(/\s+/g, "")}`,
+            ...MUSIC_GENRE_TRENDS[genre].hashtags?.slice(0, 2),
           ],
-          expiresAt: new Date(Date.now() + 86400000),
+          expiresAt: new Date(Date?.now() + 86400000),
         });
       });
     }
 
-    trends.push({
+    trends?.push({
       topic: "Independent Artists Rising",
       category: "industry",
       popularity: 88,
@@ -414,17 +414,17 @@ class DynamicTrendsService {
         "#SupportIndieMusic",
         "#UnsignedTalent",
       ],
-      expiresAt: new Date(Date.now() + 86400000 * 7),
+      expiresAt: new Date(Date?.now() + 86400000 * 7),
     });
 
-    const sortedTrends = trends
-      .sort((a, b) => b.popularity - a.popularity)
+    const _sortedTrends = trends
+      .sort((a, b) => b?.popularity - a?.popularity)
       .slice(0, 10);
 
     this.trendCache = {
       data: sortedTrends,
       fetchedAt: new Date(),
-      expiresAt: new Date(Date.now() + this.CACHE_DURATION_MS),
+      expiresAt: new Date(Date?.now() + this?.CACHE_DURATION_MS),
     };
 
     return sortedTrends;
@@ -556,8 +556,8 @@ class DynamicTrendsService {
     ];
 
     if (genre && MUSIC_GENRE_TRENDS[genre]) {
-      MUSIC_GENRE_TRENDS[genre].hashtags.forEach((tag, i) => {
-        hashtags.push({
+      MUSIC_GENRE_TRENDS[genre].hashtags?.forEach((tag, i) => {
+        hashtags?.push({
           hashtag: tag,
           category: i < 2 ? "high-reach" : "medium-reach",
           popularity: 85 - i * 5,
@@ -651,7 +651,7 @@ class DynamicTrendsService {
     };
 
     if (platformHashtags[platform]) {
-      hashtags.push(...platformHashtags[platform]);
+      hashtags?.push(...platformHashtags[platform]);
     }
 
     const objectiveBoost: Record<string, string[]> = {
@@ -663,7 +663,7 @@ class DynamicTrendsService {
 
     if (objective && objectiveBoost[objective]) {
       objectiveBoost[objective].forEach((tag, i) => {
-        hashtags.push({
+        hashtags?.push({
           hashtag: tag,
           category: "medium-reach",
           popularity: 70 - i * 5,
@@ -675,18 +675,18 @@ class DynamicTrendsService {
       });
     }
 
-    hashtags.push(...highReach, ...mediumReach, ...nicheHashtags);
+    hashtags?.push(...highReach, ...mediumReach, ...nicheHashtags);
 
-    const uniqueHashtags = hashtags.reduce((acc, tag) => {
+    const _uniqueHashtags = hashtags?.reduce((acc, tag) => {
       if (
-        !acc.some((t) => t.hashtag.toLowerCase() === tag.hashtag.toLowerCase())
+        !acc?.some((t) => t?.hashtag.toLowerCase() === tag?.hashtag.toLowerCase())
       ) {
-        acc.push(tag);
+        acc?.push(tag);
       }
       return acc;
     }, [] as HashtagData[]);
 
-    const balanced = this.balanceHashtagMix(uniqueHashtags, count);
+    const _balanced = this?.balanceHashtagMix(uniqueHashtags, count);
 
     return balanced;
   }
@@ -695,42 +695,42 @@ class DynamicTrendsService {
     hashtags: HashtagData[],
     count: number,
   ): HashtagData[] {
-    const highReach = hashtags.filter((h) => h.category === "high-reach");
-    const mediumReach = hashtags.filter((h) => h.category === "medium-reach");
-    const niche = hashtags.filter((h) => h.category === "niche");
+    const _highReach = hashtags?.filter((h) => h?.category === "high-reach");
+    const _mediumReach = hashtags?.filter((h) => h?.category === "medium-reach");
+    const _niche = hashtags?.filter((h) => h?.category === "niche");
 
     const result: HashtagData[] = [];
 
-    const highCount = Math.ceil(count * 0.3);
-    const mediumCount = Math.ceil(count * 0.4);
-    const nicheCount = count - highCount - mediumCount;
+    const _highCount = Math?.ceil(count * 0.3);
+    const _mediumCount = Math?.ceil(count * 0.4);
+    const _nicheCount = count - highCount - mediumCount;
 
-    result.push(
+    result?.push(
       ...highReach
-        .sort((a, b) => b.avgEngagement - a.avgEngagement)
+        .sort((a, b) => b?.avgEngagement - a?.avgEngagement)
         .slice(0, highCount),
     );
-    result.push(
+    result?.push(
       ...mediumReach
-        .sort((a, b) => b.avgEngagement - a.avgEngagement)
+        .sort((a, b) => b?.avgEngagement - a?.avgEngagement)
         .slice(0, mediumCount),
     );
-    result.push(
+    result?.push(
       ...niche
-        .sort((a, b) => b.avgEngagement - a.avgEngagement)
+        .sort((a, b) => b?.avgEngagement - a?.avgEngagement)
         .slice(0, nicheCount),
     );
 
-    while (result.length < count && hashtags.length > result.length) {
-      const remaining = hashtags.filter((h) => !result.includes(h));
-      if (remaining.length > 0) {
-        result.push(remaining[0]);
+    while (result?.length < count && hashtags?.length > result?.length) {
+      const _remaining = hashtags?.filter((h) => !result?.includes(h));
+      if (remaining?.length > 0) {
+        result?.push(remaining[0]);
       } else {
         break;
       }
     }
 
-    return result.slice(0, count);
+    return result?.slice(0, count);
   }
 
   async getRecommendedHashtagsForContent(
@@ -738,32 +738,32 @@ class DynamicTrendsService {
     platform: string,
     genre?: string,
   ): Promise<HashtagData[]> {
-    const contentLower = content.toLowerCase();
+    const _contentLower = content?.toLowerCase();
 
     const detectedThemes: string[] = [];
     if (
-      contentLower.includes("new") ||
-      contentLower.includes("drop") ||
-      contentLower.includes("release")
+      contentLower?.includes("new") ||
+      contentLower?.includes("drop") ||
+      contentLower?.includes("release")
     ) {
-      detectedThemes.push("release");
+      detectedThemes?.push("release");
     }
     if (
-      contentLower.includes("studio") ||
-      contentLower.includes("behind") ||
-      contentLower.includes("making")
+      contentLower?.includes("studio") ||
+      contentLower?.includes("behind") ||
+      contentLower?.includes("making")
     ) {
-      detectedThemes.push("behind-the-scenes");
+      detectedThemes?.push("behind-the-scenes");
     }
-    if (contentLower.includes("collab") || contentLower.includes("feature")) {
-      detectedThemes.push("collaboration");
+    if (contentLower?.includes("collab") || contentLower?.includes("feature")) {
+      detectedThemes?.push("collaboration");
     }
     if (
-      contentLower.includes("live") ||
-      contentLower.includes("show") ||
-      contentLower.includes("tour")
+      contentLower?.includes("live") ||
+      contentLower?.includes("show") ||
+      contentLower?.includes("tour")
     ) {
-      detectedThemes.push("live");
+      detectedThemes?.push("live");
     }
 
     const themeHashtags: Record<string, HashtagData[]> = {
@@ -870,28 +870,28 @@ class DynamicTrendsService {
     const recommendedHashtags: HashtagData[] = [];
     for (const theme of detectedThemes) {
       if (themeHashtags[theme]) {
-        recommendedHashtags.push(...themeHashtags[theme]);
+        recommendedHashtags?.push(...themeHashtags[theme]);
       }
     }
 
-    const baseHashtags = await this.getOptimizedHashtags(
+    const _baseHashtags = await this?.getOptimizedHashtags(
       platform,
       genre,
       undefined,
       5,
     );
-    recommendedHashtags.push(...baseHashtags);
+    recommendedHashtags?.push(...baseHashtags);
 
-    const unique = recommendedHashtags.reduce((acc, tag) => {
+    const _unique = recommendedHashtags?.reduce((acc, tag) => {
       if (
-        !acc.some((t) => t.hashtag.toLowerCase() === tag.hashtag.toLowerCase())
+        !acc?.some((t) => t?.hashtag.toLowerCase() === tag?.hashtag.toLowerCase())
       ) {
-        acc.push(tag);
+        acc?.push(tag);
       }
       return acc;
     }, [] as HashtagData[]);
 
-    return unique.slice(0, 10);
+    return unique?.slice(0, 10);
   }
 
   async saveHashtagResearch(
@@ -899,28 +899,28 @@ class DynamicTrendsService {
     userId: string,
   ): Promise<void> {
     try {
-      for (const hashtag of hashtags.slice(0, 10)) {
-        const existing = await db
+      for (const hashtag of hashtags?.slice(0, 10)) {
+        const _existing = await db
           .select()
           .from(hashtagResearch)
           .where(
             and(
-              eq(hashtagResearch.hashtag, hashtag.hashtag),
-              eq(hashtagResearch.platform, hashtag.platform),
+              eq(hashtagResearch?.hashtag, hashtag?.hashtag),
+              eq(hashtagResearch?.platform, hashtag?.platform),
             ),
           )
           .limit(1);
 
-        if (existing.length === 0) {
-          await db.insert(hashtagResearch).values({
+        if (existing?.length === 0) {
+          await db?.insert(hashtagResearch).values({
             userId,
-            hashtag: hashtag.hashtag,
-            platform: hashtag.platform,
-            category: hashtag.category,
-            popularity: hashtag.popularity,
-            competition: hashtag.competition,
-            avgEngagement: hashtag.avgEngagement,
-            trending: hashtag.trending,
+            hashtag: hashtag?.hashtag,
+            platform: hashtag?.platform,
+            category: hashtag?.category,
+            popularity: hashtag?.popularity,
+            competition: hashtag?.competition,
+            avgEngagement: hashtag?.avgEngagement,
+            trending: hashtag?.trending,
             relatedTags: [],
             lastUpdated: new Date(),
           });
@@ -928,19 +928,19 @@ class DynamicTrendsService {
           await db
             .update(hashtagResearch)
             .set({
-              popularity: hashtag.popularity,
-              competition: hashtag.competition,
-              avgEngagement: hashtag.avgEngagement,
-              trending: hashtag.trending,
+              popularity: hashtag?.popularity,
+              competition: hashtag?.competition,
+              avgEngagement: hashtag?.avgEngagement,
+              trending: hashtag?.trending,
               lastUpdated: new Date(),
             })
-            .where(eq(hashtagResearch.id, existing[0].id));
+            .where(eq(hashtagResearch?.id, existing[0].id));
         }
       }
     } catch (error) {
-      logger.warn({ err: error }, "Error saving hashtag research:");
+      logger?.warn({ err: error }, "Error saving hashtag research:");
     }
   }
 }
 
-export const dynamicTrendsService = new DynamicTrendsService();
+export const _dynamicTrendsService = new DynamicTrendsService();

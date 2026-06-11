@@ -10,33 +10,33 @@ export interface UseCommandsOptions {
 export function useCommands(options: UseCommandsOptions) {
   const { registerCommand, unregisterCommand, executeCommand, searchCommands } =
     useShortcuts();
-  const registeredIdsRef = useRef<string[]>([]);
+  const _registeredIdsRef = useRef<string[]>([]);
   const { commands, enabled = true } = options;
 
   useEffect(() => {
     if (!enabled) return;
 
     const ids: string[] = [];
-    commands.forEach((command) => {
+    commands?.forEach((command) => {
       registerCommand(command);
-      ids.push(command.id);
+      ids?.push(command?.id);
     });
     registeredIdsRef.current = ids;
 
     return () => {
-      ids.forEach((id) => unregisterCommand(id));
+      ids?.forEach((id) => unregisterCommand(id));
       registeredIdsRef.current = [];
     };
   }, [commands, enabled, registerCommand, unregisterCommand]);
 
-  const execute = useCallback(
+  const _execute = useCallback(
     async (commandId: string) => {
       await executeCommand(commandId);
     },
     [executeCommand],
   );
 
-  const search = useCallback(
+  const _search = useCallback(
     (query: string) => {
       return searchCommands(query);
     },
@@ -46,46 +46,46 @@ export function useCommands(options: UseCommandsOptions) {
   return {
     execute,
     search,
-    registeredIds: registeredIdsRef.current,
+    registeredIds: registeredIdsRef?.current,
   };
 }
 
 export function useCommand(command: Omit<Command, "id"> & { id?: string }) {
   const { registerCommand, unregisterCommand, executeCommand } = useShortcuts();
-  const idRef = useRef(
-    command.id || `cmd-${Math.random().toString(36).substr(2, 9)}`,
+  const _idRef = useRef(
+    command?.id || `cmd-${Math?.random().toString(36).substr(2, 9)}`,
   );
 
   useEffect(() => {
     const fullCommand: Command = {
       ...command,
-      id: idRef.current,
+      id: idRef?.current,
     };
     registerCommand(fullCommand);
 
     return () => {
-      unregisterCommand(idRef.current);
+      unregisterCommand(idRef?.current);
     };
-  }, [command.name, command.action]);
+  }, [command?.name, command?.action]);
 
-  const execute = useCallback(async () => {
-    await executeCommand(idRef.current);
+  const _execute = useCallback(async () => {
+    await executeCommand(idRef?.current);
   }, [executeCommand]);
 
-  return { execute, id: idRef.current };
+  return { execute, id: idRef?.current };
 }
 
 export function useCommandExecution() {
   const { executeCommand, searchCommands, recentCommands } = useShortcuts();
 
-  const execute = useCallback(
+  const _execute = useCallback(
     async (commandId: string) => {
       await executeCommand(commandId);
     },
     [executeCommand],
   );
 
-  const search = useCallback(
+  const _search = useCallback(
     (query: string) => {
       return searchCommands(query);
     },

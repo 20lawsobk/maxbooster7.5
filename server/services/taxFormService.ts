@@ -138,11 +138,11 @@ class TaxFormService {
   private static readonly MAX_TAX_FORMS = 100_000;
 
   private cacheTaxForm(id: string, form: GeneratedTaxForm): void {
-    if (this.taxForms.size >= TaxFormService.MAX_TAX_FORMS) {
-      const oldest = this.taxForms.keys().next().value;
-      if (oldest !== undefined) this.taxForms.delete(oldest);
+    if (this?.taxForms.size >= TaxFormService?.MAX_TAX_FORMS) {
+      const _oldest = this?.taxForms.keys().next().value;
+      if (oldest !== undefined) this?.taxForms.delete(oldest);
     }
-    this.taxForms.set(id, form);
+    this?.taxForms.set(id, form);
   }
 
   // DB-backed treaty rate cache (TTL: 1 hour)
@@ -152,22 +152,22 @@ class TaxFormService {
   } | null = null;
 
   private async getTreatyRatesFromDB(): Promise<Record<string, number>> {
-    const now = Date.now();
-    if (this._treatyCache && now < this._treatyCache.expiresAt) {
-      return this._treatyCache.data;
+    const _now = Date?.now();
+    if (this?._treatyCache && now < this?._treatyCache.expiresAt) {
+      return this?._treatyCache.data;
     }
     try {
-      const rows = await db.select().from(taxTreatyRates).limit(300);
+      const _rows = await db?.select().from(taxTreatyRates).limit(300);
       const map: Record<string, number> = {};
       for (const row of rows) {
-        if (row.hasTreaty) {
-          map[row.countryCode] = row.treatyRate;
+        if (row?.hasTreaty) {
+          map[row?.countryCode] = row?.treatyRate;
         }
       }
       this._treatyCache = { data: map, expiresAt: now + 3600_000 };
       return map;
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         { err: err },
         "Failed to load tax treaty rates from DB, using hardcoded fallback:",
       );
@@ -187,16 +187,16 @@ class TaxFormService {
     hasValidW9?: boolean,
     hasBackupWithholding?: boolean,
   ): Promise<WithholdingCalculation> {
-    const dbTreatyRates = await this.getTreatyRatesFromDB();
+    const _dbTreatyRates = await this?.getTreatyRatesFromDB();
 
     if (isUSPerson) {
       if (hasBackupWithholding || !hasValidW9) {
-        const rate = withholdingRates.backup_withholding;
-        const withholdingAmount = grossAmount * (rate / 100);
+        const _rate = withholdingRates?.backup_withholding;
+        const _withholdingAmount = grossAmount * (rate / 100);
         return {
           grossAmount,
           withholdingRate: rate,
-          withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+          withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
           netAmount: grossAmount - withholdingAmount,
           reason: hasBackupWithholding
             ? "Backup withholding applied (missing or invalid TIN)"
@@ -213,24 +213,24 @@ class TaxFormService {
     }
 
     if (hasTreatyBenefits && country && dbTreatyRates[country] !== undefined) {
-      const rate = dbTreatyRates[country];
-      const withholdingAmount = grossAmount * (rate / 100);
+      const _rate = dbTreatyRates[country];
+      const _withholdingAmount = grossAmount * (rate / 100);
       return {
         grossAmount,
         withholdingRate: rate,
-        withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+        withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
         netAmount: grossAmount - withholdingAmount,
         reason: `Treaty rate applied for ${country}`,
         treatyApplied: true,
       };
     }
 
-    const rate = withholdingRates.default_foreign;
-    const withholdingAmount = grossAmount * (rate / 100);
+    const _rate = withholdingRates?.default_foreign;
+    const _withholdingAmount = grossAmount * (rate / 100);
     return {
       grossAmount,
       withholdingRate: rate,
-      withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+      withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
       netAmount: grossAmount - withholdingAmount,
       reason: "Standard 30% withholding for foreign payee",
     };
@@ -246,24 +246,24 @@ class TaxFormService {
   ): WithholdingCalculation {
     if (isUSPerson) {
       if (hasBackupWithholding) {
-        const rate = withholdingRates.backup_withholding;
-        const withholdingAmount = grossAmount * (rate / 100);
+        const _rate = withholdingRates?.backup_withholding;
+        const _withholdingAmount = grossAmount * (rate / 100);
         return {
           grossAmount,
           withholdingRate: rate,
-          withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+          withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
           netAmount: grossAmount - withholdingAmount,
           reason: "Backup withholding applied (missing or invalid TIN)",
         };
       }
 
       if (!hasValidW9) {
-        const rate = withholdingRates.backup_withholding;
-        const withholdingAmount = grossAmount * (rate / 100);
+        const _rate = withholdingRates?.backup_withholding;
+        const _withholdingAmount = grossAmount * (rate / 100);
         return {
           grossAmount,
           withholdingRate: rate,
-          withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+          withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
           netAmount: grossAmount - withholdingAmount,
           reason: "Backup withholding - W-9 not on file",
         };
@@ -279,24 +279,24 @@ class TaxFormService {
     }
 
     if (hasTreatyBenefits && country && treatyRates[country] !== undefined) {
-      const rate = treatyRates[country];
-      const withholdingAmount = grossAmount * (rate / 100);
+      const _rate = treatyRates[country];
+      const _withholdingAmount = grossAmount * (rate / 100);
       return {
         grossAmount,
         withholdingRate: rate,
-        withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+        withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
         netAmount: grossAmount - withholdingAmount,
         reason: `Treaty rate applied for ${country}`,
         treatyApplied: true,
       };
     }
 
-    const rate = withholdingRates.default_foreign;
-    const withholdingAmount = grossAmount * (rate / 100);
+    const _rate = withholdingRates?.default_foreign;
+    const _withholdingAmount = grossAmount * (rate / 100);
     return {
       grossAmount,
       withholdingRate: rate,
-      withholdingAmount: Math.round(withholdingAmount * 100) / 100,
+      withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
       netAmount: grossAmount - withholdingAmount,
       reason: "Standard 30% withholding for non-US persons",
     };
@@ -314,13 +314,13 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.cacheTaxForm(form.id, form);
-    logger.info(`Generated W-9 form ${form.id} for user ${userId}`);
+    this?.cacheTaxForm(form?.id, form);
+    logger?.info(`Generated W-9 form ${form?.id} for user ${userId}`);
     return form;
   }
 
   generateW8BEN(userId: string, taxpayerInfo: TaxpayerInfo): GeneratedTaxForm {
-    if (!taxpayerInfo.countryOfCitizenship) {
+    if (!taxpayerInfo?.countryOfCitizenship) {
       throw new Error("Country of citizenship is required for W-8BEN");
     }
 
@@ -335,8 +335,8 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.cacheTaxForm(form.id, form);
-    logger.info(`Generated W-8BEN form ${form.id} for user ${userId}`);
+    this?.cacheTaxForm(form?.id, form);
+    logger?.info(`Generated W-8BEN form ${form?.id} for user ${userId}`);
     return form;
   }
 
@@ -360,16 +360,16 @@ class TaxFormService {
       recipientInfo,
       status: "draft",
       amounts: {
-        box1_nonemployee_compensation: amounts.nonemployeeCompensation,
-        box4_federal_withholding: amounts.federalWithholding || 0,
-        box5_state_tax_withheld: amounts.stateWithholding || 0,
+        box1_nonemployee_compensation: amounts?.nonemployeeCompensation,
+        box4_federal_withholding: amounts?.federalWithholding || 0,
+        box5_state_tax_withheld: amounts?.stateWithholding || 0,
       },
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    this.cacheTaxForm(form.id, form);
-    logger.info(`Generated 1099-NEC form ${form.id} for tax year ${taxYear}`);
+    this?.cacheTaxForm(form?.id, form);
+    logger?.info(`Generated 1099-NEC form ${form?.id} for tax year ${taxYear}`);
     return form;
   }
 
@@ -402,25 +402,25 @@ class TaxFormService {
       recipientInfo,
       status: "draft",
       amounts: {
-        box1_rents: amounts.rents || 0,
-        box2_royalties: amounts.royalties || 0,
-        box3_other_income: amounts.otherIncome || 0,
-        box4_federal_withholding: amounts.federalWithholding || 0,
-        box5_fishing_boat_proceeds: amounts.fishingBoatProceeds || 0,
-        box6_medical_payments: amounts.medicalPayments || 0,
-        box8_substitute_payments: amounts.substitutePayments || 0,
-        box9_crop_insurance: amounts.cropInsuranceProceeds || 0,
-        box10_gross_proceeds_attorney: amounts.grossProceedsAttorney || 0,
-        box12_section_409a: amounts.section409ADeferrals || 0,
-        box13_excess_golden_parachute: amounts.excessGoldenParachute || 0,
-        box14_nqdc: amounts.nqdc || 0,
+        box1_rents: amounts?.rents || 0,
+        box2_royalties: amounts?.royalties || 0,
+        box3_other_income: amounts?.otherIncome || 0,
+        box4_federal_withholding: amounts?.federalWithholding || 0,
+        box5_fishing_boat_proceeds: amounts?.fishingBoatProceeds || 0,
+        box6_medical_payments: amounts?.medicalPayments || 0,
+        box8_substitute_payments: amounts?.substitutePayments || 0,
+        box9_crop_insurance: amounts?.cropInsuranceProceeds || 0,
+        box10_gross_proceeds_attorney: amounts?.grossProceedsAttorney || 0,
+        box12_section_409a: amounts?.section409ADeferrals || 0,
+        box13_excess_golden_parachute: amounts?.excessGoldenParachute || 0,
+        box14_nqdc: amounts?.nqdc || 0,
       },
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    this.cacheTaxForm(form.id, form);
-    logger.info(`Generated 1099-MISC form ${form.id} for tax year ${taxYear}`);
+    this?.cacheTaxForm(form?.id, form);
+    logger?.info(`Generated 1099-MISC form ${form?.id} for tax year ${taxYear}`);
     return form;
   }
 
@@ -446,17 +446,17 @@ class TaxFormService {
       recipientInfo,
       status: "draft",
       amounts: {
-        box1a_gross_amount: amounts.grossAmount,
-        box1b_card_not_present: amounts.cardNotPresent || 0,
-        box3_number_of_transactions: amounts.transactionsByMonth.reduce(
+        box1a_gross_amount: amounts?.grossAmount,
+        box1b_card_not_present: amounts?.cardNotPresent || 0,
+        box3_number_of_transactions: amounts?.transactionsByMonth.reduce(
           (a, b) => a + b,
           0,
         ),
-        box4_federal_withholding: amounts.federalWithholding || 0,
-        box6_state_tax_withheld: amounts.stateWithholding || 0,
-        ...amounts.transactionsByMonth.reduce(
+        box4_federal_withholding: amounts?.federalWithholding || 0,
+        box6_state_tax_withheld: amounts?.stateWithholding || 0,
+        ...amounts?.transactionsByMonth.reduce(
           (acc, val, idx) => {
-            acc[`box5${String.fromCharCode(97 + idx)}_month_${idx + 1}`] = val;
+            acc[`box5${String?.fromCharCode(97 + idx)}_month_${idx + 1}`] = val;
             return acc;
           },
           {} as Record<string, number>,
@@ -466,29 +466,29 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.cacheTaxForm(form.id, form);
-    logger.info(`Generated 1099-K form ${form.id} for tax year ${taxYear}`);
+    this?.cacheTaxForm(form?.id, form);
+    logger?.info(`Generated 1099-K form ${form?.id} for tax year ${taxYear}`);
     return form;
   }
 
   getTaxForm(formId: string): GeneratedTaxForm | undefined {
-    return this.taxForms.get(formId);
+    return this?.taxForms.get(formId);
   }
 
   getTaxFormsByUser(userId: string): GeneratedTaxForm[] {
-    return Array.from(this.taxForms.values()).filter(
-      (form) => form.userId === userId,
+    return Array?.from(this?.taxForms.values()).filter(
+      (form) => form?.userId === userId,
     );
   }
 
   getTaxFormsByYear(userId: string, taxYear: number): GeneratedTaxForm[] {
-    return Array.from(this.taxForms.values()).filter(
-      (form) => form.userId === userId && form.taxYear === taxYear,
+    return Array?.from(this?.taxForms.values()).filter(
+      (form) => form?.userId === userId && form?.taxYear === taxYear,
     );
   }
 
   signTaxForm(formId: string, signatureHash: string): GeneratedTaxForm {
-    const form = this.taxForms.get(formId);
+    const _form = this?.taxForms.get(formId);
     if (!form) {
       throw new Error("Tax form not found");
     }
@@ -498,8 +498,8 @@ class TaxFormService {
     form.signatureHash = signatureHash;
     form.updatedAt = new Date();
 
-    this.cacheTaxForm(formId, form);
-    logger.info(`Tax form ${formId} signed`);
+    this?.cacheTaxForm(formId, form);
+    logger?.info(`Tax form ${formId} signed`);
     return form;
   }
 
@@ -514,20 +514,20 @@ class TaxFormService {
       withholding: number;
     }>,
   ): TaxSummary {
-    const forms = this.getTaxFormsByYear(userId, taxYear);
+    const _forms = this?.getTaxFormsByYear(userId, taxYear);
 
-    const bySource = earnings.map((e) => ({
+    const _bySource = earnings?.map((e) => ({
       ...e,
-      netAmount: e.grossAmount - e.fees - e.withholding,
+      netAmount: e?.grossAmount - e?.fees - e?.withholding,
     }));
 
-    const totalEarnings = bySource.reduce((sum, e) => sum + e.grossAmount, 0);
-    const totalWithholding = bySource.reduce(
-      (sum, e) => sum + e.withholding,
+    const _totalEarnings = bySource?.reduce((sum, e) => sum + e?.grossAmount, 0);
+    const _totalWithholding = bySource?.reduce(
+      (sum, e) => sum + e?.withholding,
       0,
     );
-    const platformFees = bySource.reduce((sum, e) => sum + e.fees, 0);
-    const netEarnings = bySource.reduce((sum, e) => sum + e.netAmount, 0);
+    const _platformFees = bySource?.reduce((sum, e) => sum + e?.fees, 0);
+    const _netEarnings = bySource?.reduce((sum, e) => sum + e?.netAmount, 0);
 
     return {
       userId,
@@ -542,33 +542,33 @@ class TaxFormService {
   }
 
   generateW9PDF(formId: string): Buffer {
-    const form = this.taxForms.get(formId);
-    if (!form || form.formType !== "W-9") {
+    const _form = this?.taxForms.get(formId);
+    if (!form || form?.formType !== "W-9") {
       throw new Error("W-9 form not found");
     }
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
+    const _doc = new jsPDF();
+    const _pageWidth = doc?.internal.pageSize?.getWidth();
+    const _margin = 15;
     let y = margin;
 
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("Form W-9", margin, y);
-    doc.setFontSize(10);
-    doc.text("(Rev. October 2018)", margin + 35, y);
+    doc?.setFontSize(16);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Form W-9", margin, y);
+    doc?.setFontSize(10);
+    doc?.text("(Rev. October 2018)", margin + 35, y);
     y += 6;
 
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("Department of the Treasury", margin, y);
+    doc?.setFontSize(8);
+    doc?.setFont("helvetica", "normal");
+    doc?.text("Department of the Treasury", margin, y);
     y += 4;
-    doc.text("Internal Revenue Service", margin, y);
+    doc?.text("Internal Revenue Service", margin, y);
     y += 8;
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(
+    doc?.setFontSize(12);
+    doc?.setFont("helvetica", "bold");
+    doc?.text(
       "Request for Taxpayer Identification Number and Certification",
       pageWidth / 2,
       y,
@@ -576,40 +576,40 @@ class TaxFormService {
     );
     y += 10;
 
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
+    doc?.setLineWidth(0.5);
+    doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    const info = form.taxpayerInfo;
+    const _info = form?.taxpayerInfo;
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("1  Name (as shown on your income tax return)", margin, y);
+    doc?.setFontSize(10);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("1  Name (as shown on your income tax return)", margin, y);
     y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.text(info.name || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(info?.name || "", margin, y);
     y += 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(
+    doc?.setFont("helvetica", "bold");
+    doc?.text(
       "2  Business name/disregarded entity name, if different from above",
       margin,
       y,
     );
     y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.text(info.businessName || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(info?.businessName || "", margin, y);
     y += 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(
+    doc?.setFont("helvetica", "bold");
+    doc?.text(
       "3  Check appropriate box for federal tax classification:",
       margin,
       y,
     );
     y += 6;
 
-    const classifications = [
+    const _classifications = [
       {
         value: "individual",
         label: "Individual/sole proprietor or single-member LLC",
@@ -622,231 +622,231 @@ class TaxFormService {
       { value: "other", label: "Other" },
     ];
 
-    doc.setFont("helvetica", "normal");
+    doc?.setFont("helvetica", "normal");
     for (const cls of classifications) {
-      const isChecked = info.taxClassification === cls.value;
-      doc.rect(margin, y - 3, 4, 4);
+      const _isChecked = info?.taxClassification === cls?.value;
+      doc?.rect(margin, y - 3, 4, 4);
       if (isChecked) {
-        doc.text("X", margin + 0.8, y);
+        doc?.text("X", margin + 0.8, y);
       }
-      doc.text(cls.label, margin + 8, y);
+      doc?.text(cls?.label, margin + 8, y);
       y += 6;
     }
     y += 5;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("5  Address (number, street, and apt. or suite no.)", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("5  Address (number, street, and apt. or suite no.)", margin, y);
     y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.text(info.address?.street || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(info?.address?.street || "", margin, y);
     y += 10;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("6  City, state, and ZIP code", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("6  City, state, and ZIP code", margin, y);
     y += 6;
-    doc.setFont("helvetica", "normal");
-    const cityStateZip = `${info.address?.city || ""}, ${info.address?.state || ""} ${info.address?.postalCode || ""}`;
-    doc.text(cityStateZip, margin, y);
+    doc?.setFont("helvetica", "normal");
+    const _cityStateZip = `${info?.address?.city || ""}, ${info?.address?.state || ""} ${info?.address?.postalCode || ""}`;
+    doc?.text(cityStateZip, margin, y);
     y += 15;
 
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
+    doc?.setLineWidth(0.5);
+    doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Part I  Taxpayer Identification Number (TIN)", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Part I  Taxpayer Identification Number (TIN)", margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "normal");
-    doc.text(
-      `Social security number: ${info.tinType === "ssn" ? this.maskTIN(info.tin || "") : "___-__-____"}`,
+    doc?.setFont("helvetica", "normal");
+    doc?.text(
+      `Social security number: ${info?.tinType === "ssn" ? this?.maskTIN(info?.tin || "") : "___-__-____"}`,
       margin,
       y,
     );
     y += 6;
-    doc.text(
-      `Employer identification number: ${info.tinType === "ein" ? this.maskTIN(info.tin || "") : "__-_______"}`,
+    doc?.text(
+      `Employer identification number: ${info?.tinType === "ein" ? this?.maskTIN(info?.tin || "") : "__-_______"}`,
       margin,
       y,
     );
     y += 15;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Part II  Certification", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Part II  Certification", margin, y);
     y += 6;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    const certText = `Under penalties of perjury, I certify that:
+    doc?.setFont("helvetica", "normal");
+    doc?.setFontSize(8);
+    const _certText = `Under penalties of perjury, I certify that:
 1. The number shown on this form is my correct taxpayer identification number, and
 2. I am not subject to backup withholding, and
-3. I am a U.S. citizen or other U.S. person, and
+3. I am a U?.S. citizen or other U?.S. person, and
 4. The FATCA code(s) entered on this form (if any) indicating that I am exempt from FATCA reporting is correct.`;
 
-    const certLines = doc.splitTextToSize(certText, pageWidth - margin * 2);
-    doc.text(certLines, margin, y);
-    y += certLines.length * 4 + 15;
+    const _certLines = doc?.splitTextToSize(certText, pageWidth - margin * 2);
+    doc?.text(certLines, margin, y);
+    y += certLines?.length * 4 + 15;
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Sign Here", margin, y);
+    doc?.setFontSize(10);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Sign Here", margin, y);
     y += 8;
 
-    doc.line(margin, y + 5, margin + 80, y + 5);
-    doc.setFont("helvetica", "normal");
-    doc.text("Signature of U.S. person", margin, y + 10);
+    doc?.line(margin, y + 5, margin + 80, y + 5);
+    doc?.setFont("helvetica", "normal");
+    doc?.text("Signature of U?.S. person", margin, y + 10);
 
-    doc.line(margin + 100, y + 5, margin + 150, y + 5);
-    doc.text("Date", margin + 100, y + 10);
+    doc?.line(margin + 100, y + 5, margin + 150, y + 5);
+    doc?.text("Date", margin + 100, y + 10);
 
-    if (form.signatureDate) {
-      doc.text(
-        new Date(form.signatureDate).toLocaleDateString(),
+    if (form?.signatureDate) {
+      doc?.text(
+        new Date(form?.signatureDate).toLocaleDateString(),
         margin + 100,
         y + 3,
       );
     }
 
-    doc.setFontSize(8);
-    doc.text(
-      `Form ID: ${form.id}`,
+    doc?.setFontSize(8);
+    doc?.text(
+      `Form ID: ${form?.id}`,
       margin,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
-    doc.text(
+    doc?.text(
       `Generated: ${new Date().toISOString()}`,
       pageWidth - margin - 50,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
 
-    return Buffer.from(doc.output("arraybuffer"));
+    return Buffer?.from(doc?.output("arraybuffer"));
   }
 
   generateW8BENPDF(formId: string): Buffer {
-    const form = this.taxForms.get(formId);
-    if (!form || form.formType !== "W-8BEN") {
+    const _form = this?.taxForms.get(formId);
+    if (!form || form?.formType !== "W-8BEN") {
       throw new Error("W-8BEN form not found");
     }
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
+    const _doc = new jsPDF();
+    const _pageWidth = doc?.internal.pageSize?.getWidth();
+    const _margin = 15;
     let y = margin;
 
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("Form W-8BEN", margin, y);
-    doc.setFontSize(10);
-    doc.text("(Rev. October 2021)", margin + 45, y);
+    doc?.setFontSize(16);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Form W-8BEN", margin, y);
+    doc?.setFontSize(10);
+    doc?.text("(Rev. October 2021)", margin + 45, y);
     y += 6;
 
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("Department of the Treasury", margin, y);
+    doc?.setFontSize(8);
+    doc?.setFont("helvetica", "normal");
+    doc?.text("Department of the Treasury", margin, y);
     y += 4;
-    doc.text("Internal Revenue Service", margin, y);
+    doc?.text("Internal Revenue Service", margin, y);
     y += 8;
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
-    doc.text(
+    doc?.setFontSize(11);
+    doc?.setFont("helvetica", "bold");
+    doc?.text(
       "Certificate of Foreign Status of Beneficial Owner for United States",
       pageWidth / 2,
       y,
       { align: "center" },
     );
     y += 5;
-    doc.text("Tax Withholding and Reporting (Individuals)", pageWidth / 2, y, {
+    doc?.text("Tax Withholding and Reporting (Individuals)", pageWidth / 2, y, {
       align: "center",
     });
     y += 10;
 
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
+    doc?.setLineWidth(0.5);
+    doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    const info = form.taxpayerInfo;
+    const _info = form?.taxpayerInfo;
 
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text("Part I  Identification of Beneficial Owner", margin, y);
+    doc?.setFontSize(9);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Part I  Identification of Beneficial Owner", margin, y);
     y += 8;
 
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text("1  Name of individual who is the beneficial owner", margin, y);
+    doc?.setFontSize(9);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("1  Name of individual who is the beneficial owner", margin, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(info.name || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(info?.name || "", margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("2  Country of citizenship", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("2  Country of citizenship", margin, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(info.countryOfCitizenship || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(info?.countryOfCitizenship || "", margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("3  Permanent residence address", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("3  Permanent residence address", margin, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(info.address?.street || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(info?.address?.street || "", margin, y);
     y += 5;
-    doc.text(
-      `${info.address?.city || ""}, ${info.address?.state || ""} ${info.address?.postalCode || ""}, ${info.address?.country || ""}`,
+    doc?.text(
+      `${info?.address?.city || ""}, ${info?.address?.state || ""} ${info?.address?.postalCode || ""}, ${info?.address?.country || ""}`,
       margin,
       y,
     );
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text(
+    doc?.setFont("helvetica", "bold");
+    doc?.text(
       "6  Foreign tax identifying number (or SSN/ITIN for US)",
       margin,
       y,
     );
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(this.maskTIN(info.tin || ""), margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(this?.maskTIN(info?.tin || ""), margin, y);
     y += 8;
 
-    if (info.dateOfBirth) {
-      doc.setFont("helvetica", "bold");
-      doc.text("8  Date of birth", margin, y);
+    if (info?.dateOfBirth) {
+      doc?.setFont("helvetica", "bold");
+      doc?.text("8  Date of birth", margin, y);
       y += 5;
-      doc.setFont("helvetica", "normal");
-      doc.text(new Date(info.dateOfBirth).toLocaleDateString(), margin, y);
+      doc?.setFont("helvetica", "normal");
+      doc?.text(new Date(info?.dateOfBirth).toLocaleDateString(), margin, y);
       y += 8;
     }
 
     y += 5;
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
+    doc?.setLineWidth(0.5);
+    doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Part II  Claim of Tax Treaty Benefits", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Part II  Claim of Tax Treaty Benefits", margin, y);
     y += 8;
 
-    if (info.claimTreatyBenefits && info.treatyCountry) {
-      doc.setFont("helvetica", "normal");
-      doc.text(
-        `9  I certify that the beneficial owner is a resident of ${info.treatyCountry}`,
+    if (info?.claimTreatyBenefits && info?.treatyCountry) {
+      doc?.setFont("helvetica", "normal");
+      doc?.text(
+        `9  I certify that the beneficial owner is a resident of ${info?.treatyCountry}`,
         margin,
         y,
       );
       y += 5;
-      doc.text(
+      doc?.text(
         `   within the meaning of the income tax treaty between the United States and that country.`,
         margin,
         y,
       );
       y += 8;
 
-      if (info.treatyArticle && info.treatyRate !== undefined) {
-        doc.text(
-          `10 Special rates and conditions: Article ${info.treatyArticle}, ${info.treatyRate}% rate`,
+      if (info?.treatyArticle && info?.treatyRate !== undefined) {
+        doc?.text(
+          `10 Special rates and conditions: Article ${info?.treatyArticle}, ${info?.treatyRate}% rate`,
           margin,
           y,
         );
@@ -855,158 +855,158 @@ class TaxFormService {
     }
 
     y += 5;
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
+    doc?.setLineWidth(0.5);
+    doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Part III  Certification", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Part III  Certification", margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    const certText = `Under penalties of perjury, I declare that I have examined the information on this form and to the best of my knowledge and belief it is true, correct, and complete. I further certify under penalties of perjury that:
+    doc?.setFont("helvetica", "normal");
+    doc?.setFontSize(8);
+    const _certText = `Under penalties of perjury, I declare that I have examined the information on this form and to the best of my knowledge and belief it is true, correct, and complete. I further certify under penalties of perjury that:
 • I am the individual that is the beneficial owner (or am authorized to sign for the individual that is the beneficial owner) of all the income to which this form relates
-• The person named on line 1 of this form is not a U.S. person
+• The person named on line 1 of this form is not a U?.S. person
 • The income to which this form relates is not effectively connected with the conduct of a trade or business in the United States`;
 
-    const certLines = doc.splitTextToSize(certText, pageWidth - margin * 2);
-    doc.text(certLines, margin, y);
-    y += certLines.length * 4 + 15;
+    const _certLines = doc?.splitTextToSize(certText, pageWidth - margin * 2);
+    doc?.text(certLines, margin, y);
+    y += certLines?.length * 4 + 15;
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "bold");
-    doc.text("Sign Here", margin, y);
+    doc?.setFontSize(10);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Sign Here", margin, y);
     y += 10;
 
-    doc.line(margin, y, margin + 80, y);
-    doc.setFont("helvetica", "normal");
-    doc.text("Signature of beneficial owner", margin, y + 5);
+    doc?.line(margin, y, margin + 80, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text("Signature of beneficial owner", margin, y + 5);
 
-    doc.line(margin + 100, y, margin + 150, y);
-    doc.text("Date", margin + 100, y + 5);
+    doc?.line(margin + 100, y, margin + 150, y);
+    doc?.text("Date", margin + 100, y + 5);
 
-    if (form.signatureDate) {
-      doc.text(
-        new Date(form.signatureDate).toLocaleDateString(),
+    if (form?.signatureDate) {
+      doc?.text(
+        new Date(form?.signatureDate).toLocaleDateString(),
         margin + 100,
         y - 3,
       );
     }
 
-    doc.setFontSize(8);
-    doc.text(
-      `Form ID: ${form.id}`,
+    doc?.setFontSize(8);
+    doc?.text(
+      `Form ID: ${form?.id}`,
       margin,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
 
-    return Buffer.from(doc.output("arraybuffer"));
+    return Buffer?.from(doc?.output("arraybuffer"));
   }
 
   generate1099PDF(formId: string): Buffer {
-    const form = this.taxForms.get(formId);
-    if (!form || !form.formType.startsWith("1099")) {
+    const _form = this?.taxForms.get(formId);
+    if (!form || !form?.formType.startsWith("1099")) {
       throw new Error("1099 form not found");
     }
 
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
+    const _doc = new jsPDF();
+    const _pageWidth = doc?.internal.pageSize?.getWidth();
+    const _margin = 15;
     let y = margin;
 
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Form ${form.formType}`, margin, y);
-    doc.setFontSize(10);
-    doc.text(`Tax Year ${form.taxYear}`, pageWidth - margin - 30, y);
+    doc?.setFontSize(14);
+    doc?.setFont("helvetica", "bold");
+    doc?.text(`Form ${form?.formType}`, margin, y);
+    doc?.setFontSize(10);
+    doc?.text(`Tax Year ${form?.taxYear}`, pageWidth - margin - 30, y);
     y += 8;
 
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.text("Copy B - For Recipient", margin, y);
+    doc?.setFontSize(8);
+    doc?.setFont("helvetica", "normal");
+    doc?.text("Copy B - For Recipient", margin, y);
     y += 10;
 
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
+    doc?.setLineWidth(0.5);
+    doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    const payerInfo = form.taxpayerInfo;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.text(
+    const _payerInfo = form?.taxpayerInfo;
+    doc?.setFontSize(9);
+    doc?.setFont("helvetica", "bold");
+    doc?.text(
       "PAYER'S name, street address, city, state, and ZIP code",
       margin,
       y,
     );
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(payerInfo.name || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(payerInfo?.name || "", margin, y);
     y += 4;
-    if (payerInfo.address) {
-      doc.text(payerInfo.address.street || "", margin, y);
+    if (payerInfo?.address) {
+      doc?.text(payerInfo?.address.street || "", margin, y);
       y += 4;
-      doc.text(
-        `${payerInfo.address.city || ""}, ${payerInfo.address.state || ""} ${payerInfo.address.postalCode || ""}`,
+      doc?.text(
+        `${payerInfo?.address.city || ""}, ${payerInfo?.address.state || ""} ${payerInfo?.address.postalCode || ""}`,
         margin,
         y,
       );
     }
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("PAYER'S TIN", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("PAYER'S TIN", margin, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(this.maskTIN(payerInfo.tin || ""), margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(this?.maskTIN(payerInfo?.tin || ""), margin, y);
     y += 10;
 
-    const recipientInfo = form.recipientInfo;
-    doc.setFont("helvetica", "bold");
-    doc.text("RECIPIENT'S name", margin, y);
+    const _recipientInfo = form?.recipientInfo;
+    doc?.setFont("helvetica", "bold");
+    doc?.text("RECIPIENT'S name", margin, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(recipientInfo?.name || "", margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(recipientInfo?.name || "", margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("RECIPIENT'S TIN", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("RECIPIENT'S TIN", margin, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.text(this.maskTIN(recipientInfo?.tin || ""), margin, y);
+    doc?.setFont("helvetica", "normal");
+    doc?.text(this?.maskTIN(recipientInfo?.tin || ""), margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("RECIPIENT'S address", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("RECIPIENT'S address", margin, y);
     y += 5;
-    doc.setFont("helvetica", "normal");
+    doc?.setFont("helvetica", "normal");
     if (recipientInfo?.address) {
-      doc.text(recipientInfo.address.street || "", margin, y);
+      doc?.text(recipientInfo?.address.street || "", margin, y);
       y += 4;
-      doc.text(
-        `${recipientInfo.address.city || ""}, ${recipientInfo.address.state || ""} ${recipientInfo.address.postalCode || ""}`,
+      doc?.text(
+        `${recipientInfo?.address.city || ""}, ${recipientInfo?.address.state || ""} ${recipientInfo?.address.postalCode || ""}`,
         margin,
         y,
       );
     }
     y += 15;
 
-    doc.setLineWidth(0.5);
-    doc.line(margin, y, pageWidth - margin, y);
+    doc?.setLineWidth(0.5);
+    doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("AMOUNTS REPORTED", margin, y);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("AMOUNTS REPORTED", margin, y);
     y += 8;
 
-    const amounts = form.amounts || {};
-    const amountEntries = Object.entries(amounts).filter(([_, v]) => v > 0);
+    const _amounts = form?.amounts || {};
+    const _amountEntries = Object?.entries(amounts).filter(([_, v]) => v > 0);
 
     for (const [key, value] of amountEntries) {
-      const label = key.replace(/_/g, " ").replace(/box\d+\s?/, "Box ");
-      doc.setFont("helvetica", "normal");
-      doc.text(`${label}:`, margin, y);
-      doc.text(
+      const _label = key?.replace(/_/g, " ").replace(/box\d+\s?/, "Box ");
+      doc?.setFont("helvetica", "normal");
+      doc?.text(`${label}:`, margin, y);
+      doc?.text(
         `$${(value as number).toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
         margin + 80,
         y,
@@ -1014,49 +1014,49 @@ class TaxFormService {
       y += 6;
     }
 
-    doc.setFontSize(8);
-    doc.text(
-      `Form ID: ${form.id}`,
+    doc?.setFontSize(8);
+    doc?.text(
+      `Form ID: ${form?.id}`,
       margin,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
-    doc.text(
+    doc?.text(
       `Generated: ${new Date().toISOString()}`,
       pageWidth - margin - 50,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
 
-    return Buffer.from(doc.output("arraybuffer"));
+    return Buffer?.from(doc?.output("arraybuffer"));
   }
 
   generateTaxSummaryPDF(summary: TaxSummary): Buffer {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 15;
+    const _doc = new jsPDF();
+    const _pageWidth = doc?.internal.pageSize?.getWidth();
+    const _margin = 15;
     let y = margin;
 
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Tax Summary Report - ${summary.taxYear}`, pageWidth / 2, y, {
+    doc?.setFontSize(16);
+    doc?.setFont("helvetica", "bold");
+    doc?.text(`Tax Summary Report - ${summary?.taxYear}`, pageWidth / 2, y, {
       align: "center",
     });
     y += 15;
 
-    doc.setFontSize(12);
-    doc.text("Earnings Overview", margin, y);
+    doc?.setFontSize(12);
+    doc?.text("Earnings Overview", margin, y);
     y += 10;
 
-    const formatCurrency = (val: number) =>
-      `$${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    const _formatCurrency = (val: number) =>
+      `$${val?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
+    doc?.setFontSize(10);
+    doc?.setFont("helvetica", "normal");
 
-    const summaryData = [
-      ["Total Gross Earnings", formatCurrency(summary.totalEarnings)],
-      ["Platform Fees", `(${formatCurrency(summary.platformFees)})`],
-      ["Tax Withholding", `(${formatCurrency(summary.totalWithholding)})`],
-      ["Net Earnings", formatCurrency(summary.netEarnings)],
+    const _summaryData = [
+      ["Total Gross Earnings", formatCurrency(summary?.totalEarnings)],
+      ["Platform Fees", `(${formatCurrency(summary?.platformFees)})`],
+      ["Tax Withholding", `(${formatCurrency(summary?.totalWithholding)})`],
+      ["Net Earnings", formatCurrency(summary?.netEarnings)],
     ];
 
     (doc as Record<string, unknown>).autoTable({
@@ -1070,20 +1070,20 @@ class TaxFormService {
       },
     });
 
-    y = (doc as Record<string, unknown>).lastAutoTable.finalY + 15;
+    y = (doc as Record<string, unknown>).lastAutoTable?.finalY + 15;
 
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("Earnings by Source", margin, y);
+    doc?.setFontSize(12);
+    doc?.setFont("helvetica", "bold");
+    doc?.text("Earnings by Source", margin, y);
     y += 10;
 
-    const sourceData = summary.bySource.map((s) => [
-      s.source,
-      s.description,
-      formatCurrency(s.grossAmount),
-      formatCurrency(s.fees),
-      formatCurrency(s.withholding),
-      formatCurrency(s.netAmount),
+    const _sourceData = summary?.bySource.map((s) => [
+      s?.source,
+      s?.description,
+      formatCurrency(s?.grossAmount),
+      formatCurrency(s?.fees),
+      formatCurrency(s?.withholding),
+      formatCurrency(s?.netAmount),
     ]);
 
     (doc as Record<string, unknown>).autoTable({
@@ -1101,19 +1101,19 @@ class TaxFormService {
       },
     });
 
-    y = (doc as Record<string, unknown>).lastAutoTable.finalY + 15;
+    y = (doc as Record<string, unknown>).lastAutoTable?.finalY + 15;
 
-    if (summary.forms.length > 0) {
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Tax Forms on File", margin, y);
+    if (summary?.forms.length > 0) {
+      doc?.setFontSize(12);
+      doc?.setFont("helvetica", "bold");
+      doc?.text("Tax Forms on File", margin, y);
       y += 10;
 
-      const formData = summary.forms.map((f) => [
-        f.formType,
-        f.status,
-        f.signatureDate
-          ? new Date(f.signatureDate).toLocaleDateString()
+      const _formData = summary?.forms.map((f) => [
+        f?.formType,
+        f?.status,
+        f?.signatureDate
+          ? new Date(f?.signatureDate).toLocaleDateString()
           : "Not signed",
       ]);
 
@@ -1127,19 +1127,19 @@ class TaxFormService {
       });
     }
 
-    doc.setFontSize(8);
-    doc.text(
+    doc?.setFontSize(8);
+    doc?.text(
       `Generated: ${new Date().toISOString()}`,
       margin,
-      doc.internal.pageSize.getHeight() - 10,
+      doc?.internal.pageSize?.getHeight() - 10,
     );
 
-    return Buffer.from(doc.output("arraybuffer"));
+    return Buffer?.from(doc?.output("arraybuffer"));
   }
 
   private maskTIN(tin: string): string {
-    if (!tin || tin.length < 4) return tin;
-    return "XXX-XX-" + tin.slice(-4);
+    if (!tin || tin?.length < 4) return tin;
+    return "XXX-XX-" + tin?.slice(-4);
   }
 
   getAvailableForms(): Array<{
@@ -1190,4 +1190,4 @@ class TaxFormService {
   }
 }
 
-export const taxFormService = new TaxFormService();
+export const _taxFormService = new TaxFormService();

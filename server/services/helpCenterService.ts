@@ -187,54 +187,54 @@ const defaultFAQs: FAQItem[] = [
   },
 ];
 
-const ticketStore = new Map<string, SupportTicket>();
+const _ticketStore = new Map<string, SupportTicket>();
 
 export class HelpCenterService {
   async getAllFAQs(category?: string): Promise<FAQItem[]> {
     let faqs = [...defaultFAQs];
 
     if (category) {
-      faqs = faqs.filter((faq) => faq.category === category);
+      faqs = faqs?.filter((faq) => faq?.category === category);
     }
 
-    return faqs.sort((a, b) => a.order - b.order);
+    return faqs?.sort((a, b) => a?.order - b?.order);
   }
 
   async searchFAQs(options: SearchOptions): Promise<FAQItem[]> {
     const { query, category, limit = 20, offset = 0 } = options;
-    const searchTerms = query.toLowerCase().split(" ");
+    const _searchTerms = query?.toLowerCase().split(" ");
 
-    let faqs = defaultFAQs.filter((faq) => {
-      if (!faq.isPublished) return false;
+    let faqs = defaultFAQs?.filter((faq) => {
+      if (!faq?.isPublished) return false;
 
-      const matchesQuery = searchTerms.some(
+      const _matchesQuery = searchTerms?.some(
         (term) =>
-          faq.question.toLowerCase().includes(term) ||
-          faq.answer.toLowerCase().includes(term),
+          faq?.question.toLowerCase().includes(term) ||
+          faq?.answer.toLowerCase().includes(term),
       );
 
-      const matchesCategory = !category || faq.category === category;
+      const _matchesCategory = !category || faq?.category === category;
 
       return matchesQuery && matchesCategory;
     });
 
-    const scoredFAQs = faqs.map((faq) => {
+    const _scoredFAQs = faqs?.map((faq) => {
       let score = 0;
-      searchTerms.forEach((term) => {
-        if (faq.question.toLowerCase().includes(term)) score += 10;
-        if (faq.answer.toLowerCase().includes(term)) score += 5;
+      searchTerms?.forEach((term) => {
+        if (faq?.question.toLowerCase().includes(term)) score += 10;
+        if (faq?.answer.toLowerCase().includes(term)) score += 5;
       });
-      score += faq.helpful - faq.notHelpful;
+      score += faq?.helpful - faq?.notHelpful;
       return { faq, score };
     });
 
-    scoredFAQs.sort((a, b) => b.score - a.score);
+    scoredFAQs?.sort((a, b) => b?.score - a?.score);
 
-    return scoredFAQs.slice(offset, offset + limit).map((item) => item.faq);
+    return scoredFAQs?.slice(offset, offset + limit).map((item) => item?.faq);
   }
 
   async getFAQById(id: string): Promise<FAQItem | null> {
-    return defaultFAQs.find((faq) => faq.id === id) || null;
+    return defaultFAQs?.find((faq) => faq?.id === id) || null;
   }
 
   async createFAQ(
@@ -245,18 +245,18 @@ export class HelpCenterService {
   ): Promise<FAQItem> {
     const faq: FAQItem = {
       ...data,
-      id: `faq-${Date.now()}`,
+      id: `faq-${Date?.now()}`,
       helpful: 0,
       notHelpful: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
-    defaultFAQs.push(faq);
+    defaultFAQs?.push(faq);
     return faq;
   }
 
   async updateFAQ(id: string, data: Partial<FAQItem>): Promise<FAQItem | null> {
-    const index = defaultFAQs.findIndex((faq) => faq.id === id);
+    const _index = defaultFAQs?.findIndex((faq) => faq?.id === id);
     if (index === -1) return null;
 
     defaultFAQs[index] = {
@@ -269,43 +269,43 @@ export class HelpCenterService {
   }
 
   async recordFAQFeedback(id: string, helpful: boolean): Promise<void> {
-    const faq = defaultFAQs.find((f) => f.id === id);
+    const _faq = defaultFAQs?.find((f) => f?.id === id);
     if (faq) {
       if (helpful) {
-        faq.helpful++;
+        faq?.helpful++;
       } else {
-        faq.notHelpful++;
+        faq?.notHelpful++;
       }
       faq.updatedAt = new Date();
     }
   }
 
   async deleteFAQ(id: string): Promise<boolean> {
-    const index = defaultFAQs.findIndex((faq) => faq.id === id);
+    const _index = defaultFAQs?.findIndex((faq) => faq?.id === id);
     if (index === -1) return false;
-    defaultFAQs.splice(index, 1);
+    defaultFAQs?.splice(index, 1);
     return true;
   }
 
   async createSupportTicket(data: CreateTicketData): Promise<SupportTicket> {
-    const ticketId = `ticket-${Date.now()}-${randomBytes(6).toString("hex")}`;
+    const _ticketId = `ticket-${Date?.now()}-${randomBytes(6).toString("hex")}`;
 
     const ticket: SupportTicket = {
       id: ticketId,
-      userId: data.userId,
-      subject: data.subject,
-      description: data.description,
-      category: data.category,
-      priority: data.priority,
+      userId: data?.userId,
+      subject: data?.subject,
+      description: data?.description,
+      category: data?.category,
+      priority: data?.priority,
       status: "open",
       assignedTo: null,
       messages: [
         {
-          id: `msg-${Date.now()}`,
+          id: `msg-${Date?.now()}`,
           ticketId,
-          senderId: data.userId,
+          senderId: data?.userId,
           senderType: "user",
-          message: data.description,
+          message: data?.description,
           attachments: [],
           createdAt: new Date(),
         },
@@ -315,24 +315,24 @@ export class HelpCenterService {
       resolvedAt: null,
     };
 
-    ticketStore.set(ticketId, ticket);
+    ticketStore?.set(ticketId, ticket);
 
     return ticket;
   }
 
   async getTicketById(id: string): Promise<SupportTicket | null> {
-    return ticketStore.get(id) || null;
+    return ticketStore?.get(id) || null;
   }
 
   async getTicketsByUserId(userId: number): Promise<SupportTicket[]> {
     const tickets: SupportTicket[] = [];
-    ticketStore.forEach((ticket) => {
-      if (ticket.userId === userId) {
-        tickets.push(ticket);
+    ticketStore?.forEach((ticket) => {
+      if (ticket?.userId === userId) {
+        tickets?.push(ticket);
       }
     });
-    return tickets.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    return tickets?.sort(
+      (a, b) => b?.createdAt.getTime() - a?.createdAt.getTime(),
     );
   }
 
@@ -342,25 +342,25 @@ export class HelpCenterService {
     category?: string;
     assignedTo?: number;
   }): Promise<SupportTicket[]> {
-    let tickets = Array.from(ticketStore.values());
+    let tickets = Array?.from(ticketStore?.values());
 
     if (filters) {
-      if (filters.status) {
-        tickets = tickets.filter((t) => t.status === filters.status);
+      if (filters?.status) {
+        tickets = tickets?.filter((t) => t?.status === filters?.status);
       }
-      if (filters.priority) {
-        tickets = tickets.filter((t) => t.priority === filters.priority);
+      if (filters?.priority) {
+        tickets = tickets?.filter((t) => t?.priority === filters?.priority);
       }
-      if (filters.category) {
-        tickets = tickets.filter((t) => t.category === filters.category);
+      if (filters?.category) {
+        tickets = tickets?.filter((t) => t?.category === filters?.category);
       }
-      if (filters.assignedTo !== undefined) {
-        tickets = tickets.filter((t) => t.assignedTo === filters.assignedTo);
+      if (filters?.assignedTo !== undefined) {
+        tickets = tickets?.filter((t) => t?.assignedTo === filters?.assignedTo);
       }
     }
 
-    return tickets.sort(
-      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    return tickets?.sort(
+      (a, b) => b?.createdAt.getTime() - a?.createdAt.getTime(),
     );
   }
 
@@ -368,17 +368,17 @@ export class HelpCenterService {
     id: string,
     data: UpdateTicketData,
   ): Promise<SupportTicket | null> {
-    const ticket = ticketStore.get(id);
+    const _ticket = ticketStore?.get(id);
     if (!ticket) return null;
 
     const updatedTicket: SupportTicket = {
       ...ticket,
       ...data,
       updatedAt: new Date(),
-      resolvedAt: data.status === "resolved" ? new Date() : ticket.resolvedAt,
+      resolvedAt: data?.status === "resolved" ? new Date() : ticket?.resolvedAt,
     };
 
-    ticketStore.set(id, updatedTicket);
+    ticketStore?.set(id, updatedTicket);
     return updatedTicket;
   }
 
@@ -389,11 +389,11 @@ export class HelpCenterService {
     message: string,
     attachments: string[] = [],
   ): Promise<TicketMessage | null> {
-    const ticket = ticketStore.get(ticketId);
+    const _ticket = ticketStore?.get(ticketId);
     if (!ticket) return null;
 
     const ticketMessage: TicketMessage = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${Date?.now()}`,
       ticketId,
       senderId,
       senderType,
@@ -402,33 +402,33 @@ export class HelpCenterService {
       createdAt: new Date(),
     };
 
-    ticket.messages.push(ticketMessage);
+    ticket?.messages.push(ticketMessage);
     ticket.updatedAt = new Date();
 
     if (senderType === "agent") {
       ticket.status = "in_progress";
     } else if (
       senderType === "user" &&
-      ticket.status === "waiting_on_customer"
+      ticket?.status === "waiting_on_customer"
     ) {
       ticket.status = "in_progress";
     }
 
-    ticketStore.set(ticketId, ticket);
+    ticketStore?.set(ticketId, ticket);
     return ticketMessage;
   }
 
   async getCategories(): Promise<
     { id: string; label: string; count: number }[]
   > {
-    const categoryCounts = new Map<string, number>();
+    const _categoryCounts = new Map<string, number>();
 
-    defaultFAQs.forEach((faq) => {
-      const count = categoryCounts.get(faq.category) || 0;
-      categoryCounts.set(faq.category, count + 1);
+    defaultFAQs?.forEach((faq) => {
+      const _count = categoryCounts?.get(faq?.category) || 0;
+      categoryCounts?.set(faq?.category, count + 1);
     });
 
-    const categories = [
+    const _categories = [
       { id: "getting-started", label: "Getting Started" },
       { id: "distribution", label: "Music Distribution" },
       { id: "studio", label: "AI Studio" },
@@ -437,9 +437,9 @@ export class HelpCenterService {
       { id: "account", label: "Account & Billing" },
     ];
 
-    return categories.map((cat) => ({
+    return categories?.map((cat) => ({
       ...cat,
-      count: categoryCounts.get(cat.id) || 0,
+      count: categoryCounts?.get(cat?.id) || 0,
     }));
   }
 
@@ -450,27 +450,27 @@ export class HelpCenterService {
     resolved: number;
     avgResolutionTime: number;
   }> {
-    const tickets = Array.from(ticketStore.values());
+    const _tickets = Array?.from(ticketStore?.values());
 
     let totalResolutionTime = 0;
     let resolvedCount = 0;
 
-    tickets.forEach((ticket) => {
-      if (ticket.resolvedAt) {
+    tickets?.forEach((ticket) => {
+      if (ticket?.resolvedAt) {
         totalResolutionTime +=
-          ticket.resolvedAt.getTime() - ticket.createdAt.getTime();
+          ticket?.resolvedAt.getTime() - ticket?.createdAt.getTime();
         resolvedCount++;
       }
     });
 
     return {
-      total: tickets.length,
-      open: tickets.filter((t) => t.status === "open").length,
-      inProgress: tickets.filter(
-        (t) => t.status === "in_progress" || t.status === "waiting_on_customer",
+      total: tickets?.length,
+      open: tickets?.filter((t) => t?.status === "open").length,
+      inProgress: tickets?.filter(
+        (t) => t?.status === "in_progress" || t?.status === "waiting_on_customer",
       ).length,
-      resolved: tickets.filter(
-        (t) => t.status === "resolved" || t.status === "closed",
+      resolved: tickets?.filter(
+        (t) => t?.status === "resolved" || t?.status === "closed",
       ).length,
       avgResolutionTime:
         resolvedCount > 0 ? totalResolutionTime / resolvedCount : 0,
@@ -478,4 +478,4 @@ export class HelpCenterService {
   }
 }
 
-export const helpCenterService = new HelpCenterService();
+export const _helpCenterService = new HelpCenterService();

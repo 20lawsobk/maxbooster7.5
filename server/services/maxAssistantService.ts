@@ -4,9 +4,9 @@ import { logger } from "../logger.js";
 function seededIndex(seed: string, length: number): number {
   if (length <= 0) return 0;
   let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619);
+  for (let i = 0; i < seed?.length; i++) {
+    h ^= seed?.charCodeAt(i);
+    h = Math?.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;
@@ -899,7 +899,7 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
 1. Go to **Marketplace** in the sidebar
 2. Click **"Create Storefront"**
 3. Customize: display name, bio, logo, colors, banner image
-4. Get your custom URL: \`yourname.maxbooster.app\`
+4. Get your custom URL: \`yourname?.maxbooster.app\`
 5. Connect Stripe Connect for payment processing (one-time setup, takes 2 minutes)
 
 **Uploading Products:**
@@ -1007,13 +1007,13 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
     answer: `Your Max Booster Storefront is your own professional beat/music store.
 
 **Storefront Customization:**
-• **URL:** \`yourartistname.maxbooster.app\` — fully custom, branded
+• **URL:** \`yourartistname?.maxbooster.app\` — fully custom, branded
 • **Logo:** Upload your logo (PNG with transparency recommended)
 • **Banner:** 1920×400px header image
 • **Color Scheme:** Pick primary, accent, and background colors
 • **Bio:** Tell producers/artists about your style
 • **Social Links:** Link your Instagram, Twitter, YouTube, etc.
-• **Custom Domain:** Connect your own domain (e.g., \`beats.yourname.com\`)
+• **Custom Domain:** Connect your own domain (e?.g., \`beats?.yourname.com\`)
 
 **Store Features:**
 • Built-in audio player for previews
@@ -1183,8 +1183,8 @@ The AI learns from your engagement data — content improves automatically over 
 1. Go to **Social Media → Schedule**
 2. Enable "AI-Optimized Timing" for automatic best-time selection
 3. Or set manual time slots if you prefer fixed windows
-4. Set "Do Not Post" blackout periods (e.g., late night, holidays)
-5. Set posting frequency per platform (e.g., 2x/day Instagram, 4x/day TikTok)
+4. Set "Do Not Post" blackout periods (e?.g., late night, holidays)
+5. Set posting frequency per platform (e?.g., 2x/day Instagram, 4x/day TikTok)
 
 **Release strategy:**
 For a new release, use "Burst Mode" — the AI posts 5–8x more frequently in the 48 hours around your release date to maximize initial momentum.`,
@@ -2065,7 +2065,7 @@ Google Authenticator, Authy, 1Password, Microsoft Authenticator, Bitwarden
 **API Access:**
 1. Go to **Settings → API Keys**
 2. Click **"Generate New API Key"**
-3. Name your key (e.g., "My Dashboard Integration")
+3. Name your key (e?.g., "My Dashboard Integration")
 4. Set permissions (read-only, read-write, or specific scopes)
 5. Copy and store your key securely — it's only shown once
 
@@ -3397,7 +3397,7 @@ const QUICK_ACTIONS_MAP: Record<string, QuickAction[]> = {
 // FOLLOW-UP & SCORING LOGIC
 // ─────────────────────────────────────────────────────────────────────────────
 
-const FOLLOW_UP_PATTERNS = [
+const _FOLLOW_UP_PATTERNS = [
   {
     pattern:
       /^(how|what|why|when|where|can|do|does|is|are|tell me|explain|show|give)\b/i,
@@ -3413,7 +3413,7 @@ const FOLLOW_UP_PATTERNS = [
   },
 ];
 
-const STOP_WORDS = new Set([
+const _STOP_WORDS = new Set([
   "is",
   "in",
   "to",
@@ -3494,21 +3494,21 @@ const STOP_WORDS = new Set([
 
 function scoreEntry(entry: KnowledgeEntry, tokens: string[]): number {
   let score = 0;
-  const keywords = entry.keywords;
+  const _keywords = entry?.keywords;
   for (const token of tokens) {
-    if (STOP_WORDS.has(token) || token.length < 3) continue;
+    if (STOP_WORDS?.has(token) || token?.length < 3) continue;
     for (const kw of keywords) {
       if (kw === token) {
         score += 4;
       } else {
-        const kwWords = kw.split(" ");
-        if (kwWords.includes(token)) {
+        const _kwWords = kw?.split(" ");
+        if (kwWords?.includes(token)) {
           score += 3;
-        } else if (token.includes(kw) && kw.length >= 4) {
+        } else if (token?.includes(kw) && kw?.length >= 4) {
           score += 2;
         } else if (
-          kwWords.some(
-            (w) => w.includes(token) && token.length >= 5 && w !== token,
+          kwWords?.some(
+            (w) => w?.includes(token) && token?.length >= 5 && w !== token,
           )
         ) {
           score += 1;
@@ -3516,9 +3516,9 @@ function scoreEntry(entry: KnowledgeEntry, tokens: string[]): number {
       }
     }
     // Also score related keywords (lower weight)
-    if (entry.relatedKeywords) {
-      for (const rk of entry.relatedKeywords) {
-        if (rk === token || rk.split(" ").includes(token)) {
+    if (entry?.relatedKeywords) {
+      for (const rk of entry?.relatedKeywords) {
+        if (rk === token || rk?.split(" ").includes(token)) {
           score += 1;
         }
       }
@@ -3532,31 +3532,31 @@ function tokenize(text: string): string[] {
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
     .split(/\s+/)
-    .filter((t) => t.length >= 3);
+    .filter((t) => t?.length >= 3);
 }
 
 function detectFollowUpContext(
   message: string,
   history: ConversationMessage[],
 ): string | null {
-  const isContextual = FOLLOW_UP_PATTERNS.some(
-    (p) => p.isContextual && p.pattern.test(message),
+  const _isContextual = FOLLOW_UP_PATTERNS?.some(
+    (p) => p?.isContextual && p?.pattern.test(message),
   );
-  if (!isContextual || history.length === 0) return null;
+  if (!isContextual || history?.length === 0) return null;
 
-  for (let i = history.length - 1; i >= 0; i--) {
-    const msg = history[i];
-    if (msg.role === "assistant") {
-      const tokens = tokenize(msg.content);
-      const bestEntry = KNOWLEDGE_BASE.reduce(
+  for (let i = history?.length - 1; i >= 0; i--) {
+    const _msg = history[i];
+    if (msg?.role === "assistant") {
+      const _tokens = tokenize(msg?.content);
+      const _bestEntry = KNOWLEDGE_BASE?.reduce(
         (best, entry) => {
-          const s = scoreEntry(entry, tokens);
-          return s > best.score ? { entry, score: s } : best;
+          const _s = scoreEntry(entry, tokens);
+          return s > best?.score ? { entry, score: s } : best;
         },
         { entry: null as KnowledgeEntry | null, score: 0 },
       );
-      if (bestEntry.entry && bestEntry.score > 2)
-        return bestEntry.entry.category;
+      if (bestEntry?.entry && bestEntry?.score > 2)
+        return bestEntry?.entry.category;
       break;
     }
   }
@@ -3567,19 +3567,19 @@ function getProactiveSuggestions(
   category: string,
   entry: KnowledgeEntry,
 ): string[] {
-  const flows = PROACTIVE_FLOWS[category] || [];
-  const nextSteps = entry.nextSteps || [];
+  const _flows = PROACTIVE_FLOWS[category] || [];
+  const _nextSteps = entry?.nextSteps || [];
 
   // Combine next steps and proactive flows, prioritize specific next steps
-  const combined = [...nextSteps, ...flows];
+  const _combined = [...nextSteps, ...flows];
   // Deduplicate and return top 3
-  const unique = [...new Set(combined)];
-  return unique.slice(0, 3);
+  const _unique = [...new Set(combined)];
+  return unique?.slice(0, 3);
 }
 
 function getRelatedTopics(entry: KnowledgeEntry): string[] {
-  const related = entry.relatedKeywords || [];
-  return related.slice(0, 4).map((k) => {
+  const _related = entry?.relatedKeywords || [];
+  return related?.slice(0, 4).map((k) => {
     // Map keyword to a human-readable topic name
     const topicMap: Record<string, string> = {
       studio: "Studio & Production",
@@ -3624,9 +3624,9 @@ export function generateMaxResponse(
   userMessage: string,
   history: ConversationMessage[],
 ): AssistantResponse {
-  const tokens = tokenize(userMessage);
+  const _tokens = tokenize(userMessage);
 
-  if (tokens.length === 0) {
+  if (tokens?.length === 0) {
     return {
       content:
         "I didn't catch that — could you rephrase your question? I'm here to help with anything about Max Booster.",
@@ -3650,42 +3650,42 @@ export function generateMaxResponse(
     };
   }
 
-  const scores = KNOWLEDGE_BASE.map((entry) => ({
+  const _scores = KNOWLEDGE_BASE?.map((entry) => ({
     entry,
     score: scoreEntry(entry, tokens),
   }));
 
-  scores.sort((a, b) => b.score - a.score);
+  scores?.sort((a, b) => b?.score - a?.score);
 
-  const topScore = scores[0];
+  const _topScore = scores[0];
 
-  if (topScore.score >= 2) {
-    const category = topScore.entry.category;
+  if (topScore?.score >= 2) {
+    const _category = topScore?.entry.category;
     return {
-      content: topScore.entry.answer,
+      content: topScore?.entry.answer,
       category,
-      confidence: Math.min(topScore.score / 6, 1),
-      proactiveSuggestions: getProactiveSuggestions(category, topScore.entry),
-      relatedTopics: getRelatedTopics(topScore.entry),
+      confidence: Math?.min(topScore?.score / 6, 1),
+      proactiveSuggestions: getProactiveSuggestions(category, topScore?.entry),
+      relatedTopics: getRelatedTopics(topScore?.entry),
       quickActions: getQuickActions(category),
     };
   }
 
-  const followUpCategory = detectFollowUpContext(userMessage, history);
+  const _followUpCategory = detectFollowUpContext(userMessage, history);
   if (followUpCategory) {
-    const categoryEntries = KNOWLEDGE_BASE.filter(
-      (e) => e.category === followUpCategory,
+    const _categoryEntries = KNOWLEDGE_BASE?.filter(
+      (e) => e?.category === followUpCategory,
     );
-    if (categoryEntries.length > 0) {
-      const entry =
+    if (categoryEntries?.length > 0) {
+      const _entry =
         categoryEntries[
           seededIndex(
-            followUpCategory + ":" + userMessage.slice(0, 48),
-            categoryEntries.length,
+            followUpCategory + ":" + userMessage?.slice(0, 48),
+            categoryEntries?.length,
           )
         ];
       return {
-        content: entry.answer,
+        content: entry?.answer,
         category: followUpCategory,
         confidence: 0.5,
         proactiveSuggestions: getProactiveSuggestions(followUpCategory, entry),
@@ -3695,11 +3695,11 @@ export function generateMaxResponse(
     }
   }
 
-  const isQuestion = FOLLOW_UP_PATTERNS.some(
-    (p) => p.isQuestion && p.pattern.test(userMessage),
+  const _isQuestion = FOLLOW_UP_PATTERNS?.some(
+    (p) => p?.isQuestion && p?.pattern.test(userMessage),
   );
 
-  const fallbackTopics = `Here are the areas I can help you with — click any topic or ask me anything:
+  const _fallbackTopics = `Here are the areas I can help you with — click any topic or ask me anything:
 
 • **Studio & DAW** — recording, mixing, mastering, AI generation, stem separation
 • **Music Distribution** — releasing to 150+ platforms, metadata, ISRC, playlist pitching
@@ -3740,6 +3740,6 @@ What would you like to explore?`;
   };
 }
 
-logger.info(
+logger?.info(
   "[MaxAssistantService] In-house Max AI assistant knowledge engine initialized — comprehensive edition with proactive prediction",
 );

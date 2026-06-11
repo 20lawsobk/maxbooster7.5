@@ -5,28 +5,28 @@ import { users, sessions, securityThreats } from "../../shared/schema.js";
 import { eq, desc, count, and, gte, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
-const router = Router();
+const _router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(401).json({ error: "Authentication required" });
+  if (!req?.isAuthenticated()) {
+    return res?.status(401).json({ error: "Authentication required" });
   }
-  if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "Admin access required" });
+  if (req?.user?.role !== "admin") {
+    return res?.status(403).json({ error: "Admin access required" });
   }
   next();
 };
 
-router.use(requireAdmin);
-router.use(require2FA);
+router?.use(requireAdmin);
+router?.use(require2FA);
 
-const processStartTime = Date.now();
+const _processStartTime = Date?.now();
 
-router.get("/metrics", async (_req: Request, res: Response) => {
+router?.get("/metrics", async (_req: Request, res: Response) => {
   try {
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    new Date(now.getTime() - 60 * 60 * 1000);
+    const _now = new Date();
+    const _oneDayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
+    new Date(now?.getTime() - 60 * 60 * 1000);
 
     const [
       activeSessionsResult,
@@ -35,36 +35,27 @@ router.get("/metrics", async (_req: Request, res: Response) => {
       suspiciousActivityResult,
       rateLimitThreatsResult,
       totalUsersResult,
-    ] = await Promise.all([
+    ] = await Promise?.all([
       db
         .select({ count: count() })
         .from(sessions)
         .where(
           and(
-            gte(sessions.lastActivity, oneDayAgo),
-            gte(sessions.expiresAt, now),
+            gte(sessions?.lastActivity, oneDayAgo),
+            gte(sessions?.expiresAt, now),
           ),
         ),
       db
         .select({ count: count() })
         .from(securityThreats)
-        .where(gte(securityThreats.detectedAt, oneDayAgo)),
+        .where(gte(securityThreats?.detectedAt, oneDayAgo)),
       db
         .select({ count: count() })
         .from(securityThreats)
         .where(
           and(
-            eq(securityThreats.status, "blocked"),
-            gte(securityThreats.detectedAt, oneDayAgo),
-          ),
-        ),
-      db
-        .select({ count: count() })
-        .from(securityThreats)
-        .where(
-          and(
-            eq(securityThreats.severity, "medium"),
-            gte(securityThreats.detectedAt, oneDayAgo),
+            eq(securityThreats?.status, "blocked"),
+            gte(securityThreats?.detectedAt, oneDayAgo),
           ),
         ),
       db
@@ -72,41 +63,50 @@ router.get("/metrics", async (_req: Request, res: Response) => {
         .from(securityThreats)
         .where(
           and(
-            eq(securityThreats.threatType, "rate_limit"),
-            gte(securityThreats.detectedAt, oneDayAgo),
+            eq(securityThreats?.severity, "medium"),
+            gte(securityThreats?.detectedAt, oneDayAgo),
           ),
         ),
-      db.select({ count: count() }).from(users),
+      db
+        .select({ count: count() })
+        .from(securityThreats)
+        .where(
+          and(
+            eq(securityThreats?.threatType, "rate_limit"),
+            gte(securityThreats?.detectedAt, oneDayAgo),
+          ),
+        ),
+      db?.select({ count: count() }).from(users),
     ]);
 
-    const activeSessions = activeSessionsResult[0]?.count || 0;
-    const totalThreats = totalThreatsResult[0]?.count || 0;
-    const blockedAttempts = blockedThreatsResult[0]?.count || 0;
-    const suspiciousActivity = suspiciousActivityResult[0]?.count || 0;
-    const rateLimit = rateLimitThreatsResult[0]?.count || 0;
-    const totalUsers = totalUsersResult[0]?.count || 0;
+    const _activeSessions = activeSessionsResult[0]?.count || 0;
+    const _totalThreats = totalThreatsResult[0]?.count || 0;
+    const _blockedAttempts = blockedThreatsResult[0]?.count || 0;
+    const _suspiciousActivity = suspiciousActivityResult[0]?.count || 0;
+    const _rateLimit = rateLimitThreatsResult[0]?.count || 0;
+    const _totalUsers = totalUsersResult[0]?.count || 0;
 
-    const failedLogins = await db
+    const _failedLogins = await db
       .select({ count: count() })
       .from(securityThreats)
       .where(
         and(
-          eq(securityThreats.threatType, "failed_login"),
-          gte(securityThreats.detectedAt, oneDayAgo),
+          eq(securityThreats?.threatType, "failed_login"),
+          gte(securityThreats?.detectedAt, oneDayAgo),
         ),
       );
 
-    const failedLoginCount = failedLogins[0]?.count || 0;
-    const totalLogins = Math.max(totalUsers, activeSessions + failedLoginCount);
-    const successRate =
+    const _failedLoginCount = failedLogins[0]?.count || 0;
+    const _totalLogins = Math?.max(totalUsers, activeSessions + failedLoginCount);
+    const _successRate =
       totalLogins > 0
         ? ((totalLogins - failedLoginCount) / totalLogins) * 100
         : 100;
 
-    const uptimeSeconds = Math.floor((Date.now() - processStartTime) / 1000);
-    const errorRate =
-      totalThreats > 0 ? (totalThreats / Math.max(1, totalLogins)) * 100 : 0;
-    const requestsPerMinute = Math.floor(activeSessions * 2.5);
+    const _uptimeSeconds = Math?.floor((Date?.now() - processStartTime) / 1000);
+    const _errorRate =
+      totalThreats > 0 ? (totalThreats / Math?.max(1, totalLogins)) * 100 : 0;
+    const _requestsPerMinute = Math?.floor(activeSessions * 2.5);
 
     let systemStatus: "healthy" | "degraded" | "critical" = "healthy";
     if (errorRate > 10 || blockedAttempts > 100) {
@@ -115,17 +115,17 @@ router.get("/metrics", async (_req: Request, res: Response) => {
       systemStatus = "degraded";
     }
 
-    const metrics = {
+    const _metrics = {
       systemHealth: {
         uptime: uptimeSeconds,
         status: systemStatus,
-        errorRate: Math.round(errorRate * 100) / 100,
+        errorRate: Math?.round(errorRate * 100) / 100,
         requestsPerMinute,
       },
       authentication: {
         totalLogins,
         failedLogins: failedLoginCount,
-        successRate: Math.round(successRate * 100) / 100,
+        successRate: Math?.round(successRate * 100) / 100,
         activeSessions,
       },
       threats: {
@@ -135,129 +135,129 @@ router.get("/metrics", async (_req: Request, res: Response) => {
       },
     };
 
-    res.json(metrics);
+    res?.json(metrics);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching security metrics:");
-    res.status(500).json({ error: "Failed to fetch security metrics" });
+    logger?.warn({ err: error }, "Error fetching security metrics:");
+    res?.status(500).json({ error: "Failed to fetch security metrics" });
   }
 });
 
-router.get("/behavioral-alerts", async (_req: Request, res: Response) => {
+router?.get("/behavioral-alerts", async (_req: Request, res: Response) => {
   try {
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const _sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const threats = await db
+    const _threats = await db
       .select({
-        id: securityThreats.id,
-        userId: securityThreats.userId,
-        threatType: securityThreats.threatType,
-        severity: securityThreats.severity,
-        detectedAt: securityThreats.detectedAt,
-        status: securityThreats.status,
-        indicators: securityThreats.indicators,
-        metadata: securityThreats.metadata,
+        id: securityThreats?.id,
+        userId: securityThreats?.userId,
+        threatType: securityThreats?.threatType,
+        severity: securityThreats?.severity,
+        detectedAt: securityThreats?.detectedAt,
+        status: securityThreats?.status,
+        indicators: securityThreats?.indicators,
+        metadata: securityThreats?.metadata,
       })
       .from(securityThreats)
-      .where(gte(securityThreats.detectedAt, sevenDaysAgo))
-      .orderBy(desc(securityThreats.detectedAt))
+      .where(gte(securityThreats?.detectedAt, sevenDaysAgo))
+      .orderBy(desc(securityThreats?.detectedAt))
       .limit(100);
 
-    const userIds = threats.map((t) => t.userId).filter(Boolean) as string[];
-    const uniqueUserIds = [...new Set(userIds)];
+    const _userIds = threats?.map((t) => t?.userId).filter(Boolean) as string[];
+    const _uniqueUserIds = [...new Set(userIds)];
 
     let userMap: Record<string, string> = {};
-    if (uniqueUserIds.length > 0) {
-      const usersData = await db
-        .select({ id: users.id, username: users.username, email: users.email })
+    if (uniqueUserIds?.length > 0) {
+      const _usersData = await db
+        .select({ id: users?.id, username: users?.username, email: users?.email })
         .from(users)
-        .where(sql`${users.id} = ANY(${uniqueUserIds})`);
+        .where(sql`${users?.id} = ANY(${uniqueUserIds})`);
 
-      usersData.forEach((u) => {
-        userMap[u.id] = u.username || u.email || "Unknown";
+      usersData?.forEach((u) => {
+        userMap[u?.id] = u?.username || u?.email || "Unknown";
       });
     }
 
-    const alerts = threats.map((threat) => {
+    const _alerts = threats?.map((threat) => {
       let alertType: "unusual_activity" | "multiple_failed_logins" =
         "unusual_activity";
       if (
-        threat.threatType === "failed_login" ||
-        threat.threatType === "brute_force"
+        threat?.threatType === "failed_login" ||
+        threat?.threatType === "brute_force"
       ) {
         alertType = "multiple_failed_logins";
       }
 
       let severity: "high" | "medium" | "low" = "medium";
-      if (threat.severity === "critical" || threat.severity === "high") {
+      if (threat?.severity === "critical" || threat?.severity === "high") {
         severity = "high";
-      } else if (threat.severity === "low") {
+      } else if (threat?.severity === "low") {
         severity = "low";
       }
 
-      const indicators = (threat.indicators as Record<string, any>) || {};
-      const metadata = (threat.metadata as Record<string, any>) || {};
+      const _indicators = (threat?.indicators as Record<string, any>) || {};
+      const _metadata = (threat?.metadata as Record<string, any>) || {};
 
-      let description = `${threat.threatType} detected`;
-      if (indicators.pattern) {
-        description = `${indicators.pattern} pattern detected`;
-      } else if (metadata.description) {
-        description = metadata.description;
+      let description = `${threat?.threatType} detected`;
+      if (indicators?.pattern) {
+        description = `${indicators?.pattern} pattern detected`;
+      } else if (metadata?.description) {
+        description = metadata?.description;
       }
 
       return {
-        id: threat.id,
-        userId: threat.userId || "unknown",
-        username: threat.userId
-          ? userMap[threat.userId] || "Unknown"
+        id: threat?.id,
+        userId: threat?.userId || "unknown",
+        username: threat?.userId
+          ? userMap[threat?.userId] || "Unknown"
           : "System",
         type: alertType,
         severity,
-        timestamp: threat.detectedAt?.toISOString() || new Date().toISOString(),
+        timestamp: threat?.detectedAt?.toISOString() || new Date().toISOString(),
         description,
-        resolved: threat.status === "resolved" || threat.status === "healed",
+        resolved: threat?.status === "resolved" || threat?.status === "healed",
       };
     });
 
-    res.json({ alerts });
+    res?.json({ alerts });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching behavioral alerts:");
-    res.status(500).json({ error: "Failed to fetch behavioral alerts" });
+    logger?.warn({ err: error }, "Error fetching behavioral alerts:");
+    res?.status(500).json({ error: "Failed to fetch behavioral alerts" });
   }
 });
 
-router.get("/anomaly-detection", async (_req: Request, res: Response) => {
+router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
   try {
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const _now = new Date();
+    const _oneHourAgo = new Date(now?.getTime() - 60 * 60 * 1000);
+    const _twentyFourHoursAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
 
     const [recentThreats, dailyThreats, recentSessions, dailySessions] =
-      await Promise.all([
+      await Promise?.all([
         db
           .select({ count: count() })
           .from(securityThreats)
-          .where(gte(securityThreats.detectedAt, oneHourAgo)),
+          .where(gte(securityThreats?.detectedAt, oneHourAgo)),
         db
           .select({ count: count() })
           .from(securityThreats)
-          .where(gte(securityThreats.detectedAt, twentyFourHoursAgo)),
+          .where(gte(securityThreats?.detectedAt, twentyFourHoursAgo)),
         db
           .select({ count: count() })
           .from(sessions)
-          .where(gte(sessions.createdAt, oneHourAgo)),
+          .where(gte(sessions?.createdAt, oneHourAgo)),
         db
           .select({ count: count() })
           .from(sessions)
-          .where(gte(sessions.createdAt, twentyFourHoursAgo)),
+          .where(gte(sessions?.createdAt, twentyFourHoursAgo)),
       ]);
 
-    const recentThreatCount = recentThreats[0]?.count || 0;
-    const dailyThreatCount = dailyThreats[0]?.count || 0;
-    const recentSessionCount = recentSessions[0]?.count || 0;
-    const dailySessionCount = dailySessions[0]?.count || 0;
+    const _recentThreatCount = recentThreats[0]?.count || 0;
+    const _dailyThreatCount = dailyThreats[0]?.count || 0;
+    const _recentSessionCount = recentSessions[0]?.count || 0;
+    const _dailySessionCount = dailySessions[0]?.count || 0;
 
-    const avgHourlyThreats = dailyThreatCount / 24;
-    const avgHourlySessions = dailySessionCount / 24;
+    const _avgHourlyThreats = dailyThreatCount / 24;
+    const _avgHourlySessions = dailySessionCount / 24;
 
     const anomalies: Array<{
       type: "traffic_spike" | "auth_pattern";
@@ -270,45 +270,45 @@ router.get("/anomaly-detection", async (_req: Request, res: Response) => {
     }> = [];
 
     if (recentThreatCount > avgHourlyThreats * 3 && recentThreatCount > 5) {
-      anomalies.push({
+      anomalies?.push({
         type: "traffic_spike",
-        timestamp: now.toISOString(),
+        timestamp: now?.toISOString(),
         metric: "threats_per_hour",
-        expectedValue: Math.round(avgHourlyThreats * 100) / 100,
+        expectedValue: Math?.round(avgHourlyThreats * 100) / 100,
         actualValue: recentThreatCount,
         severity: recentThreatCount > avgHourlyThreats * 5 ? "high" : "medium",
-        description: `Threat activity ${Math.round(recentThreatCount / Math.max(1, avgHourlyThreats))}x above average`,
+        description: `Threat activity ${Math?.round(recentThreatCount / Math?.max(1, avgHourlyThreats))}x above average`,
       });
     }
 
     if (recentSessionCount > avgHourlySessions * 3 && recentSessionCount > 10) {
-      anomalies.push({
+      anomalies?.push({
         type: "traffic_spike",
-        timestamp: now.toISOString(),
+        timestamp: now?.toISOString(),
         metric: "sessions_per_hour",
-        expectedValue: Math.round(avgHourlySessions * 100) / 100,
+        expectedValue: Math?.round(avgHourlySessions * 100) / 100,
         actualValue: recentSessionCount,
         severity:
           recentSessionCount > avgHourlySessions * 5 ? "high" : "medium",
-        description: `Session creation ${Math.round(recentSessionCount / Math.max(1, avgHourlySessions))}x above average`,
+        description: `Session creation ${Math?.round(recentSessionCount / Math?.max(1, avgHourlySessions))}x above average`,
       });
     }
 
-    const failedLoginThreats = await db
+    const _failedLoginThreats = await db
       .select({ count: count() })
       .from(securityThreats)
       .where(
         and(
-          eq(securityThreats.threatType, "failed_login"),
-          gte(securityThreats.detectedAt, oneHourAgo),
+          eq(securityThreats?.threatType, "failed_login"),
+          gte(securityThreats?.detectedAt, oneHourAgo),
         ),
       );
 
-    const failedLogins = failedLoginThreats[0]?.count || 0;
+    const _failedLogins = failedLoginThreats[0]?.count || 0;
     if (failedLogins > 10) {
-      anomalies.push({
+      anomalies?.push({
         type: "auth_pattern",
-        timestamp: now.toISOString(),
+        timestamp: now?.toISOString(),
         metric: "failed_logins_per_hour",
         expectedValue: 2,
         actualValue: failedLogins,
@@ -317,30 +317,30 @@ router.get("/anomaly-detection", async (_req: Request, res: Response) => {
       });
     }
 
-    res.json({ anomalies });
+    res?.json({ anomalies });
   } catch (error) {
-    logger.warn({ err: error }, "Error detecting anomalies:");
-    res.status(500).json({ error: "Failed to detect anomalies" });
+    logger?.warn({ err: error }, "Error detecting anomalies:");
+    res?.status(500).json({ error: "Failed to detect anomalies" });
   }
 });
 
-router.get("/pentest-results", async (_req: Request, res: Response) => {
+router?.get("/pentest-results", async (_req: Request, res: Response) => {
   try {
-    const now = new Date();
+    const _now = new Date();
 
-    const [threatStats] = await Promise.all([
+    const [threatStats] = await Promise?.all([
       db
         .select({
-          severity: securityThreats.severity,
+          severity: securityThreats?.severity,
           count: count(),
         })
         .from(securityThreats)
-        .groupBy(securityThreats.severity),
+        .groupBy(securityThreats?.severity),
     ]);
 
     const severityCounts: Record<string, number> = {};
-    threatStats.forEach((stat) => {
-      severityCounts[stat.severity] = stat.count;
+    threatStats?.forEach((stat) => {
+      severityCounts[stat?.severity] = stat?.count;
     });
 
     const vulnerabilities: Array<{
@@ -352,7 +352,7 @@ router.get("/pentest-results", async (_req: Request, res: Response) => {
       detectedDate: string;
     }> = [];
 
-    const securityChecks = [
+    const _securityChecks = [
       { check: "HTTPS enforcement", passed: true },
       { check: "SQL injection protection", passed: true },
       { check: "XSS protection headers", passed: true },
@@ -363,27 +363,27 @@ router.get("/pentest-results", async (_req: Request, res: Response) => {
       { check: "Input validation", passed: true },
     ];
 
-    const passedCount = securityChecks.filter((c) => c.passed).length;
+    const _passedCount = securityChecks?.filter((c) => c?.passed).length;
 
     if (severityCounts["critical"] && severityCounts["critical"] > 0) {
-      vulnerabilities.push({
+      vulnerabilities?.push({
         id: "vuln-001",
         severity: "critical",
         category: "Active Threats",
         description: `${severityCounts["critical"]} critical threats detected in the system`,
         status: "open",
-        detectedDate: now.toISOString(),
+        detectedDate: now?.toISOString(),
       });
     }
 
     if (severityCounts["high"] && severityCounts["high"] > 5) {
-      vulnerabilities.push({
+      vulnerabilities?.push({
         id: "vuln-002",
         severity: "high",
         category: "Elevated Risk",
         description: `${severityCounts["high"]} high-severity security events logged`,
         status: "open",
-        detectedDate: now.toISOString(),
+        detectedDate: now?.toISOString(),
       });
     }
 
@@ -395,19 +395,19 @@ router.get("/pentest-results", async (_req: Request, res: Response) => {
     ];
 
     if (severityCounts["critical"] && severityCounts["critical"] > 0) {
-      recommendations.unshift(
+      recommendations?.unshift(
         "Immediately investigate and remediate critical threats",
       );
     }
 
     if (severityCounts["high"] && severityCounts["high"] > 10) {
-      recommendations.unshift(
+      recommendations?.unshift(
         "Review high-severity events and implement additional monitoring",
       );
     }
 
-    const response = {
-      lastScan: now.toISOString(),
+    const _response = {
+      lastScan: now?.toISOString(),
       summary: {
         critical: severityCounts["critical"] || 0,
         high: severityCounts["high"] || 0,
@@ -419,58 +419,58 @@ router.get("/pentest-results", async (_req: Request, res: Response) => {
       recommendations,
     };
 
-    res.json(response);
+    res?.json(response);
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching pentest results:");
-    res.status(500).json({ error: "Failed to fetch pentest results" });
+    logger?.warn({ err: error }, "Error fetching pentest results:");
+    res?.status(500).json({ error: "Failed to fetch pentest results" });
   }
 });
 
-router.get("/threats", async (req: Request, res: Response) => {
+router?.get("/threats", async (req: Request, res: Response) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 100);
+    const _sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const threats = await db
+    const _threats = await db
       .select()
       .from(securityThreats)
-      .where(gte(securityThreats.detectedAt, sevenDaysAgo))
-      .orderBy(desc(securityThreats.detectedAt))
+      .where(gte(securityThreats?.detectedAt, sevenDaysAgo))
+      .orderBy(desc(securityThreats?.detectedAt))
       .limit(limit);
 
-    res.json({ threats });
+    res?.json({ threats });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching threats:");
-    res.status(500).json({ error: "Failed to fetch threats" });
+    logger?.warn({ err: error }, "Error fetching threats:");
+    res?.status(500).json({ error: "Failed to fetch threats" });
   }
 });
 
-const userAlertsRouter = Router();
+const _userAlertsRouter = Router();
 
-userAlertsRouter.get("/alerts", async (req: Request, res: Response) => {
+userAlertsRouter?.get("/alerts", async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Authentication required" });
+    if (!req?.isAuthenticated()) {
+      return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const userId = req.user!.id;
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const _userId = req?.user!.id;
+    const _sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const userThreats = await db
+    const _userThreats = await db
       .select()
       .from(securityThreats)
       .where(
         and(
-          eq(securityThreats.userId, userId),
-          gte(securityThreats.detectedAt, sevenDaysAgo),
+          eq(securityThreats?.userId, userId),
+          gte(securityThreats?.detectedAt, sevenDaysAgo),
         ),
       )
-      .orderBy(desc(securityThreats.detectedAt))
+      .orderBy(desc(securityThreats?.detectedAt))
       .limit(50);
 
-    const alerts = userThreats.map((threat) => {
-      const metadata = (threat.metadata as Record<string, any>) || {};
-      const indicators = (threat.indicators as Record<string, any>) || {};
+    const _alerts = userThreats?.map((threat) => {
+      const _metadata = (threat?.metadata as Record<string, any>) || {};
+      const _indicators = (threat?.indicators as Record<string, any>) || {};
 
       let type: string = "security_alert";
       let title = "Security Alert";
@@ -478,25 +478,25 @@ userAlertsRouter.get("/alerts", async (req: Request, res: Response) => {
       let action: string | null = null;
       let actionLabel: string | null = null;
 
-      switch (threat.threatType) {
+      switch (threat?.threatType) {
         case "suspicious_login":
           type = "suspicious_login_attempt";
           title = "Suspicious Login Attempt";
-          message = `A login attempt from ${indicators.location || "an unknown location"} was detected.`;
+          message = `A login attempt from ${indicators?.location || "an unknown location"} was detected.`;
           action = "review_sessions";
           actionLabel = "Review Sessions";
           break;
         case "new_device_login":
           type = "login_from_new_device";
           title = "New Device Login";
-          message = `Your account was accessed from a new device: ${indicators.device || "Unknown device"}.`;
+          message = `Your account was accessed from a new device: ${indicators?.device || "Unknown device"}.`;
           action = "manage_devices";
           actionLabel = "Manage Devices";
           break;
         case "new_location_login":
           type = "login_from_new_location";
           title = "Login from New Location";
-          message = `Your account was accessed from a new location: ${indicators.location || "Unknown location"}.`;
+          message = `Your account was accessed from a new location: ${indicators?.location || "Unknown location"}.`;
           action = "review_sessions";
           actionLabel = "Review Sessions";
           break;
@@ -562,75 +562,75 @@ userAlertsRouter.get("/alerts", async (req: Request, res: Response) => {
           actionLabel = "Manage Sessions";
           break;
         default:
-          type = threat.threatType;
-          title = threat.threatType
+          type = threat?.threatType;
+          title = threat?.threatType
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase());
+            .replace(/\b\w/g, (c) => c?.toUpperCase());
       }
 
       return {
-        id: threat.id,
+        id: threat?.id,
         type,
         title,
         message,
-        severity: threat.severity,
-        timestamp: threat.detectedAt?.toISOString(),
-        resolved: threat.status === "resolved" || threat.status === "healed",
+        severity: threat?.severity,
+        timestamp: threat?.detectedAt?.toISOString(),
+        resolved: threat?.status === "resolved" || threat?.status === "healed",
         action,
         actionLabel,
         metadata: {
-          ip: threat.sourceIp,
+          ip: threat?.sourceIp,
           ...indicators,
           ...metadata,
         },
       };
     });
 
-    const unresolvedCount = alerts.filter((a) => !a.resolved).length;
-    const criticalCount = alerts.filter(
-      (a) => a.severity === "critical" && !a.resolved,
+    const _unresolvedCount = alerts?.filter((a) => !a?.resolved).length;
+    const _criticalCount = alerts?.filter(
+      (a) => a?.severity === "critical" && !a?.resolved,
     ).length;
 
-    res.json({
+    res?.json({
       alerts,
       summary: {
-        total: alerts.length,
+        total: alerts?.length,
         unresolved: unresolvedCount,
         critical: criticalCount,
-        requiresAction: alerts.filter((a) => a.action && !a.resolved).length,
+        requiresAction: alerts?.filter((a) => a?.action && !a?.resolved).length,
       },
     });
   } catch (error) {
-    logger.warn({ err: error }, "Error fetching user security alerts:");
-    res.status(500).json({ error: "Failed to fetch security alerts" });
+    logger?.warn({ err: error }, "Error fetching user security alerts:");
+    res?.status(500).json({ error: "Failed to fetch security alerts" });
   }
 });
 
-userAlertsRouter.post(
+userAlertsRouter?.post(
   "/alerts/:alertId/dismiss",
   async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ error: "Authentication required" });
+      if (!req?.isAuthenticated()) {
+        return res?.status(401).json({ error: "Authentication required" });
       }
 
-      const userId = req.user!.id;
-      const { alertId } = req.params;
+      const _userId = req?.user!.id;
+      const { alertId } = req?.params;
 
       await db
         .update(securityThreats)
         .set({ status: "resolved" })
         .where(
           and(
-            eq(securityThreats.id, alertId),
-            eq(securityThreats.userId, userId),
+            eq(securityThreats?.id, alertId),
+            eq(securityThreats?.userId, userId),
           ),
         );
 
-      res.json({ success: true, message: "Alert dismissed" });
+      res?.json({ success: true, message: "Alert dismissed" });
     } catch (error) {
-      logger.warn({ err: error }, "Error dismissing alert:");
-      res.status(500).json({ error: "Failed to dismiss alert" });
+      logger?.warn({ err: error }, "Error dismissing alert:");
+      res?.status(500).json({ error: "Failed to dismiss alert" });
     }
   },
 );

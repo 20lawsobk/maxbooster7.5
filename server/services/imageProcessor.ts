@@ -13,10 +13,10 @@ async function getSharp() {
   try {
     sharpModule = (await import("sharp")).default;
     sharpAvailable = true;
-    logger.info("Sharp module loaded for image processing");
+    logger?.info("Sharp module loaded for image processing");
     return sharpModule;
   } catch (error) {
-    logger.warn("Sharp not available - image processing will be limited");
+    logger?.warn("Sharp not available - image processing will be limited");
     sharpModule = false;
     return null;
   }
@@ -80,31 +80,31 @@ export async function validateImageFormat(buffer: Buffer): Promise<{
   height?: number;
   error?: string;
 }> {
-  const sharpInstance = await getSharp();
+  const _sharpInstance = await getSharp();
   if (!sharpInstance) {
     return { valid: false, error: "Image processing not available" };
   }
 
   try {
-    const metadata = await sharpInstance(buffer).metadata();
+    const _metadata = await sharpInstance(buffer).metadata();
 
-    if (!metadata.format) {
+    if (!metadata?.format) {
       return { valid: false, error: "Unable to determine image format" };
     }
 
-    const allowedFormats = ["jpeg", "png", "webp", "jpg"];
-    if (!allowedFormats.includes(metadata.format)) {
+    const _allowedFormats = ["jpeg", "png", "webp", "jpg"];
+    if (!allowedFormats?.includes(metadata?.format)) {
       return {
         valid: false,
-        error: `Unsupported image format: ${metadata.format}. Allowed: ${allowedFormats.join(", ")}`,
+        error: `Unsupported image format: ${metadata?.format}. Allowed: ${allowedFormats?.join(", ")}`,
       };
     }
 
-    if (!metadata.width || !metadata.height) {
+    if (!metadata?.width || !metadata?.height) {
       return { valid: false, error: "Unable to determine image dimensions" };
     }
 
-    if (metadata.width > 10000 || metadata.height > 10000) {
+    if (metadata?.width > 10000 || metadata?.height > 10000) {
       return {
         valid: false,
         error: "Image dimensions too large (max 10000x10000)",
@@ -113,12 +113,12 @@ export async function validateImageFormat(buffer: Buffer): Promise<{
 
     return {
       valid: true,
-      format: metadata.format,
-      width: metadata.width,
-      height: metadata.height,
+      format: metadata?.format,
+      width: metadata?.width,
+      height: metadata?.height,
     };
   } catch (error) {
-    logger.warn("Image format validation failed", { error });
+    logger?.warn("Image format validation failed", { error });
     return { valid: false, error: "Invalid or corrupted image file" };
   }
 }
@@ -128,93 +128,93 @@ export async function processImage(
   category: UploadCategory,
   customOptions?: Partial<ImageProcessingOptions>,
 ): Promise<ProcessedImage> {
-  const categoryOptions = CATEGORY_OPTIONS[category] || DEFAULT_OPTIONS;
+  const _categoryOptions = CATEGORY_OPTIONS[category] || DEFAULT_OPTIONS;
   const options: ImageProcessingOptions = {
     ...categoryOptions,
     ...customOptions,
   };
 
-  const validation = await validateImageFormat(buffer);
-  if (!validation.valid) {
-    throw new Error(validation.error || "Invalid image");
+  const _validation = await validateImageFormat(buffer);
+  if (!validation?.valid) {
+    throw new Error(validation?.error || "Invalid image");
   }
 
-  const categoryLimits = UPLOAD_LIMITS[category];
+  const _categoryLimits = UPLOAD_LIMITS[category];
   if (categoryLimits?.maxDimensions) {
-    options.maxWidth = Math.min(
-      options.maxWidth || categoryLimits.maxDimensions.width,
-      categoryLimits.maxDimensions.width,
+    options.maxWidth = Math?.min(
+      options?.maxWidth || categoryLimits?.maxDimensions.width,
+      categoryLimits?.maxDimensions.width,
     );
-    options.maxHeight = Math.min(
-      options.maxHeight || categoryLimits.maxDimensions.height,
-      categoryLimits.maxDimensions.height,
+    options.maxHeight = Math?.min(
+      options?.maxHeight || categoryLimits?.maxDimensions.height,
+      categoryLimits?.maxDimensions.height,
     );
   }
 
-  const sharpInstance = await getSharp();
+  const _sharpInstance = await getSharp();
   if (!sharpInstance) {
     throw new Error("Image processing not available");
   }
 
   let pipeline = sharpInstance(buffer);
 
-  if (options.stripMetadata !== false) {
-    pipeline = pipeline.rotate();
+  if (options?.stripMetadata !== false) {
+    pipeline = pipeline?.rotate();
   }
 
-  const metadata = await sharpInstance(buffer).metadata();
-  const originalWidth = metadata.width || 0;
-  const originalHeight = metadata.height || 0;
+  const _metadata = await sharpInstance(buffer).metadata();
+  const _originalWidth = metadata?.width || 0;
+  const _originalHeight = metadata?.height || 0;
 
   let targetWidth = originalWidth;
   let targetHeight = originalHeight;
 
-  if (options.maxWidth && options.maxHeight) {
+  if (options?.maxWidth && options?.maxHeight) {
     if (
-      originalWidth > options.maxWidth ||
-      originalHeight > options.maxHeight
+      originalWidth > options?.maxWidth ||
+      originalHeight > options?.maxHeight
     ) {
-      const widthRatio = options.maxWidth / originalWidth;
-      const heightRatio = options.maxHeight / originalHeight;
-      const ratio = Math.min(widthRatio, heightRatio);
+      const _widthRatio = options?.maxWidth / originalWidth;
+      const _heightRatio = options?.maxHeight / originalHeight;
+      const _ratio = Math?.min(widthRatio, heightRatio);
 
-      targetWidth = Math.round(originalWidth * ratio);
-      targetHeight = Math.round(originalHeight * ratio);
+      targetWidth = Math?.round(originalWidth * ratio);
+      targetHeight = Math?.round(originalHeight * ratio);
 
-      pipeline = pipeline.resize(targetWidth, targetHeight, {
+      pipeline = pipeline?.resize(targetWidth, targetHeight, {
         fit: "inside",
         withoutEnlargement: true,
       });
     }
   }
 
-  const outputFormat = options.outputFormat || "jpeg";
-  const quality = options.quality || 85;
+  const _outputFormat = options?.outputFormat || "jpeg";
+  const _quality = options?.quality || 85;
 
   switch (outputFormat) {
     case "jpeg":
-      pipeline = pipeline.jpeg({
+      pipeline = pipeline?.jpeg({
         quality,
         progressive: true,
         mozjpeg: true,
       });
       break;
     case "png":
-      pipeline = pipeline.png({
+      pipeline = pipeline?.png({
         compressionLevel: 9,
         progressive: true,
       });
       break;
     case "webp":
-      pipeline = pipeline.webp({
+      pipeline = pipeline?.webp({
         quality,
         effort: 6,
       });
       break;
   }
 
-  const processedBuffer = await pipeline.toBuffer();
-  const processedMetadata = await sharpInstance(processedBuffer).metadata();
+  const _processedBuffer = await pipeline?.toBuffer();
+  const _processedMetadata = await sharpInstance(processedBuffer).metadata();
 
   const mimeTypes: Record<OutputFormat, string> = {
     jpeg: "image/jpeg",
@@ -222,44 +222,44 @@ export async function processImage(
     webp: "image/webp",
   };
 
-  logger.info("Image processed successfully", {
-    originalSize: buffer.length,
-    processedSize: processedBuffer.length,
+  logger?.info("Image processed successfully", {
+    originalSize: buffer?.length,
+    processedSize: processedBuffer?.length,
     originalDimensions: `${originalWidth}x${originalHeight}`,
-    processedDimensions: `${processedMetadata.width}x${processedMetadata.height}`,
+    processedDimensions: `${processedMetadata?.width}x${processedMetadata?.height}`,
     format: outputFormat,
-    metadataStripped: options.stripMetadata !== false,
+    metadataStripped: options?.stripMetadata !== false,
   });
 
   return {
     buffer: processedBuffer,
-    width: processedMetadata.width || targetWidth,
-    height: processedMetadata.height || targetHeight,
+    width: processedMetadata?.width || targetWidth,
+    height: processedMetadata?.height || targetHeight,
     format: outputFormat,
     mimeType: mimeTypes[outputFormat],
-    originalSize: buffer.length,
-    processedSize: processedBuffer.length,
-    metadataStripped: options.stripMetadata !== false,
+    originalSize: buffer?.length,
+    processedSize: processedBuffer?.length,
+    metadataStripped: options?.stripMetadata !== false,
   };
 }
 
 export async function stripImageMetadata(buffer: Buffer): Promise<Buffer> {
-  const sharpInstance = await getSharp();
+  const _sharpInstance = await getSharp();
   if (!sharpInstance) {
     throw new Error("Image processing not available");
   }
 
   try {
-    const result = await sharpInstance(buffer).rotate().toBuffer();
+    const _result = await sharpInstance(buffer).rotate().toBuffer();
 
-    logger.debug("Image metadata stripped", {
-      originalSize: buffer.length,
-      strippedSize: result.length,
+    logger?.debug("Image metadata stripped", {
+      originalSize: buffer?.length,
+      strippedSize: result?.length,
     });
 
     return result;
   } catch (error) {
-    logger.warn("Failed to strip image metadata", { error });
+    logger?.warn("Failed to strip image metadata", { error });
     throw new Error("Failed to process image metadata");
   }
 }
@@ -269,7 +269,7 @@ export async function convertToSafeFormat(
   targetFormat: OutputFormat = "jpeg",
   quality: number = 85,
 ): Promise<{ buffer: Buffer; mimeType: string }> {
-  const sharpInstance = await getSharp();
+  const _sharpInstance = await getSharp();
   if (!sharpInstance) {
     throw new Error("Image processing not available");
   }
@@ -279,17 +279,17 @@ export async function convertToSafeFormat(
 
     switch (targetFormat) {
       case "jpeg":
-        pipeline = pipeline.jpeg({ quality, progressive: true, mozjpeg: true });
+        pipeline = pipeline?.jpeg({ quality, progressive: true, mozjpeg: true });
         break;
       case "png":
-        pipeline = pipeline.png({ compressionLevel: 9, progressive: true });
+        pipeline = pipeline?.png({ compressionLevel: 9, progressive: true });
         break;
       case "webp":
-        pipeline = pipeline.webp({ quality, effort: 6 });
+        pipeline = pipeline?.webp({ quality, effort: 6 });
         break;
     }
 
-    const result = await pipeline.toBuffer();
+    const _result = await pipeline?.toBuffer();
 
     const mimeTypes: Record<OutputFormat, string> = {
       jpeg: "image/jpeg",
@@ -302,7 +302,7 @@ export async function convertToSafeFormat(
       mimeType: mimeTypes[targetFormat],
     };
   } catch (error) {
-    logger.warn("Failed to convert image format", { error, targetFormat });
+    logger?.warn("Failed to convert image format", { error, targetFormat });
     throw new Error(`Failed to convert image to ${targetFormat}`);
   }
 }
@@ -313,7 +313,7 @@ export async function resizeImage(
   maxHeight: number,
   options?: { fit?: "cover" | "contain" | "inside" | "outside" },
 ): Promise<Buffer> {
-  const sharpInstance = await getSharp();
+  const _sharpInstance = await getSharp();
   if (!sharpInstance) {
     throw new Error("Image processing not available");
   }
@@ -326,7 +326,7 @@ export async function resizeImage(
       })
       .toBuffer();
   } catch (error) {
-    logger.warn("Failed to resize image", { error, maxWidth, maxHeight });
+    logger?.warn("Failed to resize image", { error, maxWidth, maxHeight });
     throw new Error("Failed to resize image");
   }
 }
@@ -334,19 +334,19 @@ export async function resizeImage(
 export async function getImageDimensions(
   buffer: Buffer,
 ): Promise<{ width: number; height: number }> {
-  const sharpInstance = await getSharp();
+  const _sharpInstance = await getSharp();
   if (!sharpInstance) {
     throw new Error("Image processing not available");
   }
 
   try {
-    const metadata = await sharpInstance(buffer).metadata();
-    if (!metadata.width || !metadata.height) {
+    const _metadata = await sharpInstance(buffer).metadata();
+    if (!metadata?.width || !metadata?.height) {
       throw new Error("Unable to determine image dimensions");
     }
-    return { width: metadata.width, height: metadata.height };
+    return { width: metadata?.width, height: metadata?.height };
   } catch (error) {
-    logger.warn("Failed to get image dimensions", { error });
+    logger?.warn("Failed to get image dimensions", { error });
     throw new Error("Failed to get image dimensions");
   }
 }
@@ -374,8 +374,8 @@ export async function processArtworkImage(
 }
 
 export function isImageMimeType(mimeType: string): boolean {
-  const imageMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
-  return imageMimeTypes.includes(mimeType);
+  const _imageMimeTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+  return imageMimeTypes?.includes(mimeType);
 }
 
 export { getSharp };

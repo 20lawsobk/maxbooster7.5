@@ -327,27 +327,27 @@ const ALGORITHM_DIRECTIVES: Record<string, AlgorithmDirectives> = {
 
 // ─── Score: how well does content target the platform's algorithm? ─────────────
 
-const SAVE_TRIGGERS =
+const _SAVE_TRIGGERS =
   /save (this|for later)|bookmark|come back to|reference|keep this|screenshot this/i;
-const REPLY_TRIGGERS =
+const _REPLY_TRIGGERS =
   /what do you think|agree or disagree|drop (your|a)|what'?s your (take|opinion|experience)|comment below|reply with/i;
-const REWATCH_TRIGGERS =
+const _REWATCH_TRIGGERS =
   /watch again|rewatch|loop|duet|part 2|follow for more/i;
-const EMOTIONAL_HOOKS =
+const _EMOTIONAL_HOOKS =
   /story|felt|cried|changed (my|everything)|real talk|honest(ly)?|vulnerable|confession/i;
-const THREAD_INVITE =
+const _THREAD_INVITE =
   /what'?s your (experience|take|story)|has anyone (else|ever)|anyone else notice/i;
-const HOOK_OPENERS =
+const _HOOK_OPENERS =
   /^(unpopular opinion|hot take|pov:|story time|plot twist|nobody talks about|this changed|truth:|real talk:|confession:|fun fact:|did you know)/i;
-const CURIOSITY_GAP =
+const _CURIOSITY_GAP =
   /\.\.\.|here'?s why|and it'?s not what you think|but here'?s the thing|the secret|nobody tells you/i;
-const LIST_STRUCTURE = /(\d+\s+(ways|tips|things|steps|reasons)|• |→ |- )/i;
-const DWELL_STRUCTURE = /\n\n|\n/g; // line breaks signal readable structure
+const _LIST_STRUCTURE = /(\d+\s+(ways|tips|things|steps|reasons)|• |→ |- )/i;
+const _DWELL_STRUCTURE = /\n\n|\n/g; // line breaks signal readable structure
 
 export class PlatformAlgorithmOptimizer {
   getDirectives(platform: string): AlgorithmDirectives {
-    const key = platform.toLowerCase().replace(/[^a-z]/g, "");
-    return ALGORITHM_DIRECTIVES[key] ?? ALGORITHM_DIRECTIVES.instagram;
+    const _key = platform?.toLowerCase().replace(/[^a-z]/g, "");
+    return ALGORITHM_DIRECTIVES[key] ?? ALGORITHM_DIRECTIVES?.instagram;
   }
 
   /**
@@ -361,27 +361,27 @@ export class PlatformAlgorithmOptimizer {
     cta: string,
     platform: string,
   ): AlgorithmAlignmentScore {
-    const key = platform.toLowerCase().replace(/[^a-z]/g, "");
-    const full = `${headline}\n\n${content}\n\n${cta}`;
+    const _key = platform?.toLowerCase().replace(/[^a-z]/g, "");
+    const _full = `${headline}\n\n${content}\n\n${cta}`;
 
     switch (key) {
       case "twitter":
       case "x":
-        return this.scoreTwitter(full, headline, cta, content);
+        return this?.scoreTwitter(full, headline, cta, content);
       case "instagram":
-        return this.scoreInstagram(full, headline, cta, content);
+        return this?.scoreInstagram(full, headline, cta, content);
       case "tiktok":
-        return this.scoreTikTok(full, headline, cta, content);
+        return this?.scoreTikTok(full, headline, cta, content);
       case "linkedin":
-        return this.scoreLinkedIn(full, headline, cta, content);
+        return this?.scoreLinkedIn(full, headline, cta, content);
       case "facebook":
-        return this.scoreFacebook(full, headline, cta, content);
+        return this?.scoreFacebook(full, headline, cta, content);
       case "threads":
-        return this.scoreThreads(full, headline, cta, content);
+        return this?.scoreThreads(full, headline, cta, content);
       case "youtube":
-        return this.scoreYouTube(full, headline, cta, content);
+        return this?.scoreYouTube(full, headline, cta, content);
       default:
-        return this.scoreInstagram(full, headline, cta, content);
+        return this?.scoreInstagram(full, headline, cta, content);
     }
   }
 
@@ -401,62 +401,62 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: reply velocity — does it demand a response?
-    if (REPLY_TRIGGERS.test(full)) {
+    if (REPLY_TRIGGERS?.test(full)) {
       primarySignal += 25;
-      boosts.push("reply-triggering language");
+      boosts?.push("reply-triggering language");
     }
-    if (HOOK_OPENERS.test(headline)) {
+    if (HOOK_OPENERS?.test(headline)) {
       primarySignal += 15;
-      boosts.push("strong opinionated hook");
+      boosts?.push("strong opinionated hook");
     }
     if (/\?/.test(headline)) {
       primarySignal += 10;
-      boosts.push("question in hook");
+      boosts?.push("question in hook");
     }
-    if (/http|www\./i.test(content)) {
+    if (/http|www\./i?.test(content)) {
       primarySignal -= 20;
-      penalties.push("external link penalises reply velocity");
+      penalties?.push("external link penalises reply velocity");
     }
 
     // Hook: punchy opening
-    if (headline.length <= 100) {
+    if (headline?.length <= 100) {
       hookStrength += 15;
-      boosts.push("concise hook");
+      boosts?.push("concise hook");
     }
-    if (headline.length > 240) {
+    if (headline?.length > 240) {
       hookStrength -= 20;
-      penalties.push("hook too long for Twitter");
+      penalties?.push("hook too long for Twitter");
     }
-    if (HOOK_OPENERS.test(headline)) {
+    if (HOOK_OPENERS?.test(headline)) {
       hookStrength += 20;
-      boosts.push("platform-native hook pattern");
+      boosts?.push("platform-native hook pattern");
     }
 
     // CTA: drives replies
-    if (REPLY_TRIGGERS.test(cta)) {
+    if (REPLY_TRIGGERS?.test(cta)) {
       ctaAlignment += 30;
-      boosts.push("reply-driving CTA");
+      boosts?.push("reply-driving CTA");
     }
-    if (/follow|subscribe/i.test(cta)) {
+    if (/follow|subscribe/i?.test(cta)) {
       ctaAlignment -= 10;
-      penalties.push("follow CTA does not drive reply velocity");
+      penalties?.push("follow CTA does not drive reply velocity");
     }
 
     // Structure: short and punchy
-    const len = full.length;
+    const _len = full?.length;
     if (len <= 240) {
       structureScore += 20;
-      boosts.push("optimal tweet length");
+      boosts?.push("optimal tweet length");
     } else if (len > 280) {
       structureScore -= 15;
-      penalties.push("exceeds tweet character limit");
+      penalties?.push("exceeds tweet character limit");
     }
-    if (/🧵|thread/i.test(full)) {
+    if (/🧵|thread/i?.test(full)) {
       structureScore += 10;
-      boosts.push("thread signal");
+      boosts?.push("thread signal");
     }
 
-    return this.buildScore({
+    return this?.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -480,63 +480,63 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: saves — does it earn a bookmark?
-    if (SAVE_TRIGGERS.test(full)) {
+    if (SAVE_TRIGGERS?.test(full)) {
       primarySignal += 30;
-      boosts.push("save-triggering language");
+      boosts?.push("save-triggering language");
     }
-    if (LIST_STRUCTURE.test(content)) {
+    if (LIST_STRUCTURE?.test(content)) {
       primarySignal += 20;
-      boosts.push("list/step structure drives saves");
+      boosts?.push("list/step structure drives saves");
     }
-    if (/how to|tips|guide|breakdown|step/i.test(full)) {
+    if (/how to|tips|guide|breakdown|step/i?.test(full)) {
       primarySignal += 10;
-      boosts.push("educational content drives saves");
+      boosts?.push("educational content drives saves");
     }
 
     // Hook: value-first opener
-    if (headline.length <= 120) {
+    if (headline?.length <= 120) {
       hookStrength += 10;
-      boosts.push("concise hook");
+      boosts?.push("concise hook");
     }
-    if (SAVE_TRIGGERS.test(headline)) {
+    if (SAVE_TRIGGERS?.test(headline)) {
       hookStrength += 20;
-      boosts.push("save-hook in opening");
+      boosts?.push("save-hook in opening");
     }
     if (/\?/.test(headline)) {
       hookStrength += 10;
-      boosts.push("question hook");
+      boosts?.push("question hook");
     }
 
     // CTA: explicitly drives saves or DM shares
-    if (SAVE_TRIGGERS.test(cta)) {
+    if (SAVE_TRIGGERS?.test(cta)) {
       ctaAlignment += 35;
-      boosts.push("explicit save CTA");
+      boosts?.push("explicit save CTA");
     }
-    if (/dm|share|send this/i.test(cta)) {
+    if (/dm|share|send this/i?.test(cta)) {
       ctaAlignment += 15;
-      boosts.push("DM/share CTA");
+      boosts?.push("DM/share CTA");
     }
-    if (/follow me/i.test(cta)) {
+    if (/follow me/i?.test(cta)) {
       ctaAlignment -= 10;
-      penalties.push("generic follow CTA doesn't drive saves");
+      penalties?.push("generic follow CTA doesn't drive saves");
     }
 
     // Structure: readable, medium length
-    const len = content.length;
+    const _len = content?.length;
     if (len >= 300 && len <= 1200) {
       structureScore += 20;
-      boosts.push("optimal caption length");
+      boosts?.push("optimal caption length");
     }
     if (len < 100) {
       structureScore -= 15;
-      penalties.push("caption too short — no save value");
+      penalties?.push("caption too short — no save value");
     }
-    if ((content.match(DWELL_STRUCTURE) || []).length >= 3) {
+    if ((content?.match(DWELL_STRUCTURE) || []).length >= 3) {
       structureScore += 10;
-      boosts.push("readable paragraph breaks");
+      boosts?.push("readable paragraph breaks");
     }
 
-    return this.buildScore({
+    return this?.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -560,64 +560,64 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: watch completion — does it hook in 3 words and loop?
-    const firstWords = headline.split(" ").slice(0, 5).join(" ");
-    if (HOOK_OPENERS.test(firstWords)) {
+    const _firstWords = headline?.split(" ").slice(0, 5).join(" ");
+    if (HOOK_OPENERS?.test(firstWords)) {
       primarySignal += 25;
-      boosts.push("pattern interrupt in first words");
+      boosts?.push("pattern interrupt in first words");
     }
-    if (REWATCH_TRIGGERS.test(full)) {
+    if (REWATCH_TRIGGERS?.test(full)) {
       primarySignal += 20;
-      boosts.push("rewatch/loop trigger");
+      boosts?.push("rewatch/loop trigger");
     }
-    if (CURIOSITY_GAP.test(full)) {
+    if (CURIOSITY_GAP?.test(full)) {
       primarySignal += 15;
-      boosts.push("curiosity gap drives completion");
+      boosts?.push("curiosity gap drives completion");
     }
-    if (/pov:|this changed|nobody tells/i.test(headline)) {
+    if (/pov:|this changed|nobody tells/i?.test(headline)) {
       primarySignal += 10;
-      boosts.push("viral TikTok hook format");
+      boosts?.push("viral TikTok hook format");
     }
 
     // Hook: strong opening
-    if (headline.length <= 60) {
+    if (headline?.length <= 60) {
       hookStrength += 20;
-      boosts.push("short sharp TikTok hook");
+      boosts?.push("short sharp TikTok hook");
     }
-    if (HOOK_OPENERS.test(headline)) {
+    if (HOOK_OPENERS?.test(headline)) {
       hookStrength += 20;
-      boosts.push("platform-native hook");
+      boosts?.push("platform-native hook");
     }
-    if (/slow|anyway|so today|hi guys/i.test(headline)) {
+    if (/slow|anyway|so today|hi guys/i?.test(headline)) {
       hookStrength -= 20;
-      penalties.push("slow opening kills watch completion");
+      penalties?.push("slow opening kills watch completion");
     }
 
     // CTA: drives rewatches and duets
-    if (REWATCH_TRIGGERS.test(cta)) {
+    if (REWATCH_TRIGGERS?.test(cta)) {
       ctaAlignment += 30;
-      boosts.push("rewatch-driving CTA");
+      boosts?.push("rewatch-driving CTA");
     }
-    if (/duet|stitch/i.test(cta)) {
+    if (/duet|stitch/i?.test(cta)) {
       ctaAlignment += 15;
-      boosts.push("duet CTA drives UGC");
+      boosts?.push("duet CTA drives UGC");
     }
-    if (/follow/i.test(cta) && !REWATCH_TRIGGERS.test(cta)) {
+    if (/follow/i?.test(cta) && !REWATCH_TRIGGERS?.test(cta)) {
       ctaAlignment -= 5;
-      penalties.push("follow CTA alone doesn't boost watch completion");
+      penalties?.push("follow CTA alone doesn't boost watch completion");
     }
 
     // Structure: short caption, loop ending
-    const len = content.length;
+    const _len = content?.length;
     if (len <= 200) {
       structureScore += 20;
-      boosts.push("short caption — video is the content");
+      boosts?.push("short caption — video is the content");
     }
     if (len > 500) {
       structureScore -= 10;
-      penalties.push("long caption competes with the video");
+      penalties?.push("long caption competes with the video");
     }
 
-    return this.buildScore({
+    return this?.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -641,67 +641,67 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: dwell time — does it earn a long read?
-    const lineBreaks = (content.match(/\n/g) || []).length;
+    const _lineBreaks = (content?.match(/\n/g) || []).length;
     if (lineBreaks >= 5) {
       primarySignal += 20;
-      boosts.push("short paragraphs maximise dwell time");
+      boosts?.push("short paragraphs maximise dwell time");
     }
-    if (content.length >= 800) {
+    if (content?.length >= 800) {
       primarySignal += 15;
-      boosts.push("long-form content drives dwell time");
+      boosts?.push("long-form content drives dwell time");
     }
-    if (/http|www\./i.test(content)) {
+    if (/http|www\./i?.test(content)) {
       primarySignal -= 20;
-      penalties.push("link in post body penalised — move to comments");
+      penalties?.push("link in post body penalised — move to comments");
     }
-    if (/story|learned|realised|mistake|lesson/i.test(full)) {
+    if (/story|learned|realised|mistake|lesson/i?.test(full)) {
       primarySignal += 15;
-      boosts.push("narrative drives dwell time");
+      boosts?.push("narrative drives dwell time");
     }
 
     // Hook: first line must stop the scroll
-    if (headline.length <= 100) {
+    if (headline?.length <= 100) {
       hookStrength += 15;
-      boosts.push("concise scroll-stopping first line");
+      boosts?.push("concise scroll-stopping first line");
     }
     if (
-      /i (was|used to|thought|learned)|years ago|this is|the truth/i.test(
+      /i (was|used to|thought|learned)|years ago|this is|the truth/i?.test(
         headline,
       )
     ) {
       hookStrength += 20;
-      boosts.push("personal story hook");
+      boosts?.push("personal story hook");
     }
 
     // CTA: professional question
-    if (THREAD_INVITE.test(cta)) {
+    if (THREAD_INVITE?.test(cta)) {
       ctaAlignment += 25;
-      boosts.push("professional question drives comments");
+      boosts?.push("professional question drives comments");
     }
-    if (/comment|share your/i.test(cta)) {
+    if (/comment|share your/i?.test(cta)) {
       ctaAlignment += 10;
-      boosts.push("comment-driving CTA");
+      boosts?.push("comment-driving CTA");
     }
-    if (/follow|subscribe/i.test(cta) && !THREAD_INVITE.test(cta)) {
+    if (/follow|subscribe/i?.test(cta) && !THREAD_INVITE?.test(cta)) {
       ctaAlignment -= 10;
-      penalties.push("generic follow CTA underperforms on LinkedIn");
+      penalties?.push("generic follow CTA underperforms on LinkedIn");
     }
 
     // Structure: long, readable, no external links
-    if (content.length >= 800 && content.length <= 1800) {
+    if (content?.length >= 800 && content?.length <= 1800) {
       structureScore += 20;
-      boosts.push("optimal LinkedIn length");
+      boosts?.push("optimal LinkedIn length");
     }
-    if (content.length < 300) {
+    if (content?.length < 300) {
       structureScore -= 20;
-      penalties.push("too short for LinkedIn dwell time");
+      penalties?.push("too short for LinkedIn dwell time");
     }
     if (lineBreaks >= 5) {
       structureScore += 15;
-      boosts.push("readable paragraph structure");
+      boosts?.push("readable paragraph structure");
     }
 
-    return this.buildScore({
+    return this?.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -725,55 +725,55 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: emotional reactions (Love, Care, Wow > Like)
-    if (EMOTIONAL_HOOKS.test(full)) {
+    if (EMOTIONAL_HOOKS?.test(full)) {
       primarySignal += 25;
-      boosts.push("emotional content drives Love/Care reactions");
+      boosts?.push("emotional content drives Love/Care reactions");
     }
-    if (/tag (a|someone|your)/i.test(full)) {
+    if (/tag (a|someone|your)/i?.test(full)) {
       primarySignal += 20;
-      boosts.push("tag-a-friend drives organic reach");
+      boosts?.push("tag-a-friend drives organic reach");
     }
-    if (/http|www\./i.test(content)) {
+    if (/http|www\./i?.test(content)) {
       primarySignal -= 15;
-      penalties.push("external link penalised in Facebook feed");
+      penalties?.push("external link penalised in Facebook feed");
     }
 
     // Hook: emotion-first
-    if (EMOTIONAL_HOOKS.test(headline)) {
+    if (EMOTIONAL_HOOKS?.test(headline)) {
       hookStrength += 25;
-      boosts.push("emotional opener");
+      boosts?.push("emotional opener");
     }
-    if (/real talk|story time|confession/i.test(headline)) {
+    if (/real talk|story time|confession/i?.test(headline)) {
       hookStrength += 15;
-      boosts.push("personal story hook");
+      boosts?.push("personal story hook");
     }
 
     // CTA: tag and share
-    if (/tag (a|someone|your)/i.test(cta)) {
+    if (/tag (a|someone|your)/i?.test(cta)) {
       ctaAlignment += 35;
-      boosts.push("tag-a-friend CTA");
+      boosts?.push("tag-a-friend CTA");
     }
-    if (/share if|share this/i.test(cta)) {
+    if (/share if|share this/i?.test(cta)) {
       ctaAlignment += 20;
-      boosts.push("share CTA");
+      boosts?.push("share CTA");
     }
     if (/❤️|💕|🙏/.test(cta)) {
       ctaAlignment += 10;
-      boosts.push("reaction emoji CTA");
+      boosts?.push("reaction emoji CTA");
     }
 
     // Structure: story-based
-    const len = content.length;
+    const _len = content?.length;
     if (len >= 200 && len <= 800) {
       structureScore += 20;
-      boosts.push("optimal Facebook caption length");
+      boosts?.push("optimal Facebook caption length");
     }
-    if (EMOTIONAL_HOOKS.test(content)) {
+    if (EMOTIONAL_HOOKS?.test(content)) {
       structureScore += 15;
-      boosts.push("story-driven structure");
+      boosts?.push("story-driven structure");
     }
 
-    return this.buildScore({
+    return this?.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -797,55 +797,55 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: replies — does it invite dialogue?
-    if (THREAD_INVITE.test(full)) {
+    if (THREAD_INVITE?.test(full)) {
       primarySignal += 30;
-      boosts.push("dialogue-inviting language");
+      boosts?.push("dialogue-inviting language");
     }
-    if (REPLY_TRIGGERS.test(full)) {
+    if (REPLY_TRIGGERS?.test(full)) {
       primarySignal += 20;
-      boosts.push("reply-triggering phrasing");
+      boosts?.push("reply-triggering phrasing");
     }
-    if (/promotional|buy now|link in bio/i.test(full)) {
+    if (/promotional|buy now|link in bio/i?.test(full)) {
       primarySignal -= 20;
-      penalties.push("promotional language kills Threads replies");
+      penalties?.push("promotional language kills Threads replies");
     }
 
     // Hook: conversational
     if (
-      /^(has anyone|anyone else|genuine question|real talk|honest question)/i.test(
+      /^(has anyone|anyone else|genuine question|real talk|honest question)/i?.test(
         headline,
       )
     ) {
       hookStrength += 25;
-      boosts.push("conversational opener");
+      boosts?.push("conversational opener");
     }
-    if (headline.length <= 100) {
+    if (headline?.length <= 100) {
       hookStrength += 15;
-      boosts.push("short punchy hook");
+      boosts?.push("short punchy hook");
     }
 
     // CTA: invite dialogue
-    if (THREAD_INVITE.test(cta)) {
+    if (THREAD_INVITE?.test(cta)) {
       ctaAlignment += 35;
-      boosts.push("dialogue-driving CTA");
+      boosts?.push("dialogue-driving CTA");
     }
-    if (REPLY_TRIGGERS.test(cta)) {
+    if (REPLY_TRIGGERS?.test(cta)) {
       ctaAlignment += 15;
-      boosts.push("reply-driving CTA");
+      boosts?.push("reply-driving CTA");
     }
 
     // Structure: short and conversational
-    const len = full.length;
+    const _len = full?.length;
     if (len <= 300) {
       structureScore += 25;
-      boosts.push("optimal Threads length");
+      boosts?.push("optimal Threads length");
     }
     if (len > 500) {
       structureScore -= 15;
-      penalties.push("too long for Threads — loses conversational feel");
+      penalties?.push("too long for Threads — loses conversational feel");
     }
 
-    return this.buildScore({
+    return this?.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -869,56 +869,56 @@ export class PlatformAlgorithmOptimizer {
     let structureScore = 50;
 
     // Primary signal: CTR × watch time — does it deliver on its promise?
-    if (CURIOSITY_GAP.test(headline)) {
+    if (CURIOSITY_GAP?.test(headline)) {
       primarySignal += 20;
-      boosts.push("curiosity gap in title drives CTR");
+      boosts?.push("curiosity gap in title drives CTR");
     }
-    if (/how to|why|what|the truth|you\'?ve been doing/i.test(headline)) {
+    if (/how to|why|what|the truth|you\'?ve been doing/i?.test(headline)) {
       primarySignal += 15;
-      boosts.push("high-CTR title format");
+      boosts?.push("high-CTR title format");
     }
     if (
-      /in this video|by the end|you\'?ll (learn|discover|see)/i.test(content)
+      /in this video|by the end|you\'?ll (learn|discover|see)/i?.test(content)
     ) {
       primarySignal += 15;
-      boosts.push("promise delivered early — watch time");
+      boosts?.push("promise delivered early — watch time");
     }
-    if (/slow intro|hi everyone, welcome back/i.test(content)) {
+    if (/slow intro|hi everyone, welcome back/i?.test(content)) {
       primarySignal -= 20;
-      penalties.push("slow intro kills watch percentage");
+      penalties?.push("slow intro kills watch percentage");
     }
 
     // Hook: delivers on title promise in first 30 seconds
     if (
-      /first|right away|immediately|let'?s (get into|start|dive)/i.test(
-        content.substring(0, 200),
+      /first|right away|immediately|let'?s (get into|start|dive)/i?.test(
+        content?.substring(0, 200),
       )
     ) {
       hookStrength += 20;
-      boosts.push("fast-paced opening — watch time signal");
+      boosts?.push("fast-paced opening — watch time signal");
     }
 
     // CTA: subscribe and watch next
-    if (/subscribe|watch (this|next|more)/i.test(cta)) {
+    if (/subscribe|watch (this|next|more)/i?.test(cta)) {
       ctaAlignment += 25;
-      boosts.push("subscriber + session time CTA");
+      boosts?.push("subscriber + session time CTA");
     }
-    if (/comment (below|your|what)/i.test(cta)) {
+    if (/comment (below|your|what)/i?.test(cta)) {
       ctaAlignment += 15;
-      boosts.push("comment CTA");
+      boosts?.push("comment CTA");
     }
 
     // Structure: chapters and clear progression
-    if (/chapter|\d+\.|step \d/i.test(content)) {
+    if (/chapter|\d+\.|step \d/i?.test(content)) {
       structureScore += 20;
-      boosts.push("chapter structure extends session time");
+      boosts?.push("chapter structure extends session time");
     }
-    if (content.length >= 500) {
+    if (content?.length >= 500) {
       structureScore += 15;
-      boosts.push("detailed description aids search ranking");
+      boosts?.push("detailed description aids search ranking");
     }
 
-    return this.buildScore({
+    return this?.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -938,15 +938,15 @@ export class PlatformAlgorithmOptimizer {
     penalties: string[];
     boosts: string[];
   }): AlgorithmAlignmentScore {
-    const clamp = (n: number) => Math.min(100, Math.max(0, n));
+    const _clamp = (n: number) => Math?.min(100, Math?.max(0, n));
 
-    const primarySignal = clamp(input.primarySignal);
-    const hookStrength = clamp(input.hookStrength);
-    const ctaAlignment = clamp(input.ctaAlignment);
-    const structureScore = clamp(input.structureScore);
+    const _primarySignal = clamp(input?.primarySignal);
+    const _hookStrength = clamp(input?.hookStrength);
+    const _ctaAlignment = clamp(input?.ctaAlignment);
+    const _structureScore = clamp(input?.structureScore);
 
     // Weighted composite — primary signal matters most
-    const score = clamp(
+    const _score = clamp(
       primarySignal * 0.4 +
         hookStrength * 0.25 +
         ctaAlignment * 0.2 +
@@ -959,8 +959,8 @@ export class PlatformAlgorithmOptimizer {
       hookStrength,
       ctaAlignment,
       structureScore,
-      penalties: input.penalties,
-      boosts: input.boosts,
+      penalties: input?.penalties,
+      boosts: input?.boosts,
     };
   }
 
@@ -970,29 +970,29 @@ export class PlatformAlgorithmOptimizer {
    * every variant is written with the algorithm in mind from the start.
    */
   buildAlgorithmPromptSuffix(platform: string): string {
-    const d = this.getDirectives(platform);
+    const _d = this?.getDirectives(platform);
     return [
-      `PLATFORM ALGORITHM DIRECTIVES (${platform.toUpperCase()}):`,
-      `• Primary signal to trigger: ${d.primarySignal.replace(/_/g, " ")}`,
-      `• Hook: ${d.hookRequirement}`,
-      `• Structure: ${d.contentStructure}`,
-      `• CTA style: ${d.ctaStyle}`,
-      `• Avoid: ${d.avoidPatterns.join(", ")}`,
-      `• Boost with: ${d.boostPatterns.join(", ")}`,
-      `• Special rules: ${d.specialRules.join(" | ")}`,
+      `PLATFORM ALGORITHM DIRECTIVES (${platform?.toUpperCase()}):`,
+      `• Primary signal to trigger: ${d?.primarySignal.replace(/_/g, " ")}`,
+      `• Hook: ${d?.hookRequirement}`,
+      `• Structure: ${d?.contentStructure}`,
+      `• CTA style: ${d?.ctaStyle}`,
+      `• Avoid: ${d?.avoidPatterns.join(", ")}`,
+      `• Boost with: ${d?.boostPatterns.join(", ")}`,
+      `• Special rules: ${d?.specialRules.join(" | ")}`,
     ].join("\n");
   }
 
   logAlignment(platform: string, score: AlgorithmAlignmentScore): void {
-    const icon = score.score >= 75 ? "✅" : score.score >= 55 ? "⚠️" : "❌";
-    logger.info(
-      `[AlgoOptimizer] ${icon} ${platform} algorithm alignment: ${score.score.toFixed(1)}/100 ` +
-        `(signal=${score.primarySignal.toFixed(0)} hook=${score.hookStrength.toFixed(0)} ` +
-        `cta=${score.ctaAlignment.toFixed(0)} structure=${score.structureScore.toFixed(0)})` +
-        (score.boosts.length ? ` | ✓ ${score.boosts.join(", ")}` : "") +
-        (score.penalties.length ? ` | ✗ ${score.penalties.join(", ")}` : ""),
+    const _icon = score?.score >= 75 ? "✅" : score?.score >= 55 ? "⚠️" : "❌";
+    logger?.info(
+      `[AlgoOptimizer] ${icon} ${platform} algorithm alignment: ${score?.score.toFixed(1)}/100 ` +
+        `(signal=${score?.primarySignal.toFixed(0)} hook=${score?.hookStrength.toFixed(0)} ` +
+        `cta=${score?.ctaAlignment.toFixed(0)} structure=${score?.structureScore.toFixed(0)})` +
+        (score?.boosts.length ? ` | ✓ ${score?.boosts.join(", ")}` : "") +
+        (score?.penalties.length ? ` | ✗ ${score?.penalties.join(", ")}` : ""),
     );
   }
 }
 
-export const platformAlgorithmOptimizer = new PlatformAlgorithmOptimizer();
+export const _platformAlgorithmOptimizer = new PlatformAlgorithmOptimizer();

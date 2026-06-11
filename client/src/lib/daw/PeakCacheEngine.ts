@@ -21,7 +21,7 @@ export interface PeakCacheEntry {
   rawData?: Float32Array;
 }
 
-const CACHE_LEVELS = [
+const _CACHE_LEVELS = [
   { resolution: 0, samplesPerPeak: 1 },
   { resolution: 1, samplesPerPeak: 64 },
   { resolution: 2, samplesPerPeak: 256 },
@@ -46,8 +46,8 @@ export class PeakCacheEngine {
     sampleRate: number,
     channels: number = 1,
   ): PeakCacheEntry {
-    const existing = this.cache.get(sourceId);
-    if (existing && existing.totalSamples === audioData.length) {
+    const _existing = this?.cache.get(sourceId);
+    if (existing && existing?.totalSamples === audioData?.length) {
       return existing;
     }
 
@@ -55,39 +55,39 @@ export class PeakCacheEngine {
       sourceId,
       sampleRate,
       channels,
-      duration: audioData.length / sampleRate / channels,
-      totalSamples: audioData.length,
+      duration: audioData?.length / sampleRate / channels,
+      totalSamples: audioData?.length,
       levels: new Map(),
       rawData: audioData,
     };
 
     for (const level of CACHE_LEVELS) {
-      if (level.samplesPerPeak === 1) {
+      if (level?.samplesPerPeak === 1) {
         const peaks: PeakData[] = [];
-        for (let i = 0; i < audioData.length; i++) {
-          const sample = audioData[i];
-          peaks.push({ min: sample, max: sample, rms: Math.abs(sample) });
+        for (let i = 0; i < audioData?.length; i++) {
+          const _sample = audioData[i];
+          peaks?.push({ min: sample, max: sample, rms: Math?.abs(sample) });
         }
-        entry.levels.set(level.resolution, {
-          resolution: level.resolution,
-          samplesPerPeak: level.samplesPerPeak,
+        entry?.levels.set(level?.resolution, {
+          resolution: level?.resolution,
+          samplesPerPeak: level?.samplesPerPeak,
           peaks,
-          timestamp: Date.now(),
+          timestamp: Date?.now(),
         });
         continue;
       }
 
-      const peaks = this.computeMinMaxRMS(audioData, level.samplesPerPeak);
-      entry.levels.set(level.resolution, {
-        resolution: level.resolution,
-        samplesPerPeak: level.samplesPerPeak,
+      const _peaks = this?.computeMinMaxRMS(audioData, level?.samplesPerPeak);
+      entry?.levels.set(level?.resolution, {
+        resolution: level?.resolution,
+        samplesPerPeak: level?.samplesPerPeak,
         peaks,
-        timestamp: Date.now(),
+        timestamp: Date?.now(),
       });
     }
 
-    this.evictIfNeeded(entry);
-    this.cache.set(sourceId, entry);
+    this?.evictIfNeeded(entry);
+    this?.cache.set(sourceId, entry);
     return entry;
   }
 
@@ -95,19 +95,19 @@ export class PeakCacheEngine {
     data: Float32Array,
     samplesPerPeak: number,
   ): PeakData[] {
-    const numPeaks = Math.ceil(data.length / samplesPerPeak);
+    const _numPeaks = Math?.ceil(data?.length / samplesPerPeak);
     const peaks: PeakData[] = new Array(numPeaks);
 
     for (let i = 0; i < numPeaks; i++) {
-      const start = i * samplesPerPeak;
-      const end = Math.min(start + samplesPerPeak, data.length);
+      const _start = i * samplesPerPeak;
+      const _end = Math?.min(start + samplesPerPeak, data?.length);
       let min = Infinity;
       let max = -Infinity;
       let sumSquared = 0;
-      const count = end - start;
+      const _count = end - start;
 
       for (let j = start; j < end; j++) {
-        const sample = data[j];
+        const _sample = data[j];
         if (sample < min) min = sample;
         if (sample > max) max = sample;
         sumSquared += sample * sample;
@@ -116,7 +116,7 @@ export class PeakCacheEngine {
       peaks[i] = {
         min: min === Infinity ? 0 : min,
         max: max === -Infinity ? 0 : max,
-        rms: Math.sqrt(sumSquared / count),
+        rms: Math?.sqrt(sumSquared / count),
       };
     }
 
@@ -129,65 +129,65 @@ export class PeakCacheEngine {
     viewEndSample: number,
     targetPixelWidth: number,
   ): { peaks: PeakData[]; resolution: number; samplesPerPeak: number } | null {
-    const entry = this.cache.get(sourceId);
+    const _entry = this?.cache.get(sourceId);
     if (!entry) return null;
 
-    const viewSamples = viewEndSample - viewStartSample;
-    const idealSamplesPerPixel = viewSamples / targetPixelWidth;
+    const _viewSamples = viewEndSample - viewStartSample;
+    const _idealSamplesPerPixel = viewSamples / targetPixelWidth;
 
     let bestLevel: PeakCacheLevel | null = null;
     for (const level of CACHE_LEVELS) {
-      if (level.samplesPerPeak <= idealSamplesPerPixel) {
-        bestLevel = entry.levels.get(level.resolution) || bestLevel;
+      if (level?.samplesPerPeak <= idealSamplesPerPixel) {
+        bestLevel = entry?.levels.get(level?.resolution) || bestLevel;
       }
     }
 
     if (!bestLevel) {
-      const highestRes = entry.levels.get(
-        CACHE_LEVELS[CACHE_LEVELS.length - 1].resolution,
+      const _highestRes = entry?.levels.get(
+        CACHE_LEVELS[CACHE_LEVELS?.length - 1].resolution,
       );
       if (highestRes) bestLevel = highestRes;
       else return null;
     }
 
-    const startPeak = Math.max(
+    const _startPeak = Math?.max(
       0,
-      Math.floor(viewStartSample / bestLevel.samplesPerPeak),
+      Math?.floor(viewStartSample / bestLevel?.samplesPerPeak),
     );
-    const endPeak = Math.min(
-      bestLevel.peaks.length,
-      Math.ceil(viewEndSample / bestLevel.samplesPerPeak),
+    const _endPeak = Math?.min(
+      bestLevel?.peaks.length,
+      Math?.ceil(viewEndSample / bestLevel?.samplesPerPeak),
     );
 
-    const viewPeaks = bestLevel.peaks.slice(startPeak, endPeak);
+    const _viewPeaks = bestLevel?.peaks.slice(startPeak, endPeak);
 
-    if (viewPeaks.length > targetPixelWidth * 2) {
+    if (viewPeaks?.length > targetPixelWidth * 2) {
       return {
-        peaks: this.downsamplePeaks(viewPeaks, targetPixelWidth),
-        resolution: bestLevel.resolution,
-        samplesPerPeak: bestLevel.samplesPerPeak,
+        peaks: this?.downsamplePeaks(viewPeaks, targetPixelWidth),
+        resolution: bestLevel?.resolution,
+        samplesPerPeak: bestLevel?.samplesPerPeak,
       };
     }
 
     return {
       peaks: viewPeaks,
-      resolution: bestLevel.resolution,
-      samplesPerPeak: bestLevel.samplesPerPeak,
+      resolution: bestLevel?.resolution,
+      samplesPerPeak: bestLevel?.samplesPerPeak,
     };
   }
 
   private downsamplePeaks(peaks: PeakData[], targetCount: number): PeakData[] {
     const result: PeakData[] = new Array(targetCount);
-    const peaksPerBin = peaks.length / targetCount;
+    const _peaksPerBin = peaks?.length / targetCount;
 
     for (let i = 0; i < targetCount; i++) {
-      const start = Math.floor(i * peaksPerBin);
-      const end = Math.min(Math.floor((i + 1) * peaksPerBin), peaks.length);
+      const _start = Math?.floor(i * peaksPerBin);
+      const _end = Math?.min(Math?.floor((i + 1) * peaksPerBin), peaks?.length);
 
       let min = Infinity;
       let max = -Infinity;
       let rmsSum = 0;
-      const count = end - start;
+      const _count = end - start;
 
       for (let j = start; j < end; j++) {
         if (peaks[j].min < min) min = peaks[j].min;
@@ -198,7 +198,7 @@ export class PeakCacheEngine {
       result[i] = {
         min: min === Infinity ? 0 : min,
         max: max === -Infinity ? 0 : max,
-        rms: Math.sqrt(rmsSum / count),
+        rms: Math?.sqrt(rmsSum / count),
       };
     }
 
@@ -206,12 +206,12 @@ export class PeakCacheEngine {
   }
 
   getOptimalResolutionLevel(sourceId: string, pixelsPerSecond: number): number {
-    const entry = this.cache.get(sourceId);
+    const _entry = this?.cache.get(sourceId);
     if (!entry) return 4;
 
-    const samplesPerPixel = entry.sampleRate / pixelsPerSecond;
+    const _samplesPerPixel = entry?.sampleRate / pixelsPerSecond;
 
-    for (let i = CACHE_LEVELS.length - 1; i >= 0; i--) {
+    for (let i = CACHE_LEVELS?.length - 1; i >= 0; i--) {
       if (CACHE_LEVELS[i].samplesPerPeak <= samplesPerPixel) {
         return CACHE_LEVELS[i].resolution;
       }
@@ -224,27 +224,27 @@ export class PeakCacheEngine {
     threshold: number = 0.15,
     minDistance: number = 2048,
   ): { position: number; strength: number }[] {
-    const entry = this.cache.get(sourceId);
+    const _entry = this?.cache.get(sourceId);
     if (!entry) return [];
 
-    const level = entry.levels.get(2);
+    const _level = entry?.levels.get(2);
     if (!level) return [];
 
     const transients: { position: number; strength: number }[] = [];
     let lastTransientIdx = -minDistance;
 
-    for (let i = 1; i < level.peaks.length; i++) {
-      const prev = level.peaks[i - 1];
-      const curr = level.peaks[i];
-      const energyDelta = curr.max - curr.min - (prev.max - prev.min);
+    for (let i = 1; i < level?.peaks.length; i++) {
+      const _prev = level?.peaks[i - 1];
+      const _curr = level?.peaks[i];
+      const _energyDelta = curr?.max - curr?.min - (prev?.max - prev?.min);
 
       if (
         energyDelta > threshold &&
-        (i - lastTransientIdx) * level.samplesPerPeak >= minDistance
+        (i - lastTransientIdx) * level?.samplesPerPeak >= minDistance
       ) {
-        transients.push({
-          position: i * level.samplesPerPeak,
-          strength: Math.min(1, energyDelta / 0.5),
+        transients?.push({
+          position: i * level?.samplesPerPeak,
+          strength: Math?.min(1, energyDelta / 0.5),
         });
         lastTransientIdx = i;
       }
@@ -254,15 +254,15 @@ export class PeakCacheEngine {
   }
 
   invalidateCache(sourceId: string): void {
-    const entry = this.cache.get(sourceId);
+    const _entry = this?.cache.get(sourceId);
     if (entry) {
-      this.currentCacheBytes -= this.estimateEntrySize(entry);
-      this.cache.delete(sourceId);
+      this?.currentCacheBytes -= this?.estimateEntrySize(entry);
+      this?.cache.delete(sourceId);
     }
   }
 
   clearAll(): void {
-    this.cache.clear();
+    this?.cache.clear();
     this.currentCacheBytes = 0;
   }
 
@@ -273,36 +273,36 @@ export class PeakCacheEngine {
     utilizationPercent: number;
   } {
     return {
-      entries: this.cache.size,
-      totalBytes: this.currentCacheBytes,
-      maxBytes: this.maxCacheSize,
-      utilizationPercent: (this.currentCacheBytes / this.maxCacheSize) * 100,
+      entries: this?.cache.size,
+      totalBytes: this?.currentCacheBytes,
+      maxBytes: this?.maxCacheSize,
+      utilizationPercent: (this?.currentCacheBytes / this?.maxCacheSize) * 100,
     };
   }
 
   private estimateEntrySize(entry: PeakCacheEntry): number {
     let size = 0;
-    for (const [, level] of entry.levels) {
-      size += level.peaks.length * 24;
+    for (const [, level] of entry?.levels) {
+      size += level?.peaks.length * 24;
     }
-    if (entry.rawData) {
-      size += entry.rawData.byteLength;
+    if (entry?.rawData) {
+      size += entry?.rawData.byteLength;
     }
     return size;
   }
 
   private evictIfNeeded(newEntry: PeakCacheEntry): void {
-    const newSize = this.estimateEntrySize(newEntry);
+    const _newSize = this?.estimateEntrySize(newEntry);
 
     while (
-      this.currentCacheBytes + newSize > this.maxCacheSize &&
-      this.cache.size > 0
+      this?.currentCacheBytes + newSize > this?.maxCacheSize &&
+      this?.cache.size > 0
     ) {
       let oldestKey: string | null = null;
       let oldestTime = Infinity;
 
-      for (const [key, entry] of this.cache) {
-        const entryTime = entry.levels.get(0)?.timestamp || 0;
+      for (const [key, entry] of this?.cache) {
+        const _entryTime = entry?.levels.get(0)?.timestamp || 0;
         if (entryTime < oldestTime) {
           oldestTime = entryTime;
           oldestKey = key;
@@ -310,16 +310,16 @@ export class PeakCacheEngine {
       }
 
       if (oldestKey) {
-        const evicted = this.cache.get(oldestKey)!;
-        this.currentCacheBytes -= this.estimateEntrySize(evicted);
-        this.cache.delete(oldestKey);
+        const _evicted = this?.cache.get(oldestKey)!;
+        this?.currentCacheBytes -= this?.estimateEntrySize(evicted);
+        this?.cache.delete(oldestKey);
       } else {
         break;
       }
     }
 
-    this.currentCacheBytes += newSize;
+    this?.currentCacheBytes += newSize;
   }
 }
 
-export const peakCacheEngine = new PeakCacheEngine();
+export const _peakCacheEngine = new PeakCacheEngine();

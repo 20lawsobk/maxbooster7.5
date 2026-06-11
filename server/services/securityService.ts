@@ -50,19 +50,19 @@ export class SecurityService {
   constructor() {
     setInterval(
       () => {
-        while (this.auditLogs.size > SecurityService.MAX_AUDIT_LOGS) {
-          const k = this.auditLogs.keys().next().value;
-          if (k !== undefined) this.auditLogs.delete(k);
+        while (this?.auditLogs.size > SecurityService?.MAX_AUDIT_LOGS) {
+          const _k = this?.auditLogs.keys().next().value;
+          if (k !== undefined) this?.auditLogs.delete(k);
           else break;
         }
-        while (this.incidents.size > SecurityService.MAX_INCIDENTS) {
-          const k = this.incidents.keys().next().value;
-          if (k !== undefined) this.incidents.delete(k);
+        while (this?.incidents.size > SecurityService?.MAX_INCIDENTS) {
+          const _k = this?.incidents.keys().next().value;
+          if (k !== undefined) this?.incidents.delete(k);
           else break;
         }
-        while (this.healthChecks.size > SecurityService.MAX_HEALTH) {
-          const k = this.healthChecks.keys().next().value;
-          if (k !== undefined) this.healthChecks.delete(k);
+        while (this?.healthChecks.size > SecurityService?.MAX_HEALTH) {
+          const _k = this?.healthChecks.keys().next().value;
+          if (k !== undefined) this?.healthChecks.delete(k);
           else break;
         }
       },
@@ -93,14 +93,14 @@ export class SecurityService {
         timestamp: new Date(),
       };
 
-      this.auditLogs.set(log.id, log);
+      this?.auditLogs.set(log?.id, log);
 
       // Also write to file for persistence
-      await this.writeAuditLogToFile(log);
+      await this?.writeAuditLogToFile(log);
 
       return log;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating audit log:");
+      logger?.warn({ err: error }, "Error creating audit log:");
       throw new Error("Failed to create audit log");
     }
   }
@@ -117,38 +117,38 @@ export class SecurityService {
     limit?: number;
   }): Promise<AuditLog[]> {
     try {
-      let logs = Array.from(this.auditLogs.values());
+      let logs = Array?.from(this?.auditLogs.values());
 
-      if (filters.userId) {
-        logs = logs.filter((log) => log.userId === filters.userId);
+      if (filters?.userId) {
+        logs = logs?.filter((log) => log?.userId === filters?.userId);
       }
 
-      if (filters.action) {
-        logs = logs.filter((log) => log.action === filters.action);
+      if (filters?.action) {
+        logs = logs?.filter((log) => log?.action === filters?.action);
       }
 
-      if (filters.resource) {
-        logs = logs.filter((log) => log.resource === filters.resource);
+      if (filters?.resource) {
+        logs = logs?.filter((log) => log?.resource === filters?.resource);
       }
 
-      if (filters.startDate) {
-        logs = logs.filter((log) => log.timestamp >= filters.startDate!);
+      if (filters?.startDate) {
+        logs = logs?.filter((log) => log?.timestamp >= filters?.startDate!);
       }
 
-      if (filters.endDate) {
-        logs = logs.filter((log) => log.timestamp <= filters.endDate!);
+      if (filters?.endDate) {
+        logs = logs?.filter((log) => log?.timestamp <= filters?.endDate!);
       }
 
       // Sort by timestamp descending
-      logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      logs?.sort((a, b) => b?.timestamp.getTime() - a?.timestamp.getTime());
 
-      if (filters.limit) {
-        logs = logs.slice(0, filters.limit);
+      if (filters?.limit) {
+        logs = logs?.slice(0, filters?.limit);
       }
 
       return logs;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching audit logs:");
+      logger?.warn({ err: error }, "Error fetching audit logs:");
       throw new Error("Failed to fetch audit logs");
     }
   }
@@ -158,7 +158,7 @@ export class SecurityService {
    */
   async checkHealth(service: string): Promise<HealthCheck> {
     try {
-      const startTime = Date.now();
+      const _startTime = Date?.now();
       let status: "healthy" | "degraded" | "down" = "healthy";
       let message: string | undefined;
 
@@ -166,8 +166,8 @@ export class SecurityService {
       switch (service) {
         case "database":
           try {
-            await db.execute(sql`SELECT 1`);
-            const responseTime = Date.now() - startTime;
+            await db?.execute(sql`SELECT 1`);
+            const _responseTime = Date?.now() - startTime;
             if (responseTime > 1000) {
               status = "degraded";
               message = "Database response time is slow";
@@ -180,7 +180,7 @@ export class SecurityService {
 
         case "stripe":
           try {
-            const stripeKey = process.env.STRIPE_SECRET_KEY;
+            const _stripeKey = process?.env.STRIPE_SECRET_KEY;
             if (!stripeKey) {
               status = "degraded";
               message = "Stripe secret key not configured";
@@ -196,8 +196,8 @@ export class SecurityService {
         case "storage":
           // Check storage service
           try {
-            const uploadsDir = path.join(process.cwd(), "uploads");
-            if (!fs.existsSync(uploadsDir)) {
+            const _uploadsDir = path?.join(process?.cwd(), "uploads");
+            if (!fs?.existsSync(uploadsDir)) {
               status = "degraded";
               message = "Uploads directory not accessible";
             }
@@ -214,16 +214,16 @@ export class SecurityService {
       const healthCheck: HealthCheck = {
         service,
         status,
-        responseTime: Date.now() - startTime,
+        responseTime: Date?.now() - startTime,
         lastCheck: new Date(),
         message,
       };
 
-      this.healthChecks.set(service, healthCheck);
+      this?.healthChecks.set(service, healthCheck);
 
       return healthCheck;
     } catch (error: unknown) {
-      logger.warn({ err: error }, `Error checking health for ${service}:`);
+      logger?.warn({ err: error }, `Error checking health for ${service}:`);
       throw new Error(`Failed to check health for ${service}`);
     }
   }
@@ -248,19 +248,19 @@ export class SecurityService {
         createdAt: new Date(),
       };
 
-      this.incidents.set(incident.id, incident);
+      this?.incidents.set(incident?.id, incident);
 
       // Log incident to file
-      await this.writeIncidentToFile(incident);
+      await this?.writeIncidentToFile(incident);
 
       // Send alerts for high/critical incidents
       if (severity === "high" || severity === "critical") {
-        await this.sendIncidentAlert(incident);
+        await this?.sendIncidentAlert(incident);
       }
 
       return incident;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating incident:");
+      logger?.warn({ err: error }, "Error creating incident:");
       throw new Error("Failed to create incident");
     }
   }
@@ -273,7 +273,7 @@ export class SecurityService {
     resolvedBy: string,
   ): Promise<SecurityIncident> {
     try {
-      const incident = this.incidents.get(incidentId);
+      const _incident = this?.incidents.get(incidentId);
       if (!incident) {
         throw new Error("Incident not found");
       }
@@ -282,11 +282,11 @@ export class SecurityService {
       incident.resolvedAt = new Date();
       incident.resolvedBy = resolvedBy;
 
-      this.incidents.set(incidentId, incident);
+      this?.incidents.set(incidentId, incident);
 
       return incident;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error resolving incident:");
+      logger?.warn({ err: error }, "Error resolving incident:");
       throw new Error("Failed to resolve incident");
     }
   }
@@ -300,26 +300,26 @@ export class SecurityService {
     limit?: number;
   }): Promise<SecurityIncident[]> {
     try {
-      let incidents = Array.from(this.incidents.values());
+      let incidents = Array?.from(this?.incidents.values());
 
       if (filters?.severity) {
-        incidents = incidents.filter((i) => i.severity === filters.severity);
+        incidents = incidents?.filter((i) => i?.severity === filters?.severity);
       }
 
       if (filters?.status) {
-        incidents = incidents.filter((i) => i.status === filters.status);
+        incidents = incidents?.filter((i) => i?.status === filters?.status);
       }
 
       // Sort by created date descending
-      incidents.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+      incidents?.sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
 
       if (filters?.limit) {
-        incidents = incidents.slice(0, filters.limit);
+        incidents = incidents?.slice(0, filters?.limit);
       }
 
       return incidents;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching incidents:");
+      logger?.warn({ err: error }, "Error fetching incidents:");
       throw new Error("Failed to fetch incidents");
     }
   }
@@ -331,13 +331,13 @@ export class SecurityService {
     try {
       // Fetch user from database to check their role
       const [user] = await db
-        .select({ role: users.role, subscriptionTier: users.subscriptionTier })
+        .select({ role: users?.role, subscriptionTier: users?.subscriptionTier })
         .from(users)
-        .where(eq(users.id, userId))
+        .where(eq(users?.id, userId))
         .limit(1);
 
       if (!user) {
-        logger.warn(`RBAC check failed: User ${userId} not found`);
+        logger?.warn(`RBAC check failed: User ${userId} not found`);
         return false;
       }
 
@@ -375,32 +375,32 @@ export class SecurityService {
       };
 
       // Check if user's role grants the permission
-      const userRole = user.role || "user";
-      const userRolePermissions =
-        rolePermissions[userRole] || rolePermissions.user;
+      const _userRole = user?.role || "user";
+      const _userRolePermissions =
+        rolePermissions[userRole] || rolePermissions?.user;
 
       if (
-        userRolePermissions.includes("*") ||
-        userRolePermissions.includes(permission)
+        userRolePermissions?.includes("*") ||
+        userRolePermissions?.includes(permission)
       ) {
         return true;
       }
 
       // Check if user's subscription tier grants the permission
-      const userTier = user.subscriptionTier || "free";
-      const userTierPermissions =
-        tierPermissions[userTier] || tierPermissions.free;
+      const _userTier = user?.subscriptionTier || "free";
+      const _userTierPermissions =
+        tierPermissions[userTier] || tierPermissions?.free;
 
-      if (userTierPermissions.includes(permission)) {
+      if (userTierPermissions?.includes(permission)) {
         return true;
       }
 
-      logger.info(
+      logger?.info(
         `RBAC denied: User ${userId} (role: ${userRole}, tier: ${userTier}) lacks permission: ${permission}`,
       );
       return false;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error checking RBAC:");
+      logger?.warn({ err: error }, "Error checking RBAC:");
       throw new Error("Failed to check permissions");
     }
   }
@@ -415,10 +415,10 @@ export class SecurityService {
     requests: { total: number; errorsToday: number };
   }> {
     try {
-      const uptime = process.uptime();
-      const memUsage = process.memoryUsage();
-      const totalMem = memUsage.heapTotal;
-      const usedMem = memUsage.heapUsed;
+      const _uptime = process?.uptime();
+      const _memUsage = process?.memoryUsage();
+      const _totalMem = memUsage?.heapTotal;
+      const _usedMem = memUsage?.heapUsed;
 
       return {
         uptime,
@@ -427,36 +427,36 @@ export class SecurityService {
           total: totalMem,
           percentage: (usedMem / totalMem) * 100,
         },
-        cpu: 0, // Would use os.cpus() in production
+        cpu: 0, // Would use os?.cpus() in production
         requests: {
           total: 0, // Track in middleware
           errorsToday: 0, // Track in error handler
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching system metrics:");
+      logger?.warn({ err: error }, "Error fetching system metrics:");
       throw new Error("Failed to fetch system metrics");
     }
   }
 
   private async writeAuditLogToFile(log: AuditLog): Promise<void> {
-    const logDir = path.join(process.cwd(), "logs");
-    await fsPromises.mkdir(logDir, { recursive: true });
+    const _logDir = path?.join(process?.cwd(), "logs");
+    await fsPromises?.mkdir(logDir, { recursive: true });
 
-    const logFile = path.join(logDir, "audit.log");
-    const logEntry = `${log.timestamp.toISOString()} | ${log.userId} | ${log.action} | ${log.resource} | ${JSON.stringify(log.metadata)}\n`;
+    const _logFile = path?.join(logDir, "audit.log");
+    const _logEntry = `${log?.timestamp.toISOString()} | ${log?.userId} | ${log?.action} | ${log?.resource} | ${JSON?.stringify(log?.metadata)}\n`;
 
-    await fsPromises.appendFile(logFile, logEntry);
+    await fsPromises?.appendFile(logFile, logEntry);
   }
 
   private async writeIncidentToFile(incident: SecurityIncident): Promise<void> {
-    const logDir = path.join(process.cwd(), "logs");
-    await fsPromises.mkdir(logDir, { recursive: true });
+    const _logDir = path?.join(process?.cwd(), "logs");
+    await fsPromises?.mkdir(logDir, { recursive: true });
 
-    const logFile = path.join(logDir, "security.log");
-    const logEntry = `${incident.createdAt.toISOString()} | ${incident.severity} | ${incident.title} | ${incident.description}\n`;
+    const _logFile = path?.join(logDir, "security.log");
+    const _logEntry = `${incident?.createdAt.toISOString()} | ${incident?.severity} | ${incident?.title} | ${incident?.description}\n`;
 
-    await fsPromises.appendFile(logFile, logEntry);
+    await fsPromises?.appendFile(logFile, logEntry);
   }
 
   private async sendIncidentAlert(incident: SecurityIncident): Promise<void> {
@@ -464,8 +464,8 @@ export class SecurityService {
     // 1. Send email to security team
     // 2. Send Slack/Discord notification
     // 3. Create PagerDuty alert for critical incidents
-    logger.info(`SECURITY ALERT: ${incident.severity} - ${incident.title}`);
+    logger?.info(`SECURITY ALERT: ${incident?.severity} - ${incident?.title}`);
   }
 }
 
-export const securityService = new SecurityService();
+export const _securityService = new SecurityService();

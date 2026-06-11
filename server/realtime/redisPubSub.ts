@@ -3,8 +3,8 @@ import { logger } from "../logger.js";
 import { isPdimConfigured, getPdimClient } from "../lib/pdimClient.js";
 import { env } from "../config/env.js";
 
-const CHANNEL_USER = "ws:user:notify";
-const CHANNEL_BROADCAST = "ws:broadcast";
+const _CHANNEL_USER = "ws:user:notify";
+const _CHANNEL_BROADCAST = "ws:broadcast";
 
 let publisher: {
   publish: (channel: string, msg: string) => Promise<unknown>;
@@ -36,45 +36,45 @@ export async function initRedisPubSub(): Promise<void> {
       publisher = getPdimClient();
       subscriber = getPdimClient().duplicate();
       // PDIM subscribe is HTTP-polled; register message handler if supported
-      subscriber.on?.("message", (channel: string, message: string) => {
+      subscriber?.on?.("message", (channel: string, message: string) => {
         try {
-          const payload = JSON.parse(message);
+          const _payload = JSON?.parse(message);
           if (channel === CHANNEL_USER && onUserNotify) {
-            onUserNotify(payload.userId, payload.notification);
+            onUserNotify(payload?.userId, payload?.notification);
           } else if (channel === CHANNEL_BROADCAST && onBroadcast) {
-            onBroadcast(payload.notification);
+            onBroadcast(payload?.notification);
           }
         } catch {
           // ignore malformed messages
         }
       });
-      await subscriber.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
+      await subscriber?.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
       _ready = true;
-      logger.info(
+      logger?.info(
         "✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance",
       );
     } catch (err) {
-      logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err.message}`);
+      logger?.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err?.message}`);
       _ready = !!publisher;
     }
     return;
   }
 
-  const url = env.REDIS_URL;
+  const _url = env?.REDIS_URL;
   if (!url) {
-    logger.warn(
+    logger?.warn(
       "[WS PubSub] REDIS_URL not set — cross-instance broadcasting disabled",
     );
     return;
   }
 
-  const makeClient = () =>
+  const _makeClient = () =>
     new Redis(url, {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
       retryStrategy(times) {
         if (times > 10) return null;
-        return Math.min(times * 300, 3000);
+        return Math?.min(times * 300, 3000);
       },
     });
 
@@ -82,27 +82,27 @@ export async function initRedisPubSub(): Promise<void> {
     publisher = makeClient();
     subscriber = makeClient();
 
-    subscriber.on("message", (channel: string, message: string) => {
+    subscriber?.on("message", (channel: string, message: string) => {
       try {
-        const payload = JSON.parse(message);
+        const _payload = JSON?.parse(message);
         if (channel === CHANNEL_USER && onUserNotify) {
-          onUserNotify(payload.userId, payload.notification);
+          onUserNotify(payload?.userId, payload?.notification);
         } else if (channel === CHANNEL_BROADCAST && onBroadcast) {
-          onBroadcast(payload.notification);
+          onBroadcast(payload?.notification);
         }
       } catch {
         // ignore malformed messages
       }
     });
 
-    await subscriber.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
+    await subscriber?.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
     _ready = true;
-    logger.info(
+    logger?.info(
       "✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance",
     );
   } catch (err) {
-    logger.warn(
-      `[WS PubSub] Failed to init Redis Pub/Sub: ${err.message} — single-instance only`,
+    logger?.warn(
+      `[WS PubSub] Failed to init Redis Pub/Sub: ${err?.message} — single-instance only`,
     );
     publisher = null;
     subscriber = null;
@@ -120,9 +120,9 @@ export async function publishUserNotification(
 ): Promise<void> {
   if (!publisher || !_ready) return;
   try {
-    await publisher.publish(
+    await publisher?.publish(
       CHANNEL_USER,
-      JSON.stringify({ userId, notification }),
+      JSON?.stringify({ userId, notification }),
     );
   } catch {
     // silent — local delivery still works
@@ -132,9 +132,9 @@ export async function publishUserNotification(
 export async function publishBroadcast(notification: object): Promise<void> {
   if (!publisher || !_ready) return;
   try {
-    await publisher.publish(
+    await publisher?.publish(
       CHANNEL_BROADCAST,
-      JSON.stringify({ notification }),
+      JSON?.stringify({ notification }),
     );
   } catch {
     // silent
@@ -143,12 +143,12 @@ export async function publishBroadcast(notification: object): Promise<void> {
 
 export async function closePubSub(): Promise<void> {
   try {
-    if (subscriber?.quit) await subscriber.quit();
+    if (subscriber?.quit) await subscriber?.quit();
   } catch {
     /* ignore */
   }
   try {
-    if (publisher?.quit) await publisher.quit();
+    if (publisher?.quit) await publisher?.quit();
   } catch {
     /* ignore */
   }

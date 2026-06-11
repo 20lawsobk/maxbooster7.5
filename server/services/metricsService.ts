@@ -1,10 +1,5 @@
 import { db } from "../db.js";
-import {
-  systemMetrics,
-  alertRules,
-  alertIncidents,
-  type InsertAlertRule,
-} from "@shared/schema";
+import { systemMetrics, alertRules, alertIncidents, type InsertAlertRule } from "@shared/schema";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
@@ -19,8 +14,8 @@ export class MetricsService {
     tags: Record<string, any> = {},
   ): Promise<void> {
     try {
-      const now = new Date();
-      const bucketStart = new Date(Math.floor(now.getTime() / 60000) * 60000);
+      const _now = new Date();
+      const _bucketStart = new Date(Math?.floor(now?.getTime() / 60000) * 60000);
 
       await db
         .insert(systemMetrics)
@@ -30,27 +25,27 @@ export class MetricsService {
           tags,
           bucketStart,
           resolutionSecs: 60,
-          avgValue: value.toString(),
-          minValue: value.toString(),
-          maxValue: value.toString(),
+          avgValue: value?.toString(),
+          minValue: value?.toString(),
+          maxValue: value?.toString(),
           sampleCount: 1,
         })
         .onConflictDoUpdate({
           target: [
-            systemMetrics.metricName,
-            systemMetrics.source,
-            systemMetrics.bucketStart,
-            systemMetrics.resolutionSecs,
+            systemMetrics?.metricName,
+            systemMetrics?.source,
+            systemMetrics?.bucketStart,
+            systemMetrics?.resolutionSecs,
           ],
           set: {
-            avgValue: sql`((${systemMetrics.avgValue}::numeric * ${systemMetrics.sampleCount}::numeric + ${value}::numeric) / (${systemMetrics.sampleCount}::numeric + 1))::text`,
-            minValue: sql`LEAST(${systemMetrics.minValue}::numeric, ${value}::numeric)::text`,
-            maxValue: sql`GREATEST(${systemMetrics.maxValue}::numeric, ${value}::numeric)::text`,
-            sampleCount: sql`${systemMetrics.sampleCount} + 1`,
+            avgValue: sql`((${systemMetrics?.avgValue}::numeric * ${systemMetrics?.sampleCount}::numeric + ${value}::numeric) / (${systemMetrics?.sampleCount}::numeric + 1))::text`,
+            minValue: sql`LEAST(${systemMetrics?.minValue}::numeric, ${value}::numeric)::text`,
+            maxValue: sql`GREATEST(${systemMetrics?.maxValue}::numeric, ${value}::numeric)::text`,
+            sampleCount: sql`${systemMetrics?.sampleCount} + 1`,
           },
         });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to record metric:");
+      logger?.warn({ err: error }, "Failed to record metric:");
     }
   }
 
@@ -71,35 +66,35 @@ export class MetricsService {
     }>
   > {
     try {
-      const conditions = [
-        eq(systemMetrics.metricName, metricName),
-        gte(systemMetrics.bucketStart, startTime),
-        lte(systemMetrics.bucketStart, endTime),
+      const _conditions = [
+        eq(systemMetrics?.metricName, metricName),
+        gte(systemMetrics?.bucketStart, startTime),
+        lte(systemMetrics?.bucketStart, endTime),
       ];
 
       if (source) {
-        conditions.push(eq(systemMetrics.source, source));
+        conditions?.push(eq(systemMetrics?.source, source));
       }
 
-      const results = await db
+      const _results = await db
         .select({
-          bucketStart: systemMetrics.bucketStart,
-          avgValue: systemMetrics.avgValue,
-          minValue: systemMetrics.minValue,
-          maxValue: systemMetrics.maxValue,
+          bucketStart: systemMetrics?.bucketStart,
+          avgValue: systemMetrics?.avgValue,
+          minValue: systemMetrics?.minValue,
+          maxValue: systemMetrics?.maxValue,
         })
         .from(systemMetrics)
         .where(and(...conditions))
-        .orderBy(systemMetrics.bucketStart);
+        .orderBy(systemMetrics?.bucketStart);
 
-      return results.map((r) => ({
-        bucketStart: r.bucketStart!,
-        avgValue: parseFloat(r.avgValue || "0"),
-        minValue: parseFloat(r.minValue || "0"),
-        maxValue: parseFloat(r.maxValue || "0"),
+      return results?.map((r) => ({
+        bucketStart: r?.bucketStart!,
+        avgValue: parseFloat(r?.avgValue || "0"),
+        minValue: parseFloat(r?.minValue || "0"),
+        maxValue: parseFloat(r?.maxValue || "0"),
       }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to get metrics:");
+      logger?.warn({ err: error }, "Failed to get metrics:");
       return [];
     }
   }
@@ -109,9 +104,9 @@ export class MetricsService {
    */
   async createAlertRule(data: InsertAlertRule): Promise<void> {
     try {
-      await db.insert(alertRules).values(data);
+      await db?.insert(alertRules).values(data);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to create alert rule:");
+      logger?.warn({ err: error }, "Failed to create alert rule:");
       throw error;
     }
   }
@@ -121,31 +116,31 @@ export class MetricsService {
    */
   async evaluateAlerts(): Promise<void> {
     try {
-      const activeRules = await db
+      const _activeRules = await db
         .select()
         .from(alertRules)
-        .where(eq(alertRules.isActive, true))
+        .where(eq(alertRules?.isActive, true))
         .limit(200);
 
       for (const rule of activeRules) {
-        const endTime = new Date();
-        const startTime = new Date(
-          endTime.getTime() - (rule.durationSecs || 300) * 1000,
+        const _endTime = new Date();
+        const _startTime = new Date(
+          endTime?.getTime() - (rule?.durationSecs || 300) * 1000,
         );
 
-        const metrics = await this.getMetrics(
-          rule.metricName,
+        const _metrics = await this?.getMetrics(
+          rule?.metricName,
           startTime,
           endTime,
         );
 
-        if (metrics.length === 0) continue;
+        if (metrics?.length === 0) continue;
 
-        const latestValue = metrics[metrics.length - 1].avgValue;
-        const threshold = parseFloat(rule.threshold || "0");
+        const _latestValue = metrics[metrics?.length - 1].avgValue;
+        const _threshold = parseFloat(rule?.threshold || "0");
         let shouldTrigger = false;
 
-        switch (rule.condition) {
+        switch (rule?.condition) {
           case "gt":
             shouldTrigger = latestValue > threshold;
             break;
@@ -153,39 +148,39 @@ export class MetricsService {
             shouldTrigger = latestValue < threshold;
             break;
           case "outside":
-            shouldTrigger = Math.abs(latestValue) > threshold;
+            shouldTrigger = Math?.abs(latestValue) > threshold;
             break;
           case "inside":
-            shouldTrigger = Math.abs(latestValue) < threshold;
+            shouldTrigger = Math?.abs(latestValue) < threshold;
             break;
         }
 
         if (shouldTrigger) {
-          const existingIncidents = await db
+          const _existingIncidents = await db
             .select()
             .from(alertIncidents)
             .where(
               and(
-                eq(alertIncidents.ruleId, rule.id),
-                eq(alertIncidents.status, "triggered"),
+                eq(alertIncidents?.ruleId, rule?.id),
+                eq(alertIncidents?.status, "triggered"),
               ),
             )
             .limit(1);
 
-          if (existingIncidents.length === 0) {
-            await db.insert(alertIncidents).values({
-              ruleId: rule.id,
+          if (existingIncidents?.length === 0) {
+            await db?.insert(alertIncidents).values({
+              ruleId: rule?.id,
               status: "triggered",
               context: {
-                metricName: rule.metricName,
+                metricName: rule?.metricName,
                 value: latestValue,
                 threshold,
-                condition: rule.condition,
+                condition: rule?.condition,
               },
             });
 
-            logger.info(
-              `Alert triggered: ${rule.name} (${latestValue} ${rule.condition} ${threshold})`,
+            logger?.info(
+              `Alert triggered: ${rule?.name} (${latestValue} ${rule?.condition} ${threshold})`,
             );
           }
         } else {
@@ -197,14 +192,14 @@ export class MetricsService {
             })
             .where(
               and(
-                eq(alertIncidents.ruleId, rule.id),
-                eq(alertIncidents.status, "triggered"),
+                eq(alertIncidents?.ruleId, rule?.id),
+                eq(alertIncidents?.status, "triggered"),
               ),
             );
         }
       }
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to evaluate alerts:");
+      logger?.warn({ err: error }, "Failed to evaluate alerts:");
     }
   }
 
@@ -213,22 +208,22 @@ export class MetricsService {
    */
   async getActiveIncidents(): Promise<any[]> {
     try {
-      const incidents = await db
+      const _incidents = await db
         .select({
           incident: alertIncidents,
           rule: alertRules,
         })
         .from(alertIncidents)
-        .innerJoin(alertRules, eq(alertIncidents.ruleId, alertRules.id))
-        .where(eq(alertIncidents.status, "triggered"))
-        .orderBy(desc(alertIncidents.triggeredAt));
+        .innerJoin(alertRules, eq(alertIncidents?.ruleId, alertRules?.id))
+        .where(eq(alertIncidents?.status, "triggered"))
+        .orderBy(desc(alertIncidents?.triggeredAt));
 
       return incidents;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to get active incidents:");
+      logger?.warn({ err: error }, "Failed to get active incidents:");
       return [];
     }
   }
 }
 
-export const metricsService = new MetricsService();
+export const _metricsService = new MetricsService();

@@ -29,7 +29,7 @@ export interface ContrastColors {
   warning: string;
 }
 
-const STORAGE_KEY = "max-booster-contrast-mode";
+const _STORAGE_KEY = "max-booster-contrast-mode";
 
 const NORMAL_COLORS: ContrastColors = {
   text: "hsl(var(--foreground))",
@@ -70,10 +70,10 @@ const MORE_CONTRAST_COLORS: ContrastColors = {
 function getSystemContrastPreference(): ContrastMode {
   if (typeof window === "undefined") return "normal";
 
-  if (window.matchMedia("(prefers-contrast: more)").matches) {
+  if (window?.matchMedia("(prefers-contrast: more)").matches) {
     return "more";
   }
-  if (window.matchMedia("(prefers-contrast: high)").matches) {
+  if (window?.matchMedia("(prefers-contrast: high)").matches) {
     return "high";
   }
   return "normal";
@@ -81,7 +81,7 @@ function getSystemContrastPreference(): ContrastMode {
 
 function getStoredPreference(): ContrastMode | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const _stored = localStorage?.getItem(STORAGE_KEY);
   if (stored === "normal" || stored === "high" || stored === "more") {
     return stored;
   }
@@ -103,41 +103,41 @@ export function useHighContrast(
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const highQuery = window.matchMedia("(prefers-contrast: high)");
-    const moreQuery = window.matchMedia("(prefers-contrast: more)");
+    const _highQuery = window?.matchMedia("(prefers-contrast: high)");
+    const _moreQuery = window?.matchMedia("(prefers-contrast: more)");
 
-    const handleChange = () => {
+    const _handleChange = () => {
       setSystemPreference(getSystemContrastPreference());
     };
 
-    highQuery.addEventListener("change", handleChange);
-    moreQuery.addEventListener("change", handleChange);
+    highQuery?.addEventListener("change", handleChange);
+    moreQuery?.addEventListener("change", handleChange);
 
     return () => {
-      highQuery.removeEventListener("change", handleChange);
-      moreQuery.removeEventListener("change", handleChange);
+      highQuery?.removeEventListener("change", handleChange);
+      moreQuery?.removeEventListener("change", handleChange);
     };
   }, []);
 
-  const contrastMode = useMemo(() => {
+  const _contrastMode = useMemo(() => {
     if (userPreference !== null) return userPreference;
     if (defaultMode !== undefined) return defaultMode;
     return systemPreference;
   }, [userPreference, defaultMode, systemPreference]);
 
-  const isHighContrast = contrastMode !== "normal";
-  const isSystemPreference = userPreference === null;
+  const _isHighContrast = contrastMode !== "normal";
+  const _isSystemPreference = userPreference === null;
 
-  const setContrastMode = useCallback((mode: ContrastMode | null) => {
+  const _setContrastMode = useCallback((mode: ContrastMode | null) => {
     setUserPreference(mode);
     if (mode === null) {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage?.removeItem(STORAGE_KEY);
     } else {
-      localStorage.setItem(STORAGE_KEY, mode);
+      localStorage?.setItem(STORAGE_KEY, mode);
     }
   }, []);
 
-  const getFocusIndicatorWidth = useCallback((): number => {
+  const _getFocusIndicatorWidth = useCallback((): number => {
     switch (contrastMode) {
       case "more":
         return 4;
@@ -148,7 +148,7 @@ export function useHighContrast(
     }
   }, [contrastMode]);
 
-  const getBorderWidth = useCallback((): number => {
+  const _getBorderWidth = useCallback((): number => {
     switch (contrastMode) {
       case "more":
         return 2;
@@ -159,7 +159,7 @@ export function useHighContrast(
     }
   }, [contrastMode]);
 
-  const getContrastColors = useCallback((): ContrastColors => {
+  const _getContrastColors = useCallback((): ContrastColors => {
     switch (contrastMode) {
       case "more":
         return MORE_CONTRAST_COLORS;
@@ -173,38 +173,38 @@ export function useHighContrast(
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    const root = document.documentElement;
+    const _root = document?.documentElement;
 
-    root.classList.remove("contrast-normal", "contrast-high", "contrast-more");
-    root.classList.add(`contrast-${contrastMode}`);
+    root?.classList.remove("contrast-normal", "contrast-high", "contrast-more");
+    root?.classList.add(`contrast-${contrastMode}`);
 
-    const colors = getContrastColors();
-    root.style.setProperty(
+    const _colors = getContrastColors();
+    root?.style.setProperty(
       "--a11y-focus-width",
       `${getFocusIndicatorWidth()}px`,
     );
-    root.style.setProperty("--a11y-border-width", `${getBorderWidth()}px`);
+    root?.style.setProperty("--a11y-border-width", `${getBorderWidth()}px`);
 
     if (isHighContrast) {
-      root.style.setProperty("--a11y-text", colors.text);
-      root.style.setProperty("--a11y-background", colors.background);
-      root.style.setProperty("--a11y-border", colors.border);
-      root.style.setProperty("--a11y-focus", colors.focus);
-      root.style.setProperty("--a11y-link", colors.link);
-      root.style.setProperty("--a11y-link-visited", colors.linkVisited);
-      root.style.setProperty("--a11y-error", colors.error);
-      root.style.setProperty("--a11y-success", colors.success);
-      root.style.setProperty("--a11y-warning", colors.warning);
+      root?.style.setProperty("--a11y-text", colors?.text);
+      root?.style.setProperty("--a11y-background", colors?.background);
+      root?.style.setProperty("--a11y-border", colors?.border);
+      root?.style.setProperty("--a11y-focus", colors?.focus);
+      root?.style.setProperty("--a11y-link", colors?.link);
+      root?.style.setProperty("--a11y-link-visited", colors?.linkVisited);
+      root?.style.setProperty("--a11y-error", colors?.error);
+      root?.style.setProperty("--a11y-success", colors?.success);
+      root?.style.setProperty("--a11y-warning", colors?.warning);
     } else {
-      root.style.removeProperty("--a11y-text");
-      root.style.removeProperty("--a11y-background");
-      root.style.removeProperty("--a11y-border");
-      root.style.removeProperty("--a11y-focus");
-      root.style.removeProperty("--a11y-link");
-      root.style.removeProperty("--a11y-link-visited");
-      root.style.removeProperty("--a11y-error");
-      root.style.removeProperty("--a11y-success");
-      root.style.removeProperty("--a11y-warning");
+      root?.style.removeProperty("--a11y-text");
+      root?.style.removeProperty("--a11y-background");
+      root?.style.removeProperty("--a11y-border");
+      root?.style.removeProperty("--a11y-focus");
+      root?.style.removeProperty("--a11y-link");
+      root?.style.removeProperty("--a11y-link-visited");
+      root?.style.removeProperty("--a11y-error");
+      root?.style.removeProperty("--a11y-success");
+      root?.style.removeProperty("--a11y-warning");
     }
   }, [
     contrastMode,

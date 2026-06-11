@@ -23,21 +23,21 @@ interface FeatureUsageStats {
 }
 
 export function useFeatureUsageTracking() {
-  const queryClient = useQueryClient();
-  const currentSession = useRef<UsageSession | null>(null);
-  const sessionStartTime = useRef<number>(Date.now());
+  const _queryClient = useQueryClient();
+  const _currentSession = useRef<UsageSession | null>(null);
+  const _sessionStartTime = useRef<number>(Date?.now());
 
-  const trackFeatureMutation = useMutation({
+  const _trackFeatureMutation = useMutation({
     mutationFn: async (feature: string) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/personalization/track-feature",
         { feature },
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/personalization/behavior-analysis"],
       });
     },
@@ -48,128 +48,128 @@ export function useFeatureUsageTracking() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const trackFeature = useCallback(
+  const _trackFeature = useCallback(
     (feature: string) => {
       if (
-        currentSession.current &&
-        currentSession.current.feature !== feature
+        currentSession?.current &&
+        currentSession?.current.feature !== feature
       ) {
-        currentSession.current.endTime = Date.now();
-        currentSession.current.duration =
-          currentSession.current.endTime - currentSession.current.startTime;
+        currentSession?.current.endTime = Date?.now();
+        currentSession?.current.duration =
+          currentSession?.current.endTime - currentSession?.current.startTime;
       }
 
       currentSession.current = {
         feature,
-        startTime: Date.now(),
+        startTime: Date?.now(),
       };
 
-      trackFeatureMutation.mutate(feature);
+      trackFeatureMutation?.mutate(feature);
     },
     [trackFeatureMutation],
   );
 
-  const trackPageView = useCallback(
+  const _trackPageView = useCallback(
     (pageName: string) => {
       trackFeature(`page:${pageName}`);
     },
     [trackFeature],
   );
 
-  const trackAction = useCallback(
+  const _trackAction = useCallback(
     (actionName: string, _context?: Record<string, any>) => {
       trackFeature(`action:${actionName}`);
     },
     [trackFeature],
   );
 
-  const trackButtonClick = useCallback(
+  const _trackButtonClick = useCallback(
     (buttonId: string, _context?: Record<string, any>) => {
       trackFeature(`button:${buttonId}`);
     },
     [trackFeature],
   );
 
-  const trackFormSubmit = useCallback(
+  const _trackFormSubmit = useCallback(
     (formId: string, success: boolean) => {
       trackFeature(`form:${formId}:${success ? "success" : "failure"}`);
     },
     [trackFeature],
   );
 
-  const getFeatureUsageStats = useCallback((): FeatureUsageStats | null => {
+  const _getFeatureUsageStats = useCallback((): FeatureUsageStats | null => {
     if (!behaviorAnalysis) return null;
 
-    const analysis = behaviorAnalysis as Record<string, unknown>;
+    const _analysis = behaviorAnalysis as Record<string, unknown>;
     return {
-      mostUsedFeatures: analysis.mostUsedFeatures || [],
+      mostUsedFeatures: analysis?.mostUsedFeatures || [],
       recentFeatures:
-        analysis.mostUsedFeatures
+        analysis?.mostUsedFeatures
           ?.slice(0, 5)
-          .map((f: Record<string, unknown>) => f.feature) || [],
-      sessionDuration: Date.now() - sessionStartTime.current,
+          .map((f: Record<string, unknown>) => f?.feature) || [],
+      sessionDuration: Date?.now() - sessionStartTime?.current,
       featureTimeSpent: {},
     };
   }, [behaviorAnalysis]);
 
-  const isFrequentlyUsed = useCallback(
+  const _isFrequentlyUsed = useCallback(
     (feature: string): boolean => {
       if (!behaviorAnalysis) return false;
-      const analysis = behaviorAnalysis as Record<string, unknown>;
-      const featureData = analysis.mostUsedFeatures?.find(
-        (f: Record<string, unknown>) => f.feature === feature,
+      const _analysis = behaviorAnalysis as Record<string, unknown>;
+      const _featureData = analysis?.mostUsedFeatures?.find(
+        (f: Record<string, unknown>) => f?.feature === feature,
       );
-      return featureData ? featureData.count >= 5 : false;
+      return featureData ? featureData?.count >= 5 : false;
     },
     [behaviorAnalysis],
   );
 
-  const getFeatureUsageCount = useCallback(
+  const _getFeatureUsageCount = useCallback(
     (feature: string): number => {
       if (!behaviorAnalysis) return 0;
-      const analysis = behaviorAnalysis as Record<string, unknown>;
-      const featureData = analysis.mostUsedFeatures?.find(
-        (f: Record<string, unknown>) => f.feature === feature,
+      const _analysis = behaviorAnalysis as Record<string, unknown>;
+      const _featureData = analysis?.mostUsedFeatures?.find(
+        (f: Record<string, unknown>) => f?.feature === feature,
       );
       return featureData?.count || 0;
     },
     [behaviorAnalysis],
   );
 
-  const getTopFeatures = useCallback(
+  const _getTopFeatures = useCallback(
     (count: number = 5): string[] => {
       if (!behaviorAnalysis) return [];
-      const analysis = behaviorAnalysis as Record<string, unknown>;
-      return (analysis.mostUsedFeatures || [])
+      const _analysis = behaviorAnalysis as Record<string, unknown>;
+      return (analysis?.mostUsedFeatures || [])
         .slice(0, count)
-        .map((f: Record<string, unknown>) => f.feature);
+        .map((f: Record<string, unknown>) => f?.feature);
     },
     [behaviorAnalysis],
   );
 
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden && currentSession.current) {
-        currentSession.current.endTime = Date.now();
-        currentSession.current.duration =
-          currentSession.current.endTime - currentSession.current.startTime;
+    const _handleVisibilityChange = () => {
+      if (document?.hidden && currentSession?.current) {
+        currentSession?.current.endTime = Date?.now();
+        currentSession?.current.duration =
+          currentSession?.current.endTime - currentSession?.current.startTime;
       }
     };
 
-    const handleBeforeUnload = () => {
-      if (currentSession.current) {
-        currentSession.current.endTime = Date.now();
-        currentSession.current.duration =
-          currentSession.current.endTime - currentSession.current.startTime;
+    const _handleBeforeUnload = () => {
+      if (currentSession?.current) {
+        currentSession?.current.endTime = Date?.now();
+        currentSession?.current.duration =
+          currentSession?.current.endTime - currentSession?.current.startTime;
       }
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("beforeunload", handleBeforeUnload);
+    document?.addEventListener("visibilitychange", handleVisibilityChange);
+    window?.addEventListener("beforeunload", handleBeforeUnload);
 
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document?.removeEventListener("visibilitychange", handleVisibilityChange);
+      window?.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 
@@ -183,7 +183,7 @@ export function useFeatureUsageTracking() {
     isFrequentlyUsed,
     getFeatureUsageCount,
     getTopFeatures,
-    isTracking: trackFeatureMutation.isPending,
+    isTracking: trackFeatureMutation?.isPending,
   };
 }
 
@@ -198,7 +198,7 @@ export function usePageTracking(pageName: string) {
 export function useActionTracking() {
   const { trackAction, trackButtonClick } = useFeatureUsageTracking();
 
-  const withTracking = useCallback(
+  const _withTracking = useCallback(
     <T extends (...args: unknown[]) => any>(
       actionName: string,
       handler: T,

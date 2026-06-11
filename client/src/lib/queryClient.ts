@@ -3,7 +3,7 @@
  *
  * Central module for all HTTP communication between the React app and the
  * Express backend.  Exports a pre-configured QueryClient used by the
- * QueryClientProvider in App.tsx, plus helper functions.
+ * QueryClientProvider in App?.tsx, plus helper functions.
  *
  * Key exports:
  *   queryClient       — Singleton QueryClient (staleTime 5min, no window-focus refetch)
@@ -30,7 +30,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { errorService, captureException } from "./errorService";
 
-const DEFAULT_TIMEOUT_MS = 30000;
+const _DEFAULT_TIMEOUT_MS = 30000;
 
 // ── In-memory JWT session token store ────────────────────────────────────────
 // Stores the short-lived access token issued at login / refresh so it can be
@@ -84,31 +84,31 @@ export class ApiError extends Error {
   public readonly suggestions: string[];
 
   constructor(structured: StructuredApiError) {
-    super(structured.message);
+    super(structured?.message);
     this.name = "ApiError";
-    this.code = structured.code;
-    this.status = structured.status;
-    this.retryAfter = structured.retryAfter;
-    this.retryable = structured.retryable;
-    this.userMessage = structured.userMessage;
-    this.details = structured.details;
-    this.suggestions = structured.suggestions;
+    this.code = structured?.code;
+    this.status = structured?.status;
+    this.retryAfter = structured?.retryAfter;
+    this.retryable = structured?.retryable;
+    this.userMessage = structured?.userMessage;
+    this.details = structured?.details;
+    this.suggestions = structured?.suggestions;
   }
 
   static fromResponse(res: Response, body: string): ApiError {
-    const status = res.status;
+    const _status = res?.status;
     let parsed: Record<string, unknown> = {};
 
     try {
-      parsed = JSON.parse(body);
+      parsed = JSON?.parse(body);
     } catch {
-      parsed = { message: body || res.statusText };
+      parsed = { message: body || res?.statusText };
     }
 
-    const serverMessage = (parsed.error ||
-      parsed.message ||
+    const _serverMessage = (parsed?.error ||
+      parsed?.message ||
       body ||
-      res.statusText) as string;
+      res?.statusText) as string;
 
     switch (status) {
       case 401:
@@ -122,7 +122,7 @@ export class ApiError extends Error {
         });
 
       case 403: {
-        const isDemoBlock = (parsed as Record<string, unknown>).isDemo === true;
+        const _isDemoBlock = (parsed as Record<string, unknown>).isDemo === true;
         return new ApiError({
           code: "FORBIDDEN",
           message: serverMessage,
@@ -157,12 +157,12 @@ export class ApiError extends Error {
           userMessage: "Please check your input and try again.",
           status,
           retryable: false,
-          details: parsed.errors as Record<string, unknown> | undefined,
+          details: parsed?.errors as Record<string, unknown> | undefined,
           suggestions: ["Review the form for errors", "Check required fields"],
         });
 
       case 429:
-        const retryAfter = parseInt(res.headers.get("Retry-After") || "60", 10);
+        const _retryAfter = parseInt(res?.headers.get("Retry-After") || "60", 10);
         return new ApiError({
           code: "RATE_LIMITED",
           message: serverMessage,
@@ -258,16 +258,16 @@ export class ApiError extends Error {
 /** Read the CSRF token set by the server (httpOnly=false, same-origin cookie). */
 export function getCsrfTokenFromCookie(): string | null {
   try {
-    const match = document.cookie
+    const _match = document?.cookie
       .split("; ")
-      .find((row) => row.startsWith("csrf-token="));
-    return match ? decodeURIComponent(match.split("=")[1]) : null;
+      .find((row) => row?.startsWith("csrf-token="));
+    return match ? decodeURIComponent(match?.split("=")[1]) : null;
   } catch {
     return null;
   }
 }
 
-const CSRF_SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+const _CSRF_SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 
 let rateLimitState: {
   isRateLimited: boolean;
@@ -280,7 +280,7 @@ let rateLimitState: {
 };
 
 export function getRateLimitState() {
-  if (rateLimitState.resetTime && Date.now() > rateLimitState.resetTime) {
+  if (rateLimitState?.resetTime && Date?.now() > rateLimitState?.resetTime) {
     rateLimitState = {
       isRateLimited: false,
       retryAfter: null,
@@ -298,7 +298,7 @@ function setRateLimited(retryAfter: number) {
   rateLimitState = {
     isRateLimited: true,
     retryAfter,
-    resetTime: Date.now() + retryAfter * 1000,
+    resetTime: Date?.now() + retryAfter * 1000,
   };
 }
 
@@ -310,30 +310,30 @@ function createAbortControllerWithTimeout(
   cleanup: () => void;
   wasTimeout: () => boolean;
 } {
-  const controller = new AbortController();
+  const _controller = new AbortController();
   let timedOut = false;
 
-  const timeoutId = setTimeout(() => {
+  const _timeoutId = setTimeout(() => {
     timedOut = true;
-    controller.abort(new Error(`Request timeout after ${timeoutMs}ms`));
+    controller?.abort(new Error(`Request timeout after ${timeoutMs}ms`));
   }, timeoutMs);
 
-  const cleanup = () => {
+  const _cleanup = () => {
     clearTimeout(timeoutId);
   };
 
-  const wasTimeout = () => timedOut;
+  const _wasTimeout = () => timedOut;
 
   return { controller, cleanup, wasTimeout };
 }
 
 async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    const apiError = ApiError.fromResponse(res, text);
+  if (!res?.ok) {
+    const _text = (await res?.text()) || res?.statusText;
+    const _apiError = ApiError?.fromResponse(res, text);
 
-    if (apiError.code === "RATE_LIMITED" && apiError.retryAfter) {
-      setRateLimited(apiError.retryAfter);
+    if (apiError?.code === "RATE_LIMITED" && apiError?.retryAfter) {
+      setRateLimited(apiError?.retryAfter);
     }
 
     // Only report true server errors (5xx) to the error service.
@@ -341,14 +341,14 @@ async function throwIfResNotOk(res: Response) {
     // auth challenges) and are handled by each call site's own catch / onError.
     // Sending them to captureException triggers spurious "Info" toasts for
     // things like "Slug already taken" or "Unauthorized".
-    if (res.status >= 500) {
+    if (res?.status >= 500) {
       captureException(apiError, {
         action: "api-response-error",
         metadata: {
-          status: res.status,
-          url: res.url,
-          statusText: res.statusText,
-          errorCode: apiError.code,
+          status: res?.status,
+          url: res?.url,
+          statusText: res?.statusText,
+          errorCode: apiError?.code,
         },
       });
     }
@@ -368,14 +368,14 @@ export async function apiRequest(
     maxRetries?: number;
   },
 ): Promise<Response> {
-  const isFormData = data instanceof FormData;
-  const controllerWithCleanup = options?.signal
+  const _isFormData = data instanceof FormData;
+  const _controllerWithCleanup = options?.signal
     ? null
     : createAbortControllerWithTimeout(options?.timeout);
-  const signal = options?.signal || controllerWithCleanup?.controller.signal;
+  const _signal = options?.signal || controllerWithCleanup?.controller?.signal;
 
   try {
-    errorService.addBreadcrumb("api-request", {
+    errorService?.addBreadcrumb("api-request", {
       method,
       url,
       hasData: !!data,
@@ -389,23 +389,23 @@ export async function apiRequest(
 
     // Include the in-memory JWT session token as a Bearer fallback so the
     // server can authenticate the request even when PDIM session fetch fails.
-    const authToken = getAuthToken();
+    const _authToken = getAuthToken();
     if (authToken) {
       headers["Authorization"] = `Bearer ${authToken}`;
     }
 
     // Include the CSRF double-submit token for every state-mutating request
-    if (!CSRF_SAFE_METHODS.has(method.toUpperCase())) {
-      const csrfToken = getCsrfTokenFromCookie();
+    if (!CSRF_SAFE_METHODS?.has(method?.toUpperCase())) {
+      const _csrfToken = getCsrfTokenFromCookie();
       if (csrfToken) {
         headers["x-csrf-token"] = csrfToken;
       }
     }
 
-    const res = await fetch(url, {
+    const _res = await fetch(url, {
       method,
       headers,
-      body: isFormData ? data : data ? JSON.stringify(data) : undefined,
+      body: isFormData ? data : data ? JSON?.stringify(data) : undefined,
       credentials: "include",
       signal,
     });
@@ -420,9 +420,9 @@ export async function apiRequest(
       throw error;
     }
 
-    const err = error as Error;
+    const _err = error as Error;
     if (err?.name === "AbortError" || err?.message?.includes("timeout")) {
-      const timeoutError = ApiError.timeoutError(
+      const _timeoutError = ApiError?.timeoutError(
         url,
         options?.timeout || DEFAULT_TIMEOUT_MS,
       );
@@ -438,7 +438,7 @@ export async function apiRequest(
       err?.message?.includes("fetch") ||
       err?.name === "TypeError"
     ) {
-      const networkError = ApiError.networkError(url);
+      const _networkError = ApiError?.networkError(url);
       captureException(networkError, {
         action: "api-network-error",
         metadata: { method, url },
@@ -462,69 +462,69 @@ export async function uploadWithProgress(
     timeout?: number;
   },
 ): Promise<unknown> {
-  const timeoutMs = options?.timeout || 300000;
+  const _timeoutMs = options?.timeout || 300000;
 
-  errorService.addBreadcrumb("upload-request", {
+  errorService?.addBreadcrumb("upload-request", {
     url,
     hasData: true,
   });
 
   return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url);
+    const _xhr = new XMLHttpRequest();
+    xhr?.open("POST", url);
     xhr.withCredentials = true;
     xhr.timeout = timeoutMs;
 
     // Include the CSRF double-submit token (POST is a mutating method)
-    const csrfToken = getCsrfTokenFromCookie();
+    const _csrfToken = getCsrfTokenFromCookie();
     if (csrfToken) {
-      xhr.setRequestHeader("x-csrf-token", csrfToken);
+      xhr?.setRequestHeader("x-csrf-token", csrfToken);
     }
 
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable && options?.onProgress) {
-        const percentComplete = Math.round((event.loaded / event.total) * 100);
-        options.onProgress(percentComplete);
+    xhr?.upload.addEventListener("progress", (event) => {
+      if (event?.lengthComputable && options?.onProgress) {
+        const _percentComplete = Math?.round((event?.loaded / event?.total) * 100);
+        options?.onProgress(percentComplete);
       }
     });
 
-    xhr.addEventListener("load", () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
+    xhr?.addEventListener("load", () => {
+      if (xhr?.status >= 200 && xhr?.status < 300) {
         try {
-          resolve(JSON.parse(xhr.responseText));
+          resolve(JSON?.parse(xhr?.responseText));
         } catch {
           resolve({ success: true });
         }
       } else {
-        let errorMessage = `Upload failed with status ${xhr.status}`;
+        let errorMessage = `Upload failed with status ${xhr?.status}`;
 
-        if (xhr.status === 401) {
+        if (xhr?.status === 401) {
           errorMessage = "Please log in to upload files";
-        } else if (xhr.status === 403) {
+        } else if (xhr?.status === 403) {
           errorMessage = "You do not have permission to upload files";
         } else {
           try {
-            const errorData = JSON.parse(xhr.responseText);
-            errorMessage = errorData.error || errorData.message || errorMessage;
+            const _errorData = JSON?.parse(xhr?.responseText);
+            errorMessage = errorData?.error || errorData?.message || errorMessage;
           } catch {
             // Use default error message
           }
         }
 
-        const error = new Error(errorMessage);
+        const _error = new Error(errorMessage);
         // Only report true server errors (5xx) — 4xx are expected business responses
-        if (xhr.status >= 500) {
+        if (xhr?.status >= 500) {
           captureException(error, {
             action: "upload-response-error",
-            metadata: { status: xhr.status, url },
+            metadata: { status: xhr?.status, url },
           });
         }
         reject(error);
       }
     });
 
-    xhr.addEventListener("error", () => {
-      const error = new Error(
+    xhr?.addEventListener("error", () => {
+      const _error = new Error(
         "Network error during upload. Please check your connection.",
       );
       captureException(error, {
@@ -534,8 +534,8 @@ export async function uploadWithProgress(
       reject(error);
     });
 
-    xhr.addEventListener("timeout", () => {
-      const error = new Error(
+    xhr?.addEventListener("timeout", () => {
+      const _error = new Error(
         "Upload timed out. Try a smaller file or check your connection.",
       );
       captureException(error, {
@@ -545,12 +545,12 @@ export async function uploadWithProgress(
       reject(error);
     });
 
-    xhr.addEventListener("abort", () => {
-      const error = new Error("Upload was cancelled");
+    xhr?.addEventListener("abort", () => {
+      const _error = new Error("Upload was cancelled");
       reject(error);
     });
 
-    xhr.send(data);
+    xhr?.send(data);
   });
 }
 
@@ -563,19 +563,19 @@ function buildUrlFromQueryKey(queryKey: readonly unknown[]): string {
 
   for (const part of queryKey) {
     if (typeof part === "string") {
-      urlParts.push(part);
-    } else if (part && typeof part === "object" && !Array.isArray(part)) {
+      urlParts?.push(part);
+    } else if (part && typeof part === "object" && !Array?.isArray(part)) {
       // Object - convert to query parameters
-      for (const [key, value] of Object.entries(part)) {
+      for (const [key, value] of Object?.entries(part)) {
         if (value !== undefined && value !== null) {
-          queryParams.append(key, String(value));
+          queryParams?.append(key, String(value));
         }
       }
     }
   }
 
-  const baseUrl = urlParts.join("/");
-  const queryString = queryParams.toString();
+  const _baseUrl = urlParts?.join("/");
+  const _queryString = queryParams?.toString();
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
@@ -584,42 +584,42 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey, signal }) => {
-    const controllerWithCleanup = signal
+    const _controllerWithCleanup = signal
       ? null
       : createAbortControllerWithTimeout();
-    const abortSignal = signal || controllerWithCleanup?.controller.signal;
+    const _abortSignal = signal || controllerWithCleanup?.controller?.signal;
 
     try {
-      const url = buildUrlFromQueryKey(queryKey);
+      const _url = buildUrlFromQueryKey(queryKey);
 
-      errorService.addBreadcrumb("query-fetch", {
+      errorService?.addBreadcrumb("query-fetch", {
         queryKey: url,
       });
 
-      const res = await fetch(url, {
+      const _res = await fetch(url, {
         credentials: "include",
         signal: abortSignal,
       });
 
       controllerWithCleanup?.cleanup();
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+      if (unauthorizedBehavior === "returnNull" && res?.status === 401) {
         return null;
       }
 
       await throwIfResNotOk(res);
-      return await res.json();
+      return await res?.json();
     } catch (error: unknown) {
       controllerWithCleanup?.cleanup();
-      const url = buildUrlFromQueryKey(queryKey);
-      const err = error as Error;
+      const _url = buildUrlFromQueryKey(queryKey);
+      const _err = error as Error;
 
       // Check if this was an AbortError
       if (err?.name === "AbortError") {
         // Only treat as timeout if our timeout actually fired
         // Otherwise this is a normal React Query cancellation (component unmount, refetch, etc.)
         if (controllerWithCleanup?.wasTimeout()) {
-          const timeoutError = new Error(`Query ${url} timed out`);
+          const _timeoutError = new Error(`Query ${url} timed out`);
           captureException(timeoutError, {
             action: "query-timeout",
             metadata: { queryKey: url },
@@ -632,7 +632,7 @@ export const getQueryFn: <T>(options: {
 
       // Handle explicit timeout message in error
       if (err?.message?.includes("timeout")) {
-        const timeoutError = new Error(`Query ${url} timed out`);
+        const _timeoutError = new Error(`Query ${url} timed out`);
         captureException(timeoutError, {
           action: "query-timeout",
           metadata: { queryKey: url },
@@ -643,7 +643,7 @@ export const getQueryFn: <T>(options: {
       // ApiErrors (4xx / 5xx HTTP responses) have already been processed by
       // throwIfResNotOk — 5xx ones were captured there; 4xx ones are expected
       // business logic (auth challenges, validation, conflicts) and are handled
-      // by each query's own onError / queryCache.onError.  Re-capturing them
+      // by each query's own onError / queryCache?.onError.  Re-capturing them
       // here would fire a spurious "Info" toast for every failed query.
       if (!(error instanceof ApiError)) {
         captureException(error, {
@@ -660,25 +660,25 @@ export const getQueryFn: <T>(options: {
 
 // Determine if error is retryable
 
-export const queryClient = new QueryClient({
+export const _queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: Error, query) => {
-      if ((query.meta as { silentError?: boolean } | undefined)?.silentError)
+      if ((query?.meta as { silentError?: boolean } | undefined)?.silentError)
         return;
-      const apiError = error as ApiError & {
+      const _apiError = error as ApiError & {
         userMessage?: string;
         status?: number;
       };
-      if (apiError.status === 401 || apiError.status === 403) return;
+      if (apiError?.status === 401 || apiError?.status === 403) return;
       // Suppress toast for background refetch failures — the query already has
       // stale data displayed and re-showing a red banner while the user is
       // typing/pasting is disruptive and misleading.  Only surface the error
-      // when there is NO prior successful data (i.e. initial load failed).
-      const hasExistingData = query.state.dataUpdatedAt > 0;
+      // when there is NO prior successful data (i?.e. initial load failed).
+      const _hasExistingData = query?.state.dataUpdatedAt > 0;
       if (hasExistingData) return;
-      const message =
-        apiError.userMessage ||
-        error.message ||
+      const _message =
+        apiError?.userMessage ||
+        error?.message ||
         "Failed to load data. Please refresh or try again.";
       toast({
         title: "Data Load Error",
@@ -689,19 +689,19 @@ export const queryClient = new QueryClient({
   }),
   mutationCache: new MutationCache({
     onError: (error: Error, _variables, _context, mutation) => {
-      if (mutation.options.onError) return;
-      const apiError = error as ApiError & { userMessage?: string };
-      const mutationKey = mutation.options.mutationKey;
-      console.warn("[MutationCache] Unhandled mutation error:", {
-        status: apiError.status,
-        code: apiError.code,
-        message: error.message,
-        userMessage: apiError.userMessage,
+      if (mutation?.options.onError) return;
+      const _apiError = error as ApiError & { userMessage?: string };
+      const _mutationKey = mutation?.options.mutationKey;
+      console?.warn("[MutationCache] Unhandled mutation error:", {
+        status: apiError?.status,
+        code: apiError?.code,
+        message: error?.message,
+        userMessage: apiError?.userMessage,
         mutationKey,
       });
-      const message =
-        apiError.userMessage ||
-        error.message ||
+      const _message =
+        apiError?.userMessage ||
+        error?.message ||
         "Something went wrong. Please try again.";
       toast({
         title: "Error",

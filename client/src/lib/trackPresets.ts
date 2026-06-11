@@ -80,7 +80,7 @@ export interface PresetUndoState {
   appliedAt: Date;
 }
 
-const PRESET_COLORS = {
+const _PRESET_COLORS = {
   vocals: "#4ade80",
   drums: "#f87171",
   bass: "#60a5fa",
@@ -97,16 +97,16 @@ export const CATEGORY_INFO: Record<
   PresetCategory,
   { name: string; icon: string; color: string }
 > = {
-  vocals: { name: "Vocals", icon: "Mic", color: PRESET_COLORS.vocals },
-  drums: { name: "Drums", icon: "Drum", color: PRESET_COLORS.drums },
-  bass: { name: "Bass", icon: "Speaker", color: PRESET_COLORS.bass },
-  guitar: { name: "Guitar", icon: "Guitar", color: PRESET_COLORS.guitar },
-  synth: { name: "Synth", icon: "Waves", color: PRESET_COLORS.synth },
-  keys: { name: "Keys", icon: "Piano", color: PRESET_COLORS.keys },
-  strings: { name: "Strings", icon: "Music", color: PRESET_COLORS.strings },
-  fx: { name: "FX", icon: "Sparkles", color: PRESET_COLORS.fx },
-  bus: { name: "Bus", icon: "Layers", color: PRESET_COLORS.bus },
-  custom: { name: "Custom", icon: "Settings", color: PRESET_COLORS.custom },
+  vocals: { name: "Vocals", icon: "Mic", color: PRESET_COLORS?.vocals },
+  drums: { name: "Drums", icon: "Drum", color: PRESET_COLORS?.drums },
+  bass: { name: "Bass", icon: "Speaker", color: PRESET_COLORS?.bass },
+  guitar: { name: "Guitar", icon: "Guitar", color: PRESET_COLORS?.guitar },
+  synth: { name: "Synth", icon: "Waves", color: PRESET_COLORS?.synth },
+  keys: { name: "Keys", icon: "Piano", color: PRESET_COLORS?.keys },
+  strings: { name: "Strings", icon: "Music", color: PRESET_COLORS?.strings },
+  fx: { name: "FX", icon: "Sparkles", color: PRESET_COLORS?.fx },
+  bus: { name: "Bus", icon: "Layers", color: PRESET_COLORS?.bus },
+  custom: { name: "Custom", icon: "Settings", color: PRESET_COLORS?.custom },
 };
 
 export const FACTORY_PRESETS: TrackPreset[] = [
@@ -117,11 +117,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
       "Professional lead vocal chain with compression, EQ, and de-esser for clear, present vocals.",
     category: "vocals",
     icon: "Mic",
-    color: PRESET_COLORS.vocals,
+    color: PRESET_COLORS?.vocals,
     data: {
       name: "Lead Vocal",
       trackType: "audio",
-      color: PRESET_COLORS.vocals,
+      color: PRESET_COLORS?.vocals,
       volume: 0.75,
       pan: 0,
       mute: false,
@@ -188,11 +188,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
       "Backing vocal preset with tighter compression and scooped mids for sitting behind lead.",
     category: "vocals",
     icon: "Mic",
-    color: PRESET_COLORS.vocals,
+    color: PRESET_COLORS?.vocals,
     data: {
       name: "Backing Vocal",
       trackType: "audio",
-      color: PRESET_COLORS.vocals,
+      color: PRESET_COLORS?.vocals,
       volume: 0.6,
       pan: 0,
       mute: false,
@@ -247,11 +247,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Wide stereo vocal double with chorus effect for thickness.",
     category: "vocals",
     icon: "Mic",
-    color: PRESET_COLORS.vocals,
+    color: PRESET_COLORS?.vocals,
     data: {
       name: "Vocal Double",
       trackType: "audio",
-      color: PRESET_COLORS.vocals,
+      color: PRESET_COLORS?.vocals,
       volume: 0.55,
       pan: 0.4,
       mute: false,
@@ -302,11 +302,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Punchy kick drum with sub boost and attack enhancement.",
     category: "drums",
     icon: "Drum",
-    color: PRESET_COLORS.drums,
+    color: PRESET_COLORS?.drums,
     data: {
       name: "Kick",
       trackType: "audio",
-      color: PRESET_COLORS.drums,
+      color: PRESET_COLORS?.drums,
       volume: 0.85,
       pan: 0,
       mute: false,
@@ -362,11 +362,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Crisp snare with body and crack balanced perfectly.",
     category: "drums",
     icon: "Drum",
-    color: PRESET_COLORS.drums,
+    color: PRESET_COLORS?.drums,
     data: {
       name: "Snare",
       trackType: "audio",
-      color: PRESET_COLORS.drums,
+      color: PRESET_COLORS?.drums,
       volume: 0.8,
       pan: 0,
       mute: false,
@@ -429,11 +429,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
       "Clean hi-hat channel with high-pass filter and subtle compression.",
     category: "drums",
     icon: "Drum",
-    color: PRESET_COLORS.drums,
+    color: PRESET_COLORS?.drums,
     data: {
       name: "Hi-Hats",
       trackType: "audio",
-      color: PRESET_COLORS.drums,
+      color: PRESET_COLORS?.drums,
       volume: 0.65,
       pan: 0.15,
       mute: false,
@@ -481,11 +481,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
       "Drum overhead preset with wide stereo image and room character.",
     category: "drums",
     icon: "Drum",
-    color: PRESET_COLORS.drums,
+    color: PRESET_COLORS?.drums,
     data: {
       name: "Overheads",
       trackType: "audio",
-      color: PRESET_COLORS.drums,
+      color: PRESET_COLORS?.drums,
       volume: 0.7,
       pan: 0,
       mute: false,
@@ -527,11 +527,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Full-bodied electric bass with warmth and definition.",
     category: "bass",
     icon: "Speaker",
-    color: PRESET_COLORS.bass,
+    color: PRESET_COLORS?.bass,
     data: {
       name: "Bass",
       trackType: "audio",
-      color: PRESET_COLORS.bass,
+      color: PRESET_COLORS?.bass,
       volume: 0.85,
       pan: 0,
       mute: false,
@@ -587,11 +587,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
       "Deep 808 sub bass with saturation for presence on smaller speakers.",
     category: "bass",
     icon: "Speaker",
-    color: PRESET_COLORS.bass,
+    color: PRESET_COLORS?.bass,
     data: {
       name: "808",
       trackType: "instrument",
-      color: PRESET_COLORS.bass,
+      color: PRESET_COLORS?.bass,
       volume: 0.9,
       pan: 0,
       mute: false,
@@ -640,11 +640,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Natural acoustic guitar with warmth and sparkle.",
     category: "guitar",
     icon: "Guitar",
-    color: PRESET_COLORS.guitar,
+    color: PRESET_COLORS?.guitar,
     data: {
       name: "Acoustic Guitar",
       trackType: "audio",
-      color: PRESET_COLORS.guitar,
+      color: PRESET_COLORS?.guitar,
       volume: 0.7,
       pan: -0.2,
       mute: false,
@@ -699,11 +699,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Crystal clean electric guitar with subtle chorus.",
     category: "guitar",
     icon: "Guitar",
-    color: PRESET_COLORS.guitar,
+    color: PRESET_COLORS?.guitar,
     data: {
       name: "Clean Guitar",
       trackType: "audio",
-      color: PRESET_COLORS.guitar,
+      color: PRESET_COLORS?.guitar,
       volume: 0.7,
       pan: 0.3,
       mute: false,
@@ -755,11 +755,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Heavy distorted guitar with presence and clarity.",
     category: "guitar",
     icon: "Guitar",
-    color: PRESET_COLORS.guitar,
+    color: PRESET_COLORS?.guitar,
     data: {
       name: "Distorted Guitar",
       trackType: "audio",
-      color: PRESET_COLORS.guitar,
+      color: PRESET_COLORS?.guitar,
       volume: 0.75,
       pan: -0.4,
       mute: false,
@@ -807,11 +807,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Cutting synth lead with delay and reverb space.",
     category: "synth",
     icon: "Waves",
-    color: PRESET_COLORS.synth,
+    color: PRESET_COLORS?.synth,
     data: {
       name: "Synth Lead",
       trackType: "instrument",
-      color: PRESET_COLORS.synth,
+      color: PRESET_COLORS?.synth,
       volume: 0.7,
       pan: 0,
       mute: false,
@@ -856,11 +856,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Lush synth pad with chorus and ambient reverb.",
     category: "synth",
     icon: "Waves",
-    color: PRESET_COLORS.synth,
+    color: PRESET_COLORS?.synth,
     data: {
       name: "Synth Pad",
       trackType: "instrument",
-      color: PRESET_COLORS.synth,
+      color: PRESET_COLORS?.synth,
       volume: 0.55,
       pan: 0,
       mute: false,
@@ -909,11 +909,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Punchy synth bass with warmth and presence.",
     category: "synth",
     icon: "Waves",
-    color: PRESET_COLORS.synth,
+    color: PRESET_COLORS?.synth,
     data: {
       name: "Synth Bass",
       trackType: "instrument",
-      color: PRESET_COLORS.synth,
+      color: PRESET_COLORS?.synth,
       volume: 0.8,
       pan: 0,
       mute: false,
@@ -962,11 +962,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Natural piano sound with subtle room ambience.",
     category: "keys",
     icon: "Piano",
-    color: PRESET_COLORS.keys,
+    color: PRESET_COLORS?.keys,
     data: {
       name: "Piano",
       trackType: "instrument",
-      color: PRESET_COLORS.keys,
+      color: PRESET_COLORS?.keys,
       volume: 0.7,
       pan: 0,
       mute: false,
@@ -1010,11 +1010,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Vintage electric piano with warmth and chorusing.",
     category: "keys",
     icon: "Piano",
-    color: PRESET_COLORS.keys,
+    color: PRESET_COLORS?.keys,
     data: {
       name: "Electric Piano",
       trackType: "instrument",
-      color: PRESET_COLORS.keys,
+      color: PRESET_COLORS?.keys,
       volume: 0.65,
       pan: 0.1,
       mute: false,
@@ -1070,11 +1070,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Lush string section with natural room sound.",
     category: "strings",
     icon: "Music",
-    color: PRESET_COLORS.strings,
+    color: PRESET_COLORS?.strings,
     data: {
       name: "Strings",
       trackType: "instrument",
-      color: PRESET_COLORS.strings,
+      color: PRESET_COLORS?.strings,
       volume: 0.6,
       pan: 0,
       mute: false,
@@ -1111,11 +1111,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Professional drum bus with glue compression and saturation.",
     category: "bus",
     icon: "Layers",
-    color: PRESET_COLORS.bus,
+    color: PRESET_COLORS?.bus,
     data: {
       name: "Drum Bus",
       trackType: "audio",
-      color: PRESET_COLORS.bus,
+      color: PRESET_COLORS?.bus,
       volume: 0.85,
       pan: 0,
       mute: false,
@@ -1165,11 +1165,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Vocal bus with subtle compression and reverb send.",
     category: "bus",
     icon: "Layers",
-    color: PRESET_COLORS.bus,
+    color: PRESET_COLORS?.bus,
     data: {
       name: "Vocal Bus",
       trackType: "audio",
-      color: PRESET_COLORS.bus,
+      color: PRESET_COLORS?.bus,
       volume: 0.8,
       pan: 0,
       mute: false,
@@ -1219,11 +1219,11 @@ export const FACTORY_PRESETS: TrackPreset[] = [
     description: "Dramatic riser effect with filter and reverb.",
     category: "fx",
     icon: "Sparkles",
-    color: PRESET_COLORS.fx,
+    color: PRESET_COLORS?.fx,
     data: {
       name: "FX Riser",
       trackType: "audio",
-      color: PRESET_COLORS.fx,
+      color: PRESET_COLORS?.fx,
       volume: 0.6,
       pan: 0,
       mute: false,
@@ -1257,23 +1257,23 @@ export const FACTORY_PRESETS: TrackPreset[] = [
   },
 ];
 
-const LOCAL_STORAGE_KEY = "max-booster-track-presets";
-const UNDO_HISTORY_KEY = "max-booster-preset-undo-history";
+const _LOCAL_STORAGE_KEY = "max-booster-track-presets";
+const _UNDO_HISTORY_KEY = "max-booster-preset-undo-history";
 
 export function getAllPresets(): TrackPreset[] {
-  const userPresets = getUserPresets();
+  const _userPresets = getUserPresets();
   return [...FACTORY_PRESETS, ...userPresets];
 }
 
 export function getUserPresets(): TrackPreset[] {
   try {
-    const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
+    const _stored = localStorage?.getItem(LOCAL_STORAGE_KEY);
     if (!stored) return [];
-    const parsed = JSON.parse(stored);
-    return parsed.map((p: TrackPreset) => ({
+    const _parsed = JSON?.parse(stored);
+    return parsed?.map((p: TrackPreset) => ({
       ...p,
-      createdAt: new Date(p.createdAt),
-      updatedAt: new Date(p.updatedAt),
+      createdAt: new Date(p?.createdAt),
+      updatedAt: new Date(p?.updatedAt),
     }));
   } catch {
     return [];
@@ -1286,17 +1286,17 @@ export function saveUserPreset(
     "id" | "createdAt" | "updatedAt" | "isFactory" | "isUserPreset"
   >,
 ): TrackPreset {
-  const userPresets = getUserPresets();
+  const _userPresets = getUserPresets();
   const newPreset: TrackPreset = {
     ...preset,
-    id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id: `user-${Date?.now()}-${Math?.random().toString(36).slice(2, 9)}`,
     isFactory: false,
     isUserPreset: true,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  userPresets.push(newPreset);
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userPresets));
+  userPresets?.push(newPreset);
+  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(userPresets));
   return newPreset;
 }
 
@@ -1304,43 +1304,43 @@ export function updateUserPreset(
   presetId: string,
   updates: Partial<TrackPreset>,
 ): TrackPreset | null {
-  const userPresets = getUserPresets();
-  const index = userPresets.findIndex((p) => p.id === presetId);
+  const _userPresets = getUserPresets();
+  const _index = userPresets?.findIndex((p) => p?.id === presetId);
   if (index === -1) return null;
 
-  const updatedPreset = {
+  const _updatedPreset = {
     ...userPresets[index],
     ...updates,
     updatedAt: new Date(),
   };
   userPresets[index] = updatedPreset;
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userPresets));
+  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(userPresets));
   return updatedPreset;
 }
 
 export function deleteUserPreset(presetId: string): boolean {
-  const userPresets = getUserPresets();
-  const filtered = userPresets.filter((p) => p.id !== presetId);
-  if (filtered.length === userPresets.length) return false;
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtered));
+  const _userPresets = getUserPresets();
+  const _filtered = userPresets?.filter((p) => p?.id !== presetId);
+  if (filtered?.length === userPresets?.length) return false;
+  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(filtered));
   return true;
 }
 
 export function getPresetById(presetId: string): TrackPreset | undefined {
-  return getAllPresets().find((p) => p.id === presetId);
+  return getAllPresets().find((p) => p?.id === presetId);
 }
 
 export function getPresetsByCategory(category: PresetCategory): TrackPreset[] {
-  return getAllPresets().filter((p) => p.category === category);
+  return getAllPresets().filter((p) => p?.category === category);
 }
 
 export function searchPresets(query: string): TrackPreset[] {
-  const lowerQuery = query.toLowerCase();
+  const _lowerQuery = query?.toLowerCase();
   return getAllPresets().filter(
     (p) =>
-      p.name.toLowerCase().includes(lowerQuery) ||
-      p.description.toLowerCase().includes(lowerQuery) ||
-      p.tags.some((t) => t.toLowerCase().includes(lowerQuery)),
+      p?.name.toLowerCase().includes(lowerQuery) ||
+      p?.description.toLowerCase().includes(lowerQuery) ||
+      p?.tags.some((t) => t?.toLowerCase().includes(lowerQuery)),
   );
 }
 
@@ -1353,26 +1353,26 @@ export function filterPresets(options: {
 }): TrackPreset[] {
   let presets = getAllPresets();
 
-  if (options.category) {
-    presets = presets.filter((p) => p.category === options.category);
+  if (options?.category) {
+    presets = presets?.filter((p) => p?.category === options?.category);
   }
 
-  if (options.search) {
-    presets = searchPresets(options.search).filter((p) => presets.includes(p));
+  if (options?.search) {
+    presets = searchPresets(options?.search).filter((p) => presets?.includes(p));
   }
 
-  if (options.tags && options.tags.length > 0) {
-    presets = presets.filter((p) =>
-      options.tags!.every((tag) => p.tags.includes(tag.toLowerCase())),
+  if (options?.tags && options?.tags.length > 0) {
+    presets = presets?.filter((p) =>
+      options?.tags!.every((tag) => p?.tags.includes(tag?.toLowerCase())),
     );
   }
 
-  if (options.factoryOnly) {
-    presets = presets.filter((p) => p.isFactory);
+  if (options?.factoryOnly) {
+    presets = presets?.filter((p) => p?.isFactory);
   }
 
-  if (options.userOnly) {
-    presets = presets.filter((p) => p.isUserPreset);
+  if (options?.userOnly) {
+    presets = presets?.filter((p) => p?.isUserPreset);
   }
 
   return presets;
@@ -1419,69 +1419,69 @@ export function createPresetFromTrack(
 ): TrackPreset {
   const effects: PresetEffect[] = [];
 
-  if (track.effects?.eq) {
-    effects.push({
-      id: `eq-${Date.now()}`,
+  if (track?.effects?.eq) {
+    effects?.push({
+      id: `eq-${Date?.now()}`,
       name: "EQ",
       type: "eq",
-      bypass: track.effects.eq.bypass || false,
+      bypass: track?.effects.eq?.bypass || false,
       parameters: {
-        lowGain: track.effects.eq.lowGain,
-        midGain: track.effects.eq.midGain,
-        highGain: track.effects.eq.highGain,
-        midFrequency: track.effects.eq.midFrequency || 1000,
+        lowGain: track?.effects.eq?.lowGain,
+        midGain: track?.effects.eq?.midGain,
+        highGain: track?.effects.eq?.highGain,
+        midFrequency: track?.effects.eq?.midFrequency || 1000,
       },
     });
   }
 
-  if (track.effects?.compressor) {
-    effects.push({
-      id: `comp-${Date.now()}`,
+  if (track?.effects?.compressor) {
+    effects?.push({
+      id: `comp-${Date?.now()}`,
       name: "Compressor",
       type: "compressor",
-      bypass: track.effects.compressor.bypass || false,
+      bypass: track?.effects.compressor?.bypass || false,
       parameters: {
-        threshold: track.effects.compressor.threshold,
-        ratio: track.effects.compressor.ratio,
-        attack: track.effects.compressor.attack,
-        release: track.effects.compressor.release,
+        threshold: track?.effects.compressor?.threshold,
+        ratio: track?.effects.compressor?.ratio,
+        attack: track?.effects.compressor?.attack,
+        release: track?.effects.compressor?.release,
       },
     });
   }
 
-  if (track.effects?.reverb) {
-    effects.push({
-      id: `reverb-${Date.now()}`,
+  if (track?.effects?.reverb) {
+    effects?.push({
+      id: `reverb-${Date?.now()}`,
       name: "Reverb",
       type: "reverb",
-      bypass: track.effects.reverb.bypass || false,
+      bypass: track?.effects.reverb?.bypass || false,
       parameters: {
-        mix: track.effects.reverb.mix,
+        mix: track?.effects.reverb?.mix,
       },
     });
   }
 
   const presetData: TrackPresetData = {
-    name: track.name,
-    trackType: track.trackType,
-    color: track.color,
-    volume: track.volume,
-    pan: track.pan,
-    mute: track.mute,
-    solo: track.solo,
+    name: track?.name,
+    trackType: track?.trackType,
+    color: track?.color,
+    volume: track?.volume,
+    pan: track?.pan,
+    mute: track?.mute,
+    solo: track?.solo,
     effects,
     sends: [],
     inputAssignment: undefined,
-    outputBus: track.outputBus || "master",
+    outputBus: track?.outputBus || "master",
     delayCompensation: 0,
-    inputMonitoring: track.inputMonitoring || false,
-    recordEnabled: track.recordEnabled || false,
+    inputMonitoring: track?.inputMonitoring || false,
+    recordEnabled: track?.recordEnabled || false,
     phase: false,
     gain: 0,
   };
 
   return {
-    id: `user-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id: `user-${Date?.now()}-${Math?.random().toString(36).slice(2, 9)}`,
     name,
     description,
     category,
@@ -1501,50 +1501,50 @@ export function applyPresetToTrack(
   _track: StudioTrackSnapshot,
 ): Partial<StudioTrackSnapshot> {
   const updates: Partial<StudioTrackSnapshot> = {
-    name: preset.data.name,
-    color: preset.data.color,
-    volume: preset.data.volume,
-    pan: preset.data.pan,
-    mute: preset.data.mute,
-    solo: preset.data.solo,
-    outputBus: preset.data.outputBus,
-    inputMonitoring: preset.data.inputMonitoring,
-    recordEnabled: preset.data.recordEnabled,
+    name: preset?.data.name,
+    color: preset?.data.color,
+    volume: preset?.data.volume,
+    pan: preset?.data.pan,
+    mute: preset?.data.mute,
+    solo: preset?.data.solo,
+    outputBus: preset?.data.outputBus,
+    inputMonitoring: preset?.data.inputMonitoring,
+    recordEnabled: preset?.data.recordEnabled,
   };
 
-  const eqEffect = preset.data.effects.find((e) => e.type === "eq");
-  const compressorEffect = preset.data.effects.find(
-    (e) => e.type === "compressor",
+  const _eqEffect = preset?.data.effects?.find((e) => e?.type === "eq");
+  const _compressorEffect = preset?.data.effects?.find(
+    (e) => e?.type === "compressor",
   );
-  const reverbEffect = preset.data.effects.find((e) => e.type === "reverb");
+  const _reverbEffect = preset?.data.effects?.find((e) => e?.type === "reverb");
 
   if (eqEffect || compressorEffect || reverbEffect) {
     updates.effects = {};
 
-    if (eqEffect && eqEffect.parameters) {
-      updates.effects.eq = {
-        lowGain: eqEffect.parameters.lowGain || 0,
-        midGain: eqEffect.parameters.midGain || 0,
-        highGain: eqEffect.parameters.highGain || 0,
-        midFrequency: eqEffect.parameters.midFrequency || 1000,
-        bypass: eqEffect.bypass,
+    if (eqEffect && eqEffect?.parameters) {
+      updates?.effects.eq = {
+        lowGain: eqEffect?.parameters.lowGain || 0,
+        midGain: eqEffect?.parameters.midGain || 0,
+        highGain: eqEffect?.parameters.highGain || 0,
+        midFrequency: eqEffect?.parameters.midFrequency || 1000,
+        bypass: eqEffect?.bypass,
       };
     }
 
-    if (compressorEffect && compressorEffect.parameters) {
-      updates.effects.compressor = {
-        threshold: compressorEffect.parameters.threshold || -24,
-        ratio: compressorEffect.parameters.ratio || 4,
-        attack: compressorEffect.parameters.attack || 10,
-        release: compressorEffect.parameters.release || 100,
-        bypass: compressorEffect.bypass,
+    if (compressorEffect && compressorEffect?.parameters) {
+      updates?.effects.compressor = {
+        threshold: compressorEffect?.parameters.threshold || -24,
+        ratio: compressorEffect?.parameters.ratio || 4,
+        attack: compressorEffect?.parameters.attack || 10,
+        release: compressorEffect?.parameters.release || 100,
+        bypass: compressorEffect?.bypass,
       };
     }
 
-    if (reverbEffect && reverbEffect.parameters) {
-      updates.effects.reverb = {
-        mix: reverbEffect.parameters.mix || 0.2,
-        bypass: reverbEffect.bypass,
+    if (reverbEffect && reverbEffect?.parameters) {
+      updates?.effects.reverb = {
+        mix: reverbEffect?.parameters.mix || 0.2,
+        bypass: reverbEffect?.bypass,
       };
     }
   }
@@ -1554,12 +1554,12 @@ export function applyPresetToTrack(
 
 export function saveUndoState(undoState: PresetUndoState): void {
   try {
-    const history = getUndoHistory();
-    history.push(undoState);
-    if (history.length > 50) {
-      history.shift();
+    const _history = getUndoHistory();
+    history?.push(undoState);
+    if (history?.length > 50) {
+      history?.shift();
     }
-    localStorage.setItem(UNDO_HISTORY_KEY, JSON.stringify(history));
+    localStorage?.setItem(UNDO_HISTORY_KEY, JSON?.stringify(history));
   } catch {
     // Ignore storage errors
   }
@@ -1567,11 +1567,11 @@ export function saveUndoState(undoState: PresetUndoState): void {
 
 export function getUndoHistory(): PresetUndoState[] {
   try {
-    const stored = localStorage.getItem(UNDO_HISTORY_KEY);
+    const _stored = localStorage?.getItem(UNDO_HISTORY_KEY);
     if (!stored) return [];
-    return JSON.parse(stored).map((s: PresetUndoState) => ({
+    return JSON?.parse(stored).map((s: PresetUndoState) => ({
       ...s,
-      appliedAt: new Date(s.appliedAt),
+      appliedAt: new Date(s?.appliedAt),
     }));
   } catch {
     return [];
@@ -1579,31 +1579,31 @@ export function getUndoHistory(): PresetUndoState[] {
 }
 
 export function getLastUndoState(trackId: string): PresetUndoState | undefined {
-  const history = getUndoHistory();
-  return history.filter((s) => s.trackId === trackId).pop();
+  const _history = getUndoHistory();
+  return history?.filter((s) => s?.trackId === trackId).pop();
 }
 
 export function clearUndoHistory(trackId?: string): void {
   if (trackId) {
-    const history = getUndoHistory().filter((s) => s.trackId !== trackId);
-    localStorage.setItem(UNDO_HISTORY_KEY, JSON.stringify(history));
+    const _history = getUndoHistory().filter((s) => s?.trackId !== trackId);
+    localStorage?.setItem(UNDO_HISTORY_KEY, JSON?.stringify(history));
   } else {
-    localStorage.removeItem(UNDO_HISTORY_KEY);
+    localStorage?.removeItem(UNDO_HISTORY_KEY);
   }
 }
 
 export function exportPresets(presets: TrackPreset[]): string {
-  const exportData = {
+  const _exportData = {
     version: "1.0",
     exportedAt: new Date().toISOString(),
-    presets: presets.map((p) => ({
+    presets: presets?.map((p) => ({
       ...p,
-      id: p.isUserPreset ? p.id : undefined,
+      id: p?.isUserPreset ? p?.id : undefined,
       isFactory: false,
       isUserPreset: true,
     })),
   };
-  return JSON.stringify(exportData, null, 2);
+  return JSON?.stringify(exportData, null, 2);
 }
 
 export function importPresets(jsonString: string): {
@@ -1612,9 +1612,9 @@ export function importPresets(jsonString: string): {
   error?: string;
 } {
   try {
-    const data = JSON.parse(jsonString);
+    const _data = JSON?.parse(jsonString);
 
-    if (!data.version || !data.presets || !Array.isArray(data.presets)) {
+    if (!data?.version || !data?.presets || !Array?.isArray(data?.presets)) {
       return {
         success: false,
         presets: [],
@@ -1622,10 +1622,10 @@ export function importPresets(jsonString: string): {
       };
     }
 
-    const importedPresets: TrackPreset[] = data.presets.map(
+    const importedPresets: TrackPreset[] = data?.presets.map(
       (p: Partial<TrackPreset>) => ({
         ...p,
-        id: `imported-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        id: `imported-${Date?.now()}-${Math?.random().toString(36).slice(2, 9)}`,
         isFactory: false,
         isUserPreset: true,
         createdAt: new Date(),
@@ -1633,9 +1633,9 @@ export function importPresets(jsonString: string): {
       }),
     );
 
-    const existingPresets = getUserPresets();
-    const newPresets = [...existingPresets, ...importedPresets];
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newPresets));
+    const _existingPresets = getUserPresets();
+    const _newPresets = [...existingPresets, ...importedPresets];
+    localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(newPresets));
 
     return { success: true, presets: importedPresets };
   } catch (err) {
@@ -1656,11 +1656,11 @@ export function getPresetPreview(preset: TrackPreset): {
   outputBus: string;
 } {
   return {
-    effectCount: preset.data.effects.length,
-    sendCount: preset.data.sends.length,
-    hasEQ: preset.data.effects.some((e) => e.type === "eq"),
-    hasCompressor: preset.data.effects.some((e) => e.type === "compressor"),
-    hasReverb: preset.data.effects.some((e) => e.type === "reverb"),
-    outputBus: preset.data.outputBus,
+    effectCount: preset?.data.effects?.length,
+    sendCount: preset?.data.sends?.length,
+    hasEQ: preset?.data.effects?.some((e) => e?.type === "eq"),
+    hasCompressor: preset?.data.effects?.some((e) => e?.type === "compressor"),
+    hasReverb: preset?.data.effects?.some((e) => e?.type === "reverb"),
+    outputBus: preset?.data.outputBus,
   };
 }

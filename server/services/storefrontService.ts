@@ -12,21 +12,21 @@ import Stripe from "stripe";
 
 import { logger } from "../logger.js";
 
-const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-08-27.basil",
+const _stripe = process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+  ? new Stripe(process?.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27?.basil",
     })
   : null;
 
 // Validation constraints
-const SLUG_PATTERN = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
-const DOMAIN_PATTERN =
+const _SLUG_PATTERN = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
+const _DOMAIN_PATTERN =
   /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i;
-const MAX_NAME_LENGTH = 100;
-const MIN_NAME_LENGTH = 2;
-const MAX_SLUG_LENGTH = 63;
-const MIN_SLUG_LENGTH = 3;
-const RESERVED_SLUGS = [
+const _MAX_NAME_LENGTH = 100;
+const _MIN_NAME_LENGTH = 2;
+const _MAX_SLUG_LENGTH = 63;
+const _MIN_SLUG_LENGTH = 3;
+const _RESERVED_SLUGS = [
   "admin",
   "api",
   "www",
@@ -40,7 +40,7 @@ const RESERVED_SLUGS = [
   "settings",
 ];
 
-const ALLOWED_CUSTOMIZATION_KEYS = [
+const _ALLOWED_CUSTOMIZATION_KEYS = [
   "primaryColor",
   "secondaryColor",
   "backgroundColor",
@@ -71,7 +71,7 @@ const ALLOWED_CUSTOMIZATION_KEYS = [
   "avatar",
 ];
 
-const ALLOWED_SEO_KEYS = [
+const _ALLOWED_SEO_KEYS = [
   "title",
   "description",
   "keywords",
@@ -107,8 +107,8 @@ function sanitizeCustomization(
   }
 
   const sanitized: Record<string, any> = {};
-  for (const [key, value] of Object.entries(customization)) {
-    if (!ALLOWED_CUSTOMIZATION_KEYS.includes(key)) {
+  for (const [key, value] of Object?.entries(customization)) {
+    if (!ALLOWED_CUSTOMIZATION_KEYS?.includes(key)) {
       continue;
     }
 
@@ -117,28 +117,28 @@ function sanitizeCustomization(
         key === "logo" ||
         key === "banner" ||
         key === "avatar" ||
-        key.endsWith("Url") ||
+        key?.endsWith("Url") ||
         key === "logoUrl" ||
         key === "bannerUrl" ||
         key === "favicon"
       ) {
         if (
-          value.startsWith("http://") ||
-          value.startsWith("https://") ||
-          value.startsWith("/") ||
+          value?.startsWith("http://") ||
+          value?.startsWith("https://") ||
+          value?.startsWith("/") ||
           value === ""
         ) {
           sanitized[key] = value;
         }
       } else if (
-        key.includes("Color") ||
+        key?.includes("Color") ||
         key === "primaryColor" ||
         key === "secondaryColor"
       ) {
         if (
           /^#[0-9A-Fa-f]{3,8}$/.test(value) ||
           /^rgba?\(/.test(value) ||
-          /^[a-z]+$/i.test(value)
+          /^[a-z]+$/i?.test(value)
         ) {
           sanitized[key] = value;
         }
@@ -150,16 +150,16 @@ function sanitizeCustomization(
     } else if (
       typeof value === "object" &&
       value !== null &&
-      !Array.isArray(value)
+      !Array?.isArray(value)
     ) {
       if (key === "colors") {
         const colorObj: Record<string, string> = {};
-        for (const [ck, cv] of Object.entries(value)) {
+        for (const [ck, cv] of Object?.entries(value)) {
           if (
             typeof cv === "string" &&
             (/^#[0-9A-Fa-f]{3,8}$/.test(cv) ||
               /^rgba?\(/.test(cv) ||
-              /^[a-z]+$/i.test(cv))
+              /^[a-z]+$/i?.test(cv))
           ) {
             colorObj[ck] = cv;
           }
@@ -167,7 +167,7 @@ function sanitizeCustomization(
         sanitized[key] = colorObj;
       } else if (key === "fonts") {
         const fontObj: Record<string, string> = {};
-        for (const [fk, fv] of Object.entries(value)) {
+        for (const [fk, fv] of Object?.entries(value)) {
           if (typeof fv === "string") {
             fontObj[fk] = sanitizeString(fv);
           }
@@ -175,7 +175,7 @@ function sanitizeCustomization(
         sanitized[key] = fontObj;
       } else if (key === "layout") {
         const layoutObj: Record<string, any> = {};
-        for (const [lk, lv] of Object.entries(value)) {
+        for (const [lk, lv] of Object?.entries(value)) {
           if (typeof lv === "string") layoutObj[lk] = sanitizeString(lv);
           else if (typeof lv === "number") layoutObj[lk] = lv;
           else if (typeof lv === "boolean") layoutObj[lk] = lv;
@@ -183,28 +183,28 @@ function sanitizeCustomization(
         sanitized[key] = layoutObj;
       } else if (key === "socialLinks") {
         const linksObj: Record<string, string> = {};
-        for (const [sk, sv] of Object.entries(value)) {
+        for (const [sk, sv] of Object?.entries(value)) {
           if (
             typeof sv === "string" &&
-            (sv.startsWith("http://") || sv.startsWith("https://") || sv === "")
+            (sv?.startsWith("http://") || sv?.startsWith("https://") || sv === "")
           ) {
             linksObj[sk] = sv;
           }
         }
         sanitized[key] = linksObj;
       }
-    } else if (Array.isArray(value) && key === "socialLinks") {
+    } else if (Array?.isArray(value) && key === "socialLinks") {
       sanitized[key] = value
         .filter(
           (link: Record<string, unknown>) =>
             typeof link === "object" &&
-            typeof link.platform === "string" &&
-            typeof link.url === "string" &&
-            (link.url.startsWith("http://") || link.url.startsWith("https://")),
+            typeof link?.platform === "string" &&
+            typeof link?.url === "string" &&
+            (link?.url.startsWith("http://") || link?.url.startsWith("https://")),
         )
         .map((link: Record<string, unknown>) => ({
-          platform: sanitizeString(link.platform),
-          url: link.url,
+          platform: sanitizeString(link?.platform),
+          url: link?.url,
         }));
     }
   }
@@ -221,26 +221,26 @@ function sanitizeSEO(seo: Record<string, unknown>): Record<string, any> {
   }
 
   const sanitized: Record<string, any> = {};
-  for (const [key, value] of Object.entries(seo)) {
-    if (!ALLOWED_SEO_KEYS.includes(key)) {
+  for (const [key, value] of Object?.entries(seo)) {
+    if (!ALLOWED_SEO_KEYS?.includes(key)) {
       continue;
     }
 
     if (typeof value === "string") {
       if (key === "ogImage" || key === "canonicalUrl") {
-        if (value.startsWith("http://") || value.startsWith("https://")) {
+        if (value?.startsWith("http://") || value?.startsWith("https://")) {
           sanitized[key] = value;
         }
-      } else if (key === "title" && value.length > 70) {
-        sanitized[key] = sanitizeString(value.substring(0, 70));
-      } else if (key === "description" && value.length > 160) {
-        sanitized[key] = sanitizeString(value.substring(0, 160));
+      } else if (key === "title" && value?.length > 70) {
+        sanitized[key] = sanitizeString(value?.substring(0, 70));
+      } else if (key === "description" && value?.length > 160) {
+        sanitized[key] = sanitizeString(value?.substring(0, 160));
       } else if (key === "robots") {
         // Only allow valid robots directives
-        const validDirectives = ["index", "noindex", "follow", "nofollow"];
-        const directives = value.split(",").map((d) => d.trim().toLowerCase());
+        const _validDirectives = ["index", "noindex", "follow", "nofollow"];
+        const _directives = value?.split(",").map((d) => d?.trim().toLowerCase());
         sanitized[key] = directives
-          .filter((d) => validDirectives.includes(d))
+          .filter((d) => validDirectives?.includes(d))
           .join(", ");
       } else {
         sanitized[key] = sanitizeString(value);
@@ -261,43 +261,43 @@ function validateStorefrontInput(input: {
 }): { valid: boolean; errors: string[] } {
   const errors: string[] = [];
 
-  if (input.name !== undefined) {
-    if (input.name.length < MIN_NAME_LENGTH) {
-      errors.push(`Name must be at least ${MIN_NAME_LENGTH} characters`);
+  if (input?.name !== undefined) {
+    if (input?.name.length < MIN_NAME_LENGTH) {
+      errors?.push(`Name must be at least ${MIN_NAME_LENGTH} characters`);
     }
-    if (input.name.length > MAX_NAME_LENGTH) {
-      errors.push(`Name must be ${MAX_NAME_LENGTH} characters or less`);
+    if (input?.name.length > MAX_NAME_LENGTH) {
+      errors?.push(`Name must be ${MAX_NAME_LENGTH} characters or less`);
     }
   }
 
-  if (input.slug !== undefined) {
-    if (input.slug.length < MIN_SLUG_LENGTH) {
-      errors.push(`Slug must be at least ${MIN_SLUG_LENGTH} characters`);
+  if (input?.slug !== undefined) {
+    if (input?.slug.length < MIN_SLUG_LENGTH) {
+      errors?.push(`Slug must be at least ${MIN_SLUG_LENGTH} characters`);
     }
-    if (input.slug.length > MAX_SLUG_LENGTH) {
-      errors.push(`Slug must be ${MAX_SLUG_LENGTH} characters or less`);
+    if (input?.slug.length > MAX_SLUG_LENGTH) {
+      errors?.push(`Slug must be ${MAX_SLUG_LENGTH} characters or less`);
     }
-    if (!SLUG_PATTERN.test(input.slug)) {
-      errors.push(
+    if (!SLUG_PATTERN?.test(input?.slug)) {
+      errors?.push(
         "Slug must contain only lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen",
       );
     }
-    if (RESERVED_SLUGS.includes(input.slug.toLowerCase())) {
-      errors.push("This slug is reserved and cannot be used");
+    if (RESERVED_SLUGS?.includes(input?.slug.toLowerCase())) {
+      errors?.push("This slug is reserved and cannot be used");
     }
   }
 
   if (
-    input.customDomain !== undefined &&
-    input.customDomain !== null &&
-    input.customDomain !== ""
+    input?.customDomain !== undefined &&
+    input?.customDomain !== null &&
+    input?.customDomain !== ""
   ) {
-    if (!DOMAIN_PATTERN.test(input.customDomain)) {
-      errors.push("Invalid custom domain format");
+    if (!DOMAIN_PATTERN?.test(input?.customDomain)) {
+      errors?.push("Invalid custom domain format");
     }
   }
 
-  return { valid: errors.length === 0, errors };
+  return { valid: errors?.length === 0, errors };
 }
 
 export interface CreateStorefrontInput {
@@ -340,36 +340,36 @@ export class StorefrontService {
   async createStorefront(input: CreateStorefrontInput) {
     try {
       // Validate input
-      const validation = validateStorefrontInput({
-        name: input.name,
-        slug: input.slug,
+      const _validation = validateStorefrontInput({
+        name: input?.name,
+        slug: input?.slug,
       });
 
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join("; ")}`);
+      if (!validation?.valid) {
+        throw new Error(`Validation failed: ${validation?.errors.join("; ")}`);
       }
 
-      const existingSlug = await db.query.storefronts.findFirst({
-        where: eq(storefronts.slug, input.slug),
+      const _existingSlug = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.slug, input?.slug),
       });
 
       if (existingSlug) {
         throw new Error("Slug already taken. Please choose a different one.");
       }
 
-      const userStorefronts = await db.query.storefronts.findMany({
-        where: eq(storefronts.userId, input.userId),
+      const _userStorefronts = await db?.query.storefronts?.findMany({
+        where: eq(storefronts?.userId, input?.userId),
       });
 
-      if (userStorefronts.length >= 5) {
+      if (userStorefronts?.length >= 5) {
         throw new Error("Maximum of 5 storefronts per user reached.");
       }
 
-      const template = input.templateId
-        ? await db.query.storefrontTemplates.findFirst({
+      const _template = input?.templateId
+        ? await db?.query.storefrontTemplates?.findFirst({
             where: and(
-              eq(storefrontTemplates.id, input.templateId),
-              eq(storefrontTemplates.isActive, true),
+              eq(storefrontTemplates?.id, input?.templateId),
+              eq(storefrontTemplates?.isActive, true),
             ),
           })
         : null;
@@ -377,41 +377,41 @@ export class StorefrontService {
       // Merge: template configuration is the base, user-supplied customization
       // overrides on top (so colors/fonts from the chosen template are always
       // applied even when the user hasn't touched the customization panel yet).
-      const templateConfig =
+      const _templateConfig =
         template?.configuration &&
-        typeof template.configuration === "object" &&
-        !Array.isArray(template.configuration)
-          ? (template.configuration as Record<string, unknown>)
+        typeof template?.configuration === "object" &&
+        !Array?.isArray(template?.configuration)
+          ? (template?.configuration as Record<string, unknown>)
           : {};
       const mergedCustomization: Record<string, unknown> = {
         ...templateConfig,
-        ...(input.customization || {}),
+        ...(input?.customization || {}),
       };
-      const sanitizedCustomization = sanitizeCustomization(mergedCustomization);
+      const _sanitizedCustomization = sanitizeCustomization(mergedCustomization);
 
-      const autoSubdomain = await this.generateSubdomain(input.slug);
+      const _autoSubdomain = await this?.generateSubdomain(input?.slug);
 
       const [storefront] = await db
         .insert(storefronts)
         .values({
-          userId: input.userId,
-          name: sanitizeString(input.name),
-          slug: input.slug.toLowerCase(),
+          userId: input?.userId,
+          name: sanitizeString(input?.name),
+          slug: input?.slug.toLowerCase(),
           subdomain: autoSubdomain,
           isSubdomainActive: true,
-          templateId: input.templateId || null,
+          templateId: input?.templateId || null,
           customization: sanitizedCustomization,
           isActive: true,
           isPublic: true,
         })
         .returning();
 
-      logger.info(
-        `Created storefront ${storefront.id} for user ${input.userId} at ${autoSubdomain}.maxbooster.app`,
+      logger?.info(
+        `Created storefront ${storefront?.id} for user ${input?.userId} at ${autoSubdomain}.maxbooster.app`,
       );
       return storefront;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating storefront:");
+      logger?.warn({ err: error }, "Error creating storefront:");
       throw error;
     }
   }
@@ -421,8 +421,8 @@ export class StorefrontService {
    */
   async getStorefrontBySlug(slug: string) {
     try {
-      const storefront = await db.query.storefronts.findFirst({
-        where: and(eq(storefronts.slug, slug), eq(storefronts.isActive, true)),
+      const _storefront = await db?.query.storefronts?.findFirst({
+        where: and(eq(storefronts?.slug, slug), eq(storefronts?.isActive, true)),
       });
 
       if (!storefront) {
@@ -431,10 +431,10 @@ export class StorefrontService {
 
       // Note: views column doesn't exist in current schema - skip update
 
-      const [storefrontUser, userListings, tiers, template] = await Promise.all(
+      const [storefrontUser, userListings, tiers, template] = await Promise?.all(
         [
-          db.query.users.findFirst({
-            where: eq(users.id, storefront.userId),
+          db?.query.users?.findFirst({
+            where: eq(users?.id, storefront?.userId),
             columns: {
               id: true,
               username: true,
@@ -443,24 +443,24 @@ export class StorefrontService {
               profileImageUrl: true,
             },
           }),
-          db.query.listings.findMany({
+          db?.query.listings?.findMany({
             where: and(
-              eq(listings.userId, storefront.userId),
-              eq(listings.isPublished, true),
+              eq(listings?.userId, storefront?.userId),
+              eq(listings?.isPublished, true),
             ),
-            orderBy: [desc(listings.createdAt)],
+            orderBy: [desc(listings?.createdAt)],
             limit: 50,
           }),
-          db.query.membershipTiers.findMany({
+          db?.query.membershipTiers?.findMany({
             where: and(
-              eq(membershipTiers.storefrontId, storefront.id),
-              eq(membershipTiers.isActive, true),
+              eq(membershipTiers?.storefrontId, storefront?.id),
+              eq(membershipTiers?.isActive, true),
             ),
-            orderBy: [membershipTiers.createdAt],
+            orderBy: [membershipTiers?.createdAt],
           }),
-          storefront.templateId
-            ? db.query.storefrontTemplates.findFirst({
-                where: eq(storefrontTemplates.id, storefront.templateId),
+          storefront?.templateId
+            ? db?.query.storefrontTemplates?.findFirst({
+                where: eq(storefrontTemplates?.id, storefront?.templateId),
               })
             : null,
         ],
@@ -468,14 +468,14 @@ export class StorefrontService {
 
       return {
         ...storefront,
-        publicUrl: this.getStorefrontUrl(storefront),
+        publicUrl: this?.getStorefrontUrl(storefront),
         user: storefrontUser,
         listings: userListings,
         membershipTiers: tiers,
         template,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching storefront:");
+      logger?.warn({ err: error }, "Error fetching storefront:");
       throw error;
     }
   }
@@ -485,20 +485,20 @@ export class StorefrontService {
    */
   async getUserStorefronts(userId: string) {
     try {
-      const userStorefronts = await db.query.storefronts.findMany({
-        where: eq(storefronts.userId, userId),
-        orderBy: [desc(storefronts.createdAt)],
+      const _userStorefronts = await db?.query.storefronts?.findMany({
+        where: eq(storefronts?.userId, userId),
+        orderBy: [desc(storefronts?.createdAt)],
         with: {
           template: true,
         },
       });
 
-      return userStorefronts.map((sf) => ({
+      return userStorefronts?.map((sf) => ({
         ...sf,
-        publicUrl: this.getStorefrontUrl(sf),
+        publicUrl: this?.getStorefrontUrl(sf),
       }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching user storefronts:");
+      logger?.warn({ err: error }, "Error fetching user storefronts:");
       throw error;
     }
   }
@@ -512,32 +512,32 @@ export class StorefrontService {
     updates: UpdateStorefrontInput,
   ) {
     try {
-      const storefront = await db.query.storefronts.findFirst({
-        where: eq(storefronts.id, storefrontId),
+      const _storefront = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.id, storefrontId),
       });
 
       if (!storefront) {
         throw new Error("Storefront not found");
       }
 
-      if (storefront.userId !== userId) {
+      if (storefront?.userId !== userId) {
         throw new Error("Unauthorized");
       }
 
       // Validate updates
-      const validation = validateStorefrontInput({
-        name: updates.name,
-        slug: updates.slug,
-        customDomain: updates.customDomain,
+      const _validation = validateStorefrontInput({
+        name: updates?.name,
+        slug: updates?.slug,
+        customDomain: updates?.customDomain,
       });
 
-      if (!validation.valid) {
-        throw new Error(`Validation failed: ${validation.errors.join("; ")}`);
+      if (!validation?.valid) {
+        throw new Error(`Validation failed: ${validation?.errors.join("; ")}`);
       }
 
-      if (updates.slug && updates.slug !== storefront.slug) {
-        const existingSlug = await db.query.storefronts.findFirst({
-          where: eq(storefronts.slug, updates.slug),
+      if (updates?.slug && updates?.slug !== storefront?.slug) {
+        const _existingSlug = await db?.query.storefronts?.findFirst({
+          where: eq(storefronts?.slug, updates?.slug),
         });
 
         if (existingSlug) {
@@ -550,52 +550,52 @@ export class StorefrontService {
         updatedAt: new Date(),
       };
 
-      if (updates.name !== undefined) {
-        sanitizedUpdates.name = sanitizeString(updates.name);
+      if (updates?.name !== undefined) {
+        sanitizedUpdates.name = sanitizeString(updates?.name);
       }
-      if (updates.slug !== undefined) {
-        sanitizedUpdates.slug = updates.slug.toLowerCase();
+      if (updates?.slug !== undefined) {
+        sanitizedUpdates.slug = updates?.slug.toLowerCase();
       }
-      if (updates.subdomain !== undefined) {
-        sanitizedUpdates.subdomain = updates.subdomain?.toLowerCase();
+      if (updates?.subdomain !== undefined) {
+        sanitizedUpdates.subdomain = updates?.subdomain?.toLowerCase();
       }
-      if (updates.customDomain !== undefined) {
-        sanitizedUpdates.customDomain = updates.customDomain;
+      if (updates?.customDomain !== undefined) {
+        sanitizedUpdates.customDomain = updates?.customDomain;
       }
-      if (updates.isSubdomainActive !== undefined) {
-        sanitizedUpdates.isSubdomainActive = updates.isSubdomainActive;
+      if (updates?.isSubdomainActive !== undefined) {
+        sanitizedUpdates.isSubdomainActive = updates?.isSubdomainActive;
       }
-      if (updates.isCustomDomainActive !== undefined) {
-        sanitizedUpdates.isCustomDomainActive = updates.isCustomDomainActive;
+      if (updates?.isCustomDomainActive !== undefined) {
+        sanitizedUpdates.isCustomDomainActive = updates?.isCustomDomainActive;
       }
-      if (updates.templateId !== undefined) {
-        sanitizedUpdates.templateId = updates.templateId;
+      if (updates?.templateId !== undefined) {
+        sanitizedUpdates.templateId = updates?.templateId;
       }
-      if (updates.customization !== undefined) {
+      if (updates?.customization !== undefined) {
         sanitizedUpdates.customization = sanitizeCustomization(
-          updates.customization,
+          updates?.customization,
         );
       }
-      if (updates.seo !== undefined) {
-        sanitizedUpdates.seo = sanitizeSEO(updates.seo);
+      if (updates?.seo !== undefined) {
+        sanitizedUpdates.seo = sanitizeSEO(updates?.seo);
       }
-      if (updates.isActive !== undefined) {
-        sanitizedUpdates.isActive = updates.isActive;
+      if (updates?.isActive !== undefined) {
+        sanitizedUpdates.isActive = updates?.isActive;
       }
-      if (updates.isPublic !== undefined) {
-        sanitizedUpdates.isPublic = updates.isPublic;
+      if (updates?.isPublic !== undefined) {
+        sanitizedUpdates.isPublic = updates?.isPublic;
       }
 
       const [updatedStorefront] = await db
         .update(storefronts)
         .set(sanitizedUpdates)
-        .where(eq(storefronts.id, storefrontId))
+        .where(eq(storefronts?.id, storefrontId))
         .returning();
 
-      logger.info(`Updated storefront ${storefrontId}`);
+      logger?.info(`Updated storefront ${storefrontId}`);
       return updatedStorefront;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error updating storefront:");
+      logger?.warn({ err: error }, "Error updating storefront:");
       throw error;
     }
   }
@@ -605,23 +605,23 @@ export class StorefrontService {
    */
   async deleteStorefront(storefrontId: string, userId: string) {
     try {
-      const storefront = await db.query.storefronts.findFirst({
-        where: eq(storefronts.id, storefrontId),
+      const _storefront = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.id, storefrontId),
       });
 
       if (!storefront) {
         throw new Error("Storefront not found");
       }
 
-      if (storefront.userId !== userId) {
+      if (storefront?.userId !== userId) {
         throw new Error("Unauthorized");
       }
 
-      await db.delete(storefronts).where(eq(storefronts.id, storefrontId));
+      await db?.delete(storefronts).where(eq(storefronts?.id, storefrontId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error deleting storefront:");
+      logger?.warn({ err: error }, "Error deleting storefront:");
       throw error;
     }
   }
@@ -631,28 +631,29 @@ export class StorefrontService {
    */
   async getTemplates() {
     try {
-      const templates = await db
+      const _templates = await db
         .select()
         .from(storefrontTemplates)
-        .where(eq(storefrontTemplates.isActive, true))
-        .orderBy(storefrontTemplates.name);
+        .where(eq(storefrontTemplates?.isActive, true))
+        .orderBy(storefrontTemplates?.name);
 
-      if (templates.length === 0) {
+      if (templates?.length === 0) {
         // Lazy-seed built-in templates so they are always available without a
         // separate migration step.
-        const { seedStorefrontTemplates } =
-          await import("../seed/seedStorefrontTemplates.js");
+        const { seedStorefrontTemplates } = await import(
+          "../seed/seedStorefrontTemplates.js"
+        );
         await seedStorefrontTemplates();
         return db
           .select()
           .from(storefrontTemplates)
-          .where(eq(storefrontTemplates.isActive, true))
-          .orderBy(storefrontTemplates.name);
+          .where(eq(storefrontTemplates?.isActive, true))
+          .orderBy(storefrontTemplates?.name);
       }
 
       return templates;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching templates:");
+      logger?.warn({ err: error }, "Error fetching templates:");
       throw error;
     }
   }
@@ -662,8 +663,8 @@ export class StorefrontService {
    */
   async createMembershipTier(input: CreateMembershipTierInput) {
     try {
-      const storefront = await db.query.storefronts.findFirst({
-        where: eq(storefronts.id, input.storefrontId),
+      const _storefront = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.id, input?.storefrontId),
       });
 
       if (!storefront) {
@@ -674,53 +675,53 @@ export class StorefrontService {
 
       if (stripe) {
         try {
-          const price = await stripe.prices.create({
-            unit_amount: input.priceCents,
-            currency: input.currency || "usd",
+          const _price = await stripe?.prices.create({
+            unit_amount: input?.priceCents,
+            currency: input?.currency || "usd",
             recurring: {
-              interval: input.interval,
+              interval: input?.interval,
             },
             product_data: {
-              name: `${storefront.name} - ${input.name}`,
-              description: input.description || undefined,
+              name: `${storefront?.name} - ${input?.name}`,
+              description: input?.description || undefined,
             },
             metadata: {
-              storefrontId: input.storefrontId,
-              tierName: input.name,
+              storefrontId: input?.storefrontId,
+              tierName: input?.name,
             },
           });
 
-          stripePriceId = price.id;
+          stripePriceId = price?.id;
         } catch (stripeError: unknown) {
-          logger.warn("Error creating Stripe price:", stripeError);
+          logger?.warn("Error creating Stripe price:", stripeError);
         }
       }
 
-      const existingTiers = await db.query.membershipTiers.findMany({
-        where: eq(membershipTiers.storefrontId, input.storefrontId),
+      const _existingTiers = await db?.query.membershipTiers?.findMany({
+        where: eq(membershipTiers?.storefrontId, input?.storefrontId),
       });
 
       const [tier] = await db
         .insert(membershipTiers)
         .values({
-          storefrontId: input.storefrontId,
-          name: input.name,
-          description: input.description || null,
-          priceCents: input.priceCents,
-          currency: input.currency || "usd",
-          interval: input.interval,
-          benefits: input.benefits || {},
+          storefrontId: input?.storefrontId,
+          name: input?.name,
+          description: input?.description || null,
+          priceCents: input?.priceCents,
+          currency: input?.currency || "usd",
+          interval: input?.interval,
+          benefits: input?.benefits || {},
           stripePriceId,
           isActive: true,
-          sortOrder: existingTiers.length,
-          maxSubscribers: input.maxSubscribers || null,
+          sortOrder: existingTiers?.length,
+          maxSubscribers: input?.maxSubscribers || null,
           currentSubscribers: 0,
         })
         .returning();
 
       return tier;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating membership tier:");
+      logger?.warn({ err: error }, "Error creating membership tier:");
       throw error;
     }
   }
@@ -734,15 +735,15 @@ export class StorefrontService {
     updates: Partial<CreateMembershipTierInput>,
   ) {
     try {
-      const tierResults = await db
+      const _tierResults = await db
         .select({ tier: membershipTiers, storefront: storefronts })
         .from(membershipTiers)
-        .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
-        .where(eq(membershipTiers.id, tierId))
+        .leftJoin(storefronts, eq(membershipTiers?.storefrontId, storefronts?.id))
+        .where(eq(membershipTiers?.id, tierId))
         .limit(1);
 
-      const tier = tierResults[0]?.tier;
-      const storefront = tierResults[0]?.storefront;
+      const _tier = tierResults[0]?.tier;
+      const _storefront = tierResults[0]?.storefront;
 
       if (!tier) {
         throw new Error("Membership tier not found");
@@ -758,12 +759,12 @@ export class StorefrontService {
           ...updates,
           updatedAt: new Date(),
         })
-        .where(eq(membershipTiers.id, tierId))
+        .where(eq(membershipTiers?.id, tierId))
         .returning();
 
       return updatedTier;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error updating membership tier:");
+      logger?.warn({ err: error }, "Error updating membership tier:");
       throw error;
     }
   }
@@ -773,15 +774,15 @@ export class StorefrontService {
    */
   async deleteMembershipTier(tierId: string, userId: string) {
     try {
-      const tierResults = await db
+      const _tierResults = await db
         .select({ tier: membershipTiers, storefront: storefronts })
         .from(membershipTiers)
-        .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
-        .where(eq(membershipTiers.id, tierId))
+        .leftJoin(storefronts, eq(membershipTiers?.storefrontId, storefronts?.id))
+        .where(eq(membershipTiers?.id, tierId))
         .limit(1);
 
-      const tier = tierResults[0]?.tier;
-      const storefront = tierResults[0]?.storefront;
+      const _tier = tierResults[0]?.tier;
+      const _storefront = tierResults[0]?.storefront;
 
       if (!tier) {
         throw new Error("Membership tier not found");
@@ -791,22 +792,22 @@ export class StorefrontService {
         throw new Error("Unauthorized");
       }
 
-      const activeSubscriptions = await db.query.customerMemberships.findMany({
+      const _activeSubscriptions = await db?.query.customerMemberships?.findMany({
         where: and(
-          eq(customerMemberships.tierId, tierId),
-          eq(customerMemberships.status, "active"),
+          eq(customerMemberships?.tierId, tierId),
+          eq(customerMemberships?.status, "active"),
         ),
       });
 
-      if (activeSubscriptions.length > 0) {
+      if (activeSubscriptions?.length > 0) {
         throw new Error("Cannot delete tier with active subscriptions");
       }
 
-      await db.delete(membershipTiers).where(eq(membershipTiers.id, tierId));
+      await db?.delete(membershipTiers).where(eq(membershipTiers?.id, tierId));
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error deleting membership tier:");
+      logger?.warn({ err: error }, "Error deleting membership tier:");
       throw error;
     }
   }
@@ -820,87 +821,87 @@ export class StorefrontService {
         throw new Error("Stripe not configured");
       }
 
-      const tierResults = await db
+      const _tierResults = await db
         .select({
           tier: membershipTiers,
           storefront: storefronts,
         })
         .from(membershipTiers)
-        .leftJoin(storefronts, eq(membershipTiers.storefrontId, storefronts.id))
-        .where(eq(membershipTiers.id, tierId))
+        .leftJoin(storefronts, eq(membershipTiers?.storefrontId, storefronts?.id))
+        .where(eq(membershipTiers?.id, tierId))
         .limit(1);
 
-      const tier = tierResults[0]?.tier;
+      const _tier = tierResults[0]?.tier;
 
       if (!tier) {
         throw new Error("Membership tier not found");
       }
 
-      if (!tier.isActive) {
+      if (!tier?.isActive) {
         throw new Error("This membership tier is not currently available");
       }
 
       if (
-        tier.maxSubscribers &&
-        tier.currentSubscribers >= tier.maxSubscribers
+        tier?.maxSubscribers &&
+        tier?.currentSubscribers >= tier?.maxSubscribers
       ) {
         throw new Error("This membership tier is at maximum capacity");
       }
 
-      const existingMemberships = await db
+      const _existingMemberships = await db
         .select()
         .from(customerMemberships)
         .where(
           and(
-            eq(customerMemberships.customerId, customerId),
-            eq(customerMemberships.tierId, tierId),
-            eq(customerMemberships.status, "active"),
+            eq(customerMemberships?.customerId, customerId),
+            eq(customerMemberships?.tierId, tierId),
+            eq(customerMemberships?.status, "active"),
           ),
         )
         .limit(1);
-      const existingMembership = existingMemberships[0];
+      const _existingMembership = existingMemberships[0];
 
       if (existingMembership) {
         throw new Error("You already have an active membership to this tier");
       }
 
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, customerId),
+      const _user = await db?.query.users?.findFirst({
+        where: eq(users?.id, customerId),
       });
 
       if (!user) {
         throw new Error("User not found");
       }
 
-      let stripeCustomerId = user.stripeCustomerId;
+      let stripeCustomerId = user?.stripeCustomerId;
 
       if (!stripeCustomerId) {
-        const customer = await stripe.customers.create({
-          email: user.email,
+        const _customer = await stripe?.customers.create({
+          email: user?.email,
           metadata: {
-            userId: user.id,
+            userId: user?.id,
           },
         });
 
-        stripeCustomerId = customer.id;
+        stripeCustomerId = customer?.id;
 
         await db
           .update(users)
           .set({ stripeCustomerId })
-          .where(eq(users.id, customerId));
+          .where(eq(users?.id, customerId));
       }
 
-      if (!tier.stripePriceId) {
+      if (!tier?.stripePriceId) {
         throw new Error("Stripe price not configured for this tier");
       }
 
-      const subscription = await stripe.subscriptions.create({
+      const _subscription = await stripe?.subscriptions.create({
         customer: stripeCustomerId,
-        items: [{ price: tier.stripePriceId }],
+        items: [{ price: tier?.stripePriceId }],
         metadata: {
           customerId,
           tierId,
-          storefrontId: tier.storefrontId,
+          storefrontId: tier?.storefrontId,
         },
       });
 
@@ -909,9 +910,9 @@ export class StorefrontService {
         .values({
           customerId,
           tierId,
-          storefrontId: tier.storefrontId,
-          stripeSubscriptionId: subscription.id,
-          status: subscription.status,
+          storefrontId: tier?.storefrontId,
+          stripeSubscriptionId: subscription?.id,
+          status: subscription?.status,
           startsAt: new Date(),
         })
         .returning();
@@ -919,16 +920,16 @@ export class StorefrontService {
       await db
         .update(membershipTiers)
         .set({
-          currentSubscribers: sql`${membershipTiers.currentSubscribers} + 1`,
+          currentSubscribers: sql`${membershipTiers?.currentSubscribers} + 1`,
         })
-        .where(eq(membershipTiers.id, tierId));
+        .where(eq(membershipTiers?.id, tierId));
 
       return {
         membership,
         subscription,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error subscribing to membership tier:");
+      logger?.warn({ err: error }, "Error subscribing to membership tier:");
       throw error;
     }
   }
@@ -942,20 +943,20 @@ export class StorefrontService {
         throw new Error("Stripe not configured");
       }
 
-      const membership = await db.query.customerMemberships.findFirst({
-        where: eq(customerMemberships.id, membershipId),
+      const _membership = await db?.query.customerMemberships?.findFirst({
+        where: eq(customerMemberships?.id, membershipId),
       });
 
       if (!membership) {
         throw new Error("Membership not found");
       }
 
-      if (membership.customerId !== customerId) {
+      if (membership?.customerId !== customerId) {
         throw new Error("Unauthorized");
       }
 
-      if (membership.stripeSubscriptionId) {
-        await stripe.subscriptions.update(membership.stripeSubscriptionId, {
+      if (membership?.stripeSubscriptionId) {
+        await stripe?.subscriptions.update(membership?.stripeSubscriptionId, {
           cancel_at_period_end: true,
         });
       }
@@ -967,12 +968,12 @@ export class StorefrontService {
           canceledAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(customerMemberships.id, membershipId))
+        .where(eq(customerMemberships?.id, membershipId))
         .returning();
 
       return updatedMembership;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error canceling membership:");
+      logger?.warn({ err: error }, "Error canceling membership:");
       throw error;
     }
   }
@@ -982,70 +983,70 @@ export class StorefrontService {
    */
   async getCustomerMemberships(customerId: string) {
     try {
-      const results = await db
+      const _results = await db
         .select({
-          id: customerMemberships.id,
-          customerId: customerMemberships.customerId,
-          tierId: customerMemberships.tierId,
-          storefrontId: customerMemberships.storefrontId,
-          stripeSubscriptionId: customerMemberships.stripeSubscriptionId,
-          status: customerMemberships.status,
-          startDate: customerMemberships.startDate,
-          endDate: customerMemberships.endDate,
-          createdAt: customerMemberships.createdAt,
-          tierName: membershipTiers.name,
-          tierPriceCents: membershipTiers.priceCents,
-          tierDescription: membershipTiers.description,
-          storefrontName: storefronts.name,
-          storefrontSlug: storefronts.slug,
-          ownerUsername: users.username,
-          ownerFirstName: users.firstName,
-          ownerLastName: users.lastName,
+          id: customerMemberships?.id,
+          customerId: customerMemberships?.customerId,
+          tierId: customerMemberships?.tierId,
+          storefrontId: customerMemberships?.storefrontId,
+          stripeSubscriptionId: customerMemberships?.stripeSubscriptionId,
+          status: customerMemberships?.status,
+          startDate: customerMemberships?.startDate,
+          endDate: customerMemberships?.endDate,
+          createdAt: customerMemberships?.createdAt,
+          tierName: membershipTiers?.name,
+          tierPriceCents: membershipTiers?.priceCents,
+          tierDescription: membershipTiers?.description,
+          storefrontName: storefronts?.name,
+          storefrontSlug: storefronts?.slug,
+          ownerUsername: users?.username,
+          ownerFirstName: users?.firstName,
+          ownerLastName: users?.lastName,
         })
         .from(customerMemberships)
         .leftJoin(
           membershipTiers,
-          eq(customerMemberships.tierId, membershipTiers.id),
+          eq(customerMemberships?.tierId, membershipTiers?.id),
         )
         .leftJoin(
           storefronts,
-          eq(customerMemberships.storefrontId, storefronts.id),
+          eq(customerMemberships?.storefrontId, storefronts?.id),
         )
-        .leftJoin(users, eq(storefronts.userId, users.id))
-        .where(eq(customerMemberships.customerId, customerId))
-        .orderBy(desc(customerMemberships.createdAt));
+        .leftJoin(users, eq(storefronts?.userId, users?.id))
+        .where(eq(customerMemberships?.customerId, customerId))
+        .orderBy(desc(customerMemberships?.createdAt));
 
-      return results.map((r) => ({
-        id: r.id,
-        customerId: r.customerId,
-        tierId: r.tierId,
-        storefrontId: r.storefrontId,
-        stripeSubscriptionId: r.stripeSubscriptionId,
-        status: r.status,
-        startDate: r.startDate,
-        endDate: r.endDate,
-        createdAt: r.createdAt,
-        tier: r.tierName
+      return results?.map((r) => ({
+        id: r?.id,
+        customerId: r?.customerId,
+        tierId: r?.tierId,
+        storefrontId: r?.storefrontId,
+        stripeSubscriptionId: r?.stripeSubscriptionId,
+        status: r?.status,
+        startDate: r?.startDate,
+        endDate: r?.endDate,
+        createdAt: r?.createdAt,
+        tier: r?.tierName
           ? {
-              name: r.tierName,
-              priceCents: r.tierPriceCents,
-              description: r.tierDescription,
+              name: r?.tierName,
+              priceCents: r?.tierPriceCents,
+              description: r?.tierDescription,
             }
           : null,
-        storefront: r.storefrontName
+        storefront: r?.storefrontName
           ? {
-              name: r.storefrontName,
-              slug: r.storefrontSlug,
+              name: r?.storefrontName,
+              slug: r?.storefrontSlug,
               user: {
-                username: r.ownerUsername,
-                firstName: r.ownerFirstName,
-                lastName: r.ownerLastName,
+                username: r?.ownerUsername,
+                firstName: r?.ownerFirstName,
+                lastName: r?.ownerLastName,
               },
             }
           : null,
       }));
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching customer memberships:");
+      logger?.warn({ err: error }, "Error fetching customer memberships:");
       throw error;
     }
   }
@@ -1054,8 +1055,8 @@ export class StorefrontService {
    * Validate slug format
    */
   validateSlug(slug: string): boolean {
-    const slugRegex = /^[a-z0-9-]+$/;
-    return slugRegex.test(slug) && slug.length >= 3 && slug.length <= 50;
+    const _slugRegex = /^[a-z0-9-]+$/;
+    return slugRegex?.test(slug) && slug?.length >= 3 && slug?.length <= 50;
   }
 
   /**
@@ -1248,13 +1249,13 @@ export class StorefrontService {
   async generateSlug(name: string): Promise<string> {
     // If the user provided a name, base the slug on it (same as before)
     // but offer a Replit-style word combo as fallback when the name is empty
-    const useWordCombo = !name || name.trim().length === 0;
+    const _useWordCombo = !name || name?.trim().length === 0;
 
     if (useWordCombo) {
-      return this.generateRandomSlug();
+      return this?.generateRandomSlug();
     }
 
-    const baseSlug = name
+    const _baseSlug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
@@ -1263,8 +1264,8 @@ export class StorefrontService {
     let counter = 1;
 
     while (true) {
-      const existing = await db.query.storefronts.findFirst({
-        where: eq(storefronts.slug, slug),
+      const _existing = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.slug, slug),
       });
 
       if (!existing) break;
@@ -1281,25 +1282,25 @@ export class StorefrontService {
    * Appends a short number suffix only when needed to resolve collisions.
    */
   async generateRandomSlug(): Promise<string> {
-    const adj = StorefrontService.SLUG_ADJECTIVES;
-    const nouns = StorefrontService.SLUG_NOUNS;
+    const _adj = StorefrontService?.SLUG_ADJECTIVES;
+    const _nouns = StorefrontService?.SLUG_NOUNS;
 
     for (let attempt = 0; attempt < 20; attempt++) {
-      const a = adj[Math.floor(Math.random() * adj.length)];
-      const n = nouns[Math.floor(Math.random() * nouns.length)];
-      const suffix =
-        attempt === 0 ? "" : `-${Math.floor(Math.random() * 90 + 10)}`;
-      const candidate = `${a}-${n}${suffix}`;
+      const _a = adj[Math?.floor(Math?.random() * adj?.length)];
+      const _n = nouns[Math?.floor(Math?.random() * nouns?.length)];
+      const _suffix =
+        attempt === 0 ? "" : `-${Math?.floor(Math?.random() * 90 + 10)}`;
+      const _candidate = `${a}-${n}${suffix}`;
 
-      const existing = await db.query.storefronts.findFirst({
-        where: eq(storefronts.slug, candidate),
+      const _existing = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.slug, candidate),
       });
 
       if (!existing) return candidate;
     }
 
     // Last-resort: name-based slug with timestamp suffix
-    return `artist-studio-${Date.now().toString(36)}`;
+    return `artist-studio-${Date?.now().toString(36)}`;
   }
 
   /**
@@ -1307,9 +1308,9 @@ export class StorefrontService {
    */
   async incrementViews(storefrontId: string): Promise<void> {
     try {
-      logger.info(`Recording view for storefront ${storefrontId}`);
+      logger?.info(`Recording view for storefront ${storefrontId}`);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error incrementing storefront views:");
+      logger?.warn({ err: error }, "Error incrementing storefront views:");
     }
   }
 
@@ -1318,14 +1319,14 @@ export class StorefrontService {
    */
   async getMembershipTiers(storefrontId: string) {
     try {
-      const tiers = await db.query.membershipTiers.findMany({
-        where: eq(membershipTiers.storefrontId, storefrontId),
-        orderBy: [membershipTiers.createdAt],
+      const _tiers = await db?.query.membershipTiers?.findMany({
+        where: eq(membershipTiers?.storefrontId, storefrontId),
+        orderBy: [membershipTiers?.createdAt],
       });
 
       return tiers;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching membership tiers:");
+      logger?.warn({ err: error }, "Error fetching membership tiers:");
       throw error;
     }
   }
@@ -1335,43 +1336,43 @@ export class StorefrontService {
    */
   async getStorefrontListings(storefrontId: string) {
     try {
-      const storefront = await db.query.storefronts.findFirst({
-        where: eq(storefronts.id, storefrontId),
+      const _storefront = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.id, storefrontId),
       });
 
       if (!storefront) {
         throw new Error("Storefront not found");
       }
 
-      const storefrontListings = await db.query.listings.findMany({
+      const _storefrontListings = await db?.query.listings?.findMany({
         where: and(
-          eq(listings.userId, storefront.userId),
-          eq(listings.isPublished, true),
+          eq(listings?.userId, storefront?.userId),
+          eq(listings?.isPublished, true),
         ),
-        orderBy: [desc(listings.createdAt)],
+        orderBy: [desc(listings?.createdAt)],
         limit: 50,
       });
 
-      return storefrontListings.map((listing: Record<string, unknown>) => {
-        const meta = (listing.metadata as Record<string, unknown>) || {};
+      return storefrontListings?.map((listing: Record<string, unknown>) => {
+        const _meta = (listing?.metadata as Record<string, unknown>) || {};
         return {
           ...listing,
-          coverArtUrl: listing.artworkUrl || "",
-          audioUrl: listing.audioUrl || listing.previewUrl || "",
-          bpm: meta.bpm || null,
-          key: meta.key || null,
-          genre: listing.category || meta.genre || "",
-          mood: meta.mood || null,
-          tags: meta.tags || [],
-          isExclusive: meta.isExclusive || false,
-          priceCents: listing.priceCents || 0,
-          discountPercent: meta.discountPercent || null,
-          discountPriceCents: meta.discountPriceCents || null,
-          discountExpiresAt: meta.discountExpiresAt || null,
+          coverArtUrl: listing?.artworkUrl || "",
+          audioUrl: listing?.audioUrl || listing?.previewUrl || "",
+          bpm: meta?.bpm || null,
+          key: meta?.key || null,
+          genre: listing?.category || meta?.genre || "",
+          mood: meta?.mood || null,
+          tags: meta?.tags || [],
+          isExclusive: meta?.isExclusive || false,
+          priceCents: listing?.priceCents || 0,
+          discountPercent: meta?.discountPercent || null,
+          discountPriceCents: meta?.discountPriceCents || null,
+          discountExpiresAt: meta?.discountExpiresAt || null,
         };
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching storefront listings:");
+      logger?.warn({ err: error }, "Error fetching storefront listings:");
       throw error;
     }
   }
@@ -1382,13 +1383,13 @@ export class StorefrontService {
    * Cannot start or end with hyphen, no consecutive hyphens
    */
   validateSubdomain(subdomain: string): boolean {
-    const subdomainRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+    const _subdomainRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
     return (
-      subdomainRegex.test(subdomain) &&
-      subdomain.length >= 3 &&
-      subdomain.length <= 30 &&
-      !subdomain.includes("--") &&
-      !this.isReservedSubdomain(subdomain)
+      subdomainRegex?.test(subdomain) &&
+      subdomain?.length >= 3 &&
+      subdomain?.length <= 30 &&
+      !subdomain?.includes("--") &&
+      !this?.isReservedSubdomain(subdomain)
     );
   }
 
@@ -1396,7 +1397,7 @@ export class StorefrontService {
    * Check if subdomain is reserved
    */
   isReservedSubdomain(subdomain: string): boolean {
-    const reserved = [
+    const _reserved = [
       "www",
       "api",
       "app",
@@ -1427,14 +1428,14 @@ export class StorefrontService {
       "b-lawz",
       "blawzmusic",
     ];
-    return reserved.includes(subdomain.toLowerCase());
+    return reserved?.includes(subdomain?.toLowerCase());
   }
 
   /**
    * Generate a unique subdomain from a name
    */
   async generateSubdomain(name: string): Promise<string> {
-    const baseSubdomain = name
+    const _baseSubdomain = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")
@@ -1444,12 +1445,12 @@ export class StorefrontService {
     let counter = 1;
 
     while (true) {
-      if (!this.validateSubdomain(subdomain)) {
+      if (!this?.validateSubdomain(subdomain)) {
         subdomain = `artist-${baseSubdomain}`.substring(0, 30);
       }
 
-      const existing = await db.query.storefronts.findFirst({
-        where: eq(storefronts.subdomain, subdomain),
+      const _existing = await db?.query.storefronts?.findFirst({
+        where: eq(storefronts?.subdomain, subdomain),
       });
 
       if (!existing) {
@@ -1470,19 +1471,19 @@ export class StorefrontService {
     subdomain: string,
     excludeStorefrontId?: string,
   ): Promise<boolean> {
-    if (!this.validateSubdomain(subdomain)) {
+    if (!this?.validateSubdomain(subdomain)) {
       return false;
     }
 
-    const existing = await db.query.storefronts.findFirst({
-      where: eq(storefronts.subdomain, subdomain),
+    const _existing = await db?.query.storefronts?.findFirst({
+      where: eq(storefronts?.subdomain, subdomain),
     });
 
     if (!existing) {
       return true;
     }
 
-    return excludeStorefrontId ? existing.id === excludeStorefrontId : false;
+    return excludeStorefrontId ? existing?.id === excludeStorefrontId : false;
   }
 
   /**
@@ -1490,11 +1491,11 @@ export class StorefrontService {
    */
   async getStorefrontBySubdomain(subdomain: string) {
     try {
-      const storefront = await db.query.storefronts.findFirst({
+      const _storefront = await db?.query.storefronts?.findFirst({
         where: and(
-          eq(storefronts.subdomain, subdomain),
-          eq(storefronts.isSubdomainActive, true),
-          eq(storefronts.isActive, true),
+          eq(storefronts?.subdomain, subdomain),
+          eq(storefronts?.isSubdomainActive, true),
+          eq(storefronts?.isActive, true),
         ),
       });
 
@@ -1502,10 +1503,10 @@ export class StorefrontService {
         return null;
       }
 
-      const [storefrontUser, userListings, tiers, template] = await Promise.all(
+      const [storefrontUser, userListings, tiers, template] = await Promise?.all(
         [
-          db.query.users.findFirst({
-            where: eq(users.id, storefront.userId),
+          db?.query.users?.findFirst({
+            where: eq(users?.id, storefront?.userId),
             columns: {
               id: true,
               username: true,
@@ -1514,23 +1515,23 @@ export class StorefrontService {
               profileImageUrl: true,
             },
           }),
-          db.query.listings.findMany({
+          db?.query.listings?.findMany({
             where: and(
-              eq(listings.userId, storefront.userId),
-              eq(listings.isPublished, true),
+              eq(listings?.userId, storefront?.userId),
+              eq(listings?.isPublished, true),
             ),
-            orderBy: [desc(listings.createdAt)],
+            orderBy: [desc(listings?.createdAt)],
             limit: 50,
           }),
-          db.query.membershipTiers.findMany({
+          db?.query.membershipTiers?.findMany({
             where: and(
-              eq(membershipTiers.storefrontId, storefront.id),
-              eq(membershipTiers.isActive, true),
+              eq(membershipTiers?.storefrontId, storefront?.id),
+              eq(membershipTiers?.isActive, true),
             ),
           }),
-          storefront.templateId
-            ? db.query.storefrontTemplates.findFirst({
-                where: eq(storefrontTemplates.id, storefront.templateId),
+          storefront?.templateId
+            ? db?.query.storefrontTemplates?.findFirst({
+                where: eq(storefrontTemplates?.id, storefront?.templateId),
               })
             : null,
         ],
@@ -1538,14 +1539,14 @@ export class StorefrontService {
 
       return {
         ...storefront,
-        publicUrl: this.getStorefrontUrl(storefront),
+        publicUrl: this?.getStorefrontUrl(storefront),
         user: storefrontUser,
         listings: userListings,
         membershipTiers: tiers,
         template,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching storefront by subdomain:");
+      logger?.warn({ err: error }, "Error fetching storefront by subdomain:");
       throw error;
     }
   }
@@ -1568,23 +1569,23 @@ export class StorefrontService {
     customDomain?: string | null;
     isCustomDomainActive?: boolean;
   }): string {
-    const baseDomain = process.env.BASE_DOMAIN || "max-booster.com";
-    const slugUrl = `https://${baseDomain}/storefront/${storefront.slug}`;
+    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster.com";
+    const _slugUrl = `https://${baseDomain}/storefront/${storefront?.slug}`;
 
-    if (process.env.STOREFRONT_URL_FORMAT === "slug") {
+    if (process?.env.STOREFRONT_URL_FORMAT === "slug") {
       return slugUrl;
     }
 
-    if (storefront.customDomain && storefront.isCustomDomainActive) {
-      return `https://${storefront.customDomain}`;
+    if (storefront?.customDomain && storefront?.isCustomDomainActive) {
+      return `https://${storefront?.customDomain}`;
     }
 
-    if (storefront.subdomain && storefront.isSubdomainActive) {
-      return `https://${storefront.subdomain}.${baseDomain}`;
+    if (storefront?.subdomain && storefront?.isSubdomainActive) {
+      return `https://${storefront?.subdomain}.${baseDomain}`;
     }
 
     return slugUrl;
   }
 }
 
-export const storefrontService = new StorefrontService();
+export const _storefrontService = new StorefrontService();

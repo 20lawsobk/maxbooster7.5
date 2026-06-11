@@ -895,10 +895,10 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 class MusicWorkflowAutomationService {
-  private scheduledTasks = new Map<string, ReturnType<typeof cron.schedule>>();
+  private scheduledTasks = new Map<string, ReturnType<typeof cron?.schedule>>();
 
   constructor() {
-    this.startScheduledWorkflows();
+    this?.startScheduledWorkflows();
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
@@ -912,19 +912,19 @@ class MusicWorkflowAutomationService {
   ): Promise<
     Record<string, { enabled: boolean; config: Record<string, any> }>
   > {
-    const rows = await db
+    const _rows = await db
       .select()
       .from(musicWorkflowAutomations)
-      .where(eq(musicWorkflowAutomations.userId, userId));
+      .where(eq(musicWorkflowAutomations?.userId, userId));
 
     const map: Record<
       string,
       { enabled: boolean; config: Record<string, any> }
     > = {};
     for (const row of rows) {
-      map[row.templateId] = {
-        enabled: row.enabled,
-        config: (row.config as Record<string, any>) ?? {},
+      map[row?.templateId] = {
+        enabled: row?.enabled,
+        config: (row?.config as Record<string, any>) ?? {},
       };
     }
     return map;
@@ -935,34 +935,34 @@ class MusicWorkflowAutomationService {
     templateId: string,
     config?: Record<string, any>,
   ): Promise<void> {
-    const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
+    const _template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
     if (!template) throw new Error(`Unknown template: ${templateId}`);
 
-    const existing = await db
+    const _existing = await db
       .select()
       .from(musicWorkflowAutomations)
       .where(
         and(
-          eq(musicWorkflowAutomations.userId, userId),
-          eq(musicWorkflowAutomations.templateId, templateId),
+          eq(musicWorkflowAutomations?.userId, userId),
+          eq(musicWorkflowAutomations?.templateId, templateId),
         ),
       )
       .limit(1);
 
-    const mergedConfig = { ...template.defaultConfig, ...(config ?? {}) };
+    const _mergedConfig = { ...template?.defaultConfig, ...(config ?? {}) };
 
-    if (existing.length > 0) {
+    if (existing?.length > 0) {
       await db
         .update(musicWorkflowAutomations)
         .set({ enabled: true, config: mergedConfig, updatedAt: new Date() })
         .where(
           and(
-            eq(musicWorkflowAutomations.userId, userId),
-            eq(musicWorkflowAutomations.templateId, templateId),
+            eq(musicWorkflowAutomations?.userId, userId),
+            eq(musicWorkflowAutomations?.templateId, templateId),
           ),
         );
     } else {
-      await db.insert(musicWorkflowAutomations).values({
+      await db?.insert(musicWorkflowAutomations).values({
         userId,
         templateId,
         enabled: true,
@@ -977,8 +977,8 @@ class MusicWorkflowAutomationService {
       .set({ enabled: false, updatedAt: new Date() })
       .where(
         and(
-          eq(musicWorkflowAutomations.userId, userId),
-          eq(musicWorkflowAutomations.templateId, templateId),
+          eq(musicWorkflowAutomations?.userId, userId),
+          eq(musicWorkflowAutomations?.templateId, templateId),
         ),
       );
   }
@@ -988,39 +988,39 @@ class MusicWorkflowAutomationService {
     templateId: string,
     config: Record<string, any>,
   ): Promise<void> {
-    const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
+    const _template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
     if (!template) throw new Error(`Unknown template: ${templateId}`);
 
-    const existing = await db
+    const _existing = await db
       .select()
       .from(musicWorkflowAutomations)
       .where(
         and(
-          eq(musicWorkflowAutomations.userId, userId),
-          eq(musicWorkflowAutomations.templateId, templateId),
+          eq(musicWorkflowAutomations?.userId, userId),
+          eq(musicWorkflowAutomations?.templateId, templateId),
         ),
       )
       .limit(1);
 
-    const mergedConfig = {
-      ...(existing.length > 0
+    const _mergedConfig = {
+      ...(existing?.length > 0
         ? (existing[0].config as Record<string, any>)
-        : template.defaultConfig),
+        : template?.defaultConfig),
       ...config,
     };
 
-    if (existing.length > 0) {
+    if (existing?.length > 0) {
       await db
         .update(musicWorkflowAutomations)
         .set({ config: mergedConfig, updatedAt: new Date() })
         .where(
           and(
-            eq(musicWorkflowAutomations.userId, userId),
-            eq(musicWorkflowAutomations.templateId, templateId),
+            eq(musicWorkflowAutomations?.userId, userId),
+            eq(musicWorkflowAutomations?.templateId, templateId),
           ),
         );
     } else {
-      await db.insert(musicWorkflowAutomations).values({
+      await db?.insert(musicWorkflowAutomations).values({
         userId,
         templateId,
         enabled: false,
@@ -1030,19 +1030,19 @@ class MusicWorkflowAutomationService {
   }
 
   async getExecutionLogs(userId: string, templateId?: string, limit = 50) {
-    const conditions = [eq(musicWorkflowExecutionLogs.userId, userId)];
+    const _conditions = [eq(musicWorkflowExecutionLogs?.userId, userId)];
     if (templateId) {
-      conditions.push(eq(musicWorkflowExecutionLogs.templateId, templateId));
+      conditions?.push(eq(musicWorkflowExecutionLogs?.templateId, templateId));
     }
 
-    const rows = await db
+    const _rows = await db
       .select()
       .from(musicWorkflowExecutionLogs)
       .where(and(...conditions))
-      .orderBy(musicWorkflowExecutionLogs.executedAt)
+      .orderBy(musicWorkflowExecutionLogs?.executedAt)
       .limit(limit);
 
-    return rows.reverse();
+    return rows?.reverse();
   }
 
   /**
@@ -1050,7 +1050,7 @@ class MusicWorkflowAutomationService {
    * music-workflow-relevant event occurs.
    *
    * @example
-   * musicWorkflowAutomationService.triggerEvent('track:uploaded', {
+   * musicWorkflowAutomationService?.triggerEvent('track:uploaded', {
    *   userId: '...', trackId: '...', trackName: 'My Song'
    * });
    */
@@ -1061,23 +1061,23 @@ class MusicWorkflowAutomationService {
     const { userId } = data;
     if (!userId) return;
 
-    const relevantTemplates = WORKFLOW_TEMPLATES.filter(
-      (t) => t.trigger.event === eventType,
+    const _relevantTemplates = WORKFLOW_TEMPLATES?.filter(
+      (t) => t?.trigger.event === eventType,
     );
-    if (relevantTemplates.length === 0) return;
+    if (relevantTemplates?.length === 0) return;
 
-    const userAutomations = await this.getUserAutomations(userId);
+    const _userAutomations = await this?.getUserAutomations(userId);
 
     for (const template of relevantTemplates) {
-      const userConfig = userAutomations[template.id];
+      const _userConfig = userAutomations[template?.id];
       if (!userConfig?.enabled) continue;
 
-      const config = { ...template.defaultConfig, ...userConfig.config };
-      this.executeTemplate(template, userId, data, config, eventType).catch(
+      const _config = { ...template?.defaultConfig, ...userConfig?.config };
+      this?.executeTemplate(template, userId, data, config, eventType).catch(
         (err) => {
-          logger.warn(
+          logger?.warn(
             { err: err },
-            `[MusicWorkflow] Error executing ${template.id}:`,
+            `[MusicWorkflow] Error executing ${template?.id}:`,
           );
         },
       );
@@ -1093,8 +1093,8 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
     eventType: string,
   ): Promise<void> {
-    logger.info(
-      `[MusicWorkflow] Executing "${template.name}" for user ${userId}`,
+    logger?.info(
+      `[MusicWorkflow] Executing "${template?.name}" for user ${userId}`,
     );
 
     let status = "success";
@@ -1102,32 +1102,32 @@ class MusicWorkflowAutomationService {
     let error: string | null = null;
 
     try {
-      result = await this.dispatch(template.id, userId, eventData, config);
+      result = await this?.dispatch(template?.id, userId, eventData, config);
       await db
         .update(musicWorkflowAutomations)
         .set({
           lastTriggeredAt: new Date(),
-          triggerCount: sql`${musicWorkflowAutomations.triggerCount} + 1`,
+          triggerCount: sql`${musicWorkflowAutomations?.triggerCount} + 1`,
           updatedAt: new Date(),
         })
         .where(
           and(
-            eq(musicWorkflowAutomations.userId, userId),
-            eq(musicWorkflowAutomations.templateId, template.id),
+            eq(musicWorkflowAutomations?.userId, userId),
+            eq(musicWorkflowAutomations?.templateId, template?.id),
           ),
         );
     } catch (err) {
       status = "failed";
-      error = err instanceof Error ? err.message : "Unknown error";
-      logger.warn(
+      error = err instanceof Error ? err?.message : "Unknown error";
+      logger?.warn(
         { err: err },
-        `[MusicWorkflow] Failed "${template.name}" for user ${userId}:`,
+        `[MusicWorkflow] Failed "${template?.name}" for user ${userId}:`,
       );
     }
 
-    await db.insert(musicWorkflowExecutionLogs).values({
+    await db?.insert(musicWorkflowExecutionLogs).values({
       userId,
-      templateId: template.id,
+      templateId: template?.id,
       eventType,
       status,
       result,
@@ -1146,55 +1146,55 @@ class MusicWorkflowAutomationService {
   ): Promise<Record<string, any>> {
     switch (templateId) {
       case "track-upload-analysis":
-        return this.handleTrackUploadAnalysis(userId, eventData, config);
+        return this?.handleTrackUploadAnalysis(userId, eventData, config);
       case "collaboration-alert":
-        return this.handleCollaborationAlert(userId, eventData, config);
+        return this?.handleCollaborationAlert(userId, eventData, config);
       case "mix-ready-checklist":
-        return this.handleMixReadyChecklist(userId, eventData, config);
+        return this?.handleMixReadyChecklist(userId, eventData, config);
       case "release-countdown-posts":
-        return this.handleReleaseCountdownPosts(userId, eventData, config);
+        return this?.handleReleaseCountdownPosts(userId, eventData, config);
       case "pre-save-campaign":
-        return this.handlePreSaveCampaign(userId, eventData, config);
+        return this?.handlePreSaveCampaign(userId, eventData, config);
       case "distribution-submitted-notify":
-        return this.handleDistributionSubmittedNotify(
+        return this?.handleDistributionSubmittedNotify(
           userId,
           eventData,
           config,
         );
       case "release-day-social-blast":
-        return this.handleReleaseDaySocialBlast(userId, eventData, config);
+        return this?.handleReleaseDaySocialBlast(userId, eventData, config);
       case "release-day-newsletter":
-        return this.handleReleaseDayNewsletter(userId, eventData, config);
+        return this?.handleReleaseDayNewsletter(userId, eventData, config);
       case "release-day-push-notify":
-        return this.handleReleaseDayPushNotify(userId, eventData, config);
+        return this?.handleReleaseDayPushNotify(userId, eventData, config);
       case "weekly-performance-digest":
-        return this.handleWeeklyPerformanceDigest(userId, eventData, config);
+        return this?.handleWeeklyPerformanceDigest(userId, eventData, config);
       case "streaming-milestone-celebrate":
-        return this.handleStreamingMilestoneCelebrate(
+        return this?.handleStreamingMilestoneCelebrate(
           userId,
           eventData,
           config,
         );
       case "playlist-placement-alert":
-        return this.handlePlaylistPlacementAlert(userId, eventData, config);
+        return this?.handlePlaylistPlacementAlert(userId, eventData, config);
       case "low-engagement-rescue":
-        return this.handleLowEngagementRescue(userId, eventData, config);
+        return this?.handleLowEngagementRescue(userId, eventData, config);
       case "beat-sale-thank-you":
-        return this.handleBeatSaleThankYou(userId, eventData, config);
+        return this?.handleBeatSaleThankYou(userId, eventData, config);
       case "royalty-collection-reminder":
-        return this.handleRoyaltyCollectionReminder(userId, eventData, config);
+        return this?.handleRoyaltyCollectionReminder(userId, eventData, config);
       case "pro-track-registration":
-        return this.handleProTrackRegistration(userId, eventData, config);
+        return this?.handleProTrackRegistration(userId, eventData, config);
       case "press-release-generator":
-        return this.handlePressReleaseGenerator(userId, eventData, config);
+        return this?.handlePressReleaseGenerator(userId, eventData, config);
       case "social-bio-update":
-        return this.handleSocialBioUpdate(userId, eventData, config);
+        return this?.handleSocialBioUpdate(userId, eventData, config);
       case "smart-caption-repurpose":
-        return this.handleSmartCaptionRepurpose(userId, eventData, config);
+        return this?.handleSmartCaptionRepurpose(userId, eventData, config);
       case "venue-booking-followup":
-        return this.handleVenueBookingFollowup(userId, eventData, config);
+        return this?.handleVenueBookingFollowup(userId, eventData, config);
       case "sync-license-pitch":
-        return this.handleSyncLicensePitch(userId, eventData, config);
+        return this?.handleSyncLicensePitch(userId, eventData, config);
       default:
         throw new Error(`No handler for template: ${templateId}`);
     }
@@ -1210,41 +1210,42 @@ class MusicWorkflowAutomationService {
     const { trackName = "your track", trackId } = eventData;
     const actions: string[] = [];
 
-    if (config.generateISRC) {
+    if (config?.generateISRC) {
       try {
-        const { codeGenerationService } =
-          await import("./codeGenerationService.js");
-        const result = await codeGenerationService.generateISRC(
+        const { codeGenerationService } = await import(
+          "./codeGenerationService.js"
+        );
+        const _result = await codeGenerationService?.generateISRC(
           userId,
           trackId,
           (eventData as Record<string, unknown>).artist as string | undefined,
           trackName,
         );
-        actions.push(
+        actions?.push(
           result?.isrc
-            ? `ISRC ${result.isrc} assigned`
+            ? `ISRC ${result?.isrc} assigned`
             : "ISRC generation skipped (no track id)",
         );
       } catch (err) {
-        logger.warn(
+        logger?.warn(
           { err, trackId },
           "ISRC generation failed in workflow handler",
         );
-        actions.push("ISRC generation failed (will retry on next event)");
+        actions?.push("ISRC generation failed (will retry on next event)");
       }
     }
-    if (config.suggestGenre) {
-      actions.push("Genre/mood tag suggestions queued for next AI cycle");
+    if (config?.suggestGenre) {
+      actions?.push("Genre/mood tag suggestions queued for next AI cycle");
     }
-    if (config.notifyOnComplete) {
-      await notificationService.send({
+    if (config?.notifyOnComplete) {
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Track Analysis Complete",
         message: `"${trackName}" has been analyzed. BPM, key, and metadata suggestions are ready.`,
         link: trackId ? `/projects` : "/projects",
       });
-      actions.push("Push notification sent");
+      actions?.push("Push notification sent");
     }
 
     return { actions };
@@ -1261,37 +1262,37 @@ class MusicWorkflowAutomationService {
     } = eventData;
     const actions: string[] = [];
 
-    if (config.sendPush) {
-      await notificationService.send({
+    if (config?.sendPush) {
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Collaborator Added",
-        message: `${newMemberName} joined ${projectName}. ${config.includeProjectBrief ? "Project brief included in their welcome email." : ""}`,
+        message: `${newMemberName} joined ${projectName}. ${config?.includeProjectBrief ? "Project brief included in their welcome email." : ""}`,
         link: "/collaborations",
       });
-      actions.push("Project owner notified");
+      actions?.push("Project owner notified");
     }
 
-    if (config.sendEmail && eventData.newMemberEmail) {
+    if (config?.sendEmail && eventData?.newMemberEmail) {
       try {
-        await emailService.sendEmail({
-          to: eventData.newMemberEmail,
+        await emailService?.sendEmail({
+          to: eventData?.newMemberEmail,
           subject: `You've been added to "${projectName}"`,
           html: `
             <h2>Welcome to the project!</h2>
             <p>Hi ${newMemberName},</p>
             <p>You've been added as a collaborator on <strong>${projectName}</strong>.</p>
             ${
-              config.includeProjectBrief && eventData.projectBrief
-                ? `<h3>Project Brief</h3><p>${eventData.projectBrief}</p>`
+              config?.includeProjectBrief && eventData?.projectBrief
+                ? `<h3>Project Brief</h3><p>${eventData?.projectBrief}</p>`
                 : ""
             }
             <p>Log in to Max Booster to get started.</p>
           `,
         });
-        actions.push("Welcome email sent to new collaborator");
+        actions?.push("Welcome email sent to new collaborator");
       } catch {
-        actions.push("Email skipped (service unavailable)");
+        actions?.push("Email skipped (service unavailable)");
       }
     }
 
@@ -1306,22 +1307,22 @@ class MusicWorkflowAutomationService {
     const { trackName = "your track" } = eventData;
     const actions: string[] = [];
 
-    if (config.notifyTeam) {
-      await notificationService.send({
+    if (config?.notifyTeam) {
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Mix Complete — Mastering Phase",
-        message: `"${trackName}" mix is approved. Mastering task created with a ${config.masteringDeadlineDays}-day deadline.`,
+        message: `"${trackName}" mix is approved. Mastering task created with a ${config?.masteringDeadlineDays}-day deadline.`,
         link: "/projects",
       });
-      actions.push("Team notified of mix completion");
+      actions?.push("Team notified of mix completion");
     }
 
-    if (config.createMasteringTask) {
+    if (config?.createMasteringTask) {
       // No dedicated `tasks` table exists; surface the reminder via notification only.
       // Avoid claiming a DB-backed task was created when it wasn't.
-      actions.push(
-        `Mastering reminder set (due in ${config.masteringDeadlineDays} days)`,
+      actions?.push(
+        `Mastering reminder set (due in ${config?.masteringDeadlineDays} days)`,
       );
     }
 
@@ -1336,24 +1337,24 @@ class MusicWorkflowAutomationService {
     const { releaseTitle = "New Release" } = eventData;
     const scheduled: string[] = [];
 
-    const countdowns = [
-      { enabled: config.post7Day, days: 7, label: "7-day" },
-      { enabled: config.post3Day, days: 3, label: "3-day" },
-      { enabled: config.post1Day, days: 1, label: "1-day" },
-      { enabled: config.postReleaseDay, days: 0, label: "Release day" },
+    const _countdowns = [
+      { enabled: config?.post7Day, days: 7, label: "7-day" },
+      { enabled: config?.post3Day, days: 3, label: "3-day" },
+      { enabled: config?.post1Day, days: 1, label: "1-day" },
+      { enabled: config?.postReleaseDay, days: 0, label: "Release day" },
     ];
 
     for (const cd of countdowns) {
-      if (cd.enabled) {
-        scheduled.push(`${cd.label} countdown post queued`);
+      if (cd?.enabled) {
+        scheduled?.push(`${cd?.label} countdown post queued`);
       }
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "Release Countdown Posts Scheduled",
-      message: `${scheduled.length} countdown posts queued for "${releaseTitle}". Check your social calendar to review.`,
+      message: `${scheduled?.length} countdown posts queued for "${releaseTitle}". Check your social calendar to review.`,
       link: "/social-media",
     });
 
@@ -1370,11 +1371,11 @@ class MusicWorkflowAutomationService {
     // not here. This handler is the post-event notification side of that flow.
     const actions: string[] = ["Pre-save campaign event acknowledged"];
 
-    if (config.postToSocial) {
-      actions.push("Pre-save link queued for social auto-posting");
+    if (config?.postToSocial) {
+      actions?.push("Pre-save link queued for social auto-posting");
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "Pre-Save Campaign Launched",
@@ -1393,21 +1394,21 @@ class MusicWorkflowAutomationService {
     const { releaseTitle = "New Release", platforms = [] } = eventData;
     const actions: string[] = [];
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "Distribution Submitted",
-      message: `"${releaseTitle}" has been submitted to ${Array.isArray(platforms) && platforms.length > 0 ? platforms.join(", ") : "streaming platforms"}. Expect approval within 24–72 hours.`,
+      message: `"${releaseTitle}" has been submitted to ${Array?.isArray(platforms) && platforms?.length > 0 ? platforms?.join(", ") : "streaming platforms"}. Expect approval within 24–72 hours.`,
       link: "/distribution",
     });
-    actions.push("Push notification sent");
+    actions?.push("Push notification sent");
 
-    if (config.notifyTeam) {
-      actions.push("Team collaborators notified");
+    if (config?.notifyTeam) {
+      actions?.push("Team collaborators notified");
     }
 
-    if (config.setFollowUpReminder) {
-      actions.push("48-hour follow-up reminder scheduled");
+    if (config?.setFollowUpReminder) {
+      actions?.push("48-hour follow-up reminder scheduled");
     }
 
     return { actions };
@@ -1421,25 +1422,25 @@ class MusicWorkflowAutomationService {
     const { releaseTitle = "New Release", artistName = "Artist" } = eventData;
     const platformsPosted: string[] = [];
 
-    const allPlatforms = [
+    const _allPlatforms = [
       "instagram",
       "twitter",
       "facebook",
       "tiktok",
       "youtube",
     ];
-    const targets =
-      config.platforms === "all" ? allPlatforms : [config.platforms];
+    const _targets =
+      config?.platforms === "all" ? allPlatforms : [config?.platforms];
 
     for (const platform of targets) {
-      platformsPosted.push(platform);
+      platformsPosted?.push(platform);
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: `"${releaseTitle}" is LIVE!`,
-      message: `Release day blast posted to: ${platformsPosted.join(", ")}. Go celebrate!`,
+      message: `Release day blast posted to: ${platformsPosted?.join(", ")}. Go celebrate!`,
       link: "/social-media",
     });
 
@@ -1459,27 +1460,27 @@ class MusicWorkflowAutomationService {
     } = eventData;
 
     let linksHtml = "";
-    if (config.includeSpotifyLink && spotifyUrl) {
+    if (config?.includeSpotifyLink && spotifyUrl) {
       linksHtml += `<p><a href="${spotifyUrl}">Listen on Spotify</a></p>`;
     }
-    if (config.includeAppleMusicLink && appleMusicUrl) {
+    if (config?.includeAppleMusicLink && appleMusicUrl) {
       linksHtml += `<p><a href="${appleMusicUrl}">Listen on Apple Music</a></p>`;
     }
 
-    const subject =
-      config.subject || `${artistName} — "${releaseTitle}" is out now!`;
+    const _subject =
+      config?.subject || `${artistName} — "${releaseTitle}" is out now!`;
 
     try {
-      logger.info(
+      logger?.info(
         `[MusicWorkflow] Release day newsletter queued for user ${userId}: "${subject}"`,
       );
     } catch {
-      logger.warn(
+      logger?.warn(
         "[MusicWorkflow] Email service unavailable for release newsletter",
       );
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "Release Newsletter Sent",
@@ -1496,11 +1497,11 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const { releaseTitle = "New Release", artistName = "Artist" } = eventData;
-    const message =
-      config.message ||
+    const _message =
+      config?.message ||
       `${artistName}'s new release "${releaseTitle}" is out now — stream it!`;
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "New Release Alert Sent",
@@ -1518,14 +1519,14 @@ class MusicWorkflowAutomationService {
   ) {
     const sections: string[] = [];
 
-    if (config.includeStreamingData) sections.push("streaming stats");
-    if (config.includeRevenueData) sections.push("revenue summary");
-    if (config.includeAISuggestions) sections.push("AI growth tips");
+    if (config?.includeStreamingData) sections?.push("streaming stats");
+    if (config?.includeRevenueData) sections?.push("revenue summary");
+    if (config?.includeAISuggestions) sections?.push("AI growth tips");
 
-    const summary = `Weekly digest covering: ${sections.join(", ")}.`;
+    const _summary = `Weekly digest covering: ${sections?.join(", ")}.`;
 
-    if (config.deliveryMethod === "push" || config.deliveryMethod === "both") {
-      await notificationService.send({
+    if (config?.deliveryMethod === "push" || config?.deliveryMethod === "both") {
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Your Weekly Performance Digest",
@@ -1548,7 +1549,7 @@ class MusicWorkflowAutomationService {
       platform = "Spotify",
     } = eventData;
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: `🏆 ${milestone} streams on ${platform}!`,
@@ -1556,7 +1557,7 @@ class MusicWorkflowAutomationService {
       link: "/analytics",
     });
 
-    const actions = config.postToSocial
+    const _actions = config?.postToSocial
       ? ["Celebration post queued on social media"]
       : [];
     return { trackName, milestone, platform, actions };
@@ -1583,7 +1584,7 @@ class MusicWorkflowAutomationService {
 
     // Persist the confirmed placement in the database so the user has a full record
     try {
-      await db.insert(playlistPitches).values({
+      await db?.insert(playlistPitches).values({
         userId,
         trackTitle: String(trackName),
         artistName: "",
@@ -1597,29 +1598,29 @@ class MusicWorkflowAutomationService {
         status: "placed",
         submittedAt: new Date(),
       });
-      actions.push("Placement record saved to Playlist Pitches");
+      actions?.push("Placement record saved to Playlist Pitches");
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         { err },
         "handlePlaylistPlacementAlert: failed to save pitch record",
       );
     }
 
-    if (config.notifyPush) {
-      await notificationService.send({
+    if (config?.notifyPush) {
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Playlist Placement!",
         message: `"${trackName}" was added to "${playlistName}" (${Number(playlistFollowers).toLocaleString()} followers).`,
         link: "/playlist-pitching",
       });
-      actions.push("Placement notification sent");
+      actions?.push("Placement notification sent");
     }
 
     // Auto-generate and queue a social announcement for large playlists
-    if (config.autoShareAnnouncement && Number(playlistFollowers) >= 10000) {
+    if (config?.autoShareAnnouncement && Number(playlistFollowers) >= 10000) {
       try {
-        const announcementResult = await unifiedAIController.generateContent({
+        const _announcementResult = await unifiedAIController?.generateContent({
           userId,
           type: "social_post",
           platform: "instagram",
@@ -1630,19 +1631,19 @@ class MusicWorkflowAutomationService {
             followers: Number(playlistFollowers),
             event: "playlist_placement",
           },
-          seed: Math.floor(Date.now() / 10000),
+          seed: Math?.floor(Date?.now() / 10000),
         });
         if (announcementResult?.data?.caption) {
-          actions.push(
+          actions?.push(
             `Announcement post generated for ${Number(playlistFollowers).toLocaleString()}-follower playlist`,
           );
         }
       } catch (err) {
-        logger.warn(
+        logger?.warn(
           { err },
           "handlePlaylistPlacementAlert: AI announcement generation failed",
         );
-        actions.push("Announcement queued (10K+ follower playlist)");
+        actions?.push("Announcement queued (10K+ follower playlist)");
       }
     }
 
@@ -1657,19 +1658,19 @@ class MusicWorkflowAutomationService {
     const { trackName = "your track", dropPercent = 0 } = eventData;
     const actions: string[] = [];
 
-    if (config.triggerABTest) {
-      actions.push("A/B content variation test triggered");
+    if (config?.triggerABTest) {
+      actions?.push("A/B content variation test triggered");
     }
-    if (config.tryNewPostingTime) {
-      actions.push("New optimal posting time slot selected");
+    if (config?.tryNewPostingTime) {
+      actions?.push("New optimal posting time slot selected");
     }
 
-    if (config.notifyUser) {
-      await notificationService.send({
+    if (config?.notifyUser) {
+      await notificationService?.send({
         userId,
         type: "warning",
         title: "Engagement Drop Detected",
-        message: `"${trackName}" engagement dropped ${dropPercent}%. Auto-rescue actions taken: ${actions.join(", ")}.`,
+        message: `"${trackName}" engagement dropped ${dropPercent}%. Auto-rescue actions taken: ${actions?.join(", ")}.`,
         link: "/analytics",
       });
     }
@@ -1690,12 +1691,12 @@ class MusicWorkflowAutomationService {
     } = eventData;
     const actions: string[] = [];
 
-    if (config.sendThankYouEmail && buyerEmail) {
+    if (config?.sendThankYouEmail && buyerEmail) {
       try {
-        const note =
-          config.personalNote ||
+        const _note =
+          config?.personalNote ||
           `Thank you for your purchase! I appreciate your support.`;
-        await emailService.sendEmail({
+        await emailService?.sendEmail({
           to: buyerEmail,
           subject: `Thank you for purchasing "${productName}"`,
           html: `
@@ -1705,21 +1706,21 @@ class MusicWorkflowAutomationService {
             <p>Feel free to reach out if you have any questions about the license or file usage.</p>
           `,
         });
-        actions.push("Thank-you email sent to buyer");
+        actions?.push("Thank-you email sent to buyer");
       } catch {
-        actions.push("Email skipped (service unavailable)");
+        actions?.push("Email skipped (service unavailable)");
       }
     }
 
-    if (config.notifySeller) {
-      await notificationService.send({
+    if (config?.notifySeller) {
+      await notificationService?.send({
         userId,
         type: "info",
         title: `Sale: "${productName}"`,
         message: `${buyerName} purchased "${productName}". Thank-you email sent.`,
         link: "/marketplace",
       });
-      actions.push("Sale notification sent to you");
+      actions?.push("Sale notification sent to you");
     }
 
     return { actions, productName, buyerName };
@@ -1732,19 +1733,19 @@ class MusicWorkflowAutomationService {
   ) {
     const actions: string[] = [];
 
-    if (config.generateReport) {
-      actions.push("Monthly royalty collection report generated");
+    if (config?.generateReport) {
+      actions?.push("Monthly royalty collection report generated");
     }
-    if (config.checkPROBalance) {
-      actions.push("PRO account balance checked");
+    if (config?.checkPROBalance) {
+      actions?.push("PRO account balance checked");
     }
 
-    if (config.deliveryMethod === "push" || config.deliveryMethod === "both") {
-      await notificationService.send({
+    if (config?.deliveryMethod === "push" || config?.deliveryMethod === "both") {
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Monthly Royalty Check",
-        message: `Your monthly royalty audit is complete. ${actions.join(". ")}.`,
+        message: `Your monthly royalty audit is complete. ${actions?.join(". ")}.`,
         link: "/royalties",
       });
     }
@@ -1767,36 +1768,36 @@ class MusicWorkflowAutomationService {
     } = eventData as any;
 
     const actions: string[] = [];
-    const pro = config.pro || "ASCAP";
+    const _pro = config?.pro || "ASCAP";
 
     // Upsert a publishing rights record so the user has a pre-filled registration
     try {
-      const existing = await db
+      const _existing = await db
         .select()
         .from(publishingRights)
         .where(
           and(
-            eq(publishingRights.userId, userId),
-            eq(publishingRights.trackTitle, String(trackName)),
+            eq(publishingRights?.userId, userId),
+            eq(publishingRights?.trackTitle, String(trackName)),
           ),
         )
         .limit(1);
 
-      if (existing.length === 0) {
-        await db.insert(publishingRights).values({
+      if (existing?.length === 0) {
+        await db?.insert(publishingRights).values({
           userId,
           trackTitle: String(trackName),
           isrc: isrc ? String(isrc) : null,
           iswc: iswc ? String(iswc) : null,
           upc: upc ? String(upc) : null,
-          coWriters: Array.isArray(coWriters) ? coWriters : [],
+          coWriters: Array?.isArray(coWriters) ? coWriters : [],
           publisherName: publisherName ? String(publisherName) : null,
           proName: pro,
           copyrightYear: new Date().getFullYear(),
           status: "pending",
           notes: `Auto-created by workflow. Register this track at ${pro === "ASCAP" ? "ascap.com" : pro === "BMI" ? "bmi.com" : "sesac.com"}.`,
         });
-        actions.push(
+        actions?.push(
           `Publishing rights record created for "${trackName}" (${pro})`,
         );
       } else {
@@ -1804,40 +1805,40 @@ class MusicWorkflowAutomationService {
         await db
           .update(publishingRights)
           .set({ proName: pro, updatedAt: new Date() })
-          .where(eq(publishingRights.id, existing[0].id));
-        actions.push(
+          .where(eq(publishingRights?.id, existing[0].id));
+        actions?.push(
           `Publishing rights record updated for "${trackName}" (${pro})`,
         );
       }
 
-      if (config.autoFillMetadata) {
-        actions.push(
+      if (config?.autoFillMetadata) {
+        actions?.push(
           "ISRC, co-writers, copyright year pre-filled from track metadata",
         );
       }
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         { err },
         "handleProTrackRegistration: failed to upsert publishing rights",
       );
     }
 
-    if (config.sendReminder) {
-      const registrationUrl =
+    if (config?.sendReminder) {
+      const _registrationUrl =
         pro === "ASCAP"
           ? "ascap.com/register"
           : pro === "BMI"
             ? "bmi.com/register"
             : "sesac.com/register";
 
-      await notificationService.send({
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Publishing Rights Record Ready",
         message: `"${trackName}" has been logged in your Publishing Rights. Complete your ${pro} registration at ${registrationUrl}.`,
         link: "/publishing",
       });
-      actions.push(`PRO registration reminder sent (${pro})`);
+      actions?.push(`PRO registration reminder sent (${pro})`);
     }
 
     return { actions, pro };
@@ -1860,12 +1861,12 @@ class MusicWorkflowAutomationService {
     } = eventData as any;
 
     const actions: string[] = [];
-    const tone = config.tone || "professional";
+    const _tone = config?.tone || "professional";
 
     // Generate the press release body via MaxCore AI
     let pressReleaseDraft = "";
     try {
-      const aiResult = await unifiedAIController.generateContent({
+      const _aiResult = await unifiedAIController?.generateContent({
         userId,
         type: "press_release",
         platform: "blog",
@@ -1877,18 +1878,18 @@ class MusicWorkflowAutomationService {
           releaseDate: releaseDate
             ? String(releaseDate)
             : new Date().toLocaleDateString(),
-          includeQuote: Boolean(config.includeQuote),
+          includeQuote: Boolean(config?.includeQuote),
           event: "press_release_generation",
         },
-        seed: Math.floor(Date.now() / 10000),
+        seed: Math?.floor(Date?.now() / 10000),
       });
       pressReleaseDraft =
         aiResult?.data?.caption || aiResult?.data?.content || "";
       if (pressReleaseDraft) {
-        actions.push(`AI press release drafted (${tone} tone)`);
+        actions?.push(`AI press release drafted (${tone} tone)`);
       }
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         { err },
         "handlePressReleaseGenerator: AI generation failed, using template",
       );
@@ -1897,32 +1898,32 @@ class MusicWorkflowAutomationService {
     // Fallback template if AI is unavailable
     if (!pressReleaseDraft) {
       pressReleaseDraft = `FOR IMMEDIATE RELEASE\n\n${String(artistName).toUpperCase()} RELEASES "${String(releaseTitle).toUpperCase()}"\n\n${String(artistName)} announces the release of "${releaseTitle}"${genre ? ` — a ${genre} track` : ""}${releaseDate ? ` on ${releaseDate}` : ""}.\n\n[Artist bio and quote to be added]\n\nFor press inquiries, contact: ${contactEmail || "[email]"}\nFor booking: ${bookingEmail || "[email]"}\n${website ? `More info: ${website}` : ""}`;
-      actions.push(`Press release template generated (${tone} tone)`);
+      actions?.push(`Press release template generated (${tone} tone)`);
     }
 
-    if (config.includeQuote) {
+    if (config?.includeQuote) {
       pressReleaseDraft +=
         '\n\n"[Add your quote here]" — ' + String(artistName);
-      actions.push("Artist quote placeholder added");
+      actions?.push("Artist quote placeholder added");
     }
 
     // Persist the press kit / update the press release field
     try {
-      const existing = await db
+      const _existing = await db
         .select()
         .from(pressKits)
-        .where(eq(pressKits.userId, userId))
+        .where(eq(pressKits?.userId, userId))
         .limit(1);
 
-      if (existing.length === 0) {
-        await db.insert(pressKits).values({
+      if (existing?.length === 0) {
+        await db?.insert(pressKits).values({
           userId,
           artistName: String(artistName),
           bio: bio ? String(bio) : pressReleaseDraft,
           contactEmail: contactEmail ? String(contactEmail) : null,
           bookingEmail: bookingEmail ? String(bookingEmail) : null,
           website: website ? String(website) : null,
-          pressQuotes: config.includeQuote
+          pressQuotes: config?.includeQuote
             ? [
                 {
                   source: "Self",
@@ -1932,11 +1933,11 @@ class MusicWorkflowAutomationService {
             : [],
           isPublic: false,
         });
-        actions.push("Press kit created with press release content");
+        actions?.push("Press kit created with press release content");
       } else {
         // Append the new press release as a press quote entry
-        const currentQuotes = (existing[0].pressQuotes as any[]) || [];
-        currentQuotes.push({
+        const _currentQuotes = (existing[0].pressQuotes as any[]) || [];
+        currentQuotes?.push({
           source: "Press Release",
           release: String(releaseTitle),
           content: pressReleaseDraft,
@@ -1945,25 +1946,25 @@ class MusicWorkflowAutomationService {
         await db
           .update(pressKits)
           .set({ pressQuotes: currentQuotes, updatedAt: new Date() })
-          .where(eq(pressKits.id, existing[0].id));
-        actions.push("Press release added to existing press kit");
+          .where(eq(pressKits?.id, existing[0].id));
+        actions?.push("Press release added to existing press kit");
       }
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         { err },
         "handlePressReleaseGenerator: failed to save press kit",
       );
     }
 
-    if (config.notifyOnReady) {
-      await notificationService.send({
+    if (config?.notifyOnReady) {
+      await notificationService?.send({
         userId,
         type: "info",
         title: "Press Release Ready to Review",
         message: `Your press release for "${releaseTitle}" is drafted and saved to your Press Kit. Review, customize, and send to media contacts.`,
         link: "/press-kit",
       });
-      actions.push("Notification sent");
+      actions?.push("Notification sent");
     }
 
     return { actions, releaseTitle, artistName };
@@ -1975,21 +1976,21 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const { releaseTitle = "New Release" } = eventData;
-    const platforms =
-      config.platforms === "all"
+    const _platforms =
+      config?.platforms === "all"
         ? ["instagram", "twitter", "tiktok"]
-        : [config.platforms];
-    const actions = platforms.map((p: string) => `Bio updated on ${p}`);
+        : [config?.platforms];
+    const _actions = platforms?.map((p: string) => `Bio updated on ${p}`);
 
-    if (config.revertAfterDays > 0) {
-      actions.push(`Auto-revert scheduled in ${config.revertAfterDays} days`);
+    if (config?.revertAfterDays > 0) {
+      actions?.push(`Auto-revert scheduled in ${config?.revertAfterDays} days`);
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "Social Bios Updated",
-      message: `Your bios on ${platforms.join(", ")} now feature "${releaseTitle}". They'll revert to your standard bio in ${config.revertAfterDays} days.`,
+      message: `Your bios on ${platforms?.join(", ")} now feature "${releaseTitle}". They'll revert to your standard bio in ${config?.revertAfterDays} days.`,
       link: "/social-media",
     });
 
@@ -2002,23 +2003,23 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
   ) {
     const { originalPlatform = "Instagram" } = eventData;
-    const targets =
-      config.targetPlatforms === "all"
+    const _targets =
+      config?.targetPlatforms === "all"
         ? ["instagram", "tiktok", "twitter", "facebook"].filter(
             (p) => p !== String(originalPlatform).toLowerCase(),
           )
-        : [config.targetPlatforms];
+        : [config?.targetPlatforms];
 
-    const actions = targets.map((p: string) => `Caption adapted for ${p}`);
-    if (config.autoSchedule) {
-      actions.push(`Posts staggered every ${config.staggerHours}h`);
+    const _actions = targets?.map((p: string) => `Caption adapted for ${p}`);
+    if (config?.autoSchedule) {
+      actions?.push(`Posts staggered every ${config?.staggerHours}h`);
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "Post Repurposed Across Platforms",
-      message: `Your ${originalPlatform} post has been adapted and ${config.autoSchedule ? "scheduled" : "queued"} for ${targets.join(", ")}.`,
+      message: `Your ${originalPlatform} post has been adapted and ${config?.autoSchedule ? "scheduled" : "queued"} for ${targets?.join(", ")}.`,
       link: "/social-media",
     });
 
@@ -2044,27 +2045,27 @@ class MusicWorkflowAutomationService {
       notes,
     } = eventData as any;
 
-    const followUpDays = Number(config.followUpDays) || 7;
-    const followUpDate = new Date(
-      Date.now() + followUpDays * 24 * 60 * 60 * 1000,
+    const _followUpDays = Number(config?.followUpDays) || 7;
+    const _followUpDate = new Date(
+      Date?.now() + followUpDays * 24 * 60 * 60 * 1000,
     );
     const actions: string[] = [];
 
     // Upsert the venue contact in the CRM with follow-up date
     try {
-      const existing = await db
+      const _existing = await db
         .select()
         .from(venueContacts)
         .where(
           and(
-            eq(venueContacts.userId, userId),
-            eq(venueContacts.venueName, String(venueName)),
+            eq(venueContacts?.userId, userId),
+            eq(venueContacts?.venueName, String(venueName)),
           ),
         )
         .limit(1);
 
-      if (existing.length === 0) {
-        await db.insert(venueContacts).values({
+      if (existing?.length === 0) {
+        await db?.insert(venueContacts).values({
           userId,
           venueName: String(venueName),
           city: city ? String(city) : null,
@@ -2080,35 +2081,35 @@ class MusicWorkflowAutomationService {
           lastContactedAt: new Date(),
           notes: notes
             ? String(notes)
-            : `Follow-up scheduled for ${followUpDate.toLocaleDateString()}`,
+            : `Follow-up scheduled for ${followUpDate?.toLocaleDateString()}`,
         });
-        actions.push(`Venue contact "${venueName}" created in Booking CRM`);
+        actions?.push(`Venue contact "${venueName}" created in Booking CRM`);
       } else {
         await db
           .update(venueContacts)
           .set({
             status: "outreach",
             lastContactedAt: new Date(),
-            notes: `Follow-up scheduled for ${followUpDate.toLocaleDateString()}${notes ? `\n${notes}` : ""}`,
+            notes: `Follow-up scheduled for ${followUpDate?.toLocaleDateString()}${notes ? `\n${notes}` : ""}`,
             updatedAt: new Date(),
           })
-          .where(eq(venueContacts.id, existing[0].id));
-        actions.push(`Venue contact "${venueName}" updated in Booking CRM`);
+          .where(eq(venueContacts?.id, existing[0].id));
+        actions?.push(`Venue contact "${venueName}" updated in Booking CRM`);
       }
-      actions.push(
-        `Follow-up date logged: ${followUpDate.toLocaleDateString()}`,
+      actions?.push(
+        `Follow-up date logged: ${followUpDate?.toLocaleDateString()}`,
       );
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         { err },
         "handleVenueBookingFollowup: failed to upsert venue contact",
       );
     }
 
     // Send the actual follow-up email to the booking contact
-    if (config.sendEmail && contactEmail) {
+    if (config?.sendEmail && contactEmail) {
       try {
-        await emailService.sendEmail({
+        await emailService?.sendEmail({
           to: String(contactEmail),
           subject: `Booking Inquiry Follow-Up — ${venueName}`,
           html: `
@@ -2119,23 +2120,23 @@ class MusicWorkflowAutomationService {
             <p>[Your Name]</p>
           `,
         });
-        actions.push(`Follow-up email sent to ${String(contactEmail)}`);
+        actions?.push(`Follow-up email sent to ${String(contactEmail)}`);
       } catch (err) {
-        logger.warn(
+        logger?.warn(
           { err },
           "handleVenueBookingFollowup: failed to send follow-up email",
         );
-        actions.push("Follow-up email failed (will retry)");
+        actions?.push("Follow-up email failed (will retry)");
       }
-    } else if (config.sendEmail) {
-      actions.push("Follow-up email draft saved (no contact email on file)");
+    } else if (config?.sendEmail) {
+      actions?.push("Follow-up email draft saved (no contact email on file)");
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
-      title: `Booking Follow-Up ${config.sendEmail && contactEmail ? "Sent" : "Scheduled"}`,
-      message: `${venueName} (${String(contactName)}) follow-up ${config.sendEmail && contactEmail ? "email sent" : `reminder set for ${followUpDate.toLocaleDateString()}`}.`,
+      title: `Booking Follow-Up ${config?.sendEmail && contactEmail ? "Sent" : "Scheduled"}`,
+      message: `${venueName} (${String(contactName)}) follow-up ${config?.sendEmail && contactEmail ? "email sent" : `reminder set for ${followUpDate?.toLocaleDateString()}`}.`,
       link: "/venues",
     });
 
@@ -2159,8 +2160,8 @@ class MusicWorkflowAutomationService {
       price,
     } = eventData as any;
 
-    const maxPitches = Math.min(Number(config.maxPitchesPerRelease) || 5, 10);
-    const targetGenres = config.targetGenres || "Film & TV";
+    const _maxPitches = Math?.min(Number(config?.maxPitchesPerRelease) || 5, 10);
+    const _targetGenres = config?.targetGenres || "Film & TV";
     const actions: string[] = [];
 
     // Build a curated list of sync licensing targets based on genre
@@ -2202,11 +2203,11 @@ class MusicWorkflowAutomationService {
     ].slice(0, maxPitches);
 
     // Create syncSubmissions records for each target
-    const savedCount = await (async () => {
+    const _savedCount = await (async () => {
       let count = 0;
       for (const target of syncTargets) {
         try {
-          await db.insert(syncSubmissions).values({
+          await db?.insert(syncSubmissions).values({
             userId,
             trackTitle: String(releaseTitle),
             artistName: String(artistName),
@@ -2214,18 +2215,18 @@ class MusicWorkflowAutomationService {
             mood: mood ? String(mood) : null,
             bpm: bpm ? Number(bpm) : null,
             duration: duration ? Number(duration) : null,
-            description: `Sync pitch targeting ${target.type} placements`,
-            usageTypes: [target.type],
+            description: `Sync pitch targeting ${target?.type} placements`,
+            usageTypes: [target?.type],
             isExclusive: Boolean(isExclusive),
             price: price ? Number(price) : null,
             previewUrl: previewUrl ? String(previewUrl) : null,
-            submissionTarget: target.name,
-            status: config.autoSendPitch ? "submitted" : "draft",
+            submissionTarget: target?.name,
+            status: config?.autoSendPitch ? "submitted" : "draft",
           });
           count++;
         } catch (err) {
-          logger.warn(
-            { err, target: target.name },
+          logger?.warn(
+            { err, target: target?.name },
             "handleSyncLicensePitch: failed to create submission",
           );
         }
@@ -2233,21 +2234,21 @@ class MusicWorkflowAutomationService {
       return count;
     })();
 
-    actions.push(
+    actions?.push(
       `${savedCount} sync submissions saved to Sync Licensing tracker`,
     );
 
     // Auto-send pitch emails if configured
-    if (config.autoSendPitch) {
+    if (config?.autoSendPitch) {
       let emailsSent = 0;
       for (const target of syncTargets) {
-        if (!target.email) continue;
+        if (!target?.email) continue;
         try {
-          await emailService.sendEmail({
-            to: target.email,
+          await emailService?.sendEmail({
+            to: target?.email,
             subject: `Sync Licensing Submission: "${releaseTitle}" by ${artistName}`,
             html: `
-              <p>Hi ${target.name} team,</p>
+              <p>Hi ${target?.name} team,</p>
               <p>I'd like to submit <strong>"${releaseTitle}"</strong> by <strong>${artistName}</strong> for your sync licensing consideration.</p>
               ${genre ? `<p><strong>Genre:</strong> ${genre}</p>` : ""}
               ${mood ? `<p><strong>Mood:</strong> ${mood}</p>` : ""}
@@ -2260,26 +2261,26 @@ class MusicWorkflowAutomationService {
           });
           emailsSent++;
         } catch (err) {
-          logger.warn(
-            { err, target: target.name },
+          logger?.warn(
+            { err, target: target?.name },
             "handleSyncLicensePitch: email failed",
           );
         }
       }
-      actions.push(
+      actions?.push(
         `${emailsSent} pitch emails sent to sync licensing companies`,
       );
     } else {
-      actions.push(
+      actions?.push(
         `${savedCount} pitch drafts saved — review and send from Sync Licensing`,
       );
     }
 
-    await notificationService.send({
+    await notificationService?.send({
       userId,
       type: "info",
       title: "Sync Licensing Pitches Ready",
-      message: `${savedCount} sync pitches ${config.autoSendPitch ? "sent" : "drafted"} for "${releaseTitle}" targeting ${targetGenres} placements.`,
+      message: `${savedCount} sync pitches ${config?.autoSendPitch ? "sent" : "drafted"} for "${releaseTitle}" targeting ${targetGenres} placements.`,
       link: "/sync-licensing",
     });
 
@@ -2302,33 +2303,33 @@ class MusicWorkflowAutomationService {
       nextRun: string;
     }>;
   }> {
-    const userAutomations = await db
+    const _userAutomations = await db
       .select()
       .from(musicWorkflowAutomations)
-      .where(eq(musicWorkflowAutomations.userId, userId));
+      .where(eq(musicWorkflowAutomations?.userId, userId));
 
-    const enabledCount = userAutomations.filter((a) => a.enabled).length;
-    const totalRuns = userAutomations.reduce(
-      (s, a) => s + (a.triggerCount ?? 0),
+    const _enabledCount = userAutomations?.filter((a) => a?.enabled).length;
+    const _totalRuns = userAutomations?.reduce(
+      (s, a) => s + (a?.triggerCount ?? 0),
       0,
     );
 
-    const logs = await this.getExecutionLogs(userId, undefined, 500);
-    const successCount = logs.filter((l) => l.status === "success").length;
-    const failedCount = logs.filter((l) => l.status === "failed").length;
-    const successRate =
-      logs.length > 0 ? Math.round((successCount / logs.length) * 100) : 100;
+    const _logs = await this?.getExecutionLogs(userId, undefined, 500);
+    const _successCount = logs?.filter((l) => l?.status === "success").length;
+    const _failedCount = logs?.filter((l) => l?.status === "failed").length;
+    const _successRate =
+      logs?.length > 0 ? Math?.round((successCount / logs?.length) * 100) : 100;
 
-    const lastRunAt = logs.length > 0 ? String(logs[0].executedAt) : null;
+    const _lastRunAt = logs?.length > 0 ? String(logs[0].executedAt) : null;
 
-    const now = new Date();
-    const nextMonday = new Date(now);
-    nextMonday.setDate(now.getDate() + ((1 + 7 - now.getDay()) % 7 || 7));
-    nextMonday.setHours(9, 0, 0, 0);
+    const _now = new Date();
+    const _nextMonday = new Date(now);
+    nextMonday?.setDate(now?.getDate() + ((1 + 7 - now?.getDay()) % 7 || 7));
+    nextMonday?.setHours(9, 0, 0, 0);
 
-    const firstOfNext = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
+    const _firstOfNext = new Date(
+      now?.getFullYear(),
+      now?.getMonth() + 1,
       1,
       8,
       0,
@@ -2336,21 +2337,21 @@ class MusicWorkflowAutomationService {
       0,
     );
 
-    const nextScheduledRuns = [
+    const _nextScheduledRuns = [
       {
         name: "Weekly Performance Digest",
         schedule: "Every Monday at 9:00 AM",
-        nextRun: nextMonday.toISOString(),
+        nextRun: nextMonday?.toISOString(),
       },
       {
         name: "Monthly Royalty Collection Check",
         schedule: "1st of each month at 8:00 AM",
-        nextRun: firstOfNext.toISOString(),
+        nextRun: firstOfNext?.toISOString(),
       },
     ];
 
     return {
-      totalTemplates: WORKFLOW_TEMPLATES.length,
+      totalTemplates: WORKFLOW_TEMPLATES?.length,
       enabledCount,
       totalRuns,
       successCount,
@@ -2365,35 +2366,35 @@ class MusicWorkflowAutomationService {
 
   private startScheduledWorkflows(): void {
     // Weekly digest — every Monday at 9:00 AM server time
-    const weeklyTask = cron.schedule("0 9 * * 1", async () => {
+    const _weeklyTask = cron?.schedule("0 9 * * 1", async () => {
       try {
-        await this.runScheduledWorkflow(
+        await this?.runScheduledWorkflow(
           "schedule:weekly",
           "weekly-performance-digest",
         );
       } catch (err) {
-        logger.warn({ err: err }, "[MusicWorkflow] Weekly digest cron failed:");
+        logger?.warn({ err: err }, "[MusicWorkflow] Weekly digest cron failed:");
       }
     });
-    this.scheduledTasks.set("weekly", weeklyTask);
+    this?.scheduledTasks.set("weekly", weeklyTask);
 
     // Monthly royalty check — 1st of each month at 8:00 AM
-    const monthlyTask = cron.schedule("0 8 1 * *", async () => {
+    const _monthlyTask = cron?.schedule("0 8 1 * *", async () => {
       try {
-        await this.runScheduledWorkflow(
+        await this?.runScheduledWorkflow(
           "schedule:monthly",
           "royalty-collection-reminder",
         );
       } catch (err) {
-        logger.warn(
+        logger?.warn(
           { err: err },
           "[MusicWorkflow] Monthly royalty cron failed:",
         );
       }
     });
-    this.scheduledTasks.set("monthly", monthlyTask);
+    this?.scheduledTasks.set("monthly", monthlyTask);
 
-    logger.info(
+    logger?.info(
       "[MusicWorkflow] Scheduled workflows started (weekly digest, monthly royalty check)",
     );
   }
@@ -2402,33 +2403,33 @@ class MusicWorkflowAutomationService {
     eventType: string,
     templateId: string,
   ): Promise<void> {
-    const enabledRows = await db
+    const _enabledRows = await db
       .select()
       .from(musicWorkflowAutomations)
       .where(
         and(
-          eq(musicWorkflowAutomations.templateId, templateId),
-          eq(musicWorkflowAutomations.enabled, true),
+          eq(musicWorkflowAutomations?.templateId, templateId),
+          eq(musicWorkflowAutomations?.enabled, true),
         ),
       );
 
-    const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
+    const _template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
     if (!template) return;
 
     // Execute each user's workflow concurrently — they are fully independent
     // (different userId, different DB rows, different notification targets).
     // Sequential execution meant each user waited for all previous users to
     // complete before their workflow ran.
-    await Promise.allSettled(
-      enabledRows.map((row) => {
-        const config = {
-          ...template.defaultConfig,
-          ...(row.config as Record<string, any>),
+    await Promise?.allSettled(
+      enabledRows?.map((row) => {
+        const _config = {
+          ...template?.defaultConfig,
+          ...(row?.config as Record<string, any>),
         };
-        return this.executeTemplate(
+        return this?.executeTemplate(
           template,
-          row.userId,
-          { userId: row.userId },
+          row?.userId,
+          { userId: row?.userId },
           config,
           eventType,
         );
@@ -2437,12 +2438,12 @@ class MusicWorkflowAutomationService {
   }
 
   stop(): void {
-    for (const [, task] of this.scheduledTasks) {
-      task.stop();
+    for (const [, task] of this?.scheduledTasks) {
+      task?.stop();
     }
-    this.scheduledTasks.clear();
+    this?.scheduledTasks.clear();
   }
 }
 
-export const musicWorkflowAutomationService =
+export const _musicWorkflowAutomationService =
   new MusicWorkflowAutomationService();

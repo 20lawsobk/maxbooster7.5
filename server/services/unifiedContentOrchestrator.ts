@@ -18,21 +18,14 @@
  * exactly matching the existing UnifiedAIController priority chain.
  *
  * Usage:
- *   const pkg = await unifiedContentOrchestrator.generate(input);
+ *   const _pkg = await unifiedContentOrchestrator?.generate(input);
  *   // pkg is ready to schedule, publish, or store
  */
 
 import { logger } from "../logger.js";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
-import {
-  PLATFORM_SPECS,
-  assembleCaption,
-  getVisualSpec,
-  enforceHashtagLimit,
-  type SupportedPlatform,
-  type ContentSlot,
-} from "./contentPipeline/platformFormatters.js";
+import { PLATFORM_SPECS, assembleCaption, getVisualSpec, enforceHashtagLimit, type SupportedPlatform, type ContentSlot } from "./contentPipeline/platformFormatters.js";
 
 import {
   generateHooks,
@@ -75,7 +68,7 @@ import {
 
 /**
  * BoostSheet input — use when triggering from an existing BoostSheet record.
- * Fields map directly to the BoostSheetResult interface in pythonAIService.ts.
+ * Fields map directly to the BoostSheetResult interface in pythonAIService?.ts.
  */
 export interface BoostSheetInput {
   type: "boostsheet";
@@ -206,53 +199,53 @@ function normalizeInput(input: UnifiedContentInput): {
   targetArtistSegment: MaxBoosterContentContext["targetArtistSegment"];
   campaignGoal: GeneratorContext["campaignGoal"];
 } {
-  const colorPalette = input.colorPalette ?? [
+  const _colorPalette = input?.colorPalette ?? [
     "#1a1a2e",
     "#16213e",
     "#0f3460",
     "#e94560",
   ];
-  const brandVoice = input.brandVoice ?? "energetic";
-  const targetAudience = input.targetAudience ?? "music fans aged 18–35";
-  const keywords = input.keywords ?? [
-    input.genre,
-    input.mood,
-    input.artistName,
+  const _brandVoice = input?.brandVoice ?? "energetic";
+  const _targetAudience = input?.targetAudience ?? "music fans aged 18–35";
+  const _keywords = input?.keywords ?? [
+    input?.genre,
+    input?.mood,
+    input?.artistName,
   ];
-  const campaignGoal = input.campaignGoal ?? "growth";
-  const platforms: SupportedPlatform[] = input.platforms ?? [
+  const _campaignGoal = input?.campaignGoal ?? "growth";
+  const platforms: SupportedPlatform[] = input?.platforms ?? [
     "tiktok",
     "instagram",
     "youtube",
     "twitter",
   ];
-  const targetArtistSegment = input.targetArtistSegment ?? "emerging_artist";
+  const _targetArtistSegment = input?.targetArtistSegment ?? "emerging_artist";
 
   const artistCtx: ArtistContext = {
-    artistName: input.artistName,
-    genre: input.genre,
-    mood: input.mood,
-    trackTitle: input.trackTitle,
-    albumTitle: input.albumTitle,
-    releaseDate: input.releaseDate,
-    streamingLinks: input.streamingLinks,
-    bio: input.bio,
+    artistName: input?.artistName,
+    genre: input?.genre,
+    mood: input?.mood,
+    trackTitle: input?.trackTitle,
+    albumTitle: input?.albumTitle,
+    releaseDate: input?.releaseDate,
+    streamingLinks: input?.streamingLinks,
+    bio: input?.bio,
     brandVoice,
     colorPalette,
     targetAudience,
-    socialHandles: input.socialHandles,
+    socialHandles: input?.socialHandles,
     milestones: [],
-    upcomingEvents: input.upcomingEvents,
-    collaborators: input.collaborators,
+    upcomingEvents: input?.upcomingEvents,
+    collaborators: input?.collaborators,
     keywords,
   };
 
   const generatorCtx: Omit<GeneratorContext, "platform"> = {
-    artistName: input.artistName,
-    genre: input.genre,
-    mood: input.mood,
-    trackTitle: input.trackTitle,
-    releaseDate: input.releaseDate,
+    artistName: input?.artistName,
+    genre: input?.genre,
+    mood: input?.mood,
+    trackTitle: input?.trackTitle,
+    releaseDate: input?.releaseDate,
     brandVoice,
     colorPalette,
     targetAudience,
@@ -265,7 +258,7 @@ function normalizeInput(input: UnifiedContentInput): {
     artistCtx,
     generatorCtx,
     platforms,
-    schedulingOptions: input.schedulingOptions ?? {},
+    schedulingOptions: input?.schedulingOptions ?? {},
     targetArtistSegment,
     campaignGoal,
   };
@@ -277,41 +270,41 @@ function normalizeInput(input: UnifiedContentInput): {
 
 function hooksFallback(ctx: GeneratorContext): HookSet {
   return {
-    primary: `${ctx.artistName} just changed the game 🎵`,
+    primary: `${ctx?.artistName} just changed the game 🎵`,
     alternates: [
-      `The ${ctx.genre} sound you've been waiting for`,
-      `${ctx.mood} energy × ${ctx.artistName} = this`,
+      `The ${ctx?.genre} sound you've been waiting for`,
+      `${ctx?.mood} energy × ${ctx?.artistName} = this`,
     ],
-    questionHook: `Ever wonder what real ${ctx.genre} feels like?`,
-    statementHook: `${ctx.artistName} is ${ctx.mood} and unapologetic.`,
+    questionHook: `Ever wonder what real ${ctx?.genre} feels like?`,
+    statementHook: `${ctx?.artistName} is ${ctx?.mood} and unapologetic.`,
     cliffhangerHook: `This song almost wasn't released...`,
   };
 }
 
 function captionsFallback(ctx: GeneratorContext): CaptionSet {
   return {
-    short: `${ctx.artistName} 🔥 ${ctx.mood} ${ctx.genre} — out now.`,
-    medium: `${ctx.artistName} is bringing the ${ctx.mood} energy to ${ctx.genre}. New music is here. 🎵`,
-    long: `${ctx.artistName} has been working on something special. The ${ctx.mood} atmosphere, the ${ctx.genre} DNA — this is the sound you needed. Stream now.`,
-    platform: ctx.platform,
+    short: `${ctx?.artistName} 🔥 ${ctx?.mood} ${ctx?.genre} — out now.`,
+    medium: `${ctx?.artistName} is bringing the ${ctx?.mood} energy to ${ctx?.genre}. New music is here. 🎵`,
+    long: `${ctx?.artistName} has been working on something special. The ${ctx?.mood} atmosphere, the ${ctx?.genre} DNA — this is the sound you needed. Stream now.`,
+    platform: ctx?.platform,
   };
 }
 
 function adCopyFallback(ctx: GeneratorContext): AdCopySet {
   return {
-    headline: `Stream ${ctx.artistName} Now`,
-    subheadline: `${ctx.mood} ${ctx.genre} that hits different`,
-    body: `New music from ${ctx.artistName}. Available everywhere.`,
+    headline: `Stream ${ctx?.artistName} Now`,
+    subheadline: `${ctx?.mood} ${ctx?.genre} that hits different`,
+    body: `New music from ${ctx?.artistName}. Available everywhere.`,
     cta: "Stream Now",
     variants: [
       {
-        headline: `${ctx.artistName} — New Release`,
+        headline: `${ctx?.artistName} — New Release`,
         body: `The sound you didn't know you needed.`,
         cta: "Listen Free",
       },
       {
         headline: `Feel Something Real`,
-        body: `${ctx.artistName} brings the ${ctx.mood} ${ctx.genre} heat.`,
+        body: `${ctx?.artistName} brings the ${ctx?.mood} ${ctx?.genre} heat.`,
         cta: "Play Now",
       },
     ],
@@ -320,13 +313,13 @@ function adCopyFallback(ctx: GeneratorContext): AdCopySet {
 
 function videoScriptFallback(ctx: GeneratorContext): VideoScript {
   return {
-    hook: `${ctx.artistName} drops the ${ctx.mood} ${ctx.genre} anthem you needed.`,
+    hook: `${ctx?.artistName} drops the ${ctx?.mood} ${ctx?.genre} anthem you needed.`,
     body: [
       `Show the creative process`,
       `Highlight the emotion`,
       `Connect with the audience`,
     ],
-    cta: `Follow ${ctx.artistName} now.`,
+    cta: `Follow ${ctx?.artistName} now.`,
     durationHint: "30s",
     bRoll: [
       `Close-up of artist`,
@@ -334,25 +327,25 @@ function videoScriptFallback(ctx: GeneratorContext): VideoScript {
       `Studio session`,
       `Fan reactions`,
     ],
-    musicNote: `Match ${ctx.mood} atmosphere — ${ctx.genre} tempo`,
+    musicNote: `Match ${ctx?.mood} atmosphere — ${ctx?.genre} tempo`,
     overlayTexts: [
-      ctx.artistName,
-      ctx.trackTitle ?? "New Drop",
+      ctx?.artistName,
+      ctx?.trackTitle ?? "New Drop",
       "Stream Now 🎵",
     ],
   };
 }
 
 function visualPromptFallback(ctx: GeneratorContext): VisualPrompt {
-  const palette = ctx.colorPalette.join(", ");
+  const _palette = ctx?.colorPalette.join(", ");
   return {
-    imagePrompt: `A ${ctx.mood} ${ctx.genre} music promotional image for ${ctx.artistName}. Color palette: ${palette}. Cinematic quality.`,
-    thumbnailPrompt: `YouTube/social thumbnail for ${ctx.artistName}. Bold typography, ${ctx.mood} color scheme (${palette}).`,
-    colorDirections: `Primary: ${ctx.colorPalette[0] ?? "#1a1a2e"} | Accent: ${ctx.colorPalette[2] ?? "#e94560"} | Background: ${ctx.colorPalette[1] ?? "#16213e"}`,
+    imagePrompt: `A ${ctx?.mood} ${ctx?.genre} music promotional image for ${ctx?.artistName}. Color palette: ${palette}. Cinematic quality.`,
+    thumbnailPrompt: `YouTube/social thumbnail for ${ctx?.artistName}. Bold typography, ${ctx?.mood} color scheme (${palette}).`,
+    colorDirections: `Primary: ${ctx?.colorPalette[0] ?? "#1a1a2e"} | Accent: ${ctx?.colorPalette[2] ?? "#e94560"} | Background: ${ctx?.colorPalette[1] ?? "#16213e"}`,
     typographyNote: `Bold, modern sans-serif. Artist name: 48pt+. Track title: 36pt.`,
     moodBoard: [
-      `${ctx.mood} lighting`,
-      `${ctx.genre} aesthetic`,
+      `${ctx?.mood} lighting`,
+      `${ctx?.genre} aesthetic`,
       `Authentic, not over-produced`,
       `Color story: ${palette}`,
     ],
@@ -371,13 +364,13 @@ function storySequenceFallback(ctx: GeneratorContext): StorySequence {
       {
         frameNumber: 2,
         durationSeconds: 7,
-        text: `${ctx.artistName} — ${ctx.trackTitle ?? "New Music"}`,
+        text: `${ctx?.artistName} — ${ctx?.trackTitle ?? "New Music"}`,
         visualNote: `Artist photo`,
       },
       {
         frameNumber: 3,
         durationSeconds: 5,
-        text: `${ctx.mood} ${ctx.genre} energy 🎵`,
+        text: `${ctx?.mood} ${ctx?.genre} energy 🎵`,
         visualNote: `Lyric overlay`,
       },
       {
@@ -410,8 +403,8 @@ function unwrapSettled<T>(
   platform: SupportedPlatform,
   fallback: T,
 ): T {
-  if (result.status === "fulfilled") return result.value;
-  logger.warn(
+  if (result?.status === "fulfilled") return result?.value;
+  logger?.warn(
     `[UCO] ${name} rejected for ${platform}:`,
     (result as PromiseRejectedResult).reason,
   );
@@ -434,7 +427,7 @@ async function buildPlatformBundle(
     videoScriptResult,
     visualPromptResult,
     storySequenceResult,
-  ] = await Promise.allSettled([
+  ] = await Promise?.allSettled([
     generateHooks(ctx),
     generateCaptions(ctx),
     generateHashtags(ctx),
@@ -444,81 +437,81 @@ async function buildPlatformBundle(
     generateStorySequence(ctx),
   ]);
 
-  const hooks = unwrapSettled(
+  const _hooks = unwrapSettled(
     hooksResult,
     "generateHooks",
     platform,
     hooksFallback(ctx),
   );
-  const captions = unwrapSettled(
+  const _captions = unwrapSettled(
     captionsResult,
     "generateCaptions",
     platform,
     captionsFallback(ctx),
   );
-  const hashtags = unwrapSettled(hashtagsResult, "generateHashtags", platform, {
+  const _hashtags = unwrapSettled(hashtagsResult, "generateHashtags", platform, {
     niche: [],
     broad: [],
     trending: [],
-    branded: [`#${ctx.artistName.replace(/\s+/g, "")}`],
-    combined: [`#${ctx.artistName.replace(/\s+/g, "")}`, "#newmusic", "#music"],
+    branded: [`#${ctx?.artistName.replace(/\s+/g, "")}`],
+    combined: [`#${ctx?.artistName.replace(/\s+/g, "")}`, "#newmusic", "#music"],
   });
-  const adCopy = unwrapSettled(
+  const _adCopy = unwrapSettled(
     adCopyResult,
     "generateAdCopy",
     platform,
     adCopyFallback(ctx),
   );
-  const videoScript = unwrapSettled(
+  const _videoScript = unwrapSettled(
     videoScriptResult,
     "generateVideoScript",
     platform,
     videoScriptFallback(ctx),
   );
-  const visualPrompt = unwrapSettled(
+  const _visualPrompt = unwrapSettled(
     visualPromptResult,
     "generateVisualPrompt",
     platform,
     visualPromptFallback(ctx),
   );
-  const storySequence = unwrapSettled(
+  const _storySequence = unwrapSettled(
     storySequenceResult,
     "generateStorySequence",
     platform,
     storySequenceFallback(ctx),
   );
 
-  const spec = PLATFORM_SPECS[platform];
+  const _spec = PLATFORM_SPECS[platform];
   const formattedPosts: FormattedPost[] = [];
 
-  for (const slot of spec.supportedSlots) {
+  for (const slot of spec?.supportedSlots) {
     // Pick the right caption length for this slot
-    const rawBody =
+    const _rawBody =
       slot === "text_post" || slot === "thread"
-        ? captions.long
+        ? captions?.long
         : slot === "story" || slot === "google_post"
-          ? captions.short
-          : captions.medium;
+          ? captions?.short
+          : captions?.medium;
 
     const { caption: finalCaption, firstComment } = assembleCaption(
       rawBody,
-      hashtags.combined,
+      hashtags?.combined,
       platform,
     );
 
-    const visualSpec = getVisualSpec(platform, slot, genCtx.colorPalette);
+    const _visualSpec = getVisualSpec(platform, slot, genCtx?.colorPalette);
 
-    formattedPosts.push({
+    formattedPosts?.push({
       platform,
       slot,
       finalCaption,
       firstComment,
-      hashtags: enforceHashtagLimit(hashtags.combined, platform),
-      hook: hooks.primary,
-      cta: adCopy.cta,
+      hashtags: enforceHashtagLimit(hashtags?.combined, platform),
+      hook: hooks?.primary,
+      cta: adCopy?.cta,
       visualSpec,
       adCopy: slot === "ad_banner" || slot === "ad_video" ? adCopy : undefined,
-      rawContent: `${hooks.primary}\n\n${finalCaption}`,
+      rawContent: `${hooks?.primary}\n\n${finalCaption}`,
       source: "MaxCoreAI",
     });
   }
@@ -547,11 +540,11 @@ class UnifiedContentOrchestrator {
    * @returns UnifiedContentPackage — a complete, production-ready content package
    */
   async generate(input: UnifiedContentInput): Promise<UnifiedContentPackage> {
-    const runId = `ucr_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const startTime = Date.now();
+    const _runId = `ucr_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
+    const _startTime = Date?.now();
 
-    logger.info(
-      `[UnifiedContentOrchestrator] Starting run ${runId} — type=${input.type} artist="${input.artistName}" platforms=${(input.platforms ?? ["tiktok", "instagram", "youtube", "twitter"]).join(",")}`,
+    logger?.info(
+      `[UnifiedContentOrchestrator] Starting run ${runId} — type=${input?.type} artist="${input?.artistName}" platforms=${(input?.platforms ?? ["tiktok", "instagram", "youtube", "twitter"]).join(",")}`,
     );
 
     const {
@@ -564,32 +557,32 @@ class UnifiedContentOrchestrator {
     } = normalizeInput(input);
 
     // ── Step 1: Artist content generation ──────────────────────────────────
-    logger.info(
-      `[UCO:${runId}] Step 1: Generating artist content across ${platforms.length} platforms`,
+    logger?.info(
+      `[UCO:${runId}] Step 1: Generating artist content across ${platforms?.length} platforms`,
     );
-    const artistContent = generateAllArtistContent(artistCtx, platforms);
+    const _artistContent = generateAllArtistContent(artistCtx, platforms);
 
     // ── Step 2: Max Booster feature content generation ─────────────────────
-    logger.info(
+    logger?.info(
       `[UCO:${runId}] Step 2: Generating Max Booster feature content`,
     );
-    const maxBoosterContent = generateAllMaxBoosterContent(
+    const _maxBoosterContent = generateAllMaxBoosterContent(
       platforms,
       targetArtistSegment,
     );
 
     // ── Step 3: Per-platform content bundles (concurrent) ─────────────────
     // Use allSettled — one platform failing should never abort the others.
-    logger.info(
-      `[UCO:${runId}] Step 3: Building platform bundles for [${platforms.join(", ")}]`,
+    logger?.info(
+      `[UCO:${runId}] Step 3: Building platform bundles for [${platforms?.join(", ")}]`,
     );
-    const bundleResults = await Promise.allSettled(
-      platforms.map((platform) => buildPlatformBundle(platform, generatorCtx)),
+    const _bundleResults = await Promise?.allSettled(
+      platforms?.map((platform) => buildPlatformBundle(platform, generatorCtx)),
     );
     const platformBundles: PlatformContentBundle[] = bundleResults
       .map((result, i) => {
-        if (result.status === "fulfilled") return result.value;
-        logger.warn(
+        if (result?.status === "fulfilled") return result?.value;
+        logger?.warn(
           `[UCO:${runId}] Platform bundle failed for ${platforms[i]}: ${(result as PromiseRejectedResult).reason}`,
         );
         return null;
@@ -597,55 +590,55 @@ class UnifiedContentOrchestrator {
       .filter((b): b is PlatformContentBundle => b !== null);
 
     // ── Step 4: Collect all slot combinations for scheduling ───────────────
-    logger.info(`[UCO:${runId}] Step 4: Building schedule manifest`);
+    logger?.info(`[UCO:${runId}] Step 4: Building schedule manifest`);
     const slots: Array<{ platform: SupportedPlatform; slot: ContentSlot }> =
-      platformBundles.flatMap((bundle) =>
-        bundle.formattedPosts.map((post) => ({
-          platform: bundle.platform,
-          slot: post.slot,
+      platformBundles?.flatMap((bundle) =>
+        bundle?.formattedPosts.map((post) => ({
+          platform: bundle?.platform,
+          slot: post?.slot,
         })),
       );
 
-    const scheduleManifest = buildScheduleManifest(slots, {
+    const _scheduleManifest = buildScheduleManifest(slots, {
       platforms,
       campaignGoal,
       ...schedulingOptions,
-      priorityPlatforms: platforms.slice(0, 2),
+      priorityPlatforms: platforms?.slice(0, 2),
     });
 
     // ── Step 5: Build bulk-schedule payload ────────────────────────────────
-    logger.info(`[UCO:${runId}] Step 5: Assembling bulk-schedule payload`);
-    const contentMap = new Map<
+    logger?.info(`[UCO:${runId}] Step 5: Assembling bulk-schedule payload`);
+    const _contentMap = new Map<
       string,
       { content: string; platform: SupportedPlatform }
     >();
     for (const bundle of platformBundles) {
-      for (const post of bundle.formattedPosts) {
-        contentMap.set(`${post.platform}:${post.slot}`, {
-          content: post.rawContent,
-          platform: post.platform,
+      for (const post of bundle?.formattedPosts) {
+        contentMap?.set(`${post?.platform}:${post?.slot}`, {
+          content: post?.rawContent,
+          platform: post?.platform,
         });
       }
     }
-    const bulkSchedulePayload = manifestToBulkSchedulePayload(
+    const _bulkSchedulePayload = manifestToBulkSchedulePayload(
       scheduleManifest,
       contentMap,
     );
 
     // ── Step 6: Push async jobs to PDIM for background processing ─────────
-    logger.info(`[UCO:${runId}] Step 6: Enqueuing PDIM background jobs`);
-    await this.enqueuePdimJobs(
+    logger?.info(`[UCO:${runId}] Step 6: Enqueuing PDIM background jobs`);
+    await this?.enqueuePdimJobs(
       runId,
       input,
       platformBundles,
       scheduleManifest,
     ).catch((err) => {
-      logger.warn(
+      logger?.warn(
         `[UCO:${runId}] PDIM enqueue soft-failed (non-blocking): ${err?.message}`,
       );
     });
 
-    const generationTimeMs = Date.now() - startTime;
+    const _generationTimeMs = Date?.now() - startTime;
 
     const pkg: UnifiedContentPackage = {
       runId,
@@ -658,19 +651,19 @@ class UnifiedContentOrchestrator {
       bulkSchedulePayload,
       stats: {
         totalPieces:
-          artistContent.length +
-          maxBoosterContent.length +
-          platformBundles.flatMap((b) => b.formattedPosts).length,
-        platformsGenerated: platforms.length,
-        artistPieces: artistContent.length,
-        maxBoosterPieces: maxBoosterContent.length,
-        scheduledPosts: scheduleManifest.totalPostCount,
+          artistContent?.length +
+          maxBoosterContent?.length +
+          platformBundles?.flatMap((b) => b?.formattedPosts).length,
+        platformsGenerated: platforms?.length,
+        artistPieces: artistContent?.length,
+        maxBoosterPieces: maxBoosterContent?.length,
+        scheduledPosts: scheduleManifest?.totalPostCount,
         generationTimeMs,
       },
     };
 
-    logger.info(
-      `[UCO:${runId}] ✅ Complete — ${pkg.stats.totalPieces} pieces, ${pkg.stats.scheduledPosts} scheduled, ${generationTimeMs}ms`,
+    logger?.info(
+      `[UCO:${runId}] ✅ Complete — ${pkg?.stats.totalPieces} pieces, ${pkg?.stats.scheduledPosts} scheduled, ${generationTimeMs}ms`,
     );
 
     return pkg;
@@ -686,30 +679,30 @@ class UnifiedContentOrchestrator {
     bundles: PlatformContentBundle[],
     manifest: ScheduleManifest,
   ): Promise<void> {
-    const jobs = [
+    const _jobs = [
       // Content approval workflow job
       {
         queue: "mbs:content:approval",
         payload: {
           runId,
-          artistName: input.artistName,
-          totalPosts: manifest.totalPostCount,
+          artistName: input?.artistName,
+          totalPosts: manifest?.totalPostCount,
           manifestSummary: {
-            start: manifest.campaignStart,
-            end: manifest.campaignEnd,
-            platforms: Object.keys(manifest.platformBreakdown),
+            start: manifest?.campaignStart,
+            end: manifest?.campaignEnd,
+            platforms: Object?.keys(manifest?.platformBreakdown),
           },
         },
       },
       // Image/visual rendering job for each platform
-      ...bundles.map((bundle) => ({
+      ...bundles?.map((bundle) => ({
         queue: "mbs:content:visual:render",
         payload: {
           runId,
-          platform: bundle.platform,
-          imagePrompt: bundle.visualPrompt.imagePrompt,
-          thumbnailPrompt: bundle.visualPrompt.thumbnailPrompt,
-          colorPalette: bundle.visualPrompt.colorDirections,
+          platform: bundle?.platform,
+          imagePrompt: bundle?.visualPrompt.imagePrompt,
+          thumbnailPrompt: bundle?.visualPrompt.thumbnailPrompt,
+          colorPalette: bundle?.visualPrompt.colorDirections,
         },
       })),
       // Training feedback to MaxCore
@@ -718,27 +711,27 @@ class UnifiedContentOrchestrator {
         payload: {
           runId,
           event: "content_generated",
-          artistName: input.artistName,
-          genre: input.genre,
-          mood: input.mood,
-          platforms: bundles.map((b) => b.platform),
+          artistName: input?.artistName,
+          genre: input?.genre,
+          mood: input?.mood,
+          platforms: bundles?.map((b) => b?.platform),
           timestamp: new Date().toISOString(),
         },
       },
     ];
 
     try {
-      const redis = await getRedisClient();
+      const _redis = await getRedisClient();
       for (const job of jobs) {
         await redis
-          .lpush(job.queue, JSON.stringify(job.payload))
+          .lpush(job?.queue, JSON?.stringify(job?.payload))
           .catch(() => null);
       }
-      logger.info(
-        `[UCO:${runId}] Enqueued ${jobs.length} PDIM background jobs`,
+      logger?.info(
+        `[UCO:${runId}] Enqueued ${jobs?.length} PDIM background jobs`,
       );
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         `[UCO:${runId}] Could not enqueue PDIM jobs: ${(err as Error)?.message}`,
       );
     }
@@ -779,4 +772,4 @@ class UnifiedContentOrchestrator {
   }
 }
 
-export const unifiedContentOrchestrator = new UnifiedContentOrchestrator();
+export const _unifiedContentOrchestrator = new UnifiedContentOrchestrator();

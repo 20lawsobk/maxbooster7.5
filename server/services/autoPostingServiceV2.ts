@@ -11,8 +11,8 @@ import { notificationService } from "./notificationService.js";
 
 // Max posts to dequeue and process concurrently per 2-second tick.
 // Override with AUTO_POST_BATCH_SIZE env var.
-const AUTO_POST_BATCH_SIZE = parseInt(
-  process.env.AUTO_POST_BATCH_SIZE ?? "5",
+const _AUTO_POST_BATCH_SIZE = parseInt(
+  process?.env.AUTO_POST_BATCH_SIZE ?? "5",
   10,
 );
 
@@ -66,82 +66,82 @@ class AutoPostingServiceV2 {
   }
 
   async initialize() {
-    if (this.isInitialized) return;
+    if (this?.isInitialized) return;
 
-    this.startWorker();
-    await this.reloadPendingJobs();
+    this?.startWorker();
+    await this?.reloadPendingJobs();
 
     this.isInitialized = true;
-    logger.info("✅ Auto-posting service initialized (boosterstate-backed)");
+    logger?.info("✅ Auto-posting service initialized (boosterstate-backed)");
   }
 
   private async reloadPendingJobs() {
     try {
-      const pendingPosts = await storage.getScheduledPosts({
+      const _pendingPosts = await storage?.getScheduledPosts({
         status: "pending",
       });
 
       // Enqueue all pending posts concurrently — each add() is an independent
       // PDIM write, so firing them in parallel cuts startup time proportionally
       // to the number of pending posts.
-      const results = await Promise.allSettled(
-        pendingPosts.map((post) => {
-          const delay = new Date(post.scheduledTime).getTime() - Date.now();
-          return this.postQueue.add("auto-post", post, {
-            jobId: post.id,
+      const _results = await Promise?.allSettled(
+        pendingPosts?.map((post) => {
+          const _delay = new Date(post?.scheduledTime).getTime() - Date?.now();
+          return this?.postQueue.add("auto-post", post, {
+            jobId: post?.id,
             delay: delay > 0 ? delay : 0,
           });
         }),
       );
 
-      const reloadedCount = results.filter(
-        (r) => r.status === "fulfilled",
+      const _reloadedCount = results?.filter(
+        (r) => r?.status === "fulfilled",
       ).length;
-      const failedCount = results.length - reloadedCount;
+      const _failedCount = results?.length - reloadedCount;
       if (failedCount > 0) {
-        logger.warn(
+        logger?.warn(
           `[AutoPost] reloadPendingJobs: ${failedCount} enqueue(s) failed`,
         );
       }
-      logger.info(`✅ Reloaded ${reloadedCount} pending posts`);
+      logger?.info(`✅ Reloaded ${reloadedCount} pending posts`);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to reload pending jobs:");
+      logger?.warn({ err: error }, "Failed to reload pending jobs:");
     }
   }
 
   private async processSinglePost(post: ScheduledPost): Promise<void> {
-    logger.info(
-      `🚀 Processing auto-post job ${post.id} for user ${post.userId}`,
+    logger?.info(
+      `🚀 Processing auto-post job ${post?.id} for user ${post?.userId}`,
     );
     try {
-      await storage.updateScheduledPost(post.id, { status: "posting" });
-      const results = await this.executePost(post);
+      await storage?.updateScheduledPost(post?.id, { status: "posting" });
+      const _results = await this?.executePost(post);
 
-      await storage.updateScheduledPost(post.id, {
-        status: results.every((r) => r.success) ? "completed" : "failed",
+      await storage?.updateScheduledPost(post?.id, {
+        status: results?.every((r) => r?.success) ? "completed" : "failed",
         results,
       });
 
       for (const result of results) {
-        if (result.success) {
+        if (result?.success) {
           autopilotLearningService
             .recordPerformance(
-              post.userId,
+              post?.userId,
               {
-                platform: result.platform,
-                contentType: post.content.mediaType
+                platform: result?.platform,
+                contentType: post?.content.mediaType
                   ? "media_post"
                   : "text_post",
-                hookType: detectHookPattern(post.content.text || ""),
-                hashtags: post.content.hashtags || [],
-                contentText: post.content.text,
-                mediaType: post.content.mediaType || null,
-                postId: result.postId || null,
+                hookType: detectHookPattern(post?.content.text || ""),
+                hashtags: post?.content.hashtags || [],
+                contentText: post?.content.text,
+                mediaType: post?.content.mediaType || null,
+                postId: result?.postId || null,
                 postedAt: new Date(),
                 metadata: {
-                  scheduledPostId: post.id,
+                  scheduledPostId: post?.id,
                   source: "autopilot_v2",
-                  createdBy: post.createdBy,
+                  createdBy: post?.createdBy,
                 },
               },
               {
@@ -155,91 +155,91 @@ class AutoPostingServiceV2 {
               },
             )
             .catch((err) =>
-              logger.warn("Learning record failed (non-fatal):", err?.message),
+              logger?.warn("Learning record failed (non-fatal):", err?.message),
             );
         }
       }
 
-      await storage.trackSocialPost({
-        userId: post.userId,
-        content: post.content,
-        mediaType: post.content.mediaType,
-        createdBy: post.createdBy,
+      await storage?.trackSocialPost({
+        userId: post?.userId,
+        content: post?.content,
+        mediaType: post?.content.mediaType,
+        createdBy: post?.createdBy,
         results,
       });
 
-      const successfulPlatforms = results
-        .filter((r) => r.success)
-        .map((r) => r.platform);
+      const _successfulPlatforms = results
+        .filter((r) => r?.success)
+        .map((r) => r?.platform);
       if (
-        successfulPlatforms.length > 0 &&
-        post.createdBy === "social_autopilot"
+        successfulPlatforms?.length > 0 &&
+        post?.createdBy === "social_autopilot"
       ) {
-        const platformLabel =
+        const _platformLabel =
           successfulPlatforms[0].charAt(0).toUpperCase() +
           successfulPlatforms[0].slice(1);
         notificationService
           .sendAutoPostPublishedNotification(
-            post.userId,
+            post?.userId,
             platformLabel,
-            (post.content.text || "").slice(0, 100),
+            (post?.content.text || "").slice(0, 100),
           )
           .catch((err) =>
-            logger.warn(
+            logger?.warn(
               "[AutoPost] notification error (non-fatal):",
               err?.message,
             ),
           );
       }
     } catch (error) {
-      logger.warn({ err: error }, `Failed to process auto-post ${post.id}:`);
-      await storage.updateScheduledPost(post.id, { status: "failed" });
+      logger?.warn({ err: error }, `Failed to process auto-post ${post?.id}:`);
+      await storage?.updateScheduledPost(post?.id, { status: "failed" });
     }
   }
 
   private startWorker() {
     this.workerInterval = setInterval(async () => {
       try {
-        const client = await getBoosterStateClient();
+        const _client = await getBoosterStateClient();
 
         // Drain up to AUTO_POST_BATCH_SIZE items per tick and process them
         // concurrently. Each post targets different social platforms for a
         // different user, so parallel execution is fully safe.
-        const pops = await Promise.allSettled(
-          Array.from({ length: AUTO_POST_BATCH_SIZE }, () =>
-            client.queuePop("scheduled-posts"),
+        const _pops = await Promise?.allSettled(
+          Array?.from({ length: AUTO_POST_BATCH_SIZE }, () =>
+            client?.queuePop("scheduled-posts"),
           ),
         );
 
-        const items = pops
+        const _items = pops
           .filter(
             (
               r,
             ): r is {
               status: "fulfilled";
-              value: NonNullable<Awaited<ReturnType<typeof client.queuePop>>>;
-            } => r.status === "fulfilled" && r.value !== null,
+              value: NonNullable<Awaited<ReturnType<typeof client?.queuePop>>>;
+            } => r?.status === "fulfilled" && r?.value !== null,
           )
-          .map((r) => r.value);
+          .map((r) => r?.value);
 
-        if (items.length === 0) return;
+        if (items?.length === 0) return;
 
-        await Promise.allSettled(
-          items.map((item) => {
-            const parsed = JSON.parse(item.data as unknown as string);
-            const post: ScheduledPost = parsed.data || parsed;
-            return this.processSinglePost(post);
+        await Promise?.allSettled(
+          items?.map((item) => {
+            const _parsed = JSON?.parse(item?.data as unknown as string);
+            const post: ScheduledPost = parsed?.data || parsed;
+            return this?.processSinglePost(post);
           }),
         );
       } catch (error) {
-        logger.warn(
+        logger?.warn(
           "⚠️  Auto-posting worker poll error:",
           (error as Error)?.message || error,
         );
       }
     }, 2000);
 
-    logger.info(
+    logger?.info(
       `✅ Auto-posting worker started (poll interval: 2s, batch: ${AUTO_POST_BATCH_SIZE})`,
     );
   }
@@ -256,14 +256,14 @@ class AutoPostingServiceV2 {
     viralPrediction?: Record<string, unknown>,
     idempotencyKey?: string,
   ): Promise<ScheduledPost> {
-    const postId = idempotencyKey
+    const _postId = idempotencyKey
       ? `post_${idempotencyKey}`
-      : `post_${Date.now()}_${randomBytes(4).toString("hex")}`;
+      : `post_${Date?.now()}_${randomBytes(4).toString("hex")}`;
 
     if (idempotencyKey) {
-      const existingPost = await storage.getScheduledPostById(postId);
+      const _existingPost = await storage?.getScheduledPostById(postId);
       if (existingPost) {
-        logger.info(
+        logger?.info(
           `📋 Returning existing post ${postId} (idempotency key: ${idempotencyKey})`,
         );
         return existingPost as ScheduledPost;
@@ -281,16 +281,16 @@ class AutoPostingServiceV2 {
       viralPrediction,
     };
 
-    await storage.createScheduledPost(scheduledPost);
+    await storage?.createScheduledPost(scheduledPost);
 
-    const delay = scheduledTime.getTime() - Date.now();
-    await this.postQueue.add("auto-post", scheduledPost, {
+    const _delay = scheduledTime?.getTime() - Date?.now();
+    await this?.postQueue.add("auto-post", scheduledPost, {
       jobId: postId,
       delay: delay > 0 ? delay : 0,
     });
 
-    logger.info(
-      `📅 Scheduled post ${postId} for ${scheduledTime.toISOString()} (${delay}ms delay)`,
+    logger?.info(
+      `📅 Scheduled post ${postId} for ${scheduledTime?.toISOString()} (${delay}ms delay)`,
     );
 
     return scheduledPost;
@@ -305,12 +305,12 @@ class AutoPostingServiceV2 {
       | "advertising_autopilot"
       | "manual" = "manual",
   ): Promise<PostResult[]> {
-    logger.info(
-      `🚀 Posting immediately to ${platforms.join(", ")} for user ${userId}`,
+    logger?.info(
+      `🚀 Posting immediately to ${platforms?.join(", ")} for user ${userId}`,
     );
 
     const tempPost: ScheduledPost = {
-      id: `immediate_${Date.now()}`,
+      id: `immediate_${Date?.now()}`,
       userId,
       platforms,
       content,
@@ -319,36 +319,36 @@ class AutoPostingServiceV2 {
       createdBy,
     };
 
-    return await this.executePost(tempPost);
+    return await this?.executePost(tempPost);
   }
 
   private async executePost(post: ScheduledPost): Promise<PostResult[]> {
     const results: PostResult[] = [];
 
-    const user = await storage.getUserById(post.userId);
+    const _user = await storage?.getUserById(post?.userId);
     if (!user) {
       throw new Error("User not found");
     }
 
-    const postPromises = post.platforms.map(async (platform) => {
+    const _postPromises = post?.platforms.map(async (platform) => {
       try {
-        const result = await this.postToPlatform(user, platform, post.content);
-        results.push(result);
+        const _result = await this?.postToPlatform(user, platform, post?.content);
+        results?.push(result);
       } catch (error) {
-        logger.warn({ err: error }, `Failed to post to ${platform}:`);
-        results.push({
+        logger?.warn({ err: error }, `Failed to post to ${platform}:`);
+        results?.push({
           platform,
           success: false,
-          error: error.message,
+          error: error?.message,
           postedAt: new Date(),
         });
       }
     });
 
-    await Promise.all(postPromises);
+    await Promise?.all(postPromises);
 
-    logger.info(
-      `✅ Posted to ${results.filter((r) => r.success).length}/${results.length} platforms`,
+    logger?.info(
+      `✅ Posted to ${results?.filter((r) => r?.success).length}/${results?.length} platforms`,
     );
 
     return results;
@@ -359,27 +359,27 @@ class AutoPostingServiceV2 {
     platform: string,
     content: PostContent,
   ): Promise<PostResult> {
-    const tokens = await storage.getSocialTokens(user.id);
+    const _tokens = await storage?.getSocialTokens(user?.id);
 
     switch (platform) {
       case "instagram":
-        return await this.postToInstagram(user, tokens.instagram, content);
+        return await this?.postToInstagram(user, tokens?.instagram, content);
       case "facebook":
-        return await this.postToFacebook(user, tokens.facebook, content);
+        return await this?.postToFacebook(user, tokens?.facebook, content);
       case "twitter":
-        return await this.postToTwitter(user, tokens.twitter, content);
+        return await this?.postToTwitter(user, tokens?.twitter, content);
       case "tiktok":
-        return await this.postToTikTok(user, tokens.tiktok, content);
+        return await this?.postToTikTok(user, tokens?.tiktok, content);
       case "youtube":
-        return await this.postToYouTube(user, tokens.youtube, content);
+        return await this?.postToYouTube(user, tokens?.youtube, content);
       case "linkedin":
-        return await this.postToLinkedIn(user, tokens.linkedin, content);
+        return await this?.postToLinkedIn(user, tokens?.linkedin, content);
       case "threads":
-        return await this.postToThreads(user, tokens.threads, content);
+        return await this?.postToThreads(user, tokens?.threads, content);
       case "google_business":
-        return await this.postToGoogleBusiness(
+        return await this?.postToGoogleBusiness(
           user,
-          tokens.google_business,
+          tokens?.google_business,
           content,
         );
       default:
@@ -396,13 +396,13 @@ class AutoPostingServiceV2 {
       throw new Error("Instagram not connected");
     }
 
-    const postData = {
-      caption: `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`,
-      media_url: content.mediaUrl,
+    const _postData = {
+      caption: `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`,
+      media_url: content?.mediaUrl,
     };
 
-    const response = await axios.post(
-      "https://graph.facebook.com/v18.0/me/media",
+    const _response = await axios?.post(
+      "https://graph?.facebook.com/v18.0/me/media",
       postData,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
@@ -410,8 +410,8 @@ class AutoPostingServiceV2 {
     return {
       platform: "instagram",
       success: true,
-      postId: response.data.id,
-      postUrl: `https://instagram.com/p/${response.data.id}`,
+      postId: response?.data.id,
+      postUrl: `https://instagram.com/p/${response?.data.id}`,
       postedAt: new Date(),
     };
   }
@@ -423,13 +423,13 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult> {
     if (!accessToken) throw new Error("Facebook not connected");
 
-    const postData = {
-      message: `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`,
-      link: content.link,
+    const _postData = {
+      message: `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`,
+      link: content?.link,
     };
 
-    const response = await axios.post(
-      "https://graph.facebook.com/v18.0/me/feed",
+    const _response = await axios?.post(
+      "https://graph?.facebook.com/v18.0/me/feed",
       postData,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
@@ -437,8 +437,8 @@ class AutoPostingServiceV2 {
     return {
       platform: "facebook",
       success: true,
-      postId: response.data.id,
-      postUrl: `https://facebook.com/${response.data.id}`,
+      postId: response?.data.id,
+      postUrl: `https://facebook.com/${response?.data.id}`,
       postedAt: new Date(),
     };
   }
@@ -450,19 +450,19 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult> {
     if (!accessToken) throw new Error("Twitter not connected");
 
-    const tweetText = `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`;
+    const _tweetText = `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`;
 
-    const response = await axios.post(
-      "https://api.twitter.com/2/tweets",
-      { text: tweetText.slice(0, 280) },
+    const _response = await axios?.post(
+      "https://api?.twitter.com/2/tweets",
+      { text: tweetText?.slice(0, 280) },
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
 
     return {
       platform: "twitter",
       success: true,
-      postId: response.data.data.id,
-      postUrl: `https://twitter.com/i/web/status/${response.data.data.id}`,
+      postId: response?.data.data?.id,
+      postUrl: `https://twitter.com/i/web/status/${response?.data.data?.id}`,
       postedAt: new Date(),
     };
   }
@@ -474,17 +474,17 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult> {
     if (!accessToken) throw new Error("TikTok not connected");
 
-    const caption = `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`;
+    const _caption = `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`;
 
-    if (!content.mediaUrl || content.mediaType !== "video") {
+    if (!content?.mediaUrl || content?.mediaType !== "video") {
       throw new Error("TikTok requires video content");
     }
 
-    const initResponse = await axios.post(
-      "https://open.tiktokapis.com/v2/post/publish/video/init/",
+    const _initResponse = await axios?.post(
+      "https://open?.tiktokapis.com/v2/post/publish/video/init/",
       {
         post_info: {
-          title: caption.slice(0, 150),
+          title: caption?.slice(0, 150),
           privacy_level: "PUBLIC_TO_EVERYONE",
           disable_duet: false,
           disable_comment: false,
@@ -492,7 +492,7 @@ class AutoPostingServiceV2 {
         },
         source_info: {
           source: "PULL_FROM_URL",
-          video_url: content.mediaUrl,
+          video_url: content?.mediaUrl,
         },
       },
       {
@@ -503,30 +503,30 @@ class AutoPostingServiceV2 {
       },
     );
 
-    const publishId = initResponse.data.data?.publish_id;
-    const uploadUrl = initResponse.data.data?.upload_url;
+    const _publishId = initResponse?.data.data?.publish_id;
+    const _uploadUrl = initResponse?.data.data?.upload_url;
 
     if (!publishId) {
       throw new Error("TikTok video init failed: no publish_id returned");
     }
 
     if (uploadUrl) {
-      const videoResponse = await axios.get(content.mediaUrl, {
+      const _videoResponse = await axios?.get(content?.mediaUrl, {
         responseType: "arraybuffer",
       });
-      const videoBuffer = Buffer.from(videoResponse.data);
+      const _videoBuffer = Buffer?.from(videoResponse?.data);
 
-      await axios.put(uploadUrl, videoBuffer, {
+      await axios?.put(uploadUrl, videoBuffer, {
         headers: {
           "Content-Type": "video/mp4",
-          "Content-Length": videoBuffer.byteLength.toString(),
-          "Content-Range": `bytes 0-${videoBuffer.byteLength - 1}/${videoBuffer.byteLength}`,
+          "Content-Length": videoBuffer?.byteLength.toString(),
+          "Content-Range": `bytes 0-${videoBuffer?.byteLength - 1}/${videoBuffer?.byteLength}`,
         },
       });
     }
 
-    await axios.post(
-      "https://open.tiktokapis.com/v2/post/publish/video/submit/",
+    await axios?.post(
+      "https://open?.tiktokapis.com/v2/post/publish/video/submit/",
       { publish_id: publishId },
       {
         headers: {
@@ -537,12 +537,12 @@ class AutoPostingServiceV2 {
     );
 
     let videoId: string | undefined;
-    const maxAttempts = 60;
+    const _maxAttempts = 60;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 3000));
 
-      const statusResponse = await axios.post(
-        "https://open.tiktokapis.com/v2/post/publish/status/fetch/",
+      const _statusResponse = await axios?.post(
+        "https://open?.tiktokapis.com/v2/post/publish/status/fetch/",
         { publish_id: publishId },
         {
           headers: {
@@ -552,14 +552,14 @@ class AutoPostingServiceV2 {
         },
       );
 
-      const status = statusResponse.data.data?.status;
+      const _status = statusResponse?.data.data?.status;
       if (status === "PUBLISH_COMPLETE") {
-        const postIds = statusResponse.data.data?.publicly_available_post_ids;
+        const _postIds = statusResponse?.data.data?.publicly_available_post_ids;
         videoId = postIds?.[0]?.id || postIds?.[0];
         break;
       } else if (status === "FAILED") {
         throw new Error(
-          `TikTok publish failed: ${statusResponse.data.data?.fail_reason || "unknown"}`,
+          `TikTok publish failed: ${statusResponse?.data.data?.fail_reason || "unknown"}`,
         );
       }
     }
@@ -574,7 +574,7 @@ class AutoPostingServiceV2 {
       platform: "tiktok",
       success: true,
       postId: videoId,
-      postUrl: `https://www.tiktok.com/@${user.username}/video/${videoId}`,
+      postUrl: `https://www?.tiktok.com/@${user?.username}/video/${videoId}`,
       postedAt: new Date(),
     };
   }
@@ -586,16 +586,16 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult> {
     if (!accessToken) throw new Error("YouTube not connected");
 
-    const description = `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`;
+    const _description = `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`;
 
-    if (content.mediaType === "video" && content.mediaUrl) {
-      const initResponse = await axios.post(
-        "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+    if (content?.mediaType === "video" && content?.mediaUrl) {
+      const _initResponse = await axios?.post(
+        "https://www?.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
         {
           snippet: {
-            title: content.headline || content.text.slice(0, 100),
+            title: content?.headline || content?.text.slice(0, 100),
             description: description,
-            tags: content.hashtags?.map((h) => h.replace("#", "")) || [],
+            tags: content?.hashtags?.map((h) => h?.replace("#", "")) || [],
             categoryId: "10",
           },
           status: {
@@ -612,54 +612,54 @@ class AutoPostingServiceV2 {
         },
       );
 
-      const uploadUrl = initResponse.headers.location;
+      const _uploadUrl = initResponse?.headers.location;
       if (!uploadUrl) {
         throw new Error(
           "YouTube upload session failed: no upload URL returned",
         );
       }
 
-      const videoResponse = await axios.get(content.mediaUrl, {
+      const _videoResponse = await axios?.get(content?.mediaUrl, {
         responseType: "arraybuffer",
       });
-      const videoBuffer = Buffer.from(videoResponse.data);
+      const _videoBuffer = Buffer?.from(videoResponse?.data);
 
-      const uploadResponse = await axios.put(uploadUrl, videoBuffer, {
+      const _uploadResponse = await axios?.put(uploadUrl, videoBuffer, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "video/*",
-          "Content-Length": videoBuffer.byteLength.toString(),
+          "Content-Length": videoBuffer?.byteLength.toString(),
         },
         maxBodyLength: Infinity,
         maxContentLength: Infinity,
       });
 
-      const videoId = uploadResponse.data.id;
+      const _videoId = uploadResponse?.data.id;
 
       return {
         platform: "youtube",
         success: true,
-        postId: videoId || `youtube_${Date.now()}`,
+        postId: videoId || `youtube_${Date?.now()}`,
         postUrl: videoId ? `https://youtube.com/watch?v=${videoId}` : undefined,
         postedAt: new Date(),
       };
     } else {
-      const channelResponse = await axios.get(
-        "https://www.googleapis.com/youtube/v3/channels?part=id&mine=true",
+      const _channelResponse = await axios?.get(
+        "https://www?.googleapis.com/youtube/v3/channels?part=id&mine=true",
         { headers: { Authorization: `Bearer ${accessToken}` } },
       );
-      const channelId = channelResponse.data.items?.[0]?.id;
+      const _channelId = channelResponse?.data.items?.[0]?.id;
 
       if (!channelId) {
         throw new Error("YouTube channel not found");
       }
 
-      const postResponse = await axios.post(
-        "https://www.googleapis.com/youtube/v3/activities?part=snippet,contentDetails",
+      const _postResponse = await axios?.post(
+        "https://www?.googleapis.com/youtube/v3/activities?part=snippet,contentDetails",
         {
           snippet: {
             channelId: channelId,
-            description: description.slice(0, 5000),
+            description: description?.slice(0, 5000),
             type: "bulletin",
           },
           contentDetails: {
@@ -679,7 +679,7 @@ class AutoPostingServiceV2 {
       return {
         platform: "youtube",
         success: true,
-        postId: postResponse.data.id || `youtube_${Date.now()}`,
+        postId: postResponse?.data.id || `youtube_${Date?.now()}`,
         postedAt: new Date(),
       };
     }
@@ -692,19 +692,19 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult> {
     if (!accessToken) throw new Error("LinkedIn not connected");
 
-    const postText = `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`;
+    const _postText = `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`;
 
-    const profileResponse = await axios.get(
-      "https://api.linkedin.com/v2/userinfo",
+    const _profileResponse = await axios?.get(
+      "https://api?.linkedin.com/v2/userinfo",
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
-    const personUrn = `urn:li:person:${profileResponse.data.sub}`;
+    const _personUrn = `urn:li:person:${profileResponse?.data.sub}`;
 
     let mediaAssets: unknown[] = [];
 
-    if (content.mediaUrl && content.mediaType === "image") {
-      const registerResponse = await axios.post(
-        "https://api.linkedin.com/v2/assets?action=registerUpload",
+    if (content?.mediaUrl && content?.mediaType === "image") {
+      const _registerResponse = await axios?.post(
+        "https://api?.linkedin.com/v2/assets?action=registerUpload",
         {
           registerUploadRequest: {
             recipes: ["urn:li:digitalmediaRecipe:feedshare-image"],
@@ -726,25 +726,25 @@ class AutoPostingServiceV2 {
         },
       );
 
-      const uploadUrl =
-        registerResponse.data.value?.uploadMechanism?.[
-          "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"
+      const _uploadUrl =
+        registerResponse?.data.value?.uploadMechanism?.[
+          "com?.linkedin.digitalmedia?.uploading.MediaUploadHttpRequest"
         ]?.uploadUrl;
-      const assetUrn = registerResponse.data.value?.asset;
+      const _assetUrn = registerResponse?.data.value?.asset;
 
       if (uploadUrl && assetUrn) {
-        const imageResponse = await axios.get(content.mediaUrl, {
+        const _imageResponse = await axios?.get(content?.mediaUrl, {
           responseType: "arraybuffer",
         });
 
-        await axios.put(uploadUrl, imageResponse.data, {
+        await axios?.put(uploadUrl, imageResponse?.data, {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "image/*",
           },
         });
 
-        mediaAssets.push({
+        mediaAssets?.push({
           status: "READY",
           media: assetUrn,
         });
@@ -755,25 +755,25 @@ class AutoPostingServiceV2 {
       author: personUrn,
       lifecycleState: "PUBLISHED",
       specificContent: {
-        "com.linkedin.ugc.ShareContent": {
+        "com?.linkedin.ugc?.ShareContent": {
           shareCommentary: {
             text: postText,
           },
-          shareMediaCategory: mediaAssets.length > 0 ? "IMAGE" : "NONE",
+          shareMediaCategory: mediaAssets?.length > 0 ? "IMAGE" : "NONE",
         },
       },
       visibility: {
-        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
+        "com?.linkedin.ugc?.MemberNetworkVisibility": "PUBLIC",
       },
     };
 
-    if (mediaAssets.length > 0) {
-      postData.specificContent["com.linkedin.ugc.ShareContent"].media =
+    if (mediaAssets?.length > 0) {
+      postData?.specificContent["com?.linkedin.ugc?.ShareContent"].media =
         mediaAssets;
     }
 
-    const response = await axios.post(
-      "https://api.linkedin.com/v2/ugcPosts",
+    const _response = await axios?.post(
+      "https://api?.linkedin.com/v2/ugcPosts",
       postData,
       {
         headers: {
@@ -784,14 +784,14 @@ class AutoPostingServiceV2 {
       },
     );
 
-    const postId = response.data.id;
+    const _postId = response?.data.id;
 
     return {
       platform: "linkedin",
       success: true,
-      postId: postId || `linkedin_${Date.now()}`,
+      postId: postId || `linkedin_${Date?.now()}`,
       postUrl: postId
-        ? `https://www.linkedin.com/feed/update/${postId}`
+        ? `https://www?.linkedin.com/feed/update/${postId}`
         : undefined,
       postedAt: new Date(),
     };
@@ -804,79 +804,79 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult> {
     if (!accessToken) throw new Error("Threads not connected");
 
-    const caption = `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`;
+    const _caption = `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`;
 
-    const userResponse = await axios.get(
-      `https://graph.threads.net/v1.0/me?access_token=${accessToken}&fields=id,username`,
+    const _userResponse = await axios?.get(
+      `https://graph?.threads.net/v1.0/me?access_token=${accessToken}&fields=id,username`,
     );
-    const threadsUserId = userResponse.data.id;
-    const threadsUsername = userResponse.data.username;
+    const _threadsUserId = userResponse?.data.id;
+    const _threadsUsername = userResponse?.data.username;
 
     let mediaType = "TEXT";
     const containerData: Record<string, unknown> = {
-      text: caption.slice(0, 500),
+      text: caption?.slice(0, 500),
     };
 
-    if (content.mediaUrl && content.mediaType === "image") {
+    if (content?.mediaUrl && content?.mediaType === "image") {
       mediaType = "IMAGE";
-      containerData.image_url = content.mediaUrl;
-    } else if (content.mediaUrl && content.mediaType === "video") {
+      containerData.image_url = content?.mediaUrl;
+    } else if (content?.mediaUrl && content?.mediaType === "video") {
       mediaType = "VIDEO";
-      containerData.video_url = content.mediaUrl;
+      containerData.video_url = content?.mediaUrl;
     }
 
-    const createUrl = new URL(
-      `https://graph.threads.net/v1.0/${threadsUserId}/threads`,
+    const _createUrl = new URL(
+      `https://graph?.threads.net/v1.0/${threadsUserId}/threads`,
     );
-    createUrl.searchParams.set("access_token", accessToken);
-    createUrl.searchParams.set("media_type", mediaType);
-    createUrl.searchParams.set("text", containerData.text);
-    if (containerData.image_url) {
-      createUrl.searchParams.set("image_url", containerData.image_url);
+    createUrl?.searchParams.set("access_token", accessToken);
+    createUrl?.searchParams.set("media_type", mediaType);
+    createUrl?.searchParams.set("text", containerData?.text);
+    if (containerData?.image_url) {
+      createUrl?.searchParams.set("image_url", containerData?.image_url);
     }
-    if (containerData.video_url) {
-      createUrl.searchParams.set("video_url", containerData.video_url);
+    if (containerData?.video_url) {
+      createUrl?.searchParams.set("video_url", containerData?.video_url);
     }
 
-    const createResponse = await axios.post(createUrl.toString());
-    const creationId = createResponse.data.id;
+    const _createResponse = await axios?.post(createUrl?.toString());
+    const _creationId = createResponse?.data.id;
 
     if (!creationId) {
       throw new Error("Threads container creation failed");
     }
 
     if (mediaType === "VIDEO") {
-      const maxAttempts = 30;
+      const _maxAttempts = 30;
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        const statusResponse = await axios.get(
-          `https://graph.threads.net/v1.0/${creationId}?access_token=${accessToken}&fields=status`,
+        const _statusResponse = await axios?.get(
+          `https://graph?.threads.net/v1.0/${creationId}?access_token=${accessToken}&fields=status`,
         );
 
-        if (statusResponse.data.status === "FINISHED") {
+        if (statusResponse?.data.status === "FINISHED") {
           break;
-        } else if (statusResponse.data.status === "ERROR") {
+        } else if (statusResponse?.data.status === "ERROR") {
           throw new Error("Threads video processing failed");
         }
       }
     }
 
-    const publishUrl = new URL(
-      `https://graph.threads.net/v1.0/${threadsUserId}/threads_publish`,
+    const _publishUrl = new URL(
+      `https://graph?.threads.net/v1.0/${threadsUserId}/threads_publish`,
     );
-    publishUrl.searchParams.set("access_token", accessToken);
-    publishUrl.searchParams.set("creation_id", creationId);
+    publishUrl?.searchParams.set("access_token", accessToken);
+    publishUrl?.searchParams.set("creation_id", creationId);
 
-    const publishResponse = await axios.post(publishUrl.toString());
-    const postId = publishResponse.data.id;
+    const _publishResponse = await axios?.post(publishUrl?.toString());
+    const _postId = publishResponse?.data.id;
 
     return {
       platform: "threads",
       success: true,
-      postId: postId || `threads_${Date.now()}`,
+      postId: postId || `threads_${Date?.now()}`,
       postUrl: postId
-        ? `https://www.threads.net/@${threadsUsername}/post/${postId}`
+        ? `https://www?.threads.net/@${threadsUsername}/post/${postId}`
         : undefined,
       postedAt: new Date(),
     };
@@ -889,23 +889,23 @@ class AutoPostingServiceV2 {
   ): Promise<PostResult> {
     if (!accessToken) throw new Error("Google Business not connected");
 
-    const postText = `${content.headline ? content.headline + "\n\n" : ""}${content.text}${content.hashtags ? "\n\n" + content.hashtags.join(" ") : ""}`;
+    const _postText = `${content?.headline ? content?.headline + "\n\n" : ""}${content?.text}${content?.hashtags ? "\n\n" + content?.hashtags.join(" ") : ""}`;
 
-    const accountsResponse = await axios.get(
-      "https://mybusinessbusinessinformation.googleapis.com/v1/accounts",
+    const _accountsResponse = await axios?.get(
+      "https://mybusinessbusinessinformation?.googleapis.com/v1/accounts",
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
-    const accountName = accountsResponse.data.accounts?.[0]?.name;
+    const _accountName = accountsResponse?.data.accounts?.[0]?.name;
 
     if (!accountName) {
       throw new Error("No Google Business account found");
     }
 
-    const locationsResponse = await axios.get(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations`,
+    const _locationsResponse = await axios?.get(
+      `https://mybusinessbusinessinformation?.googleapis.com/v1/${accountName}/locations`,
       { headers: { Authorization: `Bearer ${accessToken}` } },
     );
-    const locationName = locationsResponse.data.locations?.[0]?.name;
+    const _locationName = locationsResponse?.data.locations?.[0]?.name;
 
     if (!locationName) {
       throw new Error("No Google Business location found");
@@ -913,28 +913,28 @@ class AutoPostingServiceV2 {
 
     const postData: Record<string, unknown> = {
       languageCode: "en-US",
-      summary: postText.slice(0, 1500),
+      summary: postText?.slice(0, 1500),
       topicType: "STANDARD",
     };
 
-    if (content.mediaUrl) {
+    if (content?.mediaUrl) {
       postData.media = [
         {
-          mediaFormat: content.mediaType === "video" ? "VIDEO" : "PHOTO",
-          sourceUrl: content.mediaUrl,
+          mediaFormat: content?.mediaType === "video" ? "VIDEO" : "PHOTO",
+          sourceUrl: content?.mediaUrl,
         },
       ];
     }
 
-    if (content.link) {
+    if (content?.link) {
       postData.callToAction = {
         actionType: "LEARN_MORE",
-        url: content.link,
+        url: content?.link,
       };
     }
 
-    const response = await axios.post(
-      `https://mybusiness.googleapis.com/v4/${locationName}/localPosts`,
+    const _response = await axios?.post(
+      `https://mybusiness?.googleapis.com/v4/${locationName}/localPosts`,
       postData,
       {
         headers: {
@@ -944,52 +944,52 @@ class AutoPostingServiceV2 {
       },
     );
 
-    const postId = response.data.name?.split("/").pop();
+    const _postId = response?.data.name?.split("/").pop();
 
     return {
       platform: "google_business",
       success: true,
-      postId: postId || `google_${Date.now()}`,
-      postUrl: response.data.searchUrl || undefined,
+      postId: postId || `google_${Date?.now()}`,
+      postUrl: response?.data.searchUrl || undefined,
       postedAt: new Date(),
     };
   }
 
   async getScheduledPosts(userId: string): Promise<ScheduledPost[]> {
-    return await storage.getScheduledPosts({ userId, status: "pending" });
+    return await storage?.getScheduledPosts({ userId, status: "pending" });
   }
 
   async cancelScheduledPost(postId: string): Promise<void> {
-    await storage.deleteScheduledPost(postId);
-    logger.info(`❌ Cancelled scheduled post ${postId}`);
+    await storage?.deleteScheduledPost(postId);
+    logger?.info(`❌ Cancelled scheduled post ${postId}`);
   }
 
   pause(): void {
-    if (this.workerInterval) {
-      clearInterval(this.workerInterval);
+    if (this?.workerInterval) {
+      clearInterval(this?.workerInterval);
       this.workerInterval = null;
     }
-    logger.info("[AutoPostingService V2] Paused by kill switch");
+    logger?.info("[AutoPostingService V2] Paused by kill switch");
   }
 
   resume(): void {
-    if (!this.workerInterval) {
-      this.startWorker();
+    if (!this?.workerInterval) {
+      this?.startWorker();
     }
-    logger.info("[AutoPostingService V2] Resumed");
+    logger?.info("[AutoPostingService V2] Resumed");
   }
 
   async shutdown() {
-    logger.info("Shutting down auto-posting service...");
+    logger?.info("Shutting down auto-posting service...");
 
-    if (this.workerInterval) {
-      clearInterval(this.workerInterval);
+    if (this?.workerInterval) {
+      clearInterval(this?.workerInterval);
       this.workerInterval = null;
     }
-    await this.postQueue.close();
+    await this?.postQueue.close();
 
-    logger.info("✅ Auto-posting service shut down gracefully");
+    logger?.info("✅ Auto-posting service shut down gracefully");
   }
 }
 
-export const autoPostingServiceV2 = new AutoPostingServiceV2();
+export const _autoPostingServiceV2 = new AutoPostingServiceV2();

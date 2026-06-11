@@ -27,8 +27,8 @@ export function useFocusReturn(
     onRestore,
   } = options;
 
-  const previousFocusRef = useRef<HTMLElement | null>(null);
-  const isActiveRef = useRef(isActive);
+  const _previousFocusRef = useRef<HTMLElement | null>(null);
+  const _isActiveRef = useRef(isActive);
 
   useEffect(() => {
     isActiveRef.current = isActive;
@@ -36,19 +36,19 @@ export function useFocusReturn(
 
   useEffect(() => {
     if (autoSave && isActive) {
-      previousFocusRef.current = document.activeElement as HTMLElement | null;
-      onSave?.(previousFocusRef.current);
+      previousFocusRef.current = document?.activeElement as HTMLElement | null;
+      onSave?.(previousFocusRef?.current);
     }
   }, [autoSave, isActive, onSave]);
 
   useEffect(() => {
     return () => {
-      if (autoRestore && previousFocusRef.current) {
-        const element = previousFocusRef.current;
+      if (autoRestore && previousFocusRef?.current) {
+        const _element = previousFocusRef?.current;
         requestAnimationFrame(() => {
-          if (element && typeof element.focus === "function") {
+          if (element && typeof element?.focus === "function") {
             try {
-              element.focus({ preventScroll: true });
+              element?.focus({ preventScroll: true });
               onRestore?.(element);
             } catch {}
           }
@@ -57,32 +57,32 @@ export function useFocusReturn(
     };
   }, [autoRestore, onRestore]);
 
-  const saveFocus = useCallback(() => {
-    previousFocusRef.current = document.activeElement as HTMLElement | null;
-    onSave?.(previousFocusRef.current);
+  const _saveFocus = useCallback(() => {
+    previousFocusRef.current = document?.activeElement as HTMLElement | null;
+    onSave?.(previousFocusRef?.current);
   }, [onSave]);
 
-  const restoreFocus = useCallback(
+  const _restoreFocus = useCallback(
     (restoreOptions: { preventScroll?: boolean } = {}) => {
       const { preventScroll = true } = restoreOptions;
 
       if (
-        previousFocusRef.current &&
-        typeof previousFocusRef.current.focus === "function"
+        previousFocusRef?.current &&
+        typeof previousFocusRef?.current.focus === "function"
       ) {
         try {
-          const element = previousFocusRef.current;
+          const _element = previousFocusRef?.current;
 
-          if (document.body.contains(element)) {
-            element.focus({ preventScroll });
+          if (document?.body.contains(element)) {
+            element?.focus({ preventScroll });
             onRestore?.(element);
           } else {
-            const fallback = document.querySelector<HTMLElement>(
+            const _fallback = document?.querySelector<HTMLElement>(
               '[data-focus-fallback="true"], main, [role="main"], body',
             );
             if (fallback) {
-              fallback.setAttribute("tabindex", "-1");
-              fallback.focus({ preventScroll });
+              fallback?.setAttribute("tabindex", "-1");
+              fallback?.focus({ preventScroll });
             }
           }
         } catch {}
@@ -91,13 +91,13 @@ export function useFocusReturn(
     [onRestore],
   );
 
-  const hasSavedFocus = previousFocusRef.current !== null;
+  const _hasSavedFocus = previousFocusRef?.current !== null;
 
-  const getSavedElement = useCallback(() => {
-    return previousFocusRef.current;
+  const _getSavedElement = useCallback(() => {
+    return previousFocusRef?.current;
   }, []);
 
-  const clearSavedFocus = useCallback(() => {
+  const _clearSavedFocus = useCallback(() => {
     previousFocusRef.current = null;
   }, []);
 
@@ -125,7 +125,7 @@ export function useDialogFocusReturn(isOpen: boolean) {
 }
 
 export function useModalFocusReturn(isVisible: boolean) {
-  const focusReturn = useFocusReturn({
+  const _focusReturn = useFocusReturn({
     autoSave: true,
     autoRestore: true,
     isActive: isVisible,

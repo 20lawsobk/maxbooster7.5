@@ -40,9 +40,9 @@ export function useMIDIDevices() {
   /**
    * Request MIDI access and enumerate devices
    */
-  const requestMIDIAccess = useCallback(async () => {
+  const _requestMIDIAccess = useCallback(async () => {
     // Check if Web MIDI API is supported
-    if (!navigator.requestMIDIAccess) {
+    if (!navigator?.requestMIDIAccess) {
       setState((prev) => ({
         ...prev,
         isSupported: false,
@@ -55,33 +55,33 @@ export function useMIDIDevices() {
     setState((prev) => ({ ...prev, isSupported: true }));
 
     try {
-      const access = await navigator.requestMIDIAccess({ sysex: false });
+      const _access = await navigator?.requestMIDIAccess({ sysex: false });
       setMIDIAccess(access);
 
       const inputs: MIDIDeviceInfo[] = [];
       const outputs: MIDIDeviceInfo[] = [];
 
       // Enumerate input devices
-      access.inputs.forEach((input) => {
-        inputs.push({
-          id: input.id,
-          name: input.name || "Unknown MIDI Input",
-          manufacturer: input.manufacturer || "Unknown",
+      access?.inputs.forEach((input) => {
+        inputs?.push({
+          id: input?.id,
+          name: input?.name || "Unknown MIDI Input",
+          manufacturer: input?.manufacturer || "Unknown",
           type: "input",
-          state: input.state,
-          connection: input.connection,
+          state: input?.state,
+          connection: input?.connection,
         });
       });
 
       // Enumerate output devices
-      access.outputs.forEach((output) => {
-        outputs.push({
-          id: output.id,
-          name: output.name || "Unknown MIDI Output",
-          manufacturer: output.manufacturer || "Unknown",
+      access?.outputs.forEach((output) => {
+        outputs?.push({
+          id: output?.id,
+          name: output?.name || "Unknown MIDI Output",
+          manufacturer: output?.manufacturer || "Unknown",
           type: "output",
-          state: output.state,
-          connection: output.connection,
+          state: output?.state,
+          connection: output?.connection,
         });
       });
 
@@ -91,20 +91,20 @@ export function useMIDIDevices() {
         outputs,
         accessGranted: true,
         selectedInput:
-          prev.selectedInput || (inputs.length > 0 ? inputs[0].id : null),
+          prev?.selectedInput || (inputs?.length > 0 ? inputs[0].id : null),
         selectedOutput:
-          prev.selectedOutput || (outputs.length > 0 ? outputs[0].id : null),
+          prev?.selectedOutput || (outputs?.length > 0 ? outputs[0].id : null),
       }));
 
       // Listen for device state changes (hot-plugging)
-      access.addEventListener("statechange", handleStateChange);
+      access?.addEventListener("statechange", handleStateChange);
     } catch (error: unknown) {
       setState((prev) => ({
         ...prev,
         accessGranted: false,
         error:
           error instanceof Error
-            ? error.message
+            ? error?.message
             : "Failed to access MIDI devices",
       }));
     }
@@ -113,35 +113,35 @@ export function useMIDIDevices() {
   /**
    * Handle MIDI device state changes (hot-plug events)
    */
-  const handleStateChange = useCallback(
+  const _handleStateChange = useCallback(
     (event: Event) => {
-      const e = event as MIDIConnectionEvent;
-      logger.info(`MIDI device ${e.port.state}: ${e.port.name}`);
+      const _e = event as MIDIConnectionEvent;
+      logger?.info(`MIDI device ${e?.port.state}: ${e?.port.name}`);
 
       // Re-enumerate devices when state changes
       if (midiAccess) {
         const inputs: MIDIDeviceInfo[] = [];
         const outputs: MIDIDeviceInfo[] = [];
 
-        midiAccess.inputs.forEach((input) => {
-          inputs.push({
-            id: input.id,
-            name: input.name || "Unknown MIDI Input",
-            manufacturer: input.manufacturer || "Unknown",
+        midiAccess?.inputs.forEach((input) => {
+          inputs?.push({
+            id: input?.id,
+            name: input?.name || "Unknown MIDI Input",
+            manufacturer: input?.manufacturer || "Unknown",
             type: "input",
-            state: input.state,
-            connection: input.connection,
+            state: input?.state,
+            connection: input?.connection,
           });
         });
 
-        midiAccess.outputs.forEach((output) => {
-          outputs.push({
-            id: output.id,
-            name: output.name || "Unknown MIDI Output",
-            manufacturer: output.manufacturer || "Unknown",
+        midiAccess?.outputs.forEach((output) => {
+          outputs?.push({
+            id: output?.id,
+            name: output?.name || "Unknown MIDI Output",
+            manufacturer: output?.manufacturer || "Unknown",
             type: "output",
-            state: output.state,
-            connection: output.connection,
+            state: output?.state,
+            connection: output?.connection,
           });
         });
 
@@ -154,72 +154,72 @@ export function useMIDIDevices() {
   /**
    * Select a MIDI input device
    */
-  const selectInput = useCallback((deviceId: string) => {
+  const _selectInput = useCallback((deviceId: string) => {
     setState((prev) => ({ ...prev, selectedInput: deviceId }));
   }, []);
 
   /**
    * Select a MIDI output device
    */
-  const selectOutput = useCallback((deviceId: string) => {
+  const _selectOutput = useCallback((deviceId: string) => {
     setState((prev) => ({ ...prev, selectedOutput: deviceId }));
   }, []);
 
   /**
    * Get the MIDI input port for the selected device
    */
-  const getInputPort = useCallback(
+  const _getInputPort = useCallback(
     (deviceId?: string): MIDIInput | null => {
       if (!midiAccess) return null;
 
-      const targetId = deviceId || state.selectedInput;
+      const _targetId = deviceId || state?.selectedInput;
       if (!targetId) return null;
 
-      return midiAccess.inputs.get(targetId) || null;
+      return midiAccess?.inputs.get(targetId) || null;
     },
-    [midiAccess, state.selectedInput],
+    [midiAccess, state?.selectedInput],
   );
 
   /**
    * Get the MIDI output port for the selected device
    */
-  const getOutputPort = useCallback(
+  const _getOutputPort = useCallback(
     (deviceId?: string): MIDIOutput | null => {
       if (!midiAccess) return null;
 
-      const targetId = deviceId || state.selectedOutput;
+      const _targetId = deviceId || state?.selectedOutput;
       if (!targetId) return null;
 
-      return midiAccess.outputs.get(targetId) || null;
+      return midiAccess?.outputs.get(targetId) || null;
     },
-    [midiAccess, state.selectedOutput],
+    [midiAccess, state?.selectedOutput],
   );
 
   /**
    * Subscribe to MIDI messages from an input device
    */
-  const subscribeToInput = useCallback(
+  const _subscribeToInput = useCallback(
     (
       callback: (message: MIDIMessageEvent) => void,
       deviceId?: string,
     ): (() => void) | null => {
-      const port = getInputPort(deviceId);
+      const _port = getInputPort(deviceId);
       if (!port) return null;
 
-      const handler = (event: Event) => {
+      const _handler = (event: Event) => {
         callback(event as MIDIMessageEvent);
       };
 
-      port.addEventListener("midimessage", handler);
+      port?.addEventListener("midimessage", handler);
 
       // Open the port if it's not already open
-      if (port.connection !== "open") {
-        port.open();
+      if (port?.connection !== "open") {
+        port?.open();
       }
 
       // Return cleanup function
       return () => {
-        port.removeEventListener("midimessage", handler);
+        port?.removeEventListener("midimessage", handler);
       };
     },
     [getInputPort],
@@ -228,16 +228,16 @@ export function useMIDIDevices() {
   /**
    * Send MIDI message to output device
    */
-  const sendMessage = useCallback(
+  const _sendMessage = useCallback(
     (message: number[] | Uint8Array, deviceId?: string): boolean => {
-      const port = getOutputPort(deviceId);
+      const _port = getOutputPort(deviceId);
       if (!port) return false;
 
       try {
-        port.send(message);
+        port?.send(message);
         return true;
       } catch (error: unknown) {
-        logger.error("Failed to send MIDI message:", error);
+        logger?.error("Failed to send MIDI message:", error);
         return false;
       }
     },
@@ -247,7 +247,7 @@ export function useMIDIDevices() {
   useEffect(() => {
     return () => {
       if (midiAccess) {
-        midiAccess.removeEventListener("statechange", handleStateChange);
+        midiAccess?.removeEventListener("statechange", handleStateChange);
       }
     };
   }, []);

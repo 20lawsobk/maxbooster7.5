@@ -31,7 +31,7 @@ interface GradientColors {
 }
 
 // B-Lawz Music brand colors
-const BRAND_COLORS = {
+const _BRAND_COLORS = {
   primary: "#FFD700", // Gold
   secondary: "#9B59B6", // Purple
   dark: "#1A1A2E", // Dark background
@@ -65,8 +65,8 @@ class SharpImageService {
   private outputDir: string;
 
   constructor() {
-    this.outputDir = path.join(
-      process.cwd(),
+    this.outputDir = path?.join(
+      process?.cwd(),
       "public",
       "generated-content",
       "images",
@@ -78,7 +78,7 @@ class SharpImageService {
    */
   getDimensions(platform: string): ImageDimensions {
     return (
-      PLATFORM_DIMENSIONS[platform.toLowerCase()] || PLATFORM_DIMENSIONS.default
+      PLATFORM_DIMENSIONS[platform?.toLowerCase()] || PLATFORM_DIMENSIONS?.default
     );
   }
 
@@ -91,19 +91,19 @@ class SharpImageService {
     colors: GradientColors,
   ): Promise<Buffer> {
     // Create SVG gradient
-    const svg = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    const _svg = `
+      <svg width="${width}" height="${height}" xmlns="http://www?.w3.org/2000/svg">
         <defs>
           <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:${colors.start};stop-opacity:1" />
-            <stop offset="100%" style="stop-color:${colors.end};stop-opacity:1" />
+            <stop offset="0%" style="stop-color:${colors?.start};stop-opacity:1" />
+            <stop offset="100%" style="stop-color:${colors?.end};stop-opacity:1" />
           </linearGradient>
         </defs>
         <rect width="100%" height="100%" fill="url(#grad)"/>
       </svg>
     `;
 
-    return Buffer.from(svg);
+    return Buffer?.from(svg);
   }
 
   /**
@@ -114,19 +114,19 @@ class SharpImageService {
     height: number,
     tone: string,
   ): Promise<Buffer> {
-    const colors = TONE_GRADIENTS[tone] || TONE_GRADIENTS.creative;
-    const accentColor = colors.accent || BRAND_COLORS.primary;
+    const _colors = TONE_GRADIENTS[tone] || TONE_GRADIENTS?.creative;
+    const _accentColor = colors?.accent || BRAND_COLORS?.primary;
 
     // Create decorative shapes with SVG
-    const svg = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    const _svg = `
+      <svg width="${width}" height="${height}" xmlns="http://www?.w3.org/2000/svg">
         <!-- Decorative circles -->
-        <circle cx="${width * 0.1}" cy="${height * 0.2}" r="${Math.min(width, height) * 0.15}" 
+        <circle cx="${width * 0.1}" cy="${height * 0.2}" r="${Math?.min(width, height) * 0.15}" 
                 fill="${accentColor}" opacity="0.1"/>
-        <circle cx="${width * 0.9}" cy="${height * 0.8}" r="${Math.min(width, height) * 0.2}" 
+        <circle cx="${width * 0.9}" cy="${height * 0.8}" r="${Math?.min(width, height) * 0.2}" 
                 fill="${accentColor}" opacity="0.08"/>
-        <circle cx="${width * 0.5}" cy="${height * 0.1}" r="${Math.min(width, height) * 0.1}" 
-                fill="${BRAND_COLORS.secondary}" opacity="0.12"/>
+        <circle cx="${width * 0.5}" cy="${height * 0.1}" r="${Math?.min(width, height) * 0.1}" 
+                fill="${BRAND_COLORS?.secondary}" opacity="0.12"/>
         
         <!-- Sound wave lines -->
         <g stroke="${accentColor}" stroke-width="2" opacity="0.2" fill="none">
@@ -146,7 +146,7 @@ class SharpImageService {
       </svg>
     `;
 
-    return Buffer.from(svg);
+    return Buffer?.from(svg);
   }
 
   /**
@@ -159,41 +159,41 @@ class SharpImageService {
     platform: string,
   ): Promise<Buffer> {
     // Calculate font size based on dimensions and text length
-    const maxCharsPerLine =
+    const _maxCharsPerLine =
       platform === "instagram" || platform === "tiktok" ? 20 : 35;
-    const lines = this.wrapText(text, maxCharsPerLine);
-    const fontSize = Math.min(
-      Math.floor(width / 15),
-      Math.floor(height / (lines.length * 2 + 2)),
+    const _lines = this?.wrapText(text, maxCharsPerLine);
+    const _fontSize = Math?.min(
+      Math?.floor(width / 15),
+      Math?.floor(height / (lines?.length * 2 + 2)),
     );
-    const lineHeight = fontSize * 1.4;
-    const totalTextHeight = lines.length * lineHeight;
-    const startY = (height - totalTextHeight) / 2 + fontSize;
+    const _lineHeight = fontSize * 1.4;
+    const _totalTextHeight = lines?.length * lineHeight;
+    const _startY = (height - totalTextHeight) / 2 + fontSize;
 
     // Create text SVG
-    const textElements = lines
+    const _textElements = lines
       .map((line, i) => {
-        const y = startY + i * lineHeight;
+        const _y = startY + i * lineHeight;
         return `
         <text x="50%" y="${y}" 
               text-anchor="middle" 
               font-family="Arial, Helvetica, sans-serif" 
               font-size="${fontSize}px" 
               font-weight="bold" 
-              fill="${BRAND_COLORS.white}">
-          <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0.5))">${this.escapeXml(line)}</tspan>
+              fill="${BRAND_COLORS?.white}">
+          <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0.5))">${this?.escapeXml(line)}</tspan>
         </text>
       `;
       })
       .join("");
 
-    const svg = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    const _svg = `
+      <svg width="${width}" height="${height}" xmlns="http://www?.w3.org/2000/svg">
         ${textElements}
       </svg>
     `;
 
-    return Buffer.from(svg);
+    return Buffer?.from(svg);
   }
 
   /**
@@ -203,19 +203,19 @@ class SharpImageService {
     width: number,
     height: number,
   ): Promise<Buffer> {
-    const brandText = "B-Lawz Music";
-    const fontSize = Math.floor(width / 30);
-    const padding = fontSize;
+    const _brandText = "B-Lawz Music";
+    const _fontSize = Math?.floor(width / 30);
+    const _padding = fontSize;
 
-    const svg = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    const _svg = `
+      <svg width="${width}" height="${height}" xmlns="http://www?.w3.org/2000/svg">
         <!-- Brand text bottom right -->
         <text x="${width - padding}" y="${height - padding}" 
               text-anchor="end" 
               font-family="Arial, Helvetica, sans-serif" 
               font-size="${fontSize}px" 
               font-weight="bold" 
-              fill="${BRAND_COLORS.primary}" 
+              fill="${BRAND_COLORS?.primary}" 
               opacity="0.8">
           ${brandText}
         </text>
@@ -223,20 +223,20 @@ class SharpImageService {
         <!-- Subtle border accent -->
         <rect x="0" y="0" width="${width}" height="${height}" 
               fill="none" 
-              stroke="${BRAND_COLORS.primary}" 
+              stroke="${BRAND_COLORS?.primary}" 
               stroke-width="4" 
               opacity="0.3"/>
       </svg>
     `;
 
-    return Buffer.from(svg);
+    return Buffer?.from(svg);
   }
 
   /**
    * Word wrap text into lines
    */
   private wrapText(text: string, maxCharsPerLine: number): string[] {
-    const words = text.split(" ");
+    const _words = text?.split(" ");
     const lines: string[] = [];
     let currentLine = "";
 
@@ -244,14 +244,14 @@ class SharpImageService {
       if ((currentLine + " " + word).trim().length <= maxCharsPerLine) {
         currentLine = (currentLine + " " + word).trim();
       } else {
-        if (currentLine) lines.push(currentLine);
+        if (currentLine) lines?.push(currentLine);
         currentLine = word;
       }
     }
-    if (currentLine) lines.push(currentLine);
+    if (currentLine) lines?.push(currentLine);
 
     // Limit to 4 lines max
-    return lines.slice(0, 4);
+    return lines?.slice(0, 4);
   }
 
   /**
@@ -276,29 +276,29 @@ class SharpImageService {
     publicUrl: string;
   }> {
     const { prompt, platform, tone = "creative" } = options;
-    const dimensions = this.getDimensions(platform);
+    const _dimensions = this?.getDimensions(platform);
     const { width, height } = dimensions;
-    const filename = `${randomBytes(8).toString("hex")}.png`;
-    const outputPath = path.join(this.outputDir, filename);
-    const publicUrl = `/generated-content/images/${filename}`;
+    const _filename = `${randomBytes(8).toString("hex")}.png`;
+    const _outputPath = path?.join(this?.outputDir, filename);
+    const _publicUrl = `/generated-content/images/${filename}`;
 
     try {
       // Ensure output directory exists
-      await fs.mkdir(this.outputDir, { recursive: true });
+      await fs?.mkdir(this?.outputDir, { recursive: true });
 
-      const colors = TONE_GRADIENTS[tone] || TONE_GRADIENTS.creative;
+      const _colors = TONE_GRADIENTS[tone] || TONE_GRADIENTS?.creative;
 
       // Create layers
       const [gradientBuffer, decorativeBuffer, textBuffer, brandingBuffer] =
-        await Promise.all([
-          this.createGradientBackground(width, height, colors),
-          this.createDecorativeOverlay(width, height, tone),
-          this.createTextOverlay(width, height, prompt, platform),
-          this.createBrandingOverlay(width, height),
+        await Promise?.all([
+          this?.createGradientBackground(width, height, colors),
+          this?.createDecorativeOverlay(width, height, tone),
+          this?.createTextOverlay(width, height, prompt, platform),
+          this?.createBrandingOverlay(width, height),
         ]);
 
       // Compose the final image using Sharp
-      const finalImage = await sharp({
+      const _finalImage = await sharp({
         create: {
           width,
           height,
@@ -328,12 +328,12 @@ class SharpImageService {
         .toBuffer();
 
       // Write to file
-      await fs.writeFile(outputPath, finalImage);
+      await fs?.writeFile(outputPath, finalImage);
 
       // Verify file was created
-      const stats = await fs.stat(outputPath);
-      logger.info(
-        `✅ Sharp generated image: ${publicUrl} (${width}x${height}, ${stats.size} bytes)`,
+      const _stats = await fs?.stat(outputPath);
+      logger?.info(
+        `✅ Sharp generated image: ${publicUrl} (${width}x${height}, ${stats?.size} bytes)`,
       );
 
       return {
@@ -343,7 +343,7 @@ class SharpImageService {
         publicUrl,
       };
     } catch (error) {
-      logger.warn(`Sharp image generation failed: ${error.message}`);
+      logger?.warn(`Sharp image generation failed: ${error?.message}`);
       throw error;
     }
   }
@@ -354,13 +354,13 @@ class SharpImageService {
   async generateSimpleImage(
     width: number,
     height: number,
-    backgroundColor: string = BRAND_COLORS.dark,
+    backgroundColor: string = BRAND_COLORS?.dark,
   ): Promise<Buffer> {
     // Convert hex to RGB
-    const hex = backgroundColor.replace("#", "");
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
+    const _hex = backgroundColor?.replace("#", "");
+    const _r = parseInt(hex?.substring(0, 2), 16);
+    const _g = parseInt(hex?.substring(2, 4), 16);
+    const _b = parseInt(hex?.substring(4, 6), 16);
 
     return sharp({
       create: {
@@ -383,24 +383,24 @@ class SharpImageService {
     publicUrl: string;
   }> {
     // Use the same image generation but with play button overlay
-    const result = await this.generateImage(options);
+    const _result = await this?.generateImage(options);
 
     // Add play button overlay
-    const playButton = await this.createPlayButtonOverlay(
-      result.dimensions.width,
-      result.dimensions.height,
+    const _playButton = await this?.createPlayButtonOverlay(
+      result?.dimensions.width,
+      result?.dimensions.height,
     );
 
-    const thumbnailBuffer = await sharp(result.buffer)
+    const _thumbnailBuffer = await sharp(result?.buffer)
       .composite([
         { input: await sharp(playButton).png().toBuffer(), top: 0, left: 0 },
       ])
       .png()
       .toBuffer();
 
-    const thumbnailFilename = result.filename.replace(".png", "-thumb.png");
-    const thumbnailPath = path.join(this.outputDir, thumbnailFilename);
-    await fs.writeFile(thumbnailPath, thumbnailBuffer);
+    const _thumbnailFilename = result?.filename.replace(".png", "-thumb.png");
+    const _thumbnailPath = path?.join(this?.outputDir, thumbnailFilename);
+    await fs?.writeFile(thumbnailPath, thumbnailBuffer);
 
     return {
       buffer: thumbnailBuffer,
@@ -416,35 +416,35 @@ class SharpImageService {
     width: number,
     height: number,
   ): Promise<Buffer> {
-    const buttonRadius = Math.min(width, height) * 0.1;
-    const cx = width / 2;
-    const cy = height / 2;
+    const _buttonRadius = Math?.min(width, height) * 0.1;
+    const _cx = width / 2;
+    const _cy = height / 2;
 
-    const svg = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    const _svg = `
+      <svg width="${width}" height="${height}" xmlns="http://www?.w3.org/2000/svg">
         <!-- Semi-transparent backdrop -->
         <circle cx="${cx}" cy="${cy}" r="${buttonRadius * 1.3}" 
                 fill="rgba(0,0,0,0.5)"/>
         <!-- Play button circle -->
         <circle cx="${cx}" cy="${cy}" r="${buttonRadius}" 
-                fill="${BRAND_COLORS.primary}"/>
+                fill="${BRAND_COLORS?.primary}"/>
         <!-- Play triangle -->
         <polygon 
           points="${cx - buttonRadius * 0.3},${cy - buttonRadius * 0.4} 
                   ${cx - buttonRadius * 0.3},${cy + buttonRadius * 0.4} 
                   ${cx + buttonRadius * 0.5},${cy}" 
-          fill="${BRAND_COLORS.dark}"/>
+          fill="${BRAND_COLORS?.dark}"/>
       </svg>
     `;
 
-    return Buffer.from(svg);
+    return Buffer?.from(svg);
   }
 }
 
 // Export singleton instance
-export const sharpImageService = new SharpImageService();
+export const _sharpImageService = new SharpImageService();
 
 // Log initialization
-logger.info(
+logger?.info(
   "✅ Sharp Image Service initialized - production-ready image generation available",
 );

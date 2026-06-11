@@ -45,15 +45,15 @@ export class AdvertisingDispatchService {
   }> {
     try {
       // 1. Get campaign
-      const campaigns = await db
+      const _campaigns = await db
         .select()
         .from(adCampaigns)
         .where(
-          and(eq(adCampaigns.id, campaignId), eq(adCampaigns.userId, userId)),
+          and(eq(adCampaigns?.id, campaignId), eq(adCampaigns?.userId, userId)),
         )
         .limit(1);
 
-      if (campaigns.length === 0) {
+      if (campaigns?.length === 0) {
         return {
           success: false,
           message: "Campaign not found",
@@ -62,10 +62,10 @@ export class AdvertisingDispatchService {
         };
       }
 
-      const campaign = campaigns[0];
+      const _campaign = campaigns[0];
 
       // 2. Check if campaign is already active
-      if (campaign.status === "active" || campaign.status === "running") {
+      if (campaign?.status === "active" || campaign?.status === "running") {
         return {
           success: false,
           message: "Campaign is already active",
@@ -74,12 +74,12 @@ export class AdvertisingDispatchService {
       }
 
       // 3. Get campaign creatives
-      const creatives = await db
+      const _creatives = await db
         .select()
         .from(adCreatives)
-        .where(eq(adCreatives.campaignId, campaignId));
+        .where(eq(adCreatives?.campaignId, campaignId));
 
-      if (creatives.length === 0) {
+      if (creatives?.length === 0) {
         return {
           success: false,
           message: "No creatives found",
@@ -90,21 +90,21 @@ export class AdvertisingDispatchService {
 
       // 4. Determine target platforms.
       // NOTE: adCampaigns has a singular `platform` column (NOT `platforms`).
-      // Additional fan-out platforms may be supplied via metadata.fanOutPlatforms.
-      const meta = (campaign.metadata as Record<string, unknown> | null) || {};
-      const fanOut = Array.isArray(meta.fanOutPlatforms)
-        ? (meta.fanOutPlatforms as unknown[]).filter(
+      // Additional fan-out platforms may be supplied via metadata?.fanOutPlatforms.
+      const _meta = (campaign?.metadata as Record<string, unknown> | null) || {};
+      const _fanOut = Array?.isArray(meta?.fanOutPlatforms)
+        ? (meta?.fanOutPlatforms as unknown[]).filter(
             (p): p is string => typeof p === "string",
           )
         : [];
-      const requestedPlatforms = Array.from(
-        new Set([campaign.platform, ...fanOut].filter((p): p is string => !!p)),
+      const _requestedPlatforms = Array?.from(
+        new Set([campaign?.platform, ...fanOut].filter((p): p is string => !!p)),
       );
 
       // 5. Verify user has connected social accounts
-      const connectedPlatforms = await this.getConnectedPlatforms(userId);
+      const _connectedPlatforms = await this?.getConnectedPlatforms(userId);
 
-      if (connectedPlatforms.length === 0) {
+      if (connectedPlatforms?.length === 0) {
         return {
           success: false,
           message: "No social media accounts connected",
@@ -122,15 +122,15 @@ export class AdvertisingDispatchService {
       }
 
       // Filter to only use platforms that are both requested AND connected
-      const platformsToUse = requestedPlatforms.filter((p) =>
-        connectedPlatforms.includes(p.toLowerCase()),
+      const _platformsToUse = requestedPlatforms?.filter((p) =>
+        connectedPlatforms?.includes(p?.toLowerCase()),
       );
 
-      if (platformsToUse.length === 0) {
+      if (platformsToUse?.length === 0) {
         return {
           success: false,
           message: "No connected platforms match campaign targets",
-          error: `Campaign targets ${requestedPlatforms.join(", ")} but you have only connected ${connectedPlatforms.join(", ")}`,
+          error: `Campaign targets ${requestedPlatforms?.join(", ")} but you have only connected ${connectedPlatforms?.join(", ")}`,
           requiredConnections: requestedPlatforms,
           connectUrl: "/settings#social-connections",
         };
@@ -147,16 +147,16 @@ export class AdvertisingDispatchService {
         // NOTE: adCreatives stores copy in `description`/`headline` and media in
         // `mediaUrl` (there are no `normalizedContent`/`rawContent`/`assetUrls`
         // columns), so read the real columns here.
-        const copy = creative.description || creative.headline || "";
-        const content = {
+        const _copy = creative?.description || creative?.headline || "";
+        const _content = {
           text: copy,
           body: copy,
-          mediaUrl: creative.mediaUrl || null,
-          hashtags: this.extractHashtags(copy),
+          mediaUrl: creative?.mediaUrl || null,
+          hashtags: this?.extractHashtags(copy),
         };
 
         // Post to each platform
-        const publishResults = await platformAPI.publishContent(
+        const _publishResults = await platformAPI?.publishContent(
           content,
           platformsToUse,
           userId,
@@ -164,33 +164,33 @@ export class AdvertisingDispatchService {
 
         // Process results
         for (const result of publishResults) {
-          if (result.success && result.postId) {
-            postResults[`${result.platform}_${creative.id}`] = result.postId;
+          if (result?.success && result?.postId) {
+            postResults[`${result?.platform}_${creative?.id}`] = result?.postId;
             successfulPosts++;
 
             // Create content calendar entry
             try {
-              const calendarEntry = await this.createCalendarEntry(
+              const _calendarEntry = await this?.createCalendarEntry(
                 userId,
                 creative,
-                result.platform,
-                result.postId,
+                result?.platform,
+                result?.postId,
                 campaign,
               );
-              calendarEntries.push(calendarEntry.id);
+              calendarEntries?.push(calendarEntry?.id);
             } catch (err: unknown) {
-              logger.warn({ err: err }, "Failed to create calendar entry:");
-              errors.push(
-                `Calendar entry failed for ${result.platform}: ${err.message}`,
+              logger?.warn({ err: err }, "Failed to create calendar entry:");
+              errors?.push(
+                `Calendar entry failed for ${result?.platform}: ${err?.message}`,
               );
             }
 
             // Create delivery log
             try {
-              await storage.createAdDeliveryLog({
-                variantId: creative.id,
-                platform: result.platform,
-                platformAdId: result.postId,
+              await storage?.createAdDeliveryLog({
+                variantId: creative?.id,
+                platform: result?.platform,
+                platformAdId: result?.postId,
                 deliveryStatus: "active",
                 platformResponse: {
                   type: "organic_post",
@@ -199,33 +199,33 @@ export class AdvertisingDispatchService {
                 deliveredAt: new Date(),
               });
             } catch (err: unknown) {
-              logger.warn({ err: err }, "Failed to create delivery log:");
+              logger?.warn({ err: err }, "Failed to create delivery log:");
             }
           } else {
-            errors.push(
-              `${result.platform}: ${result.error || "Unknown error"}`,
+            errors?.push(
+              `${result?.platform}: ${result?.error || "Unknown error"}`,
             );
 
             // Log failure
             try {
-              await storage.createAdDeliveryLog({
-                variantId: creative.id,
-                platform: result.platform,
+              await storage?.createAdDeliveryLog({
+                variantId: creative?.id,
+                platform: result?.platform,
                 deliveryStatus: "failed",
-                errorMessage: result.error || "Unknown error",
+                errorMessage: result?.error || "Unknown error",
                 retryCount: 1,
               });
             } catch (err: unknown) {
-              logger.warn({ err: err }, "Failed to create delivery log:");
+              logger?.warn({ err: err }, "Failed to create delivery log:");
             }
           }
         }
       }
 
       // 7. Update campaign status and metrics
-      const organicMetrics = {
-        posts: Object.entries(postResults).map(([key, postId]) => {
-          const [platform] = key.split("_");
+      const _organicMetrics = {
+        posts: Object?.entries(postResults).map(([key, postId]) => {
+          const [platform] = key?.split("_");
           return {
             platform,
             posted: true,
@@ -254,12 +254,12 @@ export class AdvertisingDispatchService {
           organicMetrics: organicMetrics as Record<string, unknown>,
           connectedPlatforms: platformsToUse as Record<string, unknown>,
         })
-        .where(eq(adCampaigns.id, campaignId));
+        .where(eq(adCampaigns?.id, campaignId));
 
       // 8. Return success
       return {
         success: true,
-        message: `Campaign activated! Posted ${successfulPosts} times across ${platformsToUse.length} platforms.`,
+        message: `Campaign activated! Posted ${successfulPosts} times across ${platformsToUse?.length} platforms.`,
         results: {
           postsCreated: successfulPosts,
           platformsUsed: platformsToUse,
@@ -269,12 +269,12 @@ export class AdvertisingDispatchService {
         },
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Campaign activation error:");
+      logger?.warn({ err: error }, "Campaign activation error:");
       return {
         success: false,
         message: "Campaign activation failed",
         error:
-          error.message ||
+          error?.message ||
           "An unexpected error occurred during campaign activation",
       };
     }
@@ -282,7 +282,7 @@ export class AdvertisingDispatchService {
 
   /**
    * Collect engagement metrics for active campaigns
-   * Should be called periodically (e.g., every 6-24 hours)
+   * Should be called periodically (e?.g., every 6-24 hours)
    *
    * @param campaignId - Campaign to update metrics for
    * @param userId - User ID for auth
@@ -293,76 +293,76 @@ export class AdvertisingDispatchService {
   ): Promise<void> {
     try {
       // Get campaign
-      const campaigns = await db
+      const _campaigns = await db
         .select()
         .from(adCampaigns)
         .where(
-          and(eq(adCampaigns.id, campaignId), eq(adCampaigns.userId, userId)),
+          and(eq(adCampaigns?.id, campaignId), eq(adCampaigns?.userId, userId)),
         )
         .limit(1);
 
-      if (campaigns.length === 0) {
+      if (campaigns?.length === 0) {
         throw new Error("Campaign not found");
       }
 
-      const campaign = campaigns[0];
-      const organicMetrics = campaign.organicMetrics as Record<string, unknown>;
+      const _campaign = campaigns[0];
+      const _organicMetrics = campaign?.organicMetrics as Record<string, unknown>;
 
-      if (!organicMetrics || !organicMetrics.posts) {
-        logger.info("No organic posts to track for campaign", campaignId);
+      if (!organicMetrics || !organicMetrics?.posts) {
+        logger?.info("No organic posts to track for campaign", campaignId);
         return;
       }
 
       // Update metrics for each post
-      const updatedPosts = [];
+      const _updatedPosts = [];
       let totalImpressions = 0;
       let totalEngagements = 0;
       let totalReach = 0;
 
-      for (const post of organicMetrics.posts) {
-        if (!post.postId) continue;
+      for (const post of organicMetrics?.posts) {
+        if (!post?.postId) continue;
 
         try {
           // Collect engagement data from platform
-          const engagement = await platformAPI.collectEngagementData(
-            post.postId,
-            post.platform,
+          const _engagement = await platformAPI?.collectEngagementData(
+            post?.postId,
+            post?.platform,
             userId,
           );
 
           // Update post metrics
-          const updatedPost = {
+          const _updatedPost = {
             ...post,
             metrics: {
-              impressions: engagement.impressions || engagement.views || 0,
+              impressions: engagement?.impressions || engagement?.views || 0,
               engagements:
-                engagement.likes + engagement.comments + engagement.shares,
-              shares: engagement.shares,
+                engagement?.likes + engagement?.comments + engagement?.shares,
+              shares: engagement?.shares,
               clicks: 0, // Not available from most platforms
-              reach: engagement.reach || engagement.impressions || 0,
-              engagementRate: engagement.engagementRate || 0,
+              reach: engagement?.reach || engagement?.impressions || 0,
+              engagementRate: engagement?.engagementRate || 0,
             },
-            organicBoost: this.calculateOrganicBoost(engagement),
+            organicBoost: this?.calculateOrganicBoost(engagement),
             lastUpdated: new Date().toISOString(),
           };
 
-          updatedPosts.push(updatedPost);
+          updatedPosts?.push(updatedPost);
 
           // Aggregate totals
-          totalImpressions += updatedPost.metrics.impressions;
-          totalEngagements += updatedPost.metrics.engagements;
-          totalReach += updatedPost.metrics.reach;
+          totalImpressions += updatedPost?.metrics.impressions;
+          totalEngagements += updatedPost?.metrics.engagements;
+          totalReach += updatedPost?.metrics.reach;
         } catch (err: unknown) {
-          logger.warn(
-            `Failed to collect engagement for ${post.platform} post ${post.postId}:`,
-            err.message,
+          logger?.warn(
+            `Failed to collect engagement for ${post?.platform} post ${post?.postId}:`,
+            err?.message,
           );
-          updatedPosts.push(post); // Keep existing data
+          updatedPosts?.push(post); // Keep existing data
         }
       }
 
       // Update campaign with new metrics
-      const updatedOrganicMetrics = {
+      const _updatedOrganicMetrics = {
         ...organicMetrics,
         posts: updatedPosts,
         totalImpressions,
@@ -380,13 +380,13 @@ export class AdvertisingDispatchService {
           clicks: totalEngagements, // Using clicks field for total engagements
           organicMetrics: updatedOrganicMetrics as Record<string, unknown>,
         })
-        .where(eq(adCampaigns.id, campaignId));
+        .where(eq(adCampaigns?.id, campaignId));
 
-      logger.info(
+      logger?.info(
         `✅ Updated engagement metrics for campaign ${campaignId}: ${totalImpressions} impressions, ${totalEngagements} engagements`,
       );
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to collect campaign engagement:");
+      logger?.warn({ err: error }, "Failed to collect campaign engagement:");
     }
   }
 
@@ -397,17 +397,17 @@ export class AdvertisingDispatchService {
    * @returns Array of connected platform names (lowercase)
    */
   private async getConnectedPlatforms(userId: string): Promise<string[]> {
-    const user = await storage.getUser(userId);
+    const _user = await storage?.getUser(userId);
     if (!user) return [];
 
     const platforms: string[] = [];
 
-    if (user.twitterToken) platforms.push("twitter");
-    if (user.facebookToken) platforms.push("facebook");
-    if (user.instagramToken) platforms.push("instagram");
-    if (user.linkedinToken) platforms.push("linkedin");
-    if (user.tiktokToken) platforms.push("tiktok");
-    if (user.threadsToken) platforms.push("threads");
+    if (user?.twitterToken) platforms?.push("twitter");
+    if (user?.facebookToken) platforms?.push("facebook");
+    if (user?.instagramToken) platforms?.push("instagram");
+    if (user?.linkedinToken) platforms?.push("linkedin");
+    if (user?.tiktokToken) platforms?.push("tiktok");
+    if (user?.threadsToken) platforms?.push("threads");
 
     return platforms;
   }
@@ -428,19 +428,19 @@ export class AdvertisingDispatchService {
     _postId: string,
     campaign: unknown,
   ): Promise<unknown> {
-    const entry = await db
+    const _entry = await db
       .insert(contentCalendar)
       .values({
         userId,
-        title: `${campaign.name} - ${platform}`,
+        title: `${campaign?.name} - ${platform}`,
         scheduledFor: new Date(), // Already published
         platforms: [platform] as Record<string, unknown>,
         status: "published",
         postType: "campaign_post",
-        content: creative.normalizedContent || creative.rawContent,
-        mediaUrls: creative.assetUrls as Record<string, unknown>,
-        hashtags: this.extractHashtags(
-          creative.normalizedContent || creative.rawContent || "",
+        content: creative?.normalizedContent || creative?.rawContent,
+        mediaUrls: creative?.assetUrls as Record<string, unknown>,
+        hashtags: this?.extractHashtags(
+          creative?.normalizedContent || creative?.rawContent || "",
         ) as Record<string, unknown>,
         publishedAt: new Date(),
       })
@@ -456,8 +456,8 @@ export class AdvertisingDispatchService {
    * @returns Array of hashtags
    */
   private extractHashtags(text: string): string[] {
-    const hashtagRegex = /#[\w]+/g;
-    const matches = text.match(hashtagRegex);
+    const _hashtagRegex = /#[\w]+/g;
+    const _matches = text?.match(hashtagRegex);
     return matches || [];
   }
 
@@ -470,8 +470,8 @@ export class AdvertisingDispatchService {
   private calculateOrganicBoost(engagement: unknown): number {
     // Organic posts typically get 100-300% more engagement per impression than paid ads
     // This is a simplified calculation
-    const engagementRate = engagement.engagementRate || 0;
-    const avgPaidAdEngagementRate = 0.01; // 1% baseline for paid ads
+    const _engagementRate = engagement?.engagementRate || 0;
+    const _avgPaidAdEngagementRate = 0.01; // 1% baseline for paid ads
 
     if (engagementRate > avgPaidAdEngagementRate) {
       return (
@@ -492,39 +492,39 @@ export class AdvertisingDispatchService {
   async collectAllActiveEngagement(userId?: string): Promise<void> {
     try {
       // Get all active campaigns
-      const activeCampaigns = userId
+      const _activeCampaigns = userId
         ? await db
             .select()
             .from(adCampaigns)
             .where(
               and(
-                eq(adCampaigns.status, "active"),
-                eq(adCampaigns.userId, userId),
+                eq(adCampaigns?.status, "active"),
+                eq(adCampaigns?.userId, userId),
               ),
             )
             .limit(200)
         : await db
             .select()
             .from(adCampaigns)
-            .where(eq(adCampaigns.status, "active"))
+            .where(eq(adCampaigns?.status, "active"))
             .limit(200);
 
-      logger.info(
-        `🔄 Collecting engagement for ${activeCampaigns.length} active campaigns...`,
+      logger?.info(
+        `🔄 Collecting engagement for ${activeCampaigns?.length} active campaigns...`,
       );
 
       for (const campaign of activeCampaigns) {
-        await this.collectCampaignEngagement(campaign.id, campaign.userId);
+        await this?.collectCampaignEngagement(campaign?.id, campaign?.userId);
 
         // Small delay to avoid rate limits
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 
-      logger.info(
-        `✅ Finished collecting engagement for ${activeCampaigns.length} campaigns`,
+      logger?.info(
+        `✅ Finished collecting engagement for ${activeCampaigns?.length} campaigns`,
       );
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Failed to collect all engagement:");
+      logger?.warn({ err: error }, "Failed to collect all engagement:");
     }
   }
 
@@ -540,30 +540,30 @@ export class AdvertisingDispatchService {
   ): Promise<unknown> {
     try {
       // Prepare content from variant
-      const content = {
-        text: variant.content || variant.normalizedContent || "",
-        body: variant.content || variant.normalizedContent || "",
+      const _content = {
+        text: variant?.content || variant?.normalizedContent || "",
+        body: variant?.content || variant?.normalizedContent || "",
         mediaUrl:
-          variant.assetUrls && variant.assetUrls.length > 0
-            ? variant.assetUrls[0]
+          variant?.assetUrls && variant?.assetUrls.length > 0
+            ? variant?.assetUrls[0]
             : null,
-        hashtags: this.extractHashtags(variant.content || ""),
+        hashtags: this?.extractHashtags(variant?.content || ""),
       };
 
       // Post using platformAPI
-      const results = await platformAPI.publishContent(
+      const _results = await platformAPI?.publishContent(
         content,
         [platform],
         userId,
       );
-      const result = results[0];
+      const _result = results[0];
 
-      if (result.success && result.postId) {
+      if (result?.success && result?.postId) {
         // Log success
-        await storage.createAdDeliveryLog({
-          variantId: variant.id,
-          platform: result.platform,
-          platformAdId: result.postId,
+        await storage?.createAdDeliveryLog({
+          variantId: variant?.id,
+          platform: result?.platform,
+          platformAdId: result?.postId,
           deliveryStatus: "active",
           platformResponse: {
             type: "organic_post",
@@ -573,7 +573,7 @@ export class AdvertisingDispatchService {
         });
 
         return {
-          id: result.postId,
+          id: result?.postId,
           type: "organic_post",
           status: "published",
           reach_type: "organic",
@@ -581,15 +581,15 @@ export class AdvertisingDispatchService {
           posted_at: new Date().toISOString(),
         };
       } else {
-        throw new Error(result.error || "Failed to post to platform");
+        throw new Error(result?.error || "Failed to post to platform");
       }
     } catch (error: unknown) {
       // Log failure
-      await storage.createAdDeliveryLog({
-        variantId: variant.id,
+      await storage?.createAdDeliveryLog({
+        variantId: variant?.id,
         platform,
         deliveryStatus: "failed",
-        errorMessage: error.message,
+        errorMessage: error?.message,
         retryCount: 1,
       });
       throw error;
@@ -597,4 +597,4 @@ export class AdvertisingDispatchService {
   }
 }
 
-export const advertisingDispatchService = new AdvertisingDispatchService();
+export const _advertisingDispatchService = new AdvertisingDispatchService();

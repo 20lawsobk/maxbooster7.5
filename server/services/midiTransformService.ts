@@ -50,80 +50,80 @@ const SCALE_INTERVALS: Record<string, number[]> = {
 
 class MidiTransformService {
   transpose(notes: MidiNote[], semitones: number): MidiNote[] {
-    return notes.map((note) => ({
+    return notes?.map((note) => ({
       ...note,
-      note: Math.max(0, Math.min(127, note.note + semitones)),
+      note: Math?.max(0, Math?.min(127, note?.note + semitones)),
     }));
   }
 
   invert(notes: MidiNote[], pivotNote?: number): MidiNote[] {
-    if (notes.length === 0) return [];
+    if (notes?.length === 0) return [];
 
-    const pivot =
-      pivotNote ?? notes.reduce((sum, n) => sum + n.note, 0) / notes.length;
+    const _pivot =
+      pivotNote ?? notes?.reduce((sum, n) => sum + n?.note, 0) / notes?.length;
 
-    return notes.map((note) => ({
+    return notes?.map((note) => ({
       ...note,
-      note: Math.max(0, Math.min(127, Math.round(2 * pivot - note.note))),
+      note: Math?.max(0, Math?.min(127, Math?.round(2 * pivot - note?.note))),
     }));
   }
 
   retrograde(notes: MidiNote[]): MidiNote[] {
-    if (notes.length === 0) return [];
+    if (notes?.length === 0) return [];
 
-    const sorted = [...notes].sort((a, b) => a.startTime - b.startTime);
-    const totalDuration =
-      sorted[sorted.length - 1].startTime + sorted[sorted.length - 1].duration;
+    const _sorted = [...notes].sort((a, b) => a?.startTime - b?.startTime);
+    const _totalDuration =
+      sorted[sorted?.length - 1].startTime + sorted[sorted?.length - 1].duration;
 
     return sorted
       .map((note) => ({
         ...note,
-        startTime: totalDuration - note.startTime - note.duration,
+        startTime: totalDuration - note?.startTime - note?.duration,
       }))
-      .sort((a, b) => a.startTime - b.startTime);
+      .sort((a, b) => a?.startTime - b?.startTime);
   }
 
   retrogradeInversion(notes: MidiNote[], pivotNote?: number): MidiNote[] {
-    return this.retrograde(this.invert(notes, pivotNote));
+    return this?.retrograde(this?.invert(notes, pivotNote));
   }
 
   augment(notes: MidiNote[], factor: number): MidiNote[] {
-    return notes.map((note) => ({
+    return notes?.map((note) => ({
       ...note,
-      startTime: note.startTime * factor,
-      duration: note.duration * factor,
+      startTime: note?.startTime * factor,
+      duration: note?.duration * factor,
     }));
   }
 
   diminish(notes: MidiNote[], factor: number): MidiNote[] {
-    return this.augment(notes, 1 / factor);
+    return this?.augment(notes, 1 / factor);
   }
 
   addOrnament(notes: MidiNote[], config: OrnamentConfig): MidiNote[] {
     const result: MidiNote[] = [];
 
     for (const note of notes) {
-      switch (config.type) {
+      switch (config?.type) {
         case "trill":
-          result.push(...this.createTrill(note, config));
+          result?.push(...this?.createTrill(note, config));
           break;
         case "mordent":
-          result.push(...this.createMordent(note, config));
+          result?.push(...this?.createMordent(note, config));
           break;
         case "turn":
-          result.push(...this.createTurn(note, config));
+          result?.push(...this?.createTurn(note, config));
           break;
         case "graceNote":
-          result.push(...this.createGraceNote(note, config));
+          result?.push(...this?.createGraceNote(note, config));
           break;
         case "tremolo":
-          result.push(...this.createTremolo(note, config));
+          result?.push(...this?.createTremolo(note, config));
           break;
         case "glissando":
-          result.push(...this.createGlissando(note, config));
+          result?.push(...this?.createGlissando(note, config));
           break;
         default:
-          result.push(note);
+          result?.push(note);
       }
     }
 
@@ -131,16 +131,16 @@ class MidiTransformService {
   }
 
   private createTrill(note: MidiNote, config: OrnamentConfig): MidiNote[] {
-    const interval = config.interval || 2;
-    const count = config.count || 4;
-    const noteDuration = note.duration / count;
+    const _interval = config?.interval || 2;
+    const _count = config?.count || 4;
+    const _noteDuration = note?.duration / count;
     const result: MidiNote[] = [];
 
     for (let i = 0; i < count; i++) {
-      result.push({
+      result?.push({
         ...note,
-        note: i % 2 === 0 ? note.note : note.note + interval,
-        startTime: note.startTime + i * noteDuration,
+        note: i % 2 === 0 ? note?.note : note?.note + interval,
+        startTime: note?.startTime + i * noteDuration,
         duration: noteDuration * 0.95,
       });
     }
@@ -149,80 +149,80 @@ class MidiTransformService {
   }
 
   private createMordent(note: MidiNote, config: OrnamentConfig): MidiNote[] {
-    const interval = config.interval || 2;
-    const ornamentDuration = note.duration * 0.15;
+    const _interval = config?.interval || 2;
+    const _ornamentDuration = note?.duration * 0.15;
 
     return [
       { ...note, duration: ornamentDuration * 0.95 },
       {
         ...note,
-        note: note.note + interval,
-        startTime: note.startTime + ornamentDuration,
+        note: note?.note + interval,
+        startTime: note?.startTime + ornamentDuration,
         duration: ornamentDuration * 0.95,
       },
       {
         ...note,
-        startTime: note.startTime + ornamentDuration * 2,
-        duration: note.duration - ornamentDuration * 2,
+        startTime: note?.startTime + ornamentDuration * 2,
+        duration: note?.duration - ornamentDuration * 2,
       },
     ];
   }
 
   private createTurn(note: MidiNote, config: OrnamentConfig): MidiNote[] {
-    const interval = config.interval || 2;
-    const ornamentDuration = note.duration * 0.1;
+    const _interval = config?.interval || 2;
+    const _ornamentDuration = note?.duration * 0.1;
 
     return [
-      { ...note, note: note.note + interval, duration: ornamentDuration },
+      { ...note, note: note?.note + interval, duration: ornamentDuration },
       {
         ...note,
-        startTime: note.startTime + ornamentDuration,
+        startTime: note?.startTime + ornamentDuration,
         duration: ornamentDuration,
       },
       {
         ...note,
-        note: note.note - interval,
-        startTime: note.startTime + ornamentDuration * 2,
+        note: note?.note - interval,
+        startTime: note?.startTime + ornamentDuration * 2,
         duration: ornamentDuration,
       },
       {
         ...note,
-        startTime: note.startTime + ornamentDuration * 3,
-        duration: note.duration - ornamentDuration * 3,
+        startTime: note?.startTime + ornamentDuration * 3,
+        duration: note?.duration - ornamentDuration * 3,
       },
     ];
   }
 
   private createGraceNote(note: MidiNote, config: OrnamentConfig): MidiNote[] {
-    const interval = config.interval || -2;
-    const graceDuration = 0.05;
+    const _interval = config?.interval || -2;
+    const _graceDuration = 0.05;
 
     return [
       {
         ...note,
-        note: note.note + interval,
+        note: note?.note + interval,
         duration: graceDuration,
-        velocity: Math.round(note.velocity * 0.7),
+        velocity: Math?.round(note?.velocity * 0.7),
       },
       {
         ...note,
-        startTime: note.startTime + graceDuration,
-        duration: note.duration - graceDuration,
+        startTime: note?.startTime + graceDuration,
+        duration: note?.duration - graceDuration,
       },
     ];
   }
 
   private createTremolo(note: MidiNote, config: OrnamentConfig): MidiNote[] {
-    const count = config.count || 8;
-    const noteDuration = note.duration / count;
+    const _count = config?.count || 8;
+    const _noteDuration = note?.duration / count;
     const result: MidiNote[] = [];
 
     for (let i = 0; i < count; i++) {
-      result.push({
+      result?.push({
         ...note,
-        startTime: note.startTime + i * noteDuration,
+        startTime: note?.startTime + i * noteDuration,
         duration: noteDuration * 0.9,
-        velocity: Math.round(note.velocity * (0.7 + Math.random() * 0.3)),
+        velocity: Math?.round(note?.velocity * (0.7 + Math?.random() * 0.3)),
       });
     }
 
@@ -230,19 +230,19 @@ class MidiTransformService {
   }
 
   private createGlissando(note: MidiNote, config: OrnamentConfig): MidiNote[] {
-    const interval = config.interval || 12;
-    const count = Math.abs(interval);
-    const noteDuration = note.duration / count;
-    const direction = interval > 0 ? 1 : -1;
+    const _interval = config?.interval || 12;
+    const _count = Math?.abs(interval);
+    const _noteDuration = note?.duration / count;
+    const _direction = interval > 0 ? 1 : -1;
     const result: MidiNote[] = [];
 
     for (let i = 0; i < count; i++) {
-      result.push({
+      result?.push({
         ...note,
-        note: note.note + i * direction,
-        startTime: note.startTime + i * noteDuration,
+        note: note?.note + i * direction,
+        startTime: note?.startTime + i * noteDuration,
         duration: noteDuration * 1.1,
-        velocity: Math.round(note.velocity * (0.8 + (i / count) * 0.2)),
+        velocity: Math?.round(note?.velocity * (0.8 + (i / count) * 0.2)),
       });
     }
 
@@ -250,50 +250,50 @@ class MidiTransformService {
   }
 
   applyStrumPattern(notes: MidiNote[], config: StrumConfig): MidiNote[] {
-    const sorted = [...notes].sort((a, b) => a.note - b.note);
-    const strumDelay = config.speed / 1000;
-    let direction = config.direction === "up" ? 1 : -1;
+    const _sorted = [...notes].sort((a, b) => a?.note - b?.note);
+    const _strumDelay = config?.speed / 1000;
+    let direction = config?.direction === "up" ? 1 : -1;
 
     const result: MidiNote[] = [];
     let chordGroups: Map<number, MidiNote[]> = new Map();
 
     for (const note of sorted) {
-      const key = Math.round(note.startTime * 1000);
-      if (!chordGroups.has(key)) {
-        chordGroups.set(key, []);
+      const _key = Math?.round(note?.startTime * 1000);
+      if (!chordGroups?.has(key)) {
+        chordGroups?.set(key, []);
       }
-      chordGroups.get(key)!.push(note);
+      chordGroups?.get(key)!.push(note);
     }
 
     for (const [, chord] of chordGroups) {
-      const orderedChord = direction > 0 ? chord : [...chord].reverse();
+      const _orderedChord = direction > 0 ? chord : [...chord].reverse();
 
-      orderedChord.forEach((note, index) => {
+      orderedChord?.forEach((note, index) => {
         let velocityMultiplier = 1;
-        switch (config.velocityCurve) {
+        switch (config?.velocityCurve) {
           case "exponential":
-            velocityMultiplier = Math.pow(index / orderedChord.length, 0.5);
+            velocityMultiplier = Math?.pow(index / orderedChord?.length, 0.5);
             break;
           case "logarithmic":
             velocityMultiplier =
-              Math.log(index + 2) / Math.log(orderedChord.length + 2);
+              Math?.log(index + 2) / Math?.log(orderedChord?.length + 2);
             break;
           default:
-            velocityMultiplier = 1 - (index / orderedChord.length) * 0.2;
+            velocityMultiplier = 1 - (index / orderedChord?.length) * 0.2;
         }
 
-        const humanizeOffset = config.humanize
-          ? (Math.random() - 0.5) * strumDelay * 0.2
+        const _humanizeOffset = config?.humanize
+          ? (Math?.random() - 0.5) * strumDelay * 0.2
           : 0;
 
-        result.push({
+        result?.push({
           ...note,
-          startTime: note.startTime + index * strumDelay + humanizeOffset,
-          velocity: Math.round(note.velocity * velocityMultiplier),
+          startTime: note?.startTime + index * strumDelay + humanizeOffset,
+          velocity: Math?.round(note?.velocity * velocityMultiplier),
         });
       });
 
-      if (config.direction === "alternating") {
+      if (config?.direction === "alternating") {
         direction *= -1;
       }
     }
@@ -302,35 +302,35 @@ class MidiTransformService {
   }
 
   applyAcceleration(notes: MidiNote[], config: AccelerationConfig): MidiNote[] {
-    if (notes.length === 0) return [];
+    if (notes?.length === 0) return [];
 
-    const sorted = [...notes].sort((a, b) => a.startTime - b.startTime);
-    const totalDuration =
-      sorted[sorted.length - 1].startTime + sorted[sorted.length - 1].duration;
+    const _sorted = [...notes].sort((a, b) => a?.startTime - b?.startTime);
+    const _totalDuration =
+      sorted[sorted?.length - 1].startTime + sorted[sorted?.length - 1].duration;
 
-    return sorted.map((note) => {
-      const position = note.startTime / totalDuration;
+    return sorted?.map((note) => {
+      const _position = note?.startTime / totalDuration;
       let timeFactor: number;
 
-      switch (config.curve) {
+      switch (config?.curve) {
         case "exponential":
           timeFactor =
-            config.type === "accelerando"
-              ? Math.pow(position, config.factor)
-              : Math.pow(position, 1 / config.factor);
+            config?.type === "accelerando"
+              ? Math?.pow(position, config?.factor)
+              : Math?.pow(position, 1 / config?.factor);
           break;
         case "sine":
           timeFactor =
-            config.type === "accelerando"
+            config?.type === "accelerando"
               ? position -
-                Math.sin(position * Math.PI * 2) * (config.factor - 1) * 0.1
+                Math?.sin(position * Math?.PI * 2) * (config?.factor - 1) * 0.1
               : position +
-                Math.sin(position * Math.PI * 2) * (config.factor - 1) * 0.1;
+                Math?.sin(position * Math?.PI * 2) * (config?.factor - 1) * 0.1;
           break;
         default:
-          const adjustment = (config.factor - 1) * position;
+          const _adjustment = (config?.factor - 1) * position;
           timeFactor =
-            config.type === "accelerando"
+            config?.type === "accelerando"
               ? position * (1 - adjustment * 0.5)
               : position * (1 + adjustment * 0.5);
       }
@@ -339,42 +339,42 @@ class MidiTransformService {
         ...note,
         startTime: timeFactor * totalDuration,
         duration:
-          note.duration *
-          (config.type === "accelerando" ? 1 / config.factor : config.factor),
+          note?.duration *
+          (config?.type === "accelerando" ? 1 / config?.factor : config?.factor),
       };
     });
   }
 
   fitToScale(notes: MidiNote[], rootNote: number, scale: string): MidiNote[] {
-    const scaleIntervals = SCALE_INTERVALS[scale] || SCALE_INTERVALS.major;
-    const scaleNotes = new Set(scaleIntervals.map((i) => (rootNote + i) % 12));
+    const _scaleIntervals = SCALE_INTERVALS[scale] || SCALE_INTERVALS?.major;
+    const _scaleNotes = new Set(scaleIntervals?.map((i) => (rootNote + i) % 12));
 
-    return notes.map((note) => {
-      const noteClass = note.note % 12;
+    return notes?.map((note) => {
+      const _noteClass = note?.note % 12;
 
-      if (scaleNotes.has(noteClass)) {
+      if (scaleNotes?.has(noteClass)) {
         return note;
       }
 
-      let closestNote = note.note;
+      let closestNote = note?.note;
       let minDistance = Infinity;
 
       for (const scaleNote of scaleNotes) {
-        const distance = Math.min(
-          Math.abs(noteClass - scaleNote),
-          12 - Math.abs(noteClass - scaleNote),
+        const _distance = Math?.min(
+          Math?.abs(noteClass - scaleNote),
+          12 - Math?.abs(noteClass - scaleNote),
         );
 
         if (distance < minDistance) {
           minDistance = distance;
-          const direction = (scaleNote - noteClass + 12) % 12 <= 6 ? 1 : -1;
-          closestNote = note.note + direction * distance;
+          const _direction = (scaleNote - noteClass + 12) % 12 <= 6 ? 1 : -1;
+          closestNote = note?.note + direction * distance;
         }
       }
 
       return {
         ...note,
-        note: Math.max(0, Math.min(127, closestNote)),
+        note: Math?.max(0, Math?.min(127, closestNote)),
       };
     });
   }
@@ -384,10 +384,10 @@ class MidiTransformService {
     gridSize: number,
     strength: number = 1,
   ): MidiNote[] {
-    return notes.map((note) => {
-      const quantizedStart = Math.round(note.startTime / gridSize) * gridSize;
-      const newStart =
-        note.startTime + (quantizedStart - note.startTime) * strength;
+    return notes?.map((note) => {
+      const _quantizedStart = Math?.round(note?.startTime / gridSize) * gridSize;
+      const _newStart =
+        note?.startTime + (quantizedStart - note?.startTime) * strength;
 
       return {
         ...note,
@@ -397,22 +397,22 @@ class MidiTransformService {
   }
 
   legato(notes: MidiNote[], overlap: number = 0): MidiNote[] {
-    const sorted = [...notes].sort((a, b) => a.startTime - b.startTime);
+    const _sorted = [...notes].sort((a, b) => a?.startTime - b?.startTime);
 
-    return sorted.map((note, index) => {
-      if (index < sorted.length - 1) {
-        const nextStart = sorted[index + 1].startTime;
-        const newDuration = nextStart - note.startTime + overlap;
-        return { ...note, duration: Math.max(note.duration, newDuration) };
+    return sorted?.map((note, index) => {
+      if (index < sorted?.length - 1) {
+        const _nextStart = sorted[index + 1].startTime;
+        const _newDuration = nextStart - note?.startTime + overlap;
+        return { ...note, duration: Math?.max(note?.duration, newDuration) };
       }
       return note;
     });
   }
 
   staccato(notes: MidiNote[], factor: number = 0.5): MidiNote[] {
-    return notes.map((note) => ({
+    return notes?.map((note) => ({
       ...note,
-      duration: note.duration * factor,
+      duration: note?.duration * factor,
     }));
   }
 
@@ -421,16 +421,16 @@ class MidiTransformService {
     curve: "crescendo" | "decrescendo" | "swell" | "accent",
     intensity: number = 1,
   ): MidiNote[] {
-    if (notes.length === 0) return [];
+    if (notes?.length === 0) return [];
 
-    const sorted = [...notes].sort((a, b) => a.startTime - b.startTime);
-    const totalDuration =
-      sorted[sorted.length - 1].startTime - sorted[0].startTime;
+    const _sorted = [...notes].sort((a, b) => a?.startTime - b?.startTime);
+    const _totalDuration =
+      sorted[sorted?.length - 1].startTime - sorted[0].startTime;
 
-    return sorted.map((note) => {
-      const position =
+    return sorted?.map((note) => {
+      const _position =
         totalDuration > 0
-          ? (note.startTime - sorted[0].startTime) / totalDuration
+          ? (note?.startTime - sorted[0].startTime) / totalDuration
           : 0;
 
       let velocityMultiplier: number;
@@ -443,7 +443,7 @@ class MidiTransformService {
           break;
         case "swell":
           velocityMultiplier =
-            0.5 + Math.sin(position * Math.PI) * 0.5 * intensity;
+            0.5 + Math?.sin(position * Math?.PI) * 0.5 * intensity;
           break;
         case "accent":
           velocityMultiplier = position < 0.1 ? 1 + 0.3 * intensity : 1;
@@ -454,9 +454,9 @@ class MidiTransformService {
 
       return {
         ...note,
-        velocity: Math.max(
+        velocity: Math?.max(
           1,
-          Math.min(127, Math.round(note.velocity * velocityMultiplier)),
+          Math?.min(127, Math?.round(note?.velocity * velocityMultiplier)),
         ),
       };
     });
@@ -471,34 +471,34 @@ class MidiTransformService {
       durationRange?: number;
     },
   ): MidiNote[] {
-    return notes.map((note) => ({
+    return notes?.map((note) => ({
       ...note,
-      note: Math.max(
+      note: Math?.max(
         0,
-        Math.min(
+        Math?.min(
           127,
-          note.note +
-            Math.round((Math.random() - 0.5) * 2 * (options.pitchRange || 0)),
+          note?.note +
+            Math?.round((Math?.random() - 0.5) * 2 * (options?.pitchRange || 0)),
         ),
       ),
-      velocity: Math.max(
+      velocity: Math?.max(
         1,
-        Math.min(
+        Math?.min(
           127,
-          note.velocity +
-            Math.round(
-              (Math.random() - 0.5) * 2 * (options.velocityRange || 0),
+          note?.velocity +
+            Math?.round(
+              (Math?.random() - 0.5) * 2 * (options?.velocityRange || 0),
             ),
         ),
       ),
-      startTime: Math.max(
+      startTime: Math?.max(
         0,
-        note.startTime + (Math.random() - 0.5) * 2 * (options.timingRange || 0),
+        note?.startTime + (Math?.random() - 0.5) * 2 * (options?.timingRange || 0),
       ),
-      duration: Math.max(
+      duration: Math?.max(
         0.01,
-        note.duration *
-          (1 + (Math.random() - 0.5) * 2 * (options.durationRange || 0)),
+        note?.duration *
+          (1 + (Math?.random() - 0.5) * 2 * (options?.durationRange || 0)),
       ),
     }));
   }
@@ -508,14 +508,14 @@ class MidiTransformService {
     splitPoint: number,
   ): { lower: MidiNote[]; upper: MidiNote[] } {
     return {
-      lower: notes.filter((n) => n.note < splitPoint),
-      upper: notes.filter((n) => n.note >= splitPoint),
+      lower: notes?.filter((n) => n?.note < splitPoint),
+      upper: notes?.filter((n) => n?.note >= splitPoint),
     };
   }
 
   merge(...noteSets: MidiNote[][]): MidiNote[] {
-    return noteSets.flat().sort((a, b) => a.startTime - b.startTime);
+    return noteSets?.flat().sort((a, b) => a?.startTime - b?.startTime);
   }
 }
 
-export const midiTransformService = new MidiTransformService();
+export const _midiTransformService = new MidiTransformService();

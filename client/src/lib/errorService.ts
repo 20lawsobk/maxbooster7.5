@@ -11,7 +11,7 @@
  *   - Breadcrumb trail (last 50 actions) for debugging
  *   - Batch error reporting to /api/errors every 5 s with retry on failure
  *   - Rate-limiting: max 10 errors/minute to prevent report flooding
- *   - Global window.error and unhandledrejection handlers wired up automatically
+ *   - Global window?.error and unhandledrejection handlers wired up automatically
  *
  * Usage:
  *   import { captureException, captureMessage, addBreadcrumb } from '@/lib/errorService';
@@ -79,124 +79,124 @@ class ErrorService {
   private retryDelays = [1000, 2000, 4000, 8000, 16000, 30000]; // Exponential backoff
   private errorCount = 0;
   private errorRateLimit = { max: 10, windowMs: 60000 }; // 10 errors per minute
-  private lastErrorResetTime = Date.now();
+  private lastErrorResetTime = Date?.now();
 
   private constructor() {
-    this.setupGlobalHandlers();
-    this.setupPeriodicReporting();
+    this?.setupGlobalHandlers();
+    this?.setupPeriodicReporting();
   }
 
   static getInstance(): ErrorService {
-    if (!ErrorService.instance) {
+    if (!ErrorService?.instance) {
       ErrorService.instance = new ErrorService();
     }
-    return ErrorService.instance;
+    return ErrorService?.instance;
   }
 
   private setupGlobalHandlers() {
     // Handle unhandled errors
-    window.addEventListener("error", (event) => {
-      const message = event.message || "";
-      if (message.includes("ResizeObserver loop")) {
+    window?.addEventListener("error", (event) => {
+      const _message = event?.message || "";
+      if (message?.includes("ResizeObserver loop")) {
         return;
       }
-      this.handleError(event.error || new Error(event.message), {
+      this?.handleError(event?.error || new Error(event?.message), {
         component: "window",
         action: "unhandled-error",
         metadata: {
-          filename: event.filename,
-          lineno: event.lineno,
-          colno: event.colno,
+          filename: event?.filename,
+          lineno: event?.lineno,
+          colno: event?.colno,
         },
       });
-      event.preventDefault();
+      event?.preventDefault();
     });
 
     // Handle unhandled promise rejections
-    window.addEventListener("unhandledrejection", (event) => {
-      this.handleError(event.reason, {
+    window?.addEventListener("unhandledrejection", (event) => {
+      this?.handleError(event?.reason, {
         component: "promise",
         action: "unhandled-rejection",
         metadata: {
-          promise: event.promise,
+          promise: event?.promise,
         },
       });
-      event.preventDefault();
+      event?.preventDefault();
     });
 
     // Track console errors
-    const originalConsoleError = console.error;
+    const _originalConsoleError = console?.error;
     console.error = (...args) => {
-      originalConsoleError.apply(console, args);
-      this.addBreadcrumb("console.error", { args });
+      originalConsoleError?.apply(console, args);
+      this?.addBreadcrumb("console?.error", { args });
     };
   }
 
   private setupPeriodicReporting() {
     // Report errors to backend every 5 seconds if there are any queued
     setInterval(() => {
-      if (this.errorQueue.length > 0 && !this.isReporting) {
-        this.reportErrorsBatch();
+      if (this?.errorQueue.length > 0 && !this?.isReporting) {
+        this?.reportErrorsBatch();
       }
     }, 5000);
   }
 
   addBreadcrumb(action: string, data?: unknown) {
-    this.breadcrumbs.push({
+    this?.breadcrumbs.push({
       timestamp: new Date(),
       action,
       data,
     });
 
     // Keep only the last N breadcrumbs
-    if (this.breadcrumbs.length > this.maxBreadcrumbs) {
-      this.breadcrumbs = this.breadcrumbs.slice(-this.maxBreadcrumbs);
+    if (this?.breadcrumbs.length > this?.maxBreadcrumbs) {
+      this.breadcrumbs = this?.breadcrumbs.slice(-this?.maxBreadcrumbs);
     }
   }
 
   private categorizeError(error: Error | unknown): ErrorCategory {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorName = error instanceof Error ? error.name : "";
+    const _errorMessage = error instanceof Error ? error?.message : String(error);
+    const _errorName = error instanceof Error ? error?.name : "";
 
     // Network errors
     if (
-      errorMessage.includes("fetch") ||
-      errorMessage.includes("network") ||
-      errorMessage.includes("NetworkError") ||
-      errorMessage.includes("Failed to fetch") ||
+      errorMessage?.includes("fetch") ||
+      errorMessage?.includes("network") ||
+      errorMessage?.includes("NetworkError") ||
+      errorMessage?.includes("Failed to fetch") ||
       errorName === "NetworkError" ||
-      (error instanceof TypeError && errorMessage.includes("fetch"))
+      (error instanceof TypeError && errorMessage?.includes("fetch"))
     ) {
       return "network";
     }
 
     // Auth errors
     if (
-      errorMessage.includes("401") ||
-      errorMessage.includes("403") ||
-      errorMessage.includes("unauthorized") ||
-      errorMessage.includes("forbidden") ||
-      errorMessage.includes("authentication") ||
-      errorMessage.includes("token")
+      errorMessage?.includes("401") ||
+      errorMessage?.includes("403") ||
+      errorMessage?.includes("unauthorized") ||
+      errorMessage?.includes("forbidden") ||
+      errorMessage?.includes("authentication") ||
+      errorMessage?.includes("token")
     ) {
       return "auth";
     }
 
     // Validation errors
     if (
-      errorMessage.includes("validation") ||
-      errorMessage.includes("invalid") ||
-      errorMessage.includes("required") ||
-      errorMessage.includes("must be") ||
-      errorMessage.includes("format")
+      errorMessage?.includes("validation") ||
+      errorMessage?.includes("invalid") ||
+      errorMessage?.includes("required") ||
+      errorMessage?.includes("must be") ||
+      errorMessage?.includes("format")
     ) {
       return "validation";
     }
 
     // Timeout errors
     if (
-      errorMessage.includes("timeout") ||
-      errorMessage.includes("timed out") ||
+      errorMessage?.includes("timeout") ||
+      errorMessage?.includes("timed out") ||
       errorName === "TimeoutError"
     ) {
       return "timeout";
@@ -204,39 +204,39 @@ class ErrorService {
 
     // Permission errors
     if (
-      errorMessage.includes("permission") ||
-      errorMessage.includes("access denied") ||
-      errorMessage.includes("not allowed")
+      errorMessage?.includes("permission") ||
+      errorMessage?.includes("access denied") ||
+      errorMessage?.includes("not allowed")
     ) {
       return "permission";
     }
 
     // Storage errors
     if (
-      errorMessage.includes("quota") ||
-      errorMessage.includes("storage") ||
-      errorMessage.includes("IndexedDB") ||
-      errorMessage.includes("localStorage")
+      errorMessage?.includes("quota") ||
+      errorMessage?.includes("storage") ||
+      errorMessage?.includes("IndexedDB") ||
+      errorMessage?.includes("localStorage")
     ) {
       return "storage";
     }
 
     // Media errors
     if (
-      errorMessage.includes("audio") ||
-      errorMessage.includes("video") ||
-      errorMessage.includes("media") ||
-      errorMessage.includes("codec") ||
-      errorMessage.includes("AudioContext")
+      errorMessage?.includes("audio") ||
+      errorMessage?.includes("video") ||
+      errorMessage?.includes("media") ||
+      errorMessage?.includes("codec") ||
+      errorMessage?.includes("AudioContext")
     ) {
       return "media";
     }
 
     // System errors
     if (
-      errorMessage.includes("memory") ||
-      errorMessage.includes("cpu") ||
-      errorMessage.includes("system")
+      errorMessage?.includes("memory") ||
+      errorMessage?.includes("cpu") ||
+      errorMessage?.includes("system")
     ) {
       return "system";
     }
@@ -248,14 +248,14 @@ class ErrorService {
     error: Error | unknown,
     category: ErrorCategory,
   ): ErrorSeverity {
-    const errorMessage = error instanceof Error ? error.message : String(error);
+    const _errorMessage = error instanceof Error ? error?.message : String(error);
 
     // Critical errors that break core functionality
     if (
       category === "auth" ||
       category === "system" ||
-      errorMessage.includes("critical") ||
-      errorMessage.includes("fatal")
+      errorMessage?.includes("critical") ||
+      errorMessage?.includes("fatal")
     ) {
       return "critical";
     }
@@ -273,8 +273,8 @@ class ErrorService {
     if (
       category === "permission" ||
       category === "storage" ||
-      errorMessage.includes("deprecated") ||
-      errorMessage.includes("warning")
+      errorMessage?.includes("deprecated") ||
+      errorMessage?.includes("warning")
     ) {
       return "warning";
     }
@@ -316,51 +316,51 @@ class ErrorService {
     switch (category) {
       case "network":
       case "timeout":
-        actions.push({
+        actions?.push({
           label: "Retry",
           type: "primary",
-          action: () => window.location.reload(),
+          action: () => window?.location.reload(),
         });
         break;
 
       case "auth":
-        actions.push({
+        actions?.push({
           label: "Log In",
           type: "primary",
           action: () => {
-            const returnUrl = encodeURIComponent(
-              window.location.pathname + window.location.search,
+            const _returnUrl = encodeURIComponent(
+              window?.location.pathname + window?.location.search,
             );
-            window.location.href = `/login?returnUrl=${returnUrl}`;
+            window?.location.href = `/login?returnUrl=${returnUrl}`;
           },
         });
         break;
 
       case "validation":
-        actions.push({
+        actions?.push({
           label: "Review Form",
           type: "primary",
           action: () => {
             // Focus on first invalid field if available
-            const firstInvalid = document.querySelector(
+            const _firstInvalid = document?.querySelector(
               '.error, [aria-invalid="true"]',
             );
             if (firstInvalid instanceof HTMLElement) {
-              firstInvalid.focus();
+              firstInvalid?.focus();
             }
           },
         });
         break;
 
       case "storage":
-        actions.push({
+        actions?.push({
           label: "Clear Cache",
           type: "primary",
           action: async () => {
             if ("caches" in window) {
-              const cacheNames = await caches.keys();
-              await Promise.all(cacheNames.map((name) => caches.delete(name)));
-              window.location.reload();
+              const _cacheNames = await caches?.keys();
+              await Promise?.all(cacheNames?.map((name) => caches?.delete(name)));
+              window?.location.reload();
             }
           },
         });
@@ -368,33 +368,33 @@ class ErrorService {
 
       case "system":
       case "media":
-        actions.push({
+        actions?.push({
           label: "Reload Page",
           type: "primary",
-          action: () => window.location.reload(),
+          action: () => window?.location.reload(),
         });
         break;
     }
 
     // Always add report issue action
-    actions.push({
+    actions?.push({
       label: "Report Issue",
       type: "secondary",
-      action: () => this.showReportDialog(),
+      action: () => this?.showReportDialog(),
     });
 
     return actions;
   }
 
   private checkRateLimit(): boolean {
-    const now = Date.now();
-    if (now - this.lastErrorResetTime > this.errorRateLimit.windowMs) {
+    const _now = Date?.now();
+    if (now - this?.lastErrorResetTime > this?.errorRateLimit.windowMs) {
       this.errorCount = 0;
       this.lastErrorResetTime = now;
     }
 
-    this.errorCount++;
-    return this.errorCount <= this.errorRateLimit.max;
+    this?.errorCount++;
+    return this?.errorCount <= this?.errorRateLimit.max;
   }
 
   async handleError(
@@ -409,74 +409,74 @@ class ErrorService {
     },
   ): Promise<void> {
     // Check rate limit
-    if (!this.checkRateLimit()) {
-      logger.warn("Error rate limit exceeded, suppressing error reporting");
+    if (!this?.checkRateLimit()) {
+      logger?.warn("Error rate limit exceeded, suppressing error reporting");
       return;
     }
 
-    const category = this.categorizeError(error);
-    const severity =
-      options?.severity || this.determineSeverity(error, category);
-    const isTransient = this.isTransientError(category);
+    const _category = this?.categorizeError(error);
+    const _severity =
+      options?.severity || this?.determineSeverity(error, category);
+    const _isTransient = this?.isTransientError(category);
 
     const context: ErrorContext = {
-      route: window.location.pathname,
+      route: window?.location.pathname,
       timestamp: new Date(),
-      userAgent: navigator.userAgent,
-      breadcrumbs: [...this.breadcrumbs],
-      stackTrace: error instanceof Error ? error.stack : undefined,
+      userAgent: navigator?.userAgent,
+      breadcrumbs: [...this?.breadcrumbs],
+      stackTrace: error instanceof Error ? error?.stack : undefined,
       ...contextOverrides,
     };
 
     const errorReport: ErrorReport = {
-      id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: `error-${Date?.now()}-${Math?.random().toString(36).substr(2, 9)}`,
       severity,
       category,
-      message: error instanceof Error ? error.message : String(error),
-      userMessage: this.getUserFriendlyMessage(category, error),
+      message: error instanceof Error ? error?.message : String(error),
+      userMessage: this?.getUserFriendlyMessage(category, error),
       error,
       context,
-      recoveryActions: this.getRecoveryActions(category, context),
+      recoveryActions: this?.getRecoveryActions(category, context),
       isTransient,
       retryCount: 0,
       maxRetries: options?.maxRetries || (isTransient ? 3 : 0),
     };
 
     // Log to console for debugging
-    logger.error("[ErrorService]", errorReport);
+    logger?.error("[ErrorService]", errorReport);
 
     // Add to error queue for batch reporting
-    this.errorQueue.push(errorReport);
+    this?.errorQueue.push(errorReport);
 
     // Show user feedback if not silent
     if (!options?.silent && options?.showToast !== false) {
-      this.showUserFeedback(errorReport);
+      this?.showUserFeedback(errorReport);
     }
 
     // Handle transient errors with retry
     if (
       isTransient &&
       options?.retryable !== false &&
-      errorReport.maxRetries > 0
+      errorReport?.maxRetries > 0
     ) {
-      this.scheduleRetry(errorReport);
+      this?.scheduleRetry(errorReport);
     }
 
     // Trigger immediate reporting for critical errors
     if (severity === "critical") {
-      this.reportErrorsBatch();
+      this?.reportErrorsBatch();
     }
   }
 
   private async scheduleRetry(errorReport: ErrorReport) {
-    const retryCount = errorReport.retryCount || 0;
-    const delay =
-      this.retryDelays[Math.min(retryCount, this.retryDelays.length - 1)];
+    const _retryCount = errorReport?.retryCount || 0;
+    const _delay =
+      this?.retryDelays[Math?.min(retryCount, this?.retryDelays.length - 1)];
 
     setTimeout(() => {
-      if (errorReport.recoveryActions && errorReport.recoveryActions[0]) {
-        const retryAction = errorReport.recoveryActions[0];
-        retryAction.action();
+      if (errorReport?.recoveryActions && errorReport?.recoveryActions[0]) {
+        const _retryAction = errorReport?.recoveryActions[0];
+        retryAction?.action();
       }
     }, delay);
   }
@@ -508,47 +508,48 @@ class ErrorService {
   }
 
   private async reportErrorsBatch() {
-    if (this.isReporting || this.errorQueue.length === 0) return;
+    if (this?.isReporting || this?.errorQueue.length === 0) return;
 
     this.isReporting = true;
-    const errors = [...this.errorQueue];
+    const _errors = [...this?.errorQueue];
     this.errorQueue = [];
 
     try {
-      const { getCsrfTokenFromCookie: _getCsrf } =
-        await import("@/lib/queryClient");
-      const _csrfToken = _getCsrf();
-      const response = await fetch("/api/errors", {
+      const { getCsrfTokenFromCookie: _getCsrf } = await import(
+        "@/lib/queryClient"
+      );
+      const __csrfToken = _getCsrf();
+      const _response = await fetch("/api/errors", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(_csrfToken ? { "x-csrf-token": _csrfToken } : {}),
         },
         credentials: "include",
-        body: JSON.stringify({
-          errors: errors.map((e) => ({
-            severity: e.severity,
-            category: e.category,
-            message: e.message,
+        body: JSON?.stringify({
+          errors: errors?.map((e) => ({
+            severity: e?.severity,
+            category: e?.category,
+            message: e?.message,
             context: {
-              ...e.context,
-              timestamp: e.context.timestamp.toISOString(),
+              ...e?.context,
+              timestamp: e?.context.timestamp?.toISOString(),
             },
-            stackTrace: e.context.stackTrace,
+            stackTrace: e?.context.stackTrace,
           })),
         }),
       });
 
-      if (!response.ok) {
-        const retriable = errors.filter((e) => (e.retryCount || 0) < 3);
-        retriable.forEach((e) => (e.retryCount = (e.retryCount || 0) + 1));
-        this.errorQueue.push(...retriable);
+      if (!response?.ok) {
+        const _retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
+        retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
+        this?.errorQueue.push(...retriable);
       }
     } catch (error: unknown) {
-      const retriable = errors.filter((e) => (e.retryCount || 0) < 3);
-      retriable.forEach((e) => (e.retryCount = (e.retryCount || 0) + 1));
-      this.errorQueue.push(...retriable);
-      logger.error("Failed to report errors to backend:", error);
+      const _retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
+      retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
+      this?.errorQueue.push(...retriable);
+      logger?.error("Failed to report errors to backend:", error);
     } finally {
       this.isReporting = false;
     }
@@ -556,44 +557,44 @@ class ErrorService {
 
   private showReportDialog() {
     // Get current error context
-    const errorContext = {
-      url: window.location.href,
+    const _errorContext = {
+      url: window?.location.href,
       timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      screenResolution: `${window.screen.width}x${window.screen.height}`,
-      windowSize: `${window.innerWidth}x${window.innerHeight}`,
-      breadcrumbs: this.breadcrumbs.slice(-10),
+      userAgent: navigator?.userAgent,
+      screenResolution: `${window?.screen.width}x${window?.screen.height}`,
+      windowSize: `${window?.innerWidth}x${window?.innerHeight}`,
+      breadcrumbs: this?.breadcrumbs.slice(-10),
     };
 
     // Create mailto link with error context
-    const subject = encodeURIComponent("Error Report - MAX Booster");
-    const body = encodeURIComponent(
+    const _subject = encodeURIComponent("Error Report - MAX Booster");
+    const _body = encodeURIComponent(
       `
 Error Report
 ============
 
-URL: ${errorContext.url}
-Time: ${errorContext.timestamp}
-Browser: ${errorContext.userAgent}
-Screen: ${errorContext.screenResolution}
-Window: ${errorContext.windowSize}
+URL: ${errorContext?.url}
+Time: ${errorContext?.timestamp}
+Browser: ${errorContext?.userAgent}
+Screen: ${errorContext?.screenResolution}
+Window: ${errorContext?.windowSize}
 
 Recent Actions:
-${errorContext.breadcrumbs.map((b) => `- ${b.action} at ${b.timestamp}`).join("\n")}
+${errorContext?.breadcrumbs.map((b) => `- ${b?.action} at ${b?.timestamp}`).join("\n")}
 
 Please describe what you were doing when the error occurred:
 [Your description here]
     `.trim(),
     );
 
-    window.open(
-      `mailto:support@maxbooster.com?subject=${subject}&body=${body}`,
+    window?.open(
+      `mailto:support@maxbooster?.com?subject=${subject}&body=${body}`,
     );
   }
 
   // Utility method for manual error capture
   captureException(error: Error | unknown, context?: Partial<ErrorContext>) {
-    this.handleError(error, context, { showToast: true });
+    this?.handleError(error, context, { showToast: true });
   }
 
   // Utility method for capturing messages
@@ -602,8 +603,8 @@ Please describe what you were doing when the error occurred:
     severity: ErrorSeverity = "info",
     context?: Partial<ErrorContext>,
   ) {
-    const error = new Error(message);
-    this.handleError(error, context, { severity, showToast: true });
+    const _error = new Error(message);
+    this?.handleError(error, context, { severity, showToast: true });
   }
 
   // Method to clear error history
@@ -615,27 +616,27 @@ Please describe what you were doing when the error occurred:
   // Get current error stats
   getErrorStats() {
     return {
-      queuedErrors: this.errorQueue.length,
-      breadcrumbs: this.breadcrumbs.length,
-      errorCount: this.errorCount,
+      queuedErrors: this?.errorQueue.length,
+      breadcrumbs: this?.breadcrumbs.length,
+      errorCount: this?.errorCount,
     };
   }
 }
 
 // Export singleton instance
-export const errorService = ErrorService.getInstance();
+export const _errorService = ErrorService?.getInstance();
 
 // Export helper functions for convenience
-export const captureException = (
+export const _captureException = (
   error: Error | unknown,
   context?: Partial<ErrorContext>,
-) => errorService.captureException(error, context);
+) => errorService?.captureException(error, context);
 
-export const captureMessage = (
+export const _captureMessage = (
   message: string,
   severity: ErrorSeverity = "info",
   context?: Partial<ErrorContext>,
-) => errorService.captureMessage(message, severity, context);
+) => errorService?.captureMessage(message, severity, context);
 
-export const addBreadcrumb = (action: string, data?: unknown) =>
-  errorService.addBreadcrumb(action, data);
+export const _addBreadcrumb = (action: string, data?: unknown) =>
+  errorService?.addBreadcrumb(action, data);

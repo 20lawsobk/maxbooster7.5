@@ -4,7 +4,7 @@ export interface ShaderSource {
   uniforms: string[];
 }
 
-export const COMMON_VERTEX_SHADER = `#version 300 es
+export const _COMMON_VERTEX_SHADER = `#version 300 es
 precision highp float;
 
 in vec2 a_position;
@@ -48,7 +48,7 @@ void main() {
   float lifeProgress = 1.0 - a_life;
   
   vec2 velocity = a_velocity;
-  velocity.y += u_gravity * u_time * lifeProgress;
+  velocity?.y += u_gravity * u_time * lifeProgress;
   velocity *= pow(u_friction, u_time);
   
   vec2 pos = a_position + velocity * lifeProgress;
@@ -59,7 +59,7 @@ void main() {
   gl_PointSize = a_size * a_life * audioScale;
   
   v_color = a_color;
-  v_color.a *= a_life;
+  v_color?.a *= a_life;
   v_life = a_life;
 }
 `,
@@ -78,22 +78,22 @@ void main() {
   vec2 center = gl_PointCoord - vec2(0.5);
   float dist = length(center);
   
-  float alpha = v_color.a;
+  float alpha = v_color?.a;
   
   if (u_shape == 0) {
     alpha *= smoothstep(0.5, 0.5 - u_softness, dist);
   } else if (u_shape == 1) {
-    float box = max(abs(center.x), abs(center.y));
+    float box = max(abs(center?.x), abs(center?.y));
     alpha *= smoothstep(0.5, 0.5 - u_softness, box);
   } else if (u_shape == 2) {
-    float angle = atan(center.y, center.x);
+    float angle = atan(center?.y, center?.x);
     float star = cos(angle * 5.0) * 0.4 + 0.1;
     alpha *= smoothstep(star + 0.1, star, dist);
   }
   
   if (alpha < 0.01) discard;
   
-  fragColor = vec4(v_color.rgb, alpha);
+  fragColor = vec4(v_color?.rgb, alpha);
 }
 `,
   uniforms: [
@@ -142,7 +142,7 @@ void main() {
   vec4 color = texture(u_texture, v_texCoord);
   
   if (u_pass == 0) {
-    fragColor = vec4(extractBright(color.rgb), color.a);
+    fragColor = vec4(extractBright(color?.rgb), color?.a);
     return;
   }
   
@@ -151,22 +151,22 @@ void main() {
   if (u_pass == 1) {
     for (int i = 0; i < SAMPLES; i++) {
       float offset = float(i - SAMPLES / 2) * u_radius;
-      vec2 sampleCoord = v_texCoord + vec2(offset * texelSize.x, 0.0);
+      vec2 sampleCoord = v_texCoord + vec2(offset * texelSize?.x, 0.0);
       result += texture(u_texture, sampleCoord).rgb * WEIGHTS[i];
     }
   } else if (u_pass == 2) {
     for (int i = 0; i < SAMPLES; i++) {
       float offset = float(i - SAMPLES / 2) * u_radius;
-      vec2 sampleCoord = v_texCoord + vec2(0.0, offset * texelSize.y);
+      vec2 sampleCoord = v_texCoord + vec2(0.0, offset * texelSize?.y);
       result += texture(u_texture, sampleCoord).rgb * WEIGHTS[i];
     }
   } else {
     vec3 bloom = texture(u_texture, v_texCoord).rgb;
-    fragColor = vec4(color.rgb + bloom * u_intensity, color.a);
+    fragColor = vec4(color?.rgb + bloom * u_intensity, color?.a);
     return;
   }
   
-  fragColor = vec4(result, color.a);
+  fragColor = vec4(result, color?.a);
 }
 `,
   uniforms: [
@@ -239,14 +239,14 @@ void main() {
     t = length(diff) / u_radius;
   } else if (u_type == 2) {
     vec2 diff = uv - u_center;
-    t = (atan(diff.y, diff.x) / 3.14159 + 1.0) * 0.5;
+    t = (atan(diff?.y, diff?.x) / 3.14159 + 1.0) * 0.5;
   } else if (u_type == 3) {
     vec2 diff = uv - u_center;
-    float angle = atan(diff.y, diff.x) + u_time * 0.5;
+    float angle = atan(diff?.y, diff?.x) + u_time * 0.5;
     t = (sin(angle * 4.0) + 1.0) * 0.5;
   } else if (u_type == 4) {
     vec2 centered = uv - 0.5;
-    t = max(abs(centered.x), abs(centered.y)) * 2.0;
+    t = max(abs(centered?.x), abs(centered?.y)) * 2.0;
   }
   
   t = clamp(t, 0.0, 1.0);
@@ -293,27 +293,27 @@ void main() {
   float audioAmp = u_amplitude * (1.0 + u_audioReactivity * u_bass);
   
   if (u_type == 0) {
-    uv.x += sin(uv.y * u_frequency + u_time * u_speed) * audioAmp;
-    uv.y += sin(uv.x * u_frequency + u_time * u_speed) * audioAmp;
+    uv?.x += sin(uv?.y * u_frequency + u_time * u_speed) * audioAmp;
+    uv?.y += sin(uv?.x * u_frequency + u_time * u_speed) * audioAmp;
   } else if (u_type == 1) {
-    uv.x += sin(uv.y * u_frequency + u_time * u_speed) * audioAmp;
+    uv?.x += sin(uv?.y * u_frequency + u_time * u_speed) * audioAmp;
   } else if (u_type == 2) {
-    uv.y += sin(uv.x * u_frequency + u_time * u_speed) * audioAmp;
+    uv?.y += sin(uv?.x * u_frequency + u_time * u_speed) * audioAmp;
   } else if (u_type == 3) {
     vec2 diff = uv - u_center;
     float dist = length(diff);
     float wave = sin(dist * u_frequency - u_time * u_speed) * audioAmp;
     uv += normalize(diff) * wave;
   } else if (u_type == 4) {
-    float angle = atan(uv.y - u_center.y, uv.x - u_center.x);
+    float angle = atan(uv?.y - u_center?.y, uv?.x - u_center?.x);
     float dist = length(uv - u_center);
     angle += sin(dist * u_frequency - u_time * u_speed) * audioAmp;
     uv = u_center + vec2(cos(angle), sin(angle)) * dist;
   } else if (u_type == 5) {
-    float noise1 = sin(uv.x * u_frequency * 2.0 + u_time) * sin(uv.y * u_frequency * 3.0 + u_time * 1.5);
-    float noise2 = sin(uv.x * u_frequency * 3.0 - u_time * 0.8) * sin(uv.y * u_frequency * 2.0 - u_time);
-    uv.x += noise1 * audioAmp;
-    uv.y += noise2 * audioAmp;
+    float noise1 = sin(uv?.x * u_frequency * 2.0 + u_time) * sin(uv?.y * u_frequency * 3.0 + u_time * 1.5);
+    float noise2 = sin(uv?.x * u_frequency * 3.0 - u_time * 0.8) * sin(uv?.y * u_frequency * 2.0 - u_time);
+    uv?.x += noise1 * audioAmp;
+    uv?.y += noise2 * audioAmp;
   }
   
   uv = clamp(uv, 0.0, 1.0);
@@ -407,17 +407,17 @@ void main() {
   if (u_type == 0) {
     dist = length(uv);
   } else if (u_type == 1) {
-    dist = max(abs(uv.x), abs(uv.y));
+    dist = max(abs(uv?.x), abs(uv?.y));
   } else {
-    dist = abs(uv.x) + abs(uv.y);
+    dist = abs(uv?.x) + abs(uv?.y);
   }
   
   float vignette = smoothstep(u_radius, u_radius - u_softness, dist);
   vignette = mix(1.0, vignette, u_intensity);
   
-  vec3 finalColor = mix(u_color.rgb, texColor.rgb, vignette);
+  vec3 finalColor = mix(u_color?.rgb, texColor?.rgb, vignette);
   
-  fragColor = vec4(finalColor, texColor.a);
+  fragColor = vec4(finalColor, texColor?.a);
 }
 `,
   uniforms: [
@@ -458,8 +458,8 @@ uniform float u_filmGrain;
 uniform float u_time;
 
 vec3 rgb2hsl(vec3 c) {
-  float maxC = max(max(c.r, c.g), c.b);
-  float minC = min(min(c.r, c.g), c.b);
+  float maxC = max(max(c?.r, c?.g), c?.b);
+  float minC = min(min(c?.r, c?.g), c?.b);
   float l = (maxC + minC) / 2.0;
   
   if (maxC == minC) {
@@ -470,12 +470,12 @@ vec3 rgb2hsl(vec3 c) {
   float s = l > 0.5 ? d / (2.0 - maxC - minC) : d / (maxC + minC);
   
   float h;
-  if (maxC == c.r) {
-    h = (c.g - c.b) / d + (c.g < c.b ? 6.0 : 0.0);
-  } else if (maxC == c.g) {
-    h = (c.b - c.r) / d + 2.0;
+  if (maxC == c?.r) {
+    h = (c?.g - c?.b) / d + (c?.g < c?.b ? 6.0 : 0.0);
+  } else if (maxC == c?.g) {
+    h = (c?.b - c?.r) / d + 2.0;
   } else {
-    h = (c.r - c.g) / d + 4.0;
+    h = (c?.r - c?.g) / d + 4.0;
   }
   h /= 6.0;
   
@@ -492,27 +492,27 @@ float hue2rgb(float p, float q, float t) {
 }
 
 vec3 hsl2rgb(vec3 hsl) {
-  if (hsl.y == 0.0) {
-    return vec3(hsl.z);
+  if (hsl?.y == 0.0) {
+    return vec3(hsl?.z);
   }
   
-  float q = hsl.z < 0.5 ? hsl.z * (1.0 + hsl.y) : hsl.z + hsl.y - hsl.z * hsl.y;
-  float p = 2.0 * hsl.z - q;
+  float q = hsl?.z < 0.5 ? hsl?.z * (1.0 + hsl?.y) : hsl?.z + hsl?.y - hsl?.z * hsl?.y;
+  float p = 2.0 * hsl?.z - q;
   
   return vec3(
-    hue2rgb(p, q, hsl.x + 1.0/3.0),
-    hue2rgb(p, q, hsl.x),
-    hue2rgb(p, q, hsl.x - 1.0/3.0)
+    hue2rgb(p, q, hsl?.x + 1.0/3.0),
+    hue2rgb(p, q, hsl?.x),
+    hue2rgb(p, q, hsl?.x - 1.0/3.0)
   );
 }
 
 float rand(vec2 co) {
-  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+  return fract(sin(dot(co?.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 void main() {
   vec4 color = texture(u_texture, v_texCoord);
-  vec3 rgb = color.rgb;
+  vec3 rgb = color?.rgb;
   
   rgb *= pow(2.0, u_exposure);
   
@@ -520,23 +520,23 @@ void main() {
   rgb += u_brightness;
   
   vec3 hsl = rgb2hsl(rgb);
-  hsl.x = mod(hsl.x + u_hue, 1.0);
-  hsl.y *= u_saturation;
+  hsl.x = mod(hsl?.x + u_hue, 1.0);
+  hsl?.y *= u_saturation;
   rgb = hsl2rgb(hsl);
   
-  float maxChannel = max(max(rgb.r, rgb.g), rgb.b);
-  float minChannel = min(min(rgb.r, rgb.g), rgb.b);
+  float maxChannel = max(max(rgb?.r, rgb?.g), rgb?.b);
+  float minChannel = min(min(rgb?.r, rgb?.g), rgb?.b);
   float saturation = maxChannel - minChannel;
   float vibranceScale = u_vibrance * (1.0 - saturation);
   vec3 gray = vec3(dot(rgb, vec3(0.2126, 0.7152, 0.0722)));
   rgb = mix(gray, rgb, 1.0 + vibranceScale);
   
   float tempK = u_temperature * 0.1;
-  rgb.r += tempK;
-  rgb.b -= tempK;
-  rgb.g += u_tint * 0.1;
-  rgb.r -= u_tint * 0.05;
-  rgb.b -= u_tint * 0.05;
+  rgb?.r += tempK;
+  rgb?.b -= tempK;
+  rgb?.g += u_tint * 0.1;
+  rgb?.r -= u_tint * 0.05;
+  rgb?.b -= u_tint * 0.05;
   
   float luminance = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
   float shadowWeight = 1.0 - smoothstep(0.0, 0.33, luminance);
@@ -558,7 +558,7 @@ void main() {
   
   rgb = clamp(rgb, 0.0, 1.0);
   
-  fragColor = vec4(rgb, color.a);
+  fragColor = vec4(rgb, color?.a);
 }
 `,
   uniforms: [
@@ -613,7 +613,7 @@ float noise(vec2 p) {
   float c = hash(i + vec2(0.0, 1.0));
   float d = hash(i + vec2(1.0, 1.0));
   
-  return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+  return mix(mix(a, b, f?.x), mix(c, d, f?.x), f?.y);
 }
 
 float fbm(vec2 p) {
@@ -726,8 +726,8 @@ void main() {
       float weight = exp(-offset * offset / (2.0 * u_radius * u_radius / 9.0));
       
       vec2 sampleOffset = u_direction == 0 
-        ? vec2(offset * texelSize.x, 0.0)
-        : vec2(0.0, offset * texelSize.y);
+        ? vec2(offset * texelSize?.x, 0.0)
+        : vec2(0.0, offset * texelSize?.y);
       
       result += texture(u_texture, v_texCoord + sampleOffset) * weight;
       total += weight;
@@ -738,15 +738,15 @@ void main() {
       float offset = float(i) - u_radius;
       
       vec2 sampleOffset = u_direction == 0 
-        ? vec2(offset * texelSize.x, 0.0)
-        : vec2(0.0, offset * texelSize.y);
+        ? vec2(offset * texelSize?.x, 0.0)
+        : vec2(0.0, offset * texelSize?.y);
       
       result += texture(u_texture, v_texCoord + sampleOffset);
       total += 1.0;
     }
   } else {
     vec2 center = v_texCoord - 0.5;
-    float angle = atan(center.y, center.x);
+    float angle = atan(center?.y, center?.x);
     float dist = length(center);
     
     for (int i = 0; i < MAX_SAMPLES; i++) {
@@ -787,7 +787,7 @@ uniform int u_animated;
 void main() {
   vec2 uv = (v_texCoord - u_center) * u_zoom;
   
-  float angle = atan(uv.y, uv.x);
+  float angle = atan(uv?.y, uv?.x);
   float dist = length(uv);
   
   if (u_animated == 1) {
@@ -845,22 +845,22 @@ void main() {
     vec2 centered = fract(v_texCoord * pixels) - 0.5;
     float circle = smoothstep(0.45, 0.35, length(centered));
     vec4 color = texture(u_texture, uv);
-    fragColor = vec4(color.rgb * circle, color.a);
+    fragColor = vec4(color?.rgb * circle, color?.a);
     return;
   } else {
-    float size = u_pixelSize / u_resolution.x;
-    float ratio = u_resolution.x / u_resolution.y;
+    float size = u_pixelSize / u_resolution?.x;
+    float ratio = u_resolution?.x / u_resolution?.y;
     float s = size * sqrt(3.0);
     
     vec2 p = uv;
-    p.y /= ratio;
+    p?.y /= ratio;
     
     vec2 a = mod(p, vec2(size, s)) - vec2(size * 0.5, s * 0.5);
     vec2 b = mod(p - vec2(size * 0.5, s * 0.5), vec2(size, s)) - vec2(size * 0.5, s * 0.5);
     
     vec2 gv = length(a) < length(b) ? a : b;
     uv = p - gv;
-    uv.y *= ratio;
+    uv?.y *= ratio;
   }
   
   fragColor = texture(u_texture, uv);
@@ -885,7 +885,7 @@ uniform float u_blockSize;
 uniform int u_seed;
 
 float rand(vec2 co) {
-  return fract(sin(dot(co.xy + float(u_seed), vec2(12.9898, 78.233))) * 43758.5453);
+  return fract(sin(dot(co?.xy + float(u_seed), vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 void main() {
@@ -895,22 +895,22 @@ void main() {
   float noise = rand(vec2(floor(t * 20.0), 0.0));
   
   if (noise < u_intensity) {
-    float blockY = floor(uv.y / u_blockSize) * u_blockSize;
+    float blockY = floor(uv?.y / u_blockSize) * u_blockSize;
     float offsetX = (rand(vec2(blockY, t)) - 0.5) * u_intensity * 0.1;
-    uv.x += offsetX;
+    uv?.x += offsetX;
     
     if (rand(vec2(t, blockY)) < 0.1 * u_intensity) {
       float rgbSplit = u_intensity * 0.02;
       vec4 r = texture(u_texture, uv + vec2(rgbSplit, 0.0));
       vec4 g = texture(u_texture, uv);
       vec4 b = texture(u_texture, uv - vec2(rgbSplit, 0.0));
-      fragColor = vec4(r.r, g.g, b.b, 1.0);
+      fragColor = vec4(r?.r, g?.g, b?.b, 1.0);
       return;
     }
   }
   
-  if (rand(vec2(floor(t * 50.0), uv.y * 100.0)) < 0.002 * u_intensity) {
-    float scanlineIntensity = rand(vec2(t, uv.y));
+  if (rand(vec2(floor(t * 50.0), uv?.y * 100.0)) < 0.002 * u_intensity) {
+    float scanlineIntensity = rand(vec2(t, uv?.y));
     fragColor = texture(u_texture, uv) * (1.0 - scanlineIntensity * 0.5);
     return;
   }
@@ -959,14 +959,14 @@ void main() {
   vec4 color = vec4(0.0);
   
   if (u_type == 0) {
-    float barIndex = floor(uv.x * float(u_barCount));
+    float barIndex = floor(uv?.x * float(u_barCount));
     float barX = barIndex / float(u_barCount);
     float freq = getFrequency(barX);
     
     float barCenter = (barIndex + 0.5) / float(u_barCount);
-    float barEdge = abs(uv.x - barCenter) * float(u_barCount);
+    float barEdge = abs(uv?.x - barCenter) * float(u_barCount);
     
-    float y = uv.y;
+    float y = uv?.y;
     if (u_mirror > 0.5) {
       y = abs(y - 0.5) * 2.0;
     }
@@ -976,17 +976,17 @@ void main() {
       color = mix(u_color1, u_color2, t);
     }
   } else if (u_type == 1) {
-    float freq = getFrequency(uv.x);
+    float freq = getFrequency(uv?.x);
     float waveY = 0.5 + (freq - 0.5) * 0.5;
-    float dist = abs(uv.y - waveY);
+    float dist = abs(uv?.y - waveY);
     
     if (dist < u_lineWidth) {
       float alpha = 1.0 - dist / u_lineWidth;
-      color = mix(u_color1, u_color2, uv.x) * alpha;
+      color = mix(u_color1, u_color2, uv?.x) * alpha;
     }
   } else if (u_type == 2) {
     vec2 centered = uv - u_center;
-    float angle = atan(centered.y, centered.x);
+    float angle = atan(centered?.y, centered?.x);
     float normalizedAngle = (angle + 3.14159) / (2.0 * 3.14159);
     float freq = getFrequency(normalizedAngle);
     float dist = length(centered);
@@ -999,10 +999,10 @@ void main() {
       color = mix(u_color1, u_color2, t);
     }
   } else if (u_type == 3) {
-    float x = uv.x;
+    float x = uv?.x;
     float waveform = texture(u_audioData, vec2(x, 0.5)).r;
     float y = 0.5 + (waveform - 0.5) * u_sensitivity;
-    float dist = abs(uv.y - y);
+    float dist = abs(uv?.y - y);
     
     if (dist < u_lineWidth) {
       float alpha = 1.0 - dist / u_lineWidth;
@@ -1030,7 +1030,7 @@ void main() {
   ],
 };
 
-export const SHADER_PRESETS = {
+export const _SHADER_PRESETS = {
   particle: PARTICLE_SHADER,
   bloom: BLOOM_SHADER,
   gradient: GRADIENT_SHADER,

@@ -9,9 +9,9 @@ import { logger } from "../logger.js";
 import { getBaseUrl } from "../config/defaults.js";
 
 // Initialize Stripe
-const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
-  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2025-08-27.basil",
+const _stripe = process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+  ? new Stripe(process?.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-08-27?.basil",
     })
   : null;
 
@@ -151,7 +151,7 @@ interface ListingMetadata {
   tags?: string[];
 }
 
-// Shape of a listing row as returned by storage.createListing/updateListing
+// Shape of a listing row as returned by storage?.createListing/updateListing
 interface ListingRow {
   id: string;
   userId: string;
@@ -201,21 +201,21 @@ interface DbOrderRow {
 // Helper functions to map between service and database Order types
 function toServiceOrder(dbOrder: DbOrderRow): Order {
   return {
-    id: dbOrder.id,
-    beatId: dbOrder.listingId || "",
-    buyerId: dbOrder.userId || dbOrder.buyerId || "",
-    sellerId: dbOrder.sellerId || "",
-    licenseType: dbOrder.licenseType || "",
-    amount: dbOrder.amount ?? (dbOrder.amountCents || 0) / 100,
-    status: dbOrder.status as Order["status"],
-    paymentIntentId: dbOrder.stripePaymentIntentId || undefined,
-    licenseDocumentUrl: dbOrder.licenseDocumentUrl || undefined,
-    createdAt: dbOrder.createdAt || new Date(),
+    id: dbOrder?.id,
+    beatId: dbOrder?.listingId || "",
+    buyerId: dbOrder?.userId || dbOrder?.buyerId || "",
+    sellerId: dbOrder?.sellerId || "",
+    licenseType: dbOrder?.licenseType || "",
+    amount: dbOrder?.amount ?? (dbOrder?.amountCents || 0) / 100,
+    status: dbOrder?.status as Order["status"],
+    paymentIntentId: dbOrder?.stripePaymentIntentId || undefined,
+    licenseDocumentUrl: dbOrder?.licenseDocumentUrl || undefined,
+    createdAt: dbOrder?.createdAt || new Date(),
   };
 }
 
 // Valid musical keys for validation
-const VALID_MUSICAL_KEYS = [
+const _VALID_MUSICAL_KEYS = [
   "C",
   "C#",
   "Db",
@@ -267,12 +267,12 @@ const VALID_MUSICAL_KEYS = [
 ];
 
 // Price constraints
-const MIN_PRICE = 0;
-const MAX_PRICE = 100000; // $100,000 max
-const MIN_BPM = 20;
-const MAX_BPM = 300;
-const MIN_TITLE_LENGTH = 1;
-const MAX_TITLE_LENGTH = 200;
+const _MIN_PRICE = 0;
+const _MAX_PRICE = 100000; // $100,000 max
+const _MIN_BPM = 20;
+const _MAX_BPM = 300;
+const _MIN_TITLE_LENGTH = 1;
+const _MAX_TITLE_LENGTH = 200;
 
 export class MarketplaceService {
   /**
@@ -288,65 +288,65 @@ export class MarketplaceService {
     const errors: string[] = [];
 
     // Title validation
-    if (!data.title || data.title.trim().length < MIN_TITLE_LENGTH) {
-      errors.push("Title is required and cannot be empty");
+    if (!data?.title || data?.title.trim().length < MIN_TITLE_LENGTH) {
+      errors?.push("Title is required and cannot be empty");
     }
-    if (data.title && data.title.length > MAX_TITLE_LENGTH) {
-      errors.push(`Title must be ${MAX_TITLE_LENGTH} characters or less`);
+    if (data?.title && data?.title.length > MAX_TITLE_LENGTH) {
+      errors?.push(`Title must be ${MAX_TITLE_LENGTH} characters or less`);
     }
 
     // Price validation
-    if (data.price === undefined || data.price === null) {
-      errors.push("Price is required");
-    } else if (typeof data.price !== "number" || isNaN(data.price)) {
-      errors.push("Price must be a valid number");
-    } else if (data.price < MIN_PRICE) {
-      errors.push("Price cannot be negative");
-    } else if (data.price > MAX_PRICE) {
-      errors.push(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
+    if (data?.price === undefined || data?.price === null) {
+      errors?.push("Price is required");
+    } else if (typeof data?.price !== "number" || isNaN(data?.price)) {
+      errors?.push("Price must be a valid number");
+    } else if (data?.price < MIN_PRICE) {
+      errors?.push("Price cannot be negative");
+    } else if (data?.price > MAX_PRICE) {
+      errors?.push(`Price cannot exceed $${MAX_PRICE?.toLocaleString()}`);
     }
 
     // BPM validation
-    if (data.bpm !== undefined && data.bpm !== null) {
-      if (typeof data.bpm !== "number" || isNaN(data.bpm)) {
-        errors.push("BPM must be a valid number");
-      } else if (data.bpm < MIN_BPM || data.bpm > MAX_BPM) {
-        errors.push(`BPM must be between ${MIN_BPM} and ${MAX_BPM}`);
+    if (data?.bpm !== undefined && data?.bpm !== null) {
+      if (typeof data?.bpm !== "number" || isNaN(data?.bpm)) {
+        errors?.push("BPM must be a valid number");
+      } else if (data?.bpm < MIN_BPM || data?.bpm > MAX_BPM) {
+        errors?.push(`BPM must be between ${MIN_BPM} and ${MAX_BPM}`);
       }
     }
 
     // Key validation
-    if (data.key !== undefined && data.key !== null && data.key !== "") {
-      const normalizedKey = data.key.trim();
-      if (!VALID_MUSICAL_KEYS.includes(normalizedKey)) {
-        errors.push(
-          `Invalid musical key: ${data.key}. Must be a valid key (e.g., C, Am, F# Minor)`,
+    if (data?.key !== undefined && data?.key !== null && data?.key !== "") {
+      const _normalizedKey = data?.key.trim();
+      if (!VALID_MUSICAL_KEYS?.includes(normalizedKey)) {
+        errors?.push(
+          `Invalid musical key: ${data?.key}. Must be a valid key (e?.g., C, Am, F# Minor)`,
         );
       }
     }
 
     // License validation
-    if (data.licenses && data.licenses.length > 0) {
-      for (const license of data.licenses) {
+    if (data?.licenses && data?.licenses.length > 0) {
+      for (const license of data?.licenses) {
         if (
-          !["basic", "premium", "exclusive", "unlimited"].includes(license.type)
+          !["basic", "premium", "exclusive", "unlimited"].includes(license?.type)
         ) {
-          errors.push(`Invalid license type: ${license.type}`);
+          errors?.push(`Invalid license type: ${license?.type}`);
         }
-        if (license.price < MIN_PRICE) {
-          errors.push(
-            `License price cannot be negative for type: ${license.type}`,
+        if (license?.price < MIN_PRICE) {
+          errors?.push(
+            `License price cannot be negative for type: ${license?.type}`,
           );
         }
-        if (license.price > MAX_PRICE) {
-          errors.push(
-            `License price cannot exceed $${MAX_PRICE.toLocaleString()} for type: ${license.type}`,
+        if (license?.price > MAX_PRICE) {
+          errors?.push(
+            `License price cannot exceed $${MAX_PRICE?.toLocaleString()} for type: ${license?.type}`,
           );
         }
       }
     }
 
-    return { valid: errors.length === 0, errors };
+    return { valid: errors?.length === 0, errors };
   }
 
   /**
@@ -367,66 +367,66 @@ export class MarketplaceService {
   }): Promise<BeatListing> {
     try {
       // Validate input data
-      const validation = this.validateListingData({
-        title: data.title,
-        price: data.price,
-        bpm: data.bpm,
-        key: data.key,
-        licenses: data.licenses,
+      const _validation = this?.validateListingData({
+        title: data?.title,
+        price: data?.price,
+        bpm: data?.bpm,
+        key: data?.key,
+        licenses: data?.licenses,
       });
 
-      if (!validation.valid) {
+      if (!validation?.valid) {
         throw new Error(
-          `Listing validation failed: ${validation.errors.join("; ")}`,
+          `Listing validation failed: ${validation?.errors.join("; ")}`,
         );
       }
 
       // Map service data to database schema
-      const dbListing = {
-        userId: data.userId,
-        title: data.title,
-        description: data.description,
-        priceCents: Math.round(data.price * 100), // Convert to cents
-        category: data.genre,
-        audioUrl: data.audioUrl,
-        artworkUrl: data.artworkUrl,
-        previewUrl: data.audioUrl,
+      const _dbListing = {
+        userId: data?.userId,
+        title: data?.title,
+        description: data?.description,
+        priceCents: Math?.round(data?.price * 100), // Convert to cents
+        category: data?.genre,
+        audioUrl: data?.audioUrl,
+        artworkUrl: data?.artworkUrl,
+        previewUrl: data?.audioUrl,
         isPublished: true,
         metadata: {
-          genre: data.genre,
-          bpm: data.bpm,
-          key: data.key,
-          licenses: data.licenses,
-          tags: data.tags || [],
+          genre: data?.genre,
+          bpm: data?.bpm,
+          key: data?.key,
+          licenses: data?.licenses,
+          tags: data?.tags || [],
         },
       };
 
       // Create listing in database (UUID generated automatically)
-      const createdListing = (await storage.createListing(
+      const _createdListing = (await storage?.createListing(
         dbListing,
       )) as ListingRow;
 
       // Map database result back to service format
-      const metadata = (createdListing.metadata as ListingMetadata) || {};
+      const _metadata = (createdListing?.metadata as ListingMetadata) || {};
       return {
-        id: createdListing.id,
-        userId: createdListing.userId,
-        title: createdListing.title,
-        description: createdListing.description || undefined,
-        genre: (metadata.genre || createdListing.category) ?? undefined,
-        bpm: metadata.bpm,
-        key: metadata.key,
-        price: createdListing.priceCents / 100,
-        audioUrl: createdListing.audioUrl || createdListing.previewUrl || "",
-        artworkUrl: createdListing.artworkUrl || undefined,
-        coverArt: createdListing.artworkUrl || undefined,
-        tags: metadata.tags || [],
-        licenses: metadata.licenses || data.licenses,
-        status: createdListing.isPublished ? "active" : "inactive",
-        createdAt: createdListing.createdAt || new Date(),
+        id: createdListing?.id,
+        userId: createdListing?.userId,
+        title: createdListing?.title,
+        description: createdListing?.description || undefined,
+        genre: (metadata?.genre || createdListing?.category) ?? undefined,
+        bpm: metadata?.bpm,
+        key: metadata?.key,
+        price: createdListing?.priceCents / 100,
+        audioUrl: createdListing?.audioUrl || createdListing?.previewUrl || "",
+        artworkUrl: createdListing?.artworkUrl || undefined,
+        coverArt: createdListing?.artworkUrl || undefined,
+        tags: metadata?.tags || [],
+        licenses: metadata?.licenses || data?.licenses,
+        status: createdListing?.isPublished ? "active" : "inactive",
+        createdAt: createdListing?.createdAt || new Date(),
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating listing:");
+      logger?.warn({ err: error }, "Error creating listing:");
       throw new Error("Failed to create beat listing");
     }
   }
@@ -436,10 +436,10 @@ export class MarketplaceService {
    */
   async getListing(listingId: string): Promise<BeatListing | null> {
     try {
-      const listing = await storage.getBeatListing(listingId);
+      const _listing = await storage?.getBeatListing(listingId);
       return listing;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching listing:");
+      logger?.warn({ err: error }, "Error fetching listing:");
       throw new Error("Failed to fetch listing");
     }
   }
@@ -460,10 +460,10 @@ export class MarketplaceService {
     offset?: number;
   }): Promise<BeatListing[]> {
     try {
-      const listings = await storage.getBeatListings(filters);
+      const _listings = await storage?.getBeatListings(filters);
       return listings;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error browsing listings:");
+      logger?.warn({ err: error }, "Error browsing listings:");
       throw new Error("Failed to browse listings");
     }
   }
@@ -478,35 +478,35 @@ export class MarketplaceService {
   }): Promise<Order> {
     try {
       // Get beat details
-      const beat = await this.getListing(data.beatId);
+      const _beat = await this?.getListing(data?.beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
 
       // Find the license price
-      const license = beat.licenses.find((l) => l.type === data.licenseType);
+      const _license = beat?.licenses.find((l) => l?.type === data?.licenseType);
       if (!license) {
         throw new Error("Invalid license type");
       }
 
       // Map service data to database schema
-      const dbOrder = {
-        buyerId: data.buyerId,
-        sellerId: beat.userId,
-        listingId: data.beatId,
-        licenseType: data.licenseType,
-        amountCents: Math.round(license.price * 100), // Convert to cents
+      const _dbOrder = {
+        buyerId: data?.buyerId,
+        sellerId: beat?.userId,
+        listingId: data?.beatId,
+        licenseType: data?.licenseType,
+        amountCents: Math?.round(license?.price * 100), // Convert to cents
         status: "pending",
         currency: "usd",
       };
 
       // Create order in database (UUID generated automatically, payout event created in transaction)
-      const createdOrder = await storage.createOrder(dbOrder);
+      const _createdOrder = await storage?.createOrder(dbOrder);
 
       // Convert database order to service order
       return toServiceOrder(createdOrder);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating order:");
+      logger?.warn({ err: error }, "Error creating order:");
       throw new Error("Failed to create order");
     }
   }
@@ -524,79 +524,79 @@ export class MarketplaceService {
       }
 
       // Get existing order from database
-      const dbOrder = await storage.getOrder(orderId);
+      const _dbOrder = await storage?.getOrder(orderId);
       if (!dbOrder) {
         throw new Error("Order not found");
       }
 
       // Retrieve payment intent
-      const paymentIntent =
-        await stripe.paymentIntents.retrieve(paymentIntentId);
+      const _paymentIntent =
+        await stripe?.paymentIntents.retrieve(paymentIntentId);
 
-      if (paymentIntent.status !== "succeeded") {
+      if (paymentIntent?.status !== "succeeded") {
         // Handle failed payment - update order status
-        await storage.updateOrder(orderId, {
+        await storage?.updateOrder(orderId, {
           status: "failed",
           metadata: {
-            ...((dbOrder.metadata as object) || {}),
-            failureReason: `Payment ${paymentIntent.status}`,
+            ...((dbOrder?.metadata as object) || {}),
+            failureReason: `Payment ${paymentIntent?.status}`,
             failedAt: new Date().toISOString(),
-            paymentIntentStatus: paymentIntent.status,
+            paymentIntentStatus: paymentIntent?.status,
           },
         });
 
-        logger.warn(
-          `Payment failed for order ${orderId}: status ${paymentIntent.status}`,
+        logger?.warn(
+          `Payment failed for order ${orderId}: status ${paymentIntent?.status}`,
         );
-        throw new Error(`Payment not successful: ${paymentIntent.status}`);
+        throw new Error(`Payment not successful: ${paymentIntent?.status}`);
       }
 
       // Update order status to completed
-      const updatedDBOrder = await storage.updateOrder(orderId, {
+      const _updatedDBOrder = await storage?.updateOrder(orderId, {
         status: "completed",
         stripePaymentIntentId: paymentIntentId,
       });
 
       // Trigger INSTANT PAYOUT to seller via Stripe Transfer (T+0)
-      if (dbOrder.sellerId && dbOrder.amountCents) {
-        const totalAmount = dbOrder.amountCents / 100;
-        const platformFeePercentage =
-          Number(process.env.PLATFORM_FEE_PERCENTAGE) || 10;
+      if (dbOrder?.sellerId && dbOrder?.amountCents) {
+        const _totalAmount = dbOrder?.amountCents / 100;
+        const _platformFeePercentage =
+          Number(process?.env.PLATFORM_FEE_PERCENTAGE) || 10;
 
-        logger.info(
-          `Initiating instant payout for order ${orderId}: $${totalAmount} to seller ${dbOrder.sellerId}`,
+        logger?.info(
+          `Initiating instant payout for order ${orderId}: $${totalAmount} to seller ${dbOrder?.sellerId}`,
         );
 
         // Create instant transfer to seller's connected account
-        const payoutResult = await instantPayoutService.createInstantTransfer(
-          dbOrder.sellerId,
+        const _payoutResult = await instantPayoutService?.createInstantTransfer(
+          dbOrder?.sellerId,
           totalAmount,
           orderId,
           platformFeePercentage,
         );
 
-        if (payoutResult.success) {
-          logger.info(
-            `✅ Instant payout successful: $${payoutResult.amount} transferred to seller ${dbOrder.sellerId}`,
+        if (payoutResult?.success) {
+          logger?.info(
+            `✅ Instant payout successful: $${payoutResult?.amount} transferred to seller ${dbOrder?.sellerId}`,
           );
         } else {
-          logger.warn(
-            `⚠️ Instant payout failed for order ${orderId}: ${payoutResult.error}`,
+          logger?.warn(
+            `⚠️ Instant payout failed for order ${orderId}: ${payoutResult?.error}`,
           );
           // Payout failed but order still completes - seller can withdraw manually later
         }
       }
 
       // Generate license document
-      await this.generateLicense(orderId);
+      await this?.generateLicense(orderId);
 
       // Distribute royalty splits if applicable
-      await this.distributeSplits(orderId);
+      await this?.distributeSplits(orderId);
 
       // Convert database order to service order
       return toServiceOrder(updatedDBOrder);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error processing payment:");
+      logger?.warn({ err: error }, "Error processing payment:");
       throw new Error("Failed to process payment");
     }
   }
@@ -618,7 +618,7 @@ export class MarketplaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error distributing splits:");
+      logger?.warn({ err: error }, "Error distributing splits:");
       throw new Error("Failed to distribute royalty splits");
     }
   }
@@ -629,81 +629,81 @@ export class MarketplaceService {
   async generateLicense(orderId: string): Promise<{ licenseUrl: string }> {
     try {
       // Fetch order details
-      const order = await storage.getOrder(orderId);
+      const _order = await storage?.getOrder(orderId);
       if (!order) {
         throw new Error("Order not found");
       }
 
       // Fetch beat details
-      const beat = await this.getListing(order.listingId || "");
+      const _beat = await this?.getListing(order?.listingId || "");
       if (!beat) {
         throw new Error("Beat not found for license generation");
       }
 
       // Get buyer and seller details
-      const buyer = await storage.getUser(order.buyerId || "");
-      const seller = await storage.getUser(order.sellerId || "");
+      const _buyer = await storage?.getUser(order?.buyerId || "");
+      const _seller = await storage?.getUser(order?.sellerId || "");
 
       // Get license template based on license type
-      const licenseType = order.licenseType || "basic";
-      const licenseTemplate = DEFAULT_LICENSE_TEMPLATES[licenseType];
+      const _licenseType = order?.licenseType || "basic";
+      const _licenseTemplate = DEFAULT_LICENSE_TEMPLATES[licenseType];
       if (!licenseTemplate) {
         throw new Error(`Invalid license type: ${licenseType}`);
       }
 
       // Generate license document content
-      const licenseContent = {
-        orderId: order.id,
+      const _licenseContent = {
+        orderId: order?.id,
         licenseType: licenseType,
-        beatTitle: beat.title,
-        beatId: beat.id,
+        beatTitle: beat?.title,
+        beatId: beat?.id,
         producer: {
           name: seller?.username || seller?.firstName || "Producer",
-          id: order.sellerId,
+          id: order?.sellerId,
         },
         buyer: {
           name: buyer?.username || buyer?.firstName || "Buyer",
-          id: order.buyerId,
+          id: order?.buyerId,
         },
         purchaseDate:
-          order.createdAt?.toISOString() || new Date().toISOString(),
-        amount: (order.amountCents || 0) / 100,
+          order?.createdAt?.toISOString() || new Date().toISOString(),
+        amount: (order?.amountCents || 0) / 100,
         currency: "USD",
         terms: {
-          streams: licenseTemplate.streams,
-          copies: licenseTemplate.copies,
-          radioStations: licenseTemplate.radioStations,
-          musicVideos: licenseTemplate.musicVideos,
-          duration: licenseTemplate.duration,
-          allowsBroadcast: licenseTemplate.allowsBroadcast,
-          allowsProfit: licenseTemplate.allowsProfit,
-          allowsSync: licenseTemplate.allowsSync,
-          features: licenseTemplate.features,
+          streams: licenseTemplate?.streams,
+          copies: licenseTemplate?.copies,
+          radioStations: licenseTemplate?.radioStations,
+          musicVideos: licenseTemplate?.musicVideos,
+          duration: licenseTemplate?.duration,
+          allowsBroadcast: licenseTemplate?.allowsBroadcast,
+          allowsProfit: licenseTemplate?.allowsProfit,
+          allowsSync: licenseTemplate?.allowsSync,
+          features: licenseTemplate?.features,
         },
         isExclusive: licenseType === "exclusive",
-        restrictions: this.getLicenseRestrictions(licenseType),
+        restrictions: this?.getLicenseRestrictions(licenseType),
       };
 
       // Store license document URL
-      const licenseUrl = `/licenses/${orderId}.pdf`;
+      const _licenseUrl = `/licenses/${orderId}.pdf`;
 
       // Update order with license document
-      await storage.updateOrder(orderId, {
+      await storage?.updateOrder(orderId, {
         licenseDocumentUrl: licenseUrl,
         metadata: {
-          ...((order.metadata as object) || {}),
+          ...((order?.metadata as object) || {}),
           licenseContent,
           generatedAt: new Date().toISOString(),
         },
       });
 
-      logger.info(
+      logger?.info(
         `Generated license document for order ${orderId}, type: ${licenseType}`,
       );
 
       return { licenseUrl };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error generating license:");
+      logger?.warn({ err: error }, "Error generating license:");
       throw new Error("Failed to generate license");
     }
   }
@@ -758,17 +758,17 @@ export class MarketplaceService {
         throw new Error("Stripe not configured");
       }
 
-      const beat = await this.getListing(data.beatId);
+      const _beat = await this?.getListing(data?.beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
 
-      const license = beat.licenses.find((l) => l.type === data.licenseType);
+      const _license = beat?.licenses.find((l) => l?.type === data?.licenseType);
       if (!license) {
         throw new Error("Invalid license type");
       }
 
-      const session = await stripe.checkout.sessions.create({
+      const _session = await stripe?.checkout.sessions?.create({
         mode: "payment",
         payment_method_types: ["card"],
         line_items: [
@@ -776,29 +776,29 @@ export class MarketplaceService {
             price_data: {
               currency: "usd",
               product_data: {
-                name: `${beat.title} - ${license.type} License`,
-                description: license.features.join(", "),
+                name: `${beat?.title} - ${license?.type} License`,
+                description: license?.features.join(", "),
               },
-              unit_amount: license.price * 100,
+              unit_amount: license?.price * 100,
             },
             quantity: 1,
           },
         ],
         metadata: {
-          beatId: data.beatId,
-          licenseType: data.licenseType,
-          buyerId: data.buyerId,
+          beatId: data?.beatId,
+          licenseType: data?.licenseType,
+          buyerId: data?.buyerId,
         },
-        success_url: data.successUrl,
-        cancel_url: data.cancelUrl,
+        success_url: data?.successUrl,
+        cancel_url: data?.cancelUrl,
       });
 
       return {
-        sessionId: session.id,
-        url: session.url!,
+        sessionId: session?.id,
+        url: session?.url!,
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error creating checkout session:");
+      logger?.warn({ err: error }, "Error creating checkout session:");
       throw new Error("Failed to create checkout session");
     }
   }
@@ -808,10 +808,10 @@ export class MarketplaceService {
    */
   async getUserOrders(userId: string): Promise<Order[]> {
     try {
-      const dbOrders = await storage.getUserOrders(userId);
-      return dbOrders.map(toServiceOrder);
+      const _dbOrders = await storage?.getUserOrders(userId);
+      return dbOrders?.map(toServiceOrder);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching user orders:");
+      logger?.warn({ err: error }, "Error fetching user orders:");
       throw new Error("Failed to fetch user orders");
     }
   }
@@ -822,10 +822,10 @@ export class MarketplaceService {
   async getUserSales(userId: string): Promise<Order[]> {
     try {
       // Query orders where user is the seller
-      const dbOrders = await storage.getSellerOrders(userId);
-      return dbOrders.map(toServiceOrder);
+      const _dbOrders = await storage?.getSellerOrders(userId);
+      return dbOrders?.map(toServiceOrder);
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching user sales:");
+      logger?.warn({ err: error }, "Error fetching user sales:");
       throw new Error("Failed to fetch user sales");
     }
   }
@@ -844,80 +844,80 @@ export class MarketplaceService {
       }
 
       // Check if user already has a Connect account
-      const user = await storage.getUser(userId);
+      const _user = await storage?.getUser(userId);
       if (!user) {
         throw new Error("User not found");
       }
 
-      let accountId = user.stripeCustomerId;
+      let accountId = user?.stripeCustomerId;
 
       if (!accountId) {
         // Create new Connect account
-        const account = await stripe.accounts.create({
+        const _account = await stripe?.accounts.create({
           type: "express",
-          email: user.email,
+          email: user?.email,
         });
-        accountId = account.id;
+        accountId = account?.id;
 
         // Update user with account ID
-        await storage.updateUser(userId, { stripeCustomerId: accountId });
+        await storage?.updateUser(userId, { stripeCustomerId: accountId });
       }
 
       // Create account link for onboarding
-      const accountLink = await stripe.accountLinks.create({
+      const _accountLink = await stripe?.accountLinks.create({
         account: accountId,
         refresh_url: refreshUrl,
         return_url: returnUrl,
         type: "account_onboarding",
       });
 
-      return { url: accountLink.url };
+      return { url: accountLink?.url };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error setting up Stripe Connect:");
+      logger?.warn({ err: error }, "Error setting up Stripe Connect:");
       throw new Error("Failed to setup Stripe Connect");
     }
   }
 
   async getUserListings(userId: string): Promise<any[]> {
     try {
-      const listings = await storage.getBeatListings({ userId });
-      const user = await storage.getUser(userId);
+      const _listings = await storage?.getBeatListings({ userId });
+      const _user = await storage?.getUser(userId);
 
-      const listingIds = listings.map((l) => l.id);
+      const _listingIds = listings?.map((l) => l?.id);
       const allTiers: ListingLicenseTier[] = [];
-      if (listingIds.length > 0) {
+      if (listingIds?.length > 0) {
         for (const lid of listingIds) {
-          const tiers = await db
+          const _tiers = await db
             .select()
             .from(listingLicenseTiers)
-            .where(eq(listingLicenseTiers.listingId, lid))
-            .orderBy(listingLicenseTiers.sortOrder)
+            .where(eq(listingLicenseTiers?.listingId, lid))
+            .orderBy(listingLicenseTiers?.sortOrder)
             .limit(20);
-          allTiers.push(...tiers);
+          allTiers?.push(...tiers);
         }
       }
 
-      return listings.map((listing) => {
-        const tiers = allTiers.filter((t) => t.listingId === listing.id);
-        const mappedTiers = tiers.map((t) => ({
-          id: t.id,
-          licenseType: t.licenseType,
-          label: t.label,
-          priceCents: t.priceCents,
-          price: t.priceCents / 100,
-          discountType: t.discountType,
-          discountPercent: t.discountPercent,
-          discountPriceCents: t.discountPriceCents,
-          discountPrice: t.discountPriceCents
-            ? t.discountPriceCents / 100
+      return listings?.map((listing) => {
+        const _tiers = allTiers?.filter((t) => t?.listingId === listing?.id);
+        const _mappedTiers = tiers?.map((t) => ({
+          id: t?.id,
+          licenseType: t?.licenseType,
+          label: t?.label,
+          priceCents: t?.priceCents,
+          price: t?.priceCents / 100,
+          discountType: t?.discountType,
+          discountPercent: t?.discountPercent,
+          discountPriceCents: t?.discountPriceCents,
+          discountPrice: t?.discountPriceCents
+            ? t?.discountPriceCents / 100
             : null,
-          discountExpiresAt: t.discountExpiresAt,
-          bogoEnabled: t.bogoEnabled,
-          bogoGetType: t.bogoGetType,
-          bogoGetPercent: t.bogoGetPercent,
-          fileFormats: t.fileFormats || ["mp3"],
-          audioUrls: t.audioUrls || {},
-          isActive: t.isActive,
+          discountExpiresAt: t?.discountExpiresAt,
+          bogoEnabled: t?.bogoEnabled,
+          bogoGetType: t?.bogoGetType,
+          bogoGetPercent: t?.bogoGetPercent,
+          fileFormats: t?.fileFormats || ["mp3"],
+          audioUrls: t?.audioUrls || {},
+          isActive: t?.isActive,
         }));
         return {
           // Preserve every field storage already mapped (genre, mood, tempo, key,
@@ -927,58 +927,58 @@ export class MarketplaceService {
             user?.username ||
             `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
             "Producer",
-          producerId: listing.userId,
+          producerId: listing?.userId,
           // Derive hasLicenseTiers from the live tiers table, not stale metadata.
-          hasLicenseTiers: mappedTiers.length > 0,
+          hasLicenseTiers: mappedTiers?.length > 0,
           licenseTiers: mappedTiers,
         };
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching user listings:");
+      logger?.warn({ err: error }, "Error fetching user listings:");
       return [];
     }
   }
 
   async getListingsByProducer(producerId: string): Promise<any[]> {
     try {
-      const listings = await storage.getBeatListings({ userId: producerId });
-      const producer = await storage.getUser(producerId);
+      const _listings = await storage?.getBeatListings({ userId: producerId });
+      const _producer = await storage?.getUser(producerId);
 
-      const listingIds = listings.map((l) => l.id);
+      const _listingIds = listings?.map((l) => l?.id);
       const allTiers: ListingLicenseTier[] = [];
-      if (listingIds.length > 0) {
+      if (listingIds?.length > 0) {
         for (const lid of listingIds) {
-          const tiers = await db
+          const _tiers = await db
             .select()
             .from(listingLicenseTiers)
-            .where(eq(listingLicenseTiers.listingId, lid))
-            .orderBy(listingLicenseTiers.sortOrder)
+            .where(eq(listingLicenseTiers?.listingId, lid))
+            .orderBy(listingLicenseTiers?.sortOrder)
             .limit(20);
-          allTiers.push(...tiers);
+          allTiers?.push(...tiers);
         }
       }
 
-      return listings.map((listing) => {
-        const tiers = allTiers.filter((t) => t.listingId === listing.id);
-        const mappedTiers = tiers.map((t) => ({
-          id: t.id,
-          licenseType: t.licenseType,
-          label: t.label,
-          priceCents: t.priceCents,
-          price: t.priceCents / 100,
-          discountType: t.discountType,
-          discountPercent: t.discountPercent,
-          discountPriceCents: t.discountPriceCents,
-          discountPrice: t.discountPriceCents
-            ? t.discountPriceCents / 100
+      return listings?.map((listing) => {
+        const _tiers = allTiers?.filter((t) => t?.listingId === listing?.id);
+        const _mappedTiers = tiers?.map((t) => ({
+          id: t?.id,
+          licenseType: t?.licenseType,
+          label: t?.label,
+          priceCents: t?.priceCents,
+          price: t?.priceCents / 100,
+          discountType: t?.discountType,
+          discountPercent: t?.discountPercent,
+          discountPriceCents: t?.discountPriceCents,
+          discountPrice: t?.discountPriceCents
+            ? t?.discountPriceCents / 100
             : null,
-          discountExpiresAt: t.discountExpiresAt,
-          bogoEnabled: t.bogoEnabled,
-          bogoGetType: t.bogoGetType,
-          bogoGetPercent: t.bogoGetPercent,
-          fileFormats: t.fileFormats || ["mp3"],
-          audioUrls: t.audioUrls || {},
-          isActive: t.isActive,
+          discountExpiresAt: t?.discountExpiresAt,
+          bogoEnabled: t?.bogoEnabled,
+          bogoGetType: t?.bogoGetType,
+          bogoGetPercent: t?.bogoGetPercent,
+          fileFormats: t?.fileFormats || ["mp3"],
+          audioUrls: t?.audioUrls || {},
+          isActive: t?.isActive,
         }));
         return {
           // Preserve every field storage already mapped, including counters,
@@ -988,16 +988,16 @@ export class MarketplaceService {
             producer?.username ||
             `${producer?.firstName || ""} ${producer?.lastName || ""}`.trim() ||
             "Producer",
-          producerId: listing.userId,
+          producerId: listing?.userId,
           isNew: true,
           isHot: false,
           // Derive hasLicenseTiers from the live tiers table, not stale metadata.
-          hasLicenseTiers: mappedTiers.length > 0,
+          hasLicenseTiers: mappedTiers?.length > 0,
           licenseTiers: mappedTiers,
         };
       });
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching producer listings:");
+      logger?.warn({ err: error }, "Error fetching producer listings:");
       return [];
     }
   }
@@ -1020,124 +1020,124 @@ export class MarketplaceService {
     },
   ): Promise<BeatListing | null> {
     try {
-      const listing = await storage.getBeatListing(listingId);
+      const _listing = await storage?.getBeatListing(listingId);
       if (!listing) {
         throw new Error("Listing not found");
       }
-      if (listing.userId !== userId) {
+      if (listing?.userId !== userId) {
         throw new Error("Not authorized to update this listing");
       }
 
       // Validate update data
-      const validation = this.validateListingData({
-        title: data.title || listing.title,
-        price: data.price ?? listing.price,
-        bpm: data.bpm,
-        key: data.key,
+      const _validation = this?.validateListingData({
+        title: data?.title || listing?.title,
+        price: data?.price ?? listing?.price,
+        bpm: data?.bpm,
+        key: data?.key,
       });
 
-      if (!validation.valid) {
+      if (!validation?.valid) {
         throw new Error(
-          `Listing validation failed: ${validation.errors.join("; ")}`,
+          `Listing validation failed: ${validation?.errors.join("; ")}`,
         );
       }
 
       const updateData: Record<string, unknown> = {};
-      if (data.title !== undefined) updateData.title = data.title;
-      if (data.description !== undefined)
-        updateData.description = data.description;
-      if (data.price !== undefined)
-        updateData.priceCents = Math.round(data.price * 100);
-      if (data.genre !== undefined) updateData.category = data.genre;
-      if (data.audioUrl !== undefined) updateData.audioUrl = data.audioUrl;
-      if (data.artworkUrl !== undefined)
-        updateData.artworkUrl = data.artworkUrl;
+      if (data?.title !== undefined) updateData.title = data?.title;
+      if (data?.description !== undefined)
+        updateData.description = data?.description;
+      if (data?.price !== undefined)
+        updateData.priceCents = Math?.round(data?.price * 100);
+      if (data?.genre !== undefined) updateData.category = data?.genre;
+      if (data?.audioUrl !== undefined) updateData.audioUrl = data?.audioUrl;
+      if (data?.artworkUrl !== undefined)
+        updateData.artworkUrl = data?.artworkUrl;
 
-      const existingMetadata = (listing.metadata as ListingMetadata) || {};
+      const _existingMetadata = (listing?.metadata as ListingMetadata) || {};
       updateData.metadata = {
         ...existingMetadata,
-        genre: data.genre ?? existingMetadata.genre,
-        mood: data.mood ?? existingMetadata.mood,
-        bpm: data.bpm ?? existingMetadata.bpm,
-        key: data.key ?? existingMetadata.key,
-        licenseType: data.licenseType ?? existingMetadata.licenseType,
-        tags: data.tags ?? existingMetadata.tags ?? [],
+        genre: data?.genre ?? existingMetadata?.genre,
+        mood: data?.mood ?? existingMetadata?.mood,
+        bpm: data?.bpm ?? existingMetadata?.bpm,
+        key: data?.key ?? existingMetadata?.key,
+        licenseType: data?.licenseType ?? existingMetadata?.licenseType,
+        tags: data?.tags ?? existingMetadata?.tags ?? [],
       };
 
-      const updatedListing = (await storage.updateListing(
+      const _updatedListing = (await storage?.updateListing(
         listingId,
         updateData,
       )) as ListingRow | null;
       if (!updatedListing) return null;
 
-      const metadata = (updatedListing.metadata as ListingMetadata) || {};
+      const _metadata = (updatedListing?.metadata as ListingMetadata) || {};
       return {
-        id: updatedListing.id,
-        userId: updatedListing.userId,
-        title: updatedListing.title,
-        description: updatedListing.description || undefined,
-        genre: (metadata.genre || updatedListing.category) ?? undefined,
-        bpm: metadata.bpm,
-        key: metadata.key,
-        price: updatedListing.priceCents / 100,
-        audioUrl: updatedListing.audioUrl || updatedListing.previewUrl || "",
-        artworkUrl: updatedListing.artworkUrl || undefined,
-        tags: metadata.tags || [],
-        licenses: metadata.licenses || [],
-        status: updatedListing.isPublished ? "active" : "inactive",
-        createdAt: updatedListing.createdAt || new Date(),
+        id: updatedListing?.id,
+        userId: updatedListing?.userId,
+        title: updatedListing?.title,
+        description: updatedListing?.description || undefined,
+        genre: (metadata?.genre || updatedListing?.category) ?? undefined,
+        bpm: metadata?.bpm,
+        key: metadata?.key,
+        price: updatedListing?.priceCents / 100,
+        audioUrl: updatedListing?.audioUrl || updatedListing?.previewUrl || "",
+        artworkUrl: updatedListing?.artworkUrl || undefined,
+        tags: metadata?.tags || [],
+        licenses: metadata?.licenses || [],
+        status: updatedListing?.isPublished ? "active" : "inactive",
+        createdAt: updatedListing?.createdAt || new Date(),
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error updating listing:");
+      logger?.warn({ err: error }, "Error updating listing:");
       throw error;
     }
   }
 
   async deleteListing(listingId: string, userId: string): Promise<boolean> {
     try {
-      const listing = await storage.getBeatListing(listingId);
+      const _listing = await storage?.getBeatListing(listingId);
       if (!listing) {
         throw new Error("Listing not found");
       }
-      if (listing.userId !== userId) {
+      if (listing?.userId !== userId) {
         throw new Error("Not authorized to delete this listing");
       }
 
-      await storage.deleteListing(listingId);
+      await storage?.deleteListing(listingId);
       return true;
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error deleting listing:");
+      logger?.warn({ err: error }, "Error deleting listing:");
       throw error;
     }
   }
 
   async getUserPurchases(userId: string): Promise<any[]> {
     try {
-      const orders = await storage.getUserOrders(userId);
+      const _orders = await storage?.getUserOrders(userId);
       return orders || [];
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching user purchases:");
+      logger?.warn({ err: error }, "Error fetching user purchases:");
       return [];
     }
   }
 
   async getSalesAnalytics(userId: string): Promise<unknown> {
     try {
-      const sales = await this.getUserSales(userId);
-      const totalSales = sales.reduce(
-        (sum, sale) => sum + (sale.amount || 0),
+      const _sales = await this?.getUserSales(userId);
+      const _totalSales = sales?.reduce(
+        (sum, sale) => sum + (sale?.amount || 0),
         0,
       );
-      const totalOrders = sales.length;
+      const _totalOrders = sales?.length;
 
       return {
         totalRevenue: totalSales,
         totalSales: totalOrders,
         averageOrderValue: totalOrders > 0 ? totalSales / totalOrders : 0,
-        recentSales: sales.slice(0, 10),
+        recentSales: sales?.slice(0, 10),
       };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error fetching sales analytics:");
+      logger?.warn({ err: error }, "Error fetching sales analytics:");
       return {
         totalRevenue: 0,
         totalSales: 0,
@@ -1157,7 +1157,7 @@ export class MarketplaceService {
         throw new Error("Payment system not configured");
       }
 
-      const beat = await this.getListing(beatId);
+      const _beat = await this?.getListing(beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
@@ -1166,47 +1166,49 @@ export class MarketplaceService {
       let licenseLabel = licenseType;
       let licenseSnapshot: Record<string, unknown> | null = null;
 
-      if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
-        const tier = beat.licenseTiers.find(
-          (t) => t.licenseType === licenseType && t.isActive,
+      if (beat?.hasLicenseTiers && beat?.licenseTiers?.length) {
+        const _tier = beat?.licenseTiers.find(
+          (t) => t?.licenseType === licenseType && t?.isActive,
         );
         if (!tier) {
           throw new Error("Invalid or inactive license type");
         }
-        priceInCents = tier.discountPriceCents || tier.priceCents;
-        licenseLabel = tier.label || licenseType;
+        priceInCents = tier?.discountPriceCents || tier?.priceCents;
+        licenseLabel = tier?.label || licenseType;
         licenseSnapshot = {
-          licenseType: tier.licenseType,
-          label: tier.label,
-          priceCents: tier.priceCents,
-          discountPriceCents: tier.discountPriceCents,
-          fileFormats: tier.fileFormats,
-          bogoEnabled: tier.bogoEnabled,
-          bogoGetType: tier.bogoGetType,
-          bogoGetPercent: tier.bogoGetPercent,
+          licenseType: tier?.licenseType,
+          label: tier?.label,
+          priceCents: tier?.priceCents,
+          discountPriceCents: tier?.discountPriceCents,
+          fileFormats: tier?.fileFormats,
+          bogoEnabled: tier?.bogoEnabled,
+          bogoGetType: tier?.bogoGetType,
+          bogoGetPercent: tier?.bogoGetPercent,
         };
       } else {
-        const license = beat.licenses.find((l) => l.type === licenseType);
+        const _license = beat?.licenses.find(
+          (l) => l?.type === licenseType,
+        );
         if (!license) {
           throw new Error("Invalid license type");
         }
-        priceInCents = Math.round(license.price * 100);
+        priceInCents = Math?.round(license?.price * 100);
         licenseSnapshot = {
           licenseType,
-          label: license.type,
-          price: license.price,
+          label: license?.type,
+          price: license?.price,
         };
       }
 
-      const session = await stripe.checkout.sessions.create({
+      const _session = await stripe?.checkout.sessions?.create({
         payment_method_types: ["card"],
         line_items: [
           {
             price_data: {
               currency: "usd",
               product_data: {
-                name: `${beat.title} - ${licenseLabel} License`,
-                description: `Beat purchase: ${beat.title}`,
+                name: `${beat?.title} - ${licenseLabel} License`,
+                description: `Beat purchase: ${beat?.title}`,
               },
               unit_amount: priceInCents,
             },
@@ -1220,15 +1222,15 @@ export class MarketplaceService {
           buyerId,
           beatId,
           licenseType,
-          sellerId: beat.userId,
-          licenseSnapshot: JSON.stringify(licenseSnapshot),
+          sellerId: beat?.userId,
+          licenseSnapshot: JSON?.stringify(licenseSnapshot),
         },
       });
 
-      return { url: session.url };
+      return { url: session?.url };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error initiating purchase:");
-      const msg = (error as Error).message;
+      logger?.warn({ err: error }, "Error initiating purchase:");
+      const _msg = (error as Error).message;
       if (
         msg === "Beat not found" ||
         msg === "Invalid license type" ||
@@ -1243,4 +1245,4 @@ export class MarketplaceService {
   }
 }
 
-export const marketplaceService = new MarketplaceService();
+export const _marketplaceService = new MarketplaceService();

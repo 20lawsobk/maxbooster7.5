@@ -6,12 +6,12 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
+  const _padding = "=".repeat((4 - (base64String?.length % 4)) % 4);
+  const _base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const _rawData = window?.atob(base64);
+  const _outputArray = new Uint8Array(rawData?.length);
+  for (let i = 0; i < rawData?.length; ++i) {
+    outputArray[i] = rawData?.charCodeAt(i);
   }
   return outputArray;
 }
@@ -25,7 +25,7 @@ export type PushPermissionState =
 export function usePushNotifications() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const [permissionState, setPermissionState] =
     useState<PushPermissionState>("prompt");
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -50,97 +50,97 @@ export function usePushNotifications() {
       setPermissionState("unsupported");
       return;
     }
-    setPermissionState(Notification.permission as PushPermissionState);
+    setPermissionState(Notification?.permission as PushPermissionState);
   }, []);
 
   useEffect(() => {
     if (!user || !("serviceWorker" in navigator)) return;
 
-    navigator.serviceWorker.ready.then(async (registration) => {
-      const subscription = await registration.pushManager.getSubscription();
+    navigator?.serviceWorker.ready?.then(async (registration) => {
+      const _subscription = await registration?.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
     });
   }, [user]);
 
   // Listen for service-worker messages — specifically PUSH_SUBSCRIPTION_RENEWED
-  // which is fired by the pushsubscriptionchange handler in sw.js when the browser
+  // which is fired by the pushsubscriptionchange handler in sw?.js when the browser
   // auto-renews an expired subscription.  Invalidate the status query so the UI
   // reflects the new subscription without requiring a manual refresh.
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    const handleSWMessage = (event: MessageEvent) => {
-      if (!event.data) return;
-      if (event.data.type === "PUSH_SUBSCRIPTION_RENEWED") {
+    const _handleSWMessage = (event: MessageEvent) => {
+      if (!event?.data) return;
+      if (event?.data.type === "PUSH_SUBSCRIPTION_RENEWED") {
         setIsSubscribed(true);
-        queryClient.invalidateQueries({
+        queryClient?.invalidateQueries({
           queryKey: ["/api/notifications/push-subscriptions/status"],
         });
-        logger.info(
+        logger?.info(
           "[Push] Subscription auto-renewed by service worker:",
-          event.data.endpoint,
+          event?.data.endpoint,
         );
       }
     };
 
-    navigator.serviceWorker.addEventListener("message", handleSWMessage);
+    navigator?.serviceWorker.addEventListener("message", handleSWMessage);
     return () =>
-      navigator.serviceWorker.removeEventListener("message", handleSWMessage);
+      navigator?.serviceWorker.removeEventListener("message", handleSWMessage);
   }, [queryClient]);
 
-  const saveSubscriptionMutation = useMutation({
+  const _saveSubscriptionMutation = useMutation({
     mutationFn: async (subscription: PushSubscription) => {
-      const json = subscription.toJSON();
-      const response = await apiRequest(
+      const _json = subscription?.toJSON();
+      const _response = await apiRequest(
         "POST",
         "/api/notifications/push-subscriptions",
         {
-          endpoint: json.endpoint,
+          endpoint: json?.endpoint,
           keys: {
-            p256dh: json.keys?.p256dh,
-            auth: json.keys?.auth,
+            p256dh: json?.keys?.p256dh,
+            auth: json?.keys?.auth,
           },
         },
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/notifications/push-subscriptions/status"],
       });
     },
   });
 
-  const removeSubscriptionMutation = useMutation({
+  const _removeSubscriptionMutation = useMutation({
     mutationFn: async (endpoint?: string) => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "DELETE",
         "/api/notifications/push-subscriptions",
         {
           endpoint,
         },
       );
-      return response.json();
+      return response?.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/notifications/push-subscriptions/status"],
       });
     },
   });
 
-  const testPushMutation = useMutation({
+  const _testPushMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(
+      const _response = await apiRequest(
         "POST",
         "/api/notifications/push-test",
         {},
       );
-      return response.json();
+      return response?.json();
     },
   });
 
-  const subscribe = useCallback(async (): Promise<boolean> => {
+  const _subscribe = useCallback(async (): Promise<boolean> => {
     if (!vapidKey?.publicKey) {
       toast({
         title: "Push Not Available",
@@ -162,7 +162,7 @@ export function usePushNotifications() {
     setIsLoading(true);
 
     try {
-      const permission = await Notification.requestPermission();
+      const _permission = await Notification?.requestPermission();
       setPermissionState(permission as PushPermissionState);
 
       if (permission !== "granted") {
@@ -174,17 +174,17 @@ export function usePushNotifications() {
         return false;
       }
 
-      const registration = await navigator.serviceWorker.ready;
-      let subscription = await registration.pushManager.getSubscription();
+      const _registration = await navigator?.serviceWorker.ready;
+      let subscription = await registration?.pushManager.getSubscription();
 
       if (!subscription) {
-        subscription = await registration.pushManager.subscribe({
+        subscription = await registration?.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidKey.publicKey),
+          applicationServerKey: urlBase64ToUint8Array(vapidKey?.publicKey),
         });
       }
 
-      await saveSubscriptionMutation.mutateAsync(subscription);
+      await saveSubscriptionMutation?.mutateAsync(subscription);
       setIsSubscribed(true);
 
       toast({
@@ -194,7 +194,7 @@ export function usePushNotifications() {
 
       return true;
     } catch (error) {
-      logger.error("Push subscription failed:", error);
+      logger?.error("Push subscription failed:", error);
       toast({
         title: "Subscription Failed",
         description:
@@ -207,20 +207,20 @@ export function usePushNotifications() {
     }
   }, [vapidKey, toast, saveSubscriptionMutation]);
 
-  const unsubscribe = useCallback(async (): Promise<boolean> => {
+  const _unsubscribe = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
 
     try {
       if ("serviceWorker" in navigator) {
-        const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
+        const _registration = await navigator?.serviceWorker.ready;
+        const _subscription = await registration?.pushManager.getSubscription();
 
         if (subscription) {
-          const endpoint = subscription.endpoint;
-          await subscription.unsubscribe();
-          await removeSubscriptionMutation.mutateAsync(endpoint);
+          const _endpoint = subscription?.endpoint;
+          await subscription?.unsubscribe();
+          await removeSubscriptionMutation?.mutateAsync(endpoint);
         } else {
-          await removeSubscriptionMutation.mutateAsync();
+          await removeSubscriptionMutation?.mutateAsync();
         }
       }
 
@@ -234,7 +234,7 @@ export function usePushNotifications() {
 
       return true;
     } catch (error) {
-      logger.error("Push unsubscribe failed:", error);
+      logger?.error("Push unsubscribe failed:", error);
       toast({
         title: "Unsubscribe Failed",
         description:
@@ -247,10 +247,10 @@ export function usePushNotifications() {
     }
   }, [toast, removeSubscriptionMutation]);
 
-  const sendTestNotification = useCallback(async () => {
+  const _sendTestNotification = useCallback(async () => {
     try {
-      const result = await testPushMutation.mutateAsync();
-      if (result.sent > 0) {
+      const _result = await testPushMutation?.mutateAsync();
+      if (result?.sent > 0) {
         toast({
           title: "Test Sent",
           description: "Check your device for the push notification.",

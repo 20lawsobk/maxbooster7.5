@@ -4,7 +4,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 
 import en from "./locales/en.json";
 
-const SUPPORTED_LOCALES = ["es", "fr", "de", "ja"] as const;
+const _SUPPORTED_LOCALES = ["es", "fr", "de", "ja"] as const;
 type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
 i18n
@@ -25,25 +25,25 @@ i18n
     },
   });
 
-const loadedLocales = new Set<string>(["en"]);
+const _loadedLocales = new Set<string>(["en"]);
 
 export async function loadLocale(lang: string): Promise<void> {
-  const base = lang.split("-")[0].toLowerCase() as SupportedLocale;
-  if (loadedLocales.has(base) || !SUPPORTED_LOCALES.includes(base)) return;
-  loadedLocales.add(base);
+  const _base = lang?.split("-")[0].toLowerCase() as SupportedLocale;
+  if (loadedLocales?.has(base) || !SUPPORTED_LOCALES?.includes(base)) return;
+  loadedLocales?.add(base);
   try {
-    const mod = await import(`./locales/${base}.json`);
-    i18n.addResourceBundle(base, "translation", mod.default ?? mod, true, true);
+    const _mod = await import(`./locales/${base}.json`);
+    i18n?.addResourceBundle(base, "translation", mod?.default ?? mod, true, true);
   } catch {
-    loadedLocales.delete(base);
+    loadedLocales?.delete(base);
   }
 }
 
-i18n.on("languageChanged", (lang: string) => {
+i18n?.on("languageChanged", (lang: string) => {
   loadLocale(lang);
 });
 
-const detectedLang = i18n.language || navigator?.language || "en";
+const _detectedLang = i18n?.language || navigator?.language || "en";
 if (detectedLang !== "en") {
   loadLocale(detectedLang);
 }

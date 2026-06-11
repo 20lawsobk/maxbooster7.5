@@ -29,7 +29,7 @@ interface ConversationContext {
 }
 
 // Knowledge base categories
-const KNOWLEDGE_BASE = {
+const _KNOWLEDGE_BASE = {
   distribution: {
     keywords: [
       "distribute",
@@ -129,62 +129,62 @@ const KNOWLEDGE_BASE = {
   },
 };
 
-const HELPDESK_MAX_SESSIONS = 10_000;
-const HELPDESK_SESSION_TTL_MS = 30 * 60 * 1000;
+const _HELPDESK_MAX_SESSIONS = 10_000;
+const _HELPDESK_SESSION_TTL_MS = 30 * 60 * 1000;
 
 class AIHelpDeskService {
   private conversations: Map<string, ConversationContext> = new Map();
 
   constructor() {
-    setInterval(() => this._sweepExpired(), HELPDESK_SESSION_TTL_MS).unref();
+    setInterval(() => this?._sweepExpired(), HELPDESK_SESSION_TTL_MS).unref();
   }
 
   private _sweepExpired(): void {
-    const now = Date.now();
-    for (const [id, ctx] of this.conversations) {
-      if (now - ctx.lastAccessedAt > HELPDESK_SESSION_TTL_MS) {
-        this.conversations.delete(id);
+    const _now = Date?.now();
+    for (const [id, ctx] of this?.conversations) {
+      if (now - ctx?.lastAccessedAt > HELPDESK_SESSION_TTL_MS) {
+        this?.conversations.delete(id);
       }
     }
   }
 
   private _evictOldestIfFull(): void {
-    if (this.conversations.size < HELPDESK_MAX_SESSIONS) return;
+    if (this?.conversations.size < HELPDESK_MAX_SESSIONS) return;
     let oldestKey: string | null = null;
     let oldestTime = Infinity;
-    for (const [id, ctx] of this.conversations) {
-      if (ctx.lastAccessedAt < oldestTime) {
-        oldestTime = ctx.lastAccessedAt;
+    for (const [id, ctx] of this?.conversations) {
+      if (ctx?.lastAccessedAt < oldestTime) {
+        oldestTime = ctx?.lastAccessedAt;
         oldestKey = id;
       }
     }
-    if (oldestKey) this.conversations.delete(oldestKey);
+    if (oldestKey) this?.conversations.delete(oldestKey);
   }
 
   /**
    * Get or create a conversation context
    */
   getConversation(sessionId: string, userId?: number): ConversationContext {
-    const existing = this.conversations.get(sessionId);
+    const _existing = this?.conversations.get(sessionId);
     if (existing) {
-      existing.lastAccessedAt = Date.now();
+      existing.lastAccessedAt = Date?.now();
       return existing;
     }
-    this._evictOldestIfFull();
+    this?._evictOldestIfFull();
     const ctx: ConversationContext = {
       sessionId,
       userId,
       messages: [
         {
           role: "system",
-          content: `You are ${BUSINESS_CONFIG.helpDesk.aiAssistantName}, the AI help desk assistant for ${BUSINESS_CONFIG.company.platform}, owned by ${BUSINESS_CONFIG.company.name} (LLC #${BUSINESS_CONFIG.company.llcNumber}). Be helpful, friendly, and knowledgeable about all platform features.`,
+          content: `You are ${BUSINESS_CONFIG?.helpDesk.aiAssistantName}, the AI help desk assistant for ${BUSINESS_CONFIG?.company.platform}, owned by ${BUSINESS_CONFIG?.company.name} (LLC #${BUSINESS_CONFIG?.company.llcNumber}). Be helpful, friendly, and knowledgeable about all platform features.`,
           timestamp: new Date(),
         },
       ],
       resolved: false,
-      lastAccessedAt: Date.now(),
+      lastAccessedAt: Date?.now(),
     };
-    this.conversations.set(sessionId, ctx);
+    this?.conversations.set(sessionId, ctx);
     return ctx;
   }
 
@@ -196,21 +196,21 @@ class AIHelpDeskService {
     userMessage: string,
     userId?: number,
   ): Promise<HelpDeskResponse> {
-    const context = this.getConversation(sessionId, userId);
+    const _context = this?.getConversation(sessionId, userId);
 
     // Add user message to history
-    context.messages.push({
+    context?.messages.push({
       role: "user",
       content: userMessage,
       timestamp: new Date(),
     });
 
     // Detect category and intent
-    const category = this.detectCategory(userMessage);
-    const intent = this.detectIntent(userMessage);
+    const _category = this?.detectCategory(userMessage);
+    const _intent = this?.detectIntent(userMessage);
 
     // Generate response based on category and intent
-    const response = this.generateResponse(
+    const _response = this?.generateResponse(
       userMessage,
       category,
       intent,
@@ -218,9 +218,9 @@ class AIHelpDeskService {
     );
 
     // Add assistant response to history
-    context.messages.push({
+    context?.messages.push({
       role: "assistant",
-      content: response.message,
+      content: response?.message,
       timestamp: new Date(),
     });
 
@@ -231,10 +231,10 @@ class AIHelpDeskService {
    * Detect the category of the user's question
    */
   private detectCategory(message: string): string | undefined {
-    const lowerMessage = message.toLowerCase();
+    const _lowerMessage = message?.toLowerCase();
 
-    for (const [category, data] of Object.entries(KNOWLEDGE_BASE)) {
-      if (data.keywords.some((keyword) => lowerMessage.includes(keyword))) {
+    for (const [category, data] of Object?.entries(KNOWLEDGE_BASE)) {
+      if (data?.keywords.some((keyword) => lowerMessage?.includes(keyword))) {
         return category;
       }
     }
@@ -246,27 +246,27 @@ class AIHelpDeskService {
    * Detect the user's intent
    */
   private detectIntent(message: string): string {
-    const lowerMessage = message.toLowerCase();
+    const _lowerMessage = message?.toLowerCase();
 
     if (
-      lowerMessage.includes("how") ||
-      lowerMessage.includes("what") ||
-      lowerMessage.includes("where")
+      lowerMessage?.includes("how") ||
+      lowerMessage?.includes("what") ||
+      lowerMessage?.includes("where")
     ) {
       return "question";
     }
     if (
-      lowerMessage.includes("problem") ||
-      lowerMessage.includes("issue") ||
-      lowerMessage.includes("error") ||
-      lowerMessage.includes("not working")
+      lowerMessage?.includes("problem") ||
+      lowerMessage?.includes("issue") ||
+      lowerMessage?.includes("error") ||
+      lowerMessage?.includes("not working")
     ) {
       return "problem";
     }
-    if (lowerMessage.includes("help") || lowerMessage.includes("assist")) {
+    if (lowerMessage?.includes("help") || lowerMessage?.includes("assist")) {
       return "help";
     }
-    if (lowerMessage.includes("thank")) {
+    if (lowerMessage?.includes("thank")) {
       return "gratitude";
     }
 
@@ -287,47 +287,47 @@ class AIHelpDeskService {
     // Handle gratitude
     if (intent === "gratitude") {
       return {
-        message: `You're welcome! I'm always here to help. Is there anything else you'd like to know about ${company.platform}?`,
+        message: `You're welcome! I'm always here to help. Is there anything else you'd like to know about ${company?.platform}?`,
         category: "general",
       };
     }
 
     // Handle category-specific questions
     if (category && KNOWLEDGE_BASE[category as keyof typeof KNOWLEDGE_BASE]) {
-      const kb = KNOWLEDGE_BASE[category as keyof typeof KNOWLEDGE_BASE];
-      const responses = kb.responses;
-      const responseKeys = Object.keys(responses) as (keyof typeof responses)[];
+      const _kb = KNOWLEDGE_BASE[category as keyof typeof KNOWLEDGE_BASE];
+      const _responses = kb?.responses;
+      const _responseKeys = Object?.keys(responses) as (keyof typeof responses)[];
 
       // Find best matching response
       let bestResponse = responses[responseKeys[0]];
-      const lowerMessage = message.toLowerCase();
+      const _lowerMessage = message?.toLowerCase();
 
-      if (lowerMessage.includes("how") || lowerMessage.includes("start")) {
-        bestResponse = responses.howTo || responses[responseKeys[0]];
+      if (lowerMessage?.includes("how") || lowerMessage?.includes("start")) {
+        bestResponse = responses?.howTo || responses[responseKeys[0]];
       } else if (
-        lowerMessage.includes("time") ||
-        lowerMessage.includes("long")
+        lowerMessage?.includes("time") ||
+        lowerMessage?.includes("long")
       ) {
-        bestResponse = responses.timeline || responses[responseKeys[0]];
+        bestResponse = responses?.timeline || responses[responseKeys[0]];
       } else if (
-        lowerMessage.includes("need") ||
-        lowerMessage.includes("require")
+        lowerMessage?.includes("need") ||
+        lowerMessage?.includes("require")
       ) {
-        bestResponse = responses.requirements || responses[responseKeys[0]];
+        bestResponse = responses?.requirements || responses[responseKeys[0]];
       }
 
       return {
         message: bestResponse as string,
         category,
-        suggestedActions: this.getSuggestedActions(category),
-        relatedArticles: this.getRelatedArticles(category),
+        suggestedActions: this?.getSuggestedActions(category),
+        relatedArticles: this?.getRelatedArticles(category),
       };
     }
 
     // Handle problem reports
     if (intent === "problem") {
       return {
-        message: `I'm sorry to hear you're experiencing an issue. Could you please provide more details about what's happening? If this is a technical problem, I may need to escalate this to our support team at ${company.platform}.`,
+        message: `I'm sorry to hear you're experiencing an issue. Could you please provide more details about what's happening? If this is a technical problem, I may need to escalate this to our support team at ${company?.platform}.`,
         needsHumanSupport: true,
         suggestedActions: [
           "Describe the exact error message you see",
@@ -339,7 +339,7 @@ class AIHelpDeskService {
 
     // Default response
     return {
-      message: `${helpDesk.welcomeMessage} 
+      message: `${helpDesk?.welcomeMessage} 
 
 Here's what I can help you with:
 • Music distribution to Spotify, Apple Music, and 150+ platforms
@@ -426,7 +426,7 @@ What would you like to know more about?`,
    */
   getWelcomeMessage(): HelpDeskResponse {
     return {
-      message: BUSINESS_CONFIG.helpDesk.welcomeMessage,
+      message: BUSINESS_CONFIG?.helpDesk.welcomeMessage,
       suggestedActions: [
         "How do I distribute my music?",
         "Tell me about royalties",
@@ -440,7 +440,7 @@ What would you like to know more about?`,
    * End a conversation
    */
   endConversation(sessionId: string): void {
-    const context = this.conversations.get(sessionId);
+    const _context = this?.conversations.get(sessionId);
     if (context) {
       context.resolved = true;
     }
@@ -453,15 +453,15 @@ What would you like to know more about?`,
     sessionId: string,
     _reason: string,
   ): Promise<{ ticketId: string; message: string }> {
-    this.conversations.get(sessionId);
-    const ticketId = `TKT-${Date.now()}`;
+    this?.conversations.get(sessionId);
+    const _ticketId = `TKT-${Date?.now()}`;
 
     return {
       ticketId,
-      message: `I've created support ticket #${ticketId} for you. Our team at ${BUSINESS_CONFIG.company.name} will review your case and get back to you within 24 hours. Is there anything else I can help you with in the meantime?`,
+      message: `I've created support ticket #${ticketId} for you. Our team at ${BUSINESS_CONFIG?.company.name} will review your case and get back to you within 24 hours. Is there anything else I can help you with in the meantime?`,
     };
   }
 }
 
-export const aiHelpDeskService = new AIHelpDeskService();
+export const _aiHelpDeskService = new AIHelpDeskService();
 export default aiHelpDeskService;

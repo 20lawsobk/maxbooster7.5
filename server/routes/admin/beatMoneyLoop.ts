@@ -13,71 +13,71 @@ import { beatMoneyLoopCycles } from "@shared/schema";
 import { desc } from "drizzle-orm";
 import { logger } from "../../logger.js";
 
-const router = Router();
+const _router = Router();
 
-router.use(requireAdmin);
+router?.use(requireAdmin);
 
-router.get("/status", async (_req, res) => {
+router?.get("/status", async (_req, res) => {
   try {
-    const status = await beatMoneyLoopService.getStatus();
-    res.json(status);
+    const _status = await beatMoneyLoopService?.getStatus();
+    res?.json(status);
   } catch (err) {
-    logger.warn({ err }, "[BeatMoneyLoop] /status failed");
-    res.status(500).json({ error: "Failed to load status" });
+    logger?.warn({ err }, "[BeatMoneyLoop] /status failed");
+    res?.status(500).json({ error: "Failed to load status" });
   }
 });
 
-router.post("/enable", async (_req, res) => {
+router?.post("/enable", async (_req, res) => {
   try {
-    const status = await beatMoneyLoopService.enable();
-    res.json({ ok: true, status });
+    const _status = await beatMoneyLoopService?.enable();
+    res?.json({ ok: true, status });
   } catch (err) {
-    logger.warn({ err }, "[BeatMoneyLoop] /enable failed");
-    res.status(500).json({ error: (err as Error).message });
+    logger?.warn({ err }, "[BeatMoneyLoop] /enable failed");
+    res?.status(500).json({ error: (err as Error).message });
   }
 });
 
-router.post("/disable", async (_req, res) => {
+router?.post("/disable", async (_req, res) => {
   try {
-    const status = await beatMoneyLoopService.disable();
-    res.json({ ok: true, status });
+    const _status = await beatMoneyLoopService?.disable();
+    res?.json({ ok: true, status });
   } catch (err) {
-    logger.warn({ err }, "[BeatMoneyLoop] /disable failed");
-    res.status(500).json({ error: (err as Error).message });
+    logger?.warn({ err }, "[BeatMoneyLoop] /disable failed");
+    res?.status(500).json({ error: (err as Error).message });
   }
 });
 
-router.post("/run-now", async (_req, res) => {
+router?.post("/run-now", async (_req, res) => {
   // Fire-and-forget: a cycle can take 30–60 s; respond immediately with the cycle id.
   try {
     // We need the cycleId, so wait for the cycle row to be inserted (very fast)
     // but don't wait for the whole pipeline.
-    const promise = beatMoneyLoopService.runCycle("manual");
+    const _promise = beatMoneyLoopService?.runCycle("manual");
     // Race: return promise resolution OR a short header read
-    const result = await promise;
-    res.json({ ok: true, result });
+    const _result = await promise;
+    res?.json({ ok: true, result });
   } catch (err) {
-    const msg = (err as Error).message ?? String(err);
-    logger.warn({ err }, "[BeatMoneyLoop] /run-now failed");
-    res.status(500).json({ error: msg });
+    const _msg = (err as Error).message ?? String(err);
+    logger?.warn({ err }, "[BeatMoneyLoop] /run-now failed");
+    res?.status(500).json({ error: msg });
   }
 });
 
-router.get("/cycles", async (req, res) => {
+router?.get("/cycles", async (req, res) => {
   try {
-    const limit = Math.min(
+    const _limit = Math?.min(
       200,
-      Math.max(1, parseInt(String(req.query.limit ?? "50"), 10) || 50),
+      Math?.max(1, parseInt(String(req?.query.limit ?? "50"), 10) || 50),
     );
-    const cycles = await db
+    const _cycles = await db
       .select()
       .from(beatMoneyLoopCycles)
-      .orderBy(desc(beatMoneyLoopCycles.startedAt))
+      .orderBy(desc(beatMoneyLoopCycles?.startedAt))
       .limit(limit);
-    res.json({ cycles });
+    res?.json({ cycles });
   } catch (err) {
-    logger.warn({ err }, "[BeatMoneyLoop] /cycles failed");
-    res.status(500).json({ error: "Failed to load cycles" });
+    logger?.warn({ err }, "[BeatMoneyLoop] /cycles failed");
+    res?.status(500).json({ error: "Failed to load cycles" });
   }
 });
 

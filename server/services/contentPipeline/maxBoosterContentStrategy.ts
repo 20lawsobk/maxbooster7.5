@@ -313,20 +313,20 @@ export const MAX_BOOSTER_FEATURES: MaxBoosterFeature[] = [
 // ─── Registry lookup ──────────────────────────────────────────────────────────
 
 export function getFeatureById(id: string): MaxBoosterFeature | undefined {
-  return MAX_BOOSTER_FEATURES.find((f) => f.id === id);
+  return MAX_BOOSTER_FEATURES?.find((f) => f?.id === id);
 }
 
 export function getFeaturesByCategory(
   category: MaxBoosterCategory,
 ): MaxBoosterFeature[] {
-  return MAX_BOOSTER_FEATURES.filter((f) => f.category === category);
+  return MAX_BOOSTER_FEATURES?.filter((f) => f?.category === category);
 }
 
 export function getFeaturesForPlatform(
   platform: SupportedPlatform,
 ): MaxBoosterFeature[] {
-  return MAX_BOOSTER_FEATURES.filter((f) =>
-    f.relevantPlatforms.includes(platform),
+  return MAX_BOOSTER_FEATURES?.filter((f) =>
+    f?.relevantPlatforms.includes(platform),
   );
 }
 
@@ -348,11 +348,11 @@ export function generateMaxBoosterContent(
     professional: "professional artist",
   };
 
-  const angle =
-    feature.contentAngles[
-      Math.abs(
-        [...feature.id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 0),
-      ) % feature.contentAngles.length
+  const _angle =
+    feature?.contentAngles[
+      Math?.abs(
+        [...feature?.id].reduce((h, c) => (h * 31 + c?.charCodeAt(0)) | 0, 0),
+      ) % feature?.contentAngles.length
     ];
 
   const formatTemplates: Record<
@@ -360,68 +360,68 @@ export function generateMaxBoosterContent(
     () => MaxBoosterContentPiece
   > = {
     feature_highlight: () => ({
-      featureId: feature.id,
+      featureId: feature?.id,
       platform,
       format,
-      headline: feature.tagline,
-      hook: `${feature.painPoint} 🚫`,
-      caption: `${feature.tagline}\n\n${feature.valueProp}\n\n✅ ${feature.proofPoint}\n\n${feature.ctaText} →`,
-      cta: feature.ctaText,
-      hashtags: buildMaxBoosterHashtags(feature.category, platform),
-      visualDirection: `Feature UI screenshot or demo clip. Text overlay: "${feature.tagline}". Color: Max Booster brand palette.`,
+      headline: feature?.tagline,
+      hook: `${feature?.painPoint} 🚫`,
+      caption: `${feature?.tagline}\n\n${feature?.valueProp}\n\n✅ ${feature?.proofPoint}\n\n${feature?.ctaText} →`,
+      cta: feature?.ctaText,
+      hashtags: buildMaxBoosterHashtags(feature?.category, platform),
+      visualDirection: `Feature UI screenshot or demo clip. Text overlay: "${feature?.tagline}". Color: Max Booster brand palette.`,
     }),
 
     tutorial_teaser: () => ({
-      featureId: feature.id,
+      featureId: feature?.id,
       platform,
       format,
       headline: `How to: ${angle}`,
       hook: `Did you know Max Booster can do this? 👀`,
-      caption: `Tutorial: ${angle}\n\nThis is how ${segmentAdjective[targetArtistSegment]}s are using Max Booster's ${feature.displayName}.\n\n${feature.valueProp}\n\n👉 ${feature.ctaText}`,
+      caption: `Tutorial: ${angle}\n\nThis is how ${segmentAdjective[targetArtistSegment]}s are using Max Booster's ${feature?.displayName}.\n\n${feature?.valueProp}\n\n👉 ${feature?.ctaText}`,
       cta: "Watch Full Tutorial",
-      hashtags: buildMaxBoosterHashtags(feature.category, platform),
-      visualDirection: `Screen recording walkthrough of ${feature.displayName}. Add text overlays for each step.`,
+      hashtags: buildMaxBoosterHashtags(feature?.category, platform),
+      visualDirection: `Screen recording walkthrough of ${feature?.displayName}. Add text overlays for each step.`,
       videoScriptHook: `If you're a ${segmentAdjective[targetArtistSegment]}, you need to see this.`,
     }),
 
     social_proof: () => ({
-      featureId: feature.id,
+      featureId: feature?.id,
       platform,
       format,
-      headline: `Artists are using ${feature.displayName} to change their careers`,
+      headline: `Artists are using ${feature?.displayName} to change their careers`,
       hook: `Real ${segmentAdjective[targetArtistSegment]}s. Real results. 📊`,
-      caption: `${feature.displayName} — what it looks like in real life:\n\n✅ ${feature.proofPoint}\n\n${feature.valueProp}\n\nReady to see what it can do for you?\n${feature.ctaText} →`,
-      cta: feature.ctaText,
-      hashtags: buildMaxBoosterHashtags(feature.category, platform),
-      visualDirection: `Social proof graphic — stat overlay on artist imagery. Include real metric (${feature.proofPoint}).`,
+      caption: `${feature?.displayName} — what it looks like in real life:\n\n✅ ${feature?.proofPoint}\n\n${feature?.valueProp}\n\nReady to see what it can do for you?\n${feature?.ctaText} →`,
+      cta: feature?.ctaText,
+      hashtags: buildMaxBoosterHashtags(feature?.category, platform),
+      visualDirection: `Social proof graphic — stat overlay on artist imagery. Include real metric (${feature?.proofPoint}).`,
     }),
 
     comparison: () => ({
-      featureId: feature.id,
+      featureId: feature?.id,
       platform,
       format,
       headline: `Max Booster vs the alternatives`,
       hook: `Why pay for 10 tools when one does it all? 🤔`,
-      caption: `${feature.painPoint}\n\nOld way: expensive, fragmented, time-consuming.\nMax Booster way: ${feature.valueProp}\n\n${feature.proofPoint}\n\n${feature.ctaText} — No credit card required.`,
+      caption: `${feature?.painPoint}\n\nOld way: expensive, fragmented, time-consuming.\nMax Booster way: ${feature?.valueProp}\n\n${feature?.proofPoint}\n\n${feature?.ctaText} — No credit card required.`,
       cta: "Try Free",
-      hashtags: buildMaxBoosterHashtags(feature.category, platform),
+      hashtags: buildMaxBoosterHashtags(feature?.category, platform),
       visualDirection: `Split-screen comparison: "Before Max Booster" vs "After Max Booster". Use red/green visual language.`,
     }),
 
     launch_announcement: () => ({
-      featureId: feature.id,
+      featureId: feature?.id,
       platform,
       format,
-      headline: `🚀 Introducing: ${feature.displayName}`,
+      headline: `🚀 Introducing: ${feature?.displayName}`,
       hook: `Something big just dropped at Max Booster 🎉`,
-      caption: `🚀 JUST LAUNCHED: ${feature.displayName}\n\n${feature.tagline}\n\n${feature.valueProp}\n\nAvailable now for all Max Booster subscribers.\n\n👉 ${feature.ctaText}`,
-      cta: feature.ctaText,
+      caption: `🚀 JUST LAUNCHED: ${feature?.displayName}\n\n${feature?.tagline}\n\n${feature?.valueProp}\n\nAvailable now for all Max Booster subscribers.\n\n👉 ${feature?.ctaText}`,
+      cta: feature?.ctaText,
       hashtags: [
         "#MaxBooster",
         "#MusicTech",
         "#NewFeature",
         "#IndependentArtist",
-        ...buildMaxBoosterHashtags(feature.category, platform),
+        ...buildMaxBoosterHashtags(feature?.category, platform),
       ],
       visualDirection: `Launch announcement graphic — confetti/celebratory style. Feature name large. Max Booster brand colors.`,
     }),
@@ -434,7 +434,7 @@ function buildMaxBoosterHashtags(
   category: MaxBoosterCategory,
   _platform: SupportedPlatform,
 ): string[] {
-  const base = [
+  const _base = [
     "#MaxBooster",
     "#MusicBusiness",
     "#IndependentArtist",
@@ -517,10 +517,10 @@ export function generateAllMaxBoosterContent(
 
   for (const feature of MAX_BOOSTER_FEATURES) {
     for (const platform of platforms) {
-      if (!feature.relevantPlatforms.includes(platform)) continue;
-      const format =
-        formats[MAX_BOOSTER_FEATURES.indexOf(feature) % formats.length];
-      pieces.push({
+      if (!feature?.relevantPlatforms.includes(platform)) continue;
+      const _format =
+        formats[MAX_BOOSTER_FEATURES?.indexOf(feature) % formats?.length];
+      pieces?.push({
         ...generateMaxBoosterContent({
           feature,
           targetArtistSegment: targetSegment,

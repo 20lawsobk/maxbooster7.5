@@ -15,29 +15,29 @@ import { autoScalingManager } from "./autoScaling.js";
 import { circuitBreakerRegistry } from "./circuitBreaker.js";
 
 export async function initializeInfrastructure(): Promise<void> {
-  logger.info("════════════════════════════════════════════════════════");
-  logger.info("🏗️ INITIALIZING SCALABLE INFRASTRUCTURE");
-  logger.info("════════════════════════════════════════════════════════");
+  logger?.info("════════════════════════════════════════════════════════");
+  logger?.info("🏗️ INITIALIZING SCALABLE INFRASTRUCTURE");
+  logger?.info("════════════════════════════════════════════════════════");
 
   try {
-    await distributedCache.connect();
-    logger.info("   ✓ Distributed cache initialized");
+    await distributedCache?.connect();
+    logger?.info("   ✓ Distributed cache initialized");
   } catch (error) {
-    logger.warn({ err: error }, "   ⚠️ Distributed cache using fallback mode:");
+    logger?.warn({ err: error }, "   ⚠️ Distributed cache using fallback mode:");
   }
 
   try {
-    await clusterSessionManager.initialize();
-    logger.info(
-      `   ✓ Session manager initialized (${clusterSessionManager.getStatus().mode} mode)`,
+    await clusterSessionManager?.initialize();
+    logger?.info(
+      `   ✓ Session manager initialized (${clusterSessionManager?.getStatus().mode} mode)`,
     );
   } catch (error) {
-    logger.warn({ err: error }, "   ⚠️ Session manager using memory store:");
+    logger?.warn({ err: error }, "   ⚠️ Session manager using memory store:");
   }
 
-  logger.info("════════════════════════════════════════════════════════");
-  logger.info("✅ INFRASTRUCTURE READY FOR SCALE");
-  logger.info("════════════════════════════════════════════════════════");
+  logger?.info("════════════════════════════════════════════════════════");
+  logger?.info("✅ INFRASTRUCTURE READY FOR SCALE");
+  logger?.info("════════════════════════════════════════════════════════");
 }
 
 export function getInfrastructureStatus(): {
@@ -47,9 +47,9 @@ export function getInfrastructureStatus(): {
   scaling: Record<string, unknown>;
 } {
   return {
-    cache: distributedCache.getStats(),
-    sessions: clusterSessionManager.getStatus(),
-    circuitBreakers: circuitBreakerRegistry.getAllStats(),
-    scaling: autoScalingManager.getMetrics(),
+    cache: distributedCache?.getStats(),
+    sessions: clusterSessionManager?.getStatus(),
+    circuitBreakers: circuitBreakerRegistry?.getAllStats(),
+    scaling: autoScalingManager?.getMetrics(),
   };
 }

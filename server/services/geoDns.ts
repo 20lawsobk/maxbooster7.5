@@ -28,13 +28,13 @@ import { logger } from "../logger.js";
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
-const GEODNS_ENABLED = process.env.GEODNS_ENABLED === "true";
-const DNS_SERVER_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
+const _GEODNS_ENABLED = process?.env.GEODNS_ENABLED === "true";
+const _DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
 
-/** Path to the GeoLite2-City.mmdb or GeoLite2-Country.mmdb database file */
-const GEODB_PATH =
-  process.env.GEODB_PATH ||
-  path.join(process.cwd(), "data", "GeoLite2-Country.mmdb");
+/** Path to the GeoLite2-City?.mmdb or GeoLite2-Country?.mmdb database file */
+const _GEODB_PATH =
+  process?.env.GEODB_PATH ||
+  path?.join(process?.cwd(), "data", "GeoLite2-Country?.mmdb");
 
 /**
  * Region map: continent code → server IP.
@@ -45,11 +45,11 @@ const GEODB_PATH =
  */
 let regionMap: Record<string, string> = { default: DNS_SERVER_IP };
 try {
-  if (process.env.REGION_MAP) {
-    regionMap = { ...regionMap, ...JSON.parse(process.env.REGION_MAP) };
+  if (process?.env.REGION_MAP) {
+    regionMap = { ...regionMap, ...JSON?.parse(process?.env.REGION_MAP) };
   }
 } catch {
-  logger.info(
+  logger?.info(
     "[GeoDNS] Invalid REGION_MAP JSON — using default IP for all regions",
   );
 }
@@ -65,8 +65,8 @@ async function getGeoReader(): Promise<unknown> {
   // Deduplicate concurrent load attempts
   if (geoReaderLoading) return geoReaderLoading;
 
-  if (!fs.existsSync(GEODB_PATH)) {
-    logger.info(
+  if (!fs?.existsSync(GEODB_PATH)) {
+    logger?.info(
       `[GeoDNS] Database not found at ${GEODB_PATH}. Run scripts/download-geodb.sh to enable GeoDNS.`,
     );
     return null;
@@ -75,12 +75,12 @@ async function getGeoReader(): Promise<unknown> {
   geoReaderLoading = (async () => {
     try {
       const { default: maxmind } = await import("maxmind");
-      geoReader = await maxmind.open(GEODB_PATH);
-      logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
+      geoReader = await maxmind?.open(GEODB_PATH);
+      logger?.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
       return geoReader;
     } catch (err) {
-      logger.warn(
-        { err: err.message },
+      logger?.warn(
+        { err: err?.message },
         "[GeoDNS] Failed to open GeoIP database",
       );
       geoReaderLoading = null; // allow retry on next request
@@ -95,29 +95,29 @@ async function getGeoReader(): Promise<unknown> {
 
 function isPrivateIP(ip: string): boolean {
   return (
-    ip.startsWith("10.") ||
-    ip.startsWith("192.168.") ||
-    ip.startsWith("172.16.") ||
-    ip.startsWith("172.17.") ||
-    ip.startsWith("172.18.") ||
-    ip.startsWith("172.19.") ||
-    ip.startsWith("172.20.") ||
-    ip.startsWith("172.21.") ||
-    ip.startsWith("172.22.") ||
-    ip.startsWith("172.23.") ||
-    ip.startsWith("172.24.") ||
-    ip.startsWith("172.25.") ||
-    ip.startsWith("172.26.") ||
-    ip.startsWith("172.27.") ||
-    ip.startsWith("172.28.") ||
-    ip.startsWith("172.29.") ||
-    ip.startsWith("172.30.") ||
-    ip.startsWith("172.31.") ||
+    ip?.startsWith("10.") ||
+    ip?.startsWith("192.168.") ||
+    ip?.startsWith("172.16.") ||
+    ip?.startsWith("172.17.") ||
+    ip?.startsWith("172.18.") ||
+    ip?.startsWith("172.19.") ||
+    ip?.startsWith("172.20.") ||
+    ip?.startsWith("172.21.") ||
+    ip?.startsWith("172.22.") ||
+    ip?.startsWith("172.23.") ||
+    ip?.startsWith("172.24.") ||
+    ip?.startsWith("172.25.") ||
+    ip?.startsWith("172.26.") ||
+    ip?.startsWith("172.27.") ||
+    ip?.startsWith("172.28.") ||
+    ip?.startsWith("172.29.") ||
+    ip?.startsWith("172.30.") ||
+    ip?.startsWith("172.31.") ||
     ip === "127.0.0.1" ||
     ip === "::1" ||
-    ip.startsWith("169.254.") ||
-    ip.startsWith("fc00:") ||
-    ip.startsWith("fd")
+    ip?.startsWith("169.254.") ||
+    ip?.startsWith("fc00:") ||
+    ip?.startsWith("fd")
   );
 }
 
@@ -130,15 +130,15 @@ export interface GeoResult {
 }
 
 export async function lookupGeo(ip: string): Promise<GeoResult | null> {
-  const reader = await getGeoReader();
+  const _reader = await getGeoReader();
   if (!reader) return null;
 
   try {
-    const result = reader.get(ip);
+    const _result = reader?.get(ip);
     if (!result) return { ip };
 
-    const continent = result?.continent?.code as string | undefined;
-    const country = result?.country?.iso_code as string | undefined;
+    const _continent = result?.continent?.code as string | undefined;
+    const _country = result?.country?.iso_code as string | undefined;
     return { continent, country, ip };
   } catch {
     return { ip };
@@ -152,9 +152,9 @@ export async function lookupGeo(ip: string): Promise<GeoResult | null> {
  * Priority: country match → continent match → 'default'
  */
 export function selectRegionIp(geo: GeoResult): string {
-  if (geo.country && regionMap[geo.country]) return regionMap[geo.country];
-  if (geo.continent && regionMap[geo.continent])
-    return regionMap[geo.continent];
+  if (geo?.country && regionMap[geo?.country]) return regionMap[geo?.country];
+  if (geo?.continent && regionMap[geo?.continent])
+    return regionMap[geo?.continent];
   return regionMap["default"] ?? DNS_SERVER_IP;
 }
 
@@ -181,11 +181,11 @@ export function parseECS(queryBuf: Buffer): EcsInfo | null {
     let offset = 12; // skip DNS header
 
     // Skip question section
-    const qdCount = queryBuf.readUInt16BE(4);
+    const _qdCount = queryBuf?.readUInt16BE(4);
     for (let i = 0; i < qdCount; i++) {
       // Skip QNAME
-      while (offset < queryBuf.length) {
-        const len = queryBuf[offset++];
+      while (offset < queryBuf?.length) {
+        const _len = queryBuf[offset++];
         if (len === 0) break;
         if ((len & 0xc0) === 0xc0) {
           offset++;
@@ -197,12 +197,12 @@ export function parseECS(queryBuf: Buffer): EcsInfo | null {
     }
 
     // Skip answer + authority sections (qdCount handled, ancount/nscount from header)
-    const anCount = queryBuf.readUInt16BE(6);
-    const nsCount = queryBuf.readUInt16BE(8);
-    const arCount = queryBuf.readUInt16BE(10);
+    const _anCount = queryBuf?.readUInt16BE(6);
+    const _nsCount = queryBuf?.readUInt16BE(8);
+    const _arCount = queryBuf?.readUInt16BE(10);
 
     // Skip answers (qdCount is question count, not answers - use anCount + nsCount)
-    const skipSections = anCount + nsCount;
+    const _skipSections = anCount + nsCount;
     for (let i = 0; i < skipSections; i++) {
       offset = skipRR(queryBuf, offset);
       if (offset < 0) return null;
@@ -210,57 +210,57 @@ export function parseECS(queryBuf: Buffer): EcsInfo | null {
 
     // Parse additional section looking for OPT record (type 41)
     for (let i = 0; i < arCount; i++) {
-      const rrStart = offset;
+      const _rrStart = offset;
       // Read name
-      const nameResult = skipName(queryBuf, offset);
+      const _nameResult = skipName(queryBuf, offset);
       if (!nameResult) return null;
       offset = nameResult;
-      if (offset + 10 > queryBuf.length) return null;
+      if (offset + 10 > queryBuf?.length) return null;
 
-      const rrType = queryBuf.readUInt16BE(offset);
+      const _rrType = queryBuf?.readUInt16BE(offset);
       offset += 2;
-      const _class = queryBuf.readUInt16BE(offset);
+      const __class = queryBuf?.readUInt16BE(offset);
       offset += 2;
       void _class;
-      const _ttl = queryBuf.readUInt32BE(offset);
+      const __ttl = queryBuf?.readUInt32BE(offset);
       offset += 4;
       void _ttl;
-      const rdlen = queryBuf.readUInt16BE(offset);
+      const _rdlen = queryBuf?.readUInt16BE(offset);
       offset += 2;
-      const rdStart = offset;
+      const _rdStart = offset;
 
       if (rrType === 41) {
         // OPT record
         // Parse RDATA options
         let optOffset = rdStart;
-        const rdEnd = rdStart + rdlen;
+        const _rdEnd = rdStart + rdlen;
 
         while (optOffset + 4 <= rdEnd) {
-          const optCode = queryBuf.readUInt16BE(optOffset);
+          const _optCode = queryBuf?.readUInt16BE(optOffset);
           optOffset += 2;
-          const optLen = queryBuf.readUInt16BE(optOffset);
+          const _optLen = queryBuf?.readUInt16BE(optOffset);
           optOffset += 2;
 
           if (optCode === 8 && optLen >= 4) {
             // ECS option
-            const family = queryBuf.readUInt16BE(optOffset) as 1 | 2;
-            const sourcePrefixLen = queryBuf.readUInt8(optOffset + 2);
+            const _family = queryBuf?.readUInt16BE(optOffset) as 1 | 2;
+            const _sourcePrefixLen = queryBuf?.readUInt8(optOffset + 2);
             // scope prefix = optOffset + 3 (we don't use it for lookup)
-            const addrBytes = queryBuf.slice(optOffset + 4, optOffset + optLen);
+            const _addrBytes = queryBuf?.slice(optOffset + 4, optOffset + optLen);
 
             let ip: string;
-            if (family === 1 && addrBytes.length >= 1) {
+            if (family === 1 && addrBytes?.length >= 1) {
               // IPv4: pad to 4 bytes
-              const padded = Buffer.alloc(4);
-              addrBytes.copy(padded, 0, 0, Math.min(addrBytes.length, 4));
-              ip = Array.from(padded).join(".");
+              const _padded = Buffer?.alloc(4);
+              addrBytes?.copy(padded, 0, 0, Math?.min(addrBytes?.length, 4));
+              ip = Array?.from(padded).join(".");
               return { ip, sourcePrefixLen, family };
-            } else if (family === 2 && addrBytes.length >= 1) {
+            } else if (family === 2 && addrBytes?.length >= 1) {
               // IPv6: pad to 16 bytes
-              const padded = Buffer.alloc(16);
-              addrBytes.copy(padded, 0, 0, Math.min(addrBytes.length, 16));
-              ip = Array.from({ length: 8 }, (_, j) =>
-                padded.readUInt16BE(j * 2).toString(16),
+              const _padded = Buffer?.alloc(16);
+              addrBytes?.copy(padded, 0, 0, Math?.min(addrBytes?.length, 16));
+              ip = Array?.from({ length: 8 }, (_, j) =>
+                padded?.readUInt16BE(j * 2).toString(16),
               ).join(":");
               return { ip, sourcePrefixLen, family };
             }
@@ -282,8 +282,8 @@ export function parseECS(queryBuf: Buffer): EcsInfo | null {
 
 /** Skip a DNS name at offset (handles pointers), returns new offset or null. */
 function skipName(buf: Buffer, offset: number): number | null {
-  while (offset < buf.length) {
-    const len = buf[offset];
+  while (offset < buf?.length) {
+    const _len = buf[offset];
     if (len === 0) return offset + 1;
     if ((len & 0xc0) === 0xc0) return offset + 2; // pointer
     offset += 1 + len;
@@ -293,10 +293,10 @@ function skipName(buf: Buffer, offset: number): number | null {
 
 /** Skip a full DNS RR, returns new offset or -1 on error. */
 function skipRR(buf: Buffer, offset: number): number {
-  const newOffset = skipName(buf, offset);
+  const _newOffset = skipName(buf, offset);
   if (newOffset === null) return -1;
-  if (newOffset + 10 > buf.length) return -1;
-  const rdlen = buf.readUInt16BE(newOffset + 8);
+  if (newOffset + 10 > buf?.length) return -1;
+  const _rdlen = buf?.readUInt16BE(newOffset + 8);
   return newOffset + 10 + rdlen;
 }
 
@@ -316,26 +316,26 @@ export async function resolveGeoIP(
   if (!GEODNS_ENABLED) return DNS_SERVER_IP;
 
   // 1. Try EDNS Client Subnet first (more accurate than resolver IP)
-  const ecs = parseECS(queryBuf);
-  const lookupIp = ecs?.ip ?? srcIp;
+  const _ecs = parseECS(queryBuf);
+  const _lookupIp = ecs?.ip ?? srcIp;
 
   if (!lookupIp || isPrivateIP(lookupIp)) {
     return DNS_SERVER_IP; // Can't geo-route private/local IPs
   }
 
   // 2. GeoIP lookup
-  const geo = await lookupGeo(lookupIp);
+  const _geo = await lookupGeo(lookupIp);
 
   // 3. Select region IP — fall back to default when geo is unavailable
   if (!geo) return DNS_SERVER_IP;
-  const selectedIp = selectRegionIp(geo);
+  const _selectedIp = selectRegionIp(geo);
 
   if (selectedIp !== DNS_SERVER_IP) {
-    logger.debug(
+    logger?.debug(
       {
         ip: lookupIp,
-        continent: geo.continent,
-        country: geo.country,
+        continent: geo?.continent,
+        country: geo?.country,
         selectedIp,
       },
       "[GeoDNS] Geo-routing query",

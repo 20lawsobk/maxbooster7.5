@@ -117,8 +117,8 @@ export interface UseFlowStateAdapterReturn {
 export function useFlowStateAdapter(
   projectId: string | null,
 ): UseFlowStateAdapterReturn {
-  const audioEngineRef = useRef<AudioEngine | null>(null);
-  const meterAnimationRef = useRef<number>();
+  const _audioEngineRef = useRef<AudioEngine | null>(null);
+  const _meterAnimationRef = useRef<number>();
 
   const [meterLevels, setMeterLevels] = useState<Map<string, [number, number]>>(
     new Map(),
@@ -161,9 +161,9 @@ export function useFlowStateAdapter(
     setTrackArmed: setStoreTrackArmed,
   } = useStudioStore();
 
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
-  const createTrackMutation = useMutation({
+  const _createTrackMutation = useMutation({
     mutationFn: async ({
       name,
       trackType,
@@ -182,84 +182,84 @@ export function useFlowStateAdapter(
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
-      logger.info("[FlowStateAdapter] Track created successfully");
+      logger?.info("[FlowStateAdapter] Track created successfully");
     },
     onError: (error) => {
-      logger.error("[FlowStateAdapter] Failed to create track:", error);
+      logger?.error("[FlowStateAdapter] Failed to create track:", error);
     },
   });
 
-  const deleteTrackMutation = useMutation({
+  const _deleteTrackMutation = useMutation({
     mutationFn: async (trackId: string) => {
       return await apiRequest("DELETE", `/api/studio/tracks/${trackId}`, {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
-      logger.info("[FlowStateAdapter] Track deleted successfully");
+      logger?.info("[FlowStateAdapter] Track deleted successfully");
     },
     onError: (error) => {
-      logger.error("[FlowStateAdapter] Failed to delete track:", error);
+      logger?.error("[FlowStateAdapter] Failed to delete track:", error);
     },
   });
 
-  const duplicateTrackMutation = useMutation({
+  const _duplicateTrackMutation = useMutation({
     mutationFn: async (trackId: string) => {
-      const trackToDuplicate = storeTracks.find((t) => t.id === trackId);
+      const _trackToDuplicate = storeTracks?.find((t) => t?.id === trackId);
       if (!trackToDuplicate || !projectId)
         throw new Error("Track or project not found");
       return await apiRequest("POST", "/api/studio/tracks", {
         projectId,
-        name: `${trackToDuplicate.name} (Copy)`,
-        trackType: trackToDuplicate.trackType,
-        color: trackToDuplicate.color,
-        volume: trackToDuplicate.volume,
-        pan: trackToDuplicate.pan,
+        name: `${trackToDuplicate?.name} (Copy)`,
+        trackType: trackToDuplicate?.trackType,
+        color: trackToDuplicate?.color,
+        volume: trackToDuplicate?.volume,
+        pan: trackToDuplicate?.pan,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({
+      queryClient?.invalidateQueries({
         queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
-      logger.info("[FlowStateAdapter] Track duplicated successfully");
+      logger?.info("[FlowStateAdapter] Track duplicated successfully");
     },
     onError: (error) => {
-      logger.error("[FlowStateAdapter] Failed to duplicate track:", error);
+      logger?.error("[FlowStateAdapter] Failed to duplicate track:", error);
     },
   });
 
   useEffect(() => {
-    if (AudioEngine.isSupported()) {
-      audioEngineRef.current = AudioEngine.getInstance();
+    if (AudioEngine?.isSupported()) {
+      audioEngineRef.current = AudioEngine?.getInstance();
     }
   }, []);
 
   useEffect(() => {
     if (!isPlaying) {
-      if (meterAnimationRef.current) {
-        cancelAnimationFrame(meterAnimationRef.current);
+      if (meterAnimationRef?.current) {
+        cancelAnimationFrame(meterAnimationRef?.current);
       }
       return;
     }
 
-    const updateMeters = () => {
-      if (audioEngineRef.current) {
-        const levels = new Map<string, [number, number]>();
-        storeTracks.forEach((track) => {
-          const trackLevels = audioEngineRef.current!.getTrackMeterLevels(
-            track.id,
+    const _updateMeters = () => {
+      if (audioEngineRef?.current) {
+        const _levels = new Map<string, [number, number]>();
+        storeTracks?.forEach((track) => {
+          const _trackLevels = audioEngineRef?.current!.getTrackMeterLevels(
+            track?.id,
           );
           if (trackLevels) {
-            levels.set(track.id, trackLevels);
+            levels?.set(track?.id, trackLevels);
           }
         });
         setMeterLevels(levels);
 
-        const master = audioEngineRef.current.getMasterMeterLevels();
+        const _master = audioEngineRef?.current.getMasterMeterLevels();
         if (master) {
           setMasterMeterLevels(master);
         }
@@ -270,102 +270,102 @@ export function useFlowStateAdapter(
     meterAnimationRef.current = requestAnimationFrame(updateMeters);
 
     return () => {
-      if (meterAnimationRef.current) {
-        cancelAnimationFrame(meterAnimationRef.current);
+      if (meterAnimationRef?.current) {
+        cancelAnimationFrame(meterAnimationRef?.current);
       }
     };
   }, [isPlaying, storeTracks]);
 
   useEffect(() => {
     generateAISuggestions();
-  }, [context.mode, context.selectedTrackIds, isPlaying, currentTime]);
+  }, [context?.mode, context?.selectedTrackIds, isPlaying, currentTime]);
 
-  const generateAISuggestions = useCallback(() => {
+  const _generateAISuggestions = useCallback(() => {
     const newSuggestions: AICoProducerSuggestion[] = [];
 
-    if (context.mode === "mix") {
-      newSuggestions.push({
+    if (context?.mode === "mix") {
+      newSuggestions?.push({
         id: "auto-level",
         type: "mix",
         title: "Balance Levels",
         description:
           "AI detected uneven levels across tracks. Auto-balance for better mix coherence.",
         confidence: 0.87,
-        action: () => logger.info("Auto-balancing levels..."),
+        action: () => logger?.info("Auto-balancing levels..."),
       });
 
-      newSuggestions.push({
+      newSuggestions?.push({
         id: "add-glue",
         type: "effect",
         title: "Add Bus Glue",
         description:
           "Consider adding subtle compression to the mix bus for cohesion.",
         confidence: 0.72,
-        action: () => logger.info("Adding bus compression..."),
+        action: () => logger?.info("Adding bus compression..."),
       });
     }
 
-    if (context.mode === "record" || context.mode === "create") {
-      newSuggestions.push({
+    if (context?.mode === "record" || context?.mode === "create") {
+      newSuggestions?.push({
         id: "suggest-chord",
         type: "harmonic",
         title: "Next Chord: Am7",
         description:
           "Based on your progression, Am7 would create smooth voice leading.",
         confidence: 0.91,
-        action: () => logger.info("Inserting Am7 chord..."),
+        action: () => logger?.info("Inserting Am7 chord..."),
       });
 
-      newSuggestions.push({
+      newSuggestions?.push({
         id: "suggest-fill",
         type: "rhythmic",
         title: "Add Drum Fill",
         description: "Bar 8 would benefit from a transitional drum fill.",
         confidence: 0.78,
-        action: () => logger.info("Generating drum fill..."),
+        action: () => logger?.info("Generating drum fill..."),
       });
     }
 
-    if (context.mode === "master") {
-      newSuggestions.push({
+    if (context?.mode === "master") {
+      newSuggestions?.push({
         id: "loudness-target",
         type: "mix",
         title: "Optimize for Spotify",
         description:
           "Adjust limiting to hit -14 LUFS for optimal streaming loudness.",
         confidence: 0.95,
-        action: () => logger.info("Optimizing loudness..."),
+        action: () => logger?.info("Optimizing loudness..."),
       });
     }
 
     setSuggestions(newSuggestions);
-  }, [context.mode, context.selectedTrackIds]);
+  }, [context?.mode, context?.selectedTrackIds]);
 
-  const tracks = useMemo<FlowStateTrack[]>(() => {
-    if (!storeTracks || !Array.isArray(storeTracks)) {
+  const _tracks = useMemo<FlowStateTrack[]>(() => {
+    if (!storeTracks || !Array?.isArray(storeTracks)) {
       return [];
     }
-    return storeTracks.map((track, index) => ({
-      id: track.id,
-      name: track.name,
-      type: track.trackType as FlowStateTrack["type"],
-      color: track.color || `hsl(${(index * 40) % 360}, 70%, 50%)`,
-      volume: track.volume ?? 0.8,
-      pan: track.pan ?? 0,
-      mute: track.mute ?? false,
-      solo: track.solo ?? false,
-      armed: track.armed ?? false,
-      meterLevel: meterLevels.get(track.id) || [0, 0],
+    return storeTracks?.map((track, index) => ({
+      id: track?.id,
+      name: track?.name,
+      type: track?.trackType as FlowStateTrack["type"],
+      color: track?.color || `hsl(${(index * 40) % 360}, 70%, 50%)`,
+      volume: track?.volume ?? 0.8,
+      pan: track?.pan ?? 0,
+      mute: track?.mute ?? false,
+      solo: track?.solo ?? false,
+      armed: track?.armed ?? false,
+      meterLevel: meterLevels?.get(track?.id) || [0, 0],
       clips: [],
       spatialPosition: {
-        x: (track.pan ?? 0) * 5,
+        x: (track?.pan ?? 0) * 5,
         y: 0,
         z: index * 2 - (storeTracks?.length || 0),
       },
     }));
   }, [storeTracks, meterLevels]);
 
-  const transport = useMemo<FlowStateTransport>(
+  const _transport = useMemo<FlowStateTransport>(
     () => ({
       isPlaying,
       isRecording,
@@ -390,139 +390,139 @@ export function useFlowStateAdapter(
     ],
   );
 
-  const play = useCallback(() => {
-    if (audioEngineRef.current) {
-      audioEngineRef.current.play();
+  const _play = useCallback(() => {
+    if (audioEngineRef?.current) {
+      audioEngineRef?.current.play();
       setIsPlaying(true);
     }
   }, [setIsPlaying]);
 
-  const pause = useCallback(() => {
-    if (audioEngineRef.current) {
-      audioEngineRef.current.pause();
+  const _pause = useCallback(() => {
+    if (audioEngineRef?.current) {
+      audioEngineRef?.current.pause();
       setIsPlaying(false);
     }
   }, [setIsPlaying]);
 
-  const stop = useCallback(() => {
-    if (audioEngineRef.current) {
-      audioEngineRef.current.stop();
+  const _stop = useCallback(() => {
+    if (audioEngineRef?.current) {
+      audioEngineRef?.current.stop();
       setIsPlaying(false);
       setCurrentTime(0);
     }
   }, [setIsPlaying, setCurrentTime]);
 
-  const record = useCallback(() => {
+  const _record = useCallback(() => {
     setIsRecording(!isRecording);
     if (!isRecording && !isPlaying) {
       play();
     }
   }, [isRecording, isPlaying, setIsRecording, play]);
 
-  const toggleLoop = useCallback(() => {
+  const _toggleLoop = useCallback(() => {
     setLoopEnabled(!loopEnabled);
   }, [loopEnabled, setLoopEnabled]);
 
-  const toggleMetronome = useCallback(() => {
+  const _toggleMetronome = useCallback(() => {
     setMetronomeEnabled(!metronomeEnabled);
   }, [metronomeEnabled, setMetronomeEnabled]);
 
-  const seek = useCallback(
+  const _seek = useCallback(
     (time: number) => {
-      if (audioEngineRef.current) {
-        audioEngineRef.current.seek(time);
+      if (audioEngineRef?.current) {
+        audioEngineRef?.current.seek(time);
       }
       setCurrentTime(time);
     },
     [setCurrentTime],
   );
 
-  const setTempo = useCallback(
+  const _setTempo = useCallback(
     (bpm: number) => {
       setStoreTempo(bpm);
     },
     [setStoreTempo],
   );
 
-  const setTrackVolume = useCallback(
+  const _setTrackVolume = useCallback(
     (trackId: string, volume: number) => {
       setStoreTrackVolume(trackId, volume);
-      if (audioEngineRef.current) {
-        audioEngineRef.current.setTrackGain(trackId, volume);
+      if (audioEngineRef?.current) {
+        audioEngineRef?.current.setTrackGain(trackId, volume);
       }
     },
     [setStoreTrackVolume],
   );
 
-  const setTrackPan = useCallback(
+  const _setTrackPan = useCallback(
     (trackId: string, pan: number) => {
       setStoreTrackPan(trackId, pan);
-      if (audioEngineRef.current) {
-        audioEngineRef.current.setTrackPan(trackId, pan);
+      if (audioEngineRef?.current) {
+        audioEngineRef?.current.setTrackPan(trackId, pan);
       }
     },
     [setStoreTrackPan],
   );
 
-  const toggleTrackMute = useCallback(
+  const _toggleTrackMute = useCallback(
     (trackId: string) => {
-      const track = storeTracks.find((t) => t.id === trackId);
+      const _track = storeTracks?.find((t) => t?.id === trackId);
       if (track) {
-        const newMute = !track.isMuted;
+        const _newMute = !track?.isMuted;
         setStoreTrackMute(trackId, newMute);
-        if (audioEngineRef.current) {
-          audioEngineRef.current.setTrackMute(trackId, newMute);
+        if (audioEngineRef?.current) {
+          audioEngineRef?.current.setTrackMute(trackId, newMute);
         }
       }
     },
     [storeTracks, setStoreTrackMute],
   );
 
-  const toggleTrackSolo = useCallback(
+  const _toggleTrackSolo = useCallback(
     (trackId: string) => {
-      const track = storeTracks.find((t) => t.id === trackId);
+      const _track = storeTracks?.find((t) => t?.id === trackId);
       if (track) {
-        const newSolo = !track.isSolo;
+        const _newSolo = !track?.isSolo;
         setStoreTrackSolo(trackId, newSolo);
-        if (audioEngineRef.current) {
-          audioEngineRef.current.setTrackSolo(trackId, newSolo);
+        if (audioEngineRef?.current) {
+          audioEngineRef?.current.setTrackSolo(trackId, newSolo);
         }
       }
     },
     [storeTracks, setStoreTrackSolo],
   );
 
-  const toggleTrackArm = useCallback(
+  const _toggleTrackArm = useCallback(
     (trackId: string) => {
-      const track = storeTracks.find((t) => t.id === trackId);
+      const _track = storeTracks?.find((t) => t?.id === trackId);
       if (track) {
-        setStoreTrackArmed(trackId, !track.isArmed);
+        setStoreTrackArmed(trackId, !track?.isArmed);
       }
     },
     [storeTracks, setStoreTrackArmed],
   );
 
-  const selectTrack = useCallback((trackId: string, addToSelection = false) => {
+  const _selectTrack = useCallback((trackId: string, addToSelection = false) => {
     setContext((prev) => ({
       ...prev,
       selectionType: "track",
       selectedTrackIds: addToSelection
-        ? [...prev.selectedTrackIds, trackId]
+        ? [...prev?.selectedTrackIds, trackId]
         : [trackId],
     }));
   }, []);
 
-  const selectClip = useCallback((clipId: string, addToSelection = false) => {
+  const _selectClip = useCallback((clipId: string, addToSelection = false) => {
     setContext((prev) => ({
       ...prev,
       selectionType: "clip",
       selectedClipIds: addToSelection
-        ? [...prev.selectedClipIds, clipId]
+        ? [...prev?.selectedClipIds, clipId]
         : [clipId],
     }));
   }, []);
 
-  const clearSelection = useCallback(() => {
+  const _clearSelection = useCallback(() => {
     setContext((prev) => ({
       ...prev,
       selectionType: "none",
@@ -532,23 +532,23 @@ export function useFlowStateAdapter(
     }));
   }, []);
 
-  const setMode = useCallback((mode: FlowStateMode) => {
+  const _setMode = useCallback((mode: FlowStateMode) => {
     setContext((prev) => ({ ...prev, mode }));
   }, []);
 
-  const setZoom = useCallback((level: number) => {
+  const _setZoom = useCallback((level: number) => {
     setContext((prev) => ({
       ...prev,
-      zoomLevel: Math.max(0.1, Math.min(10, level)),
+      zoomLevel: Math?.max(0.1, Math?.min(10, level)),
     }));
   }, []);
 
-  const setScroll = useCallback((position: number) => {
-    setContext((prev) => ({ ...prev, scrollPosition: Math.max(0, position) }));
+  const _setScroll = useCallback((position: number) => {
+    setContext((prev) => ({ ...prev, scrollPosition: Math?.max(0, position) }));
   }, []);
 
-  const getMeterLevels = useCallback(() => meterLevels, [meterLevels]);
-  const getMasterMeterLevels = useCallback(
+  const _getMeterLevels = useCallback(() => meterLevels, [meterLevels]);
+  const _getMasterMeterLevels = useCallback(
     () => masterMeterLevels,
     [masterMeterLevels],
   );
@@ -575,37 +575,37 @@ export function useFlowStateAdapter(
     midi: "#a855f7",
   };
 
-  const addTrack = useCallback(
+  const _addTrack = useCallback(
     (type: string, name: string) => {
       if (!projectId) {
-        logger.warn(
+        logger?.warn(
           "[FlowStateAdapter] Cannot add track - no project selected",
         );
         return;
       }
-      const backendType = trackTypeMap[type] || "audio";
-      const color = trackColorMap[type] || "#3b82f6";
-      createTrackMutation.mutate({ name, trackType: backendType, color });
+      const _backendType = trackTypeMap[type] || "audio";
+      const _color = trackColorMap[type] || "#3b82f6";
+      createTrackMutation?.mutate({ name, trackType: backendType, color });
     },
     [projectId, createTrackMutation],
   );
 
-  const duplicateTrack = useCallback(
+  const _duplicateTrack = useCallback(
     (trackId: string) => {
       if (!projectId) {
-        logger.warn(
+        logger?.warn(
           "[FlowStateAdapter] Cannot duplicate track - no project selected",
         );
         return;
       }
-      duplicateTrackMutation.mutate(trackId);
+      duplicateTrackMutation?.mutate(trackId);
     },
     [projectId, duplicateTrackMutation],
   );
 
-  const deleteTrack = useCallback(
+  const _deleteTrack = useCallback(
     (trackId: string) => {
-      deleteTrackMutation.mutate(trackId);
+      deleteTrackMutation?.mutate(trackId);
     },
     [deleteTrackMutation],
   );

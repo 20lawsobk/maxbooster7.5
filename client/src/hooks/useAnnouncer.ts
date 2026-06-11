@@ -50,19 +50,19 @@ export function useAnnouncer(
   options: UseAnnouncerOptions = {},
 ): UseAnnouncerResult {
   const { defaultPriority = "polite", debounceMs = 0 } = options;
-  const debounceTimer = useRef<ReturnType<typeof setTimeout>>();
+  const _debounceTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
+      if (debounceTimer?.current) {
+        clearTimeout(debounceTimer?.current);
       }
     };
   }, []);
 
-  const announce = useCallback(
+  const _announce = useCallback(
     (message: string, priority: AnnouncementPriority = defaultPriority) => {
-      const doAnnounce = () => {
+      const _doAnnounce = () => {
         if (priority === "assertive") {
           announceAssertive(message);
         } else {
@@ -71,8 +71,8 @@ export function useAnnouncer(
       };
 
       if (debounceMs > 0) {
-        if (debounceTimer.current) {
-          clearTimeout(debounceTimer.current);
+        if (debounceTimer?.current) {
+          clearTimeout(debounceTimer?.current);
         }
         debounceTimer.current = setTimeout(doAnnounce, debounceMs);
       } else {
@@ -101,12 +101,12 @@ export function useAnnouncer(
 }
 
 export function useLoadingAnnouncer(isLoading: boolean, context?: string) {
-  const previousLoading = useRef(isLoading);
+  const _previousLoading = useRef(isLoading);
 
   useEffect(() => {
-    if (isLoading && !previousLoading.current) {
+    if (isLoading && !previousLoading?.current) {
       announceLoadingStart(context);
-    } else if (!isLoading && previousLoading.current) {
+    } else if (!isLoading && previousLoading?.current) {
       announceLoadingComplete(context);
     }
     previousLoading.current = isLoading;
@@ -120,12 +120,12 @@ export function useRouteAnnouncer(routeName: string) {
 }
 
 export function useDialogAnnouncer(isOpen: boolean, dialogName: string) {
-  const previousOpen = useRef(isOpen);
+  const _previousOpen = useRef(isOpen);
 
   useEffect(() => {
-    if (isOpen && !previousOpen.current) {
+    if (isOpen && !previousOpen?.current) {
       announceDialogOpen(dialogName);
-    } else if (!isOpen && previousOpen.current) {
+    } else if (!isOpen && previousOpen?.current) {
       announceDialogClose(dialogName);
     }
     previousOpen.current = isOpen;

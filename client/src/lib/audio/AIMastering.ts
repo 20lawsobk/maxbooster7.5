@@ -31,9 +31,9 @@ export class AIMastering {
     this.analyzer = new AIAnalyzer(context);
 
     // Create nodes
-    this.input = context.createGain();
-    this.output = context.createGain();
-    this.makeupGain = context.createGain();
+    this.input = context?.createGain();
+    this.output = context?.createGain();
+    this.makeupGain = context?.createGain();
 
     // Create processing
     this.eq = new EQPlugin(context);
@@ -41,32 +41,32 @@ export class AIMastering {
     this.stereoEnhancer = new StereoEnhancer(context);
 
     // Create limiter
-    this.limiter = context.createDynamicsCompressor();
-    this.limiter.threshold.value = -0.5;
-    this.limiter.knee.value = 0;
-    this.limiter.ratio.value = 20;
-    this.limiter.attack.value = 0.001;
-    this.limiter.release.value = 0.01;
+    this.limiter = context?.createDynamicsCompressor();
+    this?.limiter.threshold.value = -0.5;
+    this?.limiter.knee.value = 0;
+    this?.limiter.ratio.value = 20;
+    this?.limiter.attack.value = 0.001;
+    this?.limiter.release.value = 0.01;
 
     // Connect chain
-    this.connectChain();
+    this?.connectChain();
   }
 
   private connectChain(): void {
     // Master chain: Input -> EQ -> Multiband -> Stereo -> Limiter -> Makeup -> Output
-    this.input.connect(this.eq.getInput());
-    this.eq.connect(this.multibandCompressors.getInput());
-    this.multibandCompressors.connect(this.stereoEnhancer.getInput());
-    this.stereoEnhancer.connect(this.limiter);
-    this.limiter.connect(this.makeupGain);
-    this.makeupGain.connect(this.output);
+    this?.input.connect(this?.eq.getInput());
+    this?.eq.connect(this?.multibandCompressors.getInput());
+    this?.multibandCompressors.connect(this?.stereoEnhancer.getInput());
+    this?.stereoEnhancer.connect(this?.limiter);
+    this?.limiter.connect(this?.makeupGain);
+    this?.makeupGain.connect(this?.output);
   }
 
   /**
    * Perform AI mastering on audio buffer
    */
   async performAIMastering(buffer: AudioBuffer): Promise<MasteringResult> {
-    logger.info("[AI MASTERING] Starting analysis...");
+    logger?.info("[AI MASTERING] Starting analysis...");
 
     const result: MasteringResult = {
       success: true,
@@ -82,27 +82,27 @@ export class AIMastering {
     };
 
     // Step 1: Analyze input
-    const analysis = this.analyzeInput(buffer, result);
+    const _analysis = this?.analyzeInput(buffer, result);
 
     // Step 2: Apply tonal balance correction
-    this.applyTonalBalance(analysis, result);
+    this?.applyTonalBalance(analysis, result);
 
     // Step 3: Apply multiband compression
-    this.applyMultibandCompression(analysis, result);
+    this?.applyMultibandCompression(analysis, result);
 
     // Step 4: Enhance stereo image
-    this.applyStereoEnhancement(analysis, result);
+    this?.applyStereoEnhancement(analysis, result);
 
     // Step 5: Apply loudness optimization
-    this.applyLoudnessOptimization(analysis, result);
+    this?.applyLoudnessOptimization(analysis, result);
 
     // Step 6: Apply peak limiting
-    this.applyPeakLimiting(result);
+    this?.applyPeakLimiting(result);
 
     // Step 7: Final analysis
-    this.performFinalAnalysis(buffer, result);
+    this?.performFinalAnalysis(buffer, result);
 
-    logger.info("[AI MASTERING] Mastering complete!", result);
+    logger?.info("[AI MASTERING] Mastering complete!", result);
     return result;
   }
 
@@ -113,27 +113,27 @@ export class AIMastering {
     buffer: AudioBuffer,
     result: MasteringResult,
   ): AudioAnalysis {
-    const lufs = this.analyzer.calculateLUFS(buffer);
-    const dynamics = this.analyzer.analyzeDynamicRange(buffer);
-    const clipping = this.analyzer.detectClipping(buffer);
+    const _lufs = this?.analyzer.calculateLUFS(buffer);
+    const _dynamics = this?.analyzer.analyzeDynamicRange(buffer);
+    const _clipping = this?.analyzer.detectClipping(buffer);
 
     // Analyze stereo image if stereo
     let stereoAnalysis = { correlation: 0, balance: 0, width: 0 };
-    if (buffer.numberOfChannels === 2) {
-      stereoAnalysis = this.analyzer.analyzeStereoImage(
-        buffer.getChannelData(0),
-        buffer.getChannelData(1),
+    if (buffer?.numberOfChannels === 2) {
+      stereoAnalysis = this?.analyzer.analyzeStereoImage(
+        buffer?.getChannelData(0),
+        buffer?.getChannelData(1),
       );
     }
 
-    result.metrics.inputLUFS = lufs;
-    result.metrics.dynamicRange = dynamics.dynamicRange;
-    result.metrics.truePeak = 20 * Math.log10(dynamics.peak);
-    result.metrics.stereoWidth = stereoAnalysis.width;
+    result?.metrics.inputLUFS = lufs;
+    result?.metrics.dynamicRange = dynamics?.dynamicRange;
+    result?.metrics.truePeak = 20 * Math?.log10(dynamics?.peak);
+    result?.metrics.stereoWidth = stereoAnalysis?.width;
 
-    if (clipping.hasClipping) {
-      result.recommendations.push(
-        `Input has clipping (${clipping.clippingPercentage.toFixed(2)}% samples). Consider reducing input gain.`,
+    if (clipping?.hasClipping) {
+      result?.recommendations.push(
+        `Input has clipping (${clipping?.clippingPercentage.toFixed(2)}% samples). Consider reducing input gain.`,
       );
     }
 
@@ -141,13 +141,13 @@ export class AIMastering {
 
     return {
       lufs,
-      peak: dynamics.peak,
-      rms: dynamics.rms,
-      dynamicRange: dynamics.dynamicRange,
-      crestFactor: dynamics.crestFactor,
-      stereoWidth: stereoAnalysis.width,
-      stereoBalance: stereoAnalysis.balance,
-      hasClipping: clipping.hasClipping,
+      peak: dynamics?.peak,
+      rms: dynamics?.rms,
+      dynamicRange: dynamics?.dynamicRange,
+      crestFactor: dynamics?.crestFactor,
+      stereoWidth: stereoAnalysis?.width,
+      stereoBalance: stereoAnalysis?.balance,
+      hasClipping: clipping?.hasClipping,
     };
   }
 
@@ -161,21 +161,21 @@ export class AIMastering {
     // Target tonal balance curve (pink noise reference)
 
     // Apply gentle EQ corrections
-    if (analysis.lufs < -20) {
+    if (analysis?.lufs < -20) {
       // Quiet mix - add brightness
-      this.eq.setBand(5, 8000, 2); // High shelf
-      this.eq.setBand(6, 12000, 3); // Air
-      result.adjustments.push({
+      this?.eq.setBand(5, 8000, 2); // High shelf
+      this?.eq.setBand(6, 12000, 3); // Air
+      result?.adjustments.push({
         type: "eq",
         description: "Added brightness to quiet mix",
         value: "+2dB @ 8kHz, +3dB @ 12kHz",
       });
     }
 
-    if (analysis.dynamicRange < 6) {
+    if (analysis?.dynamicRange < 6) {
       // Over-compressed - enhance transients
-      this.eq.setBand(4, 3000, 1.5); // Presence
-      result.adjustments.push({
+      this?.eq.setBand(4, 3000, 1.5); // Presence
+      result?.adjustments.push({
         type: "eq",
         description: "Enhanced transients",
         value: "+1.5dB @ 3kHz",
@@ -183,10 +183,10 @@ export class AIMastering {
     }
 
     // Gentle smile curve for pleasant sound
-    this.eq.setBand(1, 60, 1); // Subtle bass boost
-    this.eq.setBand(5, 10000, 1); // Subtle treble boost
+    this?.eq.setBand(1, 60, 1); // Subtle bass boost
+    this?.eq.setBand(5, 10000, 1); // Subtle treble boost
 
-    result.adjustments.push({
+    result?.adjustments.push({
       type: "eq",
       description: "Applied mastering EQ curve",
       value: "Gentle smile curve with tonal balance correction",
@@ -201,11 +201,11 @@ export class AIMastering {
     result: MasteringResult,
   ): void {
     // Configure bands based on dynamic range
-    const needsControl = analysis.dynamicRange > 12;
+    const _needsControl = analysis?.dynamicRange > 12;
 
     if (needsControl) {
       // Low band (20-200 Hz) - Control bass
-      this.multibandCompressors.setBand(0, {
+      this?.multibandCompressors.setBand(0, {
         threshold: -15,
         ratio: 2,
         attack: 0.01,
@@ -213,7 +213,7 @@ export class AIMastering {
       });
 
       // Low-mid band (200-800 Hz) - Body
-      this.multibandCompressors.setBand(1, {
+      this?.multibandCompressors.setBand(1, {
         threshold: -12,
         ratio: 1.5,
         attack: 0.005,
@@ -221,7 +221,7 @@ export class AIMastering {
       });
 
       // High-mid band (800-4k Hz) - Presence
-      this.multibandCompressors.setBand(2, {
+      this?.multibandCompressors.setBand(2, {
         threshold: -10,
         ratio: 1.5,
         attack: 0.003,
@@ -229,26 +229,26 @@ export class AIMastering {
       });
 
       // High band (4k-20k Hz) - Brilliance
-      this.multibandCompressors.setBand(3, {
+      this?.multibandCompressors.setBand(3, {
         threshold: -8,
         ratio: 1.2,
         attack: 0.001,
         release: 0.01,
       });
 
-      result.adjustments.push({
+      result?.adjustments.push({
         type: "multiband",
         description: "Applied 4-band compression",
         value: "Gentle control across frequency spectrum",
       });
     } else {
       // Already compressed - use very gentle settings
-      this.multibandCompressors.setBand(0, { threshold: -6, ratio: 1.1 });
-      this.multibandCompressors.setBand(1, { threshold: -6, ratio: 1.1 });
-      this.multibandCompressors.setBand(2, { threshold: -6, ratio: 1.1 });
-      this.multibandCompressors.setBand(3, { threshold: -6, ratio: 1.1 });
+      this?.multibandCompressors.setBand(0, { threshold: -6, ratio: 1.1 });
+      this?.multibandCompressors.setBand(1, { threshold: -6, ratio: 1.1 });
+      this?.multibandCompressors.setBand(2, { threshold: -6, ratio: 1.1 });
+      this?.multibandCompressors.setBand(3, { threshold: -6, ratio: 1.1 });
 
-      result.adjustments.push({
+      result?.adjustments.push({
         type: "multiband",
         description: "Applied gentle glue compression",
         value: "Minimal processing to preserve dynamics",
@@ -264,19 +264,19 @@ export class AIMastering {
     result: MasteringResult,
   ): void {
     // Only enhance if not already wide
-    if (analysis.stereoWidth < 0.5) {
-      this.stereoEnhancer.setWidth(1.2); // 120% width
-      this.stereoEnhancer.setBassMonoFrequency(120); // Mono below 120Hz
+    if (analysis?.stereoWidth < 0.5) {
+      this?.stereoEnhancer.setWidth(1.2); // 120% width
+      this?.stereoEnhancer.setBassMonoFrequency(120); // Mono below 120Hz
 
-      result.adjustments.push({
+      result?.adjustments.push({
         type: "stereo",
         description: "Enhanced stereo width",
         value: "120% width, bass mono below 120Hz",
       });
-    } else if (analysis.stereoWidth > 0.8) {
+    } else if (analysis?.stereoWidth > 0.8) {
       // Too wide - narrow slightly
-      this.stereoEnhancer.setWidth(0.9);
-      result.adjustments.push({
+      this?.stereoEnhancer.setWidth(0.9);
+      result?.adjustments.push({
         type: "stereo",
         description: "Narrowed excessive width",
         value: "90% width for better mono compatibility",
@@ -284,12 +284,12 @@ export class AIMastering {
     }
 
     // Fix stereo balance if needed
-    if (Math.abs(analysis.stereoBalance) > 0.1) {
-      this.stereoEnhancer.setBalance(-analysis.stereoBalance);
-      result.adjustments.push({
+    if (Math?.abs(analysis?.stereoBalance) > 0.1) {
+      this?.stereoEnhancer.setBalance(-analysis?.stereoBalance);
+      result?.adjustments.push({
         type: "stereo",
         description: "Corrected stereo balance",
-        value: `Adjusted ${analysis.stereoBalance > 0 ? "left" : "right"} bias`,
+        value: `Adjusted ${analysis?.stereoBalance > 0 ? "left" : "right"} bias`,
       });
     }
   }
@@ -302,28 +302,28 @@ export class AIMastering {
     result: MasteringResult,
   ): void {
     // Calculate required gain to reach target LUFS
-    const currentLUFS = analysis.lufs;
-    const gainRequired = this.targetLUFS - currentLUFS;
+    const _currentLUFS = analysis?.lufs;
+    const _gainRequired = this?.targetLUFS - currentLUFS;
 
     // Apply gain with headroom for limiter
-    const maxGain = 12; // Maximum 12dB boost
-    const actualGain = Math.min(gainRequired, maxGain);
+    const _maxGain = 12; // Maximum 12dB boost
+    const _actualGain = Math?.min(gainRequired, maxGain);
 
-    this.makeupGain.gain.setValueAtTime(
-      Math.pow(10, actualGain / 20),
-      this.context.currentTime,
+    this?.makeupGain.gain?.setValueAtTime(
+      Math?.pow(10, actualGain / 20),
+      this?.context.currentTime,
     );
 
-    result.adjustments.push({
+    result?.adjustments.push({
       type: "loudness",
       description: "Optimized for streaming platforms",
-      value: `+${actualGain.toFixed(1)}dB to reach -14 LUFS`,
+      value: `+${actualGain?.toFixed(1)}dB to reach -14 LUFS`,
     });
 
     // Update expected output LUFS
-    result.metrics.outputLUFS = Math.min(
+    result?.metrics.outputLUFS = Math?.min(
       currentLUFS + actualGain,
-      this.targetLUFS,
+      this?.targetLUFS,
     );
   }
 
@@ -332,13 +332,13 @@ export class AIMastering {
    */
   private applyPeakLimiting(result: MasteringResult): void {
     // True peak limiting at -1 dBFS
-    this.limiter.threshold.value = -1;
-    this.limiter.ratio.value = 30;
-    this.limiter.knee.value = 0;
-    this.limiter.attack.value = 0.0001; // Very fast attack
-    this.limiter.release.value = 0.005; // Fast release
+    this?.limiter.threshold.value = -1;
+    this?.limiter.ratio.value = 30;
+    this?.limiter.knee.value = 0;
+    this?.limiter.attack.value = 0.0001; // Very fast attack
+    this?.limiter.release.value = 0.005; // Fast release
 
-    result.adjustments.push({
+    result?.adjustments.push({
       type: "limiting",
       description: "Applied true peak limiting",
       value: "Ceiling at -1 dBFS for streaming compliance",
@@ -353,29 +353,29 @@ export class AIMastering {
     result: MasteringResult,
   ): void {
     // Estimate output metrics (would need actual processed buffer in production)
-    const outputDynamics = Math.max(3, result.metrics.dynamicRange - 3);
+    const _outputDynamics = Math?.max(3, result?.metrics.dynamicRange - 3);
 
-    result.metrics.dynamicRange = outputDynamics;
-    result.metrics.truePeak = -1; // Limited to -1 dBFS
+    result?.metrics.dynamicRange = outputDynamics;
+    result?.metrics.truePeak = -1; // Limited to -1 dBFS
 
     // Generate recommendations
     if (outputDynamics < 6) {
-      result.recommendations.push(
+      result?.recommendations.push(
         "Consider preserving more dynamic range for better sound quality",
       );
     }
 
-    if (result.metrics.outputLUFS > -12) {
-      result.recommendations.push(
+    if (result?.metrics.outputLUFS > -12) {
+      result?.recommendations.push(
         "Master may be too loud and could be turned down by streaming services",
       );
     }
 
-    if (result.metrics.stereoWidth < 0.3) {
-      result.recommendations.push("Mix could benefit from wider stereo image");
+    if (result?.metrics.stereoWidth < 0.3) {
+      result?.recommendations.push("Mix could benefit from wider stereo image");
     }
 
-    result.recommendations.push(
+    result?.recommendations.push(
       "Master optimized for Spotify, Apple Music, and YouTube (-14 LUFS)",
       "Check translation on different playback systems",
       "Consider A/B testing with reference tracks",
@@ -386,8 +386,8 @@ export class AIMastering {
    * Process audio through mastering chain
    */
   connect(source: AudioNode, destination: AudioNode): void {
-    source.connect(this.input);
-    this.output.connect(destination);
+    source?.connect(this?.input);
+    this?.output.connect(destination);
   }
 
   /**
@@ -395,12 +395,12 @@ export class AIMastering {
    */
   getSettings(): MasteringSettings {
     return {
-      targetLUFS: this.targetLUFS,
-      eqEnabled: !this.eq.getParameters().bypass,
+      targetLUFS: this?.targetLUFS,
+      eqEnabled: !this?.eq.getParameters().bypass,
       multibandEnabled: true,
       stereoEnabled: true,
       limiterEnabled: true,
-      makeupGain: 20 * Math.log10(this.makeupGain.gain.value),
+      makeupGain: 20 * Math?.log10(this?.makeupGain.gain?.value),
     };
   }
 
@@ -411,7 +411,7 @@ export class AIMastering {
     platform: "spotify" | "apple" | "youtube" | "soundcloud" | "custom",
     customLUFS?: number,
   ): void {
-    const platformTargets = {
+    const _platformTargets = {
       spotify: -14,
       apple: -16,
       youtube: -14,
@@ -427,13 +427,13 @@ export class AIMastering {
    */
   setBypass(bypass: boolean): void {
     if (bypass) {
-      this.makeupGain.gain.value = 1;
-      this.eq.setBypass(true);
-      this.multibandCompressors.setBypass(true);
-      this.stereoEnhancer.setBypass(true);
-      this.limiter.ratio.value = 1;
+      this?.makeupGain.gain.value = 1;
+      this?.eq.setBypass(true);
+      this?.multibandCompressors.setBypass(true);
+      this?.stereoEnhancer.setBypass(true);
+      this?.limiter.ratio.value = 1;
     } else {
-      this.connectChain();
+      this?.connectChain();
     }
   }
 
@@ -441,11 +441,11 @@ export class AIMastering {
    * Reset all settings
    */
   reset(): void {
-    this.eq.reset();
-    this.multibandCompressors.reset();
-    this.stereoEnhancer.reset();
-    this.makeupGain.gain.value = 1;
-    this.limiter.threshold.value = -0.5;
+    this?.eq.reset();
+    this?.multibandCompressors.reset();
+    this?.stereoEnhancer.reset();
+    this?.makeupGain.gain.value = 1;
+    this?.limiter.threshold.value = -0.5;
     this.targetLUFS = -14;
   }
 
@@ -453,14 +453,14 @@ export class AIMastering {
    * Cleanup resources
    */
   destroy(): void {
-    this.input.disconnect();
-    this.output.disconnect();
-    this.makeupGain.disconnect();
-    this.limiter.disconnect();
-    this.eq.destroy();
-    this.multibandCompressors.destroy();
-    this.stereoEnhancer.destroy();
-    this.analyzer.destroy();
+    this?.input.disconnect();
+    this?.output.disconnect();
+    this?.makeupGain.disconnect();
+    this?.limiter.disconnect();
+    this?.eq.destroy();
+    this?.multibandCompressors.destroy();
+    this?.stereoEnhancer.destroy();
+    this?.analyzer.destroy();
   }
 }
 
@@ -476,52 +476,52 @@ class MultibandCompressor {
 
   constructor(context: AudioContext) {
     this.context = context;
-    this.input = context.createGain();
-    this.output = context.createGain();
+    this.input = context?.createGain();
+    this.output = context?.createGain();
 
     // Create 4 frequency bands
-    const frequencies = [200, 800, 4000]; // Crossover frequencies
+    const _frequencies = [200, 800, 4000]; // Crossover frequencies
 
     for (let i = 0; i < 4; i++) {
-      const band = new CompressorBand(
+      const _band = new CompressorBand(
         context,
         i === 0 ? 0 : frequencies[i - 1],
         i === 3 ? 20000 : frequencies[i],
       );
-      this.bands.push(band);
+      this?.bands.push(band);
 
       // Connect to input and output
-      this.input.connect(band.getInput());
-      band.connect(this.output);
+      this?.input.connect(band?.getInput());
+      band?.connect(this?.output);
     }
   }
 
   getInput(): AudioNode {
-    return this.input;
+    return this?.input;
   }
 
   connect(destination: AudioNode): void {
-    this.output.connect(destination);
+    this?.output.connect(destination);
   }
 
   setBand(index: number, settings: unknown): void {
-    if (index < 0 || index >= this.bands.length) return;
-    this.bands[index].setSettings(settings);
+    if (index < 0 || index >= this?.bands.length) return;
+    this?.bands[index].setSettings(settings);
   }
 
   setBypass(bypass: boolean): void {
     this.bypassed = bypass;
-    this.bands.forEach((band) => band.setBypass(bypass));
+    this?.bands.forEach((band) => band?.setBypass(bypass));
   }
 
   reset(): void {
-    this.bands.forEach((band) => band.reset());
+    this?.bands.forEach((band) => band?.reset());
   }
 
   destroy(): void {
-    this.bands.forEach((band) => band.destroy());
-    this.input.disconnect();
-    this.output.disconnect();
+    this?.bands.forEach((band) => band?.destroy());
+    this?.input.disconnect();
+    this?.output.disconnect();
   }
 }
 
@@ -538,67 +538,67 @@ class CompressorBand {
 
   constructor(context: AudioContext, lowFreq: number, highFreq: number) {
     this.context = context;
-    this.input = context.createGain();
-    this.output = context.createGain();
+    this.input = context?.createGain();
+    this.output = context?.createGain();
 
     // Create bandpass filters
-    this.lowFilter = context.createBiquadFilter();
-    this.lowFilter.type = lowFreq > 0 ? "highpass" : "lowshelf";
-    this.lowFilter.frequency.value = Math.max(20, lowFreq);
+    this.lowFilter = context?.createBiquadFilter();
+    this?.lowFilter.type = lowFreq > 0 ? "highpass" : "lowshelf";
+    this?.lowFilter.frequency.value = Math?.max(20, lowFreq);
 
-    this.highFilter = context.createBiquadFilter();
-    this.highFilter.type = highFreq < 20000 ? "lowpass" : "highshelf";
-    this.highFilter.frequency.value = Math.min(20000, highFreq);
+    this.highFilter = context?.createBiquadFilter();
+    this?.highFilter.type = highFreq < 20000 ? "lowpass" : "highshelf";
+    this?.highFilter.frequency.value = Math?.min(20000, highFreq);
 
     // Create compressor
-    this.compressor = context.createDynamicsCompressor();
+    this.compressor = context?.createDynamicsCompressor();
 
     // Connect chain
-    this.input.connect(this.lowFilter);
-    this.lowFilter.connect(this.highFilter);
-    this.highFilter.connect(this.compressor);
-    this.compressor.connect(this.output);
+    this?.input.connect(this?.lowFilter);
+    this?.lowFilter.connect(this?.highFilter);
+    this?.highFilter.connect(this?.compressor);
+    this?.compressor.connect(this?.output);
   }
 
   getInput(): AudioNode {
-    return this.input;
+    return this?.input;
   }
 
   connect(destination: AudioNode): void {
-    this.output.connect(destination);
+    this?.output.connect(destination);
   }
 
   setSettings(settings: unknown): void {
-    if (settings.threshold)
-      this.compressor.threshold.value = settings.threshold;
-    if (settings.ratio) this.compressor.ratio.value = settings.ratio;
-    if (settings.attack) this.compressor.attack.value = settings.attack;
-    if (settings.release) this.compressor.release.value = settings.release;
-    if (settings.knee) this.compressor.knee.value = settings.knee || 2.4;
+    if (settings?.threshold)
+      this?.compressor.threshold.value = settings?.threshold;
+    if (settings?.ratio) this?.compressor.ratio.value = settings?.ratio;
+    if (settings?.attack) this?.compressor.attack.value = settings?.attack;
+    if (settings?.release) this?.compressor.release.value = settings?.release;
+    if (settings?.knee) this?.compressor.knee.value = settings?.knee || 2.4;
   }
 
   setBypass(bypass: boolean): void {
     if (bypass) {
-      this.compressor.ratio.value = 1;
+      this?.compressor.ratio.value = 1;
     } else {
-      this.compressor.ratio.value = 2;
+      this?.compressor.ratio.value = 2;
     }
   }
 
   reset(): void {
-    this.compressor.threshold.value = -24;
-    this.compressor.ratio.value = 2;
-    this.compressor.attack.value = 0.003;
-    this.compressor.release.value = 0.1;
-    this.compressor.knee.value = 2.4;
+    this?.compressor.threshold.value = -24;
+    this?.compressor.ratio.value = 2;
+    this?.compressor.attack.value = 0.003;
+    this?.compressor.release.value = 0.1;
+    this?.compressor.knee.value = 2.4;
   }
 
   destroy(): void {
-    this.input.disconnect();
-    this.output.disconnect();
-    this.lowFilter.disconnect();
-    this.highFilter.disconnect();
-    this.compressor.disconnect();
+    this?.input.disconnect();
+    this?.output.disconnect();
+    this?.lowFilter.disconnect();
+    this?.highFilter.disconnect();
+    this?.compressor.disconnect();
   }
 }
 
@@ -619,65 +619,65 @@ class StereoEnhancer {
 
   constructor(context: AudioContext) {
     this.context = context;
-    this.input = context.createGain();
-    this.output = context.createGain();
+    this.input = context?.createGain();
+    this.output = context?.createGain();
 
     // Create M/S processing
-    this.splitter = context.createChannelSplitter(2);
-    this.merger = context.createChannelMerger(2);
-    this.midGain = context.createGain();
-    this.sideGain = context.createGain();
+    this.splitter = context?.createChannelSplitter(2);
+    this.merger = context?.createChannelMerger(2);
+    this.midGain = context?.createGain();
+    this.sideGain = context?.createGain();
 
     // Bass mono filter
-    this.monoFilter = context.createBiquadFilter();
-    this.monoFilter.type = "highpass";
-    this.monoFilter.frequency.value = 100;
+    this.monoFilter = context?.createBiquadFilter();
+    this?.monoFilter.type = "highpass";
+    this?.monoFilter.frequency.value = 100;
 
     // Connect M/S matrix
-    this.input.connect(this.splitter);
+    this?.input.connect(this?.splitter);
 
     // Mid = (L + R) / 2
-    this.splitter.connect(this.midGain, 0);
-    this.splitter.connect(this.midGain, 1);
+    this?.splitter.connect(this?.midGain, 0);
+    this?.splitter.connect(this?.midGain, 1);
 
     // Side = (L - R) / 2
-    this.splitter.connect(this.sideGain, 0);
-    const inverter = context.createGain();
-    inverter.gain.value = -1;
-    this.splitter.connect(inverter, 1);
-    inverter.connect(this.sideGain);
+    this?.splitter.connect(this?.sideGain, 0);
+    const _inverter = context?.createGain();
+    inverter?.gain.value = -1;
+    this?.splitter.connect(inverter, 1);
+    inverter?.connect(this?.sideGain);
 
     // Apply processing and reconstruct
-    this.midGain.connect(this.merger, 0, 0);
-    this.midGain.connect(this.merger, 0, 1);
-    this.sideGain.connect(this.monoFilter);
-    this.monoFilter.connect(this.merger, 0, 0);
+    this?.midGain.connect(this?.merger, 0, 0);
+    this?.midGain.connect(this?.merger, 0, 1);
+    this?.sideGain.connect(this?.monoFilter);
+    this?.monoFilter.connect(this?.merger, 0, 0);
 
-    const sideInverter = context.createGain();
-    sideInverter.gain.value = -1;
-    this.monoFilter.connect(sideInverter);
-    sideInverter.connect(this.merger, 0, 1);
+    const _sideInverter = context?.createGain();
+    sideInverter?.gain.value = -1;
+    this?.monoFilter.connect(sideInverter);
+    sideInverter?.connect(this?.merger, 0, 1);
 
-    this.merger.connect(this.output);
+    this?.merger.connect(this?.output);
   }
 
   getInput(): AudioNode {
-    return this.input;
+    return this?.input;
   }
 
   connect(destination: AudioNode): void {
-    this.output.connect(destination);
+    this?.output.connect(destination);
   }
 
   setWidth(width: number): void {
-    this.width = Math.max(0, Math.min(2, width));
+    this.width = Math?.max(0, Math?.min(2, width));
     // Width = 1 is normal, < 1 is narrower, > 1 is wider
-    this.midGain.gain.value = 2 - this.width;
-    this.sideGain.gain.value = this.width;
+    this?.midGain.gain.value = 2 - this?.width;
+    this?.sideGain.gain.value = this?.width;
   }
 
   setBassMonoFrequency(freq: number): void {
-    this.monoFilter.frequency.value = Math.max(20, Math.min(500, freq));
+    this?.monoFilter.frequency.value = Math?.max(20, Math?.min(500, freq));
   }
 
   setBalance(_balance: number): void {
@@ -688,23 +688,23 @@ class StereoEnhancer {
   setBypass(bypass: boolean): void {
     this.bypassed = bypass;
     if (bypass) {
-      this.setWidth(1);
+      this?.setWidth(1);
     }
   }
 
   reset(): void {
-    this.setWidth(1);
-    this.setBassMonoFrequency(100);
+    this?.setWidth(1);
+    this?.setBassMonoFrequency(100);
   }
 
   destroy(): void {
-    this.input.disconnect();
-    this.output.disconnect();
-    this.splitter.disconnect();
-    this.merger.disconnect();
-    this.midGain.disconnect();
-    this.sideGain.disconnect();
-    this.monoFilter.disconnect();
+    this?.input.disconnect();
+    this?.output.disconnect();
+    this?.splitter.disconnect();
+    this?.merger.disconnect();
+    this?.midGain.disconnect();
+    this?.sideGain.disconnect();
+    this?.monoFilter.disconnect();
   }
 }
 

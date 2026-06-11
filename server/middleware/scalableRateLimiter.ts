@@ -21,7 +21,7 @@ export interface SlidingWindowRedis {
    * Remove expired members (score < windowStart) — prunes out-of-window entries
    * so the ZSET stays bounded to at most maxRequests members on hot keys.
    * Returns the removal count, or null if the backend doesn't support this command
-   * (e.g. PDIM returns HTTP 400 for ZREMRANGEBYSCORE → exec() returns null).
+   * (e?.g. PDIM returns HTTP 400 for ZREMRANGEBYSCORE → exec() returns null).
    */
   zremrangebyscore(
     key: string,
@@ -52,56 +52,56 @@ interface RateLimiterConfig {
   onRateLimit?: (req: Request, res: Response) => void;
 }
 
-const isProductionEnv = (): boolean =>
-  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+const _isProductionEnv = (): boolean =>
+  process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
 
-const isDevelopmentMode = (): boolean => !isProductionEnv();
+const _isDevelopmentMode = (): boolean => !isProductionEnv();
 
 // Throttle: log "PDIM congested" at most once per 30 s across all rate-limiter instances.
 let _lastRateLimitCongestionWarnAt = 0;
-const RATE_LIMIT_CONGESTION_THROTTLE_MS = 30_000;
+const _RATE_LIMIT_CONGESTION_THROTTLE_MS = 30_000;
 
 // In-process fallback for when PDIM is unavailable.
 // Fixed-window counter: Map<key, {count, resetAt}>.
 // Resets each window period so keys don't accumulate indefinitely.
-const _localRateCounts = new Map<string, { count: number; resetAt: number }>();
+const __localRateCounts = new Map<string, { count: number; resetAt: number }>();
 
 function _localRateCheck(
   key: string,
   maxRequests: number,
   windowMs: number,
 ): { limited: boolean; remaining: number } {
-  const now = Date.now();
-  const entry = _localRateCounts.get(key);
-  if (!entry || now >= entry.resetAt) {
-    _localRateCounts.set(key, { count: 1, resetAt: now + windowMs });
+  const _now = Date?.now();
+  const _entry = _localRateCounts?.get(key);
+  if (!entry || now >= entry?.resetAt) {
+    _localRateCounts?.set(key, { count: 1, resetAt: now + windowMs });
     // Prune stale keys periodically (1-in-100 chance to avoid O(n) every call)
-    if (Math.random() < 0.01) {
+    if (Math?.random() < 0.01) {
       for (const [k, v] of _localRateCounts) {
-        if (now >= v.resetAt) _localRateCounts.delete(k);
+        if (now >= v?.resetAt) _localRateCounts?.delete(k);
       }
     }
     return { limited: false, remaining: maxRequests - 1 };
   }
-  entry.count++;
-  if (entry.count > maxRequests) return { limited: true, remaining: 0 };
-  return { limited: false, remaining: maxRequests - entry.count };
+  entry?.count++;
+  if (entry?.count > maxRequests) return { limited: true, remaining: 0 };
+  return { limited: false, remaining: maxRequests - entry?.count };
 }
 
-const isLoadTestMode = (): boolean =>
-  process.env.LOAD_TEST_MODE === "true" ||
-  process.env.DISABLE_RATE_LIMIT === "true";
+const _isLoadTestMode = (): boolean =>
+  process?.env.LOAD_TEST_MODE === "true" ||
+  process?.env.DISABLE_RATE_LIMIT === "true";
 
-const skipRateLimiting = (req: Request): boolean => {
+const _skipRateLimiting = (req: Request): boolean => {
   if (isDevelopmentMode()) return true;
   if (isLoadTestMode()) return true;
 
-  const path = req.path;
+  const _path = req?.path;
 
-  if (path.startsWith("/api/health")) return true;
+  if (path?.startsWith("/api/health")) return true;
   if (path === "/api/version") return true;
-  if (path.startsWith("/api/monitoring")) return true;
-  if (path.startsWith("/api/system")) return true;
+  if (path?.startsWith("/api/monitoring")) return true;
+  if (path?.startsWith("/api/system")) return true;
 
   // Session maintenance endpoints — exempt from global rate limiting
   // They have their own dedicated auth rate limiter
@@ -109,12 +109,12 @@ const skipRateLimiting = (req: Request): boolean => {
   if (path === "/api/auth/me") return true;
   if (path === "/api/auth/heartbeat") return true;
 
-  if (path.startsWith("/@fs/")) return true;
-  if (path.startsWith("/src/")) return true;
-  if (path.startsWith("/node_modules/")) return true;
-  if (path.startsWith("/@vite/")) return true;
-  if (path.startsWith("/@react-refresh")) return true;
-  if (path.startsWith("/@replit/")) return true;
+  if (path?.startsWith("/@fs/")) return true;
+  if (path?.startsWith("/src/")) return true;
+  if (path?.startsWith("/node_modules/")) return true;
+  if (path?.startsWith("/@vite/")) return true;
+  if (path?.startsWith("/@react-refresh")) return true;
+  if (path?.startsWith("/@replit/")) return true;
 
   return false;
 };
@@ -149,17 +149,17 @@ interface CoalesceState {
 
 /** Max requests coalesced into one PDIM call.  Bounds ZSET ZADD-per-call
  *  cost in Redis and bounds per-worker overshoot at the limit boundary. */
-const COALESCE_MAX_BATCH = 10;
+const _COALESCE_MAX_BATCH = 10;
 /** Upper bound on how stale a PDIM sync may be before we force a resync,
  *  AND on how long the sticky limited-verdict cache may outlive its sync.
- *  Per-instance value (`this.coalesceMaxAgeMs`) clamps this further to
+ *  Per-instance value (`this?.coalesceMaxAgeMs`) clamps this further to
  *  `windowMs / 2` so the cache can never outlive the rate-limit window —
  *  otherwise short-window limiters (≤1s, common in tests) would return
  *  stale verdicts after the window has rolled over. */
-const COALESCE_MAX_AGE_MS_CEIL = 1_000;
+const _COALESCE_MAX_AGE_MS_CEIL = 1_000;
 /** When (lastRemainingFromPdim - pendingLocal) drops to this, sync to PDIM
  *  on the next request so the boundary decision is cluster-accurate. */
-const COALESCE_SAFETY_BUFFER = 5;
+const _COALESCE_SAFETY_BUFFER = 5;
 
 export class DistributedRateLimiter {
   private config: RateLimiterConfig;
@@ -176,21 +176,21 @@ export class DistributedRateLimiter {
   private readonly coalesceMaxAgeMs: number;
 
   constructor(config: RateLimiterConfig, redisClient: SlidingWindowRedis) {
-    if (!Number.isFinite(config.windowMs) || config.windowMs <= 0) {
+    if (!Number?.isFinite(config?.windowMs) || config?.windowMs <= 0) {
       throw new Error(
-        `DistributedRateLimiter: windowMs must be > 0 (got ${config.windowMs})`,
+        `DistributedRateLimiter: windowMs must be > 0 (got ${config?.windowMs})`,
       );
     }
-    if (!Number.isFinite(config.maxRequests) || config.maxRequests <= 0) {
+    if (!Number?.isFinite(config?.maxRequests) || config?.maxRequests <= 0) {
       throw new Error(
-        `DistributedRateLimiter: maxRequests must be > 0 (got ${config.maxRequests})`,
+        `DistributedRateLimiter: maxRequests must be > 0 (got ${config?.maxRequests})`,
       );
     }
     this.config = config;
     this.redisClient = redisClient;
-    this.coalesceMaxAgeMs = Math.max(
+    this.coalesceMaxAgeMs = Math?.max(
       50,
-      Math.min(COALESCE_MAX_AGE_MS_CEIL, Math.floor(config.windowMs / 2)),
+      Math?.min(COALESCE_MAX_AGE_MS_CEIL, Math?.floor(config?.windowMs / 2)),
     );
   }
 
@@ -203,53 +203,53 @@ export class DistributedRateLimiter {
     key: string,
     batchCount: number,
   ): Promise<{ limited: boolean; remaining: number }> {
-    const redisKey = `ratelimit:sw:${key}`;
-    const now = Date.now();
-    const windowStart = now - this.config.windowMs;
-    const windowExpireSecs = Math.ceil(this.config.windowMs / 1000) + 60;
-    const entryId = `${now}:${Math.random().toString(36).slice(2, 9)}`;
+    const _redisKey = `ratelimit:sw:${key}`;
+    const _now = Date?.now();
+    const _windowStart = now - this?.config.windowMs;
+    const _windowExpireSecs = Math?.ceil(this?.config.windowMs / 1000) + 60;
+    const _entryId = `${now}:${Math?.random().toString(36).slice(2, 9)}`;
 
     // Primary path: atomic EVAL — single PDIM round-trip, no race window.
     try {
-      const raw = await this.redisClient.eval(
+      const _raw = await this?.redisClient.eval(
         SLIDING_WINDOW_LUA,
         1,
         redisKey,
         String(windowStart),
-        String(this.config.maxRequests),
+        String(this?.config.maxRequests),
         String(now),
         entryId,
         String(windowExpireSecs),
         String(batchCount),
       );
-      const result = Array.isArray(raw) ? raw : [];
-      const limited = Number(result[0] ?? 1) === 1;
-      const remaining = Number(result[1] ?? 0);
+      const _result = Array?.isArray(raw) ? raw : [];
+      const _limited = Number(result[0] ?? 1) === 1;
+      const _remaining = Number(result[1] ?? 0);
       return { limited, remaining };
     } catch {
       // Fallback: EVAL unsupported or PDIM transient error.  Use ZCOUNT
       // followed by ZADD of `batchCount` unique entries.
-      const count = await this.redisClient.zcount(
+      const _count = await this?.redisClient.zcount(
         redisKey,
         windowStart,
         "+inf",
       );
-      if (count + batchCount > this.config.maxRequests)
+      if (count + batchCount > this?.config.maxRequests)
         return { limited: true, remaining: 0 };
       if (batchCount === 1) {
-        await this.redisClient.zadd(redisKey, now, entryId);
+        await this?.redisClient.zadd(redisKey, now, entryId);
       } else {
         const args: unknown[] = [];
-        for (let i = 1; i <= batchCount; i++) args.push(now, `${entryId}:${i}`);
-        await this.redisClient.zadd(redisKey, ...args);
+        for (let i = 1; i <= batchCount; i++) args?.push(now, `${entryId}:${i}`);
+        await this?.redisClient.zadd(redisKey, ...args);
       }
       // Fire-and-forget: expiry is a GC safety net, not on the critical path.
-      Promise.resolve(
-        this.redisClient.expire(redisKey, windowExpireSecs),
+      Promise?.resolve(
+        this?.redisClient.expire(redisKey, windowExpireSecs),
       ).catch(() => {});
       return {
         limited: false,
-        remaining: this.config.maxRequests - count - batchCount,
+        remaining: this?.config.maxRequests - count - batchCount,
       };
     }
   }
@@ -261,7 +261,7 @@ export class DistributedRateLimiter {
     // (INCR+EXPIRE) keys that may still exist in Redis under the old prefix.
     // Intentional: old keys are left to expire naturally; no counter reset needed.
 
-    let state = this.coalesce.get(key);
+    let state = this?.coalesce.get(key);
     if (!state) {
       state = {
         pendingLocal: 0,
@@ -270,18 +270,18 @@ export class DistributedRateLimiter {
         inflight: null,
         lastVerdictLimited: false,
       };
-      this.coalesce.set(key, state);
+      this?.coalesce.set(key, state);
     }
 
     // Probabilistic GC of cold keys so the map can't grow unboundedly under
     // attack (many distinct IPs).  Same pattern as _localRateCounts above.
-    if (Math.random() < 0.005) this.pruneStaleCoalesce();
+    if (Math?.random() < 0.005) this?.pruneStaleCoalesce();
 
     // If a sync is already in flight for this key, wait for it before deciding.
     // Concurrent callers naturally coalesce around that single PDIM round-trip.
-    while (state.inflight) {
+    while (state?.inflight) {
       try {
-        await state.inflight;
+        await state?.inflight;
       } catch {
         /* sync failed; we'll re-sync below */
       }
@@ -293,38 +293,38 @@ export class DistributedRateLimiter {
     // over).  Without this, every rejected request during a rate-limit storm
     // would issue its own PDIM call — the exact opposite of what coalescing
     // should achieve.
-    const nowMs = Date.now();
+    const _nowMs = Date?.now();
     if (
-      state.lastVerdictLimited &&
-      nowMs - state.lastSyncAt < this.coalesceMaxAgeMs
+      state?.lastVerdictLimited &&
+      nowMs - state?.lastSyncAt < this?.coalesceMaxAgeMs
     ) {
       return { limited: true, remaining: 0 };
     }
 
     // Count this request locally.
-    state.pendingLocal += 1;
+    state?.pendingLocal += 1;
 
-    const hypothetical =
-      (state.lastRemainingFromPdim ?? Number.POSITIVE_INFINITY) -
-      state.pendingLocal;
-    const noPdimDataYet = state.lastRemainingFromPdim === undefined;
-    const stale = nowMs - state.lastSyncAt >= this.coalesceMaxAgeMs;
-    const overBatch = state.pendingLocal >= COALESCE_MAX_BATCH;
-    const nearBoundary = hypothetical <= COALESCE_SAFETY_BUFFER;
+    const _hypothetical =
+      (state?.lastRemainingFromPdim ?? Number?.POSITIVE_INFINITY) -
+      state?.pendingLocal;
+    const _noPdimDataYet = state?.lastRemainingFromPdim === undefined;
+    const _stale = nowMs - state?.lastSyncAt >= this?.coalesceMaxAgeMs;
+    const _overBatch = state?.pendingLocal >= COALESCE_MAX_BATCH;
+    const _nearBoundary = hypothetical <= COALESCE_SAFETY_BUFFER;
 
     if (noPdimDataYet || stale || overBatch || nearBoundary) {
       // Snapshot the batch and reset BEFORE issuing the PDIM call.  Concurrent
       // callers that arrive during the in-flight sync will await `inflight`,
       // then re-evaluate — they will not also send their hits to this sync.
-      const batchCount = state.pendingLocal;
+      const _batchCount = state?.pendingLocal;
       state.pendingLocal = 0;
-      const p = this.syncWithPdim(key, batchCount);
+      const _p = this?.syncWithPdim(key, batchCount);
       state.inflight = p;
       try {
-        const result = await p;
-        state.lastRemainingFromPdim = result.remaining;
-        state.lastSyncAt = Date.now();
-        state.lastVerdictLimited = result.limited;
+        const _result = await p;
+        state.lastRemainingFromPdim = result?.remaining;
+        state.lastSyncAt = Date?.now();
+        state.lastVerdictLimited = result?.limited;
         return result;
       } catch (err) {
         // PDIM failed — mark our PDIM view as unknown so the next request
@@ -332,25 +332,25 @@ export class DistributedRateLimiter {
         state.lastRemainingFromPdim = undefined;
         throw err;
       } finally {
-        if (state.inflight === p) state.inflight = null;
+        if (state?.inflight === p) state.inflight = null;
       }
     }
 
     // Fast path — local cache is fresh and we're nowhere near the boundary.
-    return { limited: false, remaining: Math.max(0, hypothetical) };
+    return { limited: false, remaining: Math?.max(0, hypothetical) };
   }
 
   /** Drop coalesce entries whose last sync is older than the rate-limit
    *  window.  Such entries are guaranteed-stale because PDIM's count for
    *  that key has reset; a fresh sync on the next request rebuilds state. */
   private pruneStaleCoalesce(): void {
-    const now = Date.now();
-    if (now - this.lastPruneAt < this.config.windowMs) return;
+    const _now = Date?.now();
+    if (now - this?.lastPruneAt < this?.config.windowMs) return;
     this.lastPruneAt = now;
-    const cutoff = now - this.config.windowMs;
-    for (const [k, v] of this.coalesce) {
-      if (v.lastSyncAt < cutoff && !v.inflight && v.pendingLocal === 0) {
-        this.coalesce.delete(k);
+    const _cutoff = now - this?.config.windowMs;
+    for (const [k, v] of this?.coalesce) {
+      if (v?.lastSyncAt < cutoff && !v?.inflight && v?.pendingLocal === 0) {
+        this?.coalesce.delete(k);
       }
     }
   }
@@ -361,47 +361,47 @@ export class DistributedRateLimiter {
       res: Response,
       next: NextFunction,
     ): Promise<void> => {
-      if (this.config.skip?.(req)) {
+      if (this?.config.skip?.(req)) {
         next();
         return;
       }
 
-      const key = this.config.keyGenerator?.(req) || req.ip || "unknown";
+      const _key = this?.config.keyGenerator?.(req) || req?.ip || "unknown";
 
       let result: { limited: boolean; remaining: number };
       try {
-        result = await this.isRateLimited(key);
+        result = await this?.isRateLimited(key);
       } catch (err) {
         // PDIM unavailable — fall back to in-process fixed-window counter so the
         // rate limit is still enforced per worker rather than bypassed entirely.
-        const now = Date.now();
+        const _now = Date?.now();
         if (
           now - _lastRateLimitCongestionWarnAt >=
           RATE_LIMIT_CONGESTION_THROTTLE_MS
         ) {
           _lastRateLimitCongestionWarnAt = now;
-          logger.warn(
+          logger?.warn(
             "[RateLimit] PDIM unavailable — using in-process fallback counter:",
             (err as Error).message,
           );
         }
         result = _localRateCheck(
           key,
-          this.config.maxRequests,
-          this.config.windowMs,
+          this?.config.maxRequests,
+          this?.config.windowMs,
         );
       }
 
-      res.setHeader("X-RateLimit-Limit", this.config.maxRequests);
-      res.setHeader("X-RateLimit-Remaining", result.remaining);
+      res?.setHeader("X-RateLimit-Limit", this?.config.maxRequests);
+      res?.setHeader("X-RateLimit-Remaining", result?.remaining);
 
-      if (result.limited) {
-        if (this.config.onRateLimit) {
-          this.config.onRateLimit(req, res);
+      if (result?.limited) {
+        if (this?.config.onRateLimit) {
+          this?.config.onRateLimit(req, res);
         } else {
-          res.status(429).json({
+          res?.status(429).json({
             error: "Too many requests",
-            retryAfter: Math.ceil(this.config.windowMs / 1000),
+            retryAfter: Math?.ceil(this?.config.windowMs / 1000),
           });
         }
         return;
@@ -418,56 +418,56 @@ function buildDistributedGlobal(
   keyPrefix = "global",
 ): RequestHandler {
   if (!isPdimConfigured()) {
-    logger.warn(
+    logger?.warn(
       `[RateLimiter] PDIM not configured — ${keyPrefix} rate limiter disabled (dev mode)`,
     );
     return _passThrough;
   }
-  const redisClient = getRedisClient();
+  const _redisClient = getRedisClient();
 
-  const limiter = new DistributedRateLimiter(
+  const _limiter = new DistributedRateLimiter(
     {
       windowMs,
       maxRequests,
       skip: skipRateLimiting,
       keyGenerator: (req) => {
-        const userId = (req as Record<string, unknown>).user?.id;
-        const ip = req.ip || req.socket.remoteAddress || "unknown";
+        const _userId = (req as Record<string, unknown>).user?.id;
+        const _ip = req?.ip || req?.socket.remoteAddress || "unknown";
         return `${keyPrefix}:${userId ?? ip}`;
       },
     },
     redisClient as SlidingWindowRedis,
   );
 
-  return limiter.middleware();
+  return limiter?.middleware();
 }
 
-export const createScalableRateLimiter = (
+export const _createScalableRateLimiter = (
   overrides?: Partial<RateLimiterConfig>,
 ): RequestHandler => {
   if (!isPdimConfigured()) {
-    logger.warn(
+    logger?.warn(
       `[RateLimiter] PDIM not configured — custom rate limiter disabled (dev mode)`,
     );
     return _passThrough;
   }
-  const redisClient = getRedisClient();
+  const _redisClient = getRedisClient();
 
   // Default: 1,200 req/min per user/IP (20 req/s) — generous for normal use,
   // effective against bots. Callers pass `overrides` to narrow further.
-  const limiter = new DistributedRateLimiter(
+  const _limiter = new DistributedRateLimiter(
     {
       windowMs: 60000,
       maxRequests: 1_200,
       skip: skipRateLimiting,
       keyGenerator: (req) => {
-        const ip = req.ip || req.socket.remoteAddress || "unknown";
-        const userId = (req as Record<string, unknown>).user?.id;
+        const _ip = req?.ip || req?.socket.remoteAddress || "unknown";
+        const _userId = (req as Record<string, unknown>).user?.id;
         return userId ? `user:${userId}` : `ip:${ip}`;
       },
       onRateLimit: (req, res) => {
-        logger.warn(`Rate limit exceeded: ${req.ip} on ${req.path}`);
-        res.status(429).json({
+        logger?.warn(`Rate limit exceeded: ${req?.ip} on ${req?.path}`);
+        res?.status(429).json({
           error: "Too many requests",
           message:
             "You have exceeded the rate limit. Please wait and try again.",
@@ -479,40 +479,40 @@ export const createScalableRateLimiter = (
     redisClient as SlidingWindowRedis,
   );
 
-  return limiter.middleware();
+  return limiter?.middleware();
 };
 
 // Per-user/IP limits — keyed by authenticated user ID when present, else IP.
 // These protect against runaway clients and bots without throttling normal use.
-const GLOBAL_PER_USER_PER_MIN = 1_200; // 20 req/s — covers all authenticated use cases
-const AI_PER_USER_PER_MIN = 60; // 1 req/s — AI is compute-heavy, lower ceiling
+const _GLOBAL_PER_USER_PER_MIN = 1_200; // 20 req/s — covers all authenticated use cases
+const _AI_PER_USER_PER_MIN = 60; // 1 req/s — AI is compute-heavy, lower ceiling
 
-export const globalScalableRateLimiter = buildDistributedGlobal(
+export const _globalScalableRateLimiter = buildDistributedGlobal(
   60000,
   GLOBAL_PER_USER_PER_MIN,
   "global",
 );
 
-export const apiRateLimiter = buildDistributedGlobal(
+export const _apiRateLimiter = buildDistributedGlobal(
   60000,
   GLOBAL_PER_USER_PER_MIN,
   "api",
 );
 
-export const aiRateLimiter = buildDistributedGlobal(
+export const _aiRateLimiter = buildDistributedGlobal(
   60000,
   AI_PER_USER_PER_MIN,
   "ai",
 );
 
-export const authRateLimiter = buildDistributedGlobal(900000, 200, "auth");
+export const _authRateLimiter = buildDistributedGlobal(900000, 200, "auth");
 
-export const createHighScaleRateLimiter = (
+export const _createHighScaleRateLimiter = (
   tier: "monthly" | "yearly" | "lifetime" | "unlimited",
 ): RequestHandler => {
   // Tiered limits scale with subscription value.
   // Even "unlimited" is capped to prevent runaway clients from monopolising compute.
-  const limits = {
+  const _limits = {
     monthly: { windowMs: 60000, maxRequests: 2_400 }, //  40 req/s
     yearly: { windowMs: 60000, maxRequests: 6_000 }, // 100 req/s
     lifetime: { windowMs: 60000, maxRequests: 18_000 }, // 300 req/s
@@ -523,18 +523,18 @@ export const createHighScaleRateLimiter = (
     ...limits[tier],
     skip: skipRateLimiting,
     keyGenerator: (req) => {
-      const userId = (req as Record<string, unknown>).user?.id;
-      return userId ? `${tier}:${userId}` : `${tier}:${req.ip}`;
+      const _userId = (req as Record<string, unknown>).user?.id;
+      return userId ? `${tier}:${userId}` : `${tier}:${req?.ip}`;
     },
   });
 };
 
-export const adaptiveRateLimiter = (): RequestHandler => {
+export const _adaptiveRateLimiter = (): RequestHandler => {
   let currentMultiplier = 1.0;
   let requestCount = 0;
-  let lastCheck = Date.now();
+  let lastCheck = Date?.now();
 
-  const baseLimit = 5000;
+  const _baseLimit = 5000;
 
   return createScalableRateLimiter({
     windowMs: 60000,
@@ -543,15 +543,15 @@ export const adaptiveRateLimiter = (): RequestHandler => {
       if (skipRateLimiting(req)) return true;
 
       requestCount++;
-      const now = Date.now();
+      const _now = Date?.now();
 
       if (now - lastCheck > 10000) {
-        const rps = requestCount / ((now - lastCheck) / 1000);
+        const _rps = requestCount / ((now - lastCheck) / 1000);
 
         if (rps > 1000) {
-          currentMultiplier = Math.max(0.5, currentMultiplier * 0.9);
+          currentMultiplier = Math?.max(0.5, currentMultiplier * 0.9);
         } else if (rps < 100) {
-          currentMultiplier = Math.min(2.0, currentMultiplier * 1.1);
+          currentMultiplier = Math?.min(2.0, currentMultiplier * 1.1);
         }
 
         requestCount = 0;

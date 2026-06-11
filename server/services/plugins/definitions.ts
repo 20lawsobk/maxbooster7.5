@@ -1,5 +1,5 @@
 // Plugin type definitions and built-in plugin data.
-// Extracted from pluginHostService.ts to break circular imports.
+// Extracted from pluginHostService?.ts to break circular imports.
 
 export type PluginCategory = "instrument" | "effect";
 export type InstrumentType =
@@ -88,7 +88,7 @@ export interface PluginDefinition {
   oscillators?: OscillatorConfig[];
   envelope?: EnvelopeConfig;
   /** Genre-specific preset banks keyed by genre id. Populated by the
-   *  enrichment layer (`server/services/plugins/enrichCatalog.ts`).
+   *  enrichment layer (`server/services/plugins/enrichCatalog?.ts`).
    *  Each entry is a full parameter override the user can recall. */
   genrePresets?: Record<string, Record<string, number | boolean | string>>;
   /** Human-readable note describing the industry reference whose control

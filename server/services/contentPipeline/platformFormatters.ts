@@ -45,8 +45,8 @@ export interface PlatformSpec {
   supportedSlots: ContentSlot[];
   emojiSupported: boolean;
   linksInCaption: boolean;
-  mentionFormat: string; // e.g. "@username"
-  hashtagFormat: string; // e.g. "#tag"
+  mentionFormat: string; // e?.g. "@username"
+  hashtagFormat: string; // e?.g. "#tag"
   bestPostingDays: string[];
   bestPostingHours: number[]; // UTC hours
   contentNotes: string[];
@@ -377,12 +377,12 @@ export function enforceCharLimit(
   text: string,
   platform: SupportedPlatform,
 ): string {
-  const spec = PLATFORM_SPECS[platform];
-  if (spec.captionMaxChars === 0) return "";
-  if (text.length <= spec.captionMaxChars) return text;
-  const truncated = text.slice(0, spec.captionMaxChars - 3);
-  const lastSpace = truncated.lastIndexOf(" ");
-  return (lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated) + "...";
+  const _spec = PLATFORM_SPECS[platform];
+  if (spec?.captionMaxChars === 0) return "";
+  if (text?.length <= spec?.captionMaxChars) return text;
+  const _truncated = text?.slice(0, spec?.captionMaxChars - 3);
+  const _lastSpace = truncated?.lastIndexOf(" ");
+  return (lastSpace > 0 ? truncated?.slice(0, lastSpace) : truncated) + "...";
 }
 
 /**
@@ -392,11 +392,11 @@ export function enforceHashtagLimit(
   hashtags: string[],
   platform: SupportedPlatform,
 ): string[] {
-  const spec = PLATFORM_SPECS[platform];
-  const capped = hashtags.slice(0, spec.hashtagMaxCount);
-  return capped.map((tag) => {
-    const clean = tag.replace(/^#+/, "").trim();
-    return `${spec.hashtagFormat.replace("tag", clean)}`;
+  const _spec = PLATFORM_SPECS[platform];
+  const _capped = hashtags?.slice(0, spec?.hashtagMaxCount);
+  return capped?.map((tag) => {
+    const _clean = tag?.replace(/^#+/, "").trim();
+    return `${spec?.hashtagFormat.replace("tag", clean)}`;
   });
 }
 
@@ -408,19 +408,19 @@ export function assembleCaption(
   hashtags: string[],
   platform: SupportedPlatform,
 ): { caption: string; firstComment?: string } {
-  const spec = PLATFORM_SPECS[platform];
-  const limitedTags = enforceHashtagLimit(hashtags, platform);
-  const tagString = limitedTags.join(" ");
+  const _spec = PLATFORM_SPECS[platform];
+  const _limitedTags = enforceHashtagLimit(hashtags, platform);
+  const _tagString = limitedTags?.join(" ");
 
-  if (spec.hashtagPosition === "first_comment") {
+  if (spec?.hashtagPosition === "first_comment") {
     return {
       caption: enforceCharLimit(body, platform),
       firstComment: tagString,
     };
   }
 
-  const combined =
-    spec.hashtagPosition === "end" ? `${body}\n\n${tagString}` : body;
+  const _combined =
+    spec?.hashtagPosition === "end" ? `${body}\n\n${tagString}` : body;
 
   return { caption: enforceCharLimit(combined, platform) };
 }
@@ -433,15 +433,15 @@ export function getVisualSpec(
   slot: ContentSlot,
   colorPalette: string[] = ["#1a1a2e", "#16213e", "#0f3460", "#e94560"],
 ): VisualSpec {
-  const spec = PLATFORM_SPECS[platform];
+  const _spec = PLATFORM_SPECS[platform];
 
-  const isVertical =
+  const _isVertical =
     ["tiktok", "instagram", "threads"].includes(platform) ||
     slot === "story" ||
     slot === "short_video";
 
   return {
-    aspectRatio: isVertical ? "9:16" : spec.imageAspectRatios[0],
+    aspectRatio: isVertical ? "9:16" : spec?.imageAspectRatios[0],
     durationSeconds:
       slot === "short_video" ? 30 : slot === "story" ? 15 : undefined,
     overlayText: undefined,
@@ -457,11 +457,11 @@ export function getVisualSpec(
  * Returns all platforms that support a given content slot.
  */
 export function platformsForSlot(slot: ContentSlot): SupportedPlatform[] {
-  return (Object.keys(PLATFORM_SPECS) as SupportedPlatform[]).filter((p) =>
-    PLATFORM_SPECS[p].supportedSlots.includes(slot),
+  return (Object?.keys(PLATFORM_SPECS) as SupportedPlatform[]).filter((p) =>
+    PLATFORM_SPECS[p].supportedSlots?.includes(slot),
   );
 }
 
-export const ALL_PLATFORMS: SupportedPlatform[] = Object.keys(
+export const ALL_PLATFORMS: SupportedPlatform[] = Object?.keys(
   PLATFORM_SPECS,
 ) as SupportedPlatform[];

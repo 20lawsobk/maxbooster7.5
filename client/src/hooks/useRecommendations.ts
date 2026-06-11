@@ -192,18 +192,18 @@ export function useRecommendations() {
     staleTime: 15 * 60 * 1000,
   });
 
-  const getHighPriorityRecommendations = (): PreferenceRecommendation[] => {
-    return recommendations?.filter((r) => r.priority === "high") || [];
+  const _getHighPriorityRecommendations = (): PreferenceRecommendation[] => {
+    return recommendations?.filter((r) => r?.priority === "high") || [];
   };
 
-  const getActionableRecommendations = (): PreferenceRecommendation[] => {
-    return recommendations?.filter((r) => r.actionable) || [];
+  const _getActionableRecommendations = (): PreferenceRecommendation[] => {
+    return recommendations?.filter((r) => r?.actionable) || [];
   };
 
-  const getRecommendationsByCategory = (
+  const _getRecommendationsByCategory = (
     category: string,
   ): PreferenceRecommendation[] => {
-    return recommendations?.filter((r) => r.category === category) || [];
+    return recommendations?.filter((r) => r?.category === category) || [];
   };
 
   return {
@@ -220,13 +220,13 @@ export function useRecommendations() {
 export function useNextActions() {
   const { preferences } = useUserPreferences();
 
-  const generateNextActions = (): NextAction[] => {
+  const _generateNextActions = (): NextAction[] => {
     const actions: NextAction[] = [];
 
     if (!preferences) return actions;
 
-    if (preferences.genres.length === 0) {
-      actions.push({
+    if (preferences?.genres.length === 0) {
+      actions?.push({
         id: "complete-profile",
         title: "Complete Your Artist Profile",
         description:
@@ -239,8 +239,8 @@ export function useNextActions() {
       });
     }
 
-    if (preferences.contentPreferences.platforms.length < 2) {
-      actions.push({
+    if (preferences?.contentPreferences.platforms?.length < 2) {
+      actions?.push({
         id: "connect-platforms",
         title: "Connect More Platforms",
         description:
@@ -253,7 +253,7 @@ export function useNextActions() {
       });
     }
 
-    actions.push({
+    actions?.push({
       id: "schedule-content",
       title: "Schedule This Week's Content",
       description: "Plan and schedule your social media posts for the week",
@@ -264,7 +264,7 @@ export function useNextActions() {
       link: "/social-media",
     });
 
-    actions.push({
+    actions?.push({
       id: "review-analytics",
       title: "Review Your Analytics",
       description: "Check your streaming and social media performance",
@@ -275,9 +275,9 @@ export function useNextActions() {
       link: "/analytics",
     });
 
-    return actions.sort((a, b) => {
-      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
-      return priorityOrder[b.priority] - priorityOrder[a.priority];
+    return actions?.sort((a, b) => {
+      const _priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+      return priorityOrder[b?.priority] - priorityOrder[a?.priority];
     });
   };
 
@@ -290,20 +290,20 @@ export function useNextActions() {
 export function usePersonalizedTips() {
   const { preferences } = useUserPreferences();
 
-  const getTips = (): PersonalizedTip[] => {
-    if (!preferences) return CONTEXTUAL_TIPS.slice(0, 3);
+  const _getTips = (): PersonalizedTip[] => {
+    if (!preferences) return CONTEXTUAL_TIPS?.slice(0, 3);
 
     let tips = [...CONTEXTUAL_TIPS];
 
-    if (preferences.careerStage === "emerging") {
-      tips = tips.filter((t) => t.category !== "monetization");
+    if (preferences?.careerStage === "emerging") {
+      tips = tips?.filter((t) => t?.category !== "monetization");
     }
 
-    if (preferences.contentPreferences.platforms.length > 3) {
-      tips = tips.filter((t) => t.id !== "tip-3");
+    if (preferences?.contentPreferences.platforms?.length > 3) {
+      tips = tips?.filter((t) => t?.id !== "tip-3");
     }
 
-    return tips.sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, 5);
+    return tips?.sort((a, b) => b?.relevanceScore - a?.relevanceScore).slice(0, 5);
   };
 
   return {
@@ -315,9 +315,9 @@ export function usePersonalizedTips() {
 export function useCareerStageGuidance() {
   const { preferences } = useUserPreferences();
 
-  const getGuidance = (): CareerGuidance | null => {
+  const _getGuidance = (): CareerGuidance | null => {
     if (!preferences) return null;
-    return CAREER_STAGE_GUIDANCE[preferences.careerStage];
+    return CAREER_STAGE_GUIDANCE[preferences?.careerStage];
   };
 
   return {

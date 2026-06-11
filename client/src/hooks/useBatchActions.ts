@@ -105,7 +105,7 @@ export function useBatchActions(
     pollProgressInterval = 1000,
   } = options;
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
 
   const [status, setStatus] = useState<BatchActionStatus>("idle");
   const [progress, setProgress] = useState<BatchProgress>(defaultProgress);
@@ -115,22 +115,22 @@ export function useBatchActions(
     null,
   );
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const _abortControllerRef = useRef<AbortController | null>(null);
+  const _progressIntervalRef = useRef<NodeJS?.Timeout | null>(null);
+  const _pollIntervalRef = useRef<NodeJS?.Timeout | null>(null);
 
-  const updateProgress = useCallback(
+  const _updateProgress = useCallback(
     (update: Partial<BatchProgress>) => {
       setProgress((prev) => {
-        const next = { ...prev, ...update };
+        const _next = { ...prev, ...update };
         next.percentage =
-          next.total > 0 ? Math.round((next.current / next.total) * 100) : 0;
+          next?.total > 0 ? Math?.round((next?.current / next?.total) * 100) : 0;
 
-        if (next.startTime && next.current > 0) {
-          const elapsed = Date.now() - next.startTime;
-          const rate = next.current / elapsed;
-          const remaining = next.total - next.current;
-          next.estimatedTimeRemaining = Math.round(remaining / rate);
+        if (next?.startTime && next?.current > 0) {
+          const _elapsed = Date?.now() - next?.startTime;
+          const _rate = next?.current / elapsed;
+          const _remaining = next?.total - next?.current;
+          next.estimatedTimeRemaining = Math?.round(remaining / rate);
         }
 
         onProgress?.(next);
@@ -140,48 +140,48 @@ export function useBatchActions(
     [onProgress],
   );
 
-  const startProgressSimulation = useCallback(
+  const _startProgressSimulation = useCallback(
     (total: number) => {
       if (!simulateProgress) return;
 
       let current = 0;
-      const increment = Math.max(1, Math.floor(total / 20));
-      const intervalMs = 200;
+      const _increment = Math?.max(1, Math?.floor(total / 20));
+      const _intervalMs = 200;
 
       progressIntervalRef.current = setInterval(() => {
-        current = Math.min(current + increment, total - 1);
+        current = Math?.min(current + increment, total - 1);
         updateProgress({ current, total });
       }, intervalMs);
     },
     [simulateProgress, updateProgress],
   );
 
-  const stopProgressSimulation = useCallback(() => {
-    if (progressIntervalRef.current) {
-      clearInterval(progressIntervalRef.current);
+  const _stopProgressSimulation = useCallback(() => {
+    if (progressIntervalRef?.current) {
+      clearInterval(progressIntervalRef?.current);
       progressIntervalRef.current = null;
     }
-    if (pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current);
+    if (pollIntervalRef?.current) {
+      clearInterval(pollIntervalRef?.current);
       pollIntervalRef.current = null;
     }
   }, []);
 
-  const pollJobProgress = useCallback(
+  const _pollJobProgress = useCallback(
     async (jobId: string, total: number) => {
       pollIntervalRef.current = setInterval(async () => {
         try {
-          const response = await apiRequest(
+          const _response = await apiRequest(
             "GET",
             `/api/batch/progress/${jobId}`,
           );
           updateProgress({
-            current: response.processed || 0,
+            current: response?.processed || 0,
             total,
-            currentItem: response.currentItem,
+            currentItem: response?.currentItem,
           });
 
-          if (response.status === "completed" || response.status === "failed") {
+          if (response?.status === "completed" || response?.status === "failed") {
             stopProgressSimulation();
           }
         } catch {}
@@ -190,7 +190,7 @@ export function useBatchActions(
     [updateProgress, pollProgressInterval, stopProgressSimulation],
   );
 
-  const getEndpoint = useCallback(
+  const _getEndpoint = useCallback(
     (
       resource: string,
       action: BatchActionType,
@@ -227,7 +227,7 @@ export function useBatchActions(
     [],
   );
 
-  const execute = useCallback(
+  const _execute = useCallback(
     async (config: BatchActionConfig): Promise<BatchResult> => {
       const {
         resource,
@@ -246,53 +246,53 @@ export function useBatchActions(
       setResult(null);
       updateProgress({
         current: 0,
-        total: ids.length,
+        total: ids?.length,
         currentItem: undefined,
-        startTime: Date.now(),
+        startTime: Date?.now(),
       });
 
       if (!useJobProgress) {
-        startProgressSimulation(ids.length);
+        startProgressSimulation(ids?.length);
       }
 
       try {
         const { method, url } = getEndpoint(resource, action);
-        const body = { ids, data };
+        const _body = { ids, data };
 
-        const response = await apiRequest(method, url, body);
+        const _response = await apiRequest(method, url, body);
         stopProgressSimulation();
 
-        if (useJobProgress && response.jobId) {
-          await pollJobProgress(response.jobId, ids.length);
+        if (useJobProgress && response?.jobId) {
+          await pollJobProgress(response?.jobId, ids?.length);
         }
 
         const actionResult: BatchResult = {
-          success: response.success || ids,
-          failed: response.failed || [],
-          totalRequested: ids.length,
-          totalSucceeded: response.success?.length ?? ids.length,
-          totalFailed: response.failed?.length ?? 0,
-          downloadUrl: response.downloadUrl,
-          exportId: response.exportId,
-          comparisonData: response.comparisonData,
-          jobId: response.jobId,
+          success: response?.success || ids,
+          failed: response?.failed || [],
+          totalRequested: ids?.length,
+          totalSucceeded: response?.success?.length ?? ids?.length,
+          totalFailed: response?.failed?.length ?? 0,
+          downloadUrl: response?.downloadUrl,
+          exportId: response?.exportId,
+          comparisonData: response?.comparisonData,
+          jobId: response?.jobId,
         };
 
-        updateProgress({ current: ids.length, total: ids.length });
+        updateProgress({ current: ids?.length, total: ids?.length });
         setResult(actionResult);
 
-        if (actionResult.totalFailed === 0) {
+        if (actionResult?.totalFailed === 0) {
           setStatus("completed");
           toast({
             title: successMessage || "Operation completed",
-            description: `Successfully processed ${actionResult.totalSucceeded} item(s)`,
+            description: `Successfully processed ${actionResult?.totalSucceeded} item(s)`,
           });
           onSuccess?.(actionResult);
-        } else if (actionResult.totalSucceeded > 0) {
+        } else if (actionResult?.totalSucceeded > 0) {
           setStatus("partial");
           toast({
             title: "Operation partially completed",
-            description: `${actionResult.totalSucceeded} succeeded, ${actionResult.totalFailed} failed`,
+            description: `${actionResult?.totalSucceeded} succeeded, ${actionResult?.totalFailed} failed`,
             variant: "destructive",
           });
           onSuccess?.(actionResult);
@@ -300,14 +300,14 @@ export function useBatchActions(
           setStatus("failed");
           toast({
             title: errorMessage || "Operation failed",
-            description: `All ${actionResult.totalFailed} item(s) failed`,
+            description: `All ${actionResult?.totalFailed} item(s) failed`,
             variant: "destructive",
           });
         }
 
         if (invalidateQueries) {
           for (const queryKey of invalidateQueries) {
-            queryClient.invalidateQueries({ queryKey: [queryKey] });
+            queryClient?.invalidateQueries({ queryKey: [queryKey] });
           }
         }
 
@@ -315,13 +315,13 @@ export function useBatchActions(
         return actionResult;
       } catch (err) {
         stopProgressSimulation();
-        const error = err instanceof Error ? err : new Error("Unknown error");
+        const _error = err instanceof Error ? err : new Error("Unknown error");
         setError(error);
         setStatus("failed");
 
         toast({
           title: errorMessage || "Operation failed",
-          description: error.message,
+          description: error?.message,
           variant: "destructive",
         });
 
@@ -344,21 +344,21 @@ export function useBatchActions(
     ],
   );
 
-  const confirm = useCallback((config: BatchActionConfig) => {
+  const _confirm = useCallback((config: BatchActionConfig) => {
     setPendingConfig(config);
     setStatus("confirming");
   }, []);
 
-  const cancel = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+  const _cancel = useCallback(() => {
+    if (abortControllerRef?.current) {
+      abortControllerRef?.current.abort();
     }
     stopProgressSimulation();
     setPendingConfig(null);
     setStatus("cancelled");
   }, [stopProgressSimulation]);
 
-  const reset = useCallback(() => {
+  const _reset = useCallback(() => {
     stopProgressSimulation();
     setStatus("idle");
     setProgress(defaultProgress);
@@ -367,11 +367,11 @@ export function useBatchActions(
     setPendingConfig(null);
   }, [stopProgressSimulation]);
 
-  const retryFailed = useCallback(async (): Promise<BatchResult | null> => {
-    if (!pendingConfig || !result || result.failed.length === 0) return null;
+  const _retryFailed = useCallback(async (): Promise<BatchResult | null> => {
+    if (!pendingConfig || !result || result?.failed.length === 0) return null;
 
-    const failedIds = result.failed.map((f) => f.id);
-    const retryConfig = {
+    const _failedIds = result?.failed.map((f) => f?.id);
+    const _retryConfig = {
       ...pendingConfig,
       ids: failedIds,
       successMessage: "Retry completed",
@@ -381,8 +381,8 @@ export function useBatchActions(
     return execute(retryConfig);
   }, [pendingConfig, result, execute]);
 
-  const isProcessing = useMemo(() => status === "processing", [status]);
-  const isComplete = useMemo(
+  const _isProcessing = useMemo(() => status === "processing", [status]);
+  const _isComplete = useMemo(
     () => status === "completed" || status === "partial" || status === "failed",
     [status],
   );
@@ -404,11 +404,11 @@ export function useBatchActions(
 }
 
 export function useReleaseBatchActions(options: UseBatchActionsOptions = {}) {
-  const batchActions = useBatchActions(options);
+  const _batchActions = useBatchActions(options);
 
-  const submitReleases = useCallback(
+  const _submitReleases = useCallback(
     async (ids: string[], data?: Record<string, any>) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "releases",
         action: "submit",
         ids,
@@ -421,9 +421,9 @@ export function useReleaseBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const deleteReleases = useCallback(
+  const _deleteReleases = useCallback(
     async (ids: string[]) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "releases",
         action: "delete",
         ids,
@@ -435,9 +435,9 @@ export function useReleaseBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const updateReleases = useCallback(
+  const _updateReleases = useCallback(
     async (ids: string[], data: Record<string, any>) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "releases",
         action: "update",
         ids,
@@ -454,11 +454,11 @@ export function useReleaseBatchActions(options: UseBatchActionsOptions = {}) {
 }
 
 export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
-  const batchActions = useBatchActions(options);
+  const _batchActions = useBatchActions(options);
 
-  const moveTracks = useCallback(
+  const _moveTracks = useCallback(
     async (ids: string[], targetFolder: string) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "tracks",
         action: "move",
         ids,
@@ -471,9 +471,9 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const tagTracks = useCallback(
+  const _tagTracks = useCallback(
     async (ids: string[], tags: string[]) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "tracks",
         action: "tag",
         ids,
@@ -486,9 +486,9 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const exportTracks = useCallback(
+  const _exportTracks = useCallback(
     async (ids: string[], format: string = "wav") => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "tracks",
         action: "export",
         ids,
@@ -500,9 +500,9 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const deleteTracks = useCallback(
+  const _deleteTracks = useCallback(
     async (ids: string[]) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "tracks",
         action: "delete",
         ids,
@@ -518,11 +518,11 @@ export function useTrackBatchActions(options: UseBatchActionsOptions = {}) {
 }
 
 export function usePostBatchActions(options: UseBatchActionsOptions = {}) {
-  const batchActions = useBatchActions(options);
+  const _batchActions = useBatchActions(options);
 
-  const schedulePosts = useCallback(
+  const _schedulePosts = useCallback(
     async (ids: string[], scheduledTime: string) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "posts",
         action: "schedule",
         ids,
@@ -535,9 +535,9 @@ export function usePostBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const deletePosts = useCallback(
+  const _deletePosts = useCallback(
     async (ids: string[]) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "posts",
         action: "delete",
         ids,
@@ -549,9 +549,9 @@ export function usePostBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const approvePosts = useCallback(
+  const _approvePosts = useCallback(
     async (ids: string[]) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "posts",
         action: "approve",
         ids,
@@ -567,11 +567,11 @@ export function usePostBatchActions(options: UseBatchActionsOptions = {}) {
 }
 
 export function useBeatBatchActions(options: UseBatchActionsOptions = {}) {
-  const batchActions = useBatchActions(options);
+  const _batchActions = useBatchActions(options);
 
-  const updatePrices = useCallback(
+  const _updatePrices = useCallback(
     async (ids: string[], price: number) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "beats",
         action: "update",
         ids,
@@ -587,9 +587,9 @@ export function useBeatBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const updateLicenses = useCallback(
+  const _updateLicenses = useCallback(
     async (ids: string[], licenseType: string) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "beats",
         action: "update",
         ids,
@@ -605,9 +605,9 @@ export function useBeatBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const deleteBeats = useCallback(
+  const _deleteBeats = useCallback(
     async (ids: string[]) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "beats",
         action: "delete",
         ids,
@@ -626,15 +626,15 @@ export function useBeatBatchActions(options: UseBatchActionsOptions = {}) {
 }
 
 export function useAnalyticsBatchActions(options: UseBatchActionsOptions = {}) {
-  const batchActions = useBatchActions(options);
+  const _batchActions = useBatchActions(options);
 
-  const exportAnalytics = useCallback(
+  const _exportAnalytics = useCallback(
     async (
       ids: string[],
       format: string = "csv",
       dateRange?: { start: string; end: string },
     ) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "analytics",
         action: "export",
         ids,
@@ -646,9 +646,9 @@ export function useAnalyticsBatchActions(options: UseBatchActionsOptions = {}) {
     [batchActions],
   );
 
-  const compareAnalytics = useCallback(
+  const _compareAnalytics = useCallback(
     async (ids: string[]) => {
-      return batchActions.execute({
+      return batchActions?.execute({
         resource: "analytics",
         action: "compare",
         ids,

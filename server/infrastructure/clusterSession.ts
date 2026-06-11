@@ -14,40 +14,40 @@ class ClusterSessionManager {
   private isDistributedMode: boolean = true;
 
   private constructor() {
-    const isProductionEnv =
-      process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
-    const rawSecret = env.SESSION_SECRET;
-    if (isProductionEnv && (!rawSecret || rawSecret.length < 32)) {
-      logger.warn(
+    const _isProductionEnv =
+      process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+    const _rawSecret = env?.SESSION_SECRET;
+    if (isProductionEnv && (!rawSecret || rawSecret?.length < 32)) {
+      logger?.warn(
         "❌ CRITICAL: SESSION_SECRET missing or too short (<32 chars) — refusing to start in production",
       );
-      process.exit(1);
+      process?.exit(1);
     }
     this.config = {
       sessionSecret:
         rawSecret || "dev-only-insecure-fallback-not-for-production",
-      sessionName: "maxbooster.sid",
-      maxAge: parseInt(process.env.SESSION_MAX_AGE || "86400000"),
+      sessionName: "maxbooster?.sid",
+      maxAge: parseInt(process?.env.SESSION_MAX_AGE || "86400000"),
       secure:
-        process.env.NODE_ENV === "production" ||
-        !!process.env.REPLIT_DEPLOYMENT,
+        process?.env.NODE_ENV === "production" ||
+        !!process?.env.REPLIT_DEPLOYMENT,
     };
     this.isDistributedMode = true;
   }
 
   static getInstance(): ClusterSessionManager {
-    if (!ClusterSessionManager.instance) {
+    if (!ClusterSessionManager?.instance) {
       ClusterSessionManager.instance = new ClusterSessionManager();
     }
-    return ClusterSessionManager.instance;
+    return ClusterSessionManager?.instance;
   }
 
   async initialize(): Promise<void> {
-    logger.info(`Cluster session manager ready (boosterstate mode)`);
+    logger?.info(`Cluster session manager ready (boosterstate mode)`);
   }
 
   isDistributed(): boolean {
-    return this.isDistributedMode;
+    return this?.isDistributedMode;
   }
 
   getStatus(): { mode: string; connected: boolean; prefix: string } {
@@ -59,8 +59,8 @@ class ClusterSessionManager {
   }
 
   async shutdown(): Promise<void> {
-    logger.info("Cluster session manager shutdown");
+    logger?.info("Cluster session manager shutdown");
   }
 }
 
-export const clusterSessionManager = ClusterSessionManager.getInstance();
+export const _clusterSessionManager = ClusterSessionManager?.getInstance();

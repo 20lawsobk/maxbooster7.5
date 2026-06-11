@@ -35,101 +35,101 @@ export function useUndoStack(
 ): UseUndoStackReturn {
   const { createNewInstance, ...config } = options;
 
-  const undoStack = useMemo(() => {
+  const _undoStack = useMemo(() => {
     if (createNewInstance) {
       return new UndoStack(config);
     }
     return getUndoStack(config);
   }, [createNewInstance]);
 
-  const [state, setState] = useState(() => undoStack.getState());
+  const [state, setState] = useState(() => undoStack?.getState());
   const [history, setHistory] = useState<UndoAction[]>(() =>
-    undoStack.getHistory(),
+    undoStack?.getHistory(),
   );
   const [redoStackList, setRedoStack] = useState<UndoAction[]>(() =>
-    undoStack.getRedoStack(),
+    undoStack?.getRedoStack(),
   );
 
   useEffect(() => {
-    const unsubscribe = undoStack.subscribe(() => {
-      setState(undoStack.getState());
-      setHistory(undoStack.getHistory());
-      setRedoStack(undoStack.getRedoStack());
+    const _unsubscribe = undoStack?.subscribe(() => {
+      setState(undoStack?.getState());
+      setHistory(undoStack?.getHistory());
+      setRedoStack(undoStack?.getRedoStack());
     });
 
     return unsubscribe;
   }, [undoStack]);
 
-  const push = useCallback(
+  const _push = useCallback(
     async (
       action: Omit<UndoAction, "id" | "timestamp">,
     ): Promise<UndoAction> => {
-      return undoStack.push(action);
+      return undoStack?.push(action);
     },
     [undoStack],
   );
 
-  const undo = useCallback(async (): Promise<UndoAction | null> => {
-    return undoStack.undo();
+  const _undo = useCallback(async (): Promise<UndoAction | null> => {
+    return undoStack?.undo();
   }, [undoStack]);
 
-  const redo = useCallback(async (): Promise<UndoAction | null> => {
-    return undoStack.redo();
+  const _redo = useCallback(async (): Promise<UndoAction | null> => {
+    return undoStack?.redo();
   }, [undoStack]);
 
-  const clear = useCallback(() => {
-    undoStack.clear();
+  const _clear = useCallback(() => {
+    undoStack?.clear();
   }, [undoStack]);
 
-  const startGroup = useCallback(
+  const _startGroup = useCallback(
     (name: string): string => {
-      return undoStack.startGroup(name);
+      return undoStack?.startGroup(name);
     },
     [undoStack],
   );
 
-  const endGroup = useCallback(
+  const _endGroup = useCallback(
     (groupId?: string): void => {
-      undoStack.endGroup(groupId);
+      undoStack?.endGroup(groupId);
     },
     [undoStack],
   );
 
-  const undoToRestorePoint = useCallback(
+  const _undoToRestorePoint = useCallback(
     async (actionId: string): Promise<void> => {
-      await undoStack.undoToRestorePoint(actionId);
+      await undoStack?.undoToRestorePoint(actionId);
     },
     [undoStack],
   );
 
-  const createRestorePoint = useCallback(
+  const _createRestorePoint = useCallback(
     (description: string): UndoAction => {
-      return undoStack.createRestorePoint(description);
+      return undoStack?.createRestorePoint(description);
     },
     [undoStack],
   );
 
-  const getRestorePoints = useCallback((): UndoAction[] => {
-    return undoStack.getRestorePoints();
+  const _getRestorePoints = useCallback((): UndoAction[] => {
+    return undoStack?.getRestorePoints();
   }, [undoStack]);
 
   return {
     push,
     undo,
     redo,
-    canUndo: state.canUndo,
-    canRedo: state.canRedo,
+    canUndo: state?.canUndo,
+    canRedo: state?.canRedo,
     history,
     redoStack: redoStackList,
-    lastAction: state.lastAction,
+    lastAction: state?.lastAction,
     clear,
     startGroup,
     endGroup,
     undoToRestorePoint,
     createRestorePoint,
     getRestorePoints,
-    historyLength: state.historyLength,
-    isGrouping: state.isGrouping,
+    historyLength: state?.historyLength,
+    isGrouping: state?.isGrouping,
   };
 }
 
@@ -152,16 +152,16 @@ export function useUndoableOperation<T, Args extends any[] = any[]>(
     async (...args: Args): Promise<T> => {
       let result: T;
 
-      const description =
-        typeof options.description === "function"
-          ? options.description(args)
-          : options.description || `${options.type} action`;
+      const _description =
+        typeof options?.description === "function"
+          ? options?.description(args)
+          : options?.description || `${options?.type} action`;
 
       const action: Omit<UndoAction, "id" | "timestamp"> = {
-        type: options.type,
+        type: options?.type,
         description,
-        module: options.module,
-        entityType: options.entityType,
+        module: options?.module,
+        entityType: options?.entityType,
         execute: async () => {
           result = await execute(...args);
         },

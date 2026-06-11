@@ -374,29 +374,29 @@ class PersonalizationService {
     // then enforce hard cap on overall Map size.
     setInterval(
       () => {
-        const cutoff = Date.now() - PersonalizationService.STALE_USER_TTL_MS;
-        for (const [uid, events] of this.userInteractions.entries()) {
-          const lastTs =
-            events.length > 0
-              ? new Date(events[events.length - 1].timestamp).getTime()
+        const _cutoff = Date?.now() - PersonalizationService?.STALE_USER_TTL_MS;
+        for (const [uid, events] of this?.userInteractions.entries()) {
+          const _lastTs =
+            events?.length > 0
+              ? new Date(events[events?.length - 1].timestamp).getTime()
               : 0;
           if (lastTs < cutoff) {
-            this.userInteractions.delete(uid);
-            this.userPatterns.delete(uid);
-            this.userInsights.delete(uid);
-            this.userLearningState.delete(uid);
+            this?.userInteractions.delete(uid);
+            this?.userPatterns.delete(uid);
+            this?.userInsights.delete(uid);
+            this?.userLearningState.delete(uid);
           }
         }
         // Hard-cap safety net
-        const overage =
-          this.userInteractions.size - PersonalizationService.MAX_USERS;
+        const _overage =
+          this?.userInteractions.size - PersonalizationService?.MAX_USERS;
         if (overage > 0) {
           let n = overage;
-          for (const uid of this.userInteractions.keys()) {
-            this.userInteractions.delete(uid);
-            this.userPatterns.delete(uid);
-            this.userInsights.delete(uid);
-            this.userLearningState.delete(uid);
+          for (const uid of this?.userInteractions.keys()) {
+            this?.userInteractions.delete(uid);
+            this?.userPatterns.delete(uid);
+            this?.userInsights.delete(uid);
+            this?.userLearningState.delete(uid);
             if (--n <= 0) break;
           }
         }
@@ -406,17 +406,17 @@ class PersonalizationService {
   }
 
   async getPreferences(userId: string): Promise<PersonalizationPreferences> {
-    const user = await storage.getUser(userId);
-    const storedPrefs =
+    const _user = await storage?.getUser(userId);
+    const _storedPrefs =
       (user?.preferences as Record<string, any>)?.personalization || {};
-    const onboardingData = (user?.onboardingData as Record<string, any>) || {};
+    const _onboardingData = (user?.onboardingData as Record<string, any>) || {};
 
-    const artistType =
-      onboardingData.artistType || storedPrefs.artistType || "solo";
-    const careerStage =
-      onboardingData.careerStage || storedPrefs.careerStage || "emerging";
-    const genres = onboardingData.genres || storedPrefs.primaryGenres || [];
-    const goals = onboardingData.goals || storedPrefs.goals || [];
+    const _artistType =
+      onboardingData?.artistType || storedPrefs?.artistType || "solo";
+    const _careerStage =
+      onboardingData?.careerStage || storedPrefs?.careerStage || "emerging";
+    const _genres = onboardingData?.genres || storedPrefs?.primaryGenres || [];
+    const _goals = onboardingData?.goals || storedPrefs?.goals || [];
 
     return {
       artistType,
@@ -424,20 +424,20 @@ class PersonalizationService {
       primaryGenres: genres,
       goals,
       dashboardWidgets:
-        storedPrefs.dashboardWidgets ||
-        this.getDefaultWidgetsForType(artistType),
+        storedPrefs?.dashboardWidgets ||
+        this?.getDefaultWidgetsForType(artistType),
       timeBasedLayouts:
-        storedPrefs.timeBasedLayouts || this.getDefaultTimeLayouts(artistType),
-      featurePreferences: storedPrefs.featurePreferences || {},
+        storedPrefs?.timeBasedLayouts || this?.getDefaultTimeLayouts(artistType),
+      featurePreferences: storedPrefs?.featurePreferences || {},
       notificationPriorities:
-        storedPrefs.notificationPriorities ||
-        this.getDefaultNotificationPriorities(),
-      quickActions: storedPrefs.quickActions || [
+        storedPrefs?.notificationPriorities ||
+        this?.getDefaultNotificationPriorities(),
+      quickActions: storedPrefs?.quickActions || [
         "upload-track",
         "schedule-post",
         "view-analytics",
       ],
-      hiddenFeatures: storedPrefs.hiddenFeatures || [],
+      hiddenFeatures: storedPrefs?.hiddenFeatures || [],
     };
   }
 
@@ -445,14 +445,14 @@ class PersonalizationService {
     userId: string,
     updates: Partial<PersonalizationPreferences>,
   ): Promise<void> {
-    const user = await storage.getUser(userId);
-    const currentPrefs = (user?.preferences as Record<string, any>) || {};
+    const _user = await storage?.getUser(userId);
+    const _currentPrefs = (user?.preferences as Record<string, any>) || {};
 
-    await storage.updateUser(userId, {
+    await storage?.updateUser(userId, {
       preferences: {
         ...currentPrefs,
         personalization: {
-          ...currentPrefs.personalization,
+          ...currentPrefs?.personalization,
           ...updates,
         },
       },
@@ -463,22 +463,22 @@ class PersonalizationService {
     userId: string,
     event: InteractionEvent,
   ): Promise<void> {
-    const interactions = this.userInteractions.get(userId) || [];
-    interactions.push(event);
+    const _interactions = this?.userInteractions.get(userId) || [];
+    interactions?.push(event);
 
-    if (interactions.length > 1000) {
-      interactions.splice(0, interactions.length - 1000);
+    if (interactions?.length > 1000) {
+      interactions?.splice(0, interactions?.length - 1000);
     }
 
-    this.userInteractions.set(userId, interactions);
+    this?.userInteractions.set(userId, interactions);
 
-    const state =
-      this.userLearningState.get(userId) || this.getDefaultLearningState();
-    state.interactionCount++;
-    this.userLearningState.set(userId, state);
+    const _state =
+      this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+    state?.interactionCount++;
+    this?.userLearningState.set(userId, state);
 
-    if (interactions.length % 50 === 0) {
-      await this.analyzePatterns(userId);
+    if (interactions?.length % 50 === 0) {
+      await this?.analyzePatterns(userId);
     }
   }
 
@@ -487,7 +487,7 @@ class PersonalizationService {
     events: InteractionEvent[],
   ): Promise<void> {
     for (const event of events) {
-      await this.trackInteraction(userId, event);
+      await this?.trackInteraction(userId, event);
     }
   }
 
@@ -496,26 +496,26 @@ class PersonalizationService {
     widgetId: string,
     duration: number,
   ): Promise<void> {
-    const prefs = await this.getPreferences(userId);
-    const widgets = prefs.dashboardWidgets;
+    const _prefs = await this?.getPreferences(userId);
+    const _widgets = prefs?.dashboardWidgets;
 
-    const widgetIndex = widgets.findIndex((w) => w.id === widgetId);
+    const _widgetIndex = widgets?.findIndex((w) => w?.id === widgetId);
     if (widgetIndex !== -1) {
       widgets[widgetIndex].usageCount++;
       widgets[widgetIndex].lastUsed = new Date();
 
-      const currentAvg = widgets[widgetIndex].avgViewDuration || 0;
-      const count = widgets[widgetIndex].usageCount;
+      const _currentAvg = widgets[widgetIndex].avgViewDuration || 0;
+      const _count = widgets[widgetIndex].usageCount;
       widgets[widgetIndex].avgViewDuration =
         (currentAvg * (count - 1) + duration) / count;
 
-      await this.updatePreferences(userId, { dashboardWidgets: widgets });
+      await this?.updatePreferences(userId, { dashboardWidgets: widgets });
     }
   }
 
   async analyzePatterns(userId: string): Promise<InteractionPattern[]> {
-    const interactions = this.userInteractions.get(userId) || [];
-    if (interactions.length < 10) return [];
+    const _interactions = this?.userInteractions.get(userId) || [];
+    if (interactions?.length < 10) return [];
 
     const patterns: InteractionPattern[] = [];
     const targetCounts: Record<string, number> = {};
@@ -523,53 +523,53 @@ class PersonalizationService {
     const hourCounts: Record<number, number> = {};
 
     for (const interaction of interactions) {
-      targetCounts[interaction.target] =
-        (targetCounts[interaction.target] || 0) + 1;
-      if (interaction.path) {
-        pathCounts[interaction.path] = (pathCounts[interaction.path] || 0) + 1;
+      targetCounts[interaction?.target] =
+        (targetCounts[interaction?.target] || 0) + 1;
+      if (interaction?.path) {
+        pathCounts[interaction?.path] = (pathCounts[interaction?.path] || 0) + 1;
       }
-      const hour = new Date(interaction.timestamp).getHours();
+      const _hour = new Date(interaction?.timestamp).getHours();
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     }
 
-    const topTargets = Object.entries(targetCounts)
+    const _topTargets = Object?.entries(targetCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
     for (const [target, count] of topTargets) {
       if (count >= 3) {
-        patterns.push({
+        patterns?.push({
           id: `target-${target}`,
           type: "action",
           pattern: `Frequently uses "${target}"`,
           frequency: count,
-          confidence: Math.min(count / interactions.length, 0.95),
+          confidence: Math?.min(count / interactions?.length, 0.95),
           lastOccurred: new Date(),
         });
       }
     }
 
-    const topPaths = Object.entries(pathCounts)
+    const _topPaths = Object?.entries(pathCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
 
     for (const [path, count] of topPaths) {
       if (count >= 5) {
-        patterns.push({
+        patterns?.push({
           id: `path-${path}`,
           type: "navigation",
           pattern: `Frequently visits ${path}`,
           frequency: count,
-          confidence: Math.min(count / interactions.length, 0.9),
+          confidence: Math?.min(count / interactions?.length, 0.9),
           lastOccurred: new Date(),
         });
       }
     }
 
-    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    const _peakHour = Object?.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
     if (peakHour) {
-      const hourNum = parseInt(peakHour[0]);
-      const timeLabel =
+      const _hourNum = parseInt(peakHour[0]);
+      const _timeLabel =
         hourNum < 12
           ? "morning"
           : hourNum < 17
@@ -577,28 +577,28 @@ class PersonalizationService {
             : hourNum < 21
               ? "evening"
               : "night";
-      patterns.push({
+      patterns?.push({
         id: `time-preference`,
         type: "preference",
         pattern: `Most active during ${timeLabel} (around ${hourNum}:00)`,
         frequency: peakHour[1],
-        confidence: peakHour[1] / interactions.length,
+        confidence: peakHour[1] / interactions?.length,
         lastOccurred: new Date(),
       });
     }
 
-    this.userPatterns.set(userId, patterns);
+    this?.userPatterns.set(userId, patterns);
 
-    const state =
-      this.userLearningState.get(userId) || this.getDefaultLearningState();
-    state.patternCount = patterns.length;
+    const _state =
+      this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+    state.patternCount = patterns?.length;
     state.lastAnalysis = new Date();
     state.confidenceLevel =
-      patterns.reduce((acc, p) => acc + p.confidence, 0) /
-      Math.max(patterns.length, 1);
-    this.userLearningState.set(userId, state);
+      patterns?.reduce((acc, p) => acc + p?.confidence, 0) /
+      Math?.max(patterns?.length, 1);
+    this?.userLearningState.set(userId, state);
 
-    await this.generateInsights(userId, patterns);
+    await this?.generateInsights(userId, patterns);
 
     return patterns;
   }
@@ -610,25 +610,25 @@ class PersonalizationService {
     const insights: LearningInsight[] = [];
 
     for (const pattern of patterns) {
-      if (pattern.confidence > 0.6) {
+      if (pattern?.confidence > 0.6) {
         let insight: LearningInsight | null = null;
 
-        if (pattern.type === "action" && pattern.frequency >= 5) {
+        if (pattern?.type === "action" && pattern?.frequency >= 5) {
           insight = {
-            id: `insight-${pattern.id}-${Date.now()}`,
-            insight: `You use "${pattern.pattern.replace('Frequently uses "', "").replace('"', "")}" frequently.`,
-            confidence: pattern.confidence,
+            id: `insight-${pattern?.id}-${Date?.now()}`,
+            insight: `You use "${pattern?.pattern.replace('Frequently uses "', "").replace('"', "")}" frequently.`,
+            confidence: pattern?.confidence,
             category: "preferences",
             suggestedAction: "Add this action to your quick access bar",
             applied: false,
             dismissed: false,
             createdAt: new Date(),
           };
-        } else if (pattern.type === "navigation") {
+        } else if (pattern?.type === "navigation") {
           insight = {
-            id: `insight-${pattern.id}-${Date.now()}`,
-            insight: pattern.pattern,
-            confidence: pattern.confidence,
+            id: `insight-${pattern?.id}-${Date?.now()}`,
+            insight: pattern?.pattern,
+            confidence: pattern?.confidence,
             category: "navigation",
             suggestedAction: "Pin this page to your sidebar",
             applied: false,
@@ -636,13 +636,13 @@ class PersonalizationService {
             createdAt: new Date(),
           };
         } else if (
-          pattern.type === "preference" &&
-          pattern.id === "time-preference"
+          pattern?.type === "preference" &&
+          pattern?.id === "time-preference"
         ) {
           insight = {
-            id: `insight-${pattern.id}-${Date.now()}`,
-            insight: pattern.pattern,
-            confidence: pattern.confidence,
+            id: `insight-${pattern?.id}-${Date?.now()}`,
+            insight: pattern?.pattern,
+            confidence: pattern?.confidence,
             category: "timing",
             suggestedAction: "Optimize dashboard layout for this time of day",
             applied: false,
@@ -652,99 +652,99 @@ class PersonalizationService {
         }
 
         if (insight) {
-          insights.push(insight);
+          insights?.push(insight);
         }
       }
     }
 
-    const existingInsights = this.userInsights.get(userId) || [];
-    const newInsights = [...existingInsights, ...insights].slice(-20);
-    this.userInsights.set(userId, newInsights);
+    const _existingInsights = this?.userInsights.get(userId) || [];
+    const _newInsights = [...existingInsights, ...insights].slice(-20);
+    this?.userInsights.set(userId, newInsights);
   }
 
   async getLearningState(userId: string): Promise<LearningState> {
-    return this.userLearningState.get(userId) || this.getDefaultLearningState();
+    return this?.userLearningState.get(userId) || this?.getDefaultLearningState();
   }
 
   async getLearningInsights(userId: string): Promise<LearningInsight[]> {
-    return this.userInsights.get(userId) || [];
+    return this?.userInsights.get(userId) || [];
   }
 
   async getInteractionPatterns(userId: string): Promise<InteractionPattern[]> {
-    return this.userPatterns.get(userId) || [];
+    return this?.userPatterns.get(userId) || [];
   }
 
   async applyInsight(userId: string, insightId: string): Promise<void> {
-    const insights = this.userInsights.get(userId) || [];
-    const insight = insights.find((i) => i.id === insightId);
+    const _insights = this?.userInsights.get(userId) || [];
+    const _insight = insights?.find((i) => i?.id === insightId);
 
     if (insight) {
       insight.applied = true;
-      this.userInsights.set(userId, insights);
+      this?.userInsights.set(userId, insights);
 
-      const state =
-        this.userLearningState.get(userId) || this.getDefaultLearningState();
-      state.suggestionsApplied++;
-      this.userLearningState.set(userId, state);
+      const _state =
+        this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+      state?.suggestionsApplied++;
+      this?.userLearningState.set(userId, state);
     }
   }
 
   async dismissInsight(userId: string, insightId: string): Promise<void> {
-    const insights = this.userInsights.get(userId) || [];
-    const insightIndex = insights.findIndex((i) => i.id === insightId);
+    const _insights = this?.userInsights.get(userId) || [];
+    const _insightIndex = insights?.findIndex((i) => i?.id === insightId);
 
     if (insightIndex !== -1) {
       insights[insightIndex].dismissed = true;
-      this.userInsights.set(userId, insights);
+      this?.userInsights.set(userId, insights);
 
-      const state =
-        this.userLearningState.get(userId) || this.getDefaultLearningState();
-      state.suggestionsDeclined++;
-      this.userLearningState.set(userId, state);
+      const _state =
+        this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+      state?.suggestionsDeclined++;
+      this?.userLearningState.set(userId, state);
     }
   }
 
   async resetLearning(userId: string): Promise<void> {
-    this.userInteractions.delete(userId);
-    this.userPatterns.delete(userId);
-    this.userInsights.delete(userId);
-    this.userLearningState.set(userId, this.getDefaultLearningState());
+    this?.userInteractions.delete(userId);
+    this?.userPatterns.delete(userId);
+    this?.userInsights.delete(userId);
+    this?.userLearningState.set(userId, this?.getDefaultLearningState());
   }
 
   async getFeatureUsage(userId: string): Promise<FeatureUsageData[]> {
-    const prefs = await this.getPreferences(userId);
-    const interactions = this.userInteractions.get(userId) || [];
+    const _prefs = await this?.getPreferences(userId);
+    const _interactions = this?.userInteractions.get(userId) || [];
 
-    return featureDefinitions.map((feature) => {
-      const featureInteractions = interactions.filter(
+    return featureDefinitions?.map((feature) => {
+      const _featureInteractions = interactions?.filter(
         (i) =>
-          i.target.toLowerCase().includes(feature.featureId.toLowerCase()) ||
-          i.path?.includes(feature.featureId),
+          i?.target.toLowerCase().includes(feature?.featureId.toLowerCase()) ||
+          i?.path?.includes(feature?.featureId),
       );
 
-      const usageCount = featureInteractions.length;
-      const lastUsed =
-        featureInteractions.length > 0
-          ? featureInteractions[featureInteractions.length - 1].timestamp
+      const _usageCount = featureInteractions?.length;
+      const _lastUsed =
+        featureInteractions?.length > 0
+          ? featureInteractions[featureInteractions?.length - 1].timestamp
           : null;
 
-      const recentInteractions = featureInteractions.filter(
+      const _recentInteractions = featureInteractions?.filter(
         (i) =>
-          new Date(i.timestamp).getTime() >
-          Date.now() - 7 * 24 * 60 * 60 * 1000,
+          new Date(i?.timestamp).getTime() >
+          Date?.now() - 7 * 24 * 60 * 60 * 1000,
       );
-      const olderInteractions = featureInteractions.filter(
+      const _olderInteractions = featureInteractions?.filter(
         (i) =>
-          new Date(i.timestamp).getTime() <=
-            Date.now() - 7 * 24 * 60 * 60 * 1000 &&
-          new Date(i.timestamp).getTime() >
-            Date.now() - 14 * 24 * 60 * 60 * 1000,
+          new Date(i?.timestamp).getTime() <=
+            Date?.now() - 7 * 24 * 60 * 60 * 1000 &&
+          new Date(i?.timestamp).getTime() >
+            Date?.now() - 14 * 24 * 60 * 60 * 1000,
       );
 
       let trendDirection: "up" | "down" | "stable" = "stable";
-      if (recentInteractions.length > olderInteractions.length * 1.2) {
+      if (recentInteractions?.length > olderInteractions?.length * 1.2) {
         trendDirection = "up";
-      } else if (recentInteractions.length < olderInteractions.length * 0.8) {
+      } else if (recentInteractions?.length < olderInteractions?.length * 0.8) {
         trendDirection = "down";
       }
 
@@ -753,9 +753,9 @@ class PersonalizationService {
         usageCount,
         lastUsed,
         avgSessionTime: 0,
-        completionRate: usageCount > 0 ? Math.min(usageCount / 10, 1) : 0,
+        completionRate: usageCount > 0 ? Math?.min(usageCount / 10, 1) : 0,
         trendDirection,
-        isVisible: !prefs.hiddenFeatures.includes(feature.featureId),
+        isVisible: !prefs?.hiddenFeatures.includes(feature?.featureId),
       };
     });
   }
@@ -765,35 +765,35 @@ class PersonalizationService {
     featureId: string,
     updates: { isVisible?: boolean; priority?: number },
   ): Promise<void> {
-    const prefs = await this.getPreferences(userId);
+    const _prefs = await this?.getPreferences(userId);
 
-    if (updates.isVisible !== undefined) {
-      if (updates.isVisible) {
-        prefs.hiddenFeatures = prefs.hiddenFeatures.filter(
+    if (updates?.isVisible !== undefined) {
+      if (updates?.isVisible) {
+        prefs.hiddenFeatures = prefs?.hiddenFeatures.filter(
           (f) => f !== featureId,
         );
-      } else if (!prefs.hiddenFeatures.includes(featureId)) {
-        prefs.hiddenFeatures.push(featureId);
+      } else if (!prefs?.hiddenFeatures.includes(featureId)) {
+        prefs?.hiddenFeatures.push(featureId);
       }
     }
 
-    await this.updatePreferences(userId, {
-      hiddenFeatures: prefs.hiddenFeatures,
+    await this?.updatePreferences(userId, {
+      hiddenFeatures: prefs?.hiddenFeatures,
       featurePreferences: {
-        ...prefs.featurePreferences,
-        [`${featureId}_priority`]: updates.priority,
+        ...prefs?.featurePreferences,
+        [`${featureId}_priority`]: updates?.priority,
       },
     });
   }
 
   async getRecommendations(userId: string): Promise<Recommendation[]> {
-    const prefs = await this.getPreferences(userId);
-    this.userPatterns.get(userId) || [];
+    const _prefs = await this?.getPreferences(userId);
+    this?.userPatterns.get(userId) || [];
 
     const recommendations: Recommendation[] = [];
 
-    if (prefs.careerStage === "emerging") {
-      recommendations.push({
+    if (prefs?.careerStage === "emerging") {
+      recommendations?.push({
         id: "complete-profile",
         type: "action",
         title: "Complete Your Artist Profile",
@@ -808,7 +808,7 @@ class PersonalizationService {
         contextual: true,
       });
 
-      recommendations.push({
+      recommendations?.push({
         id: "first-release",
         type: "action",
         title: "Prepare Your First Release",
@@ -824,8 +824,8 @@ class PersonalizationService {
       });
     }
 
-    if (prefs.artistType === "producer") {
-      recommendations.push({
+    if (prefs?.artistType === "producer") {
+      recommendations?.push({
         id: "list-beats",
         type: "action",
         title: "List Beats on Marketplace",
@@ -841,8 +841,8 @@ class PersonalizationService {
       });
     }
 
-    if (prefs.artistType === "band") {
-      recommendations.push({
+    if (prefs?.artistType === "band") {
+      recommendations?.push({
         id: "invite-members",
         type: "action",
         title: "Invite Band Members",
@@ -857,7 +857,7 @@ class PersonalizationService {
       });
     }
 
-    recommendations.push({
+    recommendations?.push({
       id: "connect-social",
       type: "action",
       title: "Connect Social Media Accounts",
@@ -871,7 +871,7 @@ class PersonalizationService {
       contextual: false,
     });
 
-    recommendations.push({
+    recommendations?.push({
       id: "explore-ai-coach",
       type: "feature",
       title: "Meet Your AI Career Coach",
@@ -885,9 +885,9 @@ class PersonalizationService {
       contextual: false,
     });
 
-    return recommendations.sort((a, b) => {
-      const priorityOrder = { high: 0, medium: 1, low: 2 };
-      return priorityOrder[a.priority] - priorityOrder[b.priority];
+    return recommendations?.sort((a, b) => {
+      const _priorityOrder = { high: 0, medium: 1, low: 2 };
+      return priorityOrder[a?.priority] - priorityOrder[b?.priority];
     });
   }
 
@@ -895,31 +895,31 @@ class PersonalizationService {
     userId: string,
     artistType: ArtistType,
   ): Promise<void> {
-    const widgets = this.getDefaultWidgetsForType(artistType);
-    await this.updatePreferences(userId, {
+    const _widgets = this?.getDefaultWidgetsForType(artistType);
+    await this?.updatePreferences(userId, {
       artistType,
       dashboardWidgets: widgets,
     });
   }
 
   async applyGenreDefaults(userId: string, genre: string): Promise<void> {
-    await this.updatePreferences(userId, {
+    await this?.updatePreferences(userId, {
       primaryGenres: [genre],
     });
   }
 
   async resetToDefaults(userId: string): Promise<void> {
-    const user = await storage.getUser(userId);
-    const currentPrefs = (user?.preferences as Record<string, any>) || {};
+    const _user = await storage?.getUser(userId);
+    const _currentPrefs = (user?.preferences as Record<string, any>) || {};
 
-    await storage.updateUser(userId, {
+    await storage?.updateUser(userId, {
       preferences: {
         ...currentPrefs,
         personalization: null,
       },
     });
 
-    await this.resetLearning(userId);
+    await this?.resetLearning(userId);
   }
 
   async updateWidget(
@@ -927,13 +927,13 @@ class PersonalizationService {
     widgetId: string,
     updates: Partial<DashboardWidget>,
   ): Promise<void> {
-    const prefs = await this.getPreferences(userId);
-    const widgets = prefs.dashboardWidgets;
+    const _prefs = await this?.getPreferences(userId);
+    const _widgets = prefs?.dashboardWidgets;
 
-    const widgetIndex = widgets.findIndex((w) => w.id === widgetId);
+    const _widgetIndex = widgets?.findIndex((w) => w?.id === widgetId);
     if (widgetIndex !== -1) {
       widgets[widgetIndex] = { ...widgets[widgetIndex], ...updates };
-      await this.updatePreferences(userId, { dashboardWidgets: widgets });
+      await this?.updatePreferences(userId, { dashboardWidgets: widgets });
     }
   }
 
@@ -944,13 +944,13 @@ class PersonalizationService {
     genres: string[];
     enabledFeatures: string[];
   }> {
-    const prefs = await this.getPreferences(userId);
+    const _prefs = await this?.getPreferences(userId);
     return {
-      artistType: prefs.artistType,
-      careerStage: prefs.careerStage,
-      primaryGoals: prefs.goals,
-      genres: prefs.primaryGenres,
-      enabledFeatures: Object.entries(prefs.featurePreferences)
+      artistType: prefs?.artistType,
+      careerStage: prefs?.careerStage,
+      primaryGoals: prefs?.goals,
+      genres: prefs?.primaryGenres,
+      enabledFeatures: Object?.entries(prefs?.featurePreferences)
         .filter(([_, enabled]) => enabled)
         .map(([feature]) => feature),
     };
@@ -967,15 +967,15 @@ class PersonalizationService {
     },
   ): Promise<void> {
     const featurePrefs: Record<string, boolean> = {};
-    defaults.enabledFeatures.forEach((f) => {
+    defaults?.enabledFeatures.forEach((f) => {
       featurePrefs[f] = true;
     });
 
-    await this.updatePreferences(userId, {
-      artistType: defaults.artistType,
-      careerStage: defaults.careerStage,
-      goals: defaults.primaryGoals,
-      primaryGenres: defaults.genres,
+    await this?.updatePreferences(userId, {
+      artistType: defaults?.artistType,
+      careerStage: defaults?.careerStage,
+      goals: defaults?.primaryGoals,
+      primaryGenres: defaults?.genres,
       featurePreferences: featurePrefs,
     });
   }
@@ -984,16 +984,16 @@ class PersonalizationService {
     userId: string,
     layout: { name: string; widgets: DashboardWidget[] },
   ): Promise<void> {
-    await this.updatePreferences(userId, {
-      dashboardWidgets: layout.widgets,
+    await this?.updatePreferences(userId, {
+      dashboardWidgets: layout?.widgets,
     });
   }
 
   async getLayoutPresets(
     userId: string,
   ): Promise<{ id: string; name: string; widgetIds: string[] }[]> {
-    const userData = this.userPreferencesCache.get(userId);
-    const presets = (userData as Record<string, unknown>)?.layoutPresets || [];
+    const _userData = this?.userPreferencesCache.get(userId);
+    const _presets = (userData as Record<string, unknown>)?.layoutPresets || [];
     return presets;
   }
 
@@ -1001,17 +1001,17 @@ class PersonalizationService {
     userId: string,
     preset: { name: string; widgetIds: string[] },
   ): Promise<{ id: string; name: string; widgetIds: string[] }> {
-    const newPreset = {
-      id: `preset-${Date.now()}`,
-      name: preset.name,
-      widgetIds: preset.widgetIds,
+    const _newPreset = {
+      id: `preset-${Date?.now()}`,
+      name: preset?.name,
+      widgetIds: preset?.widgetIds,
     };
 
-    const userData = this.userPreferencesCache.get(userId) || {};
-    const presets = (userData as Record<string, unknown>).layoutPresets || [];
-    presets.push(newPreset);
+    const _userData = this?.userPreferencesCache.get(userId) || {};
+    const _presets = (userData as Record<string, unknown>).layoutPresets || [];
+    presets?.push(newPreset);
     (userData as Record<string, unknown>).layoutPresets = presets;
-    this.userPreferencesCache.set(
+    this?.userPreferencesCache.set(
       userId,
       userData as PersonalizationPreferences,
     );
@@ -1024,8 +1024,8 @@ class PersonalizationService {
     suggestionId: string,
     platform?: string,
   ): Promise<void> {
-    await this.getPreferences(userId);
-    await this.trackInteraction(userId, {
+    await this?.getPreferences(userId);
+    await this?.trackInteraction(userId, {
       type: "complete",
       target: "schedule-suggestion",
       context: { suggestionId, platform },
@@ -1034,32 +1034,32 @@ class PersonalizationService {
   }
 
   async getNextAction(userId: string): Promise<Recommendation | null> {
-    const recommendations = await this.getRecommendations(userId);
-    return recommendations.length > 0 ? recommendations[0] : null;
+    const _recommendations = await this?.getRecommendations(userId);
+    return recommendations?.length > 0 ? recommendations[0] : null;
   }
 
   private getDefaultWidgetsForType(artistType: ArtistType): DashboardWidget[] {
-    const priorityWidgets =
-      artistTypeWidgetPresets[artistType] || artistTypeWidgetPresets.solo;
+    const _priorityWidgets =
+      artistTypeWidgetPresets[artistType] || artistTypeWidgetPresets?.solo;
 
-    return defaultWidgets.map((widget) => ({
+    return defaultWidgets?.map((widget) => ({
       ...widget,
-      visible: priorityWidgets.includes(widget.id),
+      visible: priorityWidgets?.includes(widget?.id),
       priority:
-        priorityWidgets.indexOf(widget.id) !== -1
-          ? priorityWidgets.indexOf(widget.id)
-          : widget.priority + 100,
+        priorityWidgets?.indexOf(widget?.id) !== -1
+          ? priorityWidgets?.indexOf(widget?.id)
+          : widget?.priority + 100,
     }));
   }
 
   private getDefaultTimeLayouts(artistType: ArtistType): TimeOfDayLayout {
-    const baseWidgets = this.getDefaultWidgetsForType(artistType);
+    const _baseWidgets = this?.getDefaultWidgetsForType(artistType);
 
     return {
-      morning: baseWidgets.slice(0, 6),
+      morning: baseWidgets?.slice(0, 6),
       afternoon: baseWidgets,
       evening: baseWidgets,
-      night: baseWidgets.slice(0, 4),
+      night: baseWidgets?.slice(0, 4),
     };
   }
 
@@ -1090,4 +1090,4 @@ class PersonalizationService {
   }
 }
 
-export const personalizationService = new PersonalizationService();
+export const _personalizationService = new PersonalizationService();

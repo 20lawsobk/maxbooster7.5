@@ -17,14 +17,14 @@ export interface UseKeyboardNavigationOptions {
 }
 
 export interface UseKeyboardNavigationResult<T extends HTMLElement> {
-  containerRef: React.RefObject<T>;
+  containerRef: React?.RefObject<T>;
   focusedIndex: number;
   setFocusedIndex: (index: number) => void;
   focusFirst: () => void;
   focusLast: () => void;
   focusNext: () => void;
   focusPrevious: () => void;
-  handleKeyDown: (event: React.KeyboardEvent) => void;
+  handleKeyDown: (event: React?.KeyboardEvent) => void;
   getItemProps: (index: number) => {
     tabIndex: number;
     "aria-selected"?: boolean;
@@ -50,15 +50,15 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     typeAheadTimeout = 500,
   } = options;
 
-  const containerRef = useRef<T>(null);
+  const _containerRef = useRef<T>(null);
   const [focusedIndex, setFocusedIndexState] = useState(-1);
-  const typeAheadBufferRef = useRef("");
-  const typeAheadTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const _typeAheadBufferRef = useRef("");
+  const _typeAheadTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const getNavigableItems = useCallback((): HTMLElement[] => {
-    if (!containerRef.current) return [];
+  const _getNavigableItems = useCallback((): HTMLElement[] => {
+    if (!containerRef?.current) return [];
 
-    const selector = [
+    const _selector = [
       "button:not([disabled])",
       "a[href]",
       "input:not([disabled])",
@@ -71,18 +71,18 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
       '[data-navigable="true"]',
     ].join(",");
 
-    return Array.from(
-      containerRef.current.querySelectorAll<HTMLElement>(selector),
+    return Array?.from(
+      containerRef?.current.querySelectorAll<HTMLElement>(selector),
     ).filter((el) => {
-      const style = window.getComputedStyle(el);
-      return style.display !== "none" && style.visibility !== "hidden";
+      const _style = window?.getComputedStyle(el);
+      return style?.display !== "none" && style?.visibility !== "hidden";
     });
   }, []);
 
-  const setFocusedIndex = useCallback(
+  const _setFocusedIndex = useCallback(
     (index: number) => {
-      const items = getNavigableItems();
-      const clampedIndex = Math.max(-1, Math.min(index, items.length - 1));
+      const _items = getNavigableItems();
+      const _clampedIndex = Math?.max(-1, Math?.min(index, items?.length - 1));
 
       setFocusedIndexState(clampedIndex);
 
@@ -94,48 +94,48 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     [getNavigableItems, preventScroll, onFocusChange],
   );
 
-  const focusFirst = useCallback(() => {
+  const _focusFirst = useCallback(() => {
     setFocusedIndex(0);
   }, [setFocusedIndex]);
 
-  const focusLast = useCallback(() => {
-    const items = getNavigableItems();
-    setFocusedIndex(items.length - 1);
+  const _focusLast = useCallback(() => {
+    const _items = getNavigableItems();
+    setFocusedIndex(items?.length - 1);
   }, [getNavigableItems, setFocusedIndex]);
 
-  const focusNext = useCallback(() => {
-    const items = getNavigableItems();
-    if (items.length === 0) return;
+  const _focusNext = useCallback(() => {
+    const _items = getNavigableItems();
+    if (items?.length === 0) return;
 
     let nextIndex = focusedIndex + 1;
 
-    if (nextIndex >= items.length) {
-      nextIndex = loop ? 0 : items.length - 1;
+    if (nextIndex >= items?.length) {
+      nextIndex = loop ? 0 : items?.length - 1;
     }
 
     setFocusedIndex(nextIndex);
   }, [focusedIndex, loop, getNavigableItems, setFocusedIndex]);
 
-  const focusPrevious = useCallback(() => {
-    const items = getNavigableItems();
-    if (items.length === 0) return;
+  const _focusPrevious = useCallback(() => {
+    const _items = getNavigableItems();
+    if (items?.length === 0) return;
 
     let prevIndex = focusedIndex - 1;
 
     if (prevIndex < 0) {
-      prevIndex = loop ? items.length - 1 : 0;
+      prevIndex = loop ? items?.length - 1 : 0;
     }
 
     setFocusedIndex(prevIndex);
   }, [focusedIndex, loop, getNavigableItems, setFocusedIndex]);
 
-  const focusNextRow = useCallback(() => {
-    const items = getNavigableItems();
-    if (items.length === 0) return;
+  const _focusNextRow = useCallback(() => {
+    const _items = getNavigableItems();
+    if (items?.length === 0) return;
 
-    const nextIndex = focusedIndex + columns;
+    const _nextIndex = focusedIndex + columns;
 
-    if (nextIndex >= items.length) {
+    if (nextIndex >= items?.length) {
       if (loop) {
         setFocusedIndex(focusedIndex % columns);
       }
@@ -144,45 +144,45 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     }
   }, [focusedIndex, columns, loop, getNavigableItems, setFocusedIndex]);
 
-  const focusPreviousRow = useCallback(() => {
-    const items = getNavigableItems();
-    if (items.length === 0) return;
+  const _focusPreviousRow = useCallback(() => {
+    const _items = getNavigableItems();
+    if (items?.length === 0) return;
 
-    const prevIndex = focusedIndex - columns;
+    const _prevIndex = focusedIndex - columns;
 
     if (prevIndex < 0) {
       if (loop) {
-        const lastRowStart = Math.floor((items.length - 1) / columns) * columns;
-        const colOffset = focusedIndex % columns;
-        setFocusedIndex(Math.min(lastRowStart + colOffset, items.length - 1));
+        const _lastRowStart = Math?.floor((items?.length - 1) / columns) * columns;
+        const _colOffset = focusedIndex % columns;
+        setFocusedIndex(Math?.min(lastRowStart + colOffset, items?.length - 1));
       }
     } else {
       setFocusedIndex(prevIndex);
     }
   }, [focusedIndex, columns, loop, getNavigableItems, setFocusedIndex]);
 
-  const handleTypeAhead = useCallback(
+  const _handleTypeAhead = useCallback(
     (key: string) => {
       if (!typeAheadEnabled) return false;
 
-      if (typeAheadTimeoutRef.current) {
-        clearTimeout(typeAheadTimeoutRef.current);
+      if (typeAheadTimeoutRef?.current) {
+        clearTimeout(typeAheadTimeoutRef?.current);
       }
 
-      typeAheadBufferRef.current += key.toLowerCase();
+      typeAheadBufferRef?.current += key?.toLowerCase();
 
       typeAheadTimeoutRef.current = setTimeout(() => {
         typeAheadBufferRef.current = "";
       }, typeAheadTimeout);
 
-      const items = getNavigableItems();
-      const searchStart = focusedIndex + 1;
+      const _items = getNavigableItems();
+      const _searchStart = focusedIndex + 1;
 
-      for (let i = 0; i < items.length; i++) {
-        const index = (searchStart + i) % items.length;
-        const text = items[index].textContent?.toLowerCase() || "";
+      for (let i = 0; i < items?.length; i++) {
+        const _index = (searchStart + i) % items?.length;
+        const _text = items[index].textContent?.toLowerCase() || "";
 
-        if (text.startsWith(typeAheadBufferRef.current)) {
+        if (text?.startsWith(typeAheadBufferRef?.current)) {
           setFocusedIndex(index);
           return true;
         }
@@ -199,8 +199,8 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     ],
   );
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
+  const _handleKeyDown = useCallback(
+    (event: React?.KeyboardEvent) => {
       if (!enabled) return;
 
       const { key } = event;
@@ -266,7 +266,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
         case "Enter":
         case " ":
           if (focusedIndex >= 0) {
-            const items = getNavigableItems();
+            const _items = getNavigableItems();
             onSelect?.(focusedIndex, items[focusedIndex] || null);
             handled = true;
           }
@@ -278,15 +278,15 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
           break;
 
         default:
-          if (key.length === 1 && /[a-zA-Z0-9]/.test(key)) {
+          if (key?.length === 1 && /[a-zA-Z0-9]/.test(key)) {
             handled = handleTypeAhead(key);
           }
           break;
       }
 
       if (handled) {
-        event.preventDefault();
-        event.stopPropagation();
+        event?.preventDefault();
+        event?.stopPropagation();
       }
     },
     [
@@ -307,7 +307,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     ],
   );
 
-  const getItemProps = useCallback(
+  const _getItemProps = useCallback(
     (index: number) => ({
       tabIndex:
         focusedIndex === index || (focusedIndex === -1 && index === 0) ? 0 : -1,
@@ -319,8 +319,8 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
 
   useEffect(() => {
     return () => {
-      if (typeAheadTimeoutRef.current) {
-        clearTimeout(typeAheadTimeoutRef.current);
+      if (typeAheadTimeoutRef?.current) {
+        clearTimeout(typeAheadTimeoutRef?.current);
       }
     };
   }, []);

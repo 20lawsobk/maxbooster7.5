@@ -65,21 +65,24 @@ export function safeSync<T>(
 /**
  * Centralized error logging
  */
-export function logError(error: unknown, context: ErrorContext): void {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorStack = error instanceof Error ? error.stack : "";
+export function logError(
+  error: unknown,
+  context: ErrorContext
+): void {
+  const _errorMessage = error instanceof Error ? error?.message : String(error);
+  const _errorStack = error instanceof Error ? error?.stack : "";
 
-  const logEntry = {
+  const _logEntry = {
     timestamp: new Date().toISOString(),
-    service: context.service,
-    operation: context.operation,
-    userId: context.userId,
+    service: context?.service,
+    operation: context?.operation,
+    userId: context?.userId,
     error: errorMessage,
     stack: errorStack,
-    metadata: context.metadata,
+    metadata: context?.metadata,
   };
 
-  console.error("[ERROR]", JSON.stringify(logEntry));
+  console?.error("[ERROR]", JSON?.stringify(logEntry));
 }
 
 /**
@@ -98,11 +101,11 @@ export async function retryWithBackoff<T>(
       return await fn();
     } catch (error) {
       lastError = error;
-      const delayMs = initialDelayMs * Math.pow(2, attempt);
+      const _delayMs = initialDelayMs * Math?.pow(2, attempt);
 
       logError(error, {
         ...context,
-        operation: `${context.operation} (retry ${attempt + 1}/${maxRetries})`,
+        operation: `${context?.operation} (retry ${attempt + 1}/${maxRetries})`,
       });
 
       if (attempt < maxRetries - 1) {
@@ -122,13 +125,13 @@ export function validateRequired(
   fields: string[],
   context: ErrorContext,
 ): void {
-  const missing = fields.filter((field) => !obj[field]);
-  if (missing.length > 0) {
+  const _missing = fields?.filter((field) => !obj[field]);
+  if (missing?.length > 0) {
     throw new AppError(
       "VALIDATION_ERROR",
       400,
-      `Missing required fields: ${missing.join(", ")}`,
-      { ...context, metadata: { missing } },
+      `Missing required fields: ${missing?.join(", ")}`,
+      { ...context, metadata: { missing } }
     );
   }
 }
@@ -162,12 +165,9 @@ export function safeJsonParse<T>(
   fallback?: T,
 ): T {
   try {
-    return JSON.parse(json) as T;
+    return JSON?.parse(json) as T;
   } catch (error) {
-    logError(error, {
-      ...context,
-      operation: `${context.operation} (JSON parse)`,
-    });
+    logError(error, { ...context, operation: `${context?.operation} (JSON parse)` });
     if (fallback !== undefined) {
       return fallback;
     }
@@ -186,11 +186,11 @@ export async function safeDbOperation<T>(
   try {
     return await fn();
   } catch (error) {
-    logError(error, { ...context, operation: `${context.operation} (DB)` });
+    logError(error, { ...context, operation: `${context?.operation} (DB)` });
 
     // Check for specific DB errors
     if (error instanceof Error) {
-      if (error.message.includes("UNIQUE constraint")) {
+      if (error?.message.includes("UNIQUE constraint")) {
         throw new AppError(
           "DUPLICATE_ENTRY",
           409,
@@ -198,7 +198,7 @@ export async function safeDbOperation<T>(
           context,
         );
       }
-      if (error.message.includes("NOT NULL constraint")) {
+      if (error?.message.includes("NOT NULL constraint")) {
         throw new AppError(
           "MISSING_REQUIRED_FIELD",
           400,
@@ -226,13 +226,18 @@ export async function safeApiCall<T>(
   try {
     return await fn();
   } catch (error) {
-    logError(error, { ...context, operation: `${context.operation} (API)` });
+    logError(error, { ...context, operation: `${context?.operation} (API)` });
 
     if (error instanceof Error) {
-      if (error.message.includes("timeout")) {
-        throw new AppError("API_TIMEOUT", 504, "External API timeout", context);
+      if (error?.message.includes("timeout")) {
+        throw new AppError(
+          "API_TIMEOUT",
+          504,
+          "External API timeout",
+          context
+        );
       }
-      if (error.message.includes("rate limit")) {
+      if (error?.message.includes("rate limit")) {
         throw new AppError(
           "RATE_LIMITED",
           429,
@@ -259,20 +264,20 @@ export function errorHandlerMiddleware(
   _next: any,
 ): void {
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      error: err.code,
-      message: err.message,
-      context: err.context,
+    res?.status(err?.statusCode).json({
+      error: err?.code,
+      message: err?.message,
+      context: err?.context,
     });
   } else if (err instanceof Error) {
-    console.error("[UNHANDLED_ERROR]", err);
-    res.status(500).json({
+    console?.error("[UNHANDLED_ERROR]", err);
+    res?.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "An unexpected error occurred",
     });
   } else {
-    console.error("[UNKNOWN_ERROR]", err);
-    res.status(500).json({
+    console?.error("[UNKNOWN_ERROR]", err);
+    res?.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "An unexpected error occurred",
     });

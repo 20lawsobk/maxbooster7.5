@@ -115,13 +115,13 @@ export const blogPosts: BlogPost[] = [
 ];
 
 export function getBlogPostBySlug(slug: string): BlogPost | undefined {
-  return blogPosts.find((p) => p.slug === slug);
+  return blogPosts?.find((p) => p?.slug === slug);
 }
 
 export function getRelatedPosts(slug: string, limit = 3): BlogPost[] {
-  const current = getBlogPostBySlug(slug);
+  const _current = getBlogPostBySlug(slug);
   if (!current) return [];
   return blogPosts
-    .filter((p) => p.slug !== slug && p.category === current.category)
+    .filter((p) => p?.slug !== slug && p?.category === current?.category)
     .slice(0, limit);
 }

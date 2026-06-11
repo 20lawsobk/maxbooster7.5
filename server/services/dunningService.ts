@@ -50,7 +50,7 @@ function buildDunningEmailHtml(
   step: number,
   updateCardUrl: string,
 ): string {
-  const urgency = DUNNING_STEPS[step]?.urgency ?? "low";
+  const _urgency = DUNNING_STEPS[step]?.urgency ?? "low";
 
   const bannerColor: Record<string, string> = {
     low: "#f59e0b",
@@ -85,7 +85,7 @@ function buildDunningEmailHtml(
     },
   };
 
-  const msg = messages[urgency];
+  const _msg = messages[urgency];
 
   return `
     <!DOCTYPE html>
@@ -97,9 +97,9 @@ function buildDunningEmailHtml(
           <h1 style="color:#fff;margin:0;font-size:20px;">Max Booster</h1>
         </div>
         <div style="padding:32px;">
-          <h2 style="color:#111;margin-top:0;font-size:22px;">${msg.heading}</h2>
-          <p style="color:#374151;line-height:1.6;">${msg.body}</p>
-          <a href="${updateCardUrl}" style="display:inline-block;margin-top:16px;background:${bannerColor[urgency]};color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">${msg.cta}</a>
+          <h2 style="color:#111;margin-top:0;font-size:22px;">${msg?.heading}</h2>
+          <p style="color:#374151;line-height:1.6;">${msg?.body}</p>
+          <a href="${updateCardUrl}" style="display:inline-block;margin-top:16px;background:${bannerColor[urgency]};color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">${msg?.cta}</a>
           <p style="color:#9ca3af;font-size:13px;margin-top:32px;">If you believe this is a mistake or need help, reply to this email and we'll sort it out.</p>
         </div>
       </div>
@@ -111,31 +111,31 @@ function buildDunningEmailHtml(
 class DunningService {
   async startSequence(userId: string, invoiceId: string): Promise<void> {
     try {
-      const existing = await db
+      const _existing = await db
         .select()
         .from(dunningState)
-        .where(eq(dunningState.stripeInvoiceId, invoiceId))
+        .where(eq(dunningState?.stripeInvoiceId, invoiceId))
         .limit(1);
 
-      if (existing.length > 0) {
-        logger.info(
+      if (existing?.length > 0) {
+        logger?.info(
           `[Dunning] Sequence already started for invoice ${invoiceId}`,
         );
         return;
       }
 
-      const nextEmailAt = new Date();
+      const _nextEmailAt = new Date();
 
-      await db.insert(dunningState).values({
+      await db?.insert(dunningState).values({
         userId,
         stripeInvoiceId: invoiceId,
         currentStep: 0,
         nextEmailAt,
       });
 
-      await this.sendStep(userId, invoiceId, 0);
+      await this?.sendStep(userId, invoiceId, 0);
     } catch (err) {
-      logger.warn({ err: err }, "[Dunning] Failed to start sequence:");
+      logger?.warn({ err: err }, "[Dunning] Failed to start sequence:");
     }
   }
 
@@ -147,76 +147,76 @@ class DunningService {
       await db
         .update(dunningState)
         .set({ resolvedAt: new Date(), resolvedReason: reason })
-        .where(eq(dunningState.stripeInvoiceId, invoiceId));
+        .where(eq(dunningState?.stripeInvoiceId, invoiceId));
 
-      logger.info(
+      logger?.info(
         `[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`,
       );
     } catch (err) {
-      logger.warn({ err: err }, "[Dunning] Failed to resolve sequence:");
+      logger?.warn({ err: err }, "[Dunning] Failed to resolve sequence:");
     }
   }
 
   async processPendingSteps(): Promise<void> {
     try {
       // Keep existing entry point, call paged version
-      await this.processPendingStepsPaged(50);
+      await this?.processPendingStepsPaged(50);
     } catch (err) {
-      logger.warn({ err: err }, "[Dunning] Failed to process pending steps:");
+      logger?.warn({ err: err }, "[Dunning] Failed to process pending steps:");
     }
   }
 
   async processPendingStepsPaged(limit: number): Promise<number> {
     try {
-      const now = new Date();
+      const _now = new Date();
 
-      const pending = await db
+      const _pending = await db
         .select()
         .from(dunningState)
         .where(
           and(
-            isNull(dunningState.resolvedAt),
-            lte(dunningState.nextEmailAt, now),
+            isNull(dunningState?.resolvedAt),
+            lte(dunningState?.nextEmailAt, now),
           ),
         )
         .limit(limit);
 
       let processed = 0;
       for (const record of pending) {
-        const nextStep = record.currentStep + 1;
-        if (nextStep >= DUNNING_STEPS.length) {
+        const _nextStep = record?.currentStep + 1;
+        if (nextStep >= DUNNING_STEPS?.length) {
           await db
             .update(dunningState)
             .set({
               resolvedAt: new Date(),
               resolvedReason: "sequence_complete",
             })
-            .where(eq(dunningState.id, record.id));
+            .where(eq(dunningState?.id, record?.id));
           processed++;
           continue;
         }
 
-        await this.sendStep(
-          record.userId,
-          record.stripeInvoiceId,
-          record.currentStep,
+        await this?.sendStep(
+          record?.userId,
+          record?.stripeInvoiceId,
+          record?.currentStep,
         );
 
-        const nextStepConfig = DUNNING_STEPS[nextStep];
-        const nextEmailAt = new Date();
-        nextEmailAt.setDate(
-          nextEmailAt.getDate() + (nextStepConfig?.delayDays ?? 0),
+        const _nextStepConfig = DUNNING_STEPS[nextStep];
+        const _nextEmailAt = new Date();
+        nextEmailAt?.setDate(
+          nextEmailAt?.getDate() + (nextStepConfig?.delayDays ?? 0),
         );
 
         await db
           .update(dunningState)
           .set({ currentStep: nextStep, nextEmailAt, updatedAt: new Date() })
-          .where(eq(dunningState.id, record.id));
+          .where(eq(dunningState?.id, record?.id));
         processed++;
       }
       return processed;
     } catch (err) {
-      logger.warn(
+      logger?.warn(
         { err: err },
         "[Dunning] Failed to process pending steps paged:",
       );
@@ -229,33 +229,33 @@ class DunningService {
     invoiceId: string,
     step: number,
   ): Promise<void> {
-    const stepConfig = DUNNING_STEPS[step];
+    const _stepConfig = DUNNING_STEPS[step];
     if (!stepConfig) return;
 
-    const userRows = await db
+    const _userRows = await db
       .select({
-        email: users.email,
-        firstName: users.firstName,
-        subscriptionTier: users.subscriptionTier,
+        email: users?.email,
+        firstName: users?.firstName,
+        subscriptionTier: users?.subscriptionTier,
       })
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
-    if (!userRows.length || !userRows[0].email) return;
+    if (!userRows?.length || !userRows[0].email) return;
 
     const { email, firstName } = userRows[0];
-    const displayName = firstName ?? email.split("@")[0];
-    const updateCardUrl = `${process.env.APP_URL ?? "https://maxbooster.app"}/settings/billing?utm_source=dunning&utm_step=${step}`;
+    const _displayName = firstName ?? email?.split("@")[0];
+    const _updateCardUrl = `${process?.env.APP_URL ?? "https://maxbooster.app"}/settings/billing?utm_source=dunning&utm_step=${step}`;
 
-    const html = buildDunningEmailHtml(displayName, step, updateCardUrl);
+    const _html = buildDunningEmailHtml(displayName, step, updateCardUrl);
 
-    await emailService.sendTransactional(email, stepConfig.subject, html);
+    await emailService?.sendTransactional(email, stepConfig?.subject, html);
 
-    logger.info(
+    logger?.info(
       `[Dunning] Step ${step} email sent to ${email} for invoice ${invoiceId}`,
     );
   }
 }
 
-export const dunningService = new DunningService();
+export const _dunningService = new DunningService();

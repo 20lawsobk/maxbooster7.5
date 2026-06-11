@@ -6,49 +6,49 @@ import { metricsCollector } from "../monitoring/metricsCollector.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { requireAdmin } from "../middleware/auth.js";
 
-const router = Router();
+const _router = Router();
 
-router.use(requireAdmin);
+router?.use(requireAdmin);
 
 /**
  * GET /api/executive/dashboard
  * High-level non-technical dashboard for executives and stakeholders
- * Requires admin authentication (enforced by router.use(requireAdmin))
+ * Requires admin authentication (enforced by router?.use(requireAdmin))
  */
-router.get(
+router?.get(
   "/dashboard",
   asyncHandler(async (_req, res) => {
     try {
-      const [queueHealth, aiMetrics, dashboard] = await Promise.all([
-        queueMonitor.getHealthStatus(),
-        aiModelManager.getMetrics(),
-        metricsCollector.getDashboardData(),
+      const [queueHealth, aiMetrics, dashboard] = await Promise?.all([
+        queueMonitor?.getHealthStatus(),
+        aiModelManager?.getMetrics(),
+        metricsCollector?.getDashboardData(),
       ]);
 
-      const systemStatus = queueHealth.healthy ? "OPERATIONAL" : "DEGRADED";
-      const queueMetrics = queueHealth.queues.values().next().value?.metrics;
+      const _systemStatus = queueHealth?.healthy ? "OPERATIONAL" : "DEGRADED";
+      const _queueMetrics = queueHealth?.queues.values().next().value?.metrics;
 
-      const executiveDashboard = {
+      const _executiveDashboard = {
         timestamp: new Date(),
 
         overallStatus: {
           status: systemStatus,
-          health: queueHealth.healthy ? "Healthy" : "Needs Attention",
-          uptime: `${(process.uptime() / 3600).toFixed(1)} hours`,
+          health: queueHealth?.healthy ? "Healthy" : "Needs Attention",
+          uptime: `${(process?.uptime() / 3600).toFixed(1)} hours`,
           lastChecked: new Date(),
         },
 
         businessMetrics: {
           autoPosting: {
-            status: queueHealth.healthy ? "Active" : "Degraded",
+            status: queueHealth?.healthy ? "Active" : "Degraded",
             postsScheduled: queueMetrics?.waiting || 0,
             postsProcessing: queueMetrics?.active || 0,
             postsCompleted: queueMetrics?.completed || 0,
             postsFailed: queueMetrics?.failed || 0,
             successRate: queueMetrics
               ? (
-                  (queueMetrics.completed /
-                    (queueMetrics.completed + queueMetrics.failed || 1)) *
+                  (queueMetrics?.completed /
+                    (queueMetrics?.completed + queueMetrics?.failed || 1)) *
                   100
                 ).toFixed(1) + "%"
               : "100%",
@@ -57,12 +57,12 @@ router.get(
           aiSystems: {
             status: "Operational",
             socialMediaAI: {
-              active: aiMetrics.socialAutopilot.currentSize > 0,
+              active: aiMetrics?.socialAutopilot.currentSize > 0,
               utilizationLevel:
                 parseFloat(
                   (
-                    (aiMetrics.socialAutopilot.currentSize /
-                      aiMetrics.socialAutopilot.maxSize) *
+                    (aiMetrics?.socialAutopilot.currentSize /
+                      aiMetrics?.socialAutopilot.maxSize) *
                     100
                   ).toFixed(1),
                 ) < 50
@@ -70,12 +70,12 @@ router.get(
                   : "Normal",
             },
             advertisingAI: {
-              active: aiMetrics.advertisingAutopilot.currentSize > 0,
+              active: aiMetrics?.advertisingAutopilot.currentSize > 0,
               utilizationLevel:
                 parseFloat(
                   (
-                    (aiMetrics.advertisingAutopilot.currentSize /
-                      aiMetrics.advertisingAutopilot.maxSize) *
+                    (aiMetrics?.advertisingAutopilot.currentSize /
+                      aiMetrics?.advertisingAutopilot.maxSize) *
                     100
                   ).toFixed(1),
                 ) < 50
@@ -85,54 +85,54 @@ router.get(
           },
 
           performance: {
-            responseTime: `${dashboard.summary.queue.avgLatency.toFixed(0)}ms`,
+            responseTime: `${dashboard?.summary.queue?.avgLatency.toFixed(0)}ms`,
             responseQuality:
-              dashboard.summary.queue.avgLatency < 50
+              dashboard?.summary.queue?.avgLatency < 50
                 ? "Excellent"
-                : dashboard.summary.queue.avgLatency < 100
+                : dashboard?.summary.queue?.avgLatency < 100
                   ? "Good"
                   : "Needs Improvement",
-            memoryUsage: `${dashboard.summary.system.avgMemoryMB.toFixed(0)}MB`,
-            memoryTrend: dashboard.trends.memory,
+            memoryUsage: `${dashboard?.summary.system?.avgMemoryMB.toFixed(0)}MB`,
+            memoryTrend: dashboard?.trends.memory,
           },
         },
 
         keyIndicators: {
-          platformAvailability: queueHealth.healthy ? "99.9%" : "98.0%",
-          avgProcessingTime: `${dashboard.summary.queue.avgLatency.toFixed(0)}ms`,
+          platformAvailability: queueHealth?.healthy ? "99.9%" : "98.0%",
+          avgProcessingTime: `${dashboard?.summary.queue?.avgLatency.toFixed(0)}ms`,
           activeUsers: "N/A",
           postsToday: queueMetrics?.completed || 0,
         },
 
         trends: {
           performance:
-            dashboard.trends.redisLatency === "stable"
+            dashboard?.trends.redisLatency === "stable"
               ? "Stable ✅"
               : "Attention Needed ⚠️",
           capacity:
-            dashboard.trends.memory === "stable" ? "Stable ✅" : "Growing ⚠️",
+            dashboard?.trends.memory === "stable" ? "Stable ✅" : "Growing ⚠️",
           reliability:
-            dashboard.summary.queue.totalFailed === 0
+            dashboard?.summary.queue?.totalFailed === 0
               ? "Excellent ✅"
               : "Monitor 👀",
         },
 
         alerts: {
           critical: 0,
-          warnings: dashboard.trends.memory === "increasing" ? 1 : 0,
+          warnings: dashboard?.trends.memory === "increasing" ? 1 : 0,
           info: 0,
         },
 
         nextActions: getRecommendedActions(dashboard, queueHealth),
       };
 
-      res.json({
+      res?.json({
         success: true,
         dashboard: executiveDashboard,
       });
     } catch (error) {
-      logger.warn("Error fetching executive dashboard:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error fetching executive dashboard:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -140,25 +140,25 @@ router.get(
 /**
  * GET /api/executive/health-summary
  * Simple health summary for quick checks
- * Requires admin authentication (enforced by router.use(requireAdmin))
+ * Requires admin authentication (enforced by router?.use(requireAdmin))
  */
-router.get(
+router?.get(
   "/health-summary",
   asyncHandler(async (_req, res) => {
     try {
-      const queueHealth = await queueMonitor.getHealthStatus();
+      const _queueHealth = await queueMonitor?.getHealthStatus();
 
-      res.json({
+      res?.json({
         success: true,
-        status: queueHealth.healthy ? "HEALTHY" : "DEGRADED",
-        message: queueHealth.healthy
+        status: queueHealth?.healthy ? "HEALTHY" : "DEGRADED",
+        message: queueHealth?.healthy
           ? "All systems operational"
           : "Some systems require attention",
         timestamp: new Date(),
       });
     } catch (error) {
-      logger.warn("Error fetching health summary:", error?.message);
-      res.status(500).json({ error: "Failed to process request" });
+      logger?.warn("Error fetching health summary:", error?.message);
+      res?.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -169,28 +169,28 @@ function getRecommendedActions(
 ): string[] {
   const actions: string[] = [];
 
-  if (dashboard.trends.memory === "increasing") {
-    actions.push(
+  if (dashboard?.trends.memory === "increasing") {
+    actions?.push(
       "Monitor memory usage - consider optimization if trend continues",
     );
   }
 
-  if (dashboard.summary.queue.totalFailed > 10) {
-    actions.push("Review failed jobs - multiple failures detected");
+  if (dashboard?.summary.queue?.totalFailed > 10) {
+    actions?.push("Review failed jobs - multiple failures detected");
   }
 
-  if (!queueHealth.healthy) {
-    actions.push("System health degraded - technical team notified");
+  if (!queueHealth?.healthy) {
+    actions?.push("System health degraded - technical team notified");
   }
 
-  if (dashboard.summary.queue.avgLatency > 100) {
-    actions.push(
+  if (dashboard?.summary.queue?.avgLatency > 100) {
+    actions?.push(
       "Performance optimization recommended - response times elevated",
     );
   }
 
-  if (actions.length === 0) {
-    actions.push("No action required - all systems performing optimally");
+  if (actions?.length === 0) {
+    actions?.push("No action required - all systems performing optimally");
   }
 
   return actions;

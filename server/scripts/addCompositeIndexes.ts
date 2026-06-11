@@ -341,8 +341,8 @@ const COMPOSITE_INDEXES: Array<{
 ];
 
 async function addCompositeIndexes(): Promise<void> {
-  logger.info(
-    `[IndexMigration] Adding ${COMPOSITE_INDEXES.length} composite indexes for 90M-scale performance`,
+  logger?.info(
+    `[IndexMigration] Adding ${COMPOSITE_INDEXES?.length} composite indexes for 90M-scale performance`,
   );
 
   let created = 0;
@@ -351,27 +351,27 @@ async function addCompositeIndexes(): Promise<void> {
 
   for (const idx of COMPOSITE_INDEXES) {
     try {
-      const whereClause = idx.where ? ` WHERE ${idx.where}` : "";
-      await db.execute(
-        sql.raw(
-          `CREATE INDEX IF NOT EXISTS ${idx.name} ON ${idx.table} (${idx.columns})${whereClause}`,
+      const _whereClause = idx?.where ? ` WHERE ${idx?.where}` : "";
+      await db?.execute(
+        sql?.raw(
+          `CREATE INDEX IF NOT EXISTS ${idx?.name} ON ${idx?.table} (${idx?.columns})${whereClause}`,
         ),
       );
-      logger.info(`  ✓ ${idx.name}`);
+      logger?.info(`  ✓ ${idx?.name}`);
       created++;
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes("already exists")) {
-        logger.info(`  - ${idx.name} (already exists)`);
+      const _msg = error instanceof Error ? error?.message : String(error);
+      if (msg?.includes("already exists")) {
+        logger?.info(`  - ${idx?.name} (already exists)`);
         skipped++;
       } else {
-        logger.warn(`  ✗ ${idx.name}: ${msg}`);
+        logger?.warn(`  ✗ ${idx?.name}: ${msg}`);
         failed++;
       }
     }
   }
 
-  logger.info(
+  logger?.info(
     `[IndexMigration] Done: ${created} created, ${skipped} skipped, ${failed} failed`,
   );
 
@@ -381,6 +381,6 @@ async function addCompositeIndexes(): Promise<void> {
 }
 
 addCompositeIndexes().catch((err) => {
-  logger.warn({ err: err }, "[IndexMigration] Fatal:");
-  process.exit(1);
+  logger?.warn({ err: err }, "[IndexMigration] Fatal:");
+  process?.exit(1);
 });

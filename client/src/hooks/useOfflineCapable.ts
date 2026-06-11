@@ -26,7 +26,7 @@ const OFFLINE_ROUTES: Record<string, FeatureCapability> = {
   "/settings": "full",
 };
 
-const ONLINE_ONLY_ROUTES = [
+const _ONLINE_ONLY_ROUTES = [
   "/distribution",
   "/social-media",
   "/marketplace",
@@ -49,7 +49,7 @@ export function useOfflineCapable(): {
   const { isOffline } = useOfflineStatus();
   const [location] = useLocation();
 
-  const capabilities = useMemo<OfflineCapabilities>(() => {
+  const _capabilities = useMemo<OfflineCapabilities>(() => {
     if (!isOffline) {
       return {
         projectEditing: "full",
@@ -83,19 +83,19 @@ export function useOfflineCapable(): {
     };
   }, [isOffline]);
 
-  const routeCapability = useMemo<FeatureCapability>(() => {
+  const _routeCapability = useMemo<FeatureCapability>(() => {
     if (!isOffline) return "full";
 
-    const normalizedPath = location.split("?")[0];
+    const _normalizedPath = location?.split("?")[0];
 
     for (const route of ONLINE_ONLY_ROUTES) {
-      if (normalizedPath.startsWith(route)) {
+      if (normalizedPath?.startsWith(route)) {
         return "unavailable";
       }
     }
 
-    for (const [route, capability] of Object.entries(OFFLINE_ROUTES)) {
-      if (normalizedPath.startsWith(route)) {
+    for (const [route, capability] of Object?.entries(OFFLINE_ROUTES)) {
+      if (normalizedPath?.startsWith(route)) {
         return capability;
       }
     }
@@ -103,21 +103,21 @@ export function useOfflineCapable(): {
     return "limited";
   }, [isOffline, location]);
 
-  const availableFeatures = useMemo(() => {
-    return Object.entries(capabilities)
+  const _availableFeatures = useMemo(() => {
+    return Object?.entries(capabilities)
       .filter(([, capability]) => capability !== "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);
 
-  const unavailableFeatures = useMemo(() => {
-    return Object.entries(capabilities)
+  const _unavailableFeatures = useMemo(() => {
+    return Object?.entries(capabilities)
       .filter(([, capability]) => capability === "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);
 
-  const isFullyCapable = routeCapability === "full";
-  const isPartiallyCapable = routeCapability === "limited";
-  const isUnavailable = routeCapability === "unavailable";
+  const _isFullyCapable = routeCapability === "full";
+  const _isPartiallyCapable = routeCapability === "limited";
+  const _isUnavailable = routeCapability === "unavailable";
 
   return {
     isFullyCapable,

@@ -322,160 +322,169 @@ class SmartDefaultsService {
     userId: string,
     artistType: ArtistType,
   ): Promise<RecommendedSettings> {
-    const user = await storage.getUser(userId);
-    const onboardingData = (user?.onboardingData as Record<string, any>) || {};
-    const careerStage =
-      (onboardingData.careerStage as CareerStage) || "emerging";
-    const genres = (onboardingData.genres as string[]) || ["pop"];
+    const _user = await storage?.getUser(userId);
+    const _onboardingData = (user?.onboardingData as Record<string, any>) || {};
+    const _careerStage =
+      (onboardingData?.careerStage as CareerStage) || "emerging";
+    const _genres = (onboardingData?.genres as string[]) || ["pop"];
 
-    const baseSettings =
-      this.artistTypeSettings[artistType] || this.artistTypeSettings.solo;
-    const stageMultiplier = this.careerStageMultipliers[careerStage];
+    const _baseSettings =
+      this?.artistTypeSettings[artistType] || this?.artistTypeSettings.solo;
+    const _stageMultiplier = this?.careerStageMultipliers[careerStage];
 
-    const genreSettings = this.getGenreSpecificSettings(genres[0] || "pop");
+    const _genreSettings = this?.getGenreSpecificSettings(genres[0] || "pop");
 
     return {
       distribution: {
-        primaryPlatforms: baseSettings.distribution?.primaryPlatforms || [
+        primaryPlatforms: baseSettings?.distribution?.primaryPlatforms || [
           "spotify",
           "apple-music",
         ],
-        releaseStrategy: baseSettings.distribution?.releaseStrategy || "single",
-        preSaveEnabled: baseSettings.distribution?.preSaveEnabled ?? true,
-        contentIdEnabled: baseSettings.distribution?.contentIdEnabled ?? true,
+        releaseStrategy: baseSettings?.distribution?.releaseStrategy || "single",
+        preSaveEnabled: baseSettings?.distribution?.preSaveEnabled ?? true,
+        contentIdEnabled: baseSettings?.distribution?.contentIdEnabled ?? true,
       },
       social: {
-        suggestedPlatforms: baseSettings.social?.suggestedPlatforms || [
+        suggestedPlatforms: baseSettings?.social?.suggestedPlatforms || [
           "instagram",
           "tiktok",
         ],
-        postingFrequency: baseSettings.social?.postingFrequency || "daily",
-        contentTypes: baseSettings.social?.contentTypes || ["music-clips"],
+        postingFrequency: baseSettings?.social?.postingFrequency || "daily",
+        contentTypes: baseSettings?.social?.contentTypes || ["music-clips"],
         engagementStrategy:
-          baseSettings.social?.engagementStrategy || "personal-connection",
+          baseSettings?.social?.engagementStrategy || "personal-connection",
       },
       studio: {
-        defaultBPM: genreSettings.bpm,
-        defaultKey: genreSettings.key,
+        defaultBPM: genreSettings?.bpm,
+        defaultKey: genreSettings?.key,
         suggestedGenres: genres,
         collaborationMode: artistType === "band" || artistType === "label",
       },
       marketing: {
         budgetRange: [
-          50 * stageMultiplier.budget,
-          500 * stageMultiplier.budget,
+          50 * stageMultiplier?.budget,
+          500 * stageMultiplier?.budget,
         ],
-        targetAudience: this.getTargetAudienceByGenre(genres),
-        campaignTypes: this.getCampaignTypesByStage(careerStage),
+        targetAudience: this?.getTargetAudienceByGenre(genres),
+        campaignTypes: this?.getCampaignTypesByStage(careerStage),
       },
       dashboard: {
-        priorityWidgets: baseSettings.dashboard?.priorityWidgets || [
+        priorityWidgets: baseSettings?.dashboard?.priorityWidgets || [
           "streams",
           "revenue",
         ],
-        hiddenFeatures: baseSettings.dashboard?.hiddenFeatures || [],
-        quickActions: baseSettings.dashboard?.quickActions || ["upload-track"],
+        hiddenFeatures: baseSettings?.dashboard?.hiddenFeatures || [],
+        quickActions: baseSettings?.dashboard?.quickActions || ["upload-track"],
       },
     };
   }
 
   async analyzeUserBehavior(userId: string): Promise<UserBehaviorAnalysis> {
-    const user = await storage.getUser(userId);
-    const userProjects = await db
+    const _user = await storage?.getUser(userId);
+    const _userProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.userId, userId))
+      .where(eq(projects?.userId, userId))
       .limit(50);
 
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const _thirtyDaysAgo = new Date();
+    thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-    const recentAnalytics = await db
+    const _recentAnalytics = await db
       .select()
       .from(analytics)
       .where(
-        and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)),
+        and(eq(analytics?.userId, userId), gte(analytics?.date, thirtyDaysAgo)),
       )
-      .orderBy(desc(analytics.date))
+      .orderBy(desc(analytics?.date))
       .limit(30);
 
-    const preferences = (user?.preferences as Record<string, any>) || {};
-    const featureUsage =
-      (preferences.featureUsage as Record<string, number>) || {};
-    const sessionData = (preferences.sessionData as Record<string, any>) || {};
+    const _preferences = (user?.preferences as Record<string, any>) || {};
+    const _featureUsage =
+      (preferences?.featureUsage as Record<string, number>) || {};
+    const _sessionData = (preferences?.sessionData as Record<string, any>) || {};
 
-    const mostUsedFeatures = Object.entries(featureUsage)
+    const _mostUsedFeatures = Object?.entries(featureUsage)
       .map(([feature, count]) => ({
         feature,
         count: count as number,
         lastUsed: new Date(),
       }))
-      .sort((a, b) => b.count - a.count)
+      .sort((a, b) => b?.count - a?.count)
       .slice(0, 10);
 
     const genreCounts: Record<string, number> = {};
-    userProjects.forEach((p) => {
-      if (p.genre) {
-        genreCounts[p.genre] = (genreCounts[p.genre] || 0) + 1;
+    userProjects?.forEach((p) => {
+      if (p?.genre) {
+        genreCounts[p?.genre] = (genreCounts[p?.genre] || 0) + 1;
       }
     });
 
-    const preferredGenres = Object.entries(genreCounts)
+    const _preferredGenres = Object?.entries(genreCounts)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
       .map(([genre]) => genre);
 
-    recentAnalytics.reduce((sum, a) => sum + (a.streams || 0), 0);
-    recentAnalytics.reduce((sum, a) => sum + (a.revenue || 0), 0);
-    recentAnalytics.reduce((sum, a) => sum + (a.followers || 0), 0);
+    recentAnalytics?.reduce(
+      (sum, a) => sum + (a?.streams || 0),
+      0,
+    );
+    recentAnalytics?.reduce(
+      (sum, a) => sum + (a?.revenue || 0),
+      0,
+    );
+    recentAnalytics?.reduce(
+      (sum, a) => sum + (a?.followers || 0),
+      0,
+    );
 
     return {
       mostUsedFeatures,
-      preferredWorkingHours: this.generatePreferredHours(sessionData),
+      preferredWorkingHours: this?.generatePreferredHours(sessionData),
       contentPatterns: {
         avgTracksPerMonth:
-          userProjects.length / Math.max(1, this.getAccountAgeMonths(user)),
+          userProjects?.length / Math?.max(1, this?.getAccountAgeMonths(user)),
         preferredGenres,
         avgProjectDuration: 14,
       },
       engagementMetrics: {
-        loginFrequency: this.calculateLoginFrequency(sessionData),
-        sessionDuration: sessionData.avgDuration || 15,
-        completionRate: sessionData.completionRate || 0.6,
+        loginFrequency: this?.calculateLoginFrequency(sessionData),
+        sessionDuration: sessionData?.avgDuration || 15,
+        completionRate: sessionData?.completionRate || 0.6,
       },
       growthTrends: {
-        followerGrowthRate: this.calculateGrowthRate(
+        followerGrowthRate: this?.calculateGrowthRate(
           recentAnalytics,
           "followers",
         ),
-        revenueGrowthRate: this.calculateGrowthRate(recentAnalytics, "revenue"),
-        streamGrowthRate: this.calculateGrowthRate(recentAnalytics, "streams"),
+        revenueGrowthRate: this?.calculateGrowthRate(recentAnalytics, "revenue"),
+        streamGrowthRate: this?.calculateGrowthRate(recentAnalytics, "streams"),
       },
     };
   }
 
   async predictOptimalSchedule(userId: string): Promise<OptimalSchedule> {
-    const behavior = await this.analyzeUserBehavior(userId);
-    const user = await storage.getUser(userId);
-    const onboardingData = (user?.onboardingData as Record<string, any>) || {};
-    const artistType = (onboardingData.artistType as ArtistType) || "solo";
-    const genres = (onboardingData.genres as string[]) || ["pop"];
+    const _behavior = await this?.analyzeUserBehavior(userId);
+    const _user = await storage?.getUser(userId);
+    const _onboardingData = (user?.onboardingData as Record<string, any>) || {};
+    const _artistType = (onboardingData?.artistType as ArtistType) || "solo";
+    const _genres = (onboardingData?.genres as string[]) || ["pop"];
 
-    const platformSchedules = this.getPlatformOptimalTimes(artistType, genres);
+    const _platformSchedules = this?.getPlatformOptimalTimes(artistType, genres);
 
     return {
       posting: platformSchedules,
       releases: {
         optimalDay: "Friday",
         optimalTime: "00:00 UTC",
-        avoidDates: this.getAvoidDates(),
+        avoidDates: this?.getAvoidDates(),
         reasoning:
           "Friday releases align with New Music Friday playlists on major platforms.",
       },
       engagement: {
-        peakHours: behavior.preferredWorkingHours
-          .filter((h) => h.activityLevel > 0.7)
-          .map((h) => h.hour),
+        peakHours: behavior?.preferredWorkingHours
+          .filter((h) => h?.activityLevel > 0.7)
+          .map((h) => h?.hour),
         suggestedResponseTime: "< 2 hours",
         liveEventTimes: ["8:00 PM", "9:00 PM"],
       },
@@ -483,17 +492,17 @@ class SmartDefaultsService {
   }
 
   async getSuggestions(userId: string): Promise<ActionSuggestion[]> {
-    const user = await storage.getUser(userId);
-    const behavior = await this.analyzeUserBehavior(userId);
-    const onboardingData = (user?.onboardingData as Record<string, any>) || {};
-    const careerStage =
-      (onboardingData.careerStage as CareerStage) || "emerging";
-    const artistType = (onboardingData.artistType as ArtistType) || "solo";
+    const _user = await storage?.getUser(userId);
+    const _behavior = await this?.analyzeUserBehavior(userId);
+    const _onboardingData = (user?.onboardingData as Record<string, any>) || {};
+    const _careerStage =
+      (onboardingData?.careerStage as CareerStage) || "emerging";
+    const _artistType = (onboardingData?.artistType as ArtistType) || "solo";
 
     const suggestions: ActionSuggestion[] = [];
 
-    if (!onboardingData.hasDistributed) {
-      suggestions.push({
+    if (!onboardingData?.hasDistributed) {
+      suggestions?.push({
         id: "first-distribution",
         type: "distribution",
         priority: "high",
@@ -507,8 +516,8 @@ class SmartDefaultsService {
       });
     }
 
-    if (!onboardingData.hasConnectedSocial) {
-      suggestions.push({
+    if (!onboardingData?.hasConnectedSocial) {
+      suggestions?.push({
         id: "connect-social",
         type: "social",
         priority: "high",
@@ -522,8 +531,8 @@ class SmartDefaultsService {
       });
     }
 
-    if (behavior.mostUsedFeatures.length < 3) {
-      suggestions.push({
+    if (behavior?.mostUsedFeatures.length < 3) {
+      suggestions?.push({
         id: "explore-features",
         type: "setup",
         priority: "medium",
@@ -536,12 +545,12 @@ class SmartDefaultsService {
       });
     }
 
-    suggestions.push(
-      ...this.getCareerStageSuggestions(careerStage, artistType),
+    suggestions?.push(
+      ...this?.getCareerStageSuggestions(careerStage, artistType),
     );
 
-    if (behavior.growthTrends.streamGrowthRate < 0) {
-      suggestions.push({
+    if (behavior?.growthTrends.streamGrowthRate < 0) {
+      suggestions?.push({
         id: "boost-streams",
         type: "marketing",
         priority: "medium",
@@ -555,26 +564,26 @@ class SmartDefaultsService {
       });
     }
 
-    return suggestions.slice(0, 6);
+    return suggestions?.slice(0, 6);
   }
 
   async getDashboardLayout(userId: string): Promise<DashboardLayout> {
-    const user = await storage.getUser(userId);
-    const preferences = (user?.preferences as Record<string, any>) || {};
-    const onboardingData = (user?.onboardingData as Record<string, any>) || {};
-    const artistType = (onboardingData.artistType as ArtistType) || "solo";
+    const _user = await storage?.getUser(userId);
+    const _preferences = (user?.preferences as Record<string, any>) || {};
+    const _onboardingData = (user?.onboardingData as Record<string, any>) || {};
+    const _artistType = (onboardingData?.artistType as ArtistType) || "solo";
 
-    const savedLayout = preferences.dashboardLayout as
+    const _savedLayout = preferences?.dashboardLayout as
       | DashboardLayout
       | undefined;
     if (savedLayout) {
       return savedLayout;
     }
 
-    const behavior = await this.analyzeUserBehavior(userId);
-    const settings = await this.getRecommendedSettings(userId, artistType);
+    const _behavior = await this?.analyzeUserBehavior(userId);
+    const _settings = await this?.getRecommendedSettings(userId, artistType);
 
-    const allWidgets = [
+    const _allWidgets = [
       "streams",
       "revenue",
       "social-reach",
@@ -589,29 +598,29 @@ class SmartDefaultsService {
       "goals",
     ];
 
-    const priorityWidgets = settings.dashboard.priorityWidgets;
-    const hiddenFeatures = settings.dashboard.hiddenFeatures;
-    const frequentlyUsed = behavior.mostUsedFeatures.map((f) => f.feature);
+    const _priorityWidgets = settings?.dashboard.priorityWidgets;
+    const _hiddenFeatures = settings?.dashboard.hiddenFeatures;
+    const _frequentlyUsed = behavior?.mostUsedFeatures.map((f) => f?.feature);
 
-    const widgets = allWidgets
+    const _widgets = allWidgets
       .map((id, index) => ({
         id,
-        position: priorityWidgets.includes(id)
-          ? priorityWidgets.indexOf(id)
+        position: priorityWidgets?.includes(id)
+          ? priorityWidgets?.indexOf(id)
           : index + 100,
-        visible: !hiddenFeatures.includes(id),
-        size: priorityWidgets.includes(id)
+        visible: !hiddenFeatures?.includes(id),
+        size: priorityWidgets?.includes(id)
           ? ("large" as const)
-          : frequentlyUsed.includes(id)
+          : frequentlyUsed?.includes(id)
             ? ("medium" as const)
             : ("small" as const),
       }))
-      .sort((a, b) => a.position - b.position);
+      .sort((a, b) => a?.position - b?.position);
 
     return {
       widgets,
-      quickActions: settings.dashboard.quickActions,
-      hiddenFeatures: settings.dashboard.hiddenFeatures,
+      quickActions: settings?.dashboard.quickActions,
+      hiddenFeatures: settings?.dashboard.hiddenFeatures,
       theme: "standard",
     };
   }
@@ -620,28 +629,28 @@ class SmartDefaultsService {
     userId: string,
     preferences: Partial<PersonalizationPreferences>,
   ): Promise<void> {
-    const user = await storage.getUser(userId);
-    const currentPrefs = (user?.preferences as Record<string, any>) || {};
+    const _user = await storage?.getUser(userId);
+    const _currentPrefs = (user?.preferences as Record<string, any>) || {};
 
-    await storage.updateUser(userId, {
+    await storage?.updateUser(userId, {
       preferences: {
         ...currentPrefs,
         personalization: preferences,
         dashboardLayout:
-          preferences.dashboardLayout || currentPrefs.dashboardLayout,
+          preferences?.dashboardLayout || currentPrefs?.dashboardLayout,
       },
     });
   }
 
   async trackFeatureUsage(userId: string, feature: string): Promise<void> {
-    const user = await storage.getUser(userId);
-    const preferences = (user?.preferences as Record<string, any>) || {};
-    const featureUsage =
-      (preferences.featureUsage as Record<string, number>) || {};
+    const _user = await storage?.getUser(userId);
+    const _preferences = (user?.preferences as Record<string, any>) || {};
+    const _featureUsage =
+      (preferences?.featureUsage as Record<string, number>) || {};
 
     featureUsage[feature] = (featureUsage[feature] || 0) + 1;
 
-    await storage.updateUser(userId, {
+    await storage?.updateUser(userId, {
       preferences: {
         ...preferences,
         featureUsage,
@@ -667,7 +676,7 @@ class SmartDefaultsService {
       latin: { bpm: 100, key: "A minor" },
       electronic: { bpm: 125, key: "F minor" },
     };
-    return genreSettings[genre.toLowerCase()] || genreSettings.pop;
+    return genreSettings[genre?.toLowerCase()] || genreSettings?.pop;
   }
 
   private getTargetAudienceByGenre(genres: string[]): string[] {
@@ -678,13 +687,13 @@ class SmartDefaultsService {
       rock: ["25-45", "album-buyers", "concert-goers"],
       indie: ["20-35", "discovery-oriented", "vinyl-collectors"],
     };
-    const audiences = new Set<string>();
-    genres.forEach((g) => {
-      (audienceMap[g.toLowerCase()] || audienceMap.pop).forEach((a) =>
-        audiences.add(a),
+    const _audiences = new Set<string>();
+    genres?.forEach((g) => {
+      (audienceMap[g?.toLowerCase()] || audienceMap?.pop).forEach((a) =>
+        audiences?.add(a),
       );
     });
-    return Array.from(audiences);
+    return Array?.from(audiences);
   }
 
   private getCampaignTypesByStage(stage: CareerStage): string[] {
@@ -714,12 +723,12 @@ class SmartDefaultsService {
 
   private getAccountAgeMonths(user: Record<string, unknown>): number {
     if (!user?.createdAt) return 1;
-    const created = new Date(user.createdAt);
-    const now = new Date();
-    return Math.max(
+    const _created = new Date(user?.createdAt);
+    const _now = new Date();
+    return Math?.max(
       1,
-      Math.floor(
-        (now.getTime() - created.getTime()) / (30 * 24 * 60 * 60 * 1000),
+      Math?.floor(
+        (now?.getTime() - created?.getTime()) / (30 * 24 * 60 * 60 * 1000),
       ),
     );
   }
@@ -727,9 +736,9 @@ class SmartDefaultsService {
   private calculateLoginFrequency(
     sessionData: Record<string, any>,
   ): "daily" | "weekly" | "occasional" {
-    const loginCount = sessionData.loginCount || 0;
-    const daysSinceCreation = sessionData.daysSinceCreation || 30;
-    const avgLogins = loginCount / Math.max(1, daysSinceCreation);
+    const _loginCount = sessionData?.loginCount || 0;
+    const _daysSinceCreation = sessionData?.daysSinceCreation || 30;
+    const _avgLogins = loginCount / Math?.max(1, daysSinceCreation);
 
     if (avgLogins >= 0.8) return "daily";
     if (avgLogins >= 0.3) return "weekly";
@@ -737,29 +746,29 @@ class SmartDefaultsService {
   }
 
   private calculateGrowthRate(analyticsData: unknown[], field: string): number {
-    if (analyticsData.length < 2) return 0;
-    const recent = analyticsData.slice(0, Math.floor(analyticsData.length / 2));
-    const older = analyticsData.slice(Math.floor(analyticsData.length / 2));
+    if (analyticsData?.length < 2) return 0;
+    const _recent = analyticsData?.slice(0, Math?.floor(analyticsData?.length / 2));
+    const _older = analyticsData?.slice(Math?.floor(analyticsData?.length / 2));
 
-    const recentAvg =
-      recent.reduce((sum, a) => sum + (a[field] || 0), 0) / recent.length;
-    const olderAvg =
-      older.reduce((sum, a) => sum + (a[field] || 0), 0) / older.length;
+    const _recentAvg =
+      recent?.reduce((sum, a) => sum + (a[field] || 0), 0) / recent?.length;
+    const _olderAvg =
+      older?.reduce((sum, a) => sum + (a[field] || 0), 0) / older?.length;
 
     if (olderAvg === 0) return recentAvg > 0 ? 100 : 0;
-    return Math.round(((recentAvg - olderAvg) / olderAvg) * 100);
+    return Math?.round(((recentAvg - olderAvg) / olderAvg) * 100);
   }
 
   private generatePreferredHours(
     sessionData: Record<string, any>,
   ): { hour: number; activityLevel: number }[] {
-    const hourlyActivity =
-      (sessionData.hourlyActivity as number[]) ||
-      Array.from({ length: 24 }, (_, i) =>
-        i >= 9 && i <= 22 ? Math.random() * 0.5 + 0.5 : Math.random() * 0.3,
+    const _hourlyActivity =
+      (sessionData?.hourlyActivity as number[]) ||
+      Array?.from({ length: 24 }, (_, i) =>
+        i >= 9 && i <= 22 ? Math?.random() * 0.5 + 0.5 : Math?.random() * 0.3,
       );
 
-    return hourlyActivity.map((level, hour) => ({
+    return hourlyActivity?.map((level, hour) => ({
       hour,
       activityLevel: level,
     }));
@@ -795,28 +804,28 @@ class SmartDefaultsService {
       },
     };
 
-    return Object.entries(baseTimes).map(([platform, times]) => ({
+    return Object?.entries(baseTimes).map(([platform, times]) => ({
       platform,
-      bestDays: times.bestDays,
-      bestTimes: times.bestTimes,
+      bestDays: times?.bestDays,
+      bestTimes: times?.bestTimes,
       frequency: artistType === "label" ? "multiple-daily" : "daily",
-      audienceActivity: 0.7 + Math.random() * 0.2,
+      audienceActivity: 0.7 + Math?.random() * 0.2,
     }));
   }
 
   private getAvoidDates(): string[] {
-    const now = new Date();
+    const _now = new Date();
     const avoidDates: string[] = [];
 
-    const holidays = [
-      new Date(now.getFullYear(), 11, 25),
-      new Date(now.getFullYear(), 0, 1),
-      new Date(now.getFullYear(), 6, 4),
+    const _holidays = [
+      new Date(now?.getFullYear(), 11, 25),
+      new Date(now?.getFullYear(), 0, 1),
+      new Date(now?.getFullYear(), 6, 4),
     ];
 
-    holidays.forEach((date) => {
+    holidays?.forEach((date) => {
       if (date > now) {
-        avoidDates.push(date.toISOString().split("T")[0]);
+        avoidDates?.push(date?.toISOString().split("T")[0]);
       }
     });
 
@@ -830,7 +839,7 @@ class SmartDefaultsService {
     const suggestions: ActionSuggestion[] = [];
 
     if (stage === "emerging") {
-      suggestions.push({
+      suggestions?.push({
         id: "build-audience",
         type: "social",
         priority: "high",
@@ -845,7 +854,7 @@ class SmartDefaultsService {
     }
 
     if (stage === "developing") {
-      suggestions.push({
+      suggestions?.push({
         id: "pitch-playlists",
         type: "distribution",
         priority: "high",
@@ -860,7 +869,7 @@ class SmartDefaultsService {
     }
 
     if (artistType === "producer") {
-      suggestions.push({
+      suggestions?.push({
         id: "list-beats",
         type: "distribution",
         priority: "medium",
@@ -910,7 +919,7 @@ class SmartDefaultsService {
     engagementTrend: "increasing" | "stable" | "decreasing";
     lastUpdated: string;
   }> {
-    const suggestions = [
+    const _suggestions = [
       {
         id: "sched-1",
         dayOfWeek: "wednesday",
@@ -978,21 +987,21 @@ class SmartDefaultsService {
     userId: string,
     artistType: ArtistType,
   ): Promise<void> {
-    const layout = await this.getDashboardLayout(userId);
-    const priorityWidgets = this.getPriorityWidgetsForType(artistType);
+    const _layout = await this?.getDashboardLayout(userId);
+    const _priorityWidgets = this?.getPriorityWidgetsForType(artistType);
 
-    const updatedWidgets = layout.widgets
+    const _updatedWidgets = layout?.widgets
       .map((widget) => ({
         ...widget,
-        visible: priorityWidgets.includes(widget.id),
+        visible: priorityWidgets?.includes(widget?.id),
         position:
-          priorityWidgets.indexOf(widget.id) !== -1
-            ? priorityWidgets.indexOf(widget.id)
-            : widget.position + 100,
+          priorityWidgets?.indexOf(widget?.id) !== -1
+            ? priorityWidgets?.indexOf(widget?.id)
+            : widget?.position + 100,
       }))
-      .sort((a, b) => a.position - b.position);
+      .sort((a, b) => a?.position - b?.position);
 
-    await this.updatePreferences(userId, {
+    await this?.updatePreferences(userId, {
       artistType,
       dashboardLayout: { widgets: updatedWidgets },
     });
@@ -1049,8 +1058,8 @@ class SmartDefaultsService {
         "ai-coach",
       ],
     };
-    return widgetSets[artistType] || widgetSets.solo;
+    return widgetSets[artistType] || widgetSets?.solo;
   }
 }
 
-export const smartDefaultsService = new SmartDefaultsService();
+export const _smartDefaultsService = new SmartDefaultsService();

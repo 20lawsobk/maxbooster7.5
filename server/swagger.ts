@@ -54,7 +54,7 @@ All errors follow this format:
       `,
       contact: {
         name: "Max Booster Support",
-        email: "support@maxbooster.ai",
+        email: "support@maxbooster?.ai",
       },
       license: {
         name: "Proprietary",
@@ -71,7 +71,7 @@ All errors follow this format:
         sessionCookie: {
           type: "apiKey",
           in: "cookie",
-          name: "connect.sid",
+          name: "connect?.sid",
           description: "Session cookie obtained from login",
         },
       },
@@ -165,17 +165,17 @@ All errors follow this format:
   apis: ["./server/routes.ts", "./server/routes/*.ts"], // Path to route files
 };
 
-const swaggerSpec = swaggerJsdoc(options);
+const _swaggerSpec = swaggerJsdoc(options);
 
 /**
  * Setup Swagger documentation for Express app
  */
 export function setupSwagger(app: Express): void {
   // Serve Swagger UI
-  app.use(
+  app?.use(
     "/api-docs",
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec, {
+    swaggerUi?.serve,
+    swaggerUi?.setup(swaggerSpec, {
       customCss: ".swagger-ui .topbar { display: none }",
       customSiteTitle: "Max Booster API Docs",
       customfavIcon: "/favicon.ico",
@@ -183,12 +183,12 @@ export function setupSwagger(app: Express): void {
   );
 
   // Serve raw OpenAPI spec
-  app.get("/api-docs.json", (_req, res) => {
-    res.setHeader("Content-Type", "application/json");
-    res.send(swaggerSpec);
+  app?.get("/api-docs.json", (_req, res) => {
+    res?.setHeader("Content-Type", "application/json");
+    res?.send(swaggerSpec);
   });
 
-  logger.info("📚 Swagger documentation available at /api-docs");
+  logger?.info("📚 Swagger documentation available at /api-docs");
 }
 
 /**

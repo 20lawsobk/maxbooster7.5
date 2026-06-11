@@ -45,31 +45,31 @@ export function useScreenReaderAnnounce(
     defaultPriority = "polite",
   } = options;
 
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const delayTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const _debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const _delayTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   useEffect(() => {
     return () => {
       if (clearOnUnmount) {
-        const announcer = ScreenReaderAnnouncer.getInstance();
-        announcer.clear();
+        const _announcer = ScreenReaderAnnouncer?.getInstance();
+        announcer?.clear();
       }
 
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+      if (debounceTimerRef?.current) {
+        clearTimeout(debounceTimerRef?.current);
       }
 
-      delayTimersRef.current.forEach((timer) => clearTimeout(timer));
-      delayTimersRef.current.clear();
+      delayTimersRef?.current.forEach((timer) => clearTimeout(timer));
+      delayTimersRef?.current.clear();
     };
   }, [clearOnUnmount]);
 
-  const announce = useCallback(
+  const _announce = useCallback(
     (message: string, priority: AnnouncementPriority = defaultPriority) => {
-      if (!message.trim()) return;
+      if (!message?.trim()) return;
 
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+      if (debounceTimerRef?.current) {
+        clearTimeout(debounceTimerRef?.current);
       }
 
       debounceTimerRef.current = setTimeout(() => {
@@ -83,52 +83,52 @@ export function useScreenReaderAnnounce(
     [debounceMs, defaultPriority],
   );
 
-  const announcePoliteWrapper = useCallback((message: string) => {
+  const _announcePoliteWrapper = useCallback((message: string) => {
     announcePolite(message);
   }, []);
 
-  const announceAssertiveWrapper = useCallback((message: string) => {
+  const _announceAssertiveWrapper = useCallback((message: string) => {
     announceAssertive(message);
   }, []);
 
-  const announceWithDelay = useCallback(
+  const _announceWithDelay = useCallback(
     (
       message: string,
       delayMs: number,
       priority: AnnouncementPriority = defaultPriority,
     ) => {
-      const timer = setTimeout(() => {
+      const _timer = setTimeout(() => {
         if (priority === "assertive") {
           announceAssertive(message);
         } else {
           announcePolite(message);
         }
-        delayTimersRef.current.delete(timer);
+        delayTimersRef?.current.delete(timer);
       }, delayMs);
 
-      delayTimersRef.current.add(timer);
+      delayTimersRef?.current.add(timer);
     },
     [defaultPriority],
   );
 
-  const announceList = useCallback(
+  const _announceList = useCallback(
     (
       items: string[],
       options: { separator?: string; priority?: AnnouncementPriority } = {},
     ) => {
-      if (items.length === 0) return;
+      if (items?.length === 0) return;
 
       const { separator = ", ", priority = defaultPriority } = options;
-      const message = items.join(separator);
+      const _message = items?.join(separator);
       announce(message, priority);
     },
     [announce, defaultPriority],
   );
 
-  const announceProgress = useCallback(
+  const _announceProgress = useCallback(
     (current: number, total: number, context?: string) => {
-      const percentage = Math.round((current / total) * 100);
-      const message = context
+      const _percentage = Math?.round((current / total) * 100);
+      const _message = context
         ? `${context}: ${percentage}% complete, ${current} of ${total}`
         : `Progress: ${percentage}% complete, ${current} of ${total}`;
 
@@ -137,7 +137,7 @@ export function useScreenReaderAnnounce(
     [],
   );
 
-  const announceStatus = useCallback(
+  const _announceStatus = useCallback(
     (status: "loading" | "success" | "error" | "warning", message?: string) => {
       const statusMessages: Record<string, string> = {
         loading: message || "Loading, please wait",
@@ -146,7 +146,7 @@ export function useScreenReaderAnnounce(
         warning: message || "Warning",
       };
 
-      const fullMessage = statusMessages[status] || message || "";
+      const _fullMessage = statusMessages[status] || message || "";
 
       if (status === "error") {
         announceAssertive(fullMessage);
@@ -157,26 +157,26 @@ export function useScreenReaderAnnounce(
     [],
   );
 
-  const announceNavigation = useCallback((pageName: string) => {
+  const _announceNavigation = useCallback((pageName: string) => {
     announcePolite(`Navigated to ${pageName}`);
   }, []);
 
-  const announceAction = useCallback((action: string, target?: string) => {
-    const message = target ? `${action}: ${target}` : action;
+  const _announceAction = useCallback((action: string, target?: string) => {
+    const _message = target ? `${action}: ${target}` : action;
     announcePolite(message);
   }, []);
 
-  const clear = useCallback(() => {
-    const announcer = ScreenReaderAnnouncer.getInstance();
-    announcer.clear();
+  const _clear = useCallback(() => {
+    const _announcer = ScreenReaderAnnouncer?.getInstance();
+    announcer?.clear();
 
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+    if (debounceTimerRef?.current) {
+      clearTimeout(debounceTimerRef?.current);
       debounceTimerRef.current = null;
     }
 
-    delayTimersRef.current.forEach((timer) => clearTimeout(timer));
-    delayTimersRef.current.clear();
+    delayTimersRef?.current.forEach((timer) => clearTimeout(timer));
+    delayTimersRef?.current.clear();
   }, []);
 
   return {

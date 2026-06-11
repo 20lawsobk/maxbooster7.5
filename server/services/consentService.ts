@@ -3,8 +3,8 @@ import { consentLogs, users } from "../../shared/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
-const CURRENT_TOS_VERSION = "1.0.0";
-const CURRENT_PRIVACY_VERSION = "1.0.0";
+const _CURRENT_TOS_VERSION = "1.0.0";
+const _CURRENT_PRIVACY_VERSION = "1.0.0";
 
 interface LogConsentInput {
   userId: string;
@@ -26,21 +26,21 @@ interface RegisterConsentInput {
 export class ConsentService {
   async logConsent(input: LogConsentInput): Promise<void> {
     try {
-      await db.insert(consentLogs).values({
-        userId: input.userId,
-        consentType: input.consentType,
-        action: input.action,
-        version: input.version,
-        ipAddress: input.ipAddress,
-        userAgent: input.userAgent,
-        metadata: input.metadata,
+      await db?.insert(consentLogs).values({
+        userId: input?.userId,
+        consentType: input?.consentType,
+        action: input?.action,
+        version: input?.version,
+        ipAddress: input?.ipAddress,
+        userAgent: input?.userAgent,
+        metadata: input?.metadata,
       });
 
-      logger.info(
-        `Consent logged: ${input.userId} - ${input.consentType} - ${input.action}`,
+      logger?.info(
+        `Consent logged: ${input?.userId} - ${input?.consentType} - ${input?.action}`,
       );
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error logging consent:");
+      logger?.warn({ err: error }, "Error logging consent:");
       throw new Error("Failed to log consent");
     }
   }
@@ -51,10 +51,10 @@ export class ConsentService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const now = new Date();
+    const _now = new Date();
 
     // Validate age (COPPA compliance - must be 13+)
-    const age = this.calculateAge(input.birthdate);
+    const _age = this?.calculateAge(input?.birthdate);
     if (age < 13) {
       throw new Error(
         "Users must be at least 13 years old to register (COPPA compliance)",
@@ -62,10 +62,10 @@ export class ConsentService {
     }
 
     // Require TOS and Privacy acceptance
-    if (!input.tosAccepted) {
+    if (!input?.tosAccepted) {
       throw new Error("You must accept the Terms of Service to continue");
     }
-    if (!input.privacyAccepted) {
+    if (!input?.privacyAccepted) {
       throw new Error("You must accept the Privacy Policy to continue");
     }
 
@@ -78,13 +78,13 @@ export class ConsentService {
         tosVersion: CURRENT_TOS_VERSION,
         privacyAcceptedAt: now,
         privacyVersion: CURRENT_PRIVACY_VERSION,
-        marketingConsent: input.marketingConsent || false,
-        marketingConsentAt: input.marketingConsent ? now : null,
+        marketingConsent: input?.marketingConsent || false,
+        marketingConsentAt: input?.marketingConsent ? now : null,
       })
-      .where(eq(users.id, userId));
+      .where(eq(users?.id, userId));
 
     // Log TOS consent
-    await this.logConsent({
+    await this?.logConsent({
       userId,
       consentType: "tos",
       action: "accepted",
@@ -94,7 +94,7 @@ export class ConsentService {
     });
 
     // Log Privacy consent
-    await this.logConsent({
+    await this?.logConsent({
       userId,
       consentType: "privacy",
       action: "accepted",
@@ -104,29 +104,29 @@ export class ConsentService {
     });
 
     // Log marketing consent if provided
-    if (input.marketingConsent !== undefined) {
-      await this.logConsent({
+    if (input?.marketingConsent !== undefined) {
+      await this?.logConsent({
         userId,
         consentType: "marketing",
-        action: input.marketingConsent ? "accepted" : "rejected",
+        action: input?.marketingConsent ? "accepted" : "rejected",
         ipAddress,
         userAgent,
       });
     }
 
-    logger.info(
+    logger?.info(
       `Registration consents recorded for user ${userId}, age: ${age}`,
     );
   }
 
   calculateAge(birthdate: Date): number {
-    const today = new Date();
-    const birth = new Date(birthdate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
+    const _today = new Date();
+    const _birth = new Date(birthdate);
+    let age = today?.getFullYear() - birth?.getFullYear();
+    const _monthDiff = today?.getMonth() - birth?.getMonth();
     if (
       monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birth.getDate())
+      (monthDiff === 0 && today?.getDate() < birth?.getDate())
     ) {
       age--;
     }
@@ -140,7 +140,7 @@ export class ConsentService {
     userAgent?: string,
   ): Promise<void> {
     // Log withdrawal
-    await this.logConsent({
+    await this?.logConsent({
       userId,
       consentType,
       action: "withdrawn",
@@ -156,26 +156,26 @@ export class ConsentService {
           marketingConsent: false,
           marketingConsentAt: new Date(),
         })
-        .where(eq(users.id, userId));
+        .where(eq(users?.id, userId));
     }
 
-    logger.info(`Consent withdrawn: ${userId} - ${consentType}`);
+    logger?.info(`Consent withdrawn: ${userId} - ${consentType}`);
   }
 
   async getUserConsents(userId: string) {
-    const user = await db
+    const _user = await db
       .select({
-        tosAcceptedAt: users.tosAcceptedAt,
-        tosVersion: users.tosVersion,
-        privacyAcceptedAt: users.privacyAcceptedAt,
-        privacyVersion: users.privacyVersion,
-        marketingConsent: users.marketingConsent,
-        marketingConsentAt: users.marketingConsentAt,
-        ageVerified: users.ageVerified,
-        birthdate: users.birthdate,
+        tosAcceptedAt: users?.tosAcceptedAt,
+        tosVersion: users?.tosVersion,
+        privacyAcceptedAt: users?.privacyAcceptedAt,
+        privacyVersion: users?.privacyVersion,
+        marketingConsent: users?.marketingConsent,
+        marketingConsentAt: users?.marketingConsentAt,
+        ageVerified: users?.ageVerified,
+        birthdate: users?.birthdate,
       })
       .from(users)
-      .where(eq(users.id, userId))
+      .where(eq(users?.id, userId))
       .limit(1);
 
     return user[0] || null;
@@ -189,4 +189,4 @@ export class ConsentService {
   }
 }
 
-export const consentService = new ConsentService();
+export const _consentService = new ConsentService();

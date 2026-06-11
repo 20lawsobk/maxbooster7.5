@@ -11,54 +11,54 @@ import { db } from "./db";
 import { listings, storefrontDomains, storefronts } from "@shared/schema";
 import { and, eq } from "drizzle-orm";
 
-const __filename = fileURLToPath(import.meta.url);
-path.dirname(__filename);
+const ___filename = fileURLToPath(import?.meta.url);
+path?.dirname(__filename);
 
-const SITE_URL = process.env.SITE_URL || "https://max-booster.com";
+const _SITE_URL = process?.env.SITE_URL || "https://max-booster.com";
 
 interface CacheEntry<T> {
   value: T;
   expiresAt: number;
 }
 function makeCache<T>(ttlMs: number) {
-  const store = new Map<string, CacheEntry<T>>();
+  const _store = new Map<string, CacheEntry<T>>();
   return {
     get(key: string): T | undefined {
-      const entry = store.get(key);
+      const _entry = store?.get(key);
       if (!entry) return undefined;
-      if (Date.now() > entry.expiresAt) {
-        store.delete(key);
+      if (Date?.now() > entry?.expiresAt) {
+        store?.delete(key);
         return undefined;
       }
-      return entry.value;
+      return entry?.value;
     },
     set(key: string, value: T) {
-      store.set(key, { value, expiresAt: Date.now() + ttlMs });
+      store?.set(key, { value, expiresAt: Date?.now() + ttlMs });
     },
   };
 }
 
-const subdomainCache = makeCache<string | null>(60_000);
-const customDomainCache = makeCache<string | null>(60_000);
-const metaCache = makeCache<{
+const _subdomainCache = makeCache<string | null>(60_000);
+const _customDomainCache = makeCache<string | null>(60_000);
+const _metaCache = makeCache<{
   title: string;
   description: string;
   image: string;
   url: string;
 } | null>(120_000);
 
-const BASE_DOMAINS = [
+const _BASE_DOMAINS = [
   "max-booster.com",
-  "maxbooster.replit.app", // legacy — keep for backward-compat during migration
+  "maxbooster?.replit.app", // legacy — keep for backward-compat during migration
 ];
 
 function extractSubdomain(hostname: string): string | null {
   if (!hostname || hostname === "localhost") return null;
-  const host = hostname.split(":")[0].toLowerCase();
+  const _host = hostname?.split(":")[0].toLowerCase();
   for (const base of BASE_DOMAINS) {
     if (host === base) return null;
-    if (host.endsWith("." + base)) {
-      const sub = host.slice(0, -(base.length + 1));
+    if (host?.endsWith("." + base)) {
+      const _sub = host?.slice(0, -(base?.length + 1));
       if (sub && sub !== "www" && sub !== "api") return sub;
     }
   }
@@ -68,47 +68,47 @@ function extractSubdomain(hostname: string): string | null {
 async function getStorefrontSlugForSubdomain(
   subdomain: string,
 ): Promise<string | null> {
-  const cached = subdomainCache.get(subdomain);
+  const _cached = subdomainCache?.get(subdomain);
   if (cached !== undefined) return cached;
   try {
-    // Primary: storefronts.subdomain + isSubdomainActive (set by auto-assign on creation
+    // Primary: storefronts?.subdomain + isSubdomainActive (set by auto-assign on creation
     // and by reserveManaged when the artist picks a label via the UI).
     const [store] = await db
-      .select({ slug: storefronts.slug })
+      .select({ slug: storefronts?.slug })
       .from(storefronts)
       .where(
         and(
-          eq(storefronts.subdomain, subdomain),
-          eq(storefronts.isSubdomainActive, true),
+          eq(storefronts?.subdomain, subdomain),
+          eq(storefronts?.isSubdomainActive, true),
         ),
       )
       .limit(1);
     if (store?.slug) {
-      subdomainCache.set(subdomain, store.slug);
-      return store.slug;
+      subdomainCache?.set(subdomain, store?.slug);
+      return store?.slug;
     }
 
     // Fallback: storefront_domains table for managed_subdomain rows created via the
-    // "Find Domain" UI flow before the storefront.subdomain field was backfilled.
+    // "Find Domain" UI flow before the storefront?.subdomain field was backfilled.
     // Always use max-booster.com as the platform base domain regardless of
     // the BASE_DOMAIN env var (which can be set to a dev/preview value).
-    const baseDomainFqdn = `${subdomain}.max-booster.com`;
+    const _baseDomainFqdn = `${subdomain}.max-booster.com`;
     const [domRow] = await db
-      .select({ slug: storefronts.slug })
+      .select({ slug: storefronts?.slug })
       .from(storefrontDomains)
       .innerJoin(
         storefronts,
-        eq(storefrontDomains.storefrontId, storefronts.id),
+        eq(storefrontDomains?.storefrontId, storefronts?.id),
       )
       .where(
         and(
-          eq(storefrontDomains.domain, baseDomainFqdn),
-          eq(storefrontDomains.status, "active"),
+          eq(storefrontDomains?.domain, baseDomainFqdn),
+          eq(storefrontDomains?.status, "active"),
         ),
       )
       .limit(1);
-    const result = domRow?.slug ?? null;
-    subdomainCache.set(subdomain, result);
+    const _result = domRow?.slug ?? null;
+    subdomainCache?.set(subdomain, result);
     return result;
   } catch {
     return null;
@@ -118,18 +118,18 @@ async function getStorefrontSlugForSubdomain(
 async function getStorefrontSlugForCustomDomain(
   hostname: string,
 ): Promise<string | null> {
-  const host = hostname.split(":")[0].toLowerCase();
-  const cached = customDomainCache.get(host);
+  const _host = hostname?.split(":")[0].toLowerCase();
+  const _cached = customDomainCache?.get(host);
   if (cached !== undefined) return cached;
   try {
-    // Primary: check storefronts.customDomain (set by the custom-domain form flow)
+    // Primary: check storefronts?.customDomain (set by the custom-domain form flow)
     const [store] = await db
-      .select({ slug: storefronts.slug })
+      .select({ slug: storefronts?.slug })
       .from(storefronts)
       .where(
         and(
-          eq(storefronts.customDomain, host),
-          eq(storefronts.isCustomDomainActive, true),
+          eq(storefronts?.customDomain, host),
+          eq(storefronts?.isCustomDomainActive, true),
         ),
       )
       .limit(1);
@@ -138,23 +138,23 @@ async function getStorefrontSlugForCustomDomain(
     // Fallback: check storefront_domains table (covers DNS-manager-linked domains)
     if (!result) {
       const [domainRow] = await db
-        .select({ slug: storefronts.slug })
+        .select({ slug: storefronts?.slug })
         .from(storefrontDomains)
         .innerJoin(
           storefronts,
-          eq(storefrontDomains.storefrontId, storefronts.id),
+          eq(storefrontDomains?.storefrontId, storefronts?.id),
         )
         .where(
           and(
-            eq(storefrontDomains.domain, host),
-            eq(storefrontDomains.status, "active"),
+            eq(storefrontDomains?.domain, host),
+            eq(storefrontDomains?.status, "active"),
           ),
         )
         .limit(1);
       result = domainRow?.slug ?? null;
     }
 
-    customDomainCache.set(host, result);
+    customDomainCache?.set(host, result);
     return result;
   } catch {
     return null;
@@ -162,9 +162,9 @@ async function getStorefrontSlugForCustomDomain(
 }
 
 function isMaxBoosterDomain(hostname: string): boolean {
-  const host = hostname.split(":")[0].toLowerCase();
+  const _host = hostname?.split(":")[0].toLowerCase();
   return (
-    BASE_DOMAINS.some((base) => host === base || host.endsWith("." + base)) ||
+    BASE_DOMAINS?.some((base) => host === base || host?.endsWith("." + base)) ||
     host === "localhost"
   );
 }
@@ -175,7 +175,7 @@ async function getMetaForPath(reqPath: string): Promise<{
   image: string;
   url: string;
 } | null> {
-  const cached = metaCache.get(reqPath);
+  const _cached = metaCache?.get(reqPath);
   if (cached !== undefined) return cached;
   let result: {
     title: string;
@@ -184,42 +184,42 @@ async function getMetaForPath(reqPath: string): Promise<{
     url: string;
   } | null = null;
   try {
-    const beatMatch = reqPath.match(/^\/marketplace\/beat\/(\d+)/);
+    const _beatMatch = reqPath?.match(/^\/marketplace\/beat\/(\d+)/);
     if (beatMatch) {
-      const beatId = parseInt(beatMatch[1]);
+      const _beatId = parseInt(beatMatch[1]);
       const [beat] = await db
         .select()
         .from(listings)
-        .where(eq(listings.id, beatId))
+        .where(eq(listings?.id, beatId))
         .limit(1);
       if (beat) {
-        const metadata = beat.metadata as Record<string, any> | null;
+        const _metadata = beat?.metadata as Record<string, any> | null;
         result = {
-          title: `${beat.title} - Beat on Max Booster Marketplace`,
-          description: `${beat.title} by ${beat.sellerName || "Producer"} | ${metadata?.genre || "Beat"} | ${metadata?.bpm ? metadata.bpm + " BPM" : ""} | $${beat.price || "0"} | License and download on Max Booster`,
-          image: beat.artworkUrl || `${SITE_URL}/og-image.png`,
+          title: `${beat?.title} - Beat on Max Booster Marketplace`,
+          description: `${beat?.title} by ${beat?.sellerName || "Producer"} | ${metadata?.genre || "Beat"} | ${metadata?.bpm ? metadata?.bpm + " BPM" : ""} | $${beat?.price || "0"} | License and download on Max Booster`,
+          image: beat?.artworkUrl || `${SITE_URL}/og-image.png`,
           url: `${SITE_URL}/marketplace/beat/${beatId}`,
         };
       }
     }
 
     if (!result) {
-      const storefrontMatch = reqPath.match(/^\/storefront\/([^/]+)/);
+      const _storefrontMatch = reqPath?.match(/^\/storefront\/([^/]+)/);
       if (storefrontMatch) {
-        const slug = storefrontMatch[1];
+        const _slug = storefrontMatch[1];
         const [store] = await db
           .select()
           .from(storefronts)
-          .where(eq(storefronts.slug, slug))
+          .where(eq(storefronts?.slug, slug))
           .limit(1);
         if (store) {
           result = {
-            title: `${store.displayName || store.slug} - Producer Storefront on Max Booster`,
+            title: `${store?.displayName || store?.slug} - Producer Storefront on Max Booster`,
             description:
-              store.bio ||
-              `Browse beats and music from ${store.displayName || store.slug} on Max Booster Marketplace`,
+              store?.bio ||
+              `Browse beats and music from ${store?.displayName || store?.slug} on Max Booster Marketplace`,
             image:
-              store.bannerUrl || store.avatarUrl || `${SITE_URL}/og-image.png`,
+              store?.bannerUrl || store?.avatarUrl || `${SITE_URL}/og-image.png`,
             url: `${SITE_URL}/storefront/${slug}`,
           };
         }
@@ -299,17 +299,17 @@ async function getMetaForPath(reqPath: string): Promise<{
         },
       };
 
-      // Also match sub-paths (e.g. /pricing?plan=pro, /distribution/new)
-      const cleanPath = reqPath.split("?")[0].replace(/\/$/, "") || "/";
-      const staticMeta =
+      // Also match sub-paths (e?.g. /pricing?plan=pro, /distribution/new)
+      const _cleanPath = reqPath?.split("?")[0].replace(/\/$/, "") || "/";
+      const _staticMeta =
         STATIC_ROUTES[cleanPath] ??
-        STATIC_ROUTES[`/${cleanPath.split("/")[1]}`] ??
+        STATIC_ROUTES[`/${cleanPath?.split("/")[1]}`] ??
         null;
 
       if (staticMeta) {
         result = {
-          title: staticMeta.title,
-          description: staticMeta.description,
+          title: staticMeta?.title,
+          description: staticMeta?.description,
           image: `${SITE_URL}/og-image.png`,
           url: `${SITE_URL}${cleanPath}`,
         };
@@ -318,7 +318,7 @@ async function getMetaForPath(reqPath: string): Promise<{
   } catch (error) {
     // Metadata fetch failed - continue with default meta
   }
-  metaCache.set(reqPath, result);
+  metaCache?.set(reqPath, result);
   return result;
 }
 
@@ -335,56 +335,56 @@ function injectMeta(
   html: string,
   meta: { title: string; description: string; image: string; url: string },
 ): string {
-  const escapedTitle = escapeHtml(meta.title);
-  const escapedDesc = escapeHtml(meta.description);
-  const escapedImage = escapeHtml(meta.image);
-  const escapedUrl = escapeHtml(meta.url);
+  const _escapedTitle = escapeHtml(meta?.title);
+  const _escapedDesc = escapeHtml(meta?.description);
+  const _escapedImage = escapeHtml(meta?.image);
+  const _escapedUrl = escapeHtml(meta?.url);
 
-  html = html.replace(
+  html = html?.replace(
     /<title>[^<]*<\/title>/,
     `<title>${escapedTitle}</title>`,
   );
 
-  html = html.replace(
+  html = html?.replace(
     /<meta name="description" content="[^"]*" \/>/,
     `<meta name="description" content="${escapedDesc}" />`,
   );
 
-  html = html.replace(
+  html = html?.replace(
     /<link rel="canonical" href="[^"]*" \/>/,
     `<link rel="canonical" href="${escapedUrl}" />`,
   );
 
-  html = html.replace(
+  html = html?.replace(
     /<meta property="og:title" content="[^"]*" \/>/,
     `<meta property="og:title" content="${escapedTitle}" />`,
   );
-  html = html.replace(
+  html = html?.replace(
     /<meta property="og:description" content="[^"]*" \/>/,
     `<meta property="og:description" content="${escapedDesc}" />`,
   );
-  html = html.replace(
+  html = html?.replace(
     /<meta property="og:image" content="[^"]*" \/>/,
     `<meta property="og:image" content="${escapedImage}" />`,
   );
-  html = html.replace(
+  html = html?.replace(
     /<meta property="og:url" content="[^"]*" \/>/,
     `<meta property="og:url" content="${escapedUrl}" />`,
   );
 
-  html = html.replace(
+  html = html?.replace(
     /<meta name="twitter:title" content="[^"]*" \/>/,
     `<meta name="twitter:title" content="${escapedTitle}" />`,
   );
-  html = html.replace(
+  html = html?.replace(
     /<meta name="twitter:description" content="[^"]*" \/>/,
     `<meta name="twitter:description" content="${escapedDesc}" />`,
   );
-  html = html.replace(
+  html = html?.replace(
     /<meta name="twitter:image" content="[^"]*" \/>/,
     `<meta name="twitter:image" content="${escapedImage}" />`,
   );
-  html = html.replace(
+  html = html?.replace(
     /<meta name="twitter:url" content="[^"]*" \/>/,
     `<meta name="twitter:url" content="${escapedUrl}" />`,
   );
@@ -392,7 +392,7 @@ function injectMeta(
   return html;
 }
 
-const DIST_PATH = path.resolve(process.cwd(), "dist", "public");
+const _DIST_PATH = path?.resolve(process?.cwd(), "dist", "public");
 
 const EXT_CONTENT_TYPE: Record<string, string> = {
   ".js": "application/javascript; charset=utf-8",
@@ -406,56 +406,56 @@ const EXT_CONTENT_TYPE: Record<string, string> = {
 
 function precompressedMiddleware(distPath: string) {
   return function (req: Request, res: Response, next: NextFunction) {
-    if (req.method !== "GET" && req.method !== "HEAD") return next();
+    if (req?.method !== "GET" && req?.method !== "HEAD") return next();
 
-    const urlPath = req.path;
-    const ext = path.extname(urlPath);
+    const _urlPath = req?.path;
+    const _ext = path?.extname(urlPath);
     if (!EXT_CONTENT_TYPE[ext]) return next();
 
-    const absPath = path.join(distPath, urlPath);
-    const acceptEncoding = req.headers["accept-encoding"] || "";
+    const _absPath = path?.join(distPath, urlPath);
+    const _acceptEncoding = req?.headers["accept-encoding"] || "";
 
-    const tryBr = acceptEncoding.includes("br");
-    const tryGz = acceptEncoding.includes("gzip");
+    const _tryBr = acceptEncoding?.includes("br");
+    const _tryGz = acceptEncoding?.includes("gzip");
 
     const candidates: Array<{ file: string; encoding: string }> = [];
-    if (tryBr) candidates.push({ file: absPath + ".br", encoding: "br" });
-    if (tryGz) candidates.push({ file: absPath + ".gz", encoding: "gzip" });
+    if (tryBr) candidates?.push({ file: absPath + ".br", encoding: "br" });
+    if (tryGz) candidates?.push({ file: absPath + ".gz", encoding: "gzip" });
 
     for (const { file, encoding } of candidates) {
-      if (fs.existsSync(file)) {
-        const ct = EXT_CONTENT_TYPE[ext];
-        res.setHeader("Content-Type", ct);
-        res.setHeader("Content-Encoding", encoding);
-        res.setHeader("Vary", "Accept-Encoding");
+      if (fs?.existsSync(file)) {
+        const _ct = EXT_CONTENT_TYPE[ext];
+        res?.setHeader("Content-Type", ct);
+        res?.setHeader("Content-Encoding", encoding);
+        res?.setHeader("Vary", "Accept-Encoding");
 
         if (ext === ".html") {
-          res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+          res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         } else if (
           /\/assets\/[^/]*-[A-Za-z0-9_-]{6,16}\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|avif)$/.test(
             urlPath,
           )
         ) {
           // All Vite content-hashed assets — safe to cache forever
-          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+          res?.setHeader("Cache-Control", "public, max-age=31536000, immutable");
         } else if (ext === ".js" || ext === ".css") {
-          res.setHeader(
+          res?.setHeader(
             "Cache-Control",
             "public, max-age=3600, must-revalidate",
           );
         } else if (ext === ".woff2" || ext === ".woff" || ext === ".ttf") {
-          res.setHeader("Cache-Control", "public, max-age=604800");
+          res?.setHeader("Cache-Control", "public, max-age=604800");
         } else {
-          res.setHeader("Cache-Control", "public, max-age=86400");
+          res?.setHeader("Cache-Control", "public, max-age=86400");
         }
 
         // Use callback form so EIO errors during event-loop saturation return a
         // retryable 503 instead of an unhandled-error 500.
-        res.sendFile(file, (err) => {
-          if (err && !res.headersSent) {
-            res.setHeader("Cache-Control", "no-store");
-            res.setHeader("Retry-After", "1");
-            res.status(503).end("Asset temporarily unavailable — please retry");
+        res?.sendFile(file, (err) => {
+          if (err && !res?.headersSent) {
+            res?.setHeader("Cache-Control", "no-store");
+            res?.setHeader("Retry-After", "1");
+            res?.status(503).end("Asset temporarily unavailable — please retry");
           }
         });
         return;
@@ -471,108 +471,108 @@ function staticFileMiddlewareOptions() {
     etag: true,
     lastModified: true,
     setHeaders: (res: Record<string, unknown>, filePath: string) => {
-      if (filePath.endsWith(".html")) {
-        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      if (filePath?.endsWith(".html")) {
+        res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       } else if (
         /\/assets\/[^/]*-[A-Za-z0-9_-]{6,16}\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|avif)$/.test(
           filePath,
         )
       ) {
         // All Vite content-hashed assets — safe to cache forever
-        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-      } else if (filePath.match(/\.(js|css)$/)) {
-        res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
-      } else if (filePath.match(/\.(woff2?|ttf|eot)$/)) {
-        res.setHeader("Cache-Control", "public, max-age=604800");
-      } else if (filePath.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)) {
-        res.setHeader("Cache-Control", "public, max-age=86400");
+        res?.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+      } else if (filePath?.match(/\.(js|css)$/)) {
+        res?.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
+      } else if (filePath?.match(/\.(woff2?|ttf|eot)$/)) {
+        res?.setHeader("Cache-Control", "public, max-age=604800");
+      } else if (filePath?.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)) {
+        res?.setHeader("Cache-Control", "public, max-age=86400");
       }
     },
   };
 }
 
 /**
- * Register express.static for the pre-built frontend assets.
+ * Register express?.static for the pre-built frontend assets.
  * Must be called BEFORE session middleware so asset requests never pay
  * the cost of a PDIM session lookup.  Serves everything in dist/public
  * except the SPA catch-all (index.html for arbitrary paths) which is
  * handled by serveStatic() below, called after API routes are registered.
  */
 export function serveStaticFiles(app: Express) {
-  if (!fs.existsSync(DIST_PATH)) return;
-  app.use(precompressedMiddleware(DIST_PATH));
-  app.use(express.static(DIST_PATH, staticFileMiddlewareOptions()));
+  if (!fs?.existsSync(DIST_PATH)) return;
+  app?.use(precompressedMiddleware(DIST_PATH));
+  app?.use(express?.static(DIST_PATH, staticFileMiddlewareOptions()));
 }
 
 export function serveStatic(app: Express) {
-  const distPath = DIST_PATH;
-  if (!fs.existsSync(distPath)) {
+  const _distPath = DIST_PATH;
+  if (!fs?.existsSync(distPath)) {
     throw new Error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`,
     );
   }
 
-  const indexPath = path.resolve(distPath, "index.html");
-  const baseHtml = fs.readFileSync(indexPath, "utf-8");
+  const _indexPath = path?.resolve(distPath, "index.html");
+  const _baseHtml = fs?.readFileSync(indexPath, "utf-8");
 
-  app.use("/{*splat}", async (req: Request, res: Response) => {
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
-    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  app?.use("/{*splat}", async (req: Request, res: Response) => {
+    res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res?.setHeader("X-Content-Type-Options", "nosniff");
+    res?.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res?.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 
     // If multiTenantRouter already resolved a storefront via storefrontDomains table,
     // inject its slug and serve the SPA so the React app auto-loads the right storefront.
-    const resolvedStorefront = (req as Record<string, unknown>).storefront as
+    const _resolvedStorefront = (req as Record<string, unknown>).storefront as
       | { slug?: string }
       | undefined;
     if (resolvedStorefront?.slug) {
-      const safeSlug = resolvedStorefront.slug.replace(/[^a-z0-9-]/gi, "");
-      res.setHeader("X-Maxbooster-Subdomain", safeSlug);
-      const html = baseHtml.replace(
+      const _safeSlug = resolvedStorefront?.slug.replace(/[^a-z0-9-]/gi, "");
+      res?.setHeader("X-Maxbooster-Subdomain", safeSlug);
+      const _html = baseHtml?.replace(
         "</head>",
         `<meta name="x-maxbooster-subdomain" content="${safeSlug}"></head>`,
       );
-      return res.send(html);
+      return res?.send(html);
     }
 
-    const subdomain = extractSubdomain(req.hostname);
+    const _subdomain = extractSubdomain(req?.hostname);
     if (subdomain) {
-      const slug = await getStorefrontSlugForSubdomain(subdomain);
+      const _slug = await getStorefrontSlugForSubdomain(subdomain);
       if (slug) {
-        const safeSlug = slug.replace(/[^a-z0-9-]/gi, "");
-        res.setHeader("X-Maxbooster-Subdomain", safeSlug);
-        const html = baseHtml.replace(
+        const _safeSlug = slug?.replace(/[^a-z0-9-]/gi, "");
+        res?.setHeader("X-Maxbooster-Subdomain", safeSlug);
+        const _html = baseHtml?.replace(
           "</head>",
           `<meta name="x-maxbooster-subdomain" content="${safeSlug}"></head>`,
         );
-        return res.send(html);
+        return res?.send(html);
       }
     }
 
-    if (!isMaxBoosterDomain(req.hostname)) {
-      const slug = await getStorefrontSlugForCustomDomain(req.hostname);
+    if (!isMaxBoosterDomain(req?.hostname)) {
+      const _slug = await getStorefrontSlugForCustomDomain(req?.hostname);
       if (slug) {
-        const safeSlug = slug.replace(/[^a-z0-9-]/gi, "");
-        res.setHeader("X-Maxbooster-Subdomain", safeSlug);
-        const html = baseHtml.replace(
+        const _safeSlug = slug?.replace(/[^a-z0-9-]/gi, "");
+        res?.setHeader("X-Maxbooster-Subdomain", safeSlug);
+        const _html = baseHtml?.replace(
           "</head>",
           `<meta name="x-maxbooster-subdomain" content="${safeSlug}"></head>`,
         );
-        return res.send(html);
+        return res?.send(html);
       }
     }
 
-    const meta = await getMetaForPath(req.originalUrl);
+    const _meta = await getMetaForPath(req?.originalUrl);
     if (meta) {
-      const injected = injectMeta(baseHtml, meta);
-      return res.send(injected);
+      const _injected = injectMeta(baseHtml, meta);
+      return res?.send(injected);
     }
 
-    res.sendFile(indexPath, (err) => {
-      if (err && !res.headersSent) {
-        res.setHeader("Retry-After", "1");
-        res.status(503).end("Service temporarily unavailable — please retry");
+    res?.sendFile(indexPath, (err) => {
+      if (err && !res?.headersSent) {
+        res?.setHeader("Retry-After", "1");
+        res?.status(503).end("Service temporarily unavailable — please retry");
       }
     });
   });

@@ -68,29 +68,29 @@ function linearRegression(dataPoints: { x: number; y: number }[]): {
   slope: number;
   intercept: number;
 } {
-  if (dataPoints.length === 0) {
+  if (dataPoints?.length === 0) {
     return { slope: 0, intercept: 0 };
   }
 
-  const n = dataPoints.length;
-  const sumX = dataPoints.reduce((sum, point) => sum + point.x, 0);
-  const sumY = dataPoints.reduce((sum, point) => sum + point.y, 0);
-  const sumXY = dataPoints.reduce((sum, point) => sum + point.x * point.y, 0);
-  const sumX2 = dataPoints.reduce((sum, point) => sum + point.x * point.x, 0);
+  const _n = dataPoints?.length;
+  const _sumX = dataPoints?.reduce((sum, point) => sum + point?.x, 0);
+  const _sumY = dataPoints?.reduce((sum, point) => sum + point?.y, 0);
+  const _sumXY = dataPoints?.reduce((sum, point) => sum + point?.x * point?.y, 0);
+  const _sumX2 = dataPoints?.reduce((sum, point) => sum + point?.x * point?.x, 0);
 
-  const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
+  const _slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+  const _intercept = (sumY - slope * sumX) / n;
 
   return { slope, intercept };
 }
 
 function calculateStandardDeviation(values: number[]): number {
-  if (values.length === 0) return 0;
-  const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-  const variance =
-    values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
-    values.length;
-  return Math.sqrt(variance);
+  if (values?.length === 0) return 0;
+  const _mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
+  const _variance =
+    values?.reduce((sum, val) => sum + Math?.pow(val - mean, 2), 0) /
+    values?.length;
+  return Math?.sqrt(variance);
 }
 
 export async function predictMetric(
@@ -98,64 +98,64 @@ export async function predictMetric(
 ): Promise<PredictMetricResponse> {
   const { metric, timeframe } = params;
 
-  const days = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 90;
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
+  const _days = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 90;
+  const _startDate = new Date();
+  startDate?.setDate(startDate?.getDate() - days);
 
   let historicalData: Array<{ date: Date; value: number }> = [];
 
   if (metric === "streams") {
-    const results = await db
+    const _results = await db
       .select({
-        date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
+        date: analytics?.date,
+        value: sql<number>`CAST(COALESCE(SUM(${analytics?.streams}), 0) AS INTEGER)`,
       })
       .from(analytics)
-      .where(gte(analytics.date, startDate))
-      .groupBy(analytics.date)
-      .orderBy(analytics.date);
+      .where(gte(analytics?.date, startDate))
+      .groupBy(analytics?.date)
+      .orderBy(analytics?.date);
 
-    historicalData = results.map((r) => ({
-      date: r.date,
-      value: Number(r.value) || 0,
+    historicalData = results?.map((r) => ({
+      date: r?.date,
+      value: Number(r?.value) || 0,
     }));
   } else if (metric === "engagement") {
-    const results = await db
+    const _results = await db
       .select({
-        date: posts.publishedAt,
+        date: posts?.publishedAt,
         value: sql<number>`COUNT(*)`,
       })
       .from(posts)
       .where(
-        and(gte(posts.publishedAt, startDate), eq(posts.status, "published")),
+        and(gte(posts?.publishedAt, startDate), eq(posts?.status, "published")),
       )
-      .groupBy(posts.publishedAt)
-      .orderBy(posts.publishedAt);
+      .groupBy(posts?.publishedAt)
+      .orderBy(posts?.publishedAt);
 
     historicalData = results
-      .filter((r) => r.date !== null)
+      .filter((r) => r?.date !== null)
       .map((r) => ({
-        date: r.date!,
-        value: Number(r.value) || 0,
+        date: r?.date!,
+        value: Number(r?.value) || 0,
       }));
   } else if (metric === "revenue") {
-    const analyticsRevenue = await db
+    const _analyticsRevenue = await db
       .select({
-        date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.revenue}), 0) AS NUMERIC)`,
+        date: analytics?.date,
+        value: sql<number>`CAST(COALESCE(SUM(${analytics?.revenue}), 0) AS NUMERIC)`,
       })
       .from(analytics)
-      .where(gte(analytics.date, startDate))
-      .groupBy(analytics.date)
-      .orderBy(analytics.date);
+      .where(gte(analytics?.date, startDate))
+      .groupBy(analytics?.date)
+      .orderBy(analytics?.date);
 
-    historicalData = analyticsRevenue.map((r) => ({
-      date: r.date,
-      value: Number(r.value) || 0,
+    historicalData = analyticsRevenue?.map((r) => ({
+      date: r?.date,
+      value: Number(r?.value) || 0,
     }));
   }
 
-  if (historicalData.length === 0) {
+  if (historicalData?.length === 0) {
     return {
       predictions: [],
       trend: "stable",
@@ -163,14 +163,14 @@ export async function predictMetric(
     };
   }
 
-  const dataPoints = historicalData.map((item, index) => ({
+  const _dataPoints = historicalData?.map((item, index) => ({
     x: index,
-    y: item.value,
+    y: item?.value,
   }));
 
   const { slope, intercept } = linearRegression(dataPoints);
 
-  const forecastDays = Math.min(days, 30);
+  const _forecastDays = Math?.min(days, 30);
   const predictions: Array<{
     date: string;
     value: number;
@@ -178,39 +178,39 @@ export async function predictMetric(
   }> = [];
 
   for (let i = 1; i <= forecastDays; i++) {
-    const x = dataPoints.length + i;
-    const predictedValue = Math.max(0, slope * x + intercept);
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + i);
+    const _x = dataPoints?.length + i;
+    const _predictedValue = Math?.max(0, slope * x + intercept);
+    const _futureDate = new Date();
+    futureDate?.setDate(futureDate?.getDate() + i);
 
-    const values = historicalData.map((d) => d.value);
-    const stdDev = calculateStandardDeviation(values);
-    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-    const confidence =
-      stdDev === 0 ? 1 : Math.max(0, Math.min(1, 1 - stdDev / mean));
+    const _values = historicalData?.map((d) => d?.value);
+    const _stdDev = calculateStandardDeviation(values);
+    const _mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
+    const _confidence =
+      stdDev === 0 ? 1 : Math?.max(0, Math?.min(1, 1 - stdDev / mean));
 
-    predictions.push({
-      date: futureDate.toISOString().split("T")[0],
-      value: Math.round(predictedValue),
-      confidence: Number(confidence.toFixed(2)),
+    predictions?.push({
+      date: futureDate?.toISOString().split("T")[0],
+      value: Math?.round(predictedValue),
+      confidence: Number(confidence?.toFixed(2)),
     });
   }
 
   let trend: "up" | "down" | "stable" = "stable";
-  if (Math.abs(slope) > 0.1) {
+  if (Math?.abs(slope) > 0.1) {
     trend = slope > 0 ? "up" : "down";
   }
 
-  const values = historicalData.map((d) => d.value);
-  const stdDev = calculateStandardDeviation(values);
-  const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
-  const accuracy =
-    stdDev === 0 ? 1 : Math.max(0, Math.min(1, 1 - stdDev / (mean || 1)));
+  const _values = historicalData?.map((d) => d?.value);
+  const _stdDev = calculateStandardDeviation(values);
+  const _mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
+  const _accuracy =
+    stdDev === 0 ? 1 : Math?.max(0, Math?.min(1, 1 - stdDev / (mean || 1)));
 
   return {
     predictions,
     trend,
-    accuracy: Number(accuracy.toFixed(2)),
+    accuracy: Number(accuracy?.toFixed(2)),
   };
 }
 
@@ -220,7 +220,7 @@ const _churnCache: { data: ChurnPredictionResponse | null; expiresAt: number } =
     data: null,
     expiresAt: 0,
   };
-const CHURN_CACHE_TTL_MS = 5 * 60 * 1000;
+const _CHURN_CACHE_TTL_MS = 5 * 60 * 1000;
 
 /**
  * Predicts at-risk users using a single aggregated SQL query.
@@ -228,32 +228,32 @@ const CHURN_CACHE_TTL_MS = 5 * 60 * 1000;
  * Now: 1 query, capped at 1000 users, cached for 5 minutes.
  */
 export async function predictChurn(): Promise<ChurnPredictionResponse> {
-  if (_churnCache.data && Date.now() < _churnCache.expiresAt) {
-    return _churnCache.data;
+  if (_churnCache?.data && Date?.now() < _churnCache?.expiresAt) {
+    return _churnCache?.data;
   }
 
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const _now = new Date();
+  const _sevenDaysAgo = new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   // Single aggregated query with LEFT JOINs — replaces the N+1 per-user loop.
   // Scoped to users inactive for >7 days to focus analysis on truly at-risk accounts.
-  const rows = await db.execute(sql`
+  const _rows = await db?.execute(sql`
     SELECT
-      u.id,
-      COALESCE(u.username, u.email) AS username,
-      COALESCE(u.updated_at, u.created_at) AS last_active,
-      COALESCE(SUM(CASE WHEN p.created_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_projects,
-      COALESCE(SUM(CASE WHEN p.created_at >= ${thirtyDaysAgo} AND p.created_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_projects,
-      COALESCE(SUM(CASE WHEN po.published_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_posts,
-      COALESCE(SUM(CASE WHEN po.published_at >= ${thirtyDaysAgo} AND po.published_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_posts,
-      COALESCE(SUM(CASE WHEN s.last_activity >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_sessions
+      u?.id,
+      COALESCE(u?.username, u?.email) AS username,
+      COALESCE(u?.updated_at, u?.created_at) AS last_active,
+      COALESCE(SUM(CASE WHEN p?.created_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_projects,
+      COALESCE(SUM(CASE WHEN p?.created_at >= ${thirtyDaysAgo} AND p?.created_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_projects,
+      COALESCE(SUM(CASE WHEN po?.published_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_posts,
+      COALESCE(SUM(CASE WHEN po?.published_at >= ${thirtyDaysAgo} AND po?.published_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_posts,
+      COALESCE(SUM(CASE WHEN s?.last_activity >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_sessions
     FROM users u
-    LEFT JOIN projects p ON p.user_id = u.id
-    LEFT JOIN posts po ON po.submitted_by = u.id
-    LEFT JOIN sessions s ON s.user_id = u.id
-    WHERE COALESCE(u.updated_at, u.created_at) < ${sevenDaysAgo}
-    GROUP BY u.id, u.username, u.email, u.updated_at, u.created_at
+    LEFT JOIN projects p ON p.user_id = u?.id
+    LEFT JOIN posts po ON po.submitted_by = u?.id
+    LEFT JOIN sessions s ON s.user_id = u?.id
+    WHERE COALESCE(u?.updated_at, u?.created_at) < ${sevenDaysAgo}
+    GROUP BY u?.id, u?.username, u?.email, u?.updated_at, u?.created_at
     ORDER BY last_active ASC
     LIMIT 1000
   `);
@@ -261,18 +261,18 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
   const atRiskUsers: ChurnPredictionResponse["atRiskUsers"] = [];
 
   for (const row of (rows as Record<string, unknown>).rows ?? rows) {
-    const lastActive = new Date(row.last_active as string);
-    const daysSinceActive =
-      (now.getTime() - lastActive.getTime()) / (24 * 60 * 60 * 1000);
-    const recentProjects = Number(row.recent_projects ?? 0);
-    const oldProjects = Number(row.old_projects ?? 0);
-    const recentPosts = Number(row.recent_posts ?? 0);
-    const oldPosts = Number(row.old_posts ?? 0);
-    const recentSessions = Number(row.recent_sessions ?? 0);
+    const _lastActive = new Date(row?.last_active as string);
+    const _daysSinceActive =
+      (now?.getTime() - lastActive?.getTime()) / (24 * 60 * 60 * 1000);
+    const _recentProjects = Number(row?.recent_projects ?? 0);
+    const _oldProjects = Number(row?.old_projects ?? 0);
+    const _recentPosts = Number(row?.recent_posts ?? 0);
+    const _oldPosts = Number(row?.old_posts ?? 0);
+    const _recentSessions = Number(row?.recent_sessions ?? 0);
 
-    const recentActivityScore =
+    const _recentActivityScore =
       recentProjects * 3 + recentPosts * 2 + recentSessions;
-    const oldActivityScore = oldProjects * 3 + oldPosts * 2;
+    const _oldActivityScore = oldProjects * 3 + oldPosts * 2;
 
     let churnProbability = 0;
     let reason = "";
@@ -292,25 +292,25 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
     }
 
     if (churnProbability > 0.5) {
-      atRiskUsers.push({
-        userId: row.id as string,
-        username: row.username as string,
-        churnProbability: Number(churnProbability.toFixed(2)),
+      atRiskUsers?.push({
+        userId: row?.id as string,
+        username: row?.username as string,
+        churnProbability: Number(churnProbability?.toFixed(2)),
         reason,
-        lastActiveDate: lastActive.toISOString().split("T")[0],
+        lastActiveDate: lastActive?.toISOString().split("T")[0],
       });
     }
   }
 
   const result: ChurnPredictionResponse = {
-    atRiskUsers: atRiskUsers.sort(
-      (a, b) => b.churnProbability - a.churnProbability,
+    atRiskUsers: atRiskUsers?.sort(
+      (a, b) => b?.churnProbability - a?.churnProbability,
     ),
-    totalAtRisk: atRiskUsers.length,
+    totalAtRisk: atRiskUsers?.length,
   };
 
   _churnCache.data = result;
-  _churnCache.expiresAt = Date.now() + CHURN_CACHE_TTL_MS;
+  _churnCache.expiresAt = Date?.now() + CHURN_CACHE_TTL_MS;
 
   return result;
 }
@@ -318,37 +318,37 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
 export async function forecastRevenue(
   _timeframe: string = "30d",
 ): Promise<RevenueForecastResponse> {
-  const now = new Date();
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const _now = new Date();
+  const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const activeSubscribers = await db
+  const _activeSubscribers = await db
     .select({ count: count() })
     .from(users)
-    .where(eq(users.subscriptionStatus, "active"));
+    .where(eq(users?.subscriptionStatus, "active"));
 
-  const activeSubCount = Number(activeSubscribers[0]?.count || 0);
+  const _activeSubCount = Number(activeSubscribers[0]?.count || 0);
 
-  const avgSubscriptionValue = 20;
-  const currentMRR = activeSubCount * avgSubscriptionValue;
+  const _avgSubscriptionValue = 20;
+  const _currentMRR = activeSubCount * avgSubscriptionValue;
 
-  const newSignups = await db
+  const _newSignups = await db
     .select({ count: count() })
     .from(users)
-    .where(gte(users.createdAt, thirtyDaysAgo));
+    .where(gte(users?.createdAt, thirtyDaysAgo));
 
-  const churnedUsers = await db
+  const _churnedUsers = await db
     .select({ count: count() })
     .from(users)
-    .where(eq(users.subscriptionStatus, "canceled"));
+    .where(eq(users?.subscriptionStatus, "canceled"));
 
-  const signupCount = Number(newSignups[0]?.count || 0);
-  const churnCount = Number(churnedUsers[0]?.count || 0);
+  const _signupCount = Number(newSignups[0]?.count || 0);
+  const _churnCount = Number(churnedUsers[0]?.count || 0);
 
-  const netGrowth = signupCount - churnCount;
-  const growthRate =
+  const _netGrowth = signupCount - churnCount;
+  const _growthRate =
     activeSubCount > 0 ? (netGrowth / activeSubCount) * 100 : 0;
 
-  const monthlyGrowthRate = growthRate / 100;
+  const _monthlyGrowthRate = growthRate / 100;
 
   const forecast: Array<{
     month: string;
@@ -359,90 +359,90 @@ export async function forecastRevenue(
 
   for (let i = 1; i <= 6; i++) {
     projectedSubs = projectedSubs * (1 + monthlyGrowthRate);
-    const projectedRevenue = Math.round(projectedSubs * avgSubscriptionValue);
+    const _projectedRevenue = Math?.round(projectedSubs * avgSubscriptionValue);
 
-    const futureMonth = new Date(now);
-    futureMonth.setMonth(futureMonth.getMonth() + i);
-    const monthName = futureMonth.toLocaleDateString("en-US", {
+    const _futureMonth = new Date(now);
+    futureMonth?.setMonth(futureMonth?.getMonth() + i);
+    const _monthName = futureMonth?.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
     });
 
-    const confidence = Math.max(0.5, 1 - i * 0.08);
+    const _confidence = Math?.max(0.5, 1 - i * 0.08);
 
-    forecast.push({
+    forecast?.push({
       month: monthName,
       revenue: projectedRevenue,
-      confidence: Number(confidence.toFixed(2)),
+      confidence: Number(confidence?.toFixed(2)),
     });
   }
 
-  const projectedMRR =
-    forecast.length > 0 ? forecast[forecast.length - 1].revenue : currentMRR;
+  const _projectedMRR =
+    forecast?.length > 0 ? forecast[forecast?.length - 1].revenue : currentMRR;
 
   return {
     currentMRR,
     projectedMRR,
     forecast,
-    growthRate: Number(growthRate.toFixed(2)),
+    growthRate: Number(growthRate?.toFixed(2)),
   };
 }
 
 export async function detectAnomalies(): Promise<AnomaliesResponse> {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const _thirtyDaysAgo = new Date();
+  thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-  const analyticsData = await db
+  const _analyticsData = await db
     .select({
-      date: analytics.date,
-      streams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
-      revenue: sql<number>`CAST(COALESCE(SUM(${analytics.revenue}), 0) AS NUMERIC)`,
-      listeners: sql<number>`CAST(COALESCE(SUM(${analytics.totalListeners}), 0) AS INTEGER)`,
+      date: analytics?.date,
+      streams: sql<number>`CAST(COALESCE(SUM(${analytics?.streams}), 0) AS INTEGER)`,
+      revenue: sql<number>`CAST(COALESCE(SUM(${analytics?.revenue}), 0) AS NUMERIC)`,
+      listeners: sql<number>`CAST(COALESCE(SUM(${analytics?.totalListeners}), 0) AS INTEGER)`,
     })
     .from(analytics)
-    .where(gte(analytics.date, thirtyDaysAgo))
-    .groupBy(analytics.date)
-    .orderBy(analytics.date);
+    .where(gte(analytics?.date, thirtyDaysAgo))
+    .groupBy(analytics?.date)
+    .orderBy(analytics?.date);
 
-  if (analyticsData.length === 0) {
+  if (analyticsData?.length === 0) {
     return { anomalies: [] };
   }
 
   const anomalies: Anomaly[] = [];
 
-  const metrics = [
-    { name: "streams", values: analyticsData.map((d) => Number(d.streams)) },
-    { name: "revenue", values: analyticsData.map((d) => Number(d.revenue)) },
+  const _metrics = [
+    { name: "streams", values: analyticsData?.map((d) => Number(d?.streams)) },
+    { name: "revenue", values: analyticsData?.map((d) => Number(d?.revenue)) },
     {
       name: "listeners",
-      values: analyticsData.map((d) => Number(d.listeners)),
+      values: analyticsData?.map((d) => Number(d?.listeners)),
     },
   ];
 
   for (const metric of metrics) {
-    const mean =
-      metric.values.reduce((sum, val) => sum + val, 0) / metric.values.length;
-    const stdDev = calculateStandardDeviation(metric.values);
+    const _mean =
+      metric?.values.reduce((sum, val) => sum + val, 0) / metric?.values.length;
+    const _stdDev = calculateStandardDeviation(metric?.values);
 
-    metric.values.forEach((value, index) => {
+    metric?.values.forEach((value, index) => {
       if (stdDev > 0) {
-        const zScore = Math.abs((value - mean) / stdDev);
+        const _zScore = Math?.abs((value - mean) / stdDev);
 
         if (zScore > 2) {
           let severity: "low" | "medium" | "high" = "low";
           if (zScore > 3) severity = "high";
           else if (zScore > 2.5) severity = "medium";
 
-          const direction = value > mean ? "spike" : "drop";
-          const percentageDiff = ((value - mean) / (mean || 1)) * 100;
+          const _direction = value > mean ? "spike" : "drop";
+          const _percentageDiff = ((value - mean) / (mean || 1)) * 100;
 
-          anomalies.push({
-            metric: metric.name,
-            timestamp: analyticsData[index].date.toISOString(),
-            expectedValue: Number(mean.toFixed(2)),
+          anomalies?.push({
+            metric: metric?.name,
+            timestamp: analyticsData[index].date?.toISOString(),
+            expectedValue: Number(mean?.toFixed(2)),
             actualValue: value,
             severity,
-            description: `Unusual ${direction} in ${metric.name}: ${Math.abs(percentageDiff).toFixed(1)}% ${direction === "spike" ? "above" : "below"} expected value`,
+            description: `Unusual ${direction} in ${metric?.name}: ${Math?.abs(percentageDiff).toFixed(1)}% ${direction === "spike" ? "above" : "below"} expected value`,
           });
         }
       }
@@ -450,55 +450,55 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
   }
 
   return {
-    anomalies: anomalies.sort((a, b) => {
-      const severityOrder = { high: 3, medium: 2, low: 1 };
-      return severityOrder[b.severity] - severityOrder[a.severity];
+    anomalies: anomalies?.sort((a, b) => {
+      const _severityOrder = { high: 3, medium: 2, low: 1 };
+      return severityOrder[b?.severity] - severityOrder[a?.severity];
     }),
   };
 }
 
 export async function generateInsights(): Promise<InsightsResponse> {
   const insights: Insight[] = [];
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const _now = new Date();
+  const _sevenDaysAgo = new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const _thirtyDaysAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const recentSignups = await db
+  const _recentSignups = await db
     .select({ count: count() })
     .from(users)
-    .where(gte(users.createdAt, sevenDaysAgo));
+    .where(gte(users?.createdAt, sevenDaysAgo));
 
-  const previousSignups = await db
+  const _previousSignups = await db
     .select({ count: count() })
     .from(users)
     .where(
       and(
-        gte(users.createdAt, thirtyDaysAgo),
-        lte(users.createdAt, sevenDaysAgo),
+        gte(users?.createdAt, thirtyDaysAgo),
+        lte(users?.createdAt, sevenDaysAgo),
       ),
     );
 
-  const recentSignupCount = Number(recentSignups[0]?.count || 0);
-  const previousSignupCount = Number(previousSignups[0]?.count || 0);
+  const _recentSignupCount = Number(recentSignups[0]?.count || 0);
+  const _previousSignupCount = Number(previousSignups[0]?.count || 0);
 
   if (recentSignupCount > 0 && previousSignupCount > 0) {
-    const signupGrowth =
+    const _signupGrowth =
       ((recentSignupCount - previousSignupCount) / previousSignupCount) * 100;
 
     if (signupGrowth > 10) {
-      insights.push({
+      insights?.push({
         type: "opportunity",
         title: "User Growth Accelerating",
-        description: `User signups increased ${signupGrowth.toFixed(1)}% this week compared to the previous period`,
+        description: `User signups increased ${signupGrowth?.toFixed(1)}% this week compared to the previous period`,
         metric: "user_growth",
         impact: "high",
         actionable: true,
       });
     } else if (signupGrowth < -10) {
-      insights.push({
+      insights?.push({
         type: "warning",
         title: "Declining User Signups",
-        description: `User signups decreased ${Math.abs(signupGrowth).toFixed(1)}% this week - consider marketing initiatives`,
+        description: `User signups decreased ${Math?.abs(signupGrowth).toFixed(1)}% this week - consider marketing initiatives`,
         metric: "user_growth",
         impact: "high",
         actionable: true,
@@ -506,43 +506,43 @@ export async function generateInsights(): Promise<InsightsResponse> {
     }
   }
 
-  const recentProjects = await db
+  const _recentProjects = await db
     .select({ count: count() })
     .from(projects)
-    .where(gte(projects.createdAt, sevenDaysAgo));
+    .where(gte(projects?.createdAt, sevenDaysAgo));
 
-  const previousProjects = await db
+  const _previousProjects = await db
     .select({ count: count() })
     .from(projects)
     .where(
       and(
-        gte(projects.createdAt, thirtyDaysAgo),
-        lte(projects.createdAt, sevenDaysAgo),
+        gte(projects?.createdAt, thirtyDaysAgo),
+        lte(projects?.createdAt, sevenDaysAgo),
       ),
     );
 
-  const recentProjectCount = Number(recentProjects[0]?.count || 0);
-  const previousProjectCount = Number(previousProjects[0]?.count || 0);
+  const _recentProjectCount = Number(recentProjects[0]?.count || 0);
+  const _previousProjectCount = Number(previousProjects[0]?.count || 0);
 
   if (recentProjectCount > 0 && previousProjectCount > 0) {
-    const projectGrowth =
+    const _projectGrowth =
       ((recentProjectCount - previousProjectCount) / previousProjectCount) *
       100;
 
     if (projectGrowth > 15) {
-      insights.push({
+      insights?.push({
         type: "trend",
         title: "Content Creation Increasing",
-        description: `Project uploads increased ${projectGrowth.toFixed(1)}% - users are highly engaged`,
+        description: `Project uploads increased ${projectGrowth?.toFixed(1)}% - users are highly engaged`,
         metric: "content_uploads",
         impact: "medium",
         actionable: false,
       });
     } else if (projectGrowth < -15) {
-      insights.push({
+      insights?.push({
         type: "warning",
         title: "Content Creation Declining",
-        description: `Project uploads decreased ${Math.abs(projectGrowth).toFixed(1)}% - consider engagement features`,
+        description: `Project uploads decreased ${Math?.abs(projectGrowth).toFixed(1)}% - consider engagement features`,
         metric: "content_uploads",
         impact: "medium",
         actionable: true,
@@ -550,69 +550,69 @@ export async function generateInsights(): Promise<InsightsResponse> {
     }
   }
 
-  const weekdayProjects = await db
+  const _weekdayProjects = await db
     .select({ count: count() })
     .from(projects)
     .where(
       and(
-        gte(projects.createdAt, sevenDaysAgo),
-        sql`EXTRACT(DOW FROM ${projects.createdAt}) BETWEEN 1 AND 5`,
+        gte(projects?.createdAt, sevenDaysAgo),
+        sql`EXTRACT(DOW FROM ${projects?.createdAt}) BETWEEN 1 AND 5`,
       ),
     );
 
-  const weekendProjects = await db
+  const _weekendProjects = await db
     .select({ count: count() })
     .from(projects)
     .where(
       and(
-        gte(projects.createdAt, sevenDaysAgo),
-        sql`EXTRACT(DOW FROM ${projects.createdAt}) IN (0, 6)`,
+        gte(projects?.createdAt, sevenDaysAgo),
+        sql`EXTRACT(DOW FROM ${projects?.createdAt}) IN (0, 6)`,
       ),
     );
 
-  const weekdayCount = Number(weekdayProjects[0]?.count || 0);
-  const weekendCount = Number(weekendProjects[0]?.count || 0);
+  const _weekdayCount = Number(weekdayProjects[0]?.count || 0);
+  const _weekendCount = Number(weekendProjects[0]?.count || 0);
 
   if (weekendCount > weekdayCount * 1.3) {
-    const percentageHigher =
+    const _percentageHigher =
       ((weekendCount - weekdayCount) / weekdayCount) * 100;
-    insights.push({
+    insights?.push({
       type: "trend",
       title: "Weekend Upload Pattern Detected",
-      description: `Weekend uploads are ${percentageHigher.toFixed(0)}% higher than weekdays - optimize scheduling and support`,
+      description: `Weekend uploads are ${percentageHigher?.toFixed(0)}% higher than weekdays - optimize scheduling and support`,
       metric: "upload_timing",
       impact: "low",
       actionable: true,
     });
   }
 
-  const activeUsers = await db
+  const _activeUsers = await db
     .select({ count: count() })
     .from(sessions)
-    .where(gte(sessions.lastActivity, sevenDaysAgo));
+    .where(gte(sessions?.lastActivity, sevenDaysAgo));
 
-  const totalUsers = await db.select({ count: count() }).from(users);
+  const _totalUsers = await db?.select({ count: count() }).from(users);
 
-  const activeUserCount = Number(activeUsers[0]?.count || 0);
-  const totalUserCount = Number(totalUsers[0]?.count || 0);
+  const _activeUserCount = Number(activeUsers[0]?.count || 0);
+  const _totalUserCount = Number(totalUsers[0]?.count || 0);
 
   if (totalUserCount > 0) {
-    const engagementRate = (activeUserCount / totalUserCount) * 100;
+    const _engagementRate = (activeUserCount / totalUserCount) * 100;
 
     if (engagementRate < 20) {
-      insights.push({
+      insights?.push({
         type: "warning",
         title: "Low User Engagement Rate",
-        description: `Only ${engagementRate.toFixed(1)}% of users were active this week - consider re-engagement campaigns`,
+        description: `Only ${engagementRate?.toFixed(1)}% of users were active this week - consider re-engagement campaigns`,
         metric: "engagement_rate",
         impact: "high",
         actionable: true,
       });
     } else if (engagementRate > 60) {
-      insights.push({
+      insights?.push({
         type: "opportunity",
         title: "High User Engagement",
-        description: `${engagementRate.toFixed(1)}% of users were active this week - excellent platform health`,
+        description: `${engagementRate?.toFixed(1)}% of users were active this week - excellent platform health`,
         metric: "engagement_rate",
         impact: "medium",
         actionable: false,
@@ -620,8 +620,8 @@ export async function generateInsights(): Promise<InsightsResponse> {
     }
   }
 
-  if (insights.length === 0) {
-    insights.push({
+  if (insights?.length === 0) {
+    insights?.push({
       type: "trend",
       title: "Platform Operating Normally",
       description:
@@ -656,123 +656,123 @@ export async function predictCareerGrowth(
 ): Promise<CareerGrowthResponse> {
   const { userId, metric, timeline } = params;
 
-  const days = timeline === "30d" ? 30 : timeline === "90d" ? 90 : 180;
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
+  const _days = timeline === "30d" ? 30 : timeline === "90d" ? 90 : 180;
+  const _startDate = new Date();
+  startDate?.setDate(startDate?.getDate() - days);
 
   let historicalData: Array<{ date: Date; value: number }> = [];
 
   if (metric === "streams") {
-    const results = await db
+    const _results = await db
       .select({
-        date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
+        date: analytics?.date,
+        value: sql<number>`CAST(COALESCE(SUM(${analytics?.streams}), 0) AS INTEGER)`,
       })
       .from(analytics)
-      .where(and(eq(analytics.userId, userId), gte(analytics.date, startDate)))
-      .groupBy(analytics.date)
-      .orderBy(analytics.date);
+      .where(and(eq(analytics?.userId, userId), gte(analytics?.date, startDate)))
+      .groupBy(analytics?.date)
+      .orderBy(analytics?.date);
 
-    historicalData = results.map((r) => ({
-      date: r.date,
-      value: Number(r.value) || 0,
+    historicalData = results?.map((r) => ({
+      date: r?.date,
+      value: Number(r?.value) || 0,
     }));
   } else if (metric === "followers") {
-    const results = await db
+    const _results = await db
       .select({
-        date: analytics.date,
-        value: sql<number>`CAST(COALESCE(SUM(${analytics.totalFollowers}), 0) AS INTEGER)`,
+        date: analytics?.date,
+        value: sql<number>`CAST(COALESCE(SUM(${analytics?.totalFollowers}), 0) AS INTEGER)`,
       })
       .from(analytics)
-      .where(and(eq(analytics.userId, userId), gte(analytics.date, startDate)))
-      .groupBy(analytics.date)
-      .orderBy(analytics.date);
+      .where(and(eq(analytics?.userId, userId), gte(analytics?.date, startDate)))
+      .groupBy(analytics?.date)
+      .orderBy(analytics?.date);
 
-    historicalData = results.map((r) => ({
-      date: r.date,
-      value: Number(r.value) || 0,
+    historicalData = results?.map((r) => ({
+      date: r?.date,
+      value: Number(r?.value) || 0,
     }));
   } else {
-    const results = await db
+    const _results = await db
       .select({
-        date: analytics.date,
-        value: sql<number>`CAST(COALESCE(AVG(${analytics.engagementRate}), 0) AS INTEGER)`,
+        date: analytics?.date,
+        value: sql<number>`CAST(COALESCE(AVG(${analytics?.engagementRate}), 0) AS INTEGER)`,
       })
       .from(analytics)
-      .where(and(eq(analytics.userId, userId), gte(analytics.date, startDate)))
-      .groupBy(analytics.date)
-      .orderBy(analytics.date);
+      .where(and(eq(analytics?.userId, userId), gte(analytics?.date, startDate)))
+      .groupBy(analytics?.date)
+      .orderBy(analytics?.date);
 
-    historicalData = results.map((r) => ({
-      date: r.date,
-      value: Number(r.value) || 0,
+    historicalData = results?.map((r) => ({
+      date: r?.date,
+      value: Number(r?.value) || 0,
     }));
   }
 
-  const dataPoints = historicalData.map((d, i) => ({
+  const _dataPoints = historicalData?.map((d, i) => ({
     x: i,
-    y: d.value,
+    y: d?.value,
   }));
 
   const { slope, intercept } = linearRegression(dataPoints);
 
-  const currentValue =
-    historicalData.length > 0
-      ? historicalData[historicalData.length - 1].value
+  const _currentValue =
+    historicalData?.length > 0
+      ? historicalData[historicalData?.length - 1].value
       : 0;
 
-  const futureDays = timeline === "30d" ? 30 : timeline === "90d" ? 60 : 90;
-  const predictedValue = Math.max(
+  const _futureDays = timeline === "30d" ? 30 : timeline === "90d" ? 60 : 90;
+  const _predictedValue = Math?.max(
     0,
-    slope * (dataPoints.length + futureDays) + intercept,
+    slope * (dataPoints?.length + futureDays) + intercept,
   );
 
-  const growthRate =
+  const _growthRate =
     currentValue > 0
       ? ((predictedValue - currentValue) / currentValue) * 100
       : 0;
 
-  const values = historicalData.map((d) => d.value);
-  const stdDev = calculateStandardDeviation(values);
-  const mean = values.reduce((sum, v) => sum + v, 0) / (values.length || 1);
-  const confidence = Math.min(
+  const _values = historicalData?.map((d) => d?.value);
+  const _stdDev = calculateStandardDeviation(values);
+  const _mean = values?.reduce((sum, v) => sum + v, 0) / (values?.length || 1);
+  const _confidence = Math?.min(
     95,
-    Math.max(50, 100 - (stdDev / (mean || 1)) * 100),
+    Math?.max(50, 100 - (stdDev / (mean || 1)) * 100),
   );
 
   const recommendations: string[] = [];
 
   if (growthRate > 20) {
-    recommendations.push(
+    recommendations?.push(
       `Excellent growth trajectory! Continue your current strategy.`,
     );
-    recommendations.push(
+    recommendations?.push(
       `Consider scaling up your content production to capitalize on momentum.`,
     );
   } else if (growthRate > 0) {
-    recommendations.push(
+    recommendations?.push(
       `Moderate growth detected. Focus on consistency and quality.`,
     );
-    recommendations.push(
+    recommendations?.push(
       `Analyze your top-performing content and replicate successful patterns.`,
     );
   } else {
-    recommendations.push(
+    recommendations?.push(
       `Growth has plateaued. Time to refresh your strategy.`,
     );
-    recommendations.push(
+    recommendations?.push(
       `Experiment with new content formats, collaboration, or release timing.`,
     );
-    recommendations.push(
+    recommendations?.push(
       `Engage more actively with your fanbase on social media.`,
     );
   }
 
   return {
-    currentValue: Math.round(currentValue),
-    predictedValue: Math.round(predictedValue),
-    growthRate: Number(growthRate.toFixed(2)),
-    confidence: Math.round(confidence),
+    currentValue: Math?.round(currentValue),
+    predictedValue: Math?.round(predictedValue),
+    growthRate: Number(growthRate?.toFixed(2)),
+    confidence: Math?.round(confidence),
     recommendations,
   };
 }
@@ -788,61 +788,61 @@ interface CareerMilestone {
 export async function getCareerMilestones(
   userId: string,
 ): Promise<CareerMilestone[]> {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const _thirtyDaysAgo = new Date();
+  thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-  const analyticsData = await db
+  const _analyticsData = await db
     .select({
-      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
-      totalFollowers: sql<number>`CAST(COALESCE(SUM(${analytics.totalFollowers}), 0) AS INTEGER)`,
+      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics?.streams}), 0) AS INTEGER)`,
+      totalFollowers: sql<number>`CAST(COALESCE(SUM(${analytics?.totalFollowers}), 0) AS INTEGER)`,
     })
     .from(analytics)
     .where(
-      and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)),
+      and(eq(analytics?.userId, userId), gte(analytics?.date, thirtyDaysAgo)),
     );
 
-  const streams = Number(analyticsData[0]?.totalStreams || 0);
-  const followers = Number(analyticsData[0]?.totalFollowers || 0);
+  const _streams = Number(analyticsData[0]?.totalStreams || 0);
+  const _followers = Number(analyticsData[0]?.totalFollowers || 0);
 
   const milestones: CareerMilestone[] = [];
 
   // Streams milestones
-  const streamMilestones = [1000, 5000, 10000, 50000, 100000, 500000, 1000000];
-  const nextStreamMilestone =
-    streamMilestones.find((m) => m > streams) || 10000000;
-  const streamProgress = (streams / nextStreamMilestone) * 100;
-  const daysToStreamMilestone =
+  const _streamMilestones = [1000, 5000, 10000, 50000, 100000, 500000, 1000000];
+  const _nextStreamMilestone =
+    streamMilestones?.find((m) => m > streams) || 10000000;
+  const _streamProgress = (streams / nextStreamMilestone) * 100;
+  const _daysToStreamMilestone =
     streams > 0
-      ? Math.ceil((nextStreamMilestone - streams) / (streams / 30))
+      ? Math?.ceil((nextStreamMilestone - streams) / (streams / 30))
       : 365;
 
-  milestones.push({
+  milestones?.push({
     type: "streams",
     current: streams,
     nextMilestone: nextStreamMilestone,
-    progress: Math.min(99, Math.round(streamProgress)),
+    progress: Math?.min(99, Math?.round(streamProgress)),
     estimatedDate: new Date(
-      Date.now() + daysToStreamMilestone * 24 * 60 * 60 * 1000,
+      Date?.now() + daysToStreamMilestone * 24 * 60 * 60 * 1000,
     ).toLocaleDateString(),
   });
 
   // Followers milestones
-  const followerMilestones = [100, 500, 1000, 5000, 10000, 50000, 100000];
-  const nextFollowerMilestone =
-    followerMilestones.find((m) => m > followers) || 1000000;
-  const followerProgress = (followers / nextFollowerMilestone) * 100;
-  const daysToFollowerMilestone =
+  const _followerMilestones = [100, 500, 1000, 5000, 10000, 50000, 100000];
+  const _nextFollowerMilestone =
+    followerMilestones?.find((m) => m > followers) || 1000000;
+  const _followerProgress = (followers / nextFollowerMilestone) * 100;
+  const _daysToFollowerMilestone =
     followers > 0
-      ? Math.ceil((nextFollowerMilestone - followers) / (followers / 30))
+      ? Math?.ceil((nextFollowerMilestone - followers) / (followers / 30))
       : 365;
 
-  milestones.push({
+  milestones?.push({
     type: "followers",
     current: followers,
     nextMilestone: nextFollowerMilestone,
-    progress: Math.min(99, Math.round(followerProgress)),
+    progress: Math?.min(99, Math?.round(followerProgress)),
     estimatedDate: new Date(
-      Date.now() + daysToFollowerMilestone * 24 * 60 * 60 * 1000,
+      Date?.now() + daysToFollowerMilestone * 24 * 60 * 60 * 1000,
     ).toLocaleDateString(),
   });
 
@@ -862,58 +862,58 @@ interface FanbaseData {
 }
 
 export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const _thirtyDaysAgo = new Date();
+  thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-  const analyticsData = await db
+  const _analyticsData = await db
     .select({
-      totalFollowers: sql<number>`CAST(COALESCE(SUM(${analytics.totalFollowers}), 0) AS INTEGER)`,
-      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
-      engagementRate: sql<number>`CAST(COALESCE(AVG(${analytics.engagementRate}), 0) AS NUMERIC)`,
+      totalFollowers: sql<number>`CAST(COALESCE(SUM(${analytics?.totalFollowers}), 0) AS INTEGER)`,
+      totalStreams: sql<number>`CAST(COALESCE(SUM(${analytics?.streams}), 0) AS INTEGER)`,
+      engagementRate: sql<number>`CAST(COALESCE(AVG(${analytics?.engagementRate}), 0) AS NUMERIC)`,
     })
     .from(analytics)
     .where(
-      and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)),
+      and(eq(analytics?.userId, userId), gte(analytics?.date, thirtyDaysAgo)),
     );
 
-  const totalFans = Number(analyticsData[0]?.totalFollowers || 0);
-  const totalStreams = Number(analyticsData[0]?.totalStreams || 0);
-  const engagementRate = Number(analyticsData[0]?.engagementRate || 0);
+  const _totalFans = Number(analyticsData[0]?.totalFollowers || 0);
+  const _totalStreams = Number(analyticsData[0]?.totalStreams || 0);
+  const _engagementRate = Number(analyticsData[0]?.engagementRate || 0);
 
   // Calculate active listeners (estimate: 20% of total streams are unique listeners)
-  const activeListeners = Math.round(totalStreams * 0.2);
+  const _activeListeners = Math?.round(totalStreams * 0.2);
 
   // Platform distribution — real data from analytics table grouped by platform
-  const platformRows = await db
+  const _platformRows = await db
     .select({
-      platform: analytics.platform,
-      streams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
+      platform: analytics?.platform,
+      streams: sql<number>`CAST(COALESCE(SUM(${analytics?.streams}), 0) AS INTEGER)`,
     })
     .from(analytics)
     .where(
       and(
-        eq(analytics.userId, userId),
-        gte(analytics.date, thirtyDaysAgo),
-        isNotNull(analytics.platform),
+        eq(analytics?.userId, userId),
+        gte(analytics?.date, thirtyDaysAgo),
+        isNotNull(analytics?.platform),
       ),
     )
-    .groupBy(analytics.platform)
-    .orderBy(desc(sql<number>`SUM(${analytics.streams})`))
+    .groupBy(analytics?.platform)
+    .orderBy(desc(sql<number>`SUM(${analytics?.streams})`))
     .limit(8);
 
-  const totalPlatformStreams = platformRows.reduce(
-    (s, p) => s + Number(p.streams),
+  const _totalPlatformStreams = platformRows?.reduce(
+    (s, p) => s + Number(p?.streams),
     0,
   );
 
   let topPlatforms: Array<{ platform: string; percentage: number }>;
-  if (platformRows.length > 0 && totalPlatformStreams > 0) {
-    const mapped = platformRows.map((p) => ({
-      platform: p.platform ?? "Other",
-      percentage: Math.round((Number(p.streams) / totalPlatformStreams) * 100),
+  if (platformRows?.length > 0 && totalPlatformStreams > 0) {
+    const _mapped = platformRows?.map((p) => ({
+      platform: p?.platform ?? "Other",
+      percentage: Math?.round((Number(p?.streams) / totalPlatformStreams) * 100),
     }));
-    const assignedTotal = mapped.reduce((s, p) => s + p.percentage, 0);
-    if (assignedTotal !== 100 && mapped.length > 0)
+    const _assignedTotal = mapped?.reduce((s, p) => s + p?.percentage, 0);
+    if (assignedTotal !== 100 && mapped?.length > 0)
       mapped[0].percentage += 100 - assignedTotal;
     topPlatforms = mapped;
   } else {
@@ -927,17 +927,17 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   }
 
   // Demographics — derive peak listening times from actual analytics timestamps
-  const hourRows = await db
+  const _hourRows = await db
     .select({
-      hour: sql<number>`EXTRACT(HOUR FROM ${analytics.date})`,
-      streams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
+      hour: sql<number>`EXTRACT(HOUR FROM ${analytics?.date})`,
+      streams: sql<number>`CAST(COALESCE(SUM(${analytics?.streams}), 0) AS INTEGER)`,
     })
     .from(analytics)
     .where(
-      and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)),
+      and(eq(analytics?.userId, userId), gte(analytics?.date, thirtyDaysAgo)),
     )
-    .groupBy(sql`EXTRACT(HOUR FROM ${analytics.date})`)
-    .orderBy(desc(sql<number>`SUM(${analytics.streams})`))
+    .groupBy(sql`EXTRACT(HOUR FROM ${analytics?.date})`)
+    .orderBy(desc(sql<number>`SUM(${analytics?.streams})`))
     .limit(3);
 
   const HOUR_LABELS: Record<number, string> = {
@@ -966,71 +966,71 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
     22: "10 PM - 12 AM",
     23: "11 PM - 1 AM",
   };
-  const peakListeningTimes =
-    hourRows.length >= 2
-      ? hourRows.map((r) => HOUR_LABELS[Number(r.hour)] ?? `${r.hour}:00`)
+  const _peakListeningTimes =
+    hourRows?.length >= 2
+      ? hourRows?.map((r) => HOUR_LABELS[Number(r?.hour)] ?? `${r?.hour}:00`)
       : ["8 PM - 10 PM", "6 AM - 8 AM", "12 PM - 2 PM"];
 
   // Top listener locations from DSP analytics metadata
-  const dspRows = await db
-    .select({ metadata: dspAnalytics.metadata })
+  const _dspRows = await db
+    .select({ metadata: dspAnalytics?.metadata })
     .from(dspAnalytics)
-    .where(eq(dspAnalytics.userId, userId))
-    .orderBy(desc(dspAnalytics.date))
+    .where(eq(dspAnalytics?.userId, userId))
+    .orderBy(desc(dspAnalytics?.date))
     .limit(50);
 
-  const locationCounts = new Map<string, number>();
+  const _locationCounts = new Map<string, number>();
   for (const row of dspRows) {
-    const meta = row.metadata as Record<string, unknown> | null;
-    const country =
+    const _meta = row?.metadata as Record<string, unknown> | null;
+    const _country =
       typeof meta?.topCountry === "string"
-        ? meta.topCountry
+        ? meta?.topCountry
         : typeof meta?.country === "string"
-          ? meta.country
+          ? meta?.country
           : null;
     if (country)
-      locationCounts.set(country, (locationCounts.get(country) ?? 0) + 1);
+      locationCounts?.set(country, (locationCounts?.get(country) ?? 0) + 1);
   }
-  const topLocations =
-    locationCounts.size >= 3
-      ? [...locationCounts.entries()]
+  const _topLocations =
+    locationCounts?.size >= 3
+      ? [...locationCounts?.entries()]
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5)
           .map(([loc]) => loc)
       : ["United States", "United Kingdom", "Canada", "Australia", "Germany"];
 
-  const demographics = { topLocations, peakListeningTimes };
+  const _demographics = { topLocations, peakListeningTimes };
 
   // Growth opportunities based on current metrics
   const growthOpportunities: string[] = [];
 
   if (engagementRate < 5) {
-    growthOpportunities.push(
+    growthOpportunities?.push(
       "Low engagement rate - Focus on creating more interactive content and stories",
     );
   }
 
   if (totalStreams < 1000) {
-    growthOpportunities.push(
+    growthOpportunities?.push(
       "Limited reach - Consider playlist pitching and collaborations",
     );
   } else if (totalStreams > 10000) {
-    growthOpportunities.push(
+    growthOpportunities?.push(
       "Strong streaming performance - Perfect time to launch merchandise or exclusive content",
     );
   }
 
-  growthOpportunities.push(
+  growthOpportunities?.push(
     "Expand to emerging platforms like TikTok and Instagram Reels for discovery",
   );
-  growthOpportunities.push(
+  growthOpportunities?.push(
     "Build email list for direct fan communication and tour announcements",
   );
 
   return {
     totalFans,
     activeListeners,
-    engagementRate: Number(engagementRate.toFixed(2)),
+    engagementRate: Number(engagementRate?.toFixed(2)),
     topPlatforms,
     demographics,
     growthOpportunities,
@@ -1046,23 +1046,23 @@ interface ReleaseStrategy {
 export async function getReleaseStrategy(
   userId: string,
 ): Promise<ReleaseStrategy> {
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const _ninetyDaysAgo = new Date();
+  ninetyDaysAgo?.setDate(ninetyDaysAgo?.getDate() - 90);
 
   // Analyze historical engagement patterns
-  const engagementByDay = await db
+  const _engagementByDay = await db
     .select({
-      dayOfWeek: sql<number>`EXTRACT(DOW FROM ${analytics.date})`,
-      avgEngagement: sql<number>`CAST(COALESCE(AVG(${analytics.engagementRate}), 0) AS NUMERIC)`,
+      dayOfWeek: sql<number>`EXTRACT(DOW FROM ${analytics?.date})`,
+      avgEngagement: sql<number>`CAST(COALESCE(AVG(${analytics?.engagementRate}), 0) AS NUMERIC)`,
     })
     .from(analytics)
     .where(
-      and(eq(analytics.userId, userId), gte(analytics.date, ninetyDaysAgo)),
+      and(eq(analytics?.userId, userId), gte(analytics?.date, ninetyDaysAgo)),
     )
-    .groupBy(sql`EXTRACT(DOW FROM ${analytics.date})`);
+    .groupBy(sql`EXTRACT(DOW FROM ${analytics?.date})`);
 
   // Find best day (highest engagement)
-  const days = [
+  const _days = [
     "Sunday",
     "Monday",
     "Tuesday",
@@ -1075,40 +1075,40 @@ export async function getReleaseStrategy(
   let maxEngagement = 0;
 
   for (const data of engagementByDay) {
-    const engagement = Number(data.avgEngagement || 0);
+    const _engagement = Number(data?.avgEngagement || 0);
     if (engagement > maxEngagement) {
       maxEngagement = engagement;
-      bestDay = days[Number(data.dayOfWeek)];
+      bestDay = days[Number(data?.dayOfWeek)];
     }
   }
 
   // Industry best practices
-  const bestTime = "12:00 AM EST"; // Midnight releases are standard for streaming platforms
+  const _bestTime = "12:00 AM EST"; // Midnight releases are standard for streaming platforms
 
   const recommendations: string[] = [];
 
-  recommendations.push(
+  recommendations?.push(
     `Release on ${bestDay} at midnight for maximum Spotify algorithmic boost`,
   );
-  recommendations.push(
+  recommendations?.push(
     "Submit to Spotify editorial playlists at least 3 weeks before release",
   );
-  recommendations.push(
+  recommendations?.push(
     "Build pre-save campaign starting 2-3 weeks before release date",
   );
-  recommendations.push(
+  recommendations?.push(
     "Coordinate social media teasers starting 1 week before release",
   );
-  recommendations.push(
+  recommendations?.push(
     "Plan Instagram/TikTok content for release day to drive engagement",
   );
 
   if (maxEngagement > 5) {
-    recommendations.push(
+    recommendations?.push(
       "Your fanbase is highly engaged - consider a surprise drop strategy",
     );
   } else {
-    recommendations.push(
+    recommendations?.push(
       "Focus on building anticipation with behind-the-scenes content before release",
     );
   }

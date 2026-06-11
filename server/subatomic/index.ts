@@ -20,7 +20,7 @@ import path from "path";
 import crypto from "crypto";
 
 // Subatomic size thresholds (in bytes)
-export const SUBATOMIC_THRESHOLDS = {
+export const _SUBATOMIC_THRESHOLDS = {
   QUARK: 1024, // 1KB - Smallest unit
   ELECTRON: 10 * 1024, // 10KB - Tiny modules
   PROTON: 50 * 1024, // 50KB - Small modules
@@ -75,19 +75,19 @@ class SubatomicCore {
   private initialized: boolean = false;
 
   constructor() {
-    this.storagePath = path.join(process.cwd(), ".subatomic");
+    this.storagePath = path?.join(process?.cwd(), ".subatomic");
   }
 
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this?.initialized) return;
 
     try {
-      await mkdir(this.storagePath, { recursive: true });
-      await mkdir(path.join(this.storagePath, "cache"), { recursive: true });
-      await mkdir(path.join(this.storagePath, "compressed"), {
+      await mkdir(this?.storagePath, { recursive: true });
+      await mkdir(path?.join(this?.storagePath, "cache"), { recursive: true });
+      await mkdir(path?.join(this?.storagePath, "compressed"), {
         recursive: true,
       });
-      await mkdir(path.join(this.storagePath, "particles"), {
+      await mkdir(path?.join(this?.storagePath, "particles"), {
         recursive: true,
       });
       this.initialized = true;
@@ -107,7 +107,7 @@ class SubatomicCore {
     loader: () => Promise<unknown>,
     dependencies: string[] = [],
   ): void {
-    this.modules.set(id, {
+    this?.modules.set(id, {
       id,
       name,
       state: "superposition",
@@ -126,37 +126,37 @@ class SubatomicCore {
    * Returns cached version on subsequent accesses
    */
   async loadModule<T>(id: string): Promise<T> {
-    const module = this.modules.get(id);
+    const _module = this?.modules.get(id);
     if (!module) {
       throw new Error(`[SUBATOMIC] Module ${id} not registered`);
     }
 
     // Check if already loaded (wave function collapsed)
-    if (this.loadedModules.has(id)) {
-      module.accessCount++;
+    if (this?.loadedModules.has(id)) {
+      module?.accessCount++;
       module.lastAccess = new Date();
-      return this.loadedModules.get(id) as T;
+      return this?.loadedModules.get(id) as T;
     }
 
     // Load dependencies first (entanglement)
-    for (const depId of module.dependencies) {
-      if (!this.loadedModules.has(depId)) {
-        await this.loadModule(depId);
+    for (const depId of module?.dependencies) {
+      if (!this?.loadedModules.has(depId)) {
+        await this?.loadModule(depId);
       }
     }
 
     // Collapse the wave function (load the module)
-    const startTime = performance.now();
-    const loaded = await module.loader();
-    const loadTime = performance.now() - startTime;
+    const _startTime = performance?.now();
+    const _loaded = await module?.loader();
+    const _loadTime = performance?.now() - startTime;
 
     module.state = "collapsed";
     module.loadTime = loadTime;
     module.accessCount = 1;
     module.lastAccess = new Date();
 
-    this.loadedModules.set(id, loaded);
-    this.accessLog.push({ module: id, time: new Date(), duration: loadTime });
+    this?.loadedModules.set(id, loaded);
+    this?.accessLog.push({ module: id, time: new Date(), duration: loadTime });
 
     // Module collapsed
 
@@ -171,54 +171,54 @@ class SubatomicCore {
     data: Buffer | string,
     type: "text" | "binary" | "json" = "binary",
   ): Promise<CompressionResult> {
-    const input = typeof data === "string" ? Buffer.from(data) : data;
-    const originalSize = input.length;
+    const _input = typeof data === "string" ? Buffer?.from(data) : data;
+    const _originalSize = input?.length;
 
     // Hash for caching
-    const hash = crypto
+    const _hash = crypto
       .createHash("sha256")
       .update(input)
       .digest("hex")
       .substring(0, 16);
 
     // Check cache
-    const cached = this.compressionCache.get(hash);
+    const _cached = this?.compressionCache.get(hash);
     if (cached) {
       return {
         original: originalSize,
-        compressed: cached.length,
-        ratio: cached.length / originalSize,
+        compressed: cached?.length,
+        ratio: cached?.length / originalSize,
         algorithm: "subatomic",
         hash,
       };
     }
 
     // Try multiple algorithms and pick the best
-    const results = await Promise.all([
-      this.compressGzip(input),
-      this.compressBrotli(input),
+    const _results = await Promise?.all([
+      this?.compressGzip(input),
+      this?.compressBrotli(input),
     ]);
 
     // Select smallest result
-    const best = results.reduce((a, b) =>
-      a.compressed.length < b.compressed.length ? a : b,
+    const _best = results?.reduce((a, b) =>
+      a?.compressed.length < b?.compressed.length ? a : b,
     );
 
     // Cache the result
-    this.compressionCache.set(hash, best.compressed);
+    this?.compressionCache.set(hash, best?.compressed);
 
     // Apply subatomic optimization for text/json
-    let finalCompressed = best.compressed;
+    let finalCompressed = best?.compressed;
     if (type === "json" || type === "text") {
-      finalCompressed = await this.subatomicOptimize(best.compressed);
+      finalCompressed = await this?.subatomicOptimize(best?.compressed);
     }
 
     return {
       original: originalSize,
-      compressed: finalCompressed.length,
-      ratio: finalCompressed.length / originalSize,
+      compressed: finalCompressed?.length,
+      ratio: finalCompressed?.length / originalSize,
       algorithm:
-        type === "json" || type === "text" ? "subatomic" : best.algorithm,
+        type === "json" || type === "text" ? "subatomic" : best?.algorithm,
       hash,
     };
   }
@@ -227,14 +227,14 @@ class SubatomicCore {
     data: Buffer,
   ): Promise<{ compressed: Buffer; algorithm: "gzip" }> {
     return new Promise((resolve, reject) => {
-      const gzip = createGzip({ level: 9 });
+      const _gzip = createGzip({ level: 9 });
       const chunks: Buffer[] = [];
-      gzip.on("data", (chunk) => chunks.push(chunk));
-      gzip.on("end", () =>
-        resolve({ compressed: Buffer.concat(chunks), algorithm: "gzip" }),
+      gzip?.on("data", (chunk) => chunks?.push(chunk));
+      gzip?.on("end", () =>
+        resolve({ compressed: Buffer?.concat(chunks), algorithm: "gzip" }),
       );
-      gzip.on("error", reject);
-      gzip.end(data);
+      gzip?.on("error", reject);
+      gzip?.end(data);
     });
   }
 
@@ -242,18 +242,18 @@ class SubatomicCore {
     data: Buffer,
   ): Promise<{ compressed: Buffer; algorithm: "brotli" }> {
     return new Promise((resolve, reject) => {
-      const brotli = createBrotliCompress({
+      const _brotli = createBrotliCompress({
         params: {
-          [constants.BROTLI_PARAM_QUALITY]: constants.BROTLI_MAX_QUALITY,
+          [constants?.BROTLI_PARAM_QUALITY]: constants?.BROTLI_MAX_QUALITY,
         },
       });
       const chunks: Buffer[] = [];
-      brotli.on("data", (chunk) => chunks.push(chunk));
-      brotli.on("end", () =>
-        resolve({ compressed: Buffer.concat(chunks), algorithm: "brotli" }),
+      brotli?.on("data", (chunk) => chunks?.push(chunk));
+      brotli?.on("end", () =>
+        resolve({ compressed: Buffer?.concat(chunks), algorithm: "brotli" }),
       );
-      brotli.on("error", reject);
-      brotli.end(data);
+      brotli?.on("error", reject);
+      brotli?.end(data);
     });
   }
 
@@ -276,33 +276,33 @@ class SubatomicCore {
    */
   async atomize(
     filePath: string,
-    maxChunkSize: number = SUBATOMIC_THRESHOLDS.QUARK,
+    maxChunkSize: number = SUBATOMIC_THRESHOLDS?.QUARK,
   ): Promise<string[]> {
-    const content = await readFile(filePath);
+    const _content = await readFile(filePath);
     const chunks: string[] = [];
 
     let offset = 0;
-    while (offset < content.length) {
-      const chunk = content.subarray(offset, offset + maxChunkSize);
-      const hash = crypto
+    while (offset < content?.length) {
+      const _chunk = content?.subarray(offset, offset + maxChunkSize);
+      const _hash = crypto
         .createHash("sha256")
         .update(chunk)
         .digest("hex")
         .substring(0, 16);
-      const chunkPath = path.join(
-        this.storagePath,
+      const _chunkPath = path?.join(
+        this?.storagePath,
         "particles",
         `${hash}.particle`,
       );
 
       // Compress and save chunk
-      const compressed = await this.compress(chunk);
+      const _compressed = await this?.compress(chunk);
       await writeFile(
         chunkPath,
-        this.compressionCache.get(compressed.hash) || chunk,
+        this?.compressionCache.get(compressed?.hash) || chunk,
       );
 
-      chunks.push(hash);
+      chunks?.push(hash);
       offset += maxChunkSize;
     }
 
@@ -314,21 +314,21 @@ class SubatomicCore {
    * Evicts least recently used and least frequently accessed
    */
   async evictCache(targetSize: number): Promise<number> {
-    const entries = Array.from(this.compressionCache.entries());
-    const currentSize = entries.reduce((sum, [_, v]) => sum + v.length, 0);
+    const _entries = Array?.from(this?.compressionCache.entries());
+    const _currentSize = entries?.reduce((sum, [_, v]) => sum + v?.length, 0);
 
     if (currentSize <= targetSize) return 0;
 
     // Sort by size (largest first for faster reduction)
-    entries.sort((a, b) => b[1].length - a[1].length);
+    entries?.sort((a, b) => b[1].length - a[1].length);
 
     let evicted = 0;
     let freedSize = 0;
 
     for (const [key, value] of entries) {
       if (currentSize - freedSize <= targetSize) break;
-      this.compressionCache.delete(key);
-      freedSize += value.length;
+      this?.compressionCache.delete(key);
+      freedSize += value?.length;
       evicted++;
     }
 
@@ -343,9 +343,9 @@ class SubatomicCore {
     heavy: Array<{ name: string; estimatedSize: number; alternative?: string }>;
     totalEstimated: number;
   }> {
-    const content = await readFile(packageJsonPath, "utf-8");
-    const pkg = JSON.parse(content);
-    const deps = { ...pkg.dependencies, ...pkg.devDependencies };
+    const _content = await readFile(packageJsonPath, "utf-8");
+    const _pkg = JSON?.parse(content);
+    const _deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
 
     // Known heavy packages and their lightweight alternatives
     const heavyPackages: Record<
@@ -389,9 +389,9 @@ class SubatomicCore {
     }> = [];
     let totalEstimated = 0;
 
-    for (const [name] of Object.entries(deps)) {
+    for (const [name] of Object?.entries(deps)) {
       if (heavyPackages[name]) {
-        heavy.push({
+        heavy?.push({
           name,
           estimatedSize: heavyPackages[name].size,
           alternative: heavyPackages[name].alternative,
@@ -401,7 +401,7 @@ class SubatomicCore {
     }
 
     // Sort by size (largest first)
-    heavy.sort((a, b) => b.estimatedSize - a.estimatedSize);
+    heavy?.sort((a, b) => b?.estimatedSize - a?.estimatedSize);
 
     return { heavy, totalEstimated };
   }
@@ -410,41 +410,41 @@ class SubatomicCore {
    * Get subatomic statistics
    */
   getStats(): SubatomicStats {
-    const modules = Array.from(this.modules.values());
-    const loadedModules = modules.filter((m) => m.state === "collapsed");
+    const _modules = Array?.from(this?.modules.values());
+    const _loadedModules = modules?.filter((m) => m?.state === "collapsed");
 
-    const cacheSize = Array.from(this.compressionCache.values()).reduce(
-      (sum, buf) => sum + buf.length,
+    const _cacheSize = Array?.from(this?.compressionCache.values()).reduce(
+      (sum, buf) => sum + buf?.length,
       0,
     );
 
-    const avgLoadTime =
-      loadedModules.length > 0
-        ? loadedModules.reduce((sum, m) => sum + (m.loadTime || 0), 0) /
-          loadedModules.length
+    const _avgLoadTime =
+      loadedModules?.length > 0
+        ? loadedModules?.reduce((sum, m) => sum + (m?.loadTime || 0), 0) /
+          loadedModules?.length
         : 0;
 
-    const totalHits = modules.reduce((sum, m) => sum + m.accessCount, 0);
-    const uniqueLoads = loadedModules.length;
+    const _totalHits = modules?.reduce((sum, m) => sum + m?.accessCount, 0);
+    const _uniqueLoads = loadedModules?.length;
 
     return {
-      totalModules: modules.length,
-      loadedModules: loadedModules.length,
-      totalOriginalSize: modules.reduce((sum, m) => sum + m.size, 0),
-      totalCompressedSize: modules.reduce(
-        (sum, m) => sum + m.compressedSize,
+      totalModules: modules?.length,
+      loadedModules: loadedModules?.length,
+      totalOriginalSize: modules?.reduce((sum, m) => sum + m?.size, 0),
+      totalCompressedSize: modules?.reduce(
+        (sum, m) => sum + m?.compressedSize,
         0,
       ),
       compressionRatio:
-        modules.length > 0
-          ? modules.reduce(
-              (sum, m) => sum + m.compressedSize / (m.size || 1),
+        modules?.length > 0
+          ? modules?.reduce(
+              (sum, m) => sum + m?.compressedSize / (m?.size || 1),
               0,
-            ) / modules.length
+            ) / modules?.length
           : 0,
       averageLoadTime: avgLoadTime,
       cacheHitRate: totalHits > 0 ? (totalHits - uniqueLoads) / totalHits : 0,
-      memoryFootprint: cacheSize + process.memoryUsage().heapUsed,
+      memoryFootprint: cacheSize + process?.memoryUsage().heapUsed,
     };
   }
 
@@ -452,9 +452,9 @@ class SubatomicCore {
    * Generate a subatomic report
    */
   async generateReport(): Promise<string> {
-    const stats = this.getStats();
-    const depsAnalysis = await this.analyzeDependencies(
-      path.join(process.cwd(), "package.json"),
+    const _stats = this?.getStats();
+    const _depsAnalysis = await this?.analyzeDependencies(
+      path?.join(process?.cwd(), "package.json"),
     );
 
     return `
@@ -462,31 +462,31 @@ class SubatomicCore {
 ║              SUBATOMIC STATUS REPORT                              ║
 ╠══════════════════════════════════════════════════════════════════╣
 ║ QUANTUM LOADING                                                   ║
-║   Total Modules:        ${String(stats.totalModules).padStart(10)}                        ║
-║   Loaded (Collapsed):   ${String(stats.loadedModules).padStart(10)}                        ║
-║   In Superposition:     ${String(stats.totalModules - stats.loadedModules).padStart(10)}                        ║
+║   Total Modules:        ${String(stats?.totalModules).padStart(10)}                        ║
+║   Loaded (Collapsed):   ${String(stats?.loadedModules).padStart(10)}                        ║
+║   In Superposition:     ${String(stats?.totalModules - stats?.loadedModules).padStart(10)}                        ║
 ║                                                                   ║
 ║ PARTICLE COMPRESSION                                              ║
-║   Compression Ratio:    ${(stats.compressionRatio * 100).toFixed(1).padStart(10)}%                       ║
-║   Cache Hit Rate:       ${(stats.cacheHitRate * 100).toFixed(1).padStart(10)}%                       ║
-║   Memory Footprint:     ${(stats.memoryFootprint / 1024 / 1024).toFixed(2).padStart(10)} MB                    ║
+║   Compression Ratio:    ${(stats?.compressionRatio * 100).toFixed(1).padStart(10)}%                       ║
+║   Cache Hit Rate:       ${(stats?.cacheHitRate * 100).toFixed(1).padStart(10)}%                       ║
+║   Memory Footprint:     ${(stats?.memoryFootprint / 1024 / 1024).toFixed(2).padStart(10)} MB                    ║
 ║                                                                   ║
 ║ NEUTRINO DEPENDENCIES (Heavy Packages)                           ║
-${depsAnalysis.heavy
+${depsAnalysis?.heavy
   .slice(0, 5)
   .map(
     (d) =>
-      `║   ${d.name.padEnd(25)} ${(d.estimatedSize / 1024 / 1024).toFixed(0).padStart(5)} MB              ║`,
+      `║   ${d?.name.padEnd(25)} ${(d?.estimatedSize / 1024 / 1024).toFixed(0).padStart(5)} MB              ║`,
   )
   .join("\n")}
-║   Total Heavy Deps:     ${(depsAnalysis.totalEstimated / 1024 / 1024).toFixed(0).padStart(10)} MB                    ║
+║   Total Heavy Deps:     ${(depsAnalysis?.totalEstimated / 1024 / 1024).toFixed(0).padStart(10)} MB                    ║
 ╚══════════════════════════════════════════════════════════════════╝
 `;
   }
 }
 
 // Singleton instance
-export const subatomicCore = new SubatomicCore();
+export const _subatomicCore = new SubatomicCore();
 
 // Express middleware for subatomic compression
 export function subatomicMiddleware() {
@@ -496,29 +496,29 @@ export function subatomicMiddleware() {
     next: Record<string, unknown>,
   ) => {
     // Check if client accepts brotli
-    const acceptEncoding = req.headers["accept-encoding"] || "";
+    const _acceptEncoding = req?.headers["accept-encoding"] || "";
 
     // Store original send
-    const originalSend = res.send.bind(res);
+    const _originalSend = res?.send.bind(res);
 
     res.send = async function (body: Record<string, unknown>) {
-      if (typeof body === "string" || Buffer.isBuffer(body)) {
-        const input = typeof body === "string" ? Buffer.from(body) : body;
+      if (typeof body === "string" || Buffer?.isBuffer(body)) {
+        const _input = typeof body === "string" ? Buffer?.from(body) : body;
 
         // Only compress if large enough
-        if (input.length > SUBATOMIC_THRESHOLDS.ELECTRON) {
-          const result = await subatomicCore.compress(input);
+        if (input?.length > SUBATOMIC_THRESHOLDS?.ELECTRON) {
+          const _result = await subatomicCore?.compress(input);
 
-          if (result.ratio < 0.9) {
+          if (result?.ratio < 0.9) {
             // Only if we saved >10%
-            res.setHeader(
+            res?.setHeader(
               "Content-Encoding",
-              acceptEncoding.includes("br") ? "br" : "gzip",
+              acceptEncoding?.includes("br") ? "br" : "gzip",
             );
-            res.setHeader("X-Subatomic-Ratio", result.ratio.toFixed(3));
-            res.setHeader("X-Original-Size", result.original);
+            res?.setHeader("X-Subatomic-Ratio", result?.ratio.toFixed(3));
+            res?.setHeader("X-Original-Size", result?.original);
             return originalSend(
-              subatomicCore["compressionCache"].get(result.hash),
+              subatomicCore["compressionCache"].get(result?.hash),
             );
           }
         }
@@ -537,8 +537,8 @@ export function createLazyLoader<T>(
   importFn: () => Promise<T>,
   dependencies: string[] = [],
 ): () => Promise<T> {
-  subatomicCore.registerModule(id, name, importFn, dependencies);
-  return () => subatomicCore.loadModule<T>(id);
+  subatomicCore?.registerModule(id, name, importFn, dependencies);
+  return () => subatomicCore?.loadModule<T>(id);
 }
 
 export default subatomicCore;

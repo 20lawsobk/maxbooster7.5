@@ -28,14 +28,14 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: true,
     category: "critical",
     description: "PostgreSQL database connection string",
-    validator: (v) => v.startsWith("postgres"),
+    validator: (v) => v?.startsWith("postgres"),
   },
   {
     name: "SESSION_SECRET",
     required: false, // Generated if missing
     category: "critical",
     description: "Session encryption secret",
-    validator: (v) => v.length >= 32,
+    validator: (v) => v?.length >= 32,
   },
 
   // Payment - Required for accepting money
@@ -44,21 +44,21 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: true,
     category: "payment",
     description: "Stripe secret API key",
-    validator: (v) => v.startsWith("sk_"),
+    validator: (v) => v?.startsWith("sk_"),
   },
   {
     name: "STRIPE_PUBLISHABLE_KEY",
     required: true,
     category: "payment",
     description: "Stripe publishable API key",
-    validator: (v) => v.startsWith("pk_"),
+    validator: (v) => v?.startsWith("pk_"),
   },
   {
     name: "STRIPE_WEBHOOK_SECRET",
     required: true,
     category: "payment",
     description: "Stripe webhook signing secret",
-    validator: (v) => v.startsWith("whsec_"),
+    validator: (v) => v?.startsWith("whsec_"),
   },
 
   // Email - Required for user communication
@@ -67,7 +67,7 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: true,
     category: "email",
     description: "SendGrid API key for email delivery",
-    validator: (v) => v.startsWith("SG."),
+    validator: (v) => v?.startsWith("SG."),
   },
 
   // Monitoring - Required for production observability
@@ -76,7 +76,7 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     required: false,
     category: "monitoring",
     description: "Sentry DSN for error tracking",
-    validator: (v) => v.includes("sentry.io"),
+    validator: (v) => v?.includes("sentry.io"),
   },
 
   // BoosterState - Custom in-memory store (replaces Redis)
@@ -209,62 +209,62 @@ export function validateEnvironment(
   let missing = 0;
   let invalid = 0;
 
-  logger.info("════════════════════════════════════════════════════════");
-  logger.info("🔐 ENVIRONMENT VALIDATION");
-  logger.info("════════════════════════════════════════════════════════");
+  logger?.info("════════════════════════════════════════════════════════");
+  logger?.info("🔐 ENVIRONMENT VALIDATION");
+  logger?.info("════════════════════════════════════════════════════════");
 
   for (const req of ENV_REQUIREMENTS) {
-    const value = process.env[req.name];
+    const _value = process?.env[req?.name];
 
     if (!value) {
-      if (req.required) {
-        errors.push(`MISSING: ${req.name} - ${req.description}`);
+      if (req?.required) {
+        errors?.push(`MISSING: ${req?.name} - ${req?.description}`);
         missing++;
-        logger.warn(`   ✗ ${req.name} - MISSING (required)`);
+        logger?.warn(`   ✗ ${req?.name} - MISSING (required)`);
       } else {
-        warnings.push(`Optional: ${req.name} not set - ${req.description}`);
-        logger.warn(`   ⚠ ${req.name} - not set (optional)`);
+        warnings?.push(`Optional: ${req?.name} not set - ${req?.description}`);
+        logger?.warn(`   ⚠ ${req?.name} - not set (optional)`);
       }
       continue;
     }
 
-    if (req.validator && !req.validator(value)) {
-      if (req.required) {
-        errors.push(
-          `INVALID: ${req.name} - ${req.description} (validation failed)`,
+    if (req?.validator && !req?.validator(value)) {
+      if (req?.required) {
+        errors?.push(
+          `INVALID: ${req?.name} - ${req?.description} (validation failed)`,
         );
         invalid++;
-        logger.warn(`   ✗ ${req.name} - INVALID format`);
+        logger?.warn(`   ✗ ${req?.name} - INVALID format`);
       } else {
-        warnings.push(`Invalid format: ${req.name} - ${req.description}`);
-        logger.warn(`   ⚠ ${req.name} - invalid format`);
+        warnings?.push(`Invalid format: ${req?.name} - ${req?.description}`);
+        logger?.warn(`   ⚠ ${req?.name} - invalid format`);
       }
       continue;
     }
 
     valid++;
-    logger.info(`   ✓ ${req.name}`);
+    logger?.info(`   ✓ ${req?.name}`);
   }
 
-  const isValid = errors.length === 0;
+  const _isValid = errors?.length === 0;
 
-  logger.info("────────────────────────────────────────────────────────");
-  logger.info(`   Valid: ${valid} | Missing: ${missing} | Invalid: ${invalid}`);
+  logger?.info("────────────────────────────────────────────────────────");
+  logger?.info(`   Valid: ${valid} | Missing: ${missing} | Invalid: ${invalid}`);
 
   if (isValid) {
-    logger.info("   ✅ Environment validation PASSED");
+    logger?.info("   ✅ Environment validation PASSED");
   } else {
-    logger.warn("   ❌ Environment validation FAILED");
-    logger.warn("");
-    logger.warn("   Critical errors:");
-    errors.forEach((e) => logger.warn(`     - ${e}`));
+    logger?.warn("   ❌ Environment validation FAILED");
+    logger?.warn("");
+    logger?.warn("   Critical errors:");
+    errors?.forEach((e) => logger?.warn(`     - ${e}`));
   }
 
-  logger.info("════════════════════════════════════════════════════════");
+  logger?.info("════════════════════════════════════════════════════════");
 
   if (!isValid && strictMode) {
     throw new Error(
-      `Environment validation failed. Missing/invalid required variables:\n${errors.join("\n")}`,
+      `Environment validation failed. Missing/invalid required variables:\n${errors?.join("\n")}`,
     );
   }
 
@@ -273,7 +273,7 @@ export function validateEnvironment(
     errors,
     warnings,
     summary: {
-      total: ENV_REQUIREMENTS.length,
+      total: ENV_REQUIREMENTS?.length,
       valid,
       missing,
       invalid,
@@ -285,7 +285,7 @@ export function validateEnvironment(
  * Quick check for a specific env var
  */
 export function requireEnv(name: string): string {
-  const value = process.env[name];
+  const _value = process?.env[name];
   if (!value) {
     throw new Error(`Required environment variable ${name} is not set`);
   }
@@ -296,5 +296,5 @@ export function requireEnv(name: string): string {
  * Get env var with fallback
  */
 export function getEnv(name: string, fallback: string): string {
-  return process.env[name] || fallback;
+  return process?.env[name] || fallback;
 }

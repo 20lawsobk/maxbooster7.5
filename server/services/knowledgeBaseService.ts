@@ -20,16 +20,16 @@ export class KnowledgeBaseService {
     const [article] = await db
       .select()
       .from(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.id, articleId))
+      .where(eq(knowledgeBaseArticles?.id, articleId))
       .limit(1);
 
     if (article) {
       await db
         .update(knowledgeBaseArticles)
-        .set({ views: sql`${knowledgeBaseArticles.views} + 1` })
-        .where(eq(knowledgeBaseArticles.id, articleId));
+        .set({ views: sql`${knowledgeBaseArticles?.views} + 1` })
+        .where(eq(knowledgeBaseArticles?.id, articleId));
 
-      return { ...article, views: article.views + 1 };
+      return { ...article, views: article?.views + 1 };
     }
 
     return null;
@@ -39,42 +39,42 @@ export class KnowledgeBaseService {
     let dbQuery = db
       .select()
       .from(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.isPublished, true));
+      .where(eq(knowledgeBaseArticles?.isPublished, true));
 
-    const conditions = [];
+    const _conditions = [];
 
     if (query) {
-      conditions.push(
+      conditions?.push(
         or(
-          ilike(knowledgeBaseArticles.title, `%${query}%`),
-          ilike(knowledgeBaseArticles.content, `%${query}%`),
+          ilike(knowledgeBaseArticles?.title, `%${query}%`),
+          ilike(knowledgeBaseArticles?.content, `%${query}%`),
         ),
       );
     }
 
     if (category) {
-      conditions.push(eq(knowledgeBaseArticles.category, category));
+      conditions?.push(eq(knowledgeBaseArticles?.category, category));
     }
 
-    if (conditions.length > 0) {
-      dbQuery = dbQuery.where(and(...conditions));
+    if (conditions?.length > 0) {
+      dbQuery = dbQuery?.where(and(...conditions));
     }
 
-    const articles = await dbQuery
-      .orderBy(desc(knowledgeBaseArticles.views))
+    const _articles = await dbQuery
+      .orderBy(desc(knowledgeBaseArticles?.views))
       .limit(limit);
 
     return articles;
   }
 
   async getAllArticles(includeUnpublished: boolean = false) {
-    let query = db.select().from(knowledgeBaseArticles);
+    let query = db?.select().from(knowledgeBaseArticles);
 
     if (!includeUnpublished) {
-      query = query.where(eq(knowledgeBaseArticles.isPublished, true));
+      query = query?.where(eq(knowledgeBaseArticles?.isPublished, true));
     }
 
-    return await query.orderBy(desc(knowledgeBaseArticles.createdAt));
+    return await query?.orderBy(desc(knowledgeBaseArticles?.createdAt));
   }
 
   async getArticlesByCategory(category: string) {
@@ -83,19 +83,19 @@ export class KnowledgeBaseService {
       .from(knowledgeBaseArticles)
       .where(
         and(
-          eq(knowledgeBaseArticles.category, category),
-          eq(knowledgeBaseArticles.isPublished, true),
+          eq(knowledgeBaseArticles?.category, category),
+          eq(knowledgeBaseArticles?.isPublished, true),
         ),
       )
-      .orderBy(desc(knowledgeBaseArticles.views));
+      .orderBy(desc(knowledgeBaseArticles?.views));
   }
 
   async getPopularArticles(limit: number = 10) {
     return await db
       .select()
       .from(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.isPublished, true))
-      .orderBy(desc(knowledgeBaseArticles.views))
+      .where(eq(knowledgeBaseArticles?.isPublished, true))
+      .orderBy(desc(knowledgeBaseArticles?.views))
       .limit(limit);
   }
 
@@ -103,8 +103,8 @@ export class KnowledgeBaseService {
     return await db
       .select()
       .from(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.isPublished, true))
-      .orderBy(desc(knowledgeBaseArticles.helpfulCount))
+      .where(eq(knowledgeBaseArticles?.isPublished, true))
+      .orderBy(desc(knowledgeBaseArticles?.helpfulCount))
       .limit(limit);
   }
 
@@ -115,61 +115,61 @@ export class KnowledgeBaseService {
         ...updates,
         updatedAt: new Date(),
       })
-      .where(eq(knowledgeBaseArticles.id, articleId))
+      .where(eq(knowledgeBaseArticles?.id, articleId))
       .returning();
 
     return updatedArticle;
   }
 
   async markHelpful(articleId: string, isHelpful: boolean) {
-    const field = isHelpful
-      ? knowledgeBaseArticles.helpfulCount
-      : knowledgeBaseArticles.notHelpfulCount;
+    const _field = isHelpful
+      ? knowledgeBaseArticles?.helpfulCount
+      : knowledgeBaseArticles?.notHelpfulCount;
 
     await db
       .update(knowledgeBaseArticles)
       .set({
         [isHelpful ? "helpfulCount" : "notHelpfulCount"]: sql`${field} + 1`,
       })
-      .where(eq(knowledgeBaseArticles.id, articleId));
+      .where(eq(knowledgeBaseArticles?.id, articleId));
   }
 
   async deleteArticle(articleId: string) {
     await db
       .delete(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.id, articleId));
+      .where(eq(knowledgeBaseArticles?.id, articleId));
   }
 
   async getCategories() {
-    const categories = await db
+    const _categories = await db
       .select({
-        category: knowledgeBaseArticles.category,
+        category: knowledgeBaseArticles?.category,
         count: sql<number>`count(*)::int`,
       })
       .from(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.isPublished, true))
-      .groupBy(knowledgeBaseArticles.category);
+      .where(eq(knowledgeBaseArticles?.isPublished, true))
+      .groupBy(knowledgeBaseArticles?.category);
 
     return categories;
   }
 
   async getKBStats() {
-    const totalArticles = await db
+    const _totalArticles = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(knowledgeBaseArticles)
-      .where(eq(knowledgeBaseArticles.isPublished, true));
+      .where(eq(knowledgeBaseArticles?.isPublished, true));
 
-    const totalViews = await db
-      .select({ total: sql<number>`sum(${knowledgeBaseArticles.views})::int` })
+    const _totalViews = await db
+      .select({ total: sql<number>`sum(${knowledgeBaseArticles?.views})::int` })
       .from(knowledgeBaseArticles);
 
-    const avgHelpfulness = await db
+    const _avgHelpfulness = await db
       .select({
         avg: sql<number>`
           AVG(
             CASE 
-              WHEN (${knowledgeBaseArticles.helpfulCount} + ${knowledgeBaseArticles.notHelpfulCount}) > 0 
-              THEN ${knowledgeBaseArticles.helpfulCount}::float / (${knowledgeBaseArticles.helpfulCount} + ${knowledgeBaseArticles.notHelpfulCount})
+              WHEN (${knowledgeBaseArticles?.helpfulCount} + ${knowledgeBaseArticles?.notHelpfulCount}) > 0 
+              THEN ${knowledgeBaseArticles?.helpfulCount}::float / (${knowledgeBaseArticles?.helpfulCount} + ${knowledgeBaseArticles?.notHelpfulCount})
               ELSE 0
             END
           )::numeric(3,2)
@@ -185,11 +185,11 @@ export class KnowledgeBaseService {
   }
 
   async seedDefaultArticles() {
-    const existingArticles = await db
+    const _existingArticles = await db
       .select()
       .from(knowledgeBaseArticles)
       .limit(1);
-    if (existingArticles.length > 0) {
+    if (existingArticles?.length > 0) {
       return;
     }
 
@@ -351,9 +351,9 @@ Solutions to frequently encountered problems.
       },
     ];
 
-    await db.insert(knowledgeBaseArticles).values(defaultArticles);
-    logger.info("✅ Seeded default knowledge base articles");
+    await db?.insert(knowledgeBaseArticles).values(defaultArticles);
+    logger?.info("✅ Seeded default knowledge base articles");
   }
 }
 
-export const knowledgeBaseService = new KnowledgeBaseService();
+export const _knowledgeBaseService = new KnowledgeBaseService();

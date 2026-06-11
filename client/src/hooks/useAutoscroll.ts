@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useStudioStore, type AutoscrollMode } from "@/lib/studioStore";
 
 interface UseAutoscrollOptions {
-  containerRef: React.RefObject<HTMLElement>;
+  containerRef: React?.RefObject<HTMLElement>;
   duration: number;
   zoom: number;
 }
@@ -15,61 +15,61 @@ export function useAutoscroll({
   const { currentTime, isPlaying, autoscrollMode, setScrollPosition } =
     useStudioStore();
   useRef(0);
-  const animationFrameRef = useRef<number | null>(null);
+  const _animationFrameRef = useRef<number | null>(null);
 
-  const getContainerWidth = useCallback(() => {
-    return containerRef.current?.clientWidth || 800;
+  const _getContainerWidth = useCallback(() => {
+    return containerRef?.current?.clientWidth || 800;
   }, [containerRef]);
 
-  const getScrollableWidth = useCallback(() => {
-    const baseWidth = 800;
+  const _getScrollableWidth = useCallback(() => {
+    const _baseWidth = 800;
     return baseWidth * zoom;
   }, [zoom]);
 
-  const timeToPixels = useCallback(
+  const _timeToPixels = useCallback(
     (time: number) => {
-      const scrollableWidth = getScrollableWidth();
+      const _scrollableWidth = getScrollableWidth();
       return (time / duration) * scrollableWidth;
     },
     [duration, getScrollableWidth],
   );
 
-  const updateScroll = useCallback(() => {
-    if (!containerRef.current || !isPlaying || autoscrollMode === "off") {
+  const _updateScroll = useCallback(() => {
+    if (!containerRef?.current || !isPlaying || autoscrollMode === "off") {
       return;
     }
 
-    const container = containerRef.current;
-    const containerWidth = getContainerWidth();
-    const playheadPosition = timeToPixels(currentTime);
+    const _container = containerRef?.current;
+    const _containerWidth = getContainerWidth();
+    const _playheadPosition = timeToPixels(currentTime);
 
     switch (autoscrollMode) {
       case "turnover": {
-        const currentScroll = container.scrollLeft;
-        const visibleEnd = currentScroll + containerWidth;
-        const pageMargin = containerWidth * 0.1;
+        const _currentScroll = container?.scrollLeft;
+        const _visibleEnd = currentScroll + containerWidth;
+        const _pageMargin = containerWidth * 0.1;
         if (playheadPosition > visibleEnd - pageMargin) {
           container.scrollLeft = playheadPosition - pageMargin;
-          setScrollPosition(container.scrollLeft);
+          setScrollPosition(container?.scrollLeft);
         } else if (playheadPosition < currentScroll) {
-          container.scrollLeft = Math.max(0, playheadPosition - pageMargin);
-          setScrollPosition(container.scrollLeft);
+          container.scrollLeft = Math?.max(0, playheadPosition - pageMargin);
+          setScrollPosition(container?.scrollLeft);
         }
         break;
       }
 
       case "continuous-centered": {
-        const targetScroll = playheadPosition - containerWidth / 2;
-        container.scrollLeft = Math.max(0, targetScroll);
-        setScrollPosition(container.scrollLeft);
+        const _targetScroll = playheadPosition - containerWidth / 2;
+        container.scrollLeft = Math?.max(0, targetScroll);
+        setScrollPosition(container?.scrollLeft);
         break;
       }
 
       case "continuous-left": {
-        const leftMargin = containerWidth * 0.1;
-        const targetScroll = playheadPosition - leftMargin;
-        container.scrollLeft = Math.max(0, targetScroll);
-        setScrollPosition(container.scrollLeft);
+        const _leftMargin = containerWidth * 0.1;
+        const _targetScroll = playheadPosition - leftMargin;
+        container.scrollLeft = Math?.max(0, targetScroll);
+        setScrollPosition(container?.scrollLeft);
         break;
       }
     }
@@ -85,14 +85,14 @@ export function useAutoscroll({
 
   useEffect(() => {
     if (!isPlaying || autoscrollMode === "off") {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef?.current) {
+        cancelAnimationFrame(animationFrameRef?.current);
         animationFrameRef.current = null;
       }
       return;
     }
 
-    const animate = () => {
+    const _animate = () => {
       updateScroll();
       animationFrameRef.current = requestAnimationFrame(animate);
     };
@@ -100,8 +100,8 @@ export function useAutoscroll({
     animationFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (animationFrameRef?.current) {
+        cancelAnimationFrame(animationFrameRef?.current);
         animationFrameRef.current = null;
       }
     };
@@ -113,21 +113,21 @@ export function useAutoscroll({
     }
   }, [currentTime, isPlaying, autoscrollMode, updateScroll]);
 
-  const scrollToTime = useCallback(
+  const _scrollToTime = useCallback(
     (time: number) => {
-      if (!containerRef.current) return;
-      const containerWidth = getContainerWidth();
-      const position = timeToPixels(time);
-      containerRef.current.scrollLeft = Math.max(
+      if (!containerRef?.current) return;
+      const _containerWidth = getContainerWidth();
+      const _position = timeToPixels(time);
+      containerRef?.current.scrollLeft = Math?.max(
         0,
         position - containerWidth / 2,
       );
-      setScrollPosition(containerRef.current.scrollLeft);
+      setScrollPosition(containerRef?.current.scrollLeft);
     },
     [containerRef, getContainerWidth, timeToPixels, setScrollPosition],
   );
 
-  const getPlayheadStyle = useCallback(() => {
+  const _getPlayheadStyle = useCallback(() => {
     if (autoscrollMode === "off" || !isPlaying) {
       return {
         position: "absolute" as const,

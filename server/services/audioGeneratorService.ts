@@ -17,19 +17,19 @@ import path from "path";
 import os from "os";
 import { logger } from "../logger.js";
 
-const execFileAsync = promisify(execFile);
+const _execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
-  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
+  if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
   try {
-    const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
+    const _p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
       .trim();
     if (p) return p;
   } catch {
     /* intentional: shell which-lookup fails → falls through to hardcoded candidates */
   }
-  const candidates = [
+  const _candidates = [
     "/run/current-system/sw/bin/ffmpeg",
     "/usr/bin/ffmpeg",
     "/usr/local/bin/ffmpeg",
@@ -41,8 +41,8 @@ function resolveFFmpegPath(): string {
   return "ffmpeg";
 }
 
-const FFMPEG = resolveFFmpegPath();
-const AUDIO_DIR = path.join(process.cwd(), "uploads", "audio");
+const _FFMPEG = resolveFFmpegPath();
+const _AUDIO_DIR = path?.join(process?.cwd(), "uploads", "audio");
 
 interface AudioProfile {
   bass: string;
@@ -118,17 +118,17 @@ async function tryGenerateTTS(
   text: string,
   maxDur: number,
 ): Promise<string | null> {
-  const outPath = path.join(
-    os.tmpdir(),
+  const _outPath = path?.join(
+    os?.tmpdir(),
     `tts_${randomBytes(4).toString("hex")}.wav`,
   );
-  const clean = text
+  const _clean = text
     .replace(/['"\\]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .slice(0, 500);
 
-  const espeakArgs = [
+  const _espeakArgs = [
     "-v",
     "en",
     "-s",
@@ -151,7 +151,7 @@ async function tryGenerateTTS(
           .then(() => true)
           .catch(() => false)
       ) {
-        logger.info(`[AudioGen] TTS via ${bin} — ${clean.length} chars`);
+        logger?.info(`[AudioGen] TTS via ${bin} — ${clean?.length} chars`);
         return outPath;
       }
     } catch {
@@ -159,7 +159,7 @@ async function tryGenerateTTS(
     }
   }
 
-  const fliteText = clean.slice(0, 200).replace(/'/g, "");
+  const _fliteText = clean?.slice(0, 200).replace(/'/g, "");
   try {
     await execFileAsync(
       FFMPEG,
@@ -185,40 +185,40 @@ async function tryGenerateTTS(
         .then(() => true)
         .catch(() => false)
     ) {
-      logger.info("[AudioGen] TTS via FFmpeg flite");
+      logger?.info("[AudioGen] TTS via FFmpeg flite");
       return outPath;
     }
   } catch {
     /* intentional: flite TTS attempt failed → caller logs warning and returns null */
   }
 
-  logger.warn("[AudioGen] All TTS engines unavailable — music-bed only");
+  logger?.warn("[AudioGen] All TTS engines unavailable — music-bed only");
   return null;
 }
 
 export async function generateAudio(
   opts: AudioGenOptions = {},
 ): Promise<AudioGenResult> {
-  await fsPromises.mkdir(AUDIO_DIR, { recursive: true });
+  await fsPromises?.mkdir(AUDIO_DIR, { recursive: true });
 
-  const genre = (opts.genre || "default").toLowerCase().replace(/[\s/]/g, "-");
-  const profile = AUDIO_PROFILES[genre] || AUDIO_PROFILES["default"];
-  const duration = Math.min(Math.max(opts.duration ?? 30, 5), 120);
+  const _genre = (opts?.genre || "default").toLowerCase().replace(/[\s/]/g, "-");
+  const _profile = AUDIO_PROFILES[genre] || AUDIO_PROFILES["default"];
+  const _duration = Math?.min(Math?.max(opts?.duration ?? 30, 5), 120);
 
-  const filename = `audio_${randomBytes(6).toString("hex")}.mp3`;
-  const outputPath = path.join(AUDIO_DIR, filename);
+  const _filename = `audio_${randomBytes(6).toString("hex")}.mp3`;
+  const _outputPath = path?.join(AUDIO_DIR, filename);
 
-  const src1 = `aevalsrc=${profile.bass}|${profile.bass}:sample_rate=44100:channel_layout=stereo`;
-  const src2 = `aevalsrc=${profile.beat}|${profile.beat}:sample_rate=44100:channel_layout=stereo`;
-  const src3 = `aevalsrc=${profile.pad}|${profile.pad}:sample_rate=44100:channel_layout=stereo`;
+  const _src1 = `aevalsrc=${profile?.bass}|${profile?.bass}:sample_rate=44100:channel_layout=stereo`;
+  const _src2 = `aevalsrc=${profile?.beat}|${profile?.beat}:sample_rate=44100:channel_layout=stereo`;
+  const _src3 = `aevalsrc=${profile?.pad}|${profile?.pad}:sample_rate=44100:channel_layout=stereo`;
 
-  const fadeDur = Math.min(1.5, duration * 0.08).toFixed(2);
-  const fadeOut = Math.max(0, duration - parseFloat(fadeDur)).toFixed(2);
+  const _fadeDur = Math?.min(1.5, duration * 0.08).toFixed(2);
+  const _fadeOut = Math?.max(0, duration - parseFloat(fadeDur)).toFixed(2);
 
-  const ttsText = [opts.text, opts.topic, opts.artistName]
+  const _ttsText = [opts?.text, opts?.topic, opts?.artistName]
     .filter(Boolean)
     .join(". ");
-  const voPath = ttsText ? await tryGenerateTTS(ttsText, duration) : null;
+  const _voPath = ttsText ? await tryGenerateTTS(ttsText, duration) : null;
 
   const inputs: string[] = [
     "-f",
@@ -234,10 +234,10 @@ export async function generateAudio(
     "-i",
     src3,
   ];
-  if (voPath) inputs.push("-i", voPath);
+  if (voPath) inputs?.push("-i", voPath);
 
-  const buildFilter = (withVoice: boolean): string => {
-    const bed = [
+  const _buildFilter = (withVoice: boolean): string => {
+    const _bed = [
       `[0:a][1:a][2:a]amix=inputs=3:normalize=0:weights=1.2 0.9 0.5[bed]`,
       `[bed]volume=0.9,afade=t=in:st=0:d=${fadeDur},afade=t=out:st=${fadeOut}:d=${fadeDur}[bedq]`,
     ];
@@ -251,7 +251,7 @@ export async function generateAudio(
     return [...bed, `[bedq]volume=1.0[afinal]`].join(";");
   };
 
-  const build = (withVoice: boolean) => [
+  const _build = (withVoice: boolean) => [
     "-y",
     ...inputs,
     "-filter_complex",
@@ -271,11 +271,11 @@ export async function generateAudio(
     await execFileAsync(FFMPEG, build(!!voPath), { timeout: 60_000 });
   } catch (err) {
     if (voPath) {
-      logger.warn(
+      logger?.warn(
         "[AudioGen] First attempt failed (possibly bad TTS file), retrying music-bed only",
       );
       try {
-        await fsPromises.unlink(voPath);
+        await fsPromises?.unlink(voPath);
       } catch {
         /* intentional: temp voiceover cleanup */
       }
@@ -287,7 +287,7 @@ export async function generateAudio(
 
   if (voPath) {
     try {
-      await fsPromises.unlink(voPath);
+      await fsPromises?.unlink(voPath);
     } catch {
       /* intentional: temp voiceover cleanup */
     }
@@ -302,7 +302,7 @@ export async function generateAudio(
     return { success: false, error: "FFmpeg produced no output file" };
   }
 
-  logger.info(
+  logger?.info(
     `[AudioGen] ✅ ${filename} — ${genre} | ${duration}s | TTS: ${!!voPath}`,
   );
   return {

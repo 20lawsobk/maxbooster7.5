@@ -149,8 +149,8 @@ interface WindowedEvent {
   metadata?: Record<string, unknown>;
 }
 
-const EVENT_WINDOW_MS = 10 * 60_000; // 10 minutes
-const MAX_WINDOW_SIZE = 2000;
+const _EVENT_WINDOW_MS = 10 * 60_000; // 10 minutes
+const _MAX_WINDOW_SIZE = 2000;
 
 // ─── Signals extracted from the window ───────────────────────────────────────
 
@@ -194,7 +194,7 @@ interface InferenceRule {
 interface SecurityRule {
   id: SecurityIntent;
   name: string;
-  threatTypes: string[]; // ThreatAssessment.threatType values that match
+  threatTypes: string[]; // ThreatAssessment?.threatType values that match
   indicators: RegExp[]; // Indicator patterns that match
   explain(
     indicators: string[],
@@ -211,22 +211,22 @@ const INFERENCE_RULES: InferenceRule[] = [
     id: "pdim_cold_start",
     name: "PDIM Cold-Start Cascade",
     matches: (s) =>
-      s.pdim5xxCount > 0 && !s.pdimHadFirstSuccess && s.uptimeMs < 120_000,
+      s?.pdim5xxCount > 0 && !s?.pdimHadFirstSuccess && s?.uptimeMs < 120_000,
     confidence: (s) => {
       let c = 0.7;
-      if (s.uptimeMs < 60_000) c += 0.15;
-      if (!s.pdimCircuitOpen) c += 0.1; // slow-lane, not open = expected
-      if (s.seedingFailCount > 0) c += 0.05;
-      return Math.min(c, 0.97);
+      if (s?.uptimeMs < 60_000) c += 0.15;
+      if (!s?.pdimCircuitOpen) c += 0.1; // slow-lane, not open = expected
+      if (s?.seedingFailCount > 0) c += 0.05;
+      return Math?.min(c, 0.97);
     },
     explain: (s) => ({
       what: "PDIM (the key-value store) is still waking up after restart.",
-      why: `Replit's autoscale environment spins PDIM down between sessions. The first ${s.pdim5xxCount} request(s) failed with HTTP 5xx while PDIM initialises — this is fully expected behaviour during the startup grace window (first 120 seconds).`,
-      impact: `BullMQ job processing is delayed; AI genre-profile seeding is deferred (${s.seedingFailCount} keys); LuaExecutor${s.luaSaturationCount > 0 ? ` is queued (max ${s.luaMaxQueued} waiting)` : " is operating normally"}.`,
+      why: `Replit's autoscale environment spins PDIM down between sessions. The first ${s?.pdim5xxCount} request(s) failed with HTTP 5xx while PDIM initialises — this is fully expected behaviour during the startup grace window (first 120 seconds).`,
+      impact: `BullMQ job processing is delayed; AI genre-profile seeding is deferred (${s?.seedingFailCount} keys); LuaExecutor${s?.luaSaturationCount > 0 ? ` is queued (max ${s?.luaMaxQueued} waiting)` : " is operating normally"}.`,
       severity: "negligible",
       expectedResolution:
         "PDIM will complete initialisation within 3–8 minutes of the first request. The circuit-breaker slow-lane absorbs failures silently. All queued operations will resume automatically.",
-      estimatedResolutionMs: Math.max(0, 480_000 - s.uptimeMs),
+      estimatedResolutionMs: Math?.max(0, 480_000 - s?.uptimeMs),
       recommendedActions: [
         {
           priority: "low",
@@ -237,13 +237,13 @@ const INFERENCE_RULES: InferenceRule[] = [
         },
       ],
       correlatedSignals: [
-        `${s.pdim5xxCount} PDIM HTTP 5xx in window`,
-        `Uptime: ${Math.round(s.uptimeMs / 1000)}s (within startup grace)`,
-        ...(s.seedingFailCount > 0
-          ? [`${s.seedingFailCount} seeding deferrals`]
+        `${s?.pdim5xxCount} PDIM HTTP 5xx in window`,
+        `Uptime: ${Math?.round(s?.uptimeMs / 1000)}s (within startup grace)`,
+        ...(s?.seedingFailCount > 0
+          ? [`${s?.seedingFailCount} seeding deferrals`]
           : []),
-        ...(s.luaSaturationCount > 0
-          ? [`LuaExecutor saturation ×${s.luaSaturationCount}`]
+        ...(s?.luaSaturationCount > 0
+          ? [`LuaExecutor saturation ×${s?.luaSaturationCount}`]
           : []),
       ],
       isRoutineNoise: true,
@@ -256,25 +256,25 @@ const INFERENCE_RULES: InferenceRule[] = [
     id: "pdim_throttle_cascade",
     name: "PDIM Slow-Lane Pressure",
     matches: (s) =>
-      s.pdim5xxCount > 0 &&
-      !s.pdimCircuitOpen &&
-      s.uptimeMs >= 120_000 &&
-      s.uptimeMs < 780_000,
+      s?.pdim5xxCount > 0 &&
+      !s?.pdimCircuitOpen &&
+      s?.uptimeMs >= 120_000 &&
+      s?.uptimeMs < 780_000,
     confidence: (s) => {
       let c = 0.65;
-      if (s.luaSaturationCount > 0) c += 0.15;
-      if (s.seedingFailCount > 0) c += 0.1;
-      if (s.uptimeMs < 480_000) c += 0.05;
-      return Math.min(c, 0.92);
+      if (s?.luaSaturationCount > 0) c += 0.15;
+      if (s?.seedingFailCount > 0) c += 0.1;
+      if (s?.uptimeMs < 480_000) c += 0.05;
+      return Math?.min(c, 0.92);
     },
     explain: (s) => ({
       what: "Multiple services are contending for PDIM connections during the slow-lane phase.",
-      why: `After the startup grace window, the circuit breaker entered slow-lane mode — it tolerates up to 800 failures over 11 minutes while PDIM finishes waking up. ${s.pdim5xxCount} failure(s) have been absorbed. BullMQ, HyperLearning, and AIService seeding are all issuing concurrent PDIM requests, creating a throttle cascade.`,
-      impact: `Elevated PDIM error rate without circuit opening; ${s.luaSaturationCount > 0 ? "LuaExecutor slot contention" : "normal LuaExecutor operation"}; ${s.seedingFailCount > 0 ? "seeding retries scheduled" : "seeding completed or skipped"}.`,
+      why: `After the startup grace window, the circuit breaker entered slow-lane mode — it tolerates up to 800 failures over 11 minutes while PDIM finishes waking up. ${s?.pdim5xxCount} failure(s) have been absorbed. BullMQ, HyperLearning, and AIService seeding are all issuing concurrent PDIM requests, creating a throttle cascade.`,
+      impact: `Elevated PDIM error rate without circuit opening; ${s?.luaSaturationCount > 0 ? "LuaExecutor slot contention" : "normal LuaExecutor operation"}; ${s?.seedingFailCount > 0 ? "seeding retries scheduled" : "seeding completed or skipped"}.`,
       severity: "low",
       expectedResolution:
         'Will fully resolve when PDIM\'s first successful response triggers the "warm" transition. Typically 3–6 minutes after the grace window ends.',
-      estimatedResolutionMs: Math.max(0, 780_000 - s.uptimeMs),
+      estimatedResolutionMs: Math?.max(0, 780_000 - s?.uptimeMs),
       recommendedActions: [
         {
           priority: "low",
@@ -285,16 +285,16 @@ const INFERENCE_RULES: InferenceRule[] = [
         },
       ],
       correlatedSignals: [
-        `${s.pdim5xxCount} PDIM 5xx absorbed by slow-lane`,
-        `Uptime: ${Math.round(s.uptimeMs / 1000)}s (slow-lane window)`,
-        ...(s.luaSaturationCount > 0
+        `${s?.pdim5xxCount} PDIM 5xx absorbed by slow-lane`,
+        `Uptime: ${Math?.round(s?.uptimeMs / 1000)}s (slow-lane window)`,
+        ...(s?.luaSaturationCount > 0
           ? [
-              `LuaExecutor saturation ×${s.luaSaturationCount} (max queue: ${s.luaMaxQueued})`,
+              `LuaExecutor saturation ×${s?.luaSaturationCount} (max queue: ${s?.luaMaxQueued})`,
             ]
           : []),
-        ...(s.chainFixerFires > 0
+        ...(s?.chainFixerFires > 0
           ? [
-              `ChainFixer fired ×${s.chainFixerFires}: ${s.chainFixerPatterns.join(", ")}`,
+              `ChainFixer fired ×${s?.chainFixerFires}: ${s?.chainFixerPatterns.join(", ")}`,
             ]
           : []),
       ],
@@ -308,17 +308,17 @@ const INFERENCE_RULES: InferenceRule[] = [
     id: "pdim_genuine_outage",
     name: "PDIM Genuine Outage",
     matches: (s) =>
-      s.pdim5xxCount > 5 && s.pdimCircuitOpen && s.uptimeMs > 600_000,
+      s?.pdim5xxCount > 5 && s?.pdimCircuitOpen && s?.uptimeMs > 600_000,
     confidence: (s) => {
       let c = 0.6;
-      if (s.uptimeMs > 900_000) c += 0.15; // well past warm-up
-      if (s.pdim5xxCount > 20) c += 0.1;
-      if (s.incidentCount > 0) c += 0.1;
-      return Math.min(c, 0.88);
+      if (s?.uptimeMs > 900_000) c += 0.15; // well past warm-up
+      if (s?.pdim5xxCount > 20) c += 0.1;
+      if (s?.incidentCount > 0) c += 0.1;
+      return Math?.min(c, 0.88);
     },
     explain: (s) => ({
       what: "PDIM is experiencing an unexpected outage after successful warm-up.",
-      why: `The circuit breaker opened after ${s.pdim5xxCount} consecutive failures, well past the expected cold-start window. This indicates PDIM (pocketdimensionstorage.replit.app) is either down, restarting, or has encountered an internal error.`,
+      why: `The circuit breaker opened after ${s?.pdim5xxCount} consecutive failures, well past the expected cold-start window. This indicates PDIM (pocketdimensionstorage?.replit.app) is either down, restarting, or has encountered an internal error.`,
       impact:
         "All BullMQ job processing paused; real-time features relying on PDIM (WebSocket pub-sub, rate limiting, session store) are degraded. The system is operating in graceful-degradation mode.",
       severity: "high",
@@ -328,7 +328,7 @@ const INFERENCE_RULES: InferenceRule[] = [
       recommendedActions: [
         {
           priority: "high",
-          action: "Check pocketdimensionstorage.replit.app deployment status",
+          action: "Check pocketdimensionstorage?.replit.app deployment status",
           rationale:
             "PDIM is a separate Replit deployment; it may have been stopped, is restarting, or has an error.",
           automated: false,
@@ -342,11 +342,11 @@ const INFERENCE_RULES: InferenceRule[] = [
         },
       ],
       correlatedSignals: [
-        `Circuit OPEN (${s.pdim5xxCount} failures)`,
-        `Uptime: ${Math.round(s.uptimeMs / 1000)}s (post-warm-up outage)`,
-        ...(s.incidentCount > 0
+        `Circuit OPEN (${s?.pdim5xxCount} failures)`,
+        `Uptime: ${Math?.round(s?.uptimeMs / 1000)}s (post-warm-up outage)`,
+        ...(s?.incidentCount > 0
           ? [
-              `${s.incidentCount} open platform incident(s): ${s.incidentTitles.slice(0, 2).join(", ")}`,
+              `${s?.incidentCount} open platform incident(s): ${s?.incidentTitles.slice(0, 2).join(", ")}`,
             ]
           : []),
       ],
@@ -359,22 +359,22 @@ const INFERENCE_RULES: InferenceRule[] = [
   {
     id: "lua_executor_saturation",
     name: "LuaExecutor Saturation",
-    matches: (s) => s.luaSaturationCount > 0 && s.luaMaxQueued >= 3,
+    matches: (s) => s?.luaSaturationCount > 0 && s?.luaMaxQueued >= 3,
     confidence: (s) => {
       let c = 0.75;
-      if (s.pdim5xxCount > 0) c += 0.1; // common concurrent cause
-      if (s.luaMaxQueued >= 5) c += 0.1;
-      return Math.min(c, 0.92);
+      if (s?.pdim5xxCount > 0) c += 0.1; // common concurrent cause
+      if (s?.luaMaxQueued >= 5) c += 0.1;
+      return Math?.min(c, 0.92);
     },
     explain: (s) => ({
-      what: `LuaExecutor is congested — up to ${s.luaMaxQueued} operations queued behind 1 active slot.`,
+      what: `LuaExecutor is congested — up to ${s?.luaMaxQueued} operations queued behind 1 active slot.`,
       why: "BullMQ, HyperLearning, AIService seeding, and ChainFixer are all issuing concurrent PDIM commands. The single-slot LuaExecutor serialises them, creating a queue when PDIM responses are slow during cold-start.",
       impact:
         "BullMQ job polling is delayed; stale-job detection runs late; some lock timeouts may occur causing BullMQ to re-queue jobs (no data loss).",
-      severity: s.luaMaxQueued >= 5 ? "medium" : "low",
+      severity: s?.luaMaxQueued >= 5 ? "medium" : "low",
       expectedResolution:
         "ChainFixer proactively resets the semaphore when saturation is detected. Queue drains automatically as PDIM warms up and response times improve.",
-      estimatedResolutionMs: s.pdimHadFirstSuccess ? 60_000 : null,
+      estimatedResolutionMs: s?.pdimHadFirstSuccess ? 60_000 : null,
       recommendedActions: [
         {
           priority: "low",
@@ -385,16 +385,16 @@ const INFERENCE_RULES: InferenceRule[] = [
         },
       ],
       correlatedSignals: [
-        `LuaExecutor saturation ×${s.luaSaturationCount} (peak queue: ${s.luaMaxQueued})`,
-        ...(s.pdim5xxCount > 0
-          ? [`${s.pdim5xxCount} PDIM 5xx (common trigger)`]
+        `LuaExecutor saturation ×${s?.luaSaturationCount} (peak queue: ${s?.luaMaxQueued})`,
+        ...(s?.pdim5xxCount > 0
+          ? [`${s?.pdim5xxCount} PDIM 5xx (common trigger)`]
           : []),
-        ...(s.bullmqLockCount > 0
-          ? [`${s.bullmqLockCount} BullMQ lock race(s) (downstream effect)`]
+        ...(s?.bullmqLockCount > 0
+          ? [`${s?.bullmqLockCount} BullMQ lock race(s) (downstream effect)`]
           : []),
       ],
-      isRoutineNoise: s.uptimeMs < 480_000,
-      requiresHumanAttention: s.luaMaxQueued >= 8,
+      isRoutineNoise: s?.uptimeMs < 480_000,
+      requiresHumanAttention: s?.luaMaxQueued >= 8,
     }),
   },
 
@@ -402,12 +402,12 @@ const INFERENCE_RULES: InferenceRule[] = [
   {
     id: "bullmq_lock_race",
     name: "BullMQ Lock Race",
-    matches: (s) => s.bullmqLockCount > 0,
+    matches: (s) => s?.bullmqLockCount > 0,
     confidence: (s) => {
       let c = 0.8;
-      if (s.luaSaturationCount > 0) c += 0.1;
-      if (s.pdim5xxCount > 0) c += 0.05;
-      return Math.min(c, 0.93);
+      if (s?.luaSaturationCount > 0) c += 0.1;
+      if (s?.pdim5xxCount > 0) c += 0.05;
+      return Math?.min(c, 0.93);
     },
     explain: (s) => ({
       what: "BullMQ job locks are expiring before jobs complete.",
@@ -418,7 +418,7 @@ const INFERENCE_RULES: InferenceRule[] = [
       expectedResolution:
         "Resolves automatically as PDIM warms up and LuaExecutor latency drops below the lock timeout.",
       estimatedResolutionMs:
-        s.uptimeMs < 480_000 ? Math.max(0, 480_000 - s.uptimeMs) : 120_000,
+        s?.uptimeMs < 480_000 ? Math?.max(0, 480_000 - s?.uptimeMs) : 120_000,
       recommendedActions: [
         {
           priority: "low",
@@ -429,8 +429,8 @@ const INFERENCE_RULES: InferenceRule[] = [
         },
       ],
       correlatedSignals: [
-        `${s.bullmqLockCount} lock race(s) detected`,
-        ...(s.luaSaturationCount > 0
+        `${s?.bullmqLockCount} lock race(s) detected`,
+        ...(s?.luaSaturationCount > 0
           ? ["LuaExecutor saturation (root cause)"]
           : []),
       ],
@@ -443,33 +443,33 @@ const INFERENCE_RULES: InferenceRule[] = [
   {
     id: "memory_pressure",
     name: "Memory Pressure",
-    matches: (s) => s.memHeapPct > 80 || s.memPressureEvents > 0,
+    matches: (s) => s?.memHeapPct > 80 || s?.memPressureEvents > 0,
     confidence: (s) => {
       let c = 0.85;
-      if (s.memHeapPct > 92) c = 0.95;
+      if (s?.memHeapPct > 92) c = 0.95;
       return c;
     },
     explain: (s) => ({
-      what: `Heap is at ${s.memHeapPct}% of the V8 limit.`,
-      why: "High memory usage may indicate a memory leak in a long-running loop, accumulation of cached data without eviction, or large in-memory payloads (e.g. AI model weights, audio buffers, bulk analytics results).",
+      what: `Heap is at ${s?.memHeapPct}% of the V8 limit.`,
+      why: "High memory usage may indicate a memory leak in a long-running loop, accumulation of cached data without eviction, or large in-memory payloads (e?.g. AI model weights, audio buffers, bulk analytics results).",
       impact:
-        s.memHeapPct > 92
+        s?.memHeapPct > 92
           ? "Imminent OOM risk — platform auto-fixer has forced a GC cycle."
           : "Elevated GC frequency may cause latency spikes. No immediate risk.",
       severity:
-        s.memHeapPct > 92 ? "high" : s.memHeapPct > 85 ? "medium" : "low",
+        s?.memHeapPct > 92 ? "high" : s?.memHeapPct > 85 ? "medium" : "low",
       expectedResolution:
         "Platform auto-fixer runs GC and trims internal buffers. If heap stays above 85% for > 10 minutes, investigate for memory leaks.",
       estimatedResolutionMs: null,
       recommendedActions: [
         {
-          priority: s.memHeapPct > 90 ? "high" : "medium",
+          priority: s?.memHeapPct > 90 ? "high" : "medium",
           action: "Monitor heap trend over next 5 minutes",
           rationale:
             "If heap is growing linearly (not sawtooth from GC), a leak is likely.",
           automated: true,
         },
-        ...(s.memHeapPct > 90
+        ...(s?.memHeapPct > 90
           ? [
               {
                 priority: "high" as const,
@@ -482,13 +482,13 @@ const INFERENCE_RULES: InferenceRule[] = [
           : []),
       ],
       correlatedSignals: [
-        `Heap: ${s.memHeapPct}%`,
-        ...(s.memPressureEvents > 0
-          ? [`${s.memPressureEvents} heap warning event(s) in window`]
+        `Heap: ${s?.memHeapPct}%`,
+        ...(s?.memPressureEvents > 0
+          ? [`${s?.memPressureEvents} heap warning event(s) in window`]
           : []),
       ],
-      isRoutineNoise: s.memHeapPct < 85,
-      requiresHumanAttention: s.memHeapPct > 90,
+      isRoutineNoise: s?.memHeapPct < 85,
+      requiresHumanAttention: s?.memHeapPct > 90,
     }),
   },
 
@@ -496,14 +496,14 @@ const INFERENCE_RULES: InferenceRule[] = [
   {
     id: "database_slow",
     name: "Database Slow / Timeout",
-    matches: (s) => s.dbSlowCount > 2,
-    confidence: (s) => Math.min(0.7 + s.dbSlowCount * 0.03, 0.9),
+    matches: (s) => s?.dbSlowCount > 2,
+    confidence: (s) => Math?.min(0.7 + s?.dbSlowCount * 0.03, 0.9),
     explain: (s) => ({
-      what: `Database is responding slowly — ${s.dbSlowCount} slow-query or timeout event(s) in the last 10 minutes.`,
+      what: `Database is responding slowly — ${s?.dbSlowCount} slow-query or timeout event(s) in the last 10 minutes.`,
       why: "Possible causes: Neon PostgreSQL cold-start (serverless wake-up), table lock contention, a long-running transaction, or a missing index on a newly-queried column.",
       impact:
         "API endpoints that read from the database are slower than normal. HyperLearning analytics queries may time out and return empty results.",
-      severity: s.dbSlowCount > 10 ? "medium" : "low",
+      severity: s?.dbSlowCount > 10 ? "medium" : "low",
       expectedResolution:
         "Neon PostgreSQL cold-starts self-resolve within 10–30 seconds. Persistent slowness requires query analysis.",
       estimatedResolutionMs: 30_000,
@@ -516,9 +516,9 @@ const INFERENCE_RULES: InferenceRule[] = [
           automated: false,
         },
       ],
-      correlatedSignals: [`${s.dbSlowCount} slow-query/timeout events`],
-      isRoutineNoise: s.dbSlowCount <= 3,
-      requiresHumanAttention: s.dbSlowCount > 10,
+      correlatedSignals: [`${s?.dbSlowCount} slow-query/timeout events`],
+      isRoutineNoise: s?.dbSlowCount <= 3,
+      requiresHumanAttention: s?.dbSlowCount > 10,
     }),
   },
 
@@ -527,11 +527,11 @@ const INFERENCE_RULES: InferenceRule[] = [
     id: "self_healing_active",
     name: "Self-Healing Active",
     matches: (s) =>
-      s.chainFixerFires > 0 && s.pdim5xxCount === 0 && !s.pdimCircuitOpen,
+      s?.chainFixerFires > 0 && s?.pdim5xxCount === 0 && !s?.pdimCircuitOpen,
     confidence: (_s) => 0.9,
     explain: (s) => ({
       what: "The self-healing system applied automated fixes during this window.",
-      why: `ChainFixer triggered ${s.chainFixerFires} fix action(s): ${s.chainFixerPatterns.join(", ")}. These patterns matched known error signatures and their recovery routines ran automatically.`,
+      why: `ChainFixer triggered ${s?.chainFixerFires} fix action(s): ${s?.chainFixerPatterns.join(", ")}. These patterns matched known error signatures and their recovery routines ran automatically.`,
       impact:
         "The affected subsystem(s) were corrected without service interruption.",
       severity: "negligible",
@@ -548,7 +548,7 @@ const INFERENCE_RULES: InferenceRule[] = [
         },
       ],
       correlatedSignals: [
-        `ChainFixer: ${s.chainFixerPatterns.join(", ")} (×${s.chainFixerFires})`,
+        `ChainFixer: ${s?.chainFixerPatterns.join(", ")} (×${s?.chainFixerFires})`,
       ],
       isRoutineNoise: true,
       requiresHumanAttention: false,
@@ -559,11 +559,11 @@ const INFERENCE_RULES: InferenceRule[] = [
   {
     id: "unknown_pattern",
     name: "Novel Error Pattern",
-    matches: (s) => s.unknownErrorCount > 0,
+    matches: (s) => s?.unknownErrorCount > 0,
     confidence: (_s) => 0.55,
     explain: (s) => ({
-      what: `${s.unknownErrorCount} error(s) did not match any known recovery pattern.`,
-      why: `These errors have no corresponding auto-fix rule. They may represent new failure modes, third-party API changes, or code regressions. Samples: ${s.unknownErrors.slice(0, 2).join(" | ")}`,
+      what: `${s?.unknownErrorCount} error(s) did not match any known recovery pattern.`,
+      why: `These errors have no corresponding auto-fix rule. They may represent new failure modes, third-party API changes, or code regressions. Samples: ${s?.unknownErrors.slice(0, 2).join(" | ")}`,
       impact:
         "Unknown — the blast radius cannot be assessed without more context.",
       severity: "medium",
@@ -580,7 +580,7 @@ const INFERENCE_RULES: InferenceRule[] = [
           automated: false,
         },
       ],
-      correlatedSignals: s.unknownErrors.slice(0, 3),
+      correlatedSignals: s?.unknownErrors.slice(0, 3),
       isRoutineNoise: false,
       requiresHumanAttention: true,
     }),
@@ -612,7 +612,7 @@ const SECURITY_RULES: SecurityRule[] = [
       predictedNextMove:
         "Will iterate through more username/password variants. If not blocked, may pivot to password-reset flow or OAuth.",
       falsePositiveLikelihood: threatLevel < 0.7 ? 0.2 : 0.05,
-      reasoning: `${indicators.length} authentication-failure indicators observed. Request volume (${requestCount}) and failure pattern suggests automated tooling rather than a legitimate user with a forgotten password. Threat level ${(threatLevel * 100).toFixed(0)}%. The self-healing engine has ${threatLevel > 0.85 ? "blocked this IP and terminated active sessions" : "rate-limited this IP"}.`,
+      reasoning: `${indicators?.length} authentication-failure indicators observed. Request volume (${requestCount}) and failure pattern suggests automated tooling rather than a legitimate user with a forgotten password. Threat level ${(threatLevel * 100).toFixed(0)}%. The self-healing engine has ${threatLevel > 0.85 ? "blocked this IP and terminated active sessions" : "rate-limited this IP"}.`,
       countermeasures: [
         {
           priority: "immediate",
@@ -652,7 +652,7 @@ const SECURITY_RULES: SecurityRule[] = [
       predictedNextMove:
         "Having mapped the attack surface, attacker will likely pivot to exploitation of discovered endpoints or attempt injection attacks.",
       falsePositiveLikelihood: 0.1,
-      reasoning: `${requestCount} probing requests observed, hitting ${indicators.length} known reconnaissance paths (admin panels, config files, backup endpoints). Threat level ${(threatLevel * 100).toFixed(0)}%. This is a standard automated scan — the server returns appropriate 404s for non-existent endpoints, so no data was exposed.`,
+      reasoning: `${requestCount} probing requests observed, hitting ${indicators?.length} known reconnaissance paths (admin panels, config files, backup endpoints). Threat level ${(threatLevel * 100).toFixed(0)}%. This is a standard automated scan — the server returns appropriate 404s for non-existent endpoints, so no data was exposed.`,
       countermeasures: [
         {
           priority: "immediate",
@@ -684,13 +684,13 @@ const SECURITY_RULES: SecurityRule[] = [
       intentLabel:
         "SQL injection — attempting to extract data or execute database commands.",
       attackStage: "exploitation",
-      sophistication: indicators.some((i) =>
-        /sleep|benchmark|waitfor/i.test(i.source),
+      sophistication: indicators?.some((i) =>
+        /sleep|benchmark|waitfor/i?.test(i?.source),
       )
         ? "targeted"
         : "automated",
-      sophisticationLabel: indicators.some((i) =>
-        /sleep|benchmark|waitfor/i.test(i.source),
+      sophisticationLabel: indicators?.some((i) =>
+        /sleep|benchmark|waitfor/i?.test(i?.source),
       )
         ? "Targeted: time-based blind injection suggests a skilled attacker."
         : "Automated: pattern matches a standard SQLmap or similar scanner.",
@@ -777,7 +777,7 @@ const SECURITY_RULES: SecurityRule[] = [
     id: "ddos",
     name: "Volumetric DoS / DDoS",
     threatTypes: ["ddos", "rate_abuse"],
-    indicators: [/rate.limit/i, /too many request/i],
+    indicators: [/rate?.limit/i, /too many request/i],
     explain: (_indicators, threatLevel, requestCount) => ({
       intentLabel:
         "Volumetric denial of service — flooding with requests to exhaust server capacity.",
@@ -841,7 +841,7 @@ class SystemIntelligenceEngine extends EventEmitter {
     SecurityUnderstanding & { ip: string; threatId: string }
   > = [];
   private insights: Insight[] = [];
-  private _startedAt: number = Date.now();
+  private _startedAt: number = Date?.now();
   private _firstPdimSuccessAt: number = 0;
   private _chainFixerFires: Array<{
     ts: number;
@@ -856,25 +856,25 @@ class SystemIntelligenceEngine extends EventEmitter {
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
   initialize(): void {
-    if (this._initialized) return;
+    if (this?._initialized) return;
     this._initialized = true;
-    this._startedAt = Date.now();
+    this._startedAt = Date?.now();
 
     // Hook into structured logger to build event window
     addLogTransport((entry) => {
-      this._ingestLogEntry(entry);
+      this?._ingestLogEntry(entry);
     });
 
     // Subscribe to existing system events (lazy import avoids circular deps)
-    this._subscribeToSystems().catch(() => {
+    this?._subscribeToSystems().catch(() => {
       /* non-fatal */
     });
 
     // Periodic insight refresh
-    const insightTimer = setInterval(() => this._refreshInsights(), 60_000);
-    insightTimer.unref();
+    const _insightTimer = setInterval(() => this?._refreshInsights(), 60_000);
+    insightTimer?.unref();
 
-    logger.info(
+    logger?.info(
       "[SystemIntelligence] Reasoning engine initialized — watching all error and security signals",
     );
   }
@@ -884,23 +884,23 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     // Cache circuit-breaker accessor to avoid require() in hot path
     try {
-      const cbMod = await import("../lib/pdimCircuitBreaker.js");
-      this._cbIsOpen = cbMod.cbIsOpen;
+      const _cbMod = await import("../lib/pdimCircuitBreaker.js");
+      this._cbIsOpen = cbMod?.cbIsOpen;
     } catch {
       /* non-fatal — cbIsOpen defaults to false */
     }
 
     try {
       const { chainErrorAutoFixer } = await import("./chainErrorAutoFixer.js");
-      chainErrorAutoFixer.on(
+      chainErrorAutoFixer?.on(
         "fixed",
         (ev: { patternId: string; attempt: number }) => {
-          this._chainFixerFires.push({
-            ts: Date.now(),
-            patternId: ev.patternId,
-            patternName: ev.patternId,
+          this?._chainFixerFires.push({
+            ts: Date?.now(),
+            patternId: ev?.patternId,
+            patternName: ev?.patternId,
           });
-          if (this._chainFixerFires.length > 200) this._chainFixerFires.shift();
+          if (this?._chainFixerFires.length > 200) this?._chainFixerFires.shift();
         },
       );
     } catch {
@@ -909,19 +909,19 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     try {
       const { platformAutoFixer } = await import("./platformAutoFixer.js");
-      platformAutoFixer.on(
+      platformAutoFixer?.on(
         "incident:opened",
         (inc: { severity: string; title: string }) => {
-          this._addInsight({
-            id: `incident_${Date.now()}`,
-            priority: inc.severity as Insight["priority"],
-            title: `Platform Incident: ${inc.title}`,
+          this?._addInsight({
+            id: `incident_${Date?.now()}`,
+            priority: inc?.severity as Insight["priority"],
+            title: `Platform Incident: ${inc?.title}`,
             detail:
               "The platform auto-fixer has opened a new incident. Check the Incidents dashboard for details.",
             action:
               "Review incident details and applied patches in the Platform Fixer admin panel.",
             automated: true,
-            since: Date.now(),
+            since: Date?.now(),
           });
         },
       );
@@ -930,9 +930,10 @@ class SystemIntelligenceEngine extends EventEmitter {
     }
 
     try {
-      const { selfHealingEngine } =
-        await import("./selfHealingSecurityEngine.js");
-      selfHealingEngine.on(
+      const { selfHealingEngine } = await import(
+        "./selfHealingSecurityEngine.js"
+      );
+      selfHealingEngine?.on(
         "threat_detected",
         (assessment: {
           id: string;
@@ -942,37 +943,37 @@ class SystemIntelligenceEngine extends EventEmitter {
           indicators: string[];
           detectionTime: number;
         }) => {
-          this._threatCount++;
-          const understanding = this._classifySecurityThreat(assessment);
-          this.recentSecurityUnderstandings.unshift({
+          this?._threatCount++;
+          const _understanding = this?._classifySecurityThreat(assessment);
+          this?.recentSecurityUnderstandings.unshift({
             ...understanding,
             ip: "classified",
-            threatId: assessment.id,
+            threatId: assessment?.id,
           });
-          if (this.recentSecurityUnderstandings.length > 100)
-            this.recentSecurityUnderstandings.pop();
+          if (this?.recentSecurityUnderstandings.length > 100)
+            this?.recentSecurityUnderstandings.pop();
 
           if (
-            understanding.falsePositiveLikelihood < 0.3 &&
-            assessment.threatLevel > 0.7
+            understanding?.falsePositiveLikelihood < 0.3 &&
+            assessment?.threatLevel > 0.7
           ) {
-            this._addInsight({
-              id: `threat_${assessment.id}`,
-              priority: assessment.threatLevel > 0.9 ? "critical" : "high",
-              title: `Security: ${understanding.intentLabel.split("—")[0].trim()}`,
-              detail: understanding.reasoning,
+            this?._addInsight({
+              id: `threat_${assessment?.id}`,
+              priority: assessment?.threatLevel > 0.9 ? "critical" : "high",
+              title: `Security: ${understanding?.intentLabel.split("—")[0].trim()}`,
+              detail: understanding?.reasoning,
               action:
-                understanding.countermeasures[0]?.action ??
+                understanding?.countermeasures[0]?.action ??
                 "Review threat assessment.",
-              automated: understanding.countermeasures[0]?.automated ?? false,
-              since: Date.now(),
+              automated: understanding?.countermeasures[0]?.automated ?? false,
+              since: Date?.now(),
             });
           }
         },
       );
 
-      selfHealingEngine.on("threat_healed", () => {
-        this._healedThreats++;
+      selfHealingEngine?.on("threat_healed", () => {
+        this?._healedThreats++;
       });
     } catch {
       /* optional */
@@ -982,39 +983,39 @@ class SystemIntelligenceEngine extends EventEmitter {
   // ─── Event window management ───────────────────────────────────────────────
 
   private _ingestLogEntry(entry: LogEntry): void {
-    const now = Date.now();
+    const _now = Date?.now();
 
     // Detect PDIM first success
     if (
-      this._firstPdimSuccessAt === 0 &&
-      (entry.message.includes("PDIM first success") ||
-        entry.message.includes("[PDIM] Circuit CLOSED"))
+      this?._firstPdimSuccessAt === 0 &&
+      (entry?.message.includes("PDIM first success") ||
+        entry?.message.includes("[PDIM] Circuit CLOSED"))
     ) {
       this._firstPdimSuccessAt = now;
     }
 
-    this.eventWindow.push({
+    this?.eventWindow.push({
       ts: now,
-      level: entry.level,
-      message: entry.message,
-      metadata: entry.metadata,
+      level: entry?.level,
+      message: entry?.message,
+      metadata: entry?.metadata,
     });
 
     // Prune old entries
-    const cutoff = now - EVENT_WINDOW_MS;
-    while (this.eventWindow.length > 0 && this.eventWindow[0].ts < cutoff) {
-      this.eventWindow.shift();
+    const _cutoff = now - EVENT_WINDOW_MS;
+    while (this?.eventWindow.length > 0 && this?.eventWindow[0].ts < cutoff) {
+      this?.eventWindow.shift();
     }
-    if (this.eventWindow.length > MAX_WINDOW_SIZE) {
-      this.eventWindow.splice(0, this.eventWindow.length - MAX_WINDOW_SIZE);
+    if (this?.eventWindow.length > MAX_WINDOW_SIZE) {
+      this?.eventWindow.splice(0, this?.eventWindow.length - MAX_WINDOW_SIZE);
     }
   }
 
   // ─── Signal extraction ─────────────────────────────────────────────────────
 
   private _extractSignals(): Signals {
-    const mem = process.memoryUsage();
-    const heapPct = Math.round((mem.heapUsed / mem.heapTotal) * 100);
+    const _mem = process?.memoryUsage();
+    const _heapPct = Math?.round((mem?.heapUsed / mem?.heapTotal) * 100);
 
     let pdim5xxCount = 0;
     let pdim5xxRecentMs = 0;
@@ -1026,36 +1027,36 @@ class SystemIntelligenceEngine extends EventEmitter {
     let dbSlowCount = 0;
     let unknownErrorCount = 0;
     const unknownErrors: string[] = [];
-    const chainFixerPatternSet = new Set<string>();
+    const _chainFixerPatternSet = new Set<string>();
 
-    for (const ev of this.eventWindow) {
-      const m = ev.message;
+    for (const ev of this?.eventWindow) {
+      const _m = ev?.message;
 
-      if (/PDIM HTTP 5\d\d|ERR PDIM HTTP 5/i.test(m)) {
+      if (/PDIM HTTP 5\d\d|ERR PDIM HTTP 5/i?.test(m)) {
         pdim5xxCount++;
-        pdim5xxRecentMs = Math.max(pdim5xxRecentMs, ev.ts);
+        pdim5xxRecentMs = Math?.max(pdim5xxRecentMs, ev?.ts);
       }
-      if (/LuaExecutor busy/i.test(m)) {
+      if (/LuaExecutor busy/i?.test(m)) {
         luaSatCount++;
-        const match = m.match(/(\d+)\s+queued/);
+        const _match = m?.match(/(\d+)\s+queued/);
         if (match)
-          luaMaxQueued = Math.max(luaMaxQueued, parseInt(match[1], 10));
+          luaMaxQueued = Math?.max(luaMaxQueued, parseInt(match[1], 10));
       }
-      if (/Missing lock for job/i.test(m)) bullmqLockCount++;
-      if (/Could not seed/i.test(m)) seedingFailCount++;
-      if (/heap.*warn|memory.*warn|GC.*forced/i.test(m)) memPressureEvents++;
+      if (/Missing lock for job/i?.test(m)) bullmqLockCount++;
+      if (/Could not seed/i?.test(m)) seedingFailCount++;
+      if (/heap.*warn|memory.*warn|GC.*forced/i?.test(m)) memPressureEvents++;
       if (
-        /slow.*query|query.*timeout|db.*timeout|connection.*timeout.*pg/i.test(
+        /slow.*query|query.*timeout|db.*timeout|connection.*timeout.*pg/i?.test(
           m,
         )
       )
         dbSlowCount++;
-      if (/Novel error.*no pattern/i.test(m)) {
+      if (/Novel error.*no pattern/i?.test(m)) {
         unknownErrorCount++;
-        if (unknownErrors.length < 5) unknownErrors.push(m.slice(0, 120));
+        if (unknownErrors?.length < 5) unknownErrors?.push(m?.slice(0, 120));
       }
-      const fixerMatch = m.match(/\[ChainFixer\] (.+?) —/);
-      if (fixerMatch) chainFixerPatternSet.add(fixerMatch[1]);
+      const _fixerMatch = m?.match(/\[ChainFixer\] (.+?) —/);
+      if (fixerMatch) chainFixerPatternSet?.add(fixerMatch[1]);
     }
 
     // Route error spikes from routeErrors map (platformAutoFixer tracks these)
@@ -1066,26 +1067,26 @@ class SystemIntelligenceEngine extends EventEmitter {
     let incidentCount = 0;
 
     // ChainFixer fires in window (from our subscription)
-    const windowCutoff = Date.now() - EVENT_WINDOW_MS;
-    const chainFixerFires = this._chainFixerFires.filter(
-      (f) => f.ts > windowCutoff,
+    const _windowCutoff = Date?.now() - EVENT_WINDOW_MS;
+    const _chainFixerFires = this?._chainFixerFires.filter(
+      (f) => f?.ts > windowCutoff,
     );
-    for (const f of chainFixerFires) chainFixerPatternSet.add(f.patternId);
+    for (const f of chainFixerFires) chainFixerPatternSet?.add(f?.patternId);
 
     // Determine circuit state using cached accessor (set during _subscribeToSystems)
     let pdimCircuitOpen = false;
     try {
-      if (this._cbIsOpen) pdimCircuitOpen = this._cbIsOpen();
+      if (this?._cbIsOpen) pdimCircuitOpen = this?._cbIsOpen();
     } catch {
       /* non-fatal */
     }
 
     return {
-      uptimeMs: Date.now() - this._startedAt,
+      uptimeMs: Date?.now() - this?._startedAt,
       pdim5xxCount,
       pdim5xxRecentMs,
       pdimCircuitOpen,
-      pdimHadFirstSuccess: this._firstPdimSuccessAt > 0,
+      pdimHadFirstSuccess: this?._firstPdimSuccessAt > 0,
       luaSaturationCount: luaSatCount,
       luaMaxQueued,
       bullmqLockCount,
@@ -1094,46 +1095,46 @@ class SystemIntelligenceEngine extends EventEmitter {
       memPressureEvents,
       dbSlowCount,
       routeErrSpikes,
-      chainFixerFires: chainFixerFires.length,
+      chainFixerFires: chainFixerFires?.length,
       chainFixerPatterns: [...chainFixerPatternSet],
       incidentCount,
       incidentTitles,
       unknownErrorCount,
       unknownErrors,
-      securityThreatCount: this._threatCount,
+      securityThreatCount: this?._threatCount,
     };
   }
 
   // ─── Inference engine ──────────────────────────────────────────────────────
 
   analyzeCurrentState(): ErrorUnderstanding[] {
-    const signals = this._extractSignals();
+    const _signals = this?._extractSignals();
     const results: ErrorUnderstanding[] = [];
 
     for (const rule of INFERENCE_RULES) {
-      if (!rule.matches(signals)) continue;
-      const confidence = rule.confidence(signals);
+      if (!rule?.matches(signals)) continue;
+      const _confidence = rule?.confidence(signals);
       if (confidence < 0.4) continue;
 
-      results.push({
-        errorClass: rule.id,
+      results?.push({
+        errorClass: rule?.id,
         confidence,
-        enrichedAt: Date.now(),
-        ...rule.explain(signals),
+        enrichedAt: Date?.now(),
+        ...rule?.explain(signals),
       });
     }
 
     // Sort by severity then confidence
-    const SEV_ORDER = {
+    const _SEV_ORDER = {
       critical: 5,
       high: 4,
       medium: 3,
       low: 2,
       negligible: 1,
     };
-    results.sort((a, b) => {
-      const sd = SEV_ORDER[b.severity] - SEV_ORDER[a.severity];
-      return sd !== 0 ? sd : b.confidence - a.confidence;
+    results?.sort((a, b) => {
+      const _sd = SEV_ORDER[b?.severity] - SEV_ORDER[a?.severity];
+      return sd !== 0 ? sd : b?.confidence - a?.confidence;
     });
 
     return results;
@@ -1148,27 +1149,27 @@ class SystemIntelligenceEngine extends EventEmitter {
     indicators: string[];
     detectionTime: number;
   }): SecurityUnderstanding {
-    const indicators = assessment.indicators;
-    const requestCount = indicators.length; // proxy for volume
+    const _indicators = assessment?.indicators;
+    const _requestCount = indicators?.length; // proxy for volume
 
     for (const rule of SECURITY_RULES) {
-      const typeMatch = rule.threatTypes.some(
+      const _typeMatch = rule?.threatTypes.some(
         (t) =>
-          assessment.threatType.toLowerCase().includes(t) ||
-          t.includes(assessment.threatType.toLowerCase()),
+          assessment?.threatType.toLowerCase().includes(t) ||
+          t?.includes(assessment?.threatType.toLowerCase()),
       );
-      const indicatorMatch = rule.indicators.some((pat) =>
-        indicators.some((i) => pat.test(i)),
+      const _indicatorMatch = rule?.indicators.some((pat) =>
+        indicators?.some((i) => pat?.test(i)),
       );
 
       if (typeMatch || indicatorMatch) {
         return {
-          threatIntent: rule.id,
-          confidence: assessment.confidence,
-          enrichedAt: Date.now(),
-          ...rule.explain(
-            indicators.map((i) => i),
-            assessment.threatLevel,
+          threatIntent: rule?.id,
+          confidence: assessment?.confidence,
+          enrichedAt: Date?.now(),
+          ...rule?.explain(
+            indicators?.map((i) => i),
+            assessment?.threatLevel,
             requestCount,
           ),
         };
@@ -1176,67 +1177,67 @@ class SystemIntelligenceEngine extends EventEmitter {
     }
 
     // Fallback
-    const fallbackRule = SECURITY_RULES[SECURITY_RULES.length - 1];
+    const _fallbackRule = SECURITY_RULES[SECURITY_RULES?.length - 1];
     return {
       threatIntent: "unknown_threat",
-      confidence: assessment.confidence,
-      enrichedAt: Date.now(),
-      ...fallbackRule.explain(indicators, assessment.threatLevel, requestCount),
+      confidence: assessment?.confidence,
+      enrichedAt: Date?.now(),
+      ...fallbackRule?.explain(indicators, assessment?.threatLevel, requestCount),
     };
   }
 
   // ─── Narrator ─────────────────────────────────────────────────────────────
 
   narrateSystemState(): SystemNarrative {
-    const signals = this._extractSignals();
-    const understandings = this.analyzeCurrentState();
-    const uptimeSec = Math.round(signals.uptimeMs / 1000);
+    const _signals = this?._extractSignals();
+    const _understandings = this?.analyzeCurrentState();
+    const _uptimeSec = Math?.round(signals?.uptimeMs / 1000);
 
     // Determine system phase
     let systemPhase: SystemPhase;
     let phaseLabel: string;
-    if (signals.uptimeMs < 120_000) {
+    if (signals?.uptimeMs < 120_000) {
       systemPhase = "cold_starting";
       phaseLabel = `Cold-starting (${uptimeSec}s uptime — startup grace period)`;
-    } else if (signals.uptimeMs < 780_000 && !signals.pdimHadFirstSuccess) {
+    } else if (signals?.uptimeMs < 780_000 && !signals?.pdimHadFirstSuccess) {
       systemPhase = "warming";
       phaseLabel = `Warming up (${uptimeSec}s uptime — PDIM slow-lane active)`;
-    } else if (signals.pdimCircuitOpen || signals.incidentCount > 0) {
+    } else if (signals?.pdimCircuitOpen || signals?.incidentCount > 0) {
       systemPhase = "degraded";
-      phaseLabel = `Degraded — ${signals.incidentCount} incident(s), circuit ${signals.pdimCircuitOpen ? "OPEN" : "closed"}`;
+      phaseLabel = `Degraded — ${signals?.incidentCount} incident(s), circuit ${signals?.pdimCircuitOpen ? "OPEN" : "closed"}`;
     } else {
       systemPhase = "operational";
-      phaseLabel = `Operational (${Math.round(uptimeSec / 60)}m uptime)`;
+      phaseLabel = `Operational (${Math?.round(uptimeSec / 60)}m uptime)`;
     }
 
     // Health score: start at 100, subtract for problems
     let healthScore = 100;
-    if (signals.pdimCircuitOpen) healthScore -= 30;
-    else if (signals.pdim5xxCount > 0)
-      healthScore -= Math.min(15, signals.pdim5xxCount);
-    if (signals.memHeapPct > 90) healthScore -= 20;
-    else if (signals.memHeapPct > 80) healthScore -= 10;
-    if (signals.dbSlowCount > 5) healthScore -= 15;
-    if (signals.unknownErrorCount > 0) healthScore -= 10;
-    if (signals.incidentCount > 0) healthScore -= signals.incidentCount * 8;
-    healthScore = Math.max(0, Math.min(100, healthScore));
+    if (signals?.pdimCircuitOpen) healthScore -= 30;
+    else if (signals?.pdim5xxCount > 0)
+      healthScore -= Math?.min(15, signals?.pdim5xxCount);
+    if (signals?.memHeapPct > 90) healthScore -= 20;
+    else if (signals?.memHeapPct > 80) healthScore -= 10;
+    if (signals?.dbSlowCount > 5) healthScore -= 15;
+    if (signals?.unknownErrorCount > 0) healthScore -= 10;
+    if (signals?.incidentCount > 0) healthScore -= signals?.incidentCount * 8;
+    healthScore = Math?.max(0, Math?.min(100, healthScore));
 
     // Trend
     let trend: TrendDirection = "stable";
-    const recentPdim = this.eventWindow.filter(
-      (e) => e.ts > Date.now() - 2 * 60_000 && /PDIM HTTP 5/i.test(e.message),
+    const _recentPdim = this?.eventWindow.filter(
+      (e) => e?.ts > Date?.now() - 2 * 60_000 && /PDIM HTTP 5/i?.test(e?.message),
     ).length;
-    const olderPdim = this.eventWindow.filter(
+    const _olderPdim = this?.eventWindow.filter(
       (e) =>
-        e.ts <= Date.now() - 2 * 60_000 &&
-        e.ts > Date.now() - 5 * 60_000 &&
-        /PDIM HTTP 5/i.test(e.message),
+        e?.ts <= Date?.now() - 2 * 60_000 &&
+        e?.ts > Date?.now() - 5 * 60_000 &&
+        /PDIM HTTP 5/i?.test(e?.message),
     ).length;
     if (recentPdim < olderPdim * 0.7) trend = "improving";
     else if (recentPdim > olderPdim * 1.4) trend = "degrading";
 
     // Headline
-    const topUnderstanding = understandings[0];
+    const _topUnderstanding = understandings[0];
     let headline: string;
     if (systemPhase === "cold_starting") {
       headline =
@@ -1246,7 +1247,7 @@ class SystemIntelligenceEngine extends EventEmitter {
         "System is warming up — PDIM slow-lane is absorbing expected failures.";
     } else if (systemPhase === "degraded") {
       headline = topUnderstanding
-        ? `System degraded: ${topUnderstanding.what}`
+        ? `System degraded: ${topUnderstanding?.what}`
         : "System degraded — check platform fixer for details.";
     } else if (trend === "improving") {
       headline = "System is recovering and trending healthy.";
@@ -1255,85 +1256,85 @@ class SystemIntelligenceEngine extends EventEmitter {
     }
 
     // Body
-    const noiseCount = understandings.filter((u) => u.isRoutineNoise).length;
-    const actionableCount = understandings.filter(
-      (u) => u.requiresHumanAttention,
+    const _noiseCount = understandings?.filter((u) => u?.isRoutineNoise).length;
+    const _actionableCount = understandings?.filter(
+      (u) => u?.requiresHumanAttention,
     ).length;
 
     const bodyParts: string[] = [];
-    bodyParts.push(
+    bodyParts?.push(
       systemPhase === "operational"
-        ? `The platform has been running for ${Math.round(uptimeSec / 60)} minute(s) and all critical subsystems are ${signals.pdimCircuitOpen ? "degraded" : "healthy"}.`
+        ? `The platform has been running for ${Math?.round(uptimeSec / 60)} minute(s) and all critical subsystems are ${signals?.pdimCircuitOpen ? "degraded" : "healthy"}.`
         : `The platform is in the "${phaseLabel}" phase. Uptime: ${uptimeSec}s.`,
     );
 
     if (noiseCount > 0) {
-      bodyParts.push(
+      bodyParts?.push(
         `${noiseCount} routine event type(s) are active but require no action — ` +
           `these are expected patterns (${understandings
-            .filter((u) => u.isRoutineNoise)
-            .map((u) => u.errorClass.replace(/_/g, " "))
+            .filter((u) => u?.isRoutineNoise)
+            .map((u) => u?.errorClass.replace(/_/g, " "))
             .join(", ")}).`,
       );
     }
 
     if (actionableCount > 0) {
-      bodyParts.push(
+      bodyParts?.push(
         `${actionableCount} situation(s) require human attention: ` +
           understandings
-            .filter((u) => u.requiresHumanAttention)
-            .map((u) => u.what)
+            .filter((u) => u?.requiresHumanAttention)
+            .map((u) => u?.what)
             .join("; "),
       );
     } else if (systemPhase === "operational") {
-      bodyParts.push(
+      bodyParts?.push(
         "No immediate action is required. Self-healing systems are operating normally.",
       );
     }
 
-    if (signals.securityThreatCount > 0) {
-      bodyParts.push(
-        `Security: ${signals.securityThreatCount} threat(s) detected since startup; ` +
-          `${this._healedThreats} healed automatically.`,
+    if (signals?.securityThreatCount > 0) {
+      bodyParts?.push(
+        `Security: ${signals?.securityThreatCount} threat(s) detected since startup; ` +
+          `${this?._healedThreats} healed automatically.`,
       );
     }
 
-    const body = bodyParts.join(" ");
+    const _body = bodyParts?.join(" ");
 
     // Key insights
     const keyInsights: string[] = [];
-    if (signals.pdim5xxCount > 0 && !signals.pdimCircuitOpen) {
-      keyInsights.push(
-        `PDIM: ${signals.pdim5xxCount} 5xx errors absorbed (circuit closed — slow-lane handling).`,
+    if (signals?.pdim5xxCount > 0 && !signals?.pdimCircuitOpen) {
+      keyInsights?.push(
+        `PDIM: ${signals?.pdim5xxCount} 5xx errors absorbed (circuit closed — slow-lane handling).`,
       );
     }
-    if (signals.pdimCircuitOpen) {
-      keyInsights.push(
+    if (signals?.pdimCircuitOpen) {
+      keyInsights?.push(
         "PDIM circuit breaker is OPEN — queued operations paused.",
       );
     }
-    if (signals.luaMaxQueued > 0) {
-      keyInsights.push(
-        `LuaExecutor peak queue depth: ${signals.luaMaxQueued} (auto-reset by ChainFixer).`,
+    if (signals?.luaMaxQueued > 0) {
+      keyInsights?.push(
+        `LuaExecutor peak queue depth: ${signals?.luaMaxQueued} (auto-reset by ChainFixer).`,
       );
     }
-    if (signals.memHeapPct > 75) {
-      keyInsights.push(
-        `Heap at ${signals.memHeapPct}% of limit — ${signals.memHeapPct > 90 ? "GC forced" : "monitoring"}.`,
+    if (signals?.memHeapPct > 75) {
+      keyInsights?.push(
+        `Heap at ${signals?.memHeapPct}% of limit — ${signals?.memHeapPct > 90 ? "GC forced" : "monitoring"}.`,
       );
     }
-    if (signals.seedingFailCount > 0) {
-      keyInsights.push(
-        `${signals.seedingFailCount} AI data seed(s) deferred — will retry when PDIM is warm.`,
+    if (signals?.seedingFailCount > 0) {
+      keyInsights?.push(
+        `${signals?.seedingFailCount} AI data seed(s) deferred — will retry when PDIM is warm.`,
       );
     }
-    if (this._threatCount > 0) {
-      keyInsights.push(
-        `Security: ${this._threatCount} threat(s) detected, ${this._healedThreats} auto-healed.`,
+    if (this?._threatCount > 0) {
+      keyInsights?.push(
+        `Security: ${this?._threatCount} threat(s) detected, ${this?._healedThreats} auto-healed.`,
       );
     }
-    if (keyInsights.length === 0)
-      keyInsights.push("All subsystems operating within normal parameters.");
+    if (keyInsights?.length === 0)
+      keyInsights?.push("All subsystems operating within normal parameters.");
 
     // Next expected event
     let nextExpectedEvent: string;
@@ -1343,7 +1344,7 @@ class SystemIntelligenceEngine extends EventEmitter {
     } else if (systemPhase === "warming") {
       nextExpectedEvent =
         "PDIM will complete warm-up and circuit will transition to CLOSED-stable.";
-    } else if (signals.pdimCircuitOpen) {
+    } else if (signals?.pdimCircuitOpen) {
       nextExpectedEvent =
         "Circuit breaker will probe PDIM in the next 60–120 seconds.";
     } else {
@@ -1359,113 +1360,113 @@ class SystemIntelligenceEngine extends EventEmitter {
       phaseLabel,
       healthScore,
       trend,
-      activeThreats: this._threatCount - this._healedThreats,
+      activeThreats: this?._threatCount - this?._healedThreats,
       topErrorClass: topUnderstanding?.errorClass ?? null,
       topErrorDescription: topUnderstanding?.what ?? null,
       nextExpectedEvent,
       uptimeSeconds: uptimeSec,
-      generatedAt: Date.now(),
+      generatedAt: Date?.now(),
     };
   }
 
   // ─── Actionable insights ───────────────────────────────────────────────────
 
   private _addInsight(insight: Insight): void {
-    const existing = this.insights.findIndex((i) => i.id === insight.id);
+    const _existing = this?.insights.findIndex((i) => i?.id === insight?.id);
     if (existing !== -1) {
-      this.insights[existing] = insight;
+      this?.insights[existing] = insight;
       return;
     }
-    this.insights.unshift(insight);
-    if (this.insights.length > 50) this.insights.pop();
+    this?.insights.unshift(insight);
+    if (this?.insights.length > 50) this?.insights.pop();
   }
 
   private _refreshInsights(): void {
-    const understandings = this.analyzeCurrentState();
+    const _understandings = this?.analyzeCurrentState();
 
     for (const u of understandings) {
-      if (u.requiresHumanAttention && !u.isRoutineNoise) {
-        this._addInsight({
-          id: `error_${u.errorClass}`,
+      if (u?.requiresHumanAttention && !u?.isRoutineNoise) {
+        this?._addInsight({
+          id: `error_${u?.errorClass}`,
           priority:
-            u.severity === "critical"
+            u?.severity === "critical"
               ? "critical"
-              : u.severity === "high"
+              : u?.severity === "high"
                 ? "high"
-                : u.severity === "medium"
+                : u?.severity === "medium"
                   ? "medium"
                   : "low",
-          title: u.errorClass
+          title: u?.errorClass
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase()),
-          detail: u.what + " " + u.why,
-          action: u.recommendedActions[0]?.action ?? "Investigate.",
-          automated: u.recommendedActions[0]?.automated ?? false,
-          since: Date.now(),
+            .replace(/\b\w/g, (c) => c?.toUpperCase()),
+          detail: u?.what + " " + u?.why,
+          action: u?.recommendedActions[0]?.action ?? "Investigate.",
+          automated: u?.recommendedActions[0]?.automated ?? false,
+          since: Date?.now(),
         });
       }
     }
 
     // Prune resolved insights older than 1 hour
-    const cutoff = Date.now() - 60 * 60_000;
-    this.insights = this.insights.filter((i) => i.since > cutoff);
+    const _cutoff = Date?.now() - 60 * 60_000;
+    this.insights = this?.insights.filter((i) => i?.since > cutoff);
   }
 
   getInsights(): Insight[] {
-    this._refreshInsights();
-    return this.insights.slice(0, 20);
+    this?._refreshInsights();
+    return this?.insights.slice(0, 20);
   }
 
   // ─── Admin API data ────────────────────────────────────────────────────────
 
   getStatus() {
-    const narrative = this.narrateSystemState();
-    const understandings = this.analyzeCurrentState();
-    const signals = this._extractSignals();
+    const _narrative = this?.narrateSystemState();
+    const _understandings = this?.analyzeCurrentState();
+    const _signals = this?._extractSignals();
 
     return {
       narrative,
       currentUnderstandings: understandings,
       signals: {
-        uptimeSeconds: Math.round(signals.uptimeMs / 1000),
-        pdim5xxInWindow: signals.pdim5xxCount,
-        pdimCircuitOpen: signals.pdimCircuitOpen,
-        pdimWarm: signals.pdimHadFirstSuccess,
-        luaMaxQueued: signals.luaMaxQueued,
-        bullmqLockRaces: signals.bullmqLockCount,
-        seedingFailures: signals.seedingFailCount,
-        heapPercent: signals.memHeapPct,
-        dbSlowQueries: signals.dbSlowCount,
-        unknownErrors: signals.unknownErrorCount,
-        chainFixerFires: signals.chainFixerFires,
-        openIncidents: signals.incidentCount,
-        securityThreats: signals.securityThreatCount,
+        uptimeSeconds: Math?.round(signals?.uptimeMs / 1000),
+        pdim5xxInWindow: signals?.pdim5xxCount,
+        pdimCircuitOpen: signals?.pdimCircuitOpen,
+        pdimWarm: signals?.pdimHadFirstSuccess,
+        luaMaxQueued: signals?.luaMaxQueued,
+        bullmqLockRaces: signals?.bullmqLockCount,
+        seedingFailures: signals?.seedingFailCount,
+        heapPercent: signals?.memHeapPct,
+        dbSlowQueries: signals?.dbSlowCount,
+        unknownErrors: signals?.unknownErrorCount,
+        chainFixerFires: signals?.chainFixerFires,
+        openIncidents: signals?.incidentCount,
+        securityThreats: signals?.securityThreatCount,
       },
       security: {
-        totalThreats: this._threatCount,
-        healedThreats: this._healedThreats,
-        recentAssessments: this.recentSecurityUnderstandings.slice(0, 10),
+        totalThreats: this?._threatCount,
+        healedThreats: this?._healedThreats,
+        recentAssessments: this?.recentSecurityUnderstandings.slice(0, 10),
       },
-      insights: this.getInsights(),
-      generatedAt: Date.now(),
+      insights: this?.getInsights(),
+      generatedAt: Date?.now(),
     };
   }
 
   getSecurityReport() {
     return {
-      totalThreatsDetected: this._threatCount,
-      totalThreatsHealed: this._healedThreats,
-      activeThreats: Math.max(0, this._threatCount - this._healedThreats),
-      recentAssessments: this.recentSecurityUnderstandings.slice(0, 20),
-      generatedAt: Date.now(),
+      totalThreatsDetected: this?._threatCount,
+      totalThreatsHealed: this?._healedThreats,
+      activeThreats: Math?.max(0, this?._threatCount - this?._healedThreats),
+      recentAssessments: this?.recentSecurityUnderstandings.slice(0, 20),
+      generatedAt: Date?.now(),
     };
   }
 
   getEventWindow(limit = 100) {
-    return this.eventWindow.slice(-limit).reverse();
+    return this?.eventWindow.slice(-limit).reverse();
   }
 }
 
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
-export const systemIntelligence = new SystemIntelligenceEngine();
+export const _systemIntelligence = new SystemIntelligenceEngine();

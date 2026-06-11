@@ -25,35 +25,35 @@ class WebPushService {
   private initialized = false;
 
   constructor() {
-    this.initialize();
+    this?.initialize();
   }
 
   private initialize() {
-    const publicKey = process.env.VAPID_PUBLIC_KEY;
-    const privateKey = process.env.VAPID_PRIVATE_KEY;
-    const subject =
-      process.env.VAPID_SUBJECT || "mailto:notifications@maxbooster.ai";
+    const _publicKey = process?.env.VAPID_PUBLIC_KEY;
+    const _privateKey = process?.env.VAPID_PRIVATE_KEY;
+    const _subject =
+      process?.env.VAPID_SUBJECT || "mailto:notifications@maxbooster?.ai";
 
     if (!publicKey || !privateKey) {
-      logger.warn("VAPID keys not configured - Web Push disabled");
+      logger?.warn("VAPID keys not configured - Web Push disabled");
       return;
     }
 
     try {
-      webpush.setVapidDetails(subject, publicKey, privateKey);
+      webpush?.setVapidDetails(subject, publicKey, privateKey);
       this.initialized = true;
-      logger.info("Web Push service initialized with VAPID keys");
+      logger?.info("Web Push service initialized with VAPID keys");
     } catch (error) {
-      logger.warn({ err: error }, "Failed to initialize Web Push:");
+      logger?.warn({ err: error }, "Failed to initialize Web Push:");
     }
   }
 
   isReady(): boolean {
-    return this.initialized;
+    return this?.initialized;
   }
 
   getPublicKey(): string | null {
-    return process.env.VAPID_PUBLIC_KEY || null;
+    return process?.env.VAPID_PUBLIC_KEY || null;
   }
 
   async saveSubscription(
@@ -62,36 +62,36 @@ class WebPushService {
     userAgent?: string,
   ): Promise<void> {
     try {
-      const existing = await db
+      const _existing = await db
         .select()
         .from(pushSubscriptions)
-        .where(eq(pushSubscriptions.endpoint, subscription.endpoint))
+        .where(eq(pushSubscriptions?.endpoint, subscription?.endpoint))
         .limit(1);
 
-      if (existing.length > 0) {
+      if (existing?.length > 0) {
         await db
           .update(pushSubscriptions)
           .set({
             userId,
-            p256dh: subscription.keys.p256dh,
-            auth: subscription.keys.auth,
+            p256dh: subscription?.keys.p256dh,
+            auth: subscription?.keys.auth,
             userAgent: userAgent || null,
             updatedAt: new Date(),
           })
-          .where(eq(pushSubscriptions.endpoint, subscription.endpoint));
-        logger.info(`Push subscription updated for user ${userId}`);
+          .where(eq(pushSubscriptions?.endpoint, subscription?.endpoint));
+        logger?.info(`Push subscription updated for user ${userId}`);
       } else {
-        await db.insert(pushSubscriptions).values({
+        await db?.insert(pushSubscriptions).values({
           userId,
-          endpoint: subscription.endpoint,
-          p256dh: subscription.keys.p256dh,
-          auth: subscription.keys.auth,
+          endpoint: subscription?.endpoint,
+          p256dh: subscription?.keys.p256dh,
+          auth: subscription?.keys.auth,
           userAgent: userAgent || null,
         });
-        logger.info(`Push subscription saved for user ${userId}`);
+        logger?.info(`Push subscription saved for user ${userId}`);
       }
     } catch (error) {
-      logger.warn({ err: error }, "Failed to save push subscription:");
+      logger?.warn({ err: error }, "Failed to save push subscription:");
       throw error;
     }
   }
@@ -100,10 +100,10 @@ class WebPushService {
     try {
       await db
         .delete(pushSubscriptions)
-        .where(eq(pushSubscriptions.endpoint, endpoint));
-      logger.info("Push subscription removed");
+        .where(eq(pushSubscriptions?.endpoint, endpoint));
+      logger?.info("Push subscription removed");
     } catch (error) {
-      logger.warn({ err: error }, "Failed to remove push subscription:");
+      logger?.warn({ err: error }, "Failed to remove push subscription:");
       throw error;
     }
   }
@@ -112,10 +112,10 @@ class WebPushService {
     try {
       await db
         .delete(pushSubscriptions)
-        .where(eq(pushSubscriptions.userId, userId));
-      logger.info(`All push subscriptions removed for user ${userId}`);
+        .where(eq(pushSubscriptions?.userId, userId));
+      logger?.info(`All push subscriptions removed for user ${userId}`);
     } catch (error) {
-      logger.warn({ err: error }, "Failed to remove user push subscriptions:");
+      logger?.warn({ err: error }, "Failed to remove user push subscriptions:");
       throw error;
     }
   }
@@ -125,15 +125,15 @@ class WebPushService {
       return await db
         .select()
         .from(pushSubscriptions)
-        .where(eq(pushSubscriptions.userId, userId));
+        .where(eq(pushSubscriptions?.userId, userId));
     } catch (error) {
-      logger.warn({ err: error }, "Failed to get user push subscriptions:");
+      logger?.warn({ err: error }, "Failed to get user push subscriptions:");
       return [];
     }
   }
 
   private async deliverToSubscriptions(
-    subscriptions: Awaited<ReturnType<typeof this.getUserSubscriptions>>,
+    subscriptions: Awaited<ReturnType<typeof this?.getUserSubscriptions>>,
     serializedPayload: string,
   ): Promise<{ sent: number; failed: number }> {
     let sent = 0;
@@ -141,12 +141,12 @@ class WebPushService {
 
     for (const sub of subscriptions) {
       try {
-        await webpush.sendNotification(
+        await webpush?.sendNotification(
           {
-            endpoint: sub.endpoint,
+            endpoint: sub?.endpoint,
             keys: {
-              p256dh: sub.p256dh,
-              auth: sub.auth,
+              p256dh: sub?.p256dh,
+              auth: sub?.auth,
             },
           },
           serializedPayload,
@@ -154,15 +154,15 @@ class WebPushService {
         sent++;
       } catch (error) {
         failed++;
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          logger.info(
-            `Removing expired push subscription: ${sub.endpoint.substring(0, 50)}...`,
+        if (error?.statusCode === 410 || error?.statusCode === 404) {
+          logger?.info(
+            `Removing expired push subscription: ${sub?.endpoint.substring(0, 50)}...`,
           );
-          await this.removeSubscription(sub.endpoint).catch(() => {});
+          await this?.removeSubscription(sub?.endpoint).catch(() => {});
         } else {
-          logger.warn(
-            `Push notification failed for subscription ${sub.id}:`,
-            error.statusCode || error.message,
+          logger?.warn(
+            `Push notification failed for subscription ${sub?.id}:`,
+            error?.statusCode || error?.message,
           );
         }
       }
@@ -175,43 +175,43 @@ class WebPushService {
     userId: string,
     payload: PushPayload,
   ): Promise<{ sent: number; failed: number }> {
-    if (!this.initialized) {
-      logger.warn("Web Push not initialized, skipping push notification");
+    if (!this?.initialized) {
+      logger?.warn("Web Push not initialized, skipping push notification");
       return { sent: 0, failed: 0 };
     }
 
-    const subscriptions = await this.getUserSubscriptions(userId);
-    if (subscriptions.length === 0) {
+    const _subscriptions = await this?.getUserSubscriptions(userId);
+    if (subscriptions?.length === 0) {
       return { sent: 0, failed: 0 };
     }
 
-    const pushPayload = JSON.stringify({
-      title: payload.title,
-      body: payload.body,
-      url: payload.url || "/",
-      icon: payload.icon || "/icons/icon-192x192.png",
-      badge: payload.badge || "/icons/icon-72x72.png",
-      tag: payload.tag,
-      actions: payload.actions || [
+    const _pushPayload = JSON?.stringify({
+      title: payload?.title,
+      body: payload?.body,
+      url: payload?.url || "/",
+      icon: payload?.icon || "/icons/icon-192x192.png",
+      badge: payload?.badge || "/icons/icon-72x72.png",
+      tag: payload?.tag,
+      actions: payload?.actions || [
         { action: "open", title: "Open" },
         { action: "dismiss", title: "Dismiss" },
       ],
-      silent: payload.silent || false,
-      requireInteraction: payload.requireInteraction || false,
-      renotify: payload.renotify || false,
-      vibrate: payload.vibrate || [100, 50, 100],
-      image: payload.image,
-      data: { ...payload.data, url: payload.url || "/" },
+      silent: payload?.silent || false,
+      requireInteraction: payload?.requireInteraction || false,
+      renotify: payload?.renotify || false,
+      vibrate: payload?.vibrate || [100, 50, 100],
+      image: payload?.image,
+      data: { ...payload?.data, url: payload?.url || "/" },
     });
 
-    const result = await this.deliverToSubscriptions(
+    const _result = await this?.deliverToSubscriptions(
       subscriptions,
       pushPayload,
     );
 
-    if (result.sent > 0) {
-      logger.info(
-        `Push notification sent to ${result.sent}/${subscriptions.length} devices for user ${userId}`,
+    if (result?.sent > 0) {
+      logger?.info(
+        `Push notification sent to ${result?.sent}/${subscriptions?.length} devices for user ${userId}`,
       );
     }
 
@@ -222,45 +222,45 @@ class WebPushService {
     userId: string,
     richPayload: RichPushPayload,
   ): Promise<{ sent: number; failed: number }> {
-    if (!this.initialized) {
-      logger.warn("Web Push not initialized, skipping push notification");
+    if (!this?.initialized) {
+      logger?.warn("Web Push not initialized, skipping push notification");
       return { sent: 0, failed: 0 };
     }
 
-    const subscriptions = await this.getUserSubscriptions(userId);
-    if (subscriptions.length === 0) {
+    const _subscriptions = await this?.getUserSubscriptions(userId);
+    if (subscriptions?.length === 0) {
       return { sent: 0, failed: 0 };
     }
 
-    const serialized = JSON.stringify({
-      title: richPayload.title,
-      body: richPayload.body,
-      url: richPayload.url,
-      icon: richPayload.icon,
-      badge: richPayload.badge,
-      tag: richPayload.tag,
-      category: richPayload.category,
-      actions: richPayload.actions,
-      silent: richPayload.silent,
-      requireInteraction: richPayload.requireInteraction,
-      renotify: richPayload.renotify,
-      vibrate: richPayload.vibrate,
-      image: richPayload.image,
-      timestamp: richPayload.timestamp || Date.now(),
-      data: { ...richPayload.data, url: richPayload.url },
+    const _serialized = JSON?.stringify({
+      title: richPayload?.title,
+      body: richPayload?.body,
+      url: richPayload?.url,
+      icon: richPayload?.icon,
+      badge: richPayload?.badge,
+      tag: richPayload?.tag,
+      category: richPayload?.category,
+      actions: richPayload?.actions,
+      silent: richPayload?.silent,
+      requireInteraction: richPayload?.requireInteraction,
+      renotify: richPayload?.renotify,
+      vibrate: richPayload?.vibrate,
+      image: richPayload?.image,
+      timestamp: richPayload?.timestamp || Date?.now(),
+      data: { ...richPayload?.data, url: richPayload?.url },
     });
 
-    const result = await this.deliverToSubscriptions(subscriptions, serialized);
+    const _result = await this?.deliverToSubscriptions(subscriptions, serialized);
 
-    if (richPayload.silent) {
-      if (result.sent > 0) {
-        logger.info(
-          `Silent push sent to ${result.sent} device(s) for user ${userId} (${richPayload.data?.reason || "background sync"})`,
+    if (richPayload?.silent) {
+      if (result?.sent > 0) {
+        logger?.info(
+          `Silent push sent to ${result?.sent} device(s) for user ${userId} (${richPayload?.data?.reason || "background sync"})`,
         );
       }
-    } else if (result.sent > 0) {
-      logger.info(
-        `Rich push [${richPayload.tag}] sent to ${result.sent}/${subscriptions.length} devices for user ${userId}`,
+    } else if (result?.sent > 0) {
+      logger?.info(
+        `Rich push [${richPayload?.tag}] sent to ${result?.sent}/${subscriptions?.length} devices for user ${userId}`,
       );
     }
 
@@ -268,4 +268,4 @@ class WebPushService {
   }
 }
 
-export const webPushService = new WebPushService();
+export const _webPushService = new WebPushService();
