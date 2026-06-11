@@ -184,11 +184,6 @@ interface GenerateTextResponse {
   outputs?: Array<{ text?: string }>;
 }
 
-interface GenerateImageResponse {
-  url?: string;
-  image_url?: string;
-  path?: string;
-}
 
 interface RawBeat {
   timecodeHint?: string;
