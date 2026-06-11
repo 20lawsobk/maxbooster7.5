@@ -202,7 +202,7 @@ export default function WelcomeWizard({
   }, [onSkip, toast]);
 
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files.[0];
+    const file = event.target.files[0];
     if (!file || avatarUploading) return;
     const previewUrl = createLocalPreview(file);
     setAvatarPreview(previewUrl);
