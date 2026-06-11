@@ -205,8 +205,8 @@ export function isLuaRegistrationMode(): boolean {
 
 // process?.cwd() always resolves to the project root regardless of CJS/ESM build format
 const _projectRoot = process?.cwd();
-const _wasmoonUrl = `file://${_projectRoot}/node_modules/wasmoon/dist/index?.js`;
-const _msgpackrUrl = `file://${_projectRoot}/node_modules/msgpackr/dist/node?.cjs`;
+const _wasmoonUrl = `file://${_projectRoot}/node_modules/wasmoon/dist/index.js`;
+const _msgpackrUrl = `file://${_projectRoot}/node_modules/msgpackr/dist/node.cjs`;
 
 const WORKER_CODE = `
 import { workerData, parentPort } from 'worker_threads';
