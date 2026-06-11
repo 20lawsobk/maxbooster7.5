@@ -974,7 +974,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
     res.on("finish", () => {
       const route =
-        req.route.path ||
+        req.route?.path ||
         req.path.replace(/\/[0-9a-f-]{36}/gi, "/:id") ||
         "unknown";
       const durationSecs = (Date.now() - start) / 1000;

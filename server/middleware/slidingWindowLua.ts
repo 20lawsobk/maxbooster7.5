@@ -42,15 +42,15 @@ local entry_id     = ARGV[4]
 local expire_secs  = tonumber(ARGV[5])
 local batch_count  = tonumber(ARGV[6] or '1')
 if batch_count < 1 then batch_count = 1 end
-local n = tonumber(redis?.call('ZCOUNT', key, window_start, '+inf'))
+local n = tonumber(redis.call('ZCOUNT', key, window_start, '+inf'))
 if n + batch_count > max_req then return {1, 0} end
 if batch_count == 1 then
-  redis?.call('ZADD', key, now, entry_id)
+  redis.call('ZADD', key, now, entry_id)
 else
   for i = 1, batch_count do
-    redis?.call('ZADD', key, now, entry_id .. ':' .. i)
+    redis.call('ZADD', key, now, entry_id .. ':' .. i)
   end
 end
-redis?.call('EXPIRE', key, expire_secs)
+redis.call('EXPIRE', key, expire_secs)
 return {0, max_req - n - batch_count}
 `;
