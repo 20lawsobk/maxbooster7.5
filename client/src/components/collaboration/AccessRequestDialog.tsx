@@ -227,7 +227,7 @@ export function AccessRequestDialog({
           description: `${request.requesterName}'s request has been denied`,
         });
 
-        onOutcome.("access_request_denied", {
+        onOutcome?.("access_request_denied", {
           requestId: request.id,
           userId: request.requesterId,
           reason: denyReason,
@@ -301,7 +301,7 @@ export function AccessRequestDialog({
           ),
         });
 
-        onOutcome.("access_downgraded", { userId, newLevel });
+        onOutcome?.("access_downgraded", { userId, newLevel });
       } catch (error) {
         toast({
           title: "Downgrade Failed",

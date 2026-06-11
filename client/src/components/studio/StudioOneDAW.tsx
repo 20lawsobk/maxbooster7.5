@@ -567,7 +567,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Play / Pause",
         category: "transport",
         context: "studio",
-        action: () => dawActionsRef.current["studio.play-pause"].(),
+        action: () => dawActionsRef.current["studio.play-pause"]?.(),
       },
       {
         id: "studio.stop",
@@ -575,7 +575,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Stop",
         category: "transport",
         context: "studio",
-        action: () => dawActionsRef.current["studio.stop"].(),
+        action: () => dawActionsRef.current["studio.stop"]?.(),
       },
       {
         id: "studio.rewind",
@@ -583,7 +583,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Return to start",
         category: "transport",
         context: "studio",
-        action: () => dawActionsRef.current["studio.rewind"].(),
+        action: () => dawActionsRef.current["studio.rewind"]?.(),
       },
       {
         id: "studio.record",
@@ -591,7 +591,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle recording",
         category: "transport",
         context: "studio",
-        action: () => dawActionsRef.current["studio.record"].(),
+        action: () => dawActionsRef.current["studio.record"]?.(),
       },
       {
         id: "studio.loop",
@@ -599,7 +599,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle loop",
         category: "transport",
         context: "studio",
-        action: () => dawActionsRef.current["studio.loop"].(),
+        action: () => dawActionsRef.current["studio.loop"]?.(),
       },
       {
         id: "studio.save",
@@ -608,7 +608,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Save project",
         category: "file",
         context: "studio",
-        action: () => dawActionsRef.current["studio.save"].(),
+        action: () => dawActionsRef.current["studio.save"]?.(),
       },
       {
         id: "studio.save-as",
@@ -617,7 +617,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Save project as...",
         category: "file",
         context: "studio",
-        action: () => dawActionsRef.current["studio.save-as"].(),
+        action: () => dawActionsRef.current["studio.save-as"]?.(),
       },
       {
         id: "studio.new-project",
@@ -626,7 +626,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "New project",
         category: "file",
         context: "studio",
-        action: () => dawActionsRef.current["studio.new-project"].(),
+        action: () => dawActionsRef.current["studio.new-project"]?.(),
       },
       {
         id: "studio.undo",
@@ -635,7 +635,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Undo",
         category: "editing",
         context: "studio",
-        action: () => dawActionsRef.current["studio.undo"].(),
+        action: () => dawActionsRef.current["studio.undo"]?.(),
       },
       {
         id: "studio.redo",
@@ -644,7 +644,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Redo",
         category: "editing",
         context: "studio",
-        action: () => dawActionsRef.current["studio.redo"].(),
+        action: () => dawActionsRef.current["studio.redo"]?.(),
       },
       {
         id: "studio.toggle-mixer",
@@ -652,7 +652,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle mixer",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.toggle-mixer"].(),
+        action: () => dawActionsRef.current["studio.toggle-mixer"]?.(),
       },
       {
         id: "studio.toggle-inspector",
@@ -660,7 +660,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle inspector",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.toggle-inspector"].(),
+        action: () => dawActionsRef.current["studio.toggle-inspector"]?.(),
       },
       {
         id: "studio.toggle-editor",
@@ -668,7 +668,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle editor",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.toggle-editor"].(),
+        action: () => dawActionsRef.current["studio.toggle-editor"]?.(),
       },
       {
         id: "studio.project-settings",
@@ -677,7 +677,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Project settings",
         category: "settings",
         context: "studio",
-        action: () => dawActionsRef.current["studio.project-settings"].(),
+        action: () => dawActionsRef.current["studio.project-settings"]?.(),
       },
       {
         id: "studio.version-management",
@@ -686,7 +686,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Version management",
         category: "file",
         context: "studio",
-        action: () => dawActionsRef.current["studio.version-management"].(),
+        action: () => dawActionsRef.current["studio.version-management"]?.(),
       },
       {
         id: "studio.export",
@@ -695,7 +695,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Export project",
         category: "file",
         context: "studio",
-        action: () => dawActionsRef.current["studio.export"].(),
+        action: () => dawActionsRef.current["studio.export"]?.(),
       },
       {
         id: "studio.import-audio",
@@ -704,7 +704,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Import audio",
         category: "file",
         context: "studio",
-        action: () => dawActionsRef.current["studio.import-audio"].(),
+        action: () => dawActionsRef.current["studio.import-audio"]?.(),
       },
       {
         id: "studio.stem-export",
@@ -713,7 +713,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Stem export",
         category: "file",
         context: "studio",
-        action: () => dawActionsRef.current["studio.stem-export"].(),
+        action: () => dawActionsRef.current["studio.stem-export"]?.(),
       },
       {
         id: "studio.plugin-browser-all",
@@ -722,7 +722,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Browse all plugins",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.plugin-browser-all"].(),
+        action: () => dawActionsRef.current["studio.plugin-browser-all"]?.(),
       },
       {
         id: "studio.plugin-browser-instruments",
@@ -732,7 +732,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         category: "view",
         context: "studio",
         action: () =>
-          dawActionsRef.current["studio.plugin-browser-instruments"].(),
+          dawActionsRef.current["studio.plugin-browser-instruments"]?.(),
       },
       {
         id: "studio.plugin-browser-effects",
@@ -742,7 +742,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         category: "view",
         context: "studio",
         action: () =>
-          dawActionsRef.current["studio.plugin-browser-effects"].(),
+          dawActionsRef.current["studio.plugin-browser-effects"]?.(),
       },
       {
         id: "studio.toggle-ai-panel",
@@ -751,7 +751,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle AI panel",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.toggle-ai-panel"].(),
+        action: () => dawActionsRef.current["studio.toggle-ai-panel"]?.(),
       },
       {
         id: "studio.music-generator",
@@ -760,7 +760,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Open music generator",
         category: "actions",
         context: "studio",
-        action: () => dawActionsRef.current["studio.music-generator"].(),
+        action: () => dawActionsRef.current["studio.music-generator"]?.(),
       },
       {
         id: "studio.show-shortcuts",
@@ -768,7 +768,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Show keyboard shortcuts",
         category: "help",
         context: "studio",
-        action: () => dawActionsRef.current["studio.show-shortcuts"].(),
+        action: () => dawActionsRef.current["studio.show-shortcuts"]?.(),
       },
       {
         id: "studio.delete-clip",
@@ -776,7 +776,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Delete selected clip",
         category: "editing",
         context: "studio",
-        action: () => dawActionsRef.current["studio.delete-clip"].(),
+        action: () => dawActionsRef.current["studio.delete-clip"]?.(),
       },
       {
         id: "studio.split-clip",
@@ -785,7 +785,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Split clip at playhead",
         category: "editing",
         context: "studio",
-        action: () => dawActionsRef.current["studio.split-clip"].(),
+        action: () => dawActionsRef.current["studio.split-clip"]?.(),
       },
       {
         id: "studio.duplicate-clip",
@@ -794,7 +794,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Duplicate clip",
         category: "editing",
         context: "studio",
-        action: () => dawActionsRef.current["studio.duplicate-clip"].(),
+        action: () => dawActionsRef.current["studio.duplicate-clip"]?.(),
       },
       {
         id: "studio.copy-clip",
@@ -803,7 +803,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Copy clip",
         category: "editing",
         context: "studio",
-        action: () => dawActionsRef.current["studio.copy-clip"].(),
+        action: () => dawActionsRef.current["studio.copy-clip"]?.(),
       },
       {
         id: "studio.paste-clip",
@@ -812,7 +812,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Paste clip",
         category: "editing",
         context: "studio",
-        action: () => dawActionsRef.current["studio.paste-clip"].(),
+        action: () => dawActionsRef.current["studio.paste-clip"]?.(),
       },
       {
         id: "studio.toggle-automation",
@@ -820,7 +820,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle automation",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.toggle-automation"].(),
+        action: () => dawActionsRef.current["studio.toggle-automation"]?.(),
       },
       {
         id: "studio.toggle-video-track",
@@ -829,7 +829,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle video track",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.toggle-video-track"].(),
+        action: () => dawActionsRef.current["studio.toggle-video-track"]?.(),
       },
       {
         id: "studio.toggle-lyrics",
@@ -838,7 +838,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle lyrics panel",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.toggle-lyrics"].(),
+        action: () => dawActionsRef.current["studio.toggle-lyrics"]?.(),
       },
       {
         id: "studio.audio-devices",
@@ -847,7 +847,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Audio device settings",
         category: "settings",
         context: "studio",
-        action: () => dawActionsRef.current["studio.audio-devices"].(),
+        action: () => dawActionsRef.current["studio.audio-devices"]?.(),
       },
       {
         id: "studio.fullscreen",
@@ -855,7 +855,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         description: "Toggle fullscreen",
         category: "view",
         context: "studio",
-        action: () => dawActionsRef.current["studio.fullscreen"].(),
+        action: () => dawActionsRef.current["studio.fullscreen"]?.(),
       },
     ];
 

@@ -401,7 +401,7 @@ async function exportMixdown(
     }
   }
 
-  onProgress.({
+  onProgress?.({
     stage: "rendering",
     progress: 40,
     message: "Rendering audio...",
@@ -410,7 +410,7 @@ async function exportMixdown(
   // Render offline context
   let renderedBuffer = await offlineContext.startRendering();
 
-  onProgress.({
+  onProgress?.({
     stage: "encoding",
     progress: 70,
     message: "Processing audio...",
@@ -421,12 +421,12 @@ async function exportMixdown(
     renderedBuffer = normalizeAudioBuffer(renderedBuffer, 0.95);
   }
 
-  onProgress.({ stage: "encoding", progress: 90, message: "Encoding WAV..." });
+  onProgress?.({ stage: "encoding", progress: 90, message: "Encoding WAV..." });
 
   // Convert to WAV
   const wavBlob = audioBufferToWav(renderedBuffer, options.bitDepth);
 
-  onProgress.({
+  onProgress?.({
     stage: "complete",
     progress: 100,
     message: "Export complete!",
@@ -455,7 +455,7 @@ async function exportStems(
   for (let i = 0; i < tracksToExport.length; i++) {
     const track = tracksToExport[i];
 
-    onProgress.({
+    onProgress?.({
       stage: "loading",
       progress: (i / tracksToExport.length) * 100,
       message: `Rendering ${track.name} (${i + 1}/${tracksToExport.length})...`,

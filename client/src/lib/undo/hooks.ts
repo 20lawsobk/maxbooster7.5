@@ -104,7 +104,7 @@ export function useUndoableCreate<T extends { id: string }>(
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
-        description: getDescription.(data) || `Create ${entityType}`,
+        description: getDescription?.(data) || `Create ${entityType}`,
         category: "CRUD",
         entityType,
         newState: data,
@@ -155,7 +155,7 @@ export function useUndoableMove<T>(
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
-        description: getDescription.(id, toPosition) || `Move ${entityType}`,
+        description: getDescription?.(id, toPosition) || `Move ${entityType}`,
         category: "CRUD",
         entityId: id,
         entityType,
@@ -196,7 +196,7 @@ export function useUndoableReorder<T>(
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
-        description: getDescription.() || `Reorder ${entityType}`,
+        description: getDescription?.() || `Reorder ${entityType}`,
         category: "CRUD",
         entityType,
         previousState: previousOrder,
@@ -237,7 +237,7 @@ export function useUndoableUpdate<T>(
       const metadata: ActionMetadata = {
         timestamp: Date.now(),
         module,
-        description: getDescription.(id) || `Update ${entityType}`,
+        description: getDescription?.(id) || `Update ${entityType}`,
         category: "CRUD",
         entityId: id,
         entityType,

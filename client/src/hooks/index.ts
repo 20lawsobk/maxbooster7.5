@@ -183,7 +183,7 @@ export type {
   AccessibilityPreferences,
 } from "./useAccessibility";
 
-export { useAnnounce, useScreenReaderAnnounce } from "./useAnnounce";
+export { useAnnounce } from "./useAnnounce";
 export type { UseAnnounceOptions, UseAnnounceResult } from "./useAnnounce";
 
 export {
@@ -194,10 +194,7 @@ export {
 } from "./useAnnouncer";
 export type { UseAnnouncerOptions, UseAnnouncerResult } from "./useAnnouncer";
 
-export {
-  useAccessibilityPreferences,
-  useAutoSyncAccessibilityPreferences,
-} from "./useAccessibilityPreferences";
+export { useAutoSyncAccessibilityPreferences } from "./useAccessibilityPreferences";
 export type { AccessibilityPreferences as A11yPreferences } from "./useAccessibilityPreferences";
 
 export {
@@ -373,7 +370,6 @@ export type {
 export {
   useRecommendedActions,
   useNextAction,
-  usePersonalizedTips,
   useCareerProgress,
 } from "./useRecommendedActions";
 export type {

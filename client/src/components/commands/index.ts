@@ -34,4 +34,3 @@ export {
   ShortcutCheatSheetTrigger,
 } from "./ShortcutHints";
 export { ModuleShortcuts, ModuleShortcutsPanel } from "./ModuleShortcuts";
-export { ShortcutCustomizer } from "./ShortcutCustomizer";

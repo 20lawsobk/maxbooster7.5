@@ -746,4 +746,3 @@ interface MasteringSettings {
   makeupGain: number;
 }
 
-export { AIMastering, type MasteringResult, type MasteringSettings };

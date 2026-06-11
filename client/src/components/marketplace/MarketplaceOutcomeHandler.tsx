@@ -326,7 +326,7 @@ export function MarketplaceOutcomeHandler({
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Button onClick={() => onAction.("download")} className="w-full">
+              <Button onClick={() => onAction?.("download")} className="w-full">
                 <Download className="w-4 h-4 mr-2" />
                 Download Beat
               </Button>

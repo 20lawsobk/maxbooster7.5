@@ -98,10 +98,7 @@ export {
 
 export {
   BatchEditDialog,
-  releaseEditFields,
   trackEditFields,
-  postEditFields,
-  fileEditFields,
   type BatchEditField,
   type BatchEditPreview,
   type BatchEditDialogProps,

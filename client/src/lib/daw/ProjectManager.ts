@@ -49,13 +49,13 @@ export interface MediaPoolItem {
 
 export interface ProjectState {
   metadata: ProjectMetadata;
-  transport: ReturnType<typeof transportEngine?.getState>;
-  timeline: ReturnType<typeof timelineEngine?.getState>;
-  automation: ReturnType<typeof automationEngine?.getState>;
-  routing: ReturnType<typeof routingEngine?.serialize>;
-  midi: ReturnType<typeof midiEngine?.getState>;
-  audio: ReturnType<typeof nonDestructiveAudio?.serialize>;
-  plugins: ReturnType<typeof pluginStateManager?.serialize>;
+  transport: ReturnType<typeof transportEngine.getState>;
+  timeline: ReturnType<typeof timelineEngine.getState>;
+  automation: ReturnType<typeof automationEngine.getState>;
+  routing: ReturnType<typeof routingEngine.serialize>;
+  midi: ReturnType<typeof midiEngine.getState>;
+  audio: ReturnType<typeof nonDestructiveAudio.serialize>;
+  plugins: ReturnType<typeof pluginStateManager.serialize>;
 }
 
 export interface ProjectManagerState {

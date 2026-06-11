@@ -277,7 +277,7 @@ export function useNetworkStatus(
             });
           }
 
-          onOnline.();
+          onOnline?.();
         }
       });
     };
