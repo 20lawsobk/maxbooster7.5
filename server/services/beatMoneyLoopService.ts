@@ -72,7 +72,7 @@ const PRICE_UNDERCUT_FACTOR = 0.95;
 const TRENDING_GENRE_FALLBACK = "trap";
 const TRENDING_MOOD_FALLBACK = "dark";
 
-const PLATFORMS_FOR_CAMPAIGN = ["instagram", "tiktok", "youtube"] as const;
+const PLATFORMS_FOR_CAMPAIGN = ["instagram", "tiktok", "twitter"] as const;
 
 // ── Public types ──────────────────────────────────────────────────────────────
 

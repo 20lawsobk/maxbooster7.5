@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { storage } from "../storage";
 import { platformAPI } from "../platform-apis";
-import { adCampaigns, adCreatives, contentCalendar } from "@shared/schema";
+import { adCampaigns, adCreatives, contentCalendar, socialAccounts } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { logger } from "../logger.js";
 
@@ -397,19 +397,16 @@ export class AdvertisingDispatchService {
    * @returns Array of connected platform names (lowercase)
    */
   private async getConnectedPlatforms(userId: string): Promise<string[]> {
-    const user = await storage?.getUser(userId);
-    if (!user) return [];
-
-    const platforms: string[] = [];
-
-    if (user?.twitterToken) platforms?.push("twitter");
-    if (user?.facebookToken) platforms?.push("facebook");
-    if (user?.instagramToken) platforms?.push("instagram");
-    if (user?.linkedinToken) platforms?.push("linkedin");
-    if (user?.tiktokToken) platforms?.push("tiktok");
-    if (user?.threadsToken) platforms?.push("threads");
-
-    return platforms;
+    const rows = await db
+      .select({ platform: socialAccounts.platform })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.isActive, true),
+        ),
+      );
+    return rows.map((r) => r.platform.toLowerCase());
   }
 
   /**

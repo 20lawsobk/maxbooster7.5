@@ -138,8 +138,8 @@ export const platformAPI = {
       } catch (error: unknown) {
         const axiosErr = error as Record<string, any>;
         const errorMsg =
-          axiosErr.response.data.error.message ||
-          axiosErr.response.data.error_description ||
+          axiosErr?.response?.data?.error?.message ||
+          axiosErr?.response?.data?.error_description ||
           (error instanceof Error ? error.message : null) ||
           "Unknown error";
 
