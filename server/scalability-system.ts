@@ -301,8 +301,7 @@ export class ScalabilitySystem {
 
   // Check scaling needs
   private async checkScalingNeeds(): Promise<void> {
-    const { cpuUsage, memoryUsage, activeConnections } =
-      this.metrics;
+    const { cpuUsage, memoryUsage, activeConnections } = this.metrics;
 
     // Scale up conditions for extreme concurrency
     if (cpuUsage > 75 || memoryUsage > 80 || activeConnections > 1000000000) {

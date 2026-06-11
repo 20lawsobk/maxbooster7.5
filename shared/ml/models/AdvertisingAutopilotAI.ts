@@ -22,8 +22,16 @@
 
 import * as tf from "@tensorflow/tfjs";
 import { BaseModel } from "./BaseModel.js";
-import { advertisingRuleEngine, type AdContext, type AdRuleEvaluationResult } from "../coordination/AdvertisingRuleEngine.js";
-import { autopilotCoordinator, type ExecutionIntent, type CampaignState } from "../coordination/AutopilotCoordinator.js";
+import {
+  advertisingRuleEngine,
+  type AdContext,
+  type AdRuleEvaluationResult,
+} from "../coordination/AdvertisingRuleEngine.js";
+import {
+  autopilotCoordinator,
+  type ExecutionIntent,
+  type CampaignState,
+} from "../coordination/AutopilotCoordinator.js";
 import { featureStore } from "../coordination/FeatureStore.js";
 
 export interface CampaignData {

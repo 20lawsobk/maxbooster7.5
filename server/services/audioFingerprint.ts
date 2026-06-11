@@ -153,10 +153,7 @@ export class AudioFingerprintService {
     metadata?: Record<string, unknown>;
   }> {
     const fileBuffer = await fs.promises.readFile(audioPath);
-    crypto
-      .createHash("sha256")
-      .update(fileBuffer)
-      .digest("hex");
+    crypto.createHash("sha256").update(fileBuffer).digest("hex");
 
     const segmentHashes: string[] = [];
     const segmentSize = 4096;

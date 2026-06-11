@@ -192,7 +192,6 @@ export interface AIInsight {
 }
 
 class SocialStrategyAIService {
-
   private platformOptimalTimes: Record<string, Record<string, number[]>> = {
     instagram: {
       monday: [11, 14, 19],
@@ -428,7 +427,7 @@ class SocialStrategyAIService {
       duration?: number;
     } = {},
   ): Promise<CampaignRecommendation[]> {
-    const {  budget = 500, duration = 14 } = options;
+    const { budget = 500, duration = 14 } = options;
 
     const startDate = new Date();
     const endDate = new Date();
@@ -726,7 +725,6 @@ class SocialStrategyAIService {
       let bestDay = "wednesday";
       let bestHour = 12;
       let maxScore = 0;
-
 
       for (const day of days) {
         const hours = platformTimes[day] || [];

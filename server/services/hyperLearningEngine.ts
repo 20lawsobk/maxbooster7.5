@@ -11,7 +11,7 @@ import { EventEmitter } from "events";
 // This cache stores results in process memory for one 5-minute window, so each
 // distinct query hits the DB exactly once per cycle rather than on every call.
 // Zero PDIM overhead — fully in-process, no network I/O.
- // 5-minute bucket matches cycle interval
+// 5-minute bucket matches cycle interval
 const _hlCache = new Map<string, { value: unknown; expiresAt: number }>();
 function _hlGet<T>(key: string): T | undefined {
   const e = _hlCache.get(key);
@@ -399,7 +399,7 @@ class HyperLearningEngine extends EventEmitter {
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
       const _microKey = _hlKey("micro_all_90d");
-       
+
       let allData: Record<string, unknown>[] | undefined =
         _hlGet<Record<string, unknown>[]>(_microKey);
       if (!allData) {
@@ -1505,7 +1505,7 @@ class HyperLearningEngine extends EventEmitter {
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
       const _crossKey = _hlKey("cross_platform_90d");
-       
+
       let platformData: Record<string, unknown>[] | undefined =
         _hlGet<Record<string, unknown>[]>(_crossKey);
       if (!platformData) {
@@ -1651,9 +1651,7 @@ class HyperLearningEngine extends EventEmitter {
     return weights;
   }
 
-  private findOptimalCombinations(
-    patterns: MicroPattern[],
-  ): Array<{
+  private findOptimalCombinations(patterns: MicroPattern[]): Array<{
     combination: Record<string, string>;
     predictedEngagement: number;
     confidence: number;
@@ -2123,7 +2121,7 @@ class HyperLearningEngine extends EventEmitter {
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
       const _behavKey = _hlKey("behavioral_velocity_30d");
-       
+
       let engagementVelocity: Record<string, unknown>[] | undefined =
         _hlGet<Record<string, unknown>[]>(_behavKey);
       if (!engagementVelocity) {

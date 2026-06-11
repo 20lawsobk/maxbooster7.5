@@ -1,4 +1,12 @@
-import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, EnvelopeFollower, dbToLinear } from "./core";
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  BiquadFilter,
+  EnvelopeFollower,
+  dbToLinear,
+} from "./core";
 
 export class ParametricEQProcessor implements DSPProcessor {
   private bandsL: BiquadFilter[] = [];
@@ -285,7 +293,6 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
     for (let i = 0; i < input.samples[0].length; i++) {
       this.buffer[0][this.position] = input.samples[0][i];
       this.buffer[1][this.position] = input.samples[1][i];
-
 
       let freqNorm = ((this.position / this.fftSize) * this.sampleRate) / 2;
       let gain = 1;

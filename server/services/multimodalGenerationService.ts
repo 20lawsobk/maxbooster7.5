@@ -15,7 +15,12 @@ import {
   type OutputModality,
   PACK_DEFINITIONS,
 } from "@shared/types/multimodalGeneration.js";
-import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from "@shared/config/platformRules.js";
+import {
+  PLATFORM_RULES,
+  getRules,
+  enforceTextLength,
+  type PlatformRules,
+} from "@shared/config/platformRules.js";
 
 // Strip any trailing /api so the base is always the root, then append /api.
 // This means AI_SERVER_URL can be set to either the root or the /api form and both work.
@@ -231,8 +236,6 @@ function matchReleaseByUrl(
   }
   return undefined;
 }
-
-
 
 // ── Local URL analyzer ────────────────────────────────────────────────────────
 

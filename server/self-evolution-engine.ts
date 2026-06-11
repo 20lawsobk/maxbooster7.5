@@ -98,7 +98,6 @@ interface CodeUpgrade {
   notAppliedReason?: string;
 }
 
-
 interface PlatformStandard {
   platform: string; // Spotify, Apple Music, YouTube, etc.
   standardType:
@@ -2507,7 +2506,6 @@ export class SelfEvolutionEngine extends EventEmitter {
   // HELPER METHODS
   // ============================================
 
-
   private async identifyTargetFiles(change: IndustryChange): Promise<string[]> {
     const moduleFileMap: Record<string, string[]> = {
       studio: [
@@ -2554,7 +2552,6 @@ export class SelfEvolutionEngine extends EventEmitter {
         return "optimization";
     }
   }
-
 
   private camelCase(str: string): string {
     return str
@@ -2660,9 +2657,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     return this.industryChanges.slice(-limit);
   }
 
-  getUpgradeHistory(
-    limit: number = 50,
-  ): Array<
+  getUpgradeHistory(limit: number = 50): Array<
     Omit<CodeUpgrade, "generatedCode"> & {
       generatedCode: Record<string, string>;
     }

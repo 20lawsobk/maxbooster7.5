@@ -525,7 +525,6 @@ class LabelGridService {
     }
   }
 
-
   /**
    * Retrieve all releases in the authenticated user's LabelGrid catalog.
    *

@@ -1,4 +1,13 @@
-import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, LFO, ADSR, clamp, softClip } from "../core";
+import {
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  LFO,
+  ADSR,
+  clamp,
+  softClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;

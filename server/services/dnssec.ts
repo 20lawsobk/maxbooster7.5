@@ -295,7 +295,6 @@ export function derToRaw(derSig: Buffer, keySize = 32): Buffer {
  * Build the canonical wire-format RDATA for an AAAA record.
  */
 
-
 /**
  * Build a canonical wire-format DNS RR for signing (RFC 4034 §6.2).
  * Format: owner(wire) + type(2) + class(2) + TTL(4) + rdlength(2) + RDATA

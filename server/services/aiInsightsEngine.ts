@@ -1,6 +1,17 @@
 import { type Project } from "@shared/schema";
 import { db } from "../db";
-import { analytics, users, studioProjects, aiMetricPredictions, aiCohortAnalysis, aiChurnPredictions, aiRevenueForecasts, aiAnomalyDetections, aiModels, inferenceRuns } from "@shared/schema";
+import {
+  analytics,
+  users,
+  studioProjects,
+  aiMetricPredictions,
+  aiCohortAnalysis,
+  aiChurnPredictions,
+  aiRevenueForecasts,
+  aiAnomalyDetections,
+  aiModels,
+  inferenceRuns,
+} from "@shared/schema";
 import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
 import { logger } from "../logger.js";
 
@@ -1094,19 +1105,14 @@ export class CustomAIEngine {
   ): Promise<number> {
     const industryRetentionBenchmark = 0.35;
     const retentionVal = cohortMetrics?.retention;
-    const cohortRetention =
-      typeof retentionVal === "number" ? retentionVal : 0;
+    const cohortRetention = typeof retentionVal === "number" ? retentionVal : 0;
     return parseFloat(
       ((cohortRetention - industryRetentionBenchmark) * 100).toFixed(2),
     );
   }
 
   private async extractChurnFeatures(userId: string): Promise<ChurnFeatures> {
-    await db
-      .select()
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+    await db.select().from(users).where(eq(users.id, userId)).limit(1);
     const userProjects = await db
       .select()
       .from(studioProjects)

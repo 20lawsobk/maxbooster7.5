@@ -52,7 +52,17 @@ import {
   type CreativePrediction,
   type ROIForecast,
 } from "../../shared/ml/models/AdOptimizationEngine.js";
-import { SocialAutopilotEngine, type Platform, type ContentType, type BestTimeResult, type ContentTypeRecommendation, type ViralPotentialScore, type ScheduleOptimization, type HistoricalPost, type AudienceInsights } from "../../shared/ml/models/SocialAutopilotEngine.js";
+import {
+  SocialAutopilotEngine,
+  type Platform,
+  type ContentType,
+  type BestTimeResult,
+  type ContentTypeRecommendation,
+  type ViralPotentialScore,
+  type ScheduleOptimization,
+  type HistoricalPost,
+  type AudienceInsights,
+} from "../../shared/ml/models/SocialAutopilotEngine.js";
 import {
   AdvancedTimeSeriesModel,
   type MetricType,

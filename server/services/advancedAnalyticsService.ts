@@ -1,5 +1,19 @@
 import { db } from "../db";
-import { playlistJourneys, syncPlacements, historicalAnalytics, arDiscoveries, platformDataSources, globalRankings, nlpQueryLogs, analytics, users, InsertPlaylistJourney, InsertSyncPlacement, InsertArDiscovery, InsertGlobalRanking } from "@shared/schema";
+import {
+  playlistJourneys,
+  syncPlacements,
+  historicalAnalytics,
+  arDiscoveries,
+  platformDataSources,
+  globalRankings,
+  nlpQueryLogs,
+  analytics,
+  users,
+  InsertPlaylistJourney,
+  InsertSyncPlacement,
+  InsertArDiscovery,
+  InsertGlobalRanking,
+} from "@shared/schema";
 import { eq, and, desc, asc, sql, gte, lte, lt } from "drizzle-orm";
 import { logger } from "../logger.js";
 

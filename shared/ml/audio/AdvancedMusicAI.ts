@@ -12,7 +12,6 @@
  * 100% in-house implementation, no external APIs
  */
 
-
 // ============================================================================
 // SEMANTIC EMBEDDINGS - Deep Word Understanding
 // ============================================================================
@@ -24,7 +23,6 @@ interface SemanticVector {
   confidence: number;
   associations: string[];
 }
-
 
 interface MusicContext {
   genre: string;

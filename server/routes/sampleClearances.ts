@@ -112,12 +112,10 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "[SampleClearances] Failed to create:");
     if (error instanceof Error && error.name === "ZodError") {
-      return res
-        .status(400)
-        .json({
-          error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
-        });
+      return res.status(400).json({
+        error: "Validation error",
+        details: (error as Record<string, unknown>).flatten(),
+      });
     }
     res.status(500).json({ error: "Failed to create sample clearance" });
   }
@@ -166,12 +164,10 @@ router.put("/:id", requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "[SampleClearances] Failed to update:");
     if (error instanceof Error && error.name === "ZodError") {
-      return res
-        .status(400)
-        .json({
-          error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
-        });
+      return res.status(400).json({
+        error: "Validation error",
+        details: (error as Record<string, unknown>).flatten(),
+      });
     }
     res.status(500).json({ error: "Failed to update sample clearance" });
   }

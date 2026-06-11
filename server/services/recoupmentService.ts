@@ -1,5 +1,10 @@
 import { db } from "../db.js";
-import { recoupmentAccounts, royaltyStatements, type RecoupmentAccount, type InsertRecoupmentAccount } from "@shared/schema";
+import {
+  recoupmentAccounts,
+  royaltyStatements,
+  type RecoupmentAccount,
+  type InsertRecoupmentAccount,
+} from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 import crypto from "crypto";

@@ -49,7 +49,6 @@ const PROMO_CARD_DIMENSIONS: Record<string, { width: number; height: number }> =
     twitter: { width: 1200, height: 675 },
   };
 
-
 class PromotionalToolsService {
   private autopilotEngines: Map<string, AutopilotEngine> = new Map();
   private autonomousAutopilots: Map<string, AutonomousAutopilot> = new Map();

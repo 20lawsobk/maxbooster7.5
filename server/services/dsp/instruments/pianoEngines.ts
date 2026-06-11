@@ -1,4 +1,18 @@
-import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, CombFilter, LFO, Oscillator, ADSR, msToSamples, softClip } from "../core";
+import {
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  CombFilter,
+  LFO,
+  Oscillator,
+  ADSR,
+  msToSamples,
+  softClip,
+} from "../core";
 
 export interface NoteParams {
   frequency: number;

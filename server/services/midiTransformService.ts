@@ -1,4 +1,3 @@
-
 export interface MidiNote {
   note: number;
   velocity: number;

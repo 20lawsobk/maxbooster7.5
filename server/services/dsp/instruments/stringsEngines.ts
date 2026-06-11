@@ -1,4 +1,18 @@
-import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, LFO, Oscillator, ADSR, msToSamples, clamp, softClip } from "../core";
+import {
+  AudioBuffer,
+  DSPContext,
+  createBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  LFO,
+  Oscillator,
+  ADSR,
+  msToSamples,
+  clamp,
+  softClip,
+} from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;

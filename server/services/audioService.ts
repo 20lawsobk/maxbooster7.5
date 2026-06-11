@@ -14,7 +14,16 @@ import type {
   AudioJobResult,
 } from "./queueService.js";
 import { logger } from "../logger.js";
-import { AUDIO_FORMATS, SAMPLE_RATES, BIT_DEPTHS, FFMPEG_CODECS, validateAudioConfig, type AudioFormat, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";
+import {
+  AUDIO_FORMATS,
+  SAMPLE_RATES,
+  BIT_DEPTHS,
+  FFMPEG_CODECS,
+  validateAudioConfig,
+  type AudioFormat,
+  type SampleRate,
+  type BitDepth,
+} from "../../shared/audioConstants.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;

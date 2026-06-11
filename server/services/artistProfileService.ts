@@ -1,7 +1,23 @@
 import { db } from "../db.js";
 import { eq, and, inArray } from "drizzle-orm";
-import { artistProfiles, artistProfileReleases, distroTracks, profileClaimPipeline, profileClaimEvents, artistIdentityLinks, artistDnaSnapshots, profileSplitEvents, distributorHistoryImports } from "@shared/schema";
-import type { ArtistProfile, InsertArtistProfile, ProfileClaimPipeline, ArtistIdentityLink, ArtistDnaSnapshot } from "@shared/schema";
+import {
+  artistProfiles,
+  artistProfileReleases,
+  distroTracks,
+  profileClaimPipeline,
+  profileClaimEvents,
+  artistIdentityLinks,
+  artistDnaSnapshots,
+  profileSplitEvents,
+  distributorHistoryImports,
+} from "@shared/schema";
+import type {
+  ArtistProfile,
+  InsertArtistProfile,
+  ProfileClaimPipeline,
+  ArtistIdentityLink,
+  ArtistDnaSnapshot,
+} from "@shared/schema";
 import { logger } from "../logger.js";
 import { labelGridService } from "./labelgrid-service.js";
 import type { LabelGridArtistPlatformPresence } from "./labelgrid-service.js";
@@ -1222,9 +1238,7 @@ class ArtistProfileService {
   // Significantly more accurate than name search for newly distributed releases:
   // Apple and Deezer both expose album-by-UPC endpoints that return the exact
   // artist record tied to that release — no fuzzy matching needed.
-  async searchByUPC(
-    upc: string,
-  ): Promise<{
+  async searchByUPC(upc: string): Promise<{
     apple: AppleArtistResult | null;
     deezer: DeezerArtistResult | null;
   }> {

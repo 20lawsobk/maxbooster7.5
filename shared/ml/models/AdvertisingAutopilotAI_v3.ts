@@ -254,7 +254,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
   private platformAlgorithmModels: Map<string, tf.LayersModel> = new Map(); // Per-platform optimization
   private audienceGraphModel: tf.LayersModel | null = null; // Audience segmentation
   private trustScoringModel: tf.LayersModel | null = null; // Authenticity scoring
- // Multi-platform allocation
+  // Multi-platform allocation
 
   // Training Data
   private campaignHistory: OrganicCampaign[] = [];

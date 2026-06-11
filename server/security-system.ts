@@ -7,7 +7,14 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { db } from "./db";
-import { ipBlacklist, securityThreats, notifications, aiModels, inferenceRuns, explanationLogs } from "@shared/schema";
+import {
+  ipBlacklist,
+  securityThreats,
+  notifications,
+  aiModels,
+  inferenceRuns,
+  explanationLogs,
+} from "@shared/schema";
 import { eq, and, gte, or, sql } from "drizzle-orm";
 import { logger } from "./logger.js";
 import { env } from "./config/env.js";
@@ -29,15 +36,8 @@ interface SecurityBehaviorProfile {
   createdAt?: Date;
 }
 
-
-
-
-
 // Local storage for security data (in-memory until schema tables are added)
-new Map<
-  string,
-  SecurityBehaviorProfile
->();
+new Map<string, SecurityBehaviorProfile>();
 
 const execAsync = promisify(exec);
 
@@ -836,7 +836,7 @@ export class SelfHealingSecuritySystem {
 
     if (!this.currentRequestContext) return;
 
-    const { ipAddress,  severity } = this.currentRequestContext;
+    const { ipAddress, severity } = this.currentRequestContext;
 
     await this.trackThreatInDatabase({
       threatType: "sql-injection",
@@ -861,7 +861,7 @@ export class SelfHealingSecuritySystem {
 
     if (!this.currentRequestContext) return;
 
-    const { ipAddress,  severity } = this.currentRequestContext;
+    const { ipAddress, severity } = this.currentRequestContext;
 
     await this.trackThreatInDatabase({
       threatType: "xss-attack",

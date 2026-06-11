@@ -33,9 +33,9 @@ import {
 // For 98% acceleration: 50 years (18,250 days) should complete in ~146 minutes
 // That means ~0.48 seconds per simulated day
 const REAL_SECONDS_PER_SIMULATED_DAY = 0.48;
- // 480ms per day
- // 20ms per hour
- // ~0.33ms per minute
+// 480ms per day
+// 20ms per hour
+// ~0.33ms per minute
 const ACCELERATION_FACTOR = REAL_SECONDS_PER_SIMULATED_DAY / (24 * 60 * 60); // ~5.56e-6
 
 // Simulation time periods in days
@@ -537,10 +537,6 @@ export class RealLifeSimulationEngine extends EventEmitter {
       isViral: false,
     };
   }
-
-
-
-
 
   // Fast day simulation - aggregates all events mathematically for 98% acceleration
   private async simulateDayFast(): Promise<void> {

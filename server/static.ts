@@ -169,9 +169,7 @@ function isMaxBoosterDomain(hostname: string): boolean {
   );
 }
 
-async function getMetaForPath(
-  reqPath: string,
-): Promise<{
+async function getMetaForPath(reqPath: string): Promise<{
   title: string;
   description: string;
   image: string;

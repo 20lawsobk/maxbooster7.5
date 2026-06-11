@@ -12,7 +12,11 @@ interface StripeWebhookRequest extends Request {
 }
 import Stripe from "stripe";
 import { logger } from "../../logger.js";
-import { stripeWebhookMiddleware, handleWebhookEvent, registerWebhookHandler } from "../../safety/stripeWebhookSecurity";
+import {
+  stripeWebhookMiddleware,
+  handleWebhookEvent,
+  registerWebhookHandler,
+} from "../../safety/stripeWebhookSecurity";
 import { auditPayment } from "../../safety/auditLogger";
 import { db } from "../../db";
 import {

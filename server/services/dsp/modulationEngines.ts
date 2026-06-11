@@ -1,4 +1,17 @@
-import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, DelayLine, AllPassFilter, LFO, Oscillator, msToSamples, clamp } from "./core";
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  AllPassFilter,
+  LFO,
+  Oscillator,
+  msToSamples,
+  clamp,
+} from "./core";
 
 export class ChorusProcessor implements DSPProcessor {
   private delayLines: DelayLine[] = [];

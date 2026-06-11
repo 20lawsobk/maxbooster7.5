@@ -366,7 +366,7 @@ class PersonalizationService {
 
   // Memory caps — in-process cache only. Preferences are persisted in the DB.
   private static readonly MAX_USERS = 50_000; // max concurrent cached users
- // max interaction events per user
+  // max interaction events per user
   private static readonly STALE_USER_TTL_MS = 4 * 60 * 60 * 1000; // 4 h inactivity → evict
 
   constructor() {

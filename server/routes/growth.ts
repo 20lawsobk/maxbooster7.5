@@ -3,7 +3,10 @@ import { z } from "zod";
 import { requireAuth } from "../middleware/auth.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { logger } from "../logger.js";
-import { viralScoringService, type ContentData } from "../services/viralScoring.js";
+import {
+  viralScoringService,
+  type ContentData,
+} from "../services/viralScoring.js";
 import { timingOptimizerService } from "../services/timingOptimizer.js";
 import { contentVariantGeneratorService } from "../services/contentVariantGenerator.js";
 import {
@@ -510,12 +513,10 @@ router.post(
       const { content, variantCount = 2 } = req.body;
 
       if (!content || typeof content !== "object") {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Content object is required with caption, platform, and contentType",
-          });
+        return res.status(400).json({
+          error:
+            "Content object is required with caption, platform, and contentType",
+        });
       }
 
       const contentData = {

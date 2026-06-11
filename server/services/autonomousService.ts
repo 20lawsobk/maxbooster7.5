@@ -100,9 +100,6 @@ export class AutonomousService extends EventEmitter {
     this.loadMetricsFromCache();
   }
 
-
-
-
   private async loadMetricsFromCache(): Promise<void> {
     // If PDIM circuit is OPEN at startup, the load will fail for every attempt.
     // Skip silently and schedule a retry — in-memory defaults are already in place.

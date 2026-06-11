@@ -28,7 +28,14 @@ import {
 import { eq, and, inArray } from "drizzle-orm";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
-import { SAMPLE_RATES, BIT_DEPTHS, isSupportedSampleRate, isSupportedBitDepth, type SampleRate, type BitDepth } from "../../shared/audioConstants.js";
+import {
+  SAMPLE_RATES,
+  BIT_DEPTHS,
+  isSupportedSampleRate,
+  isSupportedBitDepth,
+  type SampleRate,
+  type BitDepth,
+} from "../../shared/audioConstants.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -104,7 +111,6 @@ export interface ExportProgress {
   estimatedCompletion?: Date;
 }
 
-
 class StemExportService {
   private readonly SUPPORTED_FORMATS: ExportFormat[] = [
     "wav",
@@ -125,7 +131,6 @@ class StemExportService {
     mp3: "audio/mpeg",
     aac: "audio/aac",
   };
-
 
   async startStemExport(options: StemExportOptions): Promise<StemExportResult> {
     const {

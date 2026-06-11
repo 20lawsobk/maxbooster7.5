@@ -137,7 +137,6 @@ const NOTE_FREQUENCIES: Record<string, number> = {
   B: 493.88,
 };
 
-
 // ============================================================================
 // UTILITY FUNCTIONS
 // ============================================================================
@@ -148,12 +147,9 @@ function getNoteFrequency(note: string, octave: number): number {
   return baseFreq * Math.pow(2, octaveDiff);
 }
 
-
-
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
-
 
 // Seeded random for reproducible generation
 class SeededRandom {
@@ -808,8 +804,6 @@ function softClip(x: number, drive: number = 1): number {
   const k = 2 * drive;
   return Math.tanh(k * x) / Math.tanh(k);
 }
-
-
 
 // Simple delay line for chorus/flanger effects
 

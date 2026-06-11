@@ -1,4 +1,19 @@
-import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, DelayLine, LFO, Oscillator, msToSamples, dbToLinear, linearToDb, clamp, softClip } from "./core";
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  BiquadFilter,
+  OnePoleFilter,
+  DelayLine,
+  LFO,
+  Oscillator,
+  msToSamples,
+  dbToLinear,
+  linearToDb,
+  clamp,
+  softClip,
+} from "./core";
 
 export class AutoTuneProcessor implements DSPProcessor {
   private phaseAccumulator: number = 0;

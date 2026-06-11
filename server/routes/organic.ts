@@ -483,7 +483,6 @@ router.get(
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
-
       res.json({
         overview: {
           totalReach: 0,
@@ -510,7 +509,6 @@ router.get(
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
-
       res.json({
         totalPosts: 0,
         totalReach: 0,
@@ -529,7 +527,6 @@ router.get(
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
-
       res.json({
         reach: null,
         impressions: null,
@@ -549,7 +546,6 @@ router.get(
   requireAuth,
   asyncHandler(async (_req, res) => {
     try {
-
       res.json({
         recommendations: [],
       });

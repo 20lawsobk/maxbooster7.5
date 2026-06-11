@@ -217,9 +217,8 @@ function createMockZsetRedis(): SlidingWindowRedis {
 
 describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", () => {
   it("allows exactly `limit` requests and blocks the (limit+1)th immediately", async () => {
-    const { DistributedRateLimiter } = await import(
-      "../server/middleware/scalableRateLimiter.js"
-    );
+    const { DistributedRateLimiter } =
+      await import("../server/middleware/scalableRateLimiter.js");
     const redis = createMockZsetRedis();
     const LIMIT = 5;
     const limiter = new DistributedRateLimiter(
@@ -242,9 +241,8 @@ describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", 
     // With INCR+EXPIRE a key-reset would allow a second full burst at the boundary;
     // the ZSET sliding window blocks it because entries survive until their score
     // falls outside [now - windowMs, now].
-    const { DistributedRateLimiter } = await import(
-      "../server/middleware/scalableRateLimiter.js"
-    );
+    const { DistributedRateLimiter } =
+      await import("../server/middleware/scalableRateLimiter.js");
     const redis = createMockZsetRedis();
     const LIMIT = 5;
     const limiter = new DistributedRateLimiter(
@@ -272,9 +270,8 @@ describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", 
   });
 
   it("allows requests again after the sliding window has fully elapsed", async () => {
-    const { DistributedRateLimiter } = await import(
-      "../server/middleware/scalableRateLimiter.js"
-    );
+    const { DistributedRateLimiter } =
+      await import("../server/middleware/scalableRateLimiter.js");
     const redis = createMockZsetRedis();
     const LIMIT = 3;
     const WINDOW_MS = 200;
@@ -302,9 +299,8 @@ describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", 
     //
     // Note: fake timers must be active BEFORE phase 1 so that all entry scores
     // are set under fake-clock timestamps and the ZCOUNT min-bound matches exactly.
-    const { DistributedRateLimiter } = await import(
-      "../server/middleware/scalableRateLimiter.js"
-    );
+    const { DistributedRateLimiter } =
+      await import("../server/middleware/scalableRateLimiter.js");
     const redis = createMockZsetRedis();
     const LIMIT = 3;
     const WINDOW_MS = 1000;
@@ -351,9 +347,8 @@ describe("Sliding-Window — Algorithm Unit Tests (mock Redis, fallback path)", 
   });
 
   it("remaining count decrements accurately as requests consume the budget", async () => {
-    const { DistributedRateLimiter } = await import(
-      "../server/middleware/scalableRateLimiter.js"
-    );
+    const { DistributedRateLimiter } =
+      await import("../server/middleware/scalableRateLimiter.js");
     const redis = createMockZsetRedis();
     const LIMIT = 4;
     const limiter = new DistributedRateLimiter(
@@ -393,9 +388,8 @@ describe("Sliding-Window — Real PDIM Integration", () => {
   it.skipIf(!_pdimConfigured)(
     "allows limit requests, blocks limit+1th, recovers after window expires",
     async () => {
-      const { DistributedRateLimiter } = await import(
-        "../server/middleware/scalableRateLimiter.js"
-      );
+      const { DistributedRateLimiter } =
+        await import("../server/middleware/scalableRateLimiter.js");
       const { getRedisClient } = await import("../server/lib/redisClient.js");
       const redis = getRedisClient();
 
@@ -450,9 +444,8 @@ describe("Sliding-Window — Real PDIM Integration", () => {
       //   T=t0           phase 1 fires — fills window (LIMIT requests pass)
       //   T=t0+BURST_AT  phase 2 fires — entries are still within window → all blocked
       //   T=t0+WINDOW_MS+MARGIN  phase 3 fires — oldest entry has expired → passes
-      const { DistributedRateLimiter } = await import(
-        "../server/middleware/scalableRateLimiter.js"
-      );
+      const { DistributedRateLimiter } =
+        await import("../server/middleware/scalableRateLimiter.js");
       const { getRedisClient } = await import("../server/lib/redisClient.js");
       const redis = getRedisClient();
 

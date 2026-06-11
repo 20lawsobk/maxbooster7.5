@@ -60,7 +60,7 @@ router.post("/", raw({ type: "application/json" }), async (req, res) => {
     for (const event of events) {
       const {
         sg_message_id,
-        
+
         event: eventType,
         timestamp: eventTimestamp,
         reason,

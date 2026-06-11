@@ -7,7 +7,17 @@ import {
   AdvertisingAutopilotAI_v3,
   type OrganicCampaign,
 } from "../../shared/ml/models/AdvertisingAutopilotAI_v3.js";
-import { ORGANIC_AS_ADS_PATTERNS, PAID_AD_BENCHMARKS, ENGAGEMENT_PREDICTION_FEATURES, GENRE_VIRAL_HOOKS, PLATFORM_CONTENT_SCRIPTS, CALL_TO_ACTION_LIBRARY, EMOTIONAL_TRIGGER_PATTERNS, VIDEO_CONTENT_TRAINING_PACK, getHashtagsForGenre } from "../../shared/ml/training/musicIndustryTrainingData.js";
+import {
+  ORGANIC_AS_ADS_PATTERNS,
+  PAID_AD_BENCHMARKS,
+  ENGAGEMENT_PREDICTION_FEATURES,
+  GENRE_VIRAL_HOOKS,
+  PLATFORM_CONTENT_SCRIPTS,
+  CALL_TO_ACTION_LIBRARY,
+  EMOTIONAL_TRIGGER_PATTERNS,
+  VIDEO_CONTENT_TRAINING_PACK,
+  getHashtagsForGenre,
+} from "../../shared/ml/training/musicIndustryTrainingData.js";
 import { modelWeightStorage } from "./modelWeightStorage.js";
 
 const PLATFORMS = ["instagram", "tiktok", "twitter", "youtube", "facebook"];
@@ -591,9 +601,8 @@ async function trainMusicGenerator(): Promise<boolean> {
     logger.info(
       "[BaseTrainer] Music generator uses embedded theory data — loading genre taxonomy and BPM ranges...",
     );
-    const { AdvancedMusicAI } = await import(
-      "../../shared/ml/audio/AdvancedMusicAI.js"
-    );
+    const { AdvancedMusicAI } =
+      await import("../../shared/ml/audio/AdvancedMusicAI.js");
     new AdvancedMusicAI();
     logger.info(
       "[BaseTrainer] Music generator initialized with full harmonic/rhythmic knowledge base",
@@ -1020,9 +1029,8 @@ async function trainCreativePlannerBase(): Promise<boolean> {
       );
       return true;
     }
-    const { CreativePlannerModel } = await import(
-      "../../shared/ml/models/CreativePlannerModel.js"
-    );
+    const { CreativePlannerModel } =
+      await import("../../shared/ml/models/CreativePlannerModel.js");
     logger.info(
       "[BaseTrainer] Training CreativePlannerModel (500 synthetic briefs)...",
     );
@@ -1061,9 +1069,8 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
       );
       return true;
     }
-    const { BeatSyncAlignmentModel } = await import(
-      "../../shared/ml/models/BeatSyncAlignmentModel.js"
-    );
+    const { BeatSyncAlignmentModel } =
+      await import("../../shared/ml/models/BeatSyncAlignmentModel.js");
     logger.info(
       "[BaseTrainer] Training BeatSyncAlignmentModel (600 synthetic beat sequences)...",
     );
@@ -1102,9 +1109,8 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
       );
       return true;
     }
-    const { VideoCreativeScorer } = await import(
-      "../../shared/ml/models/VideoCreativeScorer.js"
-    );
+    const { VideoCreativeScorer } =
+      await import("../../shared/ml/models/VideoCreativeScorer.js");
     logger.info(
       "[BaseTrainer] Training VideoCreativeScorer (800 synthetic creative packages)...",
     );
@@ -1143,9 +1149,8 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
       );
       return true;
     }
-    const { KeyframeStyleSelector } = await import(
-      "../../shared/ml/models/KeyframeStyleSelector.js"
-    );
+    const { KeyframeStyleSelector } =
+      await import("../../shared/ml/models/KeyframeStyleSelector.js");
     logger.info(
       "[BaseTrainer] Training KeyframeStyleSelector (700 synthetic keyframe–style pairs)...",
     );

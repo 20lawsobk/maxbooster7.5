@@ -17,7 +17,17 @@ import {
   studioSamples,
 } from "@shared/schema";
 import { notificationService } from "../services/notificationService.js";
-import { eq, and, or, desc, inArray, sql as drizzleSql, ilike, arrayOverlaps, type SQL } from "drizzle-orm";
+import {
+  eq,
+  and,
+  or,
+  desc,
+  inArray,
+  sql as drizzleSql,
+  ilike,
+  arrayOverlaps,
+  type SQL,
+} from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import { randomBytes } from "crypto";
@@ -1248,27 +1258,21 @@ router.post(
       const bitDepth = settings.bitDepth || 24;
 
       if (!validFormats.includes(format)) {
-        return res
-          .status(400)
-          .json({
-            error: `Invalid format. Supported: ${validFormats.join(", ")}`,
-          });
+        return res.status(400).json({
+          error: `Invalid format. Supported: ${validFormats.join(", ")}`,
+        });
       }
 
       if (!validSampleRates.includes(sampleRate)) {
-        return res
-          .status(400)
-          .json({
-            error: `Invalid sample rate. Supported: ${validSampleRates.join(", ")}`,
-          });
+        return res.status(400).json({
+          error: `Invalid sample rate. Supported: ${validSampleRates.join(", ")}`,
+        });
       }
 
       if (!validBitDepths.includes(bitDepth)) {
-        return res
-          .status(400)
-          .json({
-            error: `Invalid bit depth. Supported: ${validBitDepths.join(", ")}`,
-          });
+        return res.status(400).json({
+          error: `Invalid bit depth. Supported: ${validBitDepths.join(", ")}`,
+        });
       }
 
       if (
@@ -2311,14 +2315,18 @@ router.post(
   },
 );
 
-router.get("/conversions", requireAuth, async (_req: Request, res: Response) => {
-  try {
-    res.json({ conversions: [] });
-  } catch (error: unknown) {
-    logger.warn({ err: error }, "Error fetching conversions:");
-    res.status(500).json({ error: "Failed to fetch conversions" });
-  }
-});
+router.get(
+  "/conversions",
+  requireAuth,
+  async (_req: Request, res: Response) => {
+    try {
+      res.json({ conversions: [] });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching conversions:");
+      res.status(500).json({ error: "Failed to fetch conversions" });
+    }
+  },
+);
 
 router.post(
   "/conversions",
@@ -2496,7 +2504,7 @@ router.post(
     try {
       const userId = req.user!.id;
       const { projectId } = req.params;
-      const { targetGenre,  autoEQ, autoCompression } = req.body;
+      const { targetGenre, autoEQ, autoCompression } = req.body;
       res.json({
         success: true,
         projectId,
@@ -5696,12 +5704,10 @@ router.post(
 
       const validation = mixSettingsSchema.safeParse(req.body);
       if (!validation.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid mix settings",
-            details: validation.error.issues,
-          });
+        return res.status(400).json({
+          error: "Invalid mix settings",
+          details: validation.error.issues,
+        });
       }
 
       const mixSettings = validation.data;
@@ -5758,12 +5764,10 @@ router.post(
 
       const validation = masterSettingsSchema.safeParse(req.body);
       if (!validation.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid master settings",
-            details: validation.error.issues,
-          });
+        return res.status(400).json({
+          error: "Invalid master settings",
+          details: validation.error.issues,
+        });
       }
 
       const masterSettings = validation.data;

@@ -462,9 +462,7 @@ router.delete("/clips/:clipId/warp/markers", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Clip not found or unauthorized" });
     }
 
-    await db
-      .delete(warpMarkers)
-      .where(eq(warpMarkers.clipId, clipId));
+    await db.delete(warpMarkers).where(eq(warpMarkers.clipId, clipId));
 
     res.json({
       message: "All warp markers deleted",

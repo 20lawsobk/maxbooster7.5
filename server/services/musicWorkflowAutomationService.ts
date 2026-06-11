@@ -1212,9 +1212,8 @@ class MusicWorkflowAutomationService {
 
     if (config.generateISRC) {
       try {
-        const { codeGenerationService } = await import(
-          "./codeGenerationService.js"
-        );
+        const { codeGenerationService } =
+          await import("./codeGenerationService.js");
         const result = await codeGenerationService.generateISRC(
           userId,
           trackId,

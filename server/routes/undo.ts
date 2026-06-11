@@ -453,7 +453,7 @@ const deletedItemCache = new Map<string, DeletedItem>();
 // Individual per-user caps are enforced inline, but this is the global safety net.
 const MAX_DELETED_ITEMS = 5_000;
 const MAX_RESTORE_POINTS = 10_000;
- // 30 days
+// 30 days
 
 setInterval(
   () => {

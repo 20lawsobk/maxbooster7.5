@@ -1,6 +1,17 @@
 import { randomBytes } from "crypto";
 import { db } from "../db.js";
-import { organicAssets, organicChannels, organicRoiSnapshots, organicAssetLifetime, type OrganicAsset, type OrganicChannel, type OrganicRoiSnapshot, type OrganicAssetLifetimeRecord, type InsertOrganicAsset, type InsertOrganicChannel } from "@shared/schema";
+import {
+  organicAssets,
+  organicChannels,
+  organicRoiSnapshots,
+  organicAssetLifetime,
+  type OrganicAsset,
+  type OrganicChannel,
+  type OrganicRoiSnapshot,
+  type OrganicAssetLifetimeRecord,
+  type InsertOrganicAsset,
+  type InsertOrganicChannel,
+} from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { logger } from "../logger.js";
 

@@ -270,7 +270,10 @@ export class AudioNormalizationService {
     return high - low;
   }
 
-  private calculateTruePeak(samples: Float32Array, _sampleRate: number): number {
+  private calculateTruePeak(
+    samples: Float32Array,
+    _sampleRate: number,
+  ): number {
     const oversamplingFactor = 4;
     let maxPeak = 0;
 

@@ -1,5 +1,12 @@
 import { db } from "../db";
-import { users, analytics, projects, posts, sessions, dspAnalytics } from "@shared/schema";
+import {
+  users,
+  analytics,
+  projects,
+  posts,
+  sessions,
+  dspAnalytics,
+} from "@shared/schema";
 import { sql, gte, lte, desc, and, count, eq, isNotNull } from "drizzle-orm";
 
 interface PredictMetricRequest {
@@ -85,7 +92,6 @@ function calculateStandardDeviation(values: number[]): number {
     values.length;
   return Math.sqrt(variance);
 }
-
 
 export async function predictMetric(
   params: PredictMetricRequest,

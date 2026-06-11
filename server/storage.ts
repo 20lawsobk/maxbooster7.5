@@ -1,8 +1,63 @@
 import { logger } from "./logger";
 import { randomBytes } from "crypto";
-import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
+import {
+  users,
+  dspProviders,
+  projects,
+  releases,
+  posts,
+  socialAccounts,
+  socialCampaigns,
+  adCampaigns,
+  adCreatives,
+  contentCalendar,
+  aiModels,
+  notifications,
+  analytics,
+  pluginCatalog,
+  pluginPresets,
+  distroReleases,
+  distroTracks,
+  instantPayouts,
+  royaltyTransactions,
+  hyperFollowPages,
+  jwtTokens,
+  refreshTokens,
+  listings,
+  listingLicenseTiers,
+  sessions,
+  collabSnapshots,
+  orders,
+  autopilotLearningData,
+  inferenceRuns,
+  socialKeywords,
+  socialMentions,
+  socialAutopilotContent,
+  systemSettings,
+  workspaceAuditLog,
+  contractTemplates,
+  type User,
+  type InsertUser,
+  type DSPProvider,
+  type InsertProject,
+  type CollabSnapshot,
+  type InsertCollabSnapshot,
+} from "@shared/schema";
 import { db, dbRead } from "./db";
-import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
+import {
+  eq,
+  and,
+  desc,
+  gte,
+  lte,
+  sql,
+  inArray,
+  ilike,
+  or,
+  asc,
+  lt,
+  isNotNull,
+} from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
 type Release = typeof releases.$inferSelect;
@@ -391,13 +446,8 @@ export class DatabaseStorage implements IStorage {
   async createScheduledPost(
     post: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
-    const {
-      platforms,
-      content,
-      scheduledTime,
-      viralPrediction,
-      createdBy
-    } = post;
+    const { platforms, content, scheduledTime, viralPrediction, createdBy } =
+      post;
     const [newPost] = await db
       .insert(posts)
       .values({
@@ -1123,9 +1173,7 @@ export class DatabaseStorage implements IStorage {
     return Object.entries(byCampaign)
       .filter(([, variants]) => variants.length >= 2)
       .map(([campaignId, variants]) => {
-        variants.map(
-          (v) => (v.performance as Record<string, any>) || {},
-        );
+        variants.map((v) => (v.performance as Record<string, any>) || {});
         const best = variants.reduce((a, b) => {
           const aRate =
             ((a.performance as Record<string, unknown>)?.clicks || 0) /
@@ -1651,9 +1699,8 @@ export class DatabaseStorage implements IStorage {
 
   async seedPluginCatalog(): Promise<void> {
     const { ALL_PLUGINS } = await import("./services/plugins/index");
-    const { buildFactoryPresetRows } = await import(
-      "./services/plugins/pluginEnrichment.js"
-    );
+    const { buildFactoryPresetRows } =
+      await import("./services/plugins/pluginEnrichment.js");
 
     // Bumped whenever the enrichment layer ships new reference parameters or
     // genre presets. Forces an upsert across all rows (presets._rev mismatch).
@@ -2105,13 +2152,11 @@ export class DatabaseStorage implements IStorage {
         .set({ value: dispatches, updatedAt: new Date() })
         .where(eq(systemSettings.key, key));
     } else {
-      await db
-        .insert(systemSettings)
-        .values({
-          key,
-          value: dispatches,
-          description: `Distribution dispatches for release ${releaseId}`,
-        });
+      await db.insert(systemSettings).values({
+        key,
+        value: dispatches,
+        description: `Distribution dispatches for release ${releaseId}`,
+      });
     }
   }
 

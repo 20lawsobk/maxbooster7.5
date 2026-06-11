@@ -615,7 +615,6 @@ class AITranslationService {
     return Math.min(confidence, 95);
   }
 
-
   getSupportedLanguages(): {
     code: string;
     name: string;

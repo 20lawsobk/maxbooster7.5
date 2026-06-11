@@ -65,12 +65,7 @@ const FFMPEG = resolveFFmpegPath();
 const OUTPUT_DIR = path.join(process.cwd(), "uploads", "videos");
 const TEMP_DIR = path.join(process.cwd(), "uploads", "video_temp");
 const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
-path.join(
-  process.cwd(),
-  "server",
-  "services",
-  "frameGenerator.py",
-);
+path.join(process.cwd(), "server", "services", "frameGenerator.py");
 
 // Maps legacy FFmpeg bgType names → Python frame generator style names
 
@@ -128,7 +123,6 @@ type BgType =
   | "hologram"
   | "chromatic"
   | "sunrise";
-
 
 /**
  * Returns an enhanced geq= VF expression for animated gradient backgrounds.
@@ -903,7 +897,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
     outPath,
     platform,
   } = spec;
-  ((spec.genre || "default").toLowerCase());
+  (spec.genre || "default").toLowerCase();
   const mc = Math.max(16, Math.floor(width / (style.bs * 0.58)));
   const { hs, bs, cs } = scaleFonts(style, width, platform);
   const font = FONTS[style.font];
@@ -1022,7 +1016,6 @@ async function renderScene(spec: SceneSpec): Promise<void> {
       break;
     }
   }
-
 
   if (isSolid) {
     // Solid background — fast FFmpeg color source, add vignette for cinematic depth

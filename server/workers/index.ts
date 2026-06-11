@@ -6,7 +6,13 @@ import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService
 import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
 import { Resend } from "resend";
 import { logger } from "../logger.js";
-import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
+import type {
+  AudioConvertJobData,
+  AudioMixJobData,
+  CSVImportJobData,
+  AnalyticsJobData,
+  EmailJobData,
+} from "../services/queueService.js";
 
 const audioService = new AudioService();
 const csvImportService = new RoyaltiesCSVImportService();
@@ -341,9 +347,8 @@ export async function initializeWorkers(): Promise<void> {
   );
 
   try {
-    const { initializeWeeklyInsightsCron } = await import(
-      "./weeklyInsightsCron.js"
-    );
+    const { initializeWeeklyInsightsCron } =
+      await import("./weeklyInsightsCron.js");
     initializeWeeklyInsightsCron();
   } catch (error) {
     logger.warn(

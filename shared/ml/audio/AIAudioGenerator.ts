@@ -23,7 +23,11 @@ import {
   type GenerationRequest,
   type ExtractedParameters,
 } from "./TextToSynthAI.js";
-import { AudioFeatureExtractor, type AudioFeatures, type StyleProfile } from "./AudioFeatureExtractor.js";
+import {
+  AudioFeatureExtractor,
+  type AudioFeatures,
+  type StyleProfile,
+} from "./AudioFeatureExtractor.js";
 import {
   PatternRenderer,
   generateDrumPattern,

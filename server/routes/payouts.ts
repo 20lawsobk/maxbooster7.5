@@ -502,11 +502,9 @@ router.post("/split", async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error creating split payment:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to create split payment",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to create split payment",
+    });
   }
 });
 
@@ -549,11 +547,9 @@ router.post("/split-enhanced", async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error creating enhanced split payment:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to create split payment",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to create split payment",
+    });
   }
 });
 
@@ -655,11 +651,9 @@ router.get("/ledger", async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching ledger history:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to fetch ledger history",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to fetch ledger history",
+    });
   }
 });
 
@@ -688,11 +682,9 @@ router.get("/tax-form/:year", async (req, res) => {
     res.json(formData);
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error generating tax form:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to generate tax form",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to generate tax form",
+    });
   }
 });
 
@@ -824,11 +816,9 @@ router.get("/statements", async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching statements:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to fetch statements",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to fetch statements",
+    });
   }
 });
 
@@ -898,11 +888,9 @@ router.post("/statements/generate", async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error generating statement:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to generate statement",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to generate statement",
+    });
   }
 });
 
@@ -940,11 +928,9 @@ router.get("/statements/:id/download", async (req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error downloading statement:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to download statement",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to download statement",
+    });
   }
 });
 
@@ -1370,11 +1356,9 @@ router.get("/currencies", async (_req, res) => {
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error fetching currencies:");
-    res
-      .status(500)
-      .json({
-        error: (error as Error).message || "Failed to fetch currencies",
-      });
+    res.status(500).json({
+      error: (error as Error).message || "Failed to fetch currencies",
+    });
   }
 });
 

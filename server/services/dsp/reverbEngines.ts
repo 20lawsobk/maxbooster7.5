@@ -1,4 +1,16 @@
-import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, DelayLine, AllPassFilter, CombFilter, BiquadFilter, OnePoleFilter, msToSamples, dbToLinear } from "./core";
+import {
+  AudioBuffer,
+  DSPContext,
+  DSPProcessor,
+  copyBuffer,
+  DelayLine,
+  AllPassFilter,
+  CombFilter,
+  BiquadFilter,
+  OnePoleFilter,
+  msToSamples,
+  dbToLinear,
+} from "./core";
 
 export class PlateReverbProcessor implements DSPProcessor {
   private preDelay: DelayLine;

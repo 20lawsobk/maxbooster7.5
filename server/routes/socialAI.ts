@@ -1093,21 +1093,21 @@ router.post(
         contentType = "post",
         topic = "new music",
         tone = "energetic",
-        
+
         genre: rawGenre,
         artistName,
         trackTitle,
         albumName,
         label,
         releaseDate,
-        
+
         // URL analysis context
         urlContentType, // raw content_type from URL analysis: 'website', 'track', 'video', etc.
-         // e.g. 'music', 'general', 'tech', 'events'
+        // e.g. 'music', 'general', 'tech', 'events'
         keywords, // string[] from URL analysis
         tags, // string[] from URL analysis
         urlDescription, // summary/description from URL analysis
-         // e.g. 'youtube', 'spotify'
+        // e.g. 'youtube', 'spotify'
         // Engagement signals from URL analysis
         viewCount,
         likeCount,
@@ -1117,7 +1117,7 @@ router.post(
         eventLocation,
         performers,
         // Product-specific fields
-        
+
         brand,
       } = req.body;
 
