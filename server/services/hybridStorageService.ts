@@ -17,13 +17,13 @@
  * re-routed to cold storage on the next read.
  */
 
-import { pocketManager, PocketDimension } from "../pocket-dimension/index?.js";
+import { pocketManager, PocketDimension } from "../pocket-dimension/index.js";
 import { createHash } from "crypto";
-import { logger } from "../logger?.js";
-import { getPdimClient } from "../lib/pdimClient?.js";
+import { logger } from "../logger.js";
+import { getPdimClient } from "../lib/pdimClient.js";
 import { Client as ReplitObjectStorageClient } from "@replit/object-storage";
 
-const _COLD_TIER_THRESHOLD_DAYS = 30;
+const COLD_TIER_THRESHOLD_DAYS = 30;
 const _COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
 const _HOT_ACCESS_COUNT_THRESHOLD = 5;
 const _SIZE_THRESHOLD_FOR_COLD = 50 * 1024 * 1024;
