@@ -369,7 +369,7 @@ class SentryService {
 export const sentry = SentryService?.getInstance();
 
 export function initSentry(
-  options?: Parameters<typeof SentryService?.prototype.init>[0],
+  options?: Parameters<typeof SentryService.prototype.init>[0],
 ) {
   sentry?.init(options);
 }
@@ -402,7 +402,7 @@ export function setTag(key: string, value: string) {
 }
 
 export function withScope(
-  callback: Parameters<typeof SentryService?.prototype.withScope>[0],
+  callback: Parameters<typeof SentryService.prototype.withScope>[0],
 ) {
   return sentry?.withScope(callback);
 }

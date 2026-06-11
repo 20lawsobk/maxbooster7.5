@@ -672,7 +672,7 @@ export default function WelcomeFlow({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => onSkip.()}>
+    <Dialog open={isOpen} onOpenChange={() => onSkip?.()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0">
         <div className="relative overflow-hidden">
           {currentStep === "celebration" && (

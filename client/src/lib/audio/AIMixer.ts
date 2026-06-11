@@ -596,4 +596,3 @@ interface MixResult {
   recommendations: string[];
 }
 
-export { AIMixer, type MixResult, type InstrumentType };

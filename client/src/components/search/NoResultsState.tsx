@@ -172,7 +172,7 @@ export function NoResultsState({
                 <Button
                   variant="link"
                   className="text-purple-400 hover:text-purple-300 p-0 h-auto font-semibold"
-                  onClick={() => onSuggestionClick.(suggestedCorrection)}
+                  onClick={() => onSuggestionClick?.(suggestedCorrection)}
                 >
                   "{suggestedCorrection}"
                   <ArrowRight className="h-4 w-4 ml-1" />
@@ -191,7 +191,7 @@ export function NoResultsState({
                   key={index}
                   variant="outline"
                   size="sm"
-                  onClick={() => onSuggestionClick.(term)}
+                  onClick={() => onSuggestionClick?.(term)}
                   className="border-purple-500/30 text-purple-300 hover:bg-purple-500/10"
                 >
                   <Sparkles className="h-3 w-3 mr-1" />
@@ -235,7 +235,7 @@ export function NoResultsState({
                 key={index}
                 variant="outline"
                 size="sm"
-                onClick={() => onSuggestionClick.(suggestion)}
+                onClick={() => onSuggestionClick?.(suggestion)}
                 className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
               >
                 {suggestion}
@@ -260,7 +260,7 @@ export function NoResultsState({
                     key={index}
                     variant="outline"
                     size="sm"
-                    onClick={() => onSuggestionClick.(item.query)}
+                    onClick={() => onSuggestionClick?.(item.query)}
                     className="border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white"
                   >
                     {item.query}
@@ -289,7 +289,7 @@ export function NoResultsState({
                   key={index}
                   variant="secondary"
                   className="bg-slate-700 text-slate-300 cursor-pointer hover:bg-purple-500/20 hover:text-purple-300 px-4 py-2 transition-colors"
-                  onClick={() => onSuggestionClick.(genre)}
+                  onClick={() => onSuggestionClick?.(genre)}
                 >
                   {genre}
                 </Badge>
@@ -345,7 +345,7 @@ export function NoResultsInline({
           <button
             className="text-sm text-purple-400 hover:text-purple-300 mt-1"
             onClick={() =>
-              onSuggestionClick.(
+              onSuggestionClick?.(
                 query
                   .toLowerCase()
                   .replace(suggestedCorrection[0], suggestedCorrection[1]),
