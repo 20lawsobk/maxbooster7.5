@@ -4,7 +4,7 @@
  * Catches: arr.reduce(...) / arr.length without guard
  */
 
-module.exports = {
+export default {
   meta: {
     type: "problem",
     docs: {
