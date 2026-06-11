@@ -1,16 +1,16 @@
-import { useEffect, useRef, ReactNode } from 'react';
-import { useStudioLayoutStore } from '@/lib/studioLayoutStore';
-import { studioOneTheme, cssVariables } from '@/lib/studioOneTheme';
-import { StudioOneConsole } from './StudioOneConsole';
-import { StudioOneBrowser } from './StudioOneBrowser';
-import { ArrangerTrack } from './ArrangerTrack';
-import { LauncherGrid } from './LauncherGrid';
-import { StudioOneLayout } from './StudioOneLayout';
+import { useEffect, useRef, ReactNode } from "react";
+import { useStudioLayoutStore } from "@/lib/studioLayoutStore";
+import { studioOneTheme, cssVariables } from "@/lib/studioOneTheme";
+import { StudioOneConsole } from "./StudioOneConsole";
+import { StudioOneBrowser } from "./StudioOneBrowser";
+import { ArrangerTrack } from "./ArrangerTrack";
+import { LauncherGrid } from "./LauncherGrid";
+import { StudioOneLayout } from "./StudioOneLayout";
 
 interface StudioTrack {
   id: string;
   name: string;
-  trackType: 'audio' | 'midi' | 'instrument';
+  trackType: "audio" | "midi" | "instrument";
   trackNumber: number;
   volume: number;
   pan: number;
@@ -23,7 +23,7 @@ interface StudioTrack {
   inserts?: Array<{
     id: string;
     name: string;
-    type: 'eq' | 'compressor' | 'reverb' | 'delay' | 'distortion' | 'chorus';
+    type: "eq" | "compressor" | "reverb" | "delay" | "distortion" | "chorus";
     bypass: boolean;
     params?: Record<string, number>;
   }>;
@@ -57,7 +57,7 @@ interface ArrangerSection {
 interface BrowserFile {
   id: string;
   name: string;
-  type: 'folder' | 'audio' | 'midi' | 'preset' | 'loop';
+  type: "folder" | "audio" | "midi" | "preset" | "loop";
   path: string;
   duration?: number;
   bpm?: number;
@@ -102,8 +102,11 @@ interface StudioOneWrapperProps {
   onFileDragStart?: (file: BrowserFile, e: React.DragEvent) => void;
   onFilePreview?: (file: BrowserFile) => void;
   onFileAdd?: (file: BrowserFile) => void;
-  onArrangerSectionAdd?: (section: Omit<ArrangerSection, 'id'>) => void;
-  onArrangerSectionUpdate?: (id: string, updates: Partial<ArrangerSection>) => void;
+  onArrangerSectionAdd?: (section: Omit<ArrangerSection, "id">) => void;
+  onArrangerSectionUpdate?: (
+    id: string,
+    updates: Partial<ArrangerSection>,
+  ) => void;
   onArrangerSectionDelete?: (id: string) => void;
   useNewLayout?: boolean;
   toolbar?: ReactNode;
@@ -159,7 +162,6 @@ export function StudioOneWrapper({
   children,
 }: StudioOneWrapperProps) {
   const {
-    
     browserPanel,
     inspectorPanel,
     consolePanel,
@@ -174,9 +176,9 @@ export function StudioOneWrapper({
 
   useEffect(() => {
     if (!initializedRef.current) {
-      setPanelVisibility('browser', browserVisible);
-      setPanelVisibility('inspector', inspectorVisible);
-      setPanelVisibility('console', consoleVisible);
+      setPanelVisibility("browser", browserVisible);
+      setPanelVisibility("inspector", inspectorVisible);
+      setPanelVisibility("console", consoleVisible);
       initializedRef.current = true;
     }
   }, []);
@@ -198,7 +200,10 @@ export function StudioOneWrapper({
       externalUpdateRef.current = false;
       return;
     }
-    if (inspectorPanel.visible !== inspectorVisible && onInspectorVisibleChange) {
+    if (
+      inspectorPanel.visible !== inspectorVisible &&
+      onInspectorVisibleChange
+    ) {
       onInspectorVisibleChange(inspectorPanel.visible);
     }
   }, [inspectorPanel.visible]);
@@ -214,40 +219,61 @@ export function StudioOneWrapper({
     }
   }, [consolePanel.visible]);
 
-  const defaultBrowserFiles: BrowserFile[] = browserFiles.length > 0 ? browserFiles : [
-    {
-      id: 'project-files',
-      name: 'Project Files',
-      type: 'folder',
-      path: '/project',
-      children: [],
-    },
-    {
-      id: 'samples',
-      name: 'Samples',
-      type: 'folder',
-      path: '/samples',
-      children: [
-        { id: 'drums', name: 'Drums', type: 'folder', path: '/samples/drums', children: [] },
-        { id: 'bass', name: 'Bass', type: 'folder', path: '/samples/bass', children: [] },
-        { id: 'synths', name: 'Synths', type: 'folder', path: '/samples/synths', children: [] },
-      ],
-    },
-    {
-      id: 'loops',
-      name: 'Loops',
-      type: 'folder',
-      path: '/loops',
-      children: [],
-    },
-    {
-      id: 'presets',
-      name: 'Presets',
-      type: 'folder',
-      path: '/presets',
-      children: [],
-    },
-  ];
+  const defaultBrowserFiles: BrowserFile[] =
+    browserFiles.length > 0
+      ? browserFiles
+      : [
+          {
+            id: "project-files",
+            name: "Project Files",
+            type: "folder",
+            path: "/project",
+            children: [],
+          },
+          {
+            id: "samples",
+            name: "Samples",
+            type: "folder",
+            path: "/samples",
+            children: [
+              {
+                id: "drums",
+                name: "Drums",
+                type: "folder",
+                path: "/samples/drums",
+                children: [],
+              },
+              {
+                id: "bass",
+                name: "Bass",
+                type: "folder",
+                path: "/samples/bass",
+                children: [],
+              },
+              {
+                id: "synths",
+                name: "Synths",
+                type: "folder",
+                path: "/samples/synths",
+                children: [],
+              },
+            ],
+          },
+          {
+            id: "loops",
+            name: "Loops",
+            type: "folder",
+            path: "/loops",
+            children: [],
+          },
+          {
+            id: "presets",
+            name: "Presets",
+            type: "folder",
+            path: "/presets",
+            children: [],
+          },
+        ];
 
   const consoleElement = (
     <StudioOneConsole
@@ -310,9 +336,9 @@ export function StudioOneWrapper({
   const launcherElement = (
     <LauncherGrid
       scenes={[
-        { id: '1', name: 'Scene 1', clips: [] },
-        { id: '2', name: 'Scene 2', clips: [] },
-        { id: '3', name: 'Scene 3', clips: [] },
+        { id: "1", name: "Scene 1", clips: [] },
+        { id: "2", name: "Scene 2", clips: [] },
+        { id: "3", name: "Scene 3", clips: [] },
       ]}
       tracks={tracks.map((t) => ({
         id: t.id,
@@ -339,9 +365,7 @@ export function StudioOneWrapper({
         arrange={
           <div className="flex flex-col h-full overflow-hidden">
             {timeline}
-            <div className="flex-1 overflow-hidden">
-              {children}
-            </div>
+            <div className="flex-1 overflow-hidden">{children}</div>
           </div>
         }
         console={consoleElement}
@@ -379,7 +403,9 @@ export function StudioOneWrapper({
             {consolePanel.visible && (
               <div
                 className="shrink-0"
-                style={{ borderTop: `1px solid ${studioOneTheme.colors.border.primary}` }}
+                style={{
+                  borderTop: `1px solid ${studioOneTheme.colors.border.primary}`,
+                }}
               >
                 {consoleElement}
               </div>
@@ -410,7 +436,7 @@ interface ArrangerTrackWrapperProps {
   bpm?: number;
   pixelsPerBar?: number;
   scrollOffset?: number;
-  onSectionAdd?: (section: Omit<ArrangerSection, 'id'>) => void;
+  onSectionAdd?: (section: Omit<ArrangerSection, "id">) => void;
   onSectionUpdate?: (id: string, updates: Partial<ArrangerSection>) => void;
   onSectionDelete?: (id: string) => void;
   onSectionDuplicate?: (id: string) => void;

@@ -152,12 +152,10 @@ router.post(
       const { type, seedIds, limit, hybridWeight } = req.body;
 
       if (!type || !["tracks", "artists", "similar"].includes(type)) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Valid recommendation type is required (tracks, artists, similar)",
-          });
+        return res.status(400).json({
+          error:
+            "Valid recommendation type is required (tracks, artists, similar)",
+        });
       }
 
       const options: RecommendationOptions = {
@@ -208,12 +206,10 @@ router.post(
           "forecast_roi",
         ].includes(action)
       ) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Valid action is required (score, optimize_budget, predict_creative, forecast_roi)",
-          });
+        return res.status(400).json({
+          error:
+            "Valid action is required (score, optimize_budget, predict_creative, forecast_roi)",
+        });
       }
 
       const defaultMetrics = {
@@ -302,12 +298,10 @@ router.post(
           "optimize_schedule",
         ].includes(action)
       ) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Valid action is required (predict_engagement, viral_potential, best_time, recommend_type, optimize_schedule)",
-          });
+        return res.status(400).json({
+          error:
+            "Valid action is required (predict_engagement, viral_potential, best_time, recommend_type, optimize_schedule)",
+        });
       }
 
       const options: EngagementPredictionOptions = {
@@ -380,12 +374,10 @@ router.post("/forecast", requireAuth, async (req: Request, res: Response) => {
       !metric ||
       !["streams", "revenue", "followers", "engagement"].includes(metric)
     ) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Valid metric is required (streams, revenue, followers, engagement)",
-        });
+      return res.status(400).json({
+        error:
+          "Valid metric is required (streams, revenue, followers, engagement)",
+      });
     }
 
     if (!horizon || ![7, 30, 90].includes(horizon)) {
@@ -565,11 +557,9 @@ router.post(
       const { content, originalPlatform, targetPlatform } = req.body;
 
       if (!content || !originalPlatform || !targetPlatform) {
-        return res
-          .status(400)
-          .json({
-            error: "Content, originalPlatform, and targetPlatform are required",
-          });
+        return res.status(400).json({
+          error: "Content, originalPlatform, and targetPlatform are required",
+        });
       }
 
       const adaptedContent = unifiedAIController.adaptContent(
@@ -674,11 +664,9 @@ router.post(
       const { metric, timeframe } = req.body;
 
       if (!metric || !["streams", "engagement", "revenue"].includes(metric)) {
-        return res
-          .status(400)
-          .json({
-            error: "Valid metric is required (streams, engagement, revenue)",
-          });
+        return res.status(400).json({
+          error: "Valid metric is required (streams, engagement, revenue)",
+        });
       }
 
       if (!timeframe || !["7d", "30d", "90d"].includes(timeframe)) {
@@ -931,13 +919,11 @@ router.get(
       const data = await ctrl.json();
       res.json({ success: true, data });
     } catch (err) {
-      res
-        .status(503)
-        .json({
-          error: "Diffusion gateway not running",
-          port: 8008,
-          detail: String(err),
-        });
+      res.status(503).json({
+        error: "Diffusion gateway not running",
+        port: 8008,
+        detail: String(err),
+      });
     }
   },
 );
@@ -958,13 +944,11 @@ router.get(
       const data = await ctrl.json();
       res.json({ success: true, data });
     } catch (err) {
-      res
-        .status(503)
-        .json({
-          error: "Diffusion gateway not running",
-          port: 8008,
-          detail: String(err),
-        });
+      res.status(503).json({
+        error: "Diffusion gateway not running",
+        port: 8008,
+        detail: String(err),
+      });
     }
   },
 );

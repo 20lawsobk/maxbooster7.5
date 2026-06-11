@@ -83,12 +83,11 @@ export function PayoutDashboard() {
   });
 
   // Fetch account verification status
-  const { data: verification } =
-    useQuery<AccountVerification>({
-      queryKey: ["/api/payouts/verify"],
-      enabled: !!user,
-      staleTime: 60000, // 1 minute
-    });
+  const { data: verification } = useQuery<AccountVerification>({
+    queryKey: ["/api/payouts/verify"],
+    enabled: !!user,
+    staleTime: 60000, // 1 minute
+  });
 
   // Setup Stripe Connect mutation
   const setupStripeMutation = useMutation({

@@ -469,9 +469,8 @@ describe("withSchedLock utility (distributedLock — aggregation use)", () => {
 
   it("single-instance mode: always executes fn (no PDIM)", async () => {
     mocks.pdimState.configured = false;
-    const { withSchedLock } = await import(
-      "../../server/lib/distributedLock.js"
-    );
+    const { withSchedLock } =
+      await import("../../server/lib/distributedLock.js");
     const fn = vi.fn().mockResolvedValue(undefined);
     await withSchedLock("test-task", 10, fn);
     expect(fn).toHaveBeenCalledOnce();
@@ -479,9 +478,8 @@ describe("withSchedLock utility (distributedLock — aggregation use)", () => {
 
   it("single-instance mode: does not call SET NX (no Redis needed)", async () => {
     mocks.pdimState.configured = false;
-    const { withSchedLock } = await import(
-      "../../server/lib/distributedLock.js"
-    );
+    const { withSchedLock } =
+      await import("../../server/lib/distributedLock.js");
     await withSchedLock("test-task", 10, async () => {});
     expect(mocks.mockRedisSet).not.toHaveBeenCalled();
   });
@@ -490,9 +488,8 @@ describe("withSchedLock utility (distributedLock — aggregation use)", () => {
     mocks.pdimState.configured = true;
     mocks.mockRedisSet.mockResolvedValue("OK");
     mocks.mockRedisGet.mockResolvedValue(null);
-    const { withSchedLock } = await import(
-      "../../server/lib/distributedLock.js"
-    );
+    const { withSchedLock } =
+      await import("../../server/lib/distributedLock.js");
     const fn = vi.fn().mockResolvedValue(undefined);
     await withSchedLock("task-b", 54, fn);
     expect(fn).toHaveBeenCalledOnce();
@@ -501,9 +498,8 @@ describe("withSchedLock utility (distributedLock — aggregation use)", () => {
   it("PDIM mode: skips fn when SET NX returns null (lock held by another pod)", async () => {
     mocks.pdimState.configured = true;
     mocks.mockRedisSet.mockResolvedValue(null);
-    const { withSchedLock } = await import(
-      "../../server/lib/distributedLock.js"
-    );
+    const { withSchedLock } =
+      await import("../../server/lib/distributedLock.js");
     const fn = vi.fn().mockResolvedValue(undefined);
     await withSchedLock("task-c", 54, fn);
     expect(fn).not.toHaveBeenCalled();
@@ -512,9 +508,8 @@ describe("withSchedLock utility (distributedLock — aggregation use)", () => {
   it("PDIM mode: graceful degradation — executes fn when PDIM throws", async () => {
     mocks.pdimState.configured = true;
     mocks.mockRedisSet.mockRejectedValue(new Error("PDIM HTTP 503"));
-    const { withSchedLock } = await import(
-      "../../server/lib/distributedLock.js"
-    );
+    const { withSchedLock } =
+      await import("../../server/lib/distributedLock.js");
     const fn = vi.fn().mockResolvedValue(undefined);
     await withSchedLock("task-d", 54, fn);
     expect(fn).toHaveBeenCalledOnce();
@@ -524,9 +519,8 @@ describe("withSchedLock utility (distributedLock — aggregation use)", () => {
     mocks.pdimState.configured = true;
     mocks.mockRedisSet.mockResolvedValue("OK");
     mocks.mockRedisGet.mockResolvedValue(null);
-    const { withSchedLock } = await import(
-      "../../server/lib/distributedLock.js"
-    );
+    const { withSchedLock } =
+      await import("../../server/lib/distributedLock.js");
     const fn = vi.fn().mockRejectedValue(new Error("task exploded"));
     await expect(withSchedLock("task-e", 54, fn)).resolves.toBeUndefined();
   });

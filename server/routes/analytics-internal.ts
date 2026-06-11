@@ -33,22 +33,17 @@ router.post("/ai/predict-metric", async (req: Request, res: Response) => {
       "engagement",
     ];
     if (!metric || !ALLOWED_METRICS.includes(metric)) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
-        });
+      return res.status(400).json({
+        error: "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
+      });
     }
 
     // Validate timeframe format and cap to prevent heavy DB scans
     const timeframeMatch = /^(\d+)d$/.exec(String(timeframe));
     if (!timeframeMatch) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid timeframe format. Expected format: 30d, 90d, etc.",
-        });
+      return res.status(400).json({
+        error: "Invalid timeframe format. Expected format: 30d, 90d, etc.",
+      });
     }
     const requestedDays = parseInt(timeframeMatch[1], 10);
     if (requestedDays < 1 || requestedDays > 365) {
@@ -152,7 +147,6 @@ router.get(
   requireAdmin,
   async (_req: Request, res: Response) => {
     try {
-
       if (
         _churnPredictCache.data &&
         Date.now() < _churnPredictCache.expiresAt
@@ -492,21 +486,16 @@ router.post("/music/career-growth", async (req: Request, res: Response) => {
       "engagement",
     ];
     if (metric && !ALLOWED_METRICS.includes(metric)) {
-      return res
-        .status(400)
-        .json({
-          error:
-            "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
-        });
+      return res.status(400).json({
+        error: "Invalid metric. Must be one of: " + ALLOWED_METRICS.join(", "),
+      });
     }
 
     const timelineMatch = /^(\d+)d$/.exec(String(timeline));
     if (!timelineMatch) {
-      return res
-        .status(400)
-        .json({
-          error: "Invalid timeline format. Expected format: 30d, 90d, etc.",
-        });
+      return res.status(400).json({
+        error: "Invalid timeline format. Expected format: 30d, 90d, etc.",
+      });
     }
     const requestedDays = parseInt(timelineMatch[1], 10);
     if (requestedDays < 1 || requestedDays > 365) {
@@ -1994,7 +1983,7 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const {   minGrowth } = req.query;
+    const { minGrowth } = req.query;
 
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);

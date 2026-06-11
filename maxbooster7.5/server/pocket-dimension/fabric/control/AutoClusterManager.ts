@@ -232,9 +232,8 @@ export class AutoClusterManager {
           healthy: true,
         });
 
-        const { PocketDimensionChunkStore } = await import(
-          "../storage/PocketDimensionChunkStore.js"
-        );
+        const { PocketDimensionChunkStore } =
+          await import("../storage/PocketDimensionChunkStore.js");
         const store = new PocketDimensionChunkStore(pocketName);
         this.onNodeSpawned(node.id, pocketName, store);
         spawned.push(pocketName);

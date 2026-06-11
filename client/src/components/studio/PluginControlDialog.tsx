@@ -11,7 +11,17 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Knob } from "./Knob";
-import { RotateCcw, Activity, Volume2, Waves, Clock, Sparkles, Music, Zap, Wind } from "lucide-react";
+import {
+  RotateCcw,
+  Activity,
+  Volume2,
+  Waves,
+  Clock,
+  Sparkles,
+  Music,
+  Zap,
+  Wind,
+} from "lucide-react";
 import type { PluginInstance, PluginType } from "./PluginRack";
 
 interface PluginPreset {

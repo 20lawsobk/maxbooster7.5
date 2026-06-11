@@ -80,7 +80,6 @@ const MAGIC_BYTES: Record<string, number[]> = {
   "application/pdf": [0x25, 0x50, 0x44, 0x46],
 };
 
-
 const EXTENSION_TO_MIME: Record<string, string[]> = {
   ".jpg": ["image/jpeg"],
   ".jpeg": ["image/jpeg"],

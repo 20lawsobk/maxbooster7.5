@@ -1,7 +1,15 @@
 import { useState, useMemo, memo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from "recharts";
 import {
   Card,
   CardContent,
@@ -13,7 +21,20 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListMusic, Plus, Minus, Users, Play, Star, Clock, ExternalLink, CheckCircle, XCircle, Music, Sparkles } from "lucide-react";
+import {
+  ListMusic,
+  Plus,
+  Minus,
+  Users,
+  Play,
+  Star,
+  Clock,
+  ExternalLink,
+  CheckCircle,
+  XCircle,
+  Music,
+  Sparkles,
+} from "lucide-react";
 import { DateRangePicker } from "@/components/analytics/DateRangePicker";
 import { PlaylistEmptyState } from "@/components/analytics/AnalyticsEmptyStates";
 import { PlaylistTrackingSkeleton } from "@/components/analytics/AnalyticsLoadingSkeletons";

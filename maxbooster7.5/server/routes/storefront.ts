@@ -425,11 +425,9 @@ router.patch("/:id/publish", async (req, res) => {
     res.json(updated);
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error toggling storefront publish status:");
-    res
-      .status(500)
-      .json({
-        error: getErrorMessage(error) || "Failed to update publish status",
-      });
+    res.status(500).json({
+      error: getErrorMessage(error) || "Failed to update publish status",
+    });
   }
 });
 
@@ -673,11 +671,9 @@ router.post("/subscribe/:tierId", async (req, res) => {
 
     const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey?.startsWith("sk_")) {
-      return res
-        .status(503)
-        .json({
-          error: "Payment service unavailable. Please try again later.",
-        });
+      return res.status(503).json({
+        error: "Payment service unavailable. Please try again later.",
+      });
     }
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
@@ -780,11 +776,9 @@ router.post("/memberships/:membershipId/cancel", async (req, res) => {
     }
 
     if (errMsg.includes("Stripe")) {
-      return res
-        .status(503)
-        .json({
-          error: "Payment service unavailable. Please try again later.",
-        });
+      return res.status(503).json({
+        error: "Payment service unavailable. Please try again later.",
+      });
     }
 
     res.status(500).json({ error: errMsg || "Failed to cancel membership" });
@@ -1025,11 +1019,9 @@ router.put("/:storefrontId/custom-domain", async (req, res) => {
         existingDomain.length > 0 &&
         existingDomain[0].storefrontId !== storefrontId
       ) {
-        return res
-          .status(400)
-          .json({
-            error: "This domain is already in use by another storefront",
-          });
+        return res.status(400).json({
+          error: "This domain is already in use by another storefront",
+        });
       }
 
       const updatedStorefront = await storefrontService.updateStorefront(
@@ -1408,11 +1400,9 @@ router.post("/:id/checkout", async (req, res) => {
     const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey) {
       logger.warn("Stripe secret key is not configured");
-      return res
-        .status(503)
-        .json({
-          error: "Payment processing is not available. Please contact support.",
-        });
+      return res.status(503).json({
+        error: "Payment processing is not available. Please contact support.",
+      });
     }
     const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
 

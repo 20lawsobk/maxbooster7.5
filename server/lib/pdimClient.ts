@@ -14,7 +14,14 @@ import { EventEmitter } from "events";
 import os from "os";
 import { logger } from "../logger.js";
 import { execLuaViaPdim } from "./luaExecutor.js";
-import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalfOpenFailed, cbForceClose, cbGetState } from "./pdimCircuitBreaker.js";
+import {
+  cbAllowRequest,
+  cbRecordFailure as cbRecord503,
+  cbRecordSuccess,
+  cbHalfOpenFailed,
+  cbForceClose,
+  cbGetState,
+} from "./pdimCircuitBreaker.js";
 
 // ── Adaptive PDIM Rate Limiter (AIMD) ────────────────────────────────────────
 // "Fluid like water: easy to contain but expands freely when userbase expands."

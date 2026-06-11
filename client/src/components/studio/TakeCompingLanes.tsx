@@ -4,7 +4,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Layers, Star, Trash2, Eye, EyeOff, Copy, Sparkles } from "lucide-react";
+import {
+  Layers,
+  Star,
+  Trash2,
+  Eye,
+  EyeOff,
+  Copy,
+  Sparkles,
+} from "lucide-react";
 
 export interface Take {
   id: string;

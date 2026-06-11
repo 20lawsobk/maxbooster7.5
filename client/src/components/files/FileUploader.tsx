@@ -191,14 +191,9 @@ export function FileUploader({
     formData.append("mimeType", uploadFile.file.type);
     formData.append("category", category);
 
-    await apiRequest(
-      "POST",
-      `${uploadEndpoint}/chunk`,
-      formData,
-      {
-        signal: abortController.signal,
-      },
-    );
+    await apiRequest("POST", `${uploadEndpoint}/chunk`, formData, {
+      signal: abortController.signal,
+    });
 
     return true;
   };

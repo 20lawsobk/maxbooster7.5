@@ -417,7 +417,6 @@ var me = {};
           I = 5,
           C = Math.PI / I;
         I--;
-
       )
         ((z = e.x + Math.cos(u) * V),
           (S = e.y + Math.sin(u) * V),
@@ -506,7 +505,6 @@ var me = {};
           Re = n.width * be.x,
           Be = n.height * be.y;
         he--;
-
       )
         se.push(
           te({

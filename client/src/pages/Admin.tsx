@@ -49,7 +49,48 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, DollarSign, Music, Search, Download, UserCheck, Crown, Edit, Trash2, Eye, Ban, Shield, CreditCard, Activity, Server, Database, Cpu, HardDrive, Wifi, AlertTriangle, CheckCircle, XCircle, Power, PowerOff, Flag, Unlock, Lock, MessageSquare, AlertCircle, RefreshCw, Clock, Zap, BarChart3, Settings, Globe, LayoutDashboard, Sliders, Percent, Save, Loader2 } from "lucide-react";
+import {
+  Users,
+  DollarSign,
+  Music,
+  Search,
+  Download,
+  UserCheck,
+  Crown,
+  Edit,
+  Trash2,
+  Eye,
+  Ban,
+  Shield,
+  CreditCard,
+  Activity,
+  Server,
+  Database,
+  Cpu,
+  HardDrive,
+  Wifi,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Power,
+  PowerOff,
+  Flag,
+  Unlock,
+  Lock,
+  MessageSquare,
+  AlertCircle,
+  RefreshCw,
+  Clock,
+  Zap,
+  BarChart3,
+  Settings,
+  Globe,
+  LayoutDashboard,
+  Sliders,
+  Percent,
+  Save,
+  Loader2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -220,17 +261,12 @@ export default function Admin() {
   const [moderationAction, setModerationAction] = useState("");
   const [moderationNotes, setModerationNotes] = useState("");
   const [killSwitchReason, setKillSwitchReason] = useState("");
-  const [, setKillSwitchTarget] = useState<"all" | string>(
-    "all",
-  );
+  const [, setKillSwitchTarget] = useState<"all" | string>("all");
   const [bypassDuration, setBypassDuration] = useState("2");
   const [bypassReason, setBypassReason] = useState("");
   const [bypassExtendHours, setBypassExtendHours] = useState("1");
 
-  const {
-    data: usersData,
-    isLoading: usersLoading,
-  } = useQuery<UsersResponse>({
+  const { data: usersData, isLoading: usersLoading } = useQuery<UsersResponse>({
     queryKey: [
       "/api/admin/users",
       { search: searchTerm, status: statusFilter, plan: planFilter },

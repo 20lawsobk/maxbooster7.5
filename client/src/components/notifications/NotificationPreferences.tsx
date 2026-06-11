@@ -1,6 +1,33 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bell, Mail, Smartphone, Volume2, VolumeX, Users, DollarSign, Music2, MessageSquare, Megaphone, Shield, ShoppingBag, Loader2, Check, ExternalLink, Moon, Phone, BellOff, AlertCircle, Trophy, LayoutDashboard, Heart, Flame, FileText, BarChart2, MapPin } from "lucide-react";
+import {
+  Bell,
+  Mail,
+  Smartphone,
+  Volume2,
+  VolumeX,
+  Users,
+  DollarSign,
+  Music2,
+  MessageSquare,
+  Megaphone,
+  Shield,
+  ShoppingBag,
+  Loader2,
+  Check,
+  ExternalLink,
+  Moon,
+  Phone,
+  BellOff,
+  AlertCircle,
+  Trophy,
+  LayoutDashboard,
+  Heart,
+  Flame,
+  FileText,
+  BarChart2,
+  MapPin,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -26,7 +53,11 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { PushPermissionPrompt } from "./PushPermissionPrompt";
-import type { NotificationPreferences as NotificationPreferencesType, EmailFrequency, NotificationCategory } from "./types";
+import type {
+  NotificationPreferences as NotificationPreferencesType,
+  EmailFrequency,
+  NotificationCategory,
+} from "./types";
 import { categoryConfig } from "./types";
 
 const defaultPreferences: NotificationPreferencesType = {

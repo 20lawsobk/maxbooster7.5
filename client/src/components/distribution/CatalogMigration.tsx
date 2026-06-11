@@ -182,12 +182,8 @@ function ValidationBadge({ v }: { v: PlatformValidation }) {
 
 function ReleaseRow({ release }: { release: MigrationRelease }) {
   const [open, setOpen] = useState(false);
-  const {
-    isrcsCovered,
-    totalTracks,
-    validation,
-    platformPresence,
-  } = release._meta;
+  const { isrcsCovered, totalTracks, validation, platformPresence } =
+    release._meta;
 
   const allDiscrepancies = validation.flatMap((v) => v.discrepancies);
   const allConflicts = validation.flatMap((v) => v.isrcConflicts);

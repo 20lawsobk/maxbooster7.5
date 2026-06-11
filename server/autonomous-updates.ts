@@ -1702,7 +1702,6 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return deployment;
   }
 
-
   private async runPreDeploymentChecks(
     modelId: string,
     versionId: string,

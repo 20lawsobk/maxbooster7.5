@@ -10,7 +10,16 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Pencil, Eraser, ZoomIn, ZoomOut, Scissors, Trash2, Activity, Settings2 } from "lucide-react";
+import {
+  Pencil,
+  Eraser,
+  ZoomIn,
+  ZoomOut,
+  Scissors,
+  Trash2,
+  Activity,
+  Settings2,
+} from "lucide-react";
 
 interface MPEExpressionPoint {
   time: number;
@@ -724,7 +733,6 @@ export function PianoRoll({
 
     notes.forEach((note) => {
       if (note.id === editingExpressionNote) return;
-
 
       laneTypes.forEach((laneType, laneIndex) => {
         const laneY = laneIndex * EXPRESSION_LANE_HEIGHT;

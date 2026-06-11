@@ -1,6 +1,20 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, Eye, Edit3, MessageSquare, Check, X, Clock, ArrowUp, ArrowDown, Ban, Send, Loader2, UserPlus } from "lucide-react";
+import {
+  Shield,
+  Eye,
+  Edit3,
+  MessageSquare,
+  Check,
+  X,
+  Clock,
+  ArrowUp,
+  ArrowDown,
+  Ban,
+  Send,
+  Loader2,
+  UserPlus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

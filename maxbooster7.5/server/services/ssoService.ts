@@ -924,9 +924,7 @@ export class SSOService {
     }
   }
 
-  async getIdPMetadata(
-    workspaceId: string,
-  ): Promise<{
+  async getIdPMetadata(workspaceId: string): Promise<{
     success: boolean;
     metadata?: Record<string, unknown>;
     error?: string;

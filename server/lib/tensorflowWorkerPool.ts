@@ -28,7 +28,6 @@ interface InferenceRequest {
   reject: (err: Error) => void;
 }
 
-
 interface WorkerState {
   worker: Worker;
   busy: boolean;

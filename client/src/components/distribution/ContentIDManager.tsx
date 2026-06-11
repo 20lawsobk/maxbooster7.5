@@ -24,7 +24,19 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Fingerprint, CheckCircle2, XCircle, Loader2, Shield, Copy, Music, AlertTriangle, Info, RefreshCw, Waves } from "lucide-react";
+import {
+  Fingerprint,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Shield,
+  Copy,
+  Music,
+  AlertTriangle,
+  Info,
+  RefreshCw,
+  Waves,
+} from "lucide-react";
 
 interface ContentIdRegistration {
   id: string;

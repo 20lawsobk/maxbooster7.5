@@ -1,5 +1,26 @@
 import { useState, useMemo } from "react";
-import { History, Undo2, Redo2, Clock, GitBranch, ChevronRight, Trash2, RefreshCw, CheckCircle2, X, ChevronDown, ChevronUp, Filter, FileText, Music, Image, Settings, Users, Calendar, Folder } from "lucide-react";
+import {
+  History,
+  Undo2,
+  Redo2,
+  Clock,
+  GitBranch,
+  ChevronRight,
+  Trash2,
+  RefreshCw,
+  CheckCircle2,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Filter,
+  FileText,
+  Music,
+  Image,
+  Settings,
+  Users,
+  Calendar,
+  Folder,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";

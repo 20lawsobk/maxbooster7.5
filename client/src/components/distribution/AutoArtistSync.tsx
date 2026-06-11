@@ -1,6 +1,42 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, XCircle, ExternalLink, ChevronDown, ChevronUp, Loader2, Globe, Info, Key, Wrench, Music2, AlertCircle, RefreshCw, Search, Edit2, Save, X, Zap, BarChart2, Shield, Download, Upload, Link2, Activity, Network, Dna, ScanSearch, GitBranch, Hash, Star, TriangleAlert, Fingerprint, BookOpen, Disc3, SendHorizonal } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Globe,
+  Info,
+  Key,
+  Wrench,
+  Music2,
+  AlertCircle,
+  RefreshCw,
+  Search,
+  Edit2,
+  Save,
+  X,
+  Zap,
+  BarChart2,
+  Shield,
+  Download,
+  Upload,
+  Link2,
+  Activity,
+  Network,
+  Dna,
+  ScanSearch,
+  GitBranch,
+  Hash,
+  Star,
+  TriangleAlert,
+  Fingerprint,
+  BookOpen,
+  Disc3,
+  SendHorizonal,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -225,10 +261,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const [catalogRunning, setCatalogRunning] = useState(false);
   const [distributingId, setDistributingId] = useState<string | null>(null);
 
-  const {
-    data: hub,
-    isLoading,
-  } = useQuery<HubData>({
+  const { data: hub, isLoading } = useQuery<HubData>({
     queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`],
     queryFn: () =>
       apiRequest("GET", `/api/artist-profiles/${profile.id}/profile-hub`).then(
@@ -687,10 +720,10 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     }
   };
 
-  ((platformKey: string) =>
+  (platformKey: string) =>
     pipelineData?.pipeline?.find(
       (p: Record<string, unknown>) => p.platform === platformKey,
-    ));
+    );
 
   const CLAIM_STEP_LABELS = [
     "Not Started",

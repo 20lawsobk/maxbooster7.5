@@ -1,6 +1,20 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause, Square, Circle, Plus, Volume2, VolumeX, Headphones, Music, Drum, Piano, Layers, Grid3X3 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Square,
+  Circle,
+  Plus,
+  Volume2,
+  VolumeX,
+  Headphones,
+  Music,
+  Drum,
+  Piano,
+  Layers,
+  Grid3X3,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -11,7 +25,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
+import {
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 

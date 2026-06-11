@@ -590,9 +590,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Start system intelligence layer — must be first so it sees all log entries
   // and events from subsequent service startups.
   try {
-    const { systemIntelligence } = await import(
-      "./services/systemIntelligence.js"
-    );
+    const { systemIntelligence } =
+      await import("./services/systemIntelligence.js");
     systemIntelligence.initialize();
   } catch (e) {
     logger.warn(
@@ -603,9 +602,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Start chain error auto-fixer — must run early so it catches errors from
   // autonomous systems, BullMQ workers, and PDIM during their own startup
   try {
-    const { chainErrorAutoFixer } = await import(
-      "./services/chainErrorAutoFixer.js"
-    );
+    const { chainErrorAutoFixer } =
+      await import("./services/chainErrorAutoFixer.js");
     chainErrorAutoFixer.start();
   } catch (e) {
     logger.warn(`[ChainFixer] Failed to start: ${e.message}`);
@@ -616,9 +614,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // avoid doubling all health-check traffic across every cluster worker.
   // The middleware (per-route 5xx rate tracker) always runs — it has no external I/O.
   try {
-    const { platformAutoFixer, platformFixerMiddleware } = await import(
-      "./services/platformAutoFixer.js"
-    );
+    const { platformAutoFixer, platformFixerMiddleware } =
+      await import("./services/platformAutoFixer.js");
     if (isBgWorker) {
       platformAutoFixer.start();
     } else {
@@ -636,9 +633,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // short delay lets the connection settle before we try to read saved override keys).
   setTimeout(async () => {
     try {
-      const { permanentFixRegistry } = await import(
-        "./services/permanentFixRegistry.js"
-      );
+      const { permanentFixRegistry } =
+        await import("./services/permanentFixRegistry.js");
       await permanentFixRegistry.loadPermanentOverrides();
     } catch (e) {
       logger.warn(`[PermanentFixer] Failed to load overrides: ${e.message}`);
@@ -702,9 +698,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // changing route. Webhooks, login/register, and idempotent reads are exempt
   // (see CSRF_EXEMPT_PATHS in server/middleware/csrf.ts).
   try {
-    const { csrfProtectionWithExemptions, generateCsrfToken } = await import(
-      "./middleware/csrf.js"
-    );
+    const { csrfProtectionWithExemptions, generateCsrfToken } =
+      await import("./middleware/csrf.js");
     app.use(generateCsrfToken);
     app.use(csrfProtectionWithExemptions);
     logger.info(
@@ -804,9 +799,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Domain verification worker — polls storefront_domains for pending custom domains
   // and checks TXT propagation. Runs on every process (lightweight interval, not BullMQ).
   try {
-    const { startDomainVerificationWorker } = await import(
-      "./workers/domainVerificationWorker.js"
-    );
+    const { startDomainVerificationWorker } =
+      await import("./workers/domainVerificationWorker.js");
     startDomainVerificationWorker();
     logger.info("Domain verification worker started");
   } catch (e) {
@@ -816,9 +810,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Domain lifecycle job — manages expiry states, auto-renewal, and grace periods.
   // Runs every 6 hours; first run is deferred 2 minutes post-startup.
   try {
-    const { startDomainLifecycleJob } = await import(
-      "./services/domainLifecycleJob.js"
-    );
+    const { startDomainLifecycleJob } =
+      await import("./services/domainLifecycleJob.js");
     startDomainLifecycleJob();
     logger.info("[domainVerify] Domain lifecycle job started");
   } catch (e) {
@@ -998,9 +991,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
   });
 
-  const { multiTenantRouter } = await import(
-    "./middleware/multiTenantRouter.js"
-  );
+  const { multiTenantRouter } =
+    await import("./middleware/multiTenantRouter.js");
   app.use(multiTenantRouter);
 
   // Web Vitals ingestion endpoint — receives Core Web Vitals from the SPA.
@@ -1028,9 +1020,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   await registerRoutes(httpServer, app);
   _routesReady = true;
-  const { setRoutesReady: _setRoutesReady } = await import(
-    "./lib/bootState.js"
-  );
+  const { setRoutesReady: _setRoutesReady } =
+    await import("./lib/bootState.js");
   _setRoutesReady();
   logger.info(
     "[Boot] Routes registered — boot stubs deactivated, real handlers active",
@@ -1039,9 +1030,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Eagerly initialize push services so credentials are validated and status
   // is logged at startup rather than on first route hit.
   try {
-    const { mobilePushService } = await import(
-      "./services/mobilePushService.js"
-    );
+    const { mobilePushService } =
+      await import("./services/mobilePushService.js");
     logger.info(`📱 Mobile Push Service mode: ${mobilePushService.getMode()}`);
   } catch (e) {
     logger.warn(
@@ -1050,9 +1040,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     );
   }
   try {
-    const { desktopPushService } = await import(
-      "./services/desktopPushService.js"
-    );
+    const { desktopPushService } =
+      await import("./services/desktopPushService.js");
     logger.info(
       `🖥️  Desktop Push Service ready: ${desktopPushService.isReady()}`,
     );
@@ -1074,9 +1063,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // Start retention background services
   try {
-    const { reEngagementService } = await import(
-      "./services/reEngagementService.js"
-    );
+    const { reEngagementService } =
+      await import("./services/reEngagementService.js");
     reEngagementService.startDailyCron();
     logger.info("[Retention] Re-engagement cron started");
 
@@ -1084,9 +1072,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const { startAcmeRenewalCron } = await import("./services/acmeClient.js");
     startAcmeRenewalCron();
 
-    const { recoverStaleProcessingBatches } = await import(
-      "./services/featureEventBuffer.js"
-    );
+    const { recoverStaleProcessingBatches } =
+      await import("./services/featureEventBuffer.js");
     recoverStaleProcessingBatches().catch((e) =>
       logger.warn(
         "[Retention] Stale batch recovery failed (non-blocking):",
@@ -1094,9 +1081,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       ),
     );
 
-    const { getRetentionQueue, startRetentionWorker } = await import(
-      "./lib/scaleJobQueue.js"
-    );
+    const { getRetentionQueue, startRetentionWorker } =
+      await import("./lib/scaleJobQueue.js");
     const retentionQueue = getRetentionQueue();
     startRetentionWorker();
 
@@ -1145,9 +1131,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     setInterval(
       async () => {
         try {
-          const { advertisingDispatchService } = await import(
-            "./services/advertisingDispatchService.js"
-          );
+          const { advertisingDispatchService } =
+            await import("./services/advertisingDispatchService.js");
           await advertisingDispatchService.collectAllActiveEngagement();
         } catch (e) {
           logger.warn("[Engagement] Refresh failed (non-fatal):", e?.message);
@@ -1225,9 +1210,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       if (p.startsWith("/storefront/")) return next();
 
       const { db: sDb } = await import("./db.js");
-      const { storefrontDomains: sDoms, storefronts: sStores } = await import(
-        "@shared/schema"
-      );
+      const { storefrontDomains: sDoms, storefronts: sStores } =
+        await import("@shared/schema");
       const { eq, and } = await import("drizzle-orm");
       const fqdn = `${label}.${BASE}`;
 
@@ -1420,9 +1404,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
     // 0c. Onboarding task seeding
     try {
-      const { onboardingService } = await import(
-        "./services/onboardingService.js"
-      );
+      const { onboardingService } =
+        await import("./services/onboardingService.js");
       await onboardingService.seedDefaultTasks();
       await onboardingService.ensureAITasksExist();
     } catch (e) {
@@ -1431,9 +1414,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
     // 0d. Hybrid Storage System (Replit hot + Pocket Dimension cold)
     try {
-      const { hybridStorageService } = await import(
-        "./services/hybridStorageService.js"
-      );
+      const { hybridStorageService } =
+        await import("./services/hybridStorageService.js");
       await hybridStorageService.initialize();
       logger.info(
         "✅ [Storage] Hybrid Storage initialized (Replit Object Storage + Pocket Dimension)",
@@ -1465,9 +1447,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
     // 0e. Pocket Dimension Fabric (Distributed storage layer + Auto-cluster)
     try {
-      const { initializeFabric, autoClusterManager } = await import(
-        "./pocket-dimension/fabric/index.js"
-      );
+      const { initializeFabric, autoClusterManager } =
+        await import("./pocket-dimension/fabric/index.js");
       await initializeFabric();
       logger.info("✅ [PocketFabric] Distributed fabric storage initialized");
       killSwitch.registerSystem("pocket-fabric-autocluster" as string, {
@@ -1827,9 +1808,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     // producing a 5000+ms reconnect spike on the next background-job query.
     // Both primary and replica pools are kept alive.
     try {
-      const { pool: _keepPool, replicaPool: _replicaKeepPool } = await import(
-        "./db.js"
-      );
+      const { pool: _keepPool, replicaPool: _replicaKeepPool } =
+        await import("./db.js");
       const _keepalive = setInterval(() => {
         _keepPool.query("SELECT 1").catch(() => {});
         if (_replicaKeepPool)
@@ -1897,9 +1877,8 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   try {
     // 3. Flush any debounced autopilot-coordinator PDIM persists so the last
     //    ≤ debounce-window of queue/insight mutations isn't lost on shutdown.
-    const { autopilotCoordinatorService } = await import(
-      "./services/autopilotCoordinatorService.js"
-    );
+    const { autopilotCoordinatorService } =
+      await import("./services/autopilotCoordinatorService.js");
     await Promise.race([
       autopilotCoordinatorService.flushPendingPersists(),
       new Promise<void>((resolve) => setTimeout(resolve, 3_000)),
@@ -1919,9 +1898,8 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
 
   try {
     // 4. Stop the platform auto-fixer probe loop.
-    const { platformAutoFixer } = await import(
-      "./services/platformAutoFixer.js"
-    );
+    const { platformAutoFixer } =
+      await import("./services/platformAutoFixer.js");
     (platformAutoFixer as { stop?: () => void })?.stop?.();
     logger.info("[Shutdown] PlatformAutoFixer stopped");
   } catch {

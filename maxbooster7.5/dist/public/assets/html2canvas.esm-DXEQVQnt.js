@@ -1042,7 +1042,6 @@ var yn =
         for (
           (r === DA || r === Z) && A.push(this.consumeCodePoint());
           J(this.peekCodePoint(0));
-
         )
           A.push(this.consumeCodePoint());
         r = this.peekCodePoint(0);
@@ -1051,7 +1050,6 @@ var yn =
           for (
             A.push(this.consumeCodePoint(), this.consumeCodePoint()), t = ft;
             J(this.peekCodePoint(0));
-
           )
             A.push(this.consumeCodePoint());
         ((r = this.peekCodePoint(0)), (B = this.peekCodePoint(1)));
@@ -1060,7 +1058,6 @@ var yn =
           for (
             A.push(this.consumeCodePoint(), this.consumeCodePoint()), t = ft;
             J(this.peekCodePoint(0));
-
           )
             A.push(this.consumeCodePoint());
         return [ms(A), t];
@@ -3751,7 +3748,6 @@ var qi = 1,
           }
         };
       !(B = t.next()).done;
-
     )
       n();
     return r;
@@ -5562,7 +5558,6 @@ var x = function (e, A, t, r, B) {
             r = this.parent,
             B = this.effects.slice(0);
           r;
-
         ) {
           var n = r.effects.filter(function (a) {
             return !en(a);

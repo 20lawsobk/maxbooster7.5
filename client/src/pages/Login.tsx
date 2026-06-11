@@ -69,8 +69,7 @@ const OAUTH_ERROR_MESSAGES: Record<
 };
 
 export default function Login() {
-  const {  isLoading: authLoading } =
-    useRedirectIfAuthenticated();
+  const { isLoading: authLoading } = useRedirectIfAuthenticated();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

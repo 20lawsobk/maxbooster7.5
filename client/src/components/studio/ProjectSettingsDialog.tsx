@@ -47,7 +47,6 @@ interface ProjectSettingsDialogProps {
   }) => void;
 }
 
-
 const TIME_SIGNATURES = [
   { value: "4/4", label: "4/4" },
   { value: "3/4", label: "3/4" },

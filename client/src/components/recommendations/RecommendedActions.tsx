@@ -5,7 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useNextActions } from "@/hooks/useRecommendations";
 import { useLocation } from "wouter";
-import { ArrowRight, Clock, Zap, Target, TrendingUp, MessageSquare, DollarSign } from "lucide-react";
+import {
+  ArrowRight,
+  Clock,
+  Zap,
+  Target,
+  TrendingUp,
+  MessageSquare,
+  DollarSign,
+} from "lucide-react";
 
 const categoryIcons: Record<string, React.ElementType> = {
   content: MessageSquare,

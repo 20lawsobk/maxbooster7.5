@@ -1241,9 +1241,7 @@ class ArtistProfileService {
   // Significantly more accurate than name search for newly distributed releases:
   // Apple and Deezer both expose album-by-UPC endpoints that return the exact
   // artist record tied to that release — no fuzzy matching needed.
-  async searchByUPC(
-    upc: string,
-  ): Promise<{
+  async searchByUPC(upc: string): Promise<{
     apple: AppleArtistResult | null;
     deezer: DeezerArtistResult | null;
   }> {

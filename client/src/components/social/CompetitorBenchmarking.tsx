@@ -20,7 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -29,7 +36,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, BarChart3, PieChart, Plus, Trash2, RefreshCw, Download, Clock, Target, Award, Eye, ArrowUp, ArrowDown, Minus, Mail } from "lucide-react";
+import {
+  Users,
+  BarChart3,
+  PieChart,
+  Plus,
+  Trash2,
+  RefreshCw,
+  Download,
+  Clock,
+  Target,
+  Award,
+  Eye,
+  ArrowUp,
+  ArrowDown,
+  Minus,
+  Mail,
+} from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -63,7 +86,6 @@ interface Competitor {
   lastUpdated: string;
   color: string;
 }
-
 
 interface CompetitorsResponse {
   competitors?: Competitor[];

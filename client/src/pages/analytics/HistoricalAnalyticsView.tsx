@@ -12,7 +12,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { History, TrendingUp, Trophy, Milestone, ArrowUp, ArrowDown, BarChart3, LineChart, Loader2, RefreshCw } from "lucide-react";
+import {
+  History,
+  TrendingUp,
+  Trophy,
+  Milestone,
+  ArrowUp,
+  ArrowDown,
+  BarChart3,
+  LineChart,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 
 interface YearData {
   year: number;

@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useStudioStore as useNewStore } from "./studioStore";
 import { useStudioStore as useLegacyStore } from "@/lib/studioStore";
-import type { Track, AudioClip, MidiClip, PluginInstance, ViewState, TrackType } from "./studioStore";
+import type {
+  Track,
+  AudioClip,
+  MidiClip,
+  PluginInstance,
+  ViewState,
+  TrackType,
+} from "./studioStore";
 
 export interface UnifiedTrack {
   id: string;

@@ -3235,61 +3235,59 @@ function cs({
                               "div",
                               {
                                 className: "space-y-1",
-                                children: c
-                                  .slice(x)
-                                  .map((r) =>
-                                    e.jsxDEV(
-                                      "div",
-                                      {
-                                        className: "flex items-center gap-2",
-                                        children: [
-                                          e.jsxDEV(
-                                            "span",
-                                            {
-                                              className: "h-2 w-2 rounded-full",
-                                              style: {
-                                                backgroundColor: r.color,
-                                              },
+                                children: c.slice(x).map((r) =>
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "flex items-center gap-2",
+                                      children: [
+                                        e.jsxDEV(
+                                          "span",
+                                          {
+                                            className: "h-2 w-2 rounded-full",
+                                            style: {
+                                              backgroundColor: r.color,
                                             },
-                                            void 0,
-                                            !1,
-                                            {
-                                              fileName:
-                                                "/home/runner/workspace/client/src/components/workspace/PresenceAvatars.tsx",
-                                              lineNumber: 163,
-                                              columnNumber: 21,
-                                            },
-                                            this,
-                                          ),
-                                          e.jsxDEV(
-                                            "span",
-                                            {
-                                              className: "text-sm",
-                                              children: r.displayName,
-                                            },
-                                            void 0,
-                                            !1,
-                                            {
-                                              fileName:
-                                                "/home/runner/workspace/client/src/components/workspace/PresenceAvatars.tsx",
-                                              lineNumber: 167,
-                                              columnNumber: 21,
-                                            },
-                                            this,
-                                          ),
-                                        ],
-                                      },
-                                      r.userId,
-                                      !0,
-                                      {
-                                        fileName:
-                                          "/home/runner/workspace/client/src/components/workspace/PresenceAvatars.tsx",
-                                        lineNumber: 162,
-                                        columnNumber: 19,
-                                      },
-                                      this,
-                                    ),
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/components/workspace/PresenceAvatars.tsx",
+                                            lineNumber: 163,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "span",
+                                          {
+                                            className: "text-sm",
+                                            children: r.displayName,
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/components/workspace/PresenceAvatars.tsx",
+                                            lineNumber: 167,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    r.userId,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/components/workspace/PresenceAvatars.tsx",
+                                      lineNumber: 162,
+                                      columnNumber: 19,
+                                    },
+                                    this,
                                   ),
+                                ),
                               },
                               void 0,
                               !1,

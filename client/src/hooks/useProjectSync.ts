@@ -3,7 +3,16 @@ import { getCsrfTokenFromCookie } from "../lib/queryClient";
 import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStudioStore } from "@/stores/studioStore";
-import type { TrackType, MidiClip, Track, ViewState, MixerState, PluginInstance, TrackSend, AutomationLane } from "@/stores/studioStore";
+import type {
+  TrackType,
+  MidiClip,
+  Track,
+  ViewState,
+  MixerState,
+  PluginInstance,
+  TrackSend,
+  AutomationLane,
+} from "@/stores/studioStore";
 
 const SYNC_DEBOUNCE_MS = 2000;
 const DAW_STATE_VERSION = 1;

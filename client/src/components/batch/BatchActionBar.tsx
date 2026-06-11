@@ -1,7 +1,12 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -9,7 +14,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useBatchSelectContext } from "./BatchSelectProvider";
-import { X, Trash2, Edit, Download, MoreHorizontal, Send, Calendar, Copy, RefreshCw, Settings, Archive, Tag } from "lucide-react";
+import {
+  X,
+  Trash2,
+  Edit,
+  Download,
+  MoreHorizontal,
+  Send,
+  Calendar,
+  Copy,
+  RefreshCw,
+  Settings,
+  Archive,
+  Tag,
+} from "lucide-react";
 
 export type BatchAction = {
   id: string;

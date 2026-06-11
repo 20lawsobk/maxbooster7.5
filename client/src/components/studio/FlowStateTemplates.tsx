@@ -1,6 +1,21 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Folder, Plus, Check, Star, StarOff, Search, Music, Drum, Guitar, Piano, Mic2, Layers, Settings, ChevronRight } from "lucide-react";
+import {
+  Folder,
+  Plus,
+  Check,
+  Star,
+  StarOff,
+  Search,
+  Music,
+  Drum,
+  Guitar,
+  Piano,
+  Mic2,
+  Layers,
+  Settings,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

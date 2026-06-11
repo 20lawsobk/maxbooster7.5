@@ -17,7 +17,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDistanceToNow, format } from "date-fns";
-import { Activity, UserPlus, UserMinus, Shield, Settings, FileText, Share2, Download, AlertTriangle, CheckCircle, XCircle, Clock, Filter, RefreshCw } from "lucide-react";
+import {
+  Activity,
+  UserPlus,
+  UserMinus,
+  Shield,
+  Settings,
+  FileText,
+  Share2,
+  Download,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Filter,
+  RefreshCw,
+} from "lucide-react";
 
 export type ActivityType =
   | "workspace.created"

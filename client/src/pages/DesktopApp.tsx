@@ -62,7 +62,7 @@ const platformDescriptions: Record<string, string> = {
 
 export default function DesktopApp() {
   const { t } = useTranslation();
-  const {  isLoading } = useRequireSubscription();
+  const { isLoading } = useRequireSubscription();
   const [releaseData, setReleaseData] = useState<ReleaseData | null>(null);
   const [loadingRelease, setLoadingRelease] = useState(true);
   const [expandedLinux, setExpandedLinux] = useState(false);

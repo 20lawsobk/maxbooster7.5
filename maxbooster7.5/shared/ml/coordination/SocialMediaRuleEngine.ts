@@ -413,9 +413,7 @@ export class SocialMediaRuleEngine {
     };
   }
 
-  public getOptimalPostingWindows(
-    platform: string,
-  ): Array<{
+  public getOptimalPostingWindows(platform: string): Array<{
     hourStart: number;
     hourEnd: number;
     quality: "best" | "good" | "avoid";

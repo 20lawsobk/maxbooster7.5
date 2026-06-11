@@ -172,19 +172,15 @@ router.patch(
       const allowedPriorities = ["low", "medium", "high", "critical"];
 
       if (status && !allowedStatuses.includes(status)) {
-        return res
-          .status(400)
-          .json({
-            error: `Invalid status. Allowed: ${allowedStatuses.join(", ")}`,
-          });
+        return res.status(400).json({
+          error: `Invalid status. Allowed: ${allowedStatuses.join(", ")}`,
+        });
       }
 
       if (priority && !allowedPriorities.includes(priority)) {
-        return res
-          .status(400)
-          .json({
-            error: `Invalid priority. Allowed: ${allowedPriorities.join(", ")}`,
-          });
+        return res.status(400).json({
+          error: `Invalid priority. Allowed: ${allowedPriorities.join(", ")}`,
+        });
       }
 
       const updateData: Record<string, any> = { updatedAt: new Date() };
@@ -231,19 +227,15 @@ router.post("/tickets", requireAuth, async (req, res) => {
     const allowedPriorities = ["low", "medium", "high", "critical"];
 
     if (category && !allowedCategories.includes(category)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid category. Allowed: ${allowedCategories.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid category. Allowed: ${allowedCategories.join(", ")}`,
+      });
     }
 
     if (priority && !allowedPriorities.includes(priority)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid priority. Allowed: ${allowedPriorities.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid priority. Allowed: ${allowedPriorities.join(", ")}`,
+      });
     }
 
     const [newTicket] = await db

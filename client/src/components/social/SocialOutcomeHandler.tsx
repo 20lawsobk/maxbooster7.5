@@ -4,7 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, XCircle, AlertTriangle, Clock, Loader2, Key, Timer } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Clock,
+  Loader2,
+  Key,
+  Timer,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export type OutcomeStatus =

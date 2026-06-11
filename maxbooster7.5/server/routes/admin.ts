@@ -275,9 +275,8 @@ adminRouter.put("/users/:userId", async (req, res) => {
     ) {
       setImmediate(async () => {
         try {
-          const { revokeUserSessions } = await import(
-            "../middleware/sessionConfig.js"
-          );
+          const { revokeUserSessions } =
+            await import("../middleware/sessionConfig.js");
           await revokeUserSessions(String(userId));
         } catch (revokeErr: unknown) {
           logger.warn(
@@ -318,9 +317,8 @@ adminRouter.post("/users/:userId/suspend", async (req, res) => {
     // SECURITY: Revoke all active sessions immediately after suspension.
     setImmediate(async () => {
       try {
-        const { revokeUserSessions } = await import(
-          "../middleware/sessionConfig.js"
-        );
+        const { revokeUserSessions } =
+          await import("../middleware/sessionConfig.js");
         await revokeUserSessions(String(userId));
       } catch (revokeErr: unknown) {
         logger.warn(

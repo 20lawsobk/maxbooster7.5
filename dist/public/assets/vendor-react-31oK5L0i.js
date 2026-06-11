@@ -516,7 +516,6 @@ function bN() {
                   O = Be.call(O),
                   Be = 0;
                 !(ae = O.next()).done;
-
               )
                 ((ae = ae.value),
                   (Ne = Ze + Y(ae, Be++)),
@@ -1670,7 +1669,6 @@ function EN() {
                       for (
                         h(W), R = s(E);
                         R !== null && !(R.expirationTime > W && p());
-
                       ) {
                         var le = R.callback;
                         if (typeof le == "function") {
@@ -2890,20 +2888,17 @@ function CN() {
             for (
               y = f = 0;
               f < M.length && !M[f].includes("DetermineComponentFrameRoot");
-
             )
               f++;
             for (
               ;
               y < H.length && !H[y].includes("DetermineComponentFrameRoot");
-
             )
               y++;
             if (f === M.length || y === H.length)
               for (
                 f = M.length - 1, y = H.length - 1;
                 1 <= f && 0 <= y && M[f] !== H[y];
-
               )
                 y--;
             for (; 1 <= f && 0 <= y; f--, y--)
@@ -3447,7 +3442,6 @@ Error generating stack: ` +
           for (
             var r = e.pendingUpdatersLaneMap, i = e.memoizedUpdaters;
             0 < t;
-
           ) {
             var c = 31 - vn(t);
             ((e = 1 << c),
@@ -11179,7 +11173,6 @@ https://react.dev/link/unsafe-component-lifecycles`,
           for (
             e = t.child, r = Hr(e, e.pendingProps), t.child = r, r.return = t;
             e.sibling !== null;
-
           )
             ((e = e.sibling),
               (r = r.sibling = Hr(e, e.pendingProps)),
@@ -11412,7 +11405,6 @@ https://react.dev/link/unsafe-component-lifecycles`,
                       r = rx(t, null, i, r),
                       t.child = r;
                     r;
-
                   )
                     ((r.flags = (r.flags & -3) | 4096), (r = r.sibling));
               else {
@@ -12095,7 +12087,6 @@ https://react.dev/link/unsafe-component-lifecycles`,
                           e = r,
                           r = t.child;
                         r !== null;
-
                       )
                         (RS(r, e), (r = r.sibling));
                       return (
@@ -12623,7 +12614,6 @@ Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fet
           for (
             e.sibling.return = e.return, e = e.sibling;
             e.tag !== 5 && e.tag !== 6 && e.tag !== 18;
-
           ) {
             if (
               (e.tag === 27 && Pa(e.type)) ||
@@ -12768,7 +12758,6 @@ Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fet
                       q !== f || (i !== 0 && q.nodeType !== 3) || (w = y + i),
                       q.nodeType === 3 && (y += q.nodeValue.length),
                       (X = q.firstChild) !== null;
-
                   )
                     ((z = q), (q = X));
                   for (;;) {
@@ -12791,7 +12780,6 @@ Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fet
         for (
           N0 = { focusedElem: e, selectionRange: r }, Oh = !1, nn = t;
           nn !== null;
-
         )
           if (
             ((t = nn),
@@ -13565,7 +13553,6 @@ Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fet
                   y = null,
                   t = e;
                 ;
-
               ) {
                 if (t.tag === 5 || t.tag === 26) {
                   if (y === null) {
@@ -13978,7 +13965,6 @@ Learn more about data fetching with Hooks: https://react.dev/link/hooks-data-fet
                 (t.alternate === null || t.alternate.child !== t.child))),
             t = t.child;
           t !== null;
-
         ) {
           var y = t.sibling;
           (hE(e, t, r, i, c, y !== null ? y.actualStartTime : f), (t = y));
@@ -15970,7 +15956,6 @@ This ensures that you're testing the behavior the user would see in the browser.
             c = e.expirationTimes,
             f = e.pendingLanes & -62914561;
           0 < f;
-
         ) {
           var y = 31 - vn(f),
             b = 1 << y,
@@ -27750,13 +27735,11 @@ var dz = class extends Kl {
       this.#t.setOptions(this.options),
       o._defaulted &&
         !ep(this.options, o) &&
-        this.#e
-          .getQueryCache()
-          .notify({
-            type: "observerOptionsUpdated",
-            query: this.#t,
-            observer: this,
-          }));
+        this.#e.getQueryCache().notify({
+          type: "observerOptionsUpdated",
+          query: this.#t,
+          observer: this,
+        }));
     const s = this.hasListeners();
     (s && OM(this.#t, a, this.options, o) && this.#f(),
       this.updateResult(),
@@ -28436,13 +28419,11 @@ var vz = class extends Kl {
       const a = this.options;
       ((this.options = this.#e.defaultMutationOptions(o)),
         ep(this.options, a) ||
-          this.#e
-            .getMutationCache()
-            .notify({
-              type: "observerOptionsUpdated",
-              mutation: this.#n,
-              observer: this,
-            }),
+          this.#e.getMutationCache().notify({
+            type: "observerOptionsUpdated",
+            mutation: this.#n,
+            observer: this,
+          }),
         a?.mutationKey &&
         this.options.mutationKey &&
         gi(a.mutationKey) !== gi(this.options.mutationKey)

@@ -1,4 +1,7 @@
-import type { LayerConfig, TransformConfig } from "../../../../shared/video/VideoRendererEngine";
+import type {
+  LayerConfig,
+  TransformConfig,
+} from "../../../../shared/video/VideoRendererEngine";
 
 export type BlendMode =
   | "normal"

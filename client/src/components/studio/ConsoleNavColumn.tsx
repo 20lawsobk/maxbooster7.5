@@ -4,7 +4,22 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
-import { Volume2, Sliders, Send, Activity, Plug, Minimize2, Maximize2, Settings2, PanelBottom, PanelLeft, PanelRight, Layers, Grid3X3, ListMusic } from "lucide-react";
+import {
+  Volume2,
+  Sliders,
+  Send,
+  Activity,
+  Plug,
+  Minimize2,
+  Maximize2,
+  Settings2,
+  PanelBottom,
+  PanelLeft,
+  PanelRight,
+  Layers,
+  Grid3X3,
+  ListMusic,
+} from "lucide-react";
 import { useStudioLayoutStore } from "@/lib/studioLayoutStore";
 import { studioOneTheme } from "@/lib/studioOneTheme";
 import { useLocation } from "wouter";

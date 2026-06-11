@@ -49,8 +49,58 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest, uploadWithProgress } from "@/lib/queryClient";
-import { Share2, Plus, Calendar, BarChart2, BarChart3, Users, Heart, MessageCircle, MessageSquare, Eye, RefreshCw, Upload, Image, Video, Link, Globe, CheckCircle, XCircle, Clock, TrendingUp, Zap, Brain, Sparkles, Wand2, Bot, Send, Edit, Trash2, Copy, Download, Star, Activity, ArrowRight, X, FileImage, Radio, Mail, Newspaper, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
-import { YouTubeIcon, TikTokIcon, LinkedInIcon, ThreadsIcon, GoogleIcon, MetaIcon, XIcon } from "@/components/ui/brand-icons";
+import {
+  Share2,
+  Plus,
+  Calendar,
+  BarChart2,
+  BarChart3,
+  Users,
+  Heart,
+  MessageCircle,
+  MessageSquare,
+  Eye,
+  RefreshCw,
+  Upload,
+  Image,
+  Video,
+  Link,
+  Globe,
+  CheckCircle,
+  XCircle,
+  Clock,
+  TrendingUp,
+  Zap,
+  Brain,
+  Sparkles,
+  Wand2,
+  Bot,
+  Send,
+  Edit,
+  Trash2,
+  Copy,
+  Download,
+  Star,
+  Activity,
+  ArrowRight,
+  X,
+  FileImage,
+  Radio,
+  Mail,
+  Newspaper,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+} from "lucide-react";
+import {
+  YouTubeIcon,
+  TikTokIcon,
+  LinkedInIcon,
+  ThreadsIcon,
+  GoogleIcon,
+  MetaIcon,
+  XIcon,
+} from "@/components/ui/brand-icons";
 import { ContentCalendarView } from "@/components/social/ContentCalendarView";
 import {
   SchedulePostDialog,
@@ -111,7 +161,6 @@ interface SocialPost {
   createdAt: string;
   publishedAt?: string;
 }
-
 
 interface GeneratedContent {
   platform: string;
@@ -449,9 +498,9 @@ export default function SocialMedia() {
     clearOutcome,
     handleOAuthSuccess,
     handleOAuthDenied,
-    
+
     handlePlatformUnavailable,
-    
+
     handleContentGenerated,
     handleContentGenerationFailed,
   } = useOutcomeHandler();
@@ -492,12 +541,12 @@ export default function SocialMedia() {
   >(new Set());
 
   // Helper function to format numbers with K/M suffix
-  ((num: number): string => {
+  (num: number): string => {
     if (!num || num === 0) return "0";
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
-  });
+  };
 
   // Handle OAuth callback URL parameters
   useEffect(() => {
@@ -628,16 +677,13 @@ export default function SocialMedia() {
     enabled: !!user,
   });
 
-  const { data: aiInsights } =
-    useQuery<AIInsightsData>({
-      queryKey: ["/api/social/ai-insights"],
-      enabled: !!user,
-      meta: { silentError: true },
-    });
+  const { data: aiInsights } = useQuery<AIInsightsData>({
+    queryKey: ["/api/social/ai-insights"],
+    enabled: !!user,
+    meta: { silentError: true },
+  });
 
-  const { data: activity = [] } = useQuery<
-    ActivityItem[]
-  >({
+  const { data: activity = [] } = useQuery<ActivityItem[]>({
     queryKey: ["/api/social/activity"],
     enabled: !!user,
   });
@@ -656,11 +702,10 @@ export default function SocialMedia() {
     enabled: !!user,
   });
 
-  const { data: calendarStats } =
-    useQuery<CalendarStats>({
-      queryKey: ["/api/social/calendar/stats"],
-      enabled: !!user,
-    });
+  const { data: calendarStats } = useQuery<CalendarStats>({
+    queryKey: ["/api/social/calendar/stats"],
+    enabled: !!user,
+  });
 
   const MULTIMODAL_PLATFORMS = new Set([
     "facebook",
@@ -734,9 +779,7 @@ export default function SocialMedia() {
     };
 
     return (assets || [])
-      .filter(
-        (a) => !filterModality || a.modality === filterModality,
-      )
+      .filter((a) => !filterModality || a.modality === filterModality)
       .map((a) => {
         const m: AssetMetadata = a.metadata ?? {};
         const isMedia =
@@ -1249,11 +1292,11 @@ export default function SocialMedia() {
 
   // Autopilot Queries and Mutations
   useQuery<AutopilotStatus>({
-      queryKey: ["/api/autopilot/status"],
-      enabled: !!user,
-      refetchInterval: 30000,
-      meta: { silentError: true },
-    });
+    queryKey: ["/api/autopilot/status"],
+    enabled: !!user,
+    refetchInterval: 30000,
+    meta: { silentError: true },
+  });
 
   useMutation({
     mutationFn: async (config: unknown) => {
@@ -5018,9 +5061,7 @@ function RadioPitchingContent() {
   const filteredPitches =
     filterType === "all"
       ? pitches
-      : pitches.filter(
-          (p: RadioPitchItem) => p.targetType === filterType,
-        );
+      : pitches.filter((p: RadioPitchItem) => p.targetType === filterType);
 
   const typeColors: Record<string, string> = {
     radio: "bg-blue-100 text-blue-700",
@@ -5029,7 +5070,6 @@ function RadioPitchingContent() {
     podcast: "bg-orange-100 text-orange-700",
     magazine: "bg-pink-100 text-pink-700",
   };
-
 
   return (
     <div className="space-y-6">

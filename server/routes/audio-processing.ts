@@ -287,7 +287,7 @@ router.post("/process", requireAuth, async (req: Request, res: Response) => {
 
     const {
       sampleRate,
-      
+
       samples,
       leftChannel,
       rightChannel,
@@ -704,9 +704,8 @@ router.post(
       if (!filePath || typeof filePath !== "string") {
         return res.status(400).json({ error: "filePath is required" });
       }
-      const { pythonAIService } = await import(
-        "../services/pythonAIService.js"
-      );
+      const { pythonAIService } =
+        await import("../services/pythonAIService.js");
       const available = await pythonAIService.isAvailable();
       if (!available) {
         return res

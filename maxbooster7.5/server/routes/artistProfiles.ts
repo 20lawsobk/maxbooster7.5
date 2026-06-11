@@ -118,11 +118,9 @@ router.get("/search", async (req: Request, res: Response) => {
     const platform = String(req.query.platform || "all");
     const validPlatforms = ["all", "spotify", "apple", "deezer"];
     if (!validPlatforms.includes(platform)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid platform. Valid options: ${validPlatforms.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid platform. Valid options: ${validPlatforms.join(", ")}`,
+      });
     }
 
     let results;
@@ -192,12 +190,10 @@ router.patch(
     try {
       const parsed = createProfileSchema.partial().safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Validation failed",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Validation failed",
+          details: parsed.error.flatten(),
+        });
       }
 
       const profile = await artistProfileService.updateProfile(
@@ -241,12 +237,10 @@ router.post(
     try {
       const parsed = fixerSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Validation failed",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Validation failed",
+          details: parsed.error.flatten(),
+        });
       }
 
       const profile = await artistProfileService.submitFixerRequest(
@@ -393,12 +387,10 @@ router.post(
         profile.spotifyArtistId,
       );
       if (!spotifyData) {
-        return res
-          .status(422)
-          .json({
-            error:
-              "Spotify artist ID could not be verified. Check that the ID is correct.",
-          });
+        return res.status(422).json({
+          error:
+            "Spotify artist ID could not be verified. Check that the ID is correct.",
+        });
       }
 
       const verified = await artistProfileService.updateProfile(
@@ -513,12 +505,10 @@ router.patch(
     try {
       const parsed = claimStateSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Validation failed",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Validation failed",
+          details: parsed.error.flatten(),
+        });
       }
       const { platform, state, notes, triggeredBy } = parsed.data;
       const result = await artistProfileService.updateClaimState(
@@ -656,12 +646,10 @@ router.post(
     try {
       const parsed = multiFixerSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Validation failed",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Validation failed",
+          details: parsed.error.flatten(),
+        });
       }
       const profile = await artistProfileService.submitMultiPlatformFixer(
         req.params.id,
@@ -705,12 +693,10 @@ router.post(
     try {
       const parsed = importHistorySchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Validation failed",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Validation failed",
+          details: parsed.error.flatten(),
+        });
       }
       const result = await artistProfileService.importDistributorHistory(
         req.params.id,
@@ -777,12 +763,10 @@ router.post(
     try {
       const parsed = resolveHandleSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Validation failed",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Validation failed",
+          details: parsed.error.flatten(),
+        });
       }
       const result = await artistProfileService.resolveHandleToDSP(
         req.params.id,

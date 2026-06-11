@@ -349,9 +349,8 @@ export async function initializeWorkers(): Promise<void> {
   );
 
   try {
-    const { initializeWeeklyInsightsCron } = await import(
-      "./weeklyInsightsCron.js"
-    );
+    const { initializeWeeklyInsightsCron } =
+      await import("./weeklyInsightsCron.js");
     initializeWeeklyInsightsCron();
   } catch (error) {
     logger.warn(

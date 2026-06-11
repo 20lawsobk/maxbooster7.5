@@ -27,8 +27,54 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, LineChart, Line, ComposedChart, Area, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis } from "recharts";
-import { Sparkles, Wand2, Type, MousePointerClick, TrendingUp, Trophy, RefreshCw, Copy, CheckCircle, AlertCircle, Play, Pause, BarChart3, Target, Eye, Layers, Settings, Plus, Clock, Brain, Crown, Rocket, Activity, DollarSign, Lightbulb, FlaskConical, GitBranch, RotateCcw, ThumbsUp, ThumbsDown } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LineChart,
+  Line,
+  ComposedChart,
+  Area,
+  RadarChart,
+  Radar,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+} from "recharts";
+import {
+  Sparkles,
+  Wand2,
+  Type,
+  MousePointerClick,
+  TrendingUp,
+  Trophy,
+  RefreshCw,
+  Copy,
+  CheckCircle,
+  AlertCircle,
+  Play,
+  Pause,
+  BarChart3,
+  Target,
+  Eye,
+  Layers,
+  Settings,
+  Plus,
+  Clock,
+  Brain,
+  Crown,
+  Rocket,
+  Activity,
+  DollarSign,
+  Lightbulb,
+  FlaskConical,
+  GitBranch,
+  RotateCcw,
+  ThumbsUp,
+  ThumbsDown,
+} from "lucide-react";
 
 interface CreativeVariant {
   id: string;
@@ -169,8 +215,8 @@ export function CreativeAutomation() {
   variants.reduce((acc, v) => acc + v.conversions, 0);
   const totalRevenue = variants.reduce((acc, v) => acc + v.revenue, 0);
   variants.length > 0
-      ? variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length
-      : 0;
+    ? variants.reduce((acc, v) => acc + v.ctr, 0) / variants.length
+    : 0;
 
   if (abTests.length === 0) {
     return (

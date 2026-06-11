@@ -45,7 +45,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 
-
 interface DocumentChecklist {
   type: string;
   name: string;
@@ -1387,7 +1386,6 @@ function VerificationStepper({
     </div>
   );
 }
-
 
 interface DocumentUploadCardProps {
   title: string;

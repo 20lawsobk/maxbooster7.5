@@ -11,7 +11,16 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { StudioSkeleton } from "./StudioSkeleton";
-import { AlertCircle, RefreshCw, WifiOff, Clock, Plus, Home, AlertTriangle, CheckCircle } from "lucide-react";
+import {
+  AlertCircle,
+  RefreshCw,
+  WifiOff,
+  Clock,
+  Plus,
+  Home,
+  AlertTriangle,
+  CheckCircle,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { errorService, captureException } from "@/lib/errorService";
 import { apiRequest } from "@/lib/queryClient";
@@ -69,7 +78,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   const {
     data: projectsData,
     isLoading: projectsLoading,
-    
+
     error: projectsErrorData,
     refetch: refetchProjects,
   } = useQuery({
@@ -92,9 +101,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   // Query for samples with error handling
   const {
     data: samplesData,
-    
-    
-    
+
     refetch: refetchSamples,
   } = useQuery({
     queryKey: ["/api/studio/samples"],

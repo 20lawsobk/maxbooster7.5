@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { Timer, Trash2, RotateCcw, Play, Pause, Lock, Unlock } from "lucide-react";
+import {
+  Timer,
+  Trash2,
+  RotateCcw,
+  Play,
+  Pause,
+  Lock,
+  Unlock,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -120,7 +128,7 @@ export function FlowStateAudioWarp({
 
   const {
     data: apiMarkers,
-    
+
     error: markersError,
   } = useQuery({
     queryKey: ["warp-markers", clipId],
@@ -300,7 +308,7 @@ export function FlowStateAudioWarp({
     }
   };
 
-  ((markerId: string, newTime: number) => {
+  (markerId: string, newTime: number) => {
     setMarkers((prev) =>
       prev.map((m) =>
         m.id === markerId && !m.isLocked
@@ -308,7 +316,7 @@ export function FlowStateAudioWarp({
           : m,
       ),
     );
-  });
+  };
 
   const deleteMarker = (markerId: string) => {
     const marker = markers.find((m) => m.id === markerId);

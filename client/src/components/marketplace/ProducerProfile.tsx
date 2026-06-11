@@ -18,13 +18,35 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Music, Play, Pause, Heart, Share2, MessageCircle, Star, Award, Trophy, Crown, Flame, Users, CheckCircle, Calendar, MapPin, Globe, Headphones, ShoppingCart, BarChart3, Zap, Music2 } from "lucide-react";
-import { InstagramIcon, YouTubeIcon, TikTokIcon, TwitterIcon } from "@/components/ui/brand-icons";
-
-
-
-
-
+import {
+  Music,
+  Play,
+  Pause,
+  Heart,
+  Share2,
+  MessageCircle,
+  Star,
+  Award,
+  Trophy,
+  Crown,
+  Flame,
+  Users,
+  CheckCircle,
+  Calendar,
+  MapPin,
+  Globe,
+  Headphones,
+  ShoppingCart,
+  BarChart3,
+  Zap,
+  Music2,
+} from "lucide-react";
+import {
+  InstagramIcon,
+  YouTubeIcon,
+  TikTokIcon,
+  TwitterIcon,
+} from "@/components/ui/brand-icons";
 
 interface ProducerProfileProps {
   producerId: string;

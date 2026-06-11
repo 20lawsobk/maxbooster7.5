@@ -18,7 +18,27 @@ import {
   ContextMenuTrigger,
   ContextMenuSeparator,
 } from "@/components/ui/context-menu";
-import { Volume2, GripVertical, Headphones, Plus, Music, Copy, Trash2, Drum, Guitar, Mic2, Piano, Radio, Cpu, ChevronDown, ChevronUp, X, Settings2, Snowflake, Loader2 } from "lucide-react";
+import {
+  Volume2,
+  GripVertical,
+  Headphones,
+  Plus,
+  Music,
+  Copy,
+  Trash2,
+  Drum,
+  Guitar,
+  Mic2,
+  Piano,
+  Radio,
+  Cpu,
+  ChevronDown,
+  ChevronUp,
+  X,
+  Settings2,
+  Snowflake,
+  Loader2,
+} from "lucide-react";
 import { useStudioStore } from "@/lib/studioStore";
 import {
   Tooltip,
@@ -36,7 +56,12 @@ import {
   useSensors,
   DragEndEvent,
 } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
 interface StudioTrack {
@@ -261,7 +286,6 @@ const SortableTrackRow = memo(function SortableTrackRow({
   });
 
   const {
-    
     isFreezing,
     freezingTrackId,
     freezeTrack,

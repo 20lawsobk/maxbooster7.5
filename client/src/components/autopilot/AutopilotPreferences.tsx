@@ -23,7 +23,17 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Bot, Save, RefreshCw, Music, MessageSquare, Hash, Clock, Zap, Settings } from "lucide-react";
+import {
+  Bot,
+  Save,
+  RefreshCw,
+  Music,
+  MessageSquare,
+  Hash,
+  Clock,
+  Zap,
+  Settings,
+} from "lucide-react";
 
 interface PlatformSetting {
   enabled: boolean;

@@ -184,9 +184,8 @@ async function initializeAdminResources(
 
     if (!existingStorage) {
       try {
-        const { userPocketService } = await import(
-          "./services/userPocketDimensionService.js"
-        );
+        const { userPocketService } =
+          await import("./services/userPocketDimensionService.js");
         await userPocketService.initializeUserStorage(adminId, adminEmail);
         logger.info("   ✓ Admin Pocket Dimension storage initialized");
       } catch (error) {
@@ -1653,9 +1652,8 @@ function getCategoryFromSlug(slug: string): string {
  */
 async function seedDistributionPlatformsFromFile() {
   try {
-    const { seedDistributionPlatforms } = await import(
-      "./seed/distributionPlatforms.js"
-    );
+    const { seedDistributionPlatforms } =
+      await import("./seed/distributionPlatforms.js");
     await seedDistributionPlatforms();
   } catch (error) {
     logger.warn("Distribution platforms seeding skipped:", error.message);
@@ -1674,9 +1672,8 @@ async function seedAchievementsData() {
 
 async function seedStatusPageServices() {
   try {
-    const { statusPageService } = await import(
-      "./services/statusPageService.js"
-    );
+    const { statusPageService } =
+      await import("./services/statusPageService.js");
     await statusPageService.initializeDefaultServices();
     logger.info("   ✓ Status page services initialized");
   } catch (error) {
@@ -1686,17 +1683,14 @@ async function seedStatusPageServices() {
 
 async function seedAIModels() {
   try {
-    const { initializeAIMusicModels } = await import(
-      "./seed/initializeAIMusicModels.js"
-    );
+    const { initializeAIMusicModels } =
+      await import("./seed/initializeAIMusicModels.js");
     await initializeAIMusicModels();
-    const { initializeAIInsightsModels } = await import(
-      "./seed/initializeAIInsightsModels.js"
-    );
+    const { initializeAIInsightsModels } =
+      await import("./seed/initializeAIInsightsModels.js");
     await initializeAIInsightsModels();
-    const { initializeAIContentModels } = await import(
-      "./seed/initializeAIContentModels.js"
-    );
+    const { initializeAIContentModels } =
+      await import("./seed/initializeAIContentModels.js");
     await initializeAIContentModels();
     logger.info("   ✓ AI models seeded");
   } catch (error) {

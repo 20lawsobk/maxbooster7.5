@@ -12,7 +12,22 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Clock, BarChart3, Zap, Target, Lightbulb, RefreshCw, ArrowUpRight, Activity, Eye, Heart } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  BarChart3,
+  Zap,
+  Target,
+  Lightbulb,
+  RefreshCw,
+  ArrowUpRight,
+  Activity,
+  Eye,
+  Heart,
+} from "lucide-react";
 
 interface PlatformHealth {
   platform: string;
@@ -123,7 +138,6 @@ export function OrganicReachDashboard() {
     const interval = setInterval(fetchDashboardData, 300000);
     return () => clearInterval(interval);
   }, []);
-
 
   const getStatusBadge = (status: string) => {
     const variants: Record<

@@ -146,13 +146,11 @@ router.post(
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Validation error",
-            details: error.errors,
-          });
+        return res.status(400).json({
+          success: false,
+          error: "Validation error",
+          details: error.errors,
+        });
       }
       logger.warn({ err: error }, "Error in daily social loop:");
       res
@@ -207,13 +205,11 @@ router.post("/fanbase/segments", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error creating fan segment:");
     res
@@ -272,13 +268,11 @@ router.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error updating fan segment:");
     res
@@ -304,12 +298,10 @@ router.delete("/fanbase/segments/:id", requireAuth, async (req, res) => {
     const deleted = await socialFanbaseService.deleteSegment(segmentId);
 
     if (!deleted) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "Segment not found or failed to delete",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "Segment not found or failed to delete",
+      });
     }
 
     res.json({
@@ -366,13 +358,11 @@ router.post("/fanbase/content", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error creating autopilot content:");
     res
@@ -406,21 +396,17 @@ router.put(
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Validation error",
-            details: error.errors,
-          });
+        return res.status(400).json({
+          success: false,
+          error: "Validation error",
+          details: error.errors,
+        });
       }
       logger.warn({ err: error }, "Error updating content performance:");
-      res
-        .status(500)
-        .json({
-          success: false,
-          error: "Failed to update content performance",
-        });
+      res.status(500).json({
+        success: false,
+        error: "Failed to update content performance",
+      });
     }
   },
 );
@@ -441,12 +427,10 @@ router.get("/fanbase/content/top", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching top performing content:");
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: "Failed to fetch top performing content",
-      });
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch top performing content",
+    });
   }
 });
 
@@ -520,13 +504,11 @@ router.post(
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Validation error",
-            details: error.errors,
-          });
+        return res.status(400).json({
+          success: false,
+          error: "Validation error",
+          details: error.errors,
+        });
       }
       logger.warn({ err: error }, "Error in weekly organic loop:");
       res
@@ -552,13 +534,11 @@ router.post("/organic/assets", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error creating organic asset:");
     res
@@ -605,13 +585,11 @@ router.put("/organic/assets/:id/performance", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error updating asset performance:");
     res
@@ -658,13 +636,11 @@ router.post("/organic/channels", requireAuth, async (req, res) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "Validation error",
-          details: error.errors,
-        });
+      return res.status(400).json({
+        success: false,
+        error: "Validation error",
+        details: error.errors,
+      });
     }
     logger.warn({ err: error }, "Error creating organic channel:");
     res
@@ -716,13 +692,11 @@ router.put(
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Validation error",
-            details: error.errors,
-          });
+        return res.status(400).json({
+          success: false,
+          error: "Validation error",
+          details: error.errors,
+        });
       }
       logger.warn({ err: error }, "Error updating channel efficiency:");
       res
@@ -832,12 +806,10 @@ router.get("/insights/social-to-organic", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching social-to-organic insights:");
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: "Failed to fetch social-to-organic insights",
-      });
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch social-to-organic insights",
+    });
   }
 });
 
@@ -856,12 +828,10 @@ router.get("/insights/organic-to-social", requireAuth, async (req, res) => {
     });
   } catch (error) {
     logger.warn({ err: error }, "Error fetching organic-to-social insights:");
-    res
-      .status(500)
-      .json({
-        success: false,
-        error: "Failed to fetch organic-to-social insights",
-      });
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch organic-to-social insights",
+    });
   }
 });
 
@@ -908,13 +878,11 @@ router.post(
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Validation error",
-            details: error.errors,
-          });
+        return res.status(400).json({
+          success: false,
+          error: "Validation error",
+          details: error.errors,
+        });
       }
       logger.warn({ err: error }, "Error applying insights to organic:");
       res
@@ -947,13 +915,11 @@ router.post(
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: "Validation error",
-            details: error.errors,
-          });
+        return res.status(400).json({
+          success: false,
+          error: "Validation error",
+          details: error.errors,
+        });
       }
       logger.warn({ err: error }, "Error applying insights to social:");
       res

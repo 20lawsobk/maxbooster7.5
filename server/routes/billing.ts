@@ -352,12 +352,10 @@ router.post(
 
       const { planId } = req.body;
       if (!planId || !["monthly", "yearly", "lifetime"].includes(planId)) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid plan",
-            message: "Please select a valid plan: monthly, yearly, or lifetime",
-          });
+        return res.status(400).json({
+          error: "Invalid plan",
+          message: "Please select a valid plan: monthly, yearly, or lifetime",
+        });
       }
 
       const userId = req.user!.id;
@@ -414,12 +412,10 @@ router.post(
         { err: error },
         "[Billing] Failed to create checkout session:",
       );
-      res
-        .status(500)
-        .json({
-          error: "Checkout failed",
-          message: "Failed to create checkout session",
-        });
+      res.status(500).json({
+        error: "Checkout failed",
+        message: "Failed to create checkout session",
+      });
     }
   },
 );

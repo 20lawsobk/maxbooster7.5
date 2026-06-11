@@ -228,11 +228,9 @@ router.post("/manual-token", async (req: Request, res: Response) => {
       "apple_music",
     ];
     if (!validPlatforms.includes(platform)) {
-      return res
-        .status(400)
-        .json({
-          error: `Invalid platform. Must be one of: ${validPlatforms.join(", ")}`,
-        });
+      return res.status(400).json({
+        error: `Invalid platform. Must be one of: ${validPlatforms.join(", ")}`,
+      });
     }
 
     const existing = await db

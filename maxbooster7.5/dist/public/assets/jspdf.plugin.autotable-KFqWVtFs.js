@@ -1211,7 +1211,6 @@ function Rt(e, t, r) {
   for (
     var o = !0, l = (i = r?.start) !== null && i !== void 0 ? i : 0;
     l < t.columns.length;
-
   ) {
     if (a.has(l)) {
       l++;
@@ -1308,7 +1307,6 @@ function At(e, t, r, i) {
             (s = o));
         };
       s < t.body.length - 1;
-
     )
       f();
 }

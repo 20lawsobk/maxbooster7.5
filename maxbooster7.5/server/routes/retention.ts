@@ -94,12 +94,10 @@ router.post(
     try {
       const parsed = cancellationSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res
-          .status(400)
-          .json({
-            error: "Invalid feedback data",
-            details: parsed.error.flatten(),
-          });
+        return res.status(400).json({
+          error: "Invalid feedback data",
+          details: parsed.error.flatten(),
+        });
       }
 
       const userId = req.user!.id;

@@ -376,7 +376,6 @@ export function ServerVideoGenerator({
     // INTENTIONAL: mount-only effect — the handler only needs to access refs (stable) and
     // activeJobIdRef/applyVideoResult are always current via ref indirection. Adding them
     // as deps would re-register the visibilitychange listener on every render.
-     
   }, []);
 
   // Clean up image preview URL on unmount
@@ -700,7 +699,6 @@ export function ServerVideoGenerator({
     // INTENTIONAL: mount-only effect — all props accessed here (topic, hook, template, etc.)
     // are captured at mount time intentionally. Including them would re-trigger auto-start on
     // every prop change; the ref guard (autoStartFiredRef) is sufficient to ensure single-fire.
-     
   }, []);
 
   // ── Text mode ────────────────────────────────────────────────────────────────

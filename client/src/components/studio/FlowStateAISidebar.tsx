@@ -1,6 +1,25 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Sparkles, Wand2, TrendingUp, Music, Mic, Layers, ChevronRight, BarChart3, Lightbulb, ArrowRight, Play, Sliders, Check, X, RefreshCw, Gauge, Radio } from "lucide-react";
+import {
+  Brain,
+  Sparkles,
+  Wand2,
+  TrendingUp,
+  Music,
+  Mic,
+  Layers,
+  ChevronRight,
+  BarChart3,
+  Lightbulb,
+  ArrowRight,
+  Play,
+  Sliders,
+  Check,
+  X,
+  RefreshCw,
+  Gauge,
+  Radio,
+} from "lucide-react";
 import type { FlowStateMode } from "@/hooks/useFlowStateAdapter";
 import { cn } from "@/lib/utils";
 

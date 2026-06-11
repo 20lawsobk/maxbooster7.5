@@ -110,8 +110,6 @@ const SmartDefaultsContext = createContext<
   SmartDefaultsContextValue | undefined
 >(undefined);
 
-
-
 function getCurrentTimeOfDay(): "morning" | "afternoon" | "evening" | "night" {
   const hour = new Date().getHours();
   if (hour >= 5 && hour < 12) return "morning";

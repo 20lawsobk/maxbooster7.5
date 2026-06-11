@@ -1,6 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Waves, Plus, Trash2, Link, Play, Pause, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Waves,
+  Plus,
+  Trash2,
+  Link,
+  Play,
+  Pause,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";

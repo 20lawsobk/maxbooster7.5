@@ -138,19 +138,19 @@ export function Timeline({
     setRangeSelection,
     clearRangeSelection,
     projectDuration,
-    
+
     expandTimelineIfNeeded,
     fitTimelineToContents,
     autoExpandEnabled,
     autoscrollPaused,
     pauseAutoscroll,
-    
+
     adaptiveSnapEnabled,
     showSyncPoints,
     translucentEventsEnabled,
     loopToolEnabled,
     timeStretchEnabled,
-    
+
     setHorizontalDropMode,
     getAdaptiveSnapInterval,
   } = useStudioStore();
@@ -201,7 +201,6 @@ export function Timeline({
 
   // Tempo Detection State
   const {
-    
     isAnalyzingTempo,
     analyzingClipId,
     addTempoMap,

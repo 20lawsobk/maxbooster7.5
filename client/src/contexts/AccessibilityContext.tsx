@@ -15,7 +15,10 @@ export type {
   ColorBlindMode,
 } from "@/components/a11y/AccessibilityProvider";
 
-import { AccessibilityProvider, useAccessibility } from "@/components/a11y/AccessibilityProvider";
+import {
+  AccessibilityProvider,
+  useAccessibility,
+} from "@/components/a11y/AccessibilityProvider";
 
 export interface AccessibilitySettings {
   reducedMotion: boolean;

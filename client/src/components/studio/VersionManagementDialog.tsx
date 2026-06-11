@@ -14,7 +14,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
-import { History, Plus, Clock, RefreshCw, Trash2, Save, FileStack } from "lucide-react";
+import {
+  History,
+  Plus,
+  Clock,
+  RefreshCw,
+  Trash2,
+  Save,
+  FileStack,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ProjectVersion {
@@ -33,7 +41,6 @@ interface VersionManagementDialogProps {
   onDeleteVersion: (versionId: string) => void;
   versions: ProjectVersion[];
 }
-
 
 export function VersionManagementDialog({
   open,

@@ -23,11 +23,9 @@ function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
     (t) => now - t < window,
   );
   if (calls.length >= maxPerMinute) {
-    return res
-      .status(429)
-      .json({
-        error: `Rate limit: max ${maxPerMinute} evolution cycles per minute`,
-      });
+    return res.status(429).json({
+      error: `Rate limit: max ${maxPerMinute} evolution cycles per minute`,
+    });
   }
   calls.push(now);
   runOnceCalls.set(userId, calls);
@@ -42,11 +40,9 @@ function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
   const last = simulationCalls.get(userId) || 0;
   if (now - last < cooldownMs) {
     const remainingSec = Math.ceil((cooldownMs - (now - last)) / 1000);
-    return res
-      .status(429)
-      .json({
-        error: `Simulation cooldown: wait ${remainingSec}s before running again`,
-      });
+    return res.status(429).json({
+      error: `Simulation cooldown: wait ${remainingSec}s before running again`,
+    });
   }
   simulationCalls.set(userId, now);
   return next();

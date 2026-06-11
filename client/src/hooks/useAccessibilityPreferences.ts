@@ -19,7 +19,6 @@ export interface AccessibilityPreferences {
   keyboardNavigationEnabled: boolean;
 }
 
-
 export function useAccessibilityPreferences() {
   const queryClient = useQueryClient();
   const {

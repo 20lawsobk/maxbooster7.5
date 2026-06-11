@@ -19,7 +19,18 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Shield, Bell, Mail, Smartphone, AlertTriangle, Lock, Globe, Key, Loader2, Info } from "lucide-react";
+import {
+  Shield,
+  Bell,
+  Mail,
+  Smartphone,
+  AlertTriangle,
+  Lock,
+  Globe,
+  Key,
+  Loader2,
+  Info,
+} from "lucide-react";
 
 interface SecurityAlertSettings {
   emailOnNewLogin: boolean;

@@ -12,7 +12,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Knob } from "./Knob";
 import { cn } from "@/lib/utils";
-import { Power, RotateCcw, Music, Piano, Drum, Guitar, Mic2, Waves, Zap, Settings, Layers, Activity } from "lucide-react";
+import {
+  Power,
+  RotateCcw,
+  Music,
+  Piano,
+  Drum,
+  Guitar,
+  Mic2,
+  Waves,
+  Zap,
+  Settings,
+  Layers,
+  Activity,
+} from "lucide-react";
 
 export type InstrumentType =
   | "synth"

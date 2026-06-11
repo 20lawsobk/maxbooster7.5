@@ -18,7 +18,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ListMusic, TrendingUp, Calendar, Users, Plus, Minus, Clock, ChevronUp, Sparkles, Radio, UserCheck, Loader2, RefreshCw } from "lucide-react";
+import {
+  ListMusic,
+  TrendingUp,
+  Calendar,
+  Users,
+  Plus,
+  Minus,
+  Clock,
+  ChevronUp,
+  Sparkles,
+  Radio,
+  UserCheck,
+  Loader2,
+  RefreshCw,
+} from "lucide-react";
 
 interface PlaylistEvent {
   id: string;
@@ -380,7 +394,7 @@ export default function PlaylistJourneysVisualization({
   const {
     data: journeysResponse,
     isLoading,
-    
+
     refetch,
   } = useQuery<{
     data: {

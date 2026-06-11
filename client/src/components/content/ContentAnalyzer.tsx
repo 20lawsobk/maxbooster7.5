@@ -13,7 +13,21 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Sparkles, Image as ImageIcon, Video, Music, FileText, Globe, Loader2, CheckCircle, TrendingUp, Eye, Heart, Zap, Target } from "lucide-react";
+import {
+  Sparkles,
+  Image as ImageIcon,
+  Video,
+  Music,
+  FileText,
+  Globe,
+  Loader2,
+  CheckCircle,
+  TrendingUp,
+  Eye,
+  Heart,
+  Zap,
+  Target,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type ContentType = "image" | "video" | "audio" | "text" | "website";

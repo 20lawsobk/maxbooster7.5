@@ -72,7 +72,6 @@ const defaultProgress: BulkActionProgress = {
   percentage: 0,
 };
 
-
 export function useBulkAction(
   options: UseBulkActionOptions = {},
 ): UseBulkActionResult {

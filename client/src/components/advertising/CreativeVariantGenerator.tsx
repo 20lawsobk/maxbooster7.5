@@ -29,8 +29,42 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { XAxis, YAxis, CartesianGrid, LineChart, Line, PieChart, Pie, Cell } from "recharts";
-import { Sparkles, Wand2, Image, Type, MousePointerClick, TrendingUp, Trophy, RefreshCw, Copy, CheckCircle, AlertCircle, Play, Pause, BarChart3, Target, Zap, Eye, Layers, Plus, ArrowUpRight, ArrowDownRight, Clock, Brain, Shuffle } from "lucide-react";
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import {
+  Sparkles,
+  Wand2,
+  Image,
+  Type,
+  MousePointerClick,
+  TrendingUp,
+  Trophy,
+  RefreshCw,
+  Copy,
+  CheckCircle,
+  AlertCircle,
+  Play,
+  Pause,
+  BarChart3,
+  Target,
+  Zap,
+  Eye,
+  Layers,
+  Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
+  Brain,
+  Shuffle,
+} from "lucide-react";
 
 interface CreativeVariant {
   id: string;

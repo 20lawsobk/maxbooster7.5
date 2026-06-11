@@ -25,7 +25,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Download, ExternalLink, CheckCircle, Clock, AlertTriangle, XCircle, RefreshCw, Loader2 } from "lucide-react";
+import {
+  FileText,
+  Download,
+  ExternalLink,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+  XCircle,
+  RefreshCw,
+  Loader2,
+} from "lucide-react";
 
 interface Invoice {
   id: string;
@@ -94,7 +104,7 @@ export default function InvoiceStatus({
 }: InvoiceStatusProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  const { data, isLoading,  refetch, isRefetching } = useQuery<{
+  const { data, isLoading, refetch, isRefetching } = useQuery<{
     invoices: Invoice[];
   }>({
     queryKey: [

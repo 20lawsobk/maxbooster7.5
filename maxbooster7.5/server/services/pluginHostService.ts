@@ -1216,9 +1216,7 @@ class PluginHostService {
     return this.updateInstanceParameters(instanceId, preset.parameters);
   }
 
-  getFactoryPresets(
-    pluginId: string,
-  ): Array<{
+  getFactoryPresets(pluginId: string): Array<{
     name: string;
     parameters: Record<string, number | boolean | string>;
   }> {

@@ -679,9 +679,8 @@ class ContentQualityPipeline {
             CALL_TO_ACTION_LIBRARY,
             GENRE_VIRAL_HOOKS,
             EMOTIONAL_TRIGGER_PATTERNS,
-          } = await import(
-            "../../shared/ml/training/musicIndustryTrainingData.js"
-          );
+          } =
+            await import("../../shared/ml/training/musicIndustryTrainingData.js");
 
           // Deterministic seed: same user + strategy + index → same pick every
           // time so content is reproducible without Math.random().

@@ -40,7 +40,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { MoreVertical, Eye, Edit, Copy, Trash2, AlertTriangle, Clock } from "lucide-react";
+import {
+  MoreVertical,
+  Eye,
+  Edit,
+  Copy,
+  Trash2,
+  AlertTriangle,
+  Clock,
+} from "lucide-react";
 
 interface ReleaseActionsPanelProps {
   release: {

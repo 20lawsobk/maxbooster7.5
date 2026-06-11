@@ -83,7 +83,7 @@ export function useBatchProgress(
 ): UseBatchProgressReturn {
   const {
     pollingInterval = 1000,
-    
+
     onProgress,
     onComplete,
     onError,

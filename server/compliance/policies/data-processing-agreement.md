@@ -452,15 +452,15 @@ By entering into the Agreement, both parties agree to the terms of this Data Pro
 
 **Controller:**
 
-Signature: ************\_\_\_************  
-Name: ************\_\_\_************  
-Title: ************\_\_\_************  
-Date: ************\_\_\_************
+Signature: ****\*\*\*\*****\_\_\_****\*\*\*\*****  
+Name: ****\*\*\*\*****\_\_\_****\*\*\*\*****  
+Title: ****\*\*\*\*****\_\_\_****\*\*\*\*****  
+Date: ****\*\*\*\*****\_\_\_****\*\*\*\*****
 
 **Processor (Max Booster, Inc.):**
 
-Signature: ************\_\_\_************  
-Name: ************\_\_\_************  
+Signature: ****\*\*\*\*****\_\_\_****\*\*\*\*****  
+Name: ****\*\*\*\*****\_\_\_****\*\*\*\*****  
 Title: Chief Information Security Officer  
 Date: November 11, 2025
 

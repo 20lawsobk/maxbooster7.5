@@ -6592,153 +6592,151 @@ function Wr({
                         "div",
                         {
                           className: "space-y-2 max-h-48 overflow-y-auto",
-                          children: t
-                            .slice(0, 6)
-                            .map((r) =>
-                              e.jsxDEV(
-                                "div",
-                                {
-                                  onClick: () => o(r),
-                                  className: `flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${f?.id === r.id ? "bg-primary/10 border border-primary" : "bg-muted/30 hover:bg-muted/50"}`,
-                                  "data-testid": `statement-item-${r.id}`,
-                                  children: [
-                                    e.jsxDEV(
-                                      "div",
-                                      {
-                                        className: "flex items-center gap-3",
-                                        children: [
+                          children: t.slice(0, 6).map((r) =>
+                            e.jsxDEV(
+                              "div",
+                              {
+                                onClick: () => o(r),
+                                className: `flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${f?.id === r.id ? "bg-primary/10 border border-primary" : "bg-muted/30 hover:bg-muted/50"}`,
+                                "data-testid": `statement-item-${r.id}`,
+                                children: [
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "flex items-center gap-3",
+                                      children: [
+                                        e.jsxDEV(
+                                          se,
+                                          {
+                                            className:
+                                              "w-4 h-4 text-muted-foreground",
+                                          },
+                                          void 0,
+                                          !1,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
+                                            lineNumber: 335,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                        e.jsxDEV(
+                                          "div",
+                                          {
+                                            children: [
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className: "font-medium",
+                                                  children: r.label,
+                                                },
+                                                void 0,
+                                                !1,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
+                                                  lineNumber: 337,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                              e.jsxDEV(
+                                                "p",
+                                                {
+                                                  className:
+                                                    "text-xs text-muted-foreground",
+                                                  children: [
+                                                    ve(r.startDate, "MMM d"),
+                                                    " - ",
+                                                    ve(
+                                                      r.endDate,
+                                                      "MMM d, yyyy",
+                                                    ),
+                                                  ],
+                                                },
+                                                void 0,
+                                                !0,
+                                                {
+                                                  fileName:
+                                                    "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
+                                                  lineNumber: 338,
+                                                  columnNumber: 23,
+                                                },
+                                                this,
+                                              ),
+                                            ],
+                                          },
+                                          void 0,
+                                          !0,
+                                          {
+                                            fileName:
+                                              "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
+                                            lineNumber: 336,
+                                            columnNumber: 21,
+                                          },
+                                          this,
+                                        ),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
+                                      lineNumber: 334,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                  e.jsxDEV(
+                                    "div",
+                                    {
+                                      className: "text-right",
+                                      children: [
+                                        r.status === "available" &&
                                           e.jsxDEV(
-                                            se,
+                                            "p",
                                             {
-                                              className:
-                                                "w-4 h-4 text-muted-foreground",
+                                              className: "font-semibold",
+                                              children: B(r.earnings),
                                             },
                                             void 0,
                                             !1,
                                             {
                                               fileName:
                                                 "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                              lineNumber: 335,
-                                              columnNumber: 21,
+                                              lineNumber: 345,
+                                              columnNumber: 23,
                                             },
                                             this,
                                           ),
-                                          e.jsxDEV(
-                                            "div",
-                                            {
-                                              children: [
-                                                e.jsxDEV(
-                                                  "p",
-                                                  {
-                                                    className: "font-medium",
-                                                    children: r.label,
-                                                  },
-                                                  void 0,
-                                                  !1,
-                                                  {
-                                                    fileName:
-                                                      "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                                    lineNumber: 337,
-                                                    columnNumber: 23,
-                                                  },
-                                                  this,
-                                                ),
-                                                e.jsxDEV(
-                                                  "p",
-                                                  {
-                                                    className:
-                                                      "text-xs text-muted-foreground",
-                                                    children: [
-                                                      ve(r.startDate, "MMM d"),
-                                                      " - ",
-                                                      ve(
-                                                        r.endDate,
-                                                        "MMM d, yyyy",
-                                                      ),
-                                                    ],
-                                                  },
-                                                  void 0,
-                                                  !0,
-                                                  {
-                                                    fileName:
-                                                      "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                                    lineNumber: 338,
-                                                    columnNumber: 23,
-                                                  },
-                                                  this,
-                                                ),
-                                              ],
-                                            },
-                                            void 0,
-                                            !0,
-                                            {
-                                              fileName:
-                                                "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                              lineNumber: 336,
-                                              columnNumber: 21,
-                                            },
-                                            this,
-                                          ),
-                                        ],
-                                      },
-                                      void 0,
-                                      !0,
-                                      {
-                                        fileName:
-                                          "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                        lineNumber: 334,
-                                        columnNumber: 19,
-                                      },
-                                      this,
-                                    ),
-                                    e.jsxDEV(
-                                      "div",
-                                      {
-                                        className: "text-right",
-                                        children: [
-                                          r.status === "available" &&
-                                            e.jsxDEV(
-                                              "p",
-                                              {
-                                                className: "font-semibold",
-                                                children: B(r.earnings),
-                                              },
-                                              void 0,
-                                              !1,
-                                              {
-                                                fileName:
-                                                  "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                                lineNumber: 345,
-                                                columnNumber: 23,
-                                              },
-                                              this,
-                                            ),
-                                          Y(r.status),
-                                        ],
-                                      },
-                                      void 0,
-                                      !0,
-                                      {
-                                        fileName:
-                                          "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                        lineNumber: 343,
-                                        columnNumber: 19,
-                                      },
-                                      this,
-                                    ),
-                                  ],
-                                },
-                                r.id,
-                                !0,
-                                {
-                                  fileName:
-                                    "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
-                                  lineNumber: 324,
-                                  columnNumber: 17,
-                                },
-                                this,
-                              ),
+                                        Y(r.status),
+                                      ],
+                                    },
+                                    void 0,
+                                    !0,
+                                    {
+                                      fileName:
+                                        "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
+                                      lineNumber: 343,
+                                      columnNumber: 19,
+                                    },
+                                    this,
+                                  ),
+                                ],
+                              },
+                              r.id,
+                              !0,
+                              {
+                                fileName:
+                                  "/home/runner/workspace/client/src/components/royalties/StatementDateRangePicker.tsx",
+                                lineNumber: 324,
+                                columnNumber: 17,
+                              },
+                              this,
                             ),
+                          ),
                         },
                         void 0,
                         !1,

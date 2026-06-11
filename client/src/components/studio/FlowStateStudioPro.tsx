@@ -1,7 +1,35 @@
 import { logger } from "@/lib/logger";
 import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, Square, Circle, SkipBack, Repeat, Settings, Wand2, Sparkles, Brain, Layers, Music, Mic, Scissors, Save, Download, Box, Sliders, Activity, Gauge, Radio, MousePointer, Move, Pencil, Eraser, Plus, HelpCircle } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Square,
+  Circle,
+  SkipBack,
+  Repeat,
+  Settings,
+  Wand2,
+  Sparkles,
+  Brain,
+  Layers,
+  Music,
+  Mic,
+  Scissors,
+  Save,
+  Download,
+  Box,
+  Sliders,
+  Activity,
+  Gauge,
+  Radio,
+  MousePointer,
+  Move,
+  Pencil,
+  Eraser,
+  Plus,
+  HelpCircle,
+} from "lucide-react";
 import "./FlowStateTheme.css";
 import {
   useFlowStateAdapter,

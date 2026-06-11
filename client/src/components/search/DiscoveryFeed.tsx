@@ -6,7 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Sparkles, TrendingUp, Clock, Music, Play, ChevronRight, RefreshCw, Flame, Star, Zap, Disc } from "lucide-react";
+import {
+  Sparkles,
+  TrendingUp,
+  Clock,
+  Music,
+  Play,
+  ChevronRight,
+  RefreshCw,
+  Flame,
+  Star,
+  Zap,
+  Disc,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DiscoverySection {

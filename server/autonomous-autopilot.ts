@@ -672,10 +672,6 @@ export class AutonomousAutopilot extends EventEmitter {
     return "tips"; // Default fallback
   }
 
-
-
-
-
   // Autonomous Performance Analysis
   private schedulePerformanceAnalysis(): void {
     this.performanceAnalysisInterval = setInterval(
@@ -817,7 +813,8 @@ export class AutonomousAutopilot extends EventEmitter {
 
     if (recentPerformance.length > 5) {
       const avgEngagement =
-        recentPerformance.reduce((a, b) => a + b, 0) / (recentPerformance.length || 1);
+        recentPerformance.reduce((a, b) => a + b, 0) /
+        (recentPerformance.length || 1);
 
       if (avgEngagement > 0.05) {
         // High engagement

@@ -26,7 +26,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { MessageSquare, Clock, CheckCircle2, BarChart3, Loader2 } from "lucide-react";
+import {
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  BarChart3,
+  Loader2,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import { Link } from "wouter";

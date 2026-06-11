@@ -1,6 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle, Shield, Share2, Activity, Eye, Clock, Link, Mail, UserPlus, UserMinus, Settings, FileText, AlertCircle } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Shield,
+  Share2,
+  Activity,
+  Eye,
+  Clock,
+  Link,
+  Mail,
+  UserPlus,
+  UserMinus,
+  Settings,
+  FileText,
+  AlertCircle,
+} from "lucide-react";
 
 export type WorkspaceOutcomeType =
   | "workspace_created"

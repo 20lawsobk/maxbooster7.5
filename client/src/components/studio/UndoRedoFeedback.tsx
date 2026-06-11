@@ -7,7 +7,23 @@ import {
   ReactNode,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Undo, Redo, History, ChevronDown, Check, Trash2, Copy, Scissors, Music, Volume2, Sliders, Move, Edit3, GitBranch, Layers } from "lucide-react";
+import {
+  Undo,
+  Redo,
+  History,
+  ChevronDown,
+  Check,
+  Trash2,
+  Copy,
+  Scissors,
+  Music,
+  Volume2,
+  Sliders,
+  Move,
+  Edit3,
+  GitBranch,
+  Layers,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {

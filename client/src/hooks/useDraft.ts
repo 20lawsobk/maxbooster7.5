@@ -35,8 +35,7 @@ export function useDraft<T = unknown>(
   const {
     formId,
     enabled = true,
-    
-    
+
     expirationMs,
     onSave,
     onRecover,

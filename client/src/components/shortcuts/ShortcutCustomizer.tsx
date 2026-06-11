@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { Settings, X, Search, RotateCcw, AlertTriangle, Check } from "lucide-react";
+import {
+  Settings,
+  X,
+  Search,
+  RotateCcw,
+  AlertTriangle,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -136,11 +143,11 @@ export function ShortcutCustomizer({
     setConflict(null);
   };
 
-  ((shortcutId: string) => {
+  (shortcutId: string) => {
     if (!shortcutManager) return;
     shortcutManager.resetShortcut(shortcutId);
     setShortcuts(shortcutManager.getAllShortcuts());
-  });
+  };
 
   const handleResetAll = () => {
     if (!shortcutManager) return;

@@ -7,7 +7,19 @@ import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, royaltyStatements } from "../shared/schema.js";
+import {
+  analytics,
+  userStorage,
+  userStorageFiles,
+  users,
+  notifications,
+  pushSubscriptions,
+  royaltyTransactions,
+  royaltySplits,
+  taxForms,
+  releases,
+  royaltyStatements,
+} from "../shared/schema.js";
 import { sum, count, inArray } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
@@ -362,11 +374,9 @@ export async function registerRoutes(
         if (username) {
           const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/;
           if (!usernameRegex.test(username)) {
-            return res
-              .status(400)
-              .json({
-                message: "Username must be 3-30 alphanumeric characters",
-              });
+            return res.status(400).json({
+              message: "Username must be 3-30 alphanumeric characters",
+            });
           }
 
           const existingUsername = await storage.getUserByUsername(username);
@@ -1026,9 +1036,8 @@ export async function registerRoutes(
 
         // Also try to delete from Redis if available
         try {
-          const { getRedisClient } = await import(
-            "./lib/redisConnectionFactory.js"
-          );
+          const { getRedisClient } =
+            await import("./lib/redisConnectionFactory.js");
           const redisClient = await getRedisClient();
           if (redisClient) {
             await redisClient.del(`maxbooster:sess:${sessionId}`);
@@ -1067,9 +1076,8 @@ export async function registerRoutes(
             if (deleted) {
               terminatedCount++;
               try {
-                const { getRedisClient } = await import(
-                  "./lib/redisConnectionFactory.js"
-                );
+                const { getRedisClient } =
+                  await import("./lib/redisConnectionFactory.js");
                 const redisClient = await getRedisClient();
                 if (redisClient) {
                   await redisClient.del(`maxbooster:sess:${session.id}`);
@@ -1115,9 +1123,8 @@ export async function registerRoutes(
             if (deleted) {
               terminatedCount++;
               try {
-                const { getRedisClient } = await import(
-                  "./lib/redisConnectionFactory.js"
-                );
+                const { getRedisClient } =
+                  await import("./lib/redisConnectionFactory.js");
                 const redisClient = await getRedisClient();
                 if (redisClient) {
                   await redisClient.del(`maxbooster:sess:${session.id}`);
@@ -1389,9 +1396,8 @@ export async function registerRoutes(
               await storage.deleteSession(session.id);
               // Also try to delete from Redis if available
               try {
-                const { getRedisClient } = await import(
-                  "./lib/redisConnectionFactory.js"
-                );
+                const { getRedisClient } =
+                  await import("./lib/redisConnectionFactory.js");
                 const redisClient = await getRedisClient();
                 if (redisClient) {
                   await redisClient.del(`maxbooster:sess:${session.id}`);
@@ -1422,9 +1428,8 @@ export async function registerRoutes(
         // the PDIM store — pods whose L1 session caches still hold the old session
         // will now get a revocation signal on next request.
         try {
-          const { revokeUserSessions } = await import(
-            "./middleware/sessionConfig.js"
-          );
+          const { revokeUserSessions } =
+            await import("./middleware/sessionConfig.js");
           await revokeUserSessions(String(req.user.id));
         } catch (revokeErr: unknown) {
           logger.warn(
@@ -1479,21 +1484,18 @@ export async function registerRoutes(
 
       // Dynamically import avatar upload middleware and storage
       try {
-        const { avatarUpload, storeUploadedFile } = await import(
-          "./middleware/uploadHandler.js"
-        );
+        const { avatarUpload, storeUploadedFile } =
+          await import("./middleware/uploadHandler.js");
 
         // Handle multipart upload
         avatarUpload.single("avatar")(req, res, async (err: unknown) => {
           if (err) {
             logger.warn({ err: err }, "Avatar upload error");
-            return res
-              .status(400)
-              .json({
-                message:
-                  (err instanceof Error ? err.message : undefined) ||
-                  "Failed to upload avatar",
-              });
+            return res.status(400).json({
+              message:
+                (err instanceof Error ? err.message : undefined) ||
+                "Failed to upload avatar",
+            });
           }
 
           if (!req.file) {
@@ -1518,9 +1520,8 @@ export async function registerRoutes(
                 { err: storeError },
                 "[Avatar] Object Storage unavailable, falling back to data URL",
               );
-              const { processAvatarImage } = await import(
-                "./middleware/uploadHandler.js"
-              );
+              const { processAvatarImage } =
+                await import("./middleware/uploadHandler.js");
               const processed = await processAvatarImage(req.file!.buffer);
               avatarUrl = `data:${processed.mimeType};base64,${processed.buffer.toString("base64")}`;
               logger.info(
@@ -1547,14 +1548,12 @@ export async function registerRoutes(
             });
           } catch (storeError) {
             logger.warn({ err: storeError }, "Avatar storage error");
-            return res
-              .status(500)
-              .json({
-                message:
-                  (storeError instanceof Error
-                    ? storeError.message
-                    : undefined) || "Failed to store avatar",
-              });
+            return res.status(500).json({
+              message:
+                (storeError instanceof Error
+                  ? storeError.message
+                  : undefined) || "Failed to store avatar",
+            });
           }
         });
       } catch (importError) {
@@ -1629,9 +1628,8 @@ export async function registerRoutes(
       }
 
       const { storageService } = await import("./services/storageService.js");
-      const { hybridStorageService } = await import(
-        "./services/hybridStorageService.js"
-      );
+      const { hybridStorageService } =
+        await import("./services/hybridStorageService.js");
 
       let fileBuffer: Buffer | null = null;
       let storageTier = "unknown";
@@ -1926,11 +1924,9 @@ export async function registerRoutes(
       return res.redirect(307, "/api/auth/google");
     }
     // For other platforms the caller should use POST /api/social/connect/:platform
-    return res
-      .status(400)
-      .json({
-        message: `Use POST /api/social/connect/${platform} for this platform`,
-      });
+    return res.status(400).json({
+      message: `Use POST /api/social/connect/${platform} for this platform`,
+    });
   });
 
   // Auth: OAuth callback alias — GET /api/auth/oauth/callback?platform=X&[code&state | error]
@@ -2130,9 +2126,8 @@ export async function registerRoutes(
         // SECURITY: Revoke all active sessions after password reset so old sessions
         // are rejected across all pods within ≤5 s (REVOKE_L1_TTL_ACTIVE_MS).
         try {
-          const { revokeUserSessions } = await import(
-            "./middleware/sessionConfig.js"
-          );
+          const { revokeUserSessions } =
+            await import("./middleware/sessionConfig.js");
           await revokeUserSessions(String(user.id));
         } catch (revokeErr: unknown) {
           logger.warn(
@@ -2870,9 +2865,8 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       try {
         const { token } = req.body;
-        const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
-        );
+        const { mobilePushService } =
+          await import("./services/mobilePushService.js");
         if (token) {
           await mobilePushService.deactivateToken(token);
         } else {
@@ -3403,9 +3397,8 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { notificationDispatcher } = await import(
-          "./services/notificationDispatcher.js"
-        );
+        const { notificationDispatcher } =
+          await import("./services/notificationDispatcher.js");
         const result = await notificationDispatcher.sendTestToUser(req.user.id);
         return res.json({
           success: true,
@@ -3436,19 +3429,16 @@ export async function registerRoutes(
           return res.status(400).json({ message: "Phone number is required" });
 
         // Normalize to E.164 using libphonenumber-js
-        const { parsePhoneNumber, isValidPhoneNumber } = await import(
-          "libphonenumber-js"
-        );
+        const { parsePhoneNumber, isValidPhoneNumber } =
+          await import("libphonenumber-js");
         let e164Phone: string;
         try {
           const parsed = parsePhoneNumber(phoneNumber as string, "US");
           if (!parsed || !isValidPhoneNumber(phoneNumber as string, "US")) {
-            return res
-              .status(400)
-              .json({
-                message:
-                  "Invalid phone number. Please include country code, e.g. +1 (555) 123-4567",
-              });
+            return res.status(400).json({
+              message:
+                "Invalid phone number. Please include country code, e.g. +1 (555) 123-4567",
+            });
           }
           e164Phone = parsed.format("E.164");
         } catch {
@@ -3489,12 +3479,10 @@ export async function registerRoutes(
               { status: verification.status },
               "[SMS] Unexpected Verify status",
             );
-            return res
-              .status(502)
-              .json({
-                message:
-                  "Failed to send your Max Booster verification code. Please try again.",
-              });
+            return res.status(502).json({
+              message:
+                "Failed to send your Max Booster verification code. Please try again.",
+            });
           }
 
           // Store the normalized phone number (code is managed by Twilio — no DB storage needed)
@@ -3596,19 +3584,15 @@ export async function registerRoutes(
           code?: number;
         };
         if (twilioErr?.status === 429 || twilioErr?.code === 60203) {
-          return res
-            .status(429)
-            .json({
-              message:
-                "Too many attempts. Please wait before requesting another code.",
-            });
+          return res.status(429).json({
+            message:
+              "Too many attempts. Please wait before requesting another code.",
+          });
         }
         if (twilioErr?.code === 60200) {
-          return res
-            .status(400)
-            .json({
-              message: "Invalid phone number. Please check and try again.",
-            });
+          return res.status(400).json({
+            message: "Invalid phone number. Please check and try again.",
+          });
         }
         logger.warn({ err: error }, "SMS verify error");
         return res
@@ -3645,11 +3629,9 @@ export async function registerRoutes(
         const toPhone = (phoneNumber as string | undefined) || storedPhone;
 
         if (!toPhone) {
-          return res
-            .status(400)
-            .json({
-              message: "Phone number not found. Please restart verification.",
-            });
+          return res.status(400).json({
+            message: "Phone number not found. Please restart verification.",
+          });
         }
 
         if (twilioSid && twilioToken && verifyServiceSid) {
@@ -3665,12 +3647,10 @@ export async function registerRoutes(
             });
 
           if (check.status !== "approved") {
-            return res
-              .status(400)
-              .json({
-                message:
-                  "Invalid or expired verification code. Please try again.",
-              });
+            return res.status(400).json({
+              message:
+                "Invalid or expired verification code. Please try again.",
+            });
           }
         } else {
           // 🔧 Dev/demo fallback — validate against stored code
@@ -3681,11 +3661,9 @@ export async function registerRoutes(
             | number
             | undefined;
           if (!pendingCode)
-            return res
-              .status(400)
-              .json({
-                message: "No pending verification. Please request a new code.",
-              });
+            return res.status(400).json({
+              message: "No pending verification. Please request a new code.",
+            });
           if (expiry && Date.now() > expiry)
             return res
               .status(400)
@@ -3718,11 +3696,9 @@ export async function registerRoutes(
       } catch (error: unknown) {
         const twilioErr = error as { status?: number; code?: number };
         if (twilioErr?.code === 60202) {
-          return res
-            .status(400)
-            .json({
-              message: "Max check attempts reached. Please request a new code.",
-            });
+          return res.status(400).json({
+            message: "Max check attempts reached. Please request a new code.",
+          });
         }
         logger.warn({ err: error }, "SMS confirm error");
         return res
@@ -3739,15 +3715,12 @@ export async function registerRoutes(
       if (!req.user)
         return res.status(401).json({ message: "Not authenticated" });
       try {
-        const { notificationDispatcher } = await import(
-          "./services/notificationDispatcher.js"
-        );
-        const { desktopPushService } = await import(
-          "./services/desktopPushService.js"
-        );
-        const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
-        );
+        const { notificationDispatcher } =
+          await import("./services/notificationDispatcher.js");
+        const { desktopPushService } =
+          await import("./services/desktopPushService.js");
+        const { mobilePushService } =
+          await import("./services/mobilePushService.js");
         const [breakdown, mobileStatus, serviceStatus] = await Promise.all([
           desktopPushService.getSubscriptionBreakdown(req.user.id),
           mobilePushService.getUserTokenStatus(req.user.id),
@@ -3779,9 +3752,8 @@ export async function registerRoutes(
             .status(400)
             .json({ error: "Platform must be android or ios" });
         }
-        const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
-        );
+        const { mobilePushService } =
+          await import("./services/mobilePushService.js");
         await mobilePushService.registerToken(
           req.user.id,
           token,
@@ -3813,9 +3785,8 @@ export async function registerRoutes(
       if (!req.user)
         return res.status(401).json({ message: "Not authenticated" });
       try {
-        const { mobilePushService } = await import(
-          "./services/mobilePushService.js"
-        );
+        const { mobilePushService } =
+          await import("./services/mobilePushService.js");
         const status = await mobilePushService.getUserTokenStatus(req.user.id);
         return res.json(status);
       } catch (error) {
@@ -3835,9 +3806,8 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       try {
         const { reason = "feed_refresh" } = req.body;
-        const { notificationDispatcher } = await import(
-          "./services/notificationDispatcher.js"
-        );
+        const { notificationDispatcher } =
+          await import("./services/notificationDispatcher.js");
         const result = await notificationDispatcher.dispatchSilent(
           req.user.id,
           reason,
@@ -3924,9 +3894,8 @@ export async function registerRoutes(
 
         if (req.file) {
           // Direct file upload (≤ proxy limit)
-          const { storeUploadedFile } = await import(
-            "./middleware/uploadHandler.js"
-          );
+          const { storeUploadedFile } =
+            await import("./middleware/uploadHandler.js");
           const storedFile = await storeUploadedFile(
             req.file,
             "audio",
@@ -5856,9 +5825,8 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { instantPayoutService } = await import(
-          "./services/instantPayoutService"
-        );
+        const { instantPayoutService } =
+          await import("./services/instantPayoutService");
         const balance = await instantPayoutService.calculateAvailableBalance(
           req.user.id,
         );
@@ -5879,12 +5847,10 @@ export async function registerRoutes(
         });
       } catch (error) {
         logger.warn({ err: error }, "Request payout error");
-        return res
-          .status(500)
-          .json({
-            message:
-              "Failed to request payout. Please ensure your payment method is configured.",
-          });
+        return res.status(500).json({
+          message:
+            "Failed to request payout. Please ensure your payment method is configured.",
+        });
       }
     },
   );
@@ -5973,9 +5939,8 @@ export async function registerRoutes(
         return res.status(401).json({ message: "Not authenticated" });
       }
       try {
-        const { instantPayoutService } = await import(
-          "./services/instantPayoutService"
-        );
+        const { instantPayoutService } =
+          await import("./services/instantPayoutService");
         const baseUrl = getBaseUrl();
         const refreshUrl = `${baseUrl}/royalties?setup=refresh`;
         const returnUrl = `${baseUrl}/royalties?setup=complete`;
@@ -5999,11 +5964,9 @@ export async function registerRoutes(
             code: "STRIPE_CONNECT_NOT_ENABLED",
           });
         }
-        return res
-          .status(500)
-          .json({
-            message: "Failed to connect bank account. Please try again.",
-          });
+        return res.status(500).json({
+          message: "Failed to connect bank account. Please try again.",
+        });
       }
     },
   );
@@ -6017,12 +5980,10 @@ export async function registerRoutes(
       }
 
       if (!stripe) {
-        return res
-          .status(503)
-          .json({
-            message: "Payment service unavailable",
-            code: "STRIPE_NOT_CONFIGURED",
-          });
+        return res.status(503).json({
+          message: "Payment service unavailable",
+          code: "STRIPE_NOT_CONFIGURED",
+        });
       }
 
       // Accept either planName (preferred) or a raw priceId (legacy)
@@ -6142,11 +6103,9 @@ export async function registerRoutes(
 
       const { uploadId, chunkIndex, totalChunks } = req.body;
       if (!uploadId || chunkIndex === undefined || !totalChunks) {
-        return res
-          .status(400)
-          .json({
-            message: "uploadId, chunkIndex and totalChunks are required",
-          });
+        return res.status(400).json({
+          message: "uploadId, chunkIndex and totalChunks are required",
+        });
       }
 
       // Sanitise uploadId — only allow alphanumeric + hyphens
@@ -6253,9 +6212,8 @@ export async function registerRoutes(
         return res.status(400).json({ message: "audioData is required" });
       }
 
-      const { hybridStorageService } = await import(
-        "./services/hybridStorageService.js"
-      );
+      const { hybridStorageService } =
+        await import("./services/hybridStorageService.js");
 
       const ext = format || "wav";
       const mimeType =
@@ -6321,9 +6279,8 @@ export async function registerRoutes(
     import("./routes/batch.js"),
     import("./routes/distribution.js"),
   ]);
-  const { aiServiceProxyRouter, boosterstateProxyRouter } = await import(
-    "./routes/internalProxy.js"
-  );
+  const { aiServiceProxyRouter, boosterstateProxyRouter } =
+    await import("./routes/internalProxy.js");
   app.use("/api/ai-service", aiServiceProxyRouter);
   app.use("/api/boosterstate", boosterstateProxyRouter);
 
@@ -6403,9 +6360,8 @@ export async function registerRoutes(
   // making the catch-block throw silently and leaving the routes unregistered.
   // Eagerly importing + mounting here guarantees the router is always present.
   try {
-    const { default: socialMediaRouter } = await import(
-      "./routes/socialMedia.js"
-    );
+    const { default: socialMediaRouter } =
+      await import("./routes/socialMedia.js");
     if (
       socialMediaRouter &&
       typeof socialMediaRouter === "function" &&
@@ -7216,11 +7172,9 @@ export async function registerRoutes(
         const priceId = priceIds[tier as keyof typeof priceIds];
 
         if (!priceId || priceId.includes("placeholder")) {
-          return res
-            .status(500)
-            .json({
-              error: "Stripe prices not configured. Please try again later.",
-            });
+          return res.status(500).json({
+            error: "Stripe prices not configured. Please try again later.",
+          });
         }
 
         const baseUrl = getBaseUrl();
@@ -7262,11 +7216,9 @@ export async function registerRoutes(
         res.json({ url: session.url, sessionId: session.id });
       } catch (error) {
         logger.warn({ err: error }, "Error creating checkout session:");
-        res
-          .status(500)
-          .json({
-            error: "Failed to create checkout session. Please try again.",
-          });
+        res.status(500).json({
+          error: "Failed to create checkout session. Please try again.",
+        });
       }
     },
   );
@@ -7284,23 +7236,16 @@ export async function registerRoutes(
             .json({ error: "Payment system not configured" });
         }
 
-        const {
-          sessionId,
-          password,
-          tosAccepted,
-          privacyAccepted,
-        } = req.body;
+        const { sessionId, password, tosAccepted, privacyAccepted } = req.body;
 
         if (!sessionId || !password) {
           return res.status(400).json({ error: "Missing required fields" });
         }
 
         if (!tosAccepted || !privacyAccepted) {
-          return res
-            .status(400)
-            .json({
-              error: "You must accept the Terms of Service and Privacy Policy",
-            });
+          return res.status(400).json({
+            error: "You must accept the Terms of Service and Privacy Policy",
+          });
         }
 
         if (password.length < 8) {
@@ -7327,11 +7272,9 @@ export async function registerRoutes(
         const tier = session.metadata?.tier || "monthly";
 
         if (!email || !username) {
-          return res
-            .status(400)
-            .json({
-              error: "Session metadata missing. Please contact support.",
-            });
+          return res.status(400).json({
+            error: "Session metadata missing. Please contact support.",
+          });
         }
 
         // Check if user already exists (prevent duplicate registration)
@@ -7401,11 +7344,9 @@ export async function registerRoutes(
             { err: sessionErr },
             "[PostPayment] Session operation failed after retries",
           );
-          return res
-            .status(500)
-            .json({
-              error: "Account created but login failed - please sign in.",
-            });
+          return res.status(500).json({
+            error: "Account created but login failed - please sign in.",
+          });
         }
       } catch (error) {
         logger.warn(
@@ -7419,11 +7360,9 @@ export async function registerRoutes(
             .json({ error: "Invalid payment session. Please try again." });
         }
 
-        return res
-          .status(500)
-          .json({
-            error: "Failed to complete registration. Please contact support.",
-          });
+        return res.status(500).json({
+          error: "Failed to complete registration. Please contact support.",
+        });
       }
     },
   );
@@ -7437,9 +7376,8 @@ export async function registerRoutes(
       if (req.user?.role !== "admin") {
         return res.status(403).json({ error: "Admin access required" });
       }
-      const { paymentBypassService } = await import(
-        "./services/paymentBypassService"
-      );
+      const { paymentBypassService } =
+        await import("./services/paymentBypassService");
       const status = await paymentBypassService.getStatus();
       return res.json({
         bypassed: status.bypassed,
@@ -7454,9 +7392,8 @@ export async function registerRoutes(
 
   // Infrastructure scaling routes
   try {
-    const { scalingMetricsRouter, getInfrastructureStatus } = await import(
-      "./infrastructure/index.js"
-    );
+    const { scalingMetricsRouter, getInfrastructureStatus } =
+      await import("./infrastructure/index.js");
     app.use("/api/infrastructure", scalingMetricsRouter);
     app.get("/api/infrastructure/status", (req, res) => {
       if (!req.user || req.user.role !== "admin") {
@@ -7466,12 +7403,10 @@ export async function registerRoutes(
         const status = getInfrastructureStatus();
         res.json({ success: true, ...status });
       } catch (error) {
-        res
-          .status(500)
-          .json({
-            success: false,
-            error: "Failed to get infrastructure status",
-          });
+        res.status(500).json({
+          success: false,
+          error: "Failed to get infrastructure status",
+        });
       }
     });
     log("Infrastructure scaling routes registered");
@@ -7651,9 +7586,8 @@ export async function registerRoutes(
   try {
     // Warm the Self-Evolution registry from persisted state so the autopilot
     // timing/content consumers see active enhancements immediately on boot.
-    const { evolutionRegistry } = await import(
-      "./services/evolutionRegistry.js"
-    );
+    const { evolutionRegistry } =
+      await import("./services/evolutionRegistry.js");
     await evolutionRegistry.load(true);
     const stats = evolutionRegistry.getStats();
     log(
@@ -7666,9 +7600,8 @@ export async function registerRoutes(
   }
 
   try {
-    const { silentDeployment } = await import(
-      "./services/silentDeploymentService.js"
-    );
+    const { silentDeployment } =
+      await import("./services/silentDeploymentService.js");
     if (process.env.ENABLE_SELF_EVOLUTION === "true") {
       silentDeployment.enable();
       log("Silent deployment system ENABLED (ENABLE_SELF_EVOLUTION=true)");

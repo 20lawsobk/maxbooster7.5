@@ -236,7 +236,6 @@ export function VideoTrack({
     };
     // INTENTIONAL: only re-run when a new import URL appears. currentTime/duration/generateThumbnails
     // are deliberately excluded — including them would restart the import on every seek/zoom.
-     
   }, [pendingImportUrl]);
   // ── End URL-based import ────────────────────────────────────────────────────
 

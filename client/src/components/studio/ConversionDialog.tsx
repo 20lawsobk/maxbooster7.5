@@ -23,7 +23,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Download, X, FileAudio, Loader2, Plus, AlertCircle } from "lucide-react";
+import {
+  Download,
+  X,
+  FileAudio,
+  Loader2,
+  Plus,
+  AlertCircle,
+} from "lucide-react";
 
 interface ConversionDialogProps {
   open: boolean;

@@ -255,12 +255,9 @@ router.post(
 
       const { platform, currentMetrics, previousMetrics } = req.body;
       if (!platform || !currentMetrics || !previousMetrics) {
-        return res
-          .status(400)
-          .json({
-            error:
-              "Platform, current metrics, and previous metrics are required",
-          });
+        return res.status(400).json({
+          error: "Platform, current metrics, and previous metrics are required",
+        });
       }
 
       await analyticsAlertService.detectGrowthAnomalies(

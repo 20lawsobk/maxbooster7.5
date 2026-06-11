@@ -298,11 +298,9 @@ router.post("/:storefrontId/credentials", async (req, res) => {
       apiSecret,
     });
     if (!valid)
-      return res
-        .status(400)
-        .json({
-          error: "Invalid credentials. Check your API key/secret and domain.",
-        });
+      return res.status(400).json({
+        error: "Invalid credentials. Check your API key/secret and domain.",
+      });
 
     const existing = await getCredentials(userId, domain);
     if (existing) {
@@ -420,12 +418,10 @@ router.get("/:storefrontId/records", async (req, res) => {
     if (refresh) {
       const cred = await getCredentials(userId, domain);
       if (!cred)
-        return res
-          .status(400)
-          .json({
-            error:
-              "No credentials saved for this domain. Connect your DNS provider first.",
-          });
+        return res.status(400).json({
+          error:
+            "No credentials saved for this domain. Connect your DNS provider first.",
+        });
 
       const provider = getProvider(cred.provider);
       const credentials = cred.credentials as {
@@ -729,12 +725,10 @@ router.post("/:storefrontId/records/batch", async (req, res) => {
     for (const rd of recordsData) {
       const parsed = recordSchema.safeParse(rd);
       if (!parsed.success)
-        return res
-          .status(400)
-          .json({
-            error: "Invalid record in batch",
-            details: parsed.error.issues,
-          });
+        return res.status(400).json({
+          error: "Invalid record in batch",
+          details: parsed.error.issues,
+        });
       const record = parsed.data as DnsRecord;
       const err = validateDnsRecord(record);
       if (err)
@@ -1048,9 +1042,8 @@ router.post("/activate-persist-validation", async (req, res) => {
     return res.status(403).json({ error: "Admin required" });
   }
   try {
-    const { activateAcmePersistValidation } = await import(
-      "../services/acmeClient.js"
-    );
+    const { activateAcmePersistValidation } =
+      await import("../services/acmeClient.js");
     const result = await activateAcmePersistValidation("max-booster.com");
     res.json({ ok: true, ...result });
   } catch (err) {
