@@ -4517,10 +4517,10 @@ export default function Marketplace() {
                       >
                         <div className="flex items-center space-x-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {affiliate.name.substring(0, 2).toUpperCase()}
+                            {(affiliate.name ?? '??').substring(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium">{affiliate.name}</p>
+                            <p className="font-medium">{affiliate.name ?? ''}</p>
                             <p className="text-sm text-muted-foreground">
                               {affiliate.email}
                             </p>
@@ -7911,7 +7911,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Contract Template</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{selectedContract.name}"? This
+              Are you sure you want to delete "{selectedContract?.name}"? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -5255,7 +5255,7 @@ export async function registerRoutes(
       return res.json({
         totalEarnings: Number(agg.totalEarnings || 0),
         pendingPayouts: Number(agg.pendingPayouts || 0),
-        lastPayout: lastPaidRow.paidAt ?? null,
+        lastPayout: lastPaidRow?.paidAt ?? null,
         platformsCount: platformRows.length,
       });
     } catch (error) {
@@ -5351,7 +5351,7 @@ export async function registerRoutes(
         data: rows,
         totalEarnings: Number(agg.totalEarnings || 0),
         pendingPayouts: Number(agg.pendingPayouts || 0),
-        lastPayout: lastPaidRow.paidAt ?? null,
+        lastPayout: lastPaidRow?.paidAt ?? null,
         pagination: {
           total: Number(agg.totalRows || 0),
           page: pageParam,

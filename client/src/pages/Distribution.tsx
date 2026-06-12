@@ -1615,7 +1615,7 @@ export default function Distribution() {
             id: platform.slug,
             icon: getPlatformIcon(platform.slug),
             color: getPlatformColor(platform.slug),
-            earnings: platformEarning.amount ?? 0,
+            earnings: platformEarning?.amount ?? 0,
           },
         ];
       }),
