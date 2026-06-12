@@ -306,7 +306,7 @@ function extractUserIdFromSession(
   if (!data) return undefined;
   const d = data as unknown as Record<string, unknown>;
   const passportUser = (d.passport as Record<string, unknown> | undefined)
-    .user;
+    ?.user;
   const uid = d.userId ?? passportUser;
   return uid ? String(uid) : undefined;
 }
