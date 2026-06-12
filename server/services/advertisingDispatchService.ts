@@ -288,7 +288,7 @@ export class AdvertisingDispatchService {
    * @param userId - User ID for auth
    */
   async collectCampaignEngagement(
-    campaignId: number,
+    campaignId: string,
     userId: string,
   ): Promise<void> {
     try {
@@ -434,10 +434,10 @@ export class AdvertisingDispatchService {
         platforms: [platform] as Record<string, unknown>,
         status: "published",
         postType: "campaign_post",
-        content: creative.normalizedContent || creative?.rawContent,
-        mediaUrls: creative.assetUrls as Record<string, unknown>,
+        content: creative?.description || creative?.headline || "",
+        mediaUrls: (creative?.mediaUrl ? [creative.mediaUrl] : null) as Record<string, unknown>,
         hashtags: this.extractHashtags(
-          creative?.normalizedContent || creative?.rawContent || "",
+          creative?.description || creative?.headline || "",
         ) as Record<string, unknown>,
         publishedAt: new Date(),
       })
