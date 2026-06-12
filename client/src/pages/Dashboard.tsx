@@ -290,7 +290,7 @@ function DashboardContent({ user }: { user: User }) {
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
 
-  const projects = projectsData.data || [];
+  const projects = projectsData?.data || [];
 
   useQuery({
     queryKey: ["/api/analytics/dashboard"],
