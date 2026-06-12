@@ -3263,7 +3263,7 @@ export default function Analytics() {
                   <Skeleton key={i} className="h-32 w-full" />
                 ))}
               </div>
-            ) : anomalyData.anomalies && anomalyData.anomalies.length > 0 ? (
+            ) : anomalyData?.anomalies && anomalyData.anomalies.length > 0 ? (
               <div className="space-y-4">
                 {anomalyData.anomalies.map(
                   (anomaly) => {

@@ -659,7 +659,7 @@ export default function Collaborations() {
             >
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Connect with {selectedUser.name}</DialogTitle>
+                  <DialogTitle>Connect with {selectedUser?.name}</DialogTitle>
                   <DialogDescription>
                     Send a personalized message with your connection request
                   </DialogDescription>

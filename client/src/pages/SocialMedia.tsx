@@ -3868,7 +3868,7 @@ export default function SocialMedia() {
                         icon: Edit,
                         engagement:
                           metrics?.contentPerformance?.text?.engagement ?? 0,
-                        reach: metrics.contentPerformance?.text?.reach ?? "0",
+                        reach: metrics?.contentPerformance?.text?.reach ?? "0",
                         color: "from-green-500 to-emerald-500",
                       },
                     ].map((content) => {
