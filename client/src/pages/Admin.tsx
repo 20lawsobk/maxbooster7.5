@@ -2666,7 +2666,7 @@ export default function Admin() {
             <AlertDialogTitle>Delete User</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete "
-              {selectedUser.username || selectedUser.email}"? This action
+              {selectedUser?.username || selectedUser?.email}"? This action
               cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
