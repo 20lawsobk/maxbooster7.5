@@ -5035,13 +5035,13 @@ function RadioPitchingContent() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[
-          { label: "Total Pitches", value: stats.total || 0 },
-          { label: "Radio", value: stats.radio || 0, color: "text-blue-600" },
-          { label: "Blogs", value: stats.blog || 0, color: "text-green-600" },
-          { label: "DJs", value: stats.dj || 0, color: "text-purple-600" },
+          { label: "Total Pitches", value: stats?.total || 0 },
+          { label: "Radio", value: stats?.radio || 0, color: "text-blue-600" },
+          { label: "Blogs", value: stats?.blog || 0, color: "text-green-600" },
+          { label: "DJs", value: stats?.dj || 0, color: "text-purple-600" },
           {
             label: "Featured",
-            value: stats.features || 0,
+            value: stats?.features || 0,
             color: "text-yellow-600",
           },
         ].map((s, i) => (
@@ -5453,11 +5453,11 @@ function FanCampaignsContent() {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Campaigns", value: stats.totalCampaigns || 0 },
-          { label: "Sent", value: stats.sent || 0, color: "text-green-600" },
+          { label: "Total Campaigns", value: stats?.totalCampaigns || 0 },
+          { label: "Sent", value: stats?.sent || 0, color: "text-green-600" },
           {
             label: "Total Subscribers",
-            value: stats.totalSubscribers || 0,
+            value: stats?.totalSubscribers || 0,
             color: "text-blue-600",
           },
           {
