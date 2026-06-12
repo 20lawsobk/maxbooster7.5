@@ -1041,7 +1041,7 @@ function DashboardContent({ user }: { user: User }) {
                       <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 rounded-lg">
                         <div className="text-2xl font-bold text-purple-600">
                           {(
-                            aiInsights.predictions?.viralPotential * 100 || 0
+                            aiInsights?.predictions?.viralPotential * 100 || 0
                           ).toFixed(0)}
                           %
                         </div>

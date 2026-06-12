@@ -326,7 +326,7 @@ export default function RevenueForecast() {
     );
   }
 
-  if (error || !projectionsData.data) {
+  if (error || !projectionsData?.data) {
     return (
       <Card className="p-6">
         <div className="text-center text-muted-foreground">

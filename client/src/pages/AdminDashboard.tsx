@@ -1184,7 +1184,7 @@ export default function AdminDashboard() {
                   </Alert>
                 ) : usersLoading ? (
                   <Skeleton className="h-96 w-full" />
-                ) : usersData.users && usersData.users.length > 0 ? (
+                ) : usersData?.users && usersData.users.length > 0 ? (
                   <div className="space-y-4">
                     <div className="rounded-md border">
                       <Table>
@@ -1282,7 +1282,7 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Pagination */}
-                    {usersData.pagination && (
+                    {usersData?.pagination && (
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-600">
                           Showing {usersData.pagination.offset + 1} to{" "}
@@ -1309,7 +1309,7 @@ export default function AdminDashboard() {
                             size="sm"
                             onClick={() => setUsersPage((p) => p + 1)}
                             disabled={
-                              !usersData.pagination ||
+                              !usersData?.pagination ||
                               usersPage >=
                                 Math.ceil(
                                   usersData.pagination.total /
