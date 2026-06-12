@@ -287,10 +287,10 @@ export async function registerRoutes(
 
     // Production debugging for session issues
     if (isProduction) {
-      const hasCookie = req.headers.cookie.includes("sessionId");
+      const hasCookie = !!req.headers.cookie?.includes("sessionId");
       const hasSession = !!req.session;
-      const hasUserId = !!req.session.userId;
-      req.session.id.substring(0, 8) || "none";
+      const hasUserId = !!req.session?.userId;
+      req.session?.id?.substring(0, 8) || "none";
 
       logger.info({ hasSession, hasUserId }, "[Auth/me] Auth check");
 
