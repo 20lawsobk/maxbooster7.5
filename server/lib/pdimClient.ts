@@ -369,8 +369,25 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
   //   script fast-lane wait = scriptDepth × 10ms  (independent chain)
   // When the combined estimate exceeds _MAX_DIRECT_WAIT_MS, reject immediately
   // so callers with fallbacks (PG-backed sessions, in-memory caches) use them.
+  //
+  // Gap cap rationale: after a 429 burst, AIMD pushes _pdimGapMs to the 2000ms
+  // ceiling. At that ceiling, even 3 callers across 2 lanes exceeds 2500ms
+  // (3/2 × 2000 = 3000ms), causing fast-fail on virtually every new caller.
+  // This is a vicious cycle: fast-fail prevents success events that drive
+  // additive decay, so passive geometric decay (0.8× every 2s, ~30s to floor)
+  // becomes the only recovery mechanism — but new callers are rejected the
+  // whole time, making PDIM appear completely unavailable during recovery.
+  //
+  // Fix: cap the gap used for estimation at floor×8. Passive decay brings the
+  // real gap down to floor within ~30s regardless, so floor×8 is a conservative
+  // upper bound on the actual wait a queued caller will experience.  At prod
+  // floor=78ms: cap=624ms, max queue before fast-fail = 8 callers across 2
+  // lanes (8/2×624=2496ms < 2500ms).  At normal operation (gap≤floor) there is
+  // no change — the cap has no effect.  Callers that ARE queued during recovery
+  // wait less than the estimate because the gap is actively falling.
+  const gapForFastFail = Math.min(_pdimGapMs, _PDIM_GAP_FLOOR_MS * 8);
   const perLaneDirectWaitMs =
-    (_directQueueDepth / _PDIM_DIRECT_LANES) * _pdimGapMs;
+    (_directQueueDepth / _PDIM_DIRECT_LANES) * gapForFastFail;
   const estimatedWaitMs = perLaneDirectWaitMs + _scriptQueueDepth * 10;
   if (estimatedWaitMs > _MAX_DIRECT_WAIT_MS) {
     const now = Date?.now();
@@ -378,7 +395,7 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
       _fastFailLoggedAt = now;
       logger?.warn(
         `[PDIM] Direct-call fast-fail — est. queue wait ${Math?.round(estimatedWaitMs)}ms ` +
-          `(${_directQueueDepth} direct / ${_PDIM_DIRECT_LANES} lanes × ${_pdimGapMs}ms + ` +
+          `(${_directQueueDepth} direct / ${_PDIM_DIRECT_LANES} lanes × ${gapForFastFail}ms capped [live=${_pdimGapMs}ms] + ` +
           `${_scriptQueueDepth} script × 10ms) > ${_MAX_DIRECT_WAIT_MS}ms threshold; ` +
           `caller falls back to PG/in-memory`,
       );
