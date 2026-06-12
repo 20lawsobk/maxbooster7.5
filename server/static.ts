@@ -528,7 +528,7 @@ export function serveStatic(app: Express) {
     const resolvedStorefront = (req as Record<string, unknown>).storefront as
       | { slug?: string }
       | undefined;
-    if (resolvedStorefront.slug) {
+    if (resolvedStorefront?.slug) {
       const safeSlug = resolvedStorefront.slug.replace(/[^a-z0-9-]/gi, "");
       res.setHeader("X-Maxbooster-Subdomain", safeSlug);
       const html = baseHtml.replace(

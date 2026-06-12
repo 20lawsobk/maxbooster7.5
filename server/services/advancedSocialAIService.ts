@@ -1398,7 +1398,7 @@ class AdvancedSocialAIService {
       cta_strength: request.callToActionStrength,
     });
 
-    if (!mc.hook && !mc.caption) {
+    if (!mc || (!mc.hook && !mc.caption)) {
       // MaxCore returned null — either the endpoint is suppressed after a burst
       // exhausted all retries (rate-limit / 503 / timeout) or the response shape
       // didn't carry the expected hook/caption fields.  Throw so the caller's
