@@ -1811,24 +1811,24 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await dbRead?.execute(sql`
         SELECT
-          u?.id,
-          u?.first_name,
-          u?.last_name,
-          u?.username,
-          u?.artist_name,
-          u?.avatar_url,
-          u?.bio,
-          u?.location,
-          u?.website,
-          u?.role,
-          u?.subscription_tier,
-          COALESCE(l?.beats_count, 0)::int        AS beats_count,
-          COALESCE(o?.sales_count, 0)::int        AS sales_count,
-          COALESCE(sf?.followers_count, 0)::int   AS followers_count,
-          COALESCE(ROUND(sr?.avg_rating::numeric, 1), 0) AS avg_rating
+          u.id,
+          u.first_name,
+          u.last_name,
+          u.username,
+          u.artist_name,
+          u.avatar_url,
+          u.bio,
+          u.location,
+          u.website,
+          u.role,
+          u.subscription_tier,
+          COALESCE(l.beats_count, 0)::int        AS beats_count,
+          COALESCE(o.sales_count, 0)::int        AS sales_count,
+          COALESCE(sf.followers_count, 0)::int   AS followers_count,
+          COALESCE(ROUND(sr.avg_rating::numeric, 1), 0) AS avg_rating
         FROM users u
         LEFT JOIN LATERAL (
-          SELECT COUNT(*) AS beats_count FROM listings WHERE user_id = u?.id
+          SELECT COUNT(*) AS beats_count FROM listings WHERE user_id = u.id
         ) l ON true
         LEFT JOIN LATERAL (
           SELECT COUNT(*) AS sales_count FROM orders WHERE seller_id = u.id AND status = 'completed'
@@ -1836,18 +1836,18 @@ export class DatabaseStorage implements IStorage {
         LEFT JOIN LATERAL (
           SELECT COUNT(*) AS followers_count
           FROM storefront_follows sf2
-          JOIN storefronts s ON sf2.storefront_id = s?.id
-          WHERE s.user_id = u?.id
+          JOIN storefronts s ON sf2.storefront_id = s.id
+          WHERE s.user_id = u.id
         ) sf ON true
         LEFT JOIN LATERAL (
-          SELECT COALESCE(AVG(sr2?.rating), 0) AS avg_rating
+          SELECT COALESCE(AVG(sr2.rating), 0) AS avg_rating
           FROM storefront_ratings sr2
-          JOIN storefronts s ON sr2.storefront_id = s?.id
-          WHERE s.user_id = u?.id
+          JOIN storefronts s ON sr2.storefront_id = s.id
+          WHERE s.user_id = u.id
         ) sr ON true
-        WHERE l?.beats_count > 0
-           OR EXISTS (SELECT 1 FROM storefronts st WHERE st.user_id = u?.id)
-        ORDER BY l?.beats_count DESC, o?.sales_count DESC
+        WHERE l.beats_count > 0
+           OR EXISTS (SELECT 1 FROM storefronts st WHERE st.user_id = u.id)
+        ORDER BY l.beats_count DESC, o.sales_count DESC
         LIMIT 50
       `);
 
