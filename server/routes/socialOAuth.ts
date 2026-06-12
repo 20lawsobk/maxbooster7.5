@@ -99,8 +99,8 @@ const PLATFORMS = {
         process.env.TIKTOK_CLIENT_SECRET;
     const scopes = isSandbox
       ? process.env.TIKTOK_SANDBOX_SCOPES ||
-        "user?.info.basic,video?.list,video?.upload,video?.publish"
-      : process.env.TIKTOK_PROD_SCOPES || "user?.info.basic";
+        "user.info.basic,video.list,video.upload,video.publish"
+      : process.env.TIKTOK_PROD_SCOPES || "user.info.basic";
     const redirectUri = isSandbox
       ? process.env.TIKTOK_SANDBOX_REDIRECT_URI
       : process.env.TIKTOK_PROD_REDIRECT_URI;
@@ -137,7 +137,7 @@ const PLATFORMS = {
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     scope:
-      "https://www.googleapis.com/auth/youtube https://www?.googleapis.com/auth/youtube.upload https://www?.googleapis.com/auth/youtube.readonly https://www?.googleapis.com/auth/yt-analytics.readonly",
+      "https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly",
     clientId: env.YOUTUBE_CLIENT_ID || env.GOOGLE_CLIENT_ID,
     clientSecret: env.YOUTUBE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET,
     usePKCE: false,
@@ -151,7 +151,7 @@ const PLATFORMS = {
     authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
     scope:
-      "https://www?.googleapis.com/auth/business.manage https://www?.googleapis.com/auth/plus.business.manage",
+      "https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/plus.business.manage",
     clientId: env.GOOGLE_BUSINESS_CLIENT_ID || env.GOOGLE_CLIENT_ID,
     clientSecret: env.GOOGLE_BUSINESS_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET,
     usePKCE: false,
@@ -176,7 +176,7 @@ const PLATFORMS = {
     authUrl: "https://twitter.com/i/oauth2/authorize",
     tokenUrl: "https://api.x.com/2/oauth2/token",
     scope:
-      "tweet?.read tweet?.write users?.read follows?.read follows?.write offline?.access",
+      "tweet.read tweet.write users.read follows.read follows.write offline.access",
     clientId: process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY,
     clientSecret:
       process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET,
