@@ -923,7 +923,7 @@ router?.get(
           id: platform.id,
           name: platform.name,
           isConnected: !!conn,
-          followers: conn.followerCount || 0,
+          followers: conn?.followerCount || 0,
           engagement,
           lastSync:
             connMeta?.lastSyncedAt || conn?.createdAt?.toISOString() || "",
@@ -933,11 +933,11 @@ router?.get(
               : "active"
             : "inactive",
           needsReconnect,
-          tokenRefreshFailedAt: connMeta.tokenRefreshFailedAt || null,
-          username: conn.username || undefined,
-          profileUrl: conn.profileUrl || "",
-          platformUserId: conn.platformUserId || "",
-          metadata: conn.metadata || {},
+          tokenRefreshFailedAt: connMeta?.tokenRefreshFailedAt || null,
+          username: conn?.username || undefined,
+          profileUrl: conn?.profileUrl || "",
+          platformUserId: conn?.platformUserId || "",
+          metadata: conn?.metadata || {},
         };
       });
 
