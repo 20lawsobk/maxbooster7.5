@@ -409,14 +409,23 @@ export class AnalyticsAnomalyService {
     try {
       const allUsers = await storage?.getAllUsers({ page: 1, limit: 1000 });
 
-      for (const user of allUsers?.data) {
+      const realUsers = (allUsers?.data ?? []).filter(
+        (u: { email?: string }) =>
+          u?.email &&
+          !u.email.includes("maxbooster-test") &&
+          !u.email.endsWith("@test.invalid") &&
+          !u.email.endsWith("@test.com") &&
+          !u.email.endsWith("@maxbooster.test"),
+      );
+
+      for (const user of realUsers) {
         await this?.detectAnomaliesForUser(user?.id);
       }
 
       await loggingService?.logInfo(
         "anomaly_detection",
-        `Anomaly detection completed for ${allUsers?.data.length} users`,
-        { userCount: allUsers.data.length },
+        `Anomaly detection completed for ${realUsers.length} users`,
+        { userCount: realUsers.length },
       );
     } catch (error: unknown) {
       await loggingService?.logError(

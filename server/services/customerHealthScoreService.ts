@@ -382,6 +382,12 @@ class CustomerHealthScoreService {
       const allUsers = await db
         .select({ id: users.id })
         .from(users)
+        .where(
+          sql`email NOT LIKE '%maxbooster-test%'
+           AND email NOT LIKE '%@test.invalid'
+           AND email NOT LIKE '%@test.com'
+           AND email NOT LIKE '%@maxbooster.test'`,
+        )
         .limit(limit);
       const results = await Promise?.allSettled(
         allUsers?.map((u) => this?.computeAndStore(u?.id)),

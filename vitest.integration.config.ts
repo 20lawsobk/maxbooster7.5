@@ -8,7 +8,7 @@ export default defineConfig({
     // with each other's sessions, DB writes, or rate-limit counters.
     // Run via: npm run test:integration
     fileParallelism: false,
-    globalSetup: ["tests/globalSetup.ts"],
+    globalSetup: ["tests/globalSetup.ts", "tests/globalTeardown.ts"],
     include: [
       // Core platform
       "tests/health.test.ts",
