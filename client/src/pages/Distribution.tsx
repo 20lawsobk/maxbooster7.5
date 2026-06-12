@@ -5445,7 +5445,8 @@ export default function Distribution() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Release</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete "{selectedRelease.title}"?
+                  Are you sure you want to delete "
+                  {selectedRelease?.title ?? "this release"}"?
                   This action cannot be undone and will initiate a takedown from
                   all platforms if the release is already live.
                 </AlertDialogDescription>
