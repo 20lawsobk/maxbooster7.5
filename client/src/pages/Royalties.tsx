@@ -179,7 +179,7 @@ export default function Royalties() {
       { period: selectedPeriod, platform: selectedPlatform },
     ],
     enabled: !!user,
-    retry: false,
+    retry: 1,
     staleTime: 5 * 60 * 1000,
   });
   const royalties = royaltiesResponse?.data ?? [];
