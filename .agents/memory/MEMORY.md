@@ -22,3 +22,4 @@
 - [tsx vs esbuild standalone scanner](tsx-vs-esbuild-scanner.md) — esbuild --bundle=false MISSES syntax errors inside generic type args (Promise<X?.Y>); use tsx's own esbuild transform API as the authoritative scanner
 - [PDIM fast-fail gap cap](pdim-fast-fail-gap-cap.md) — fast-fail estimate must cap the live gap at floor×8; raw 2000ms ceiling causes fast-fail at 3 callers (3/2×2000=3000>2500), starving recovery in production
 - [DiffBG MaxCore availability check](diffbg-maxcore-check.md) — check external MaxCore URL as second tier before local Python fallback; local Gateway (port 8008) not running in prod so always fell back and logged "not available"
+- [MaxCore video serves no file](maxcore-video-no-file.md) — remote `/api/generate-video` fabricates status=done with a /uploads URL that 404s (its own /download 500s); render+serve bug is on the remote MaxCore deployment, not this repo — "MaxCore-only video" is blocked at the source
