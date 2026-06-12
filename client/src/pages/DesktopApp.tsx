@@ -464,7 +464,7 @@ export default function DesktopApp() {
         <div className="flex justify-center">
           <Button variant="outline" size="lg" asChild>
             <a
-              href={releaseData.allReleasesUrl || GITHUB_ACTIONS_URL}
+              href={releaseData?.allReleasesUrl || GITHUB_ACTIONS_URL}
               target="_blank"
               rel="noopener noreferrer"
             >

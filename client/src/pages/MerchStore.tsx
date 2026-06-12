@@ -577,21 +577,21 @@ export default function MerchStore() {
             },
             {
               label: "Orders (Month)",
-              value: stats.ordersThisMonth || 0,
+              value: stats?.ordersThisMonth || 0,
               sub: "Orders this month",
               icon: ShoppingCart,
               color: "text-blue-500",
             },
             {
               label: "Total Orders",
-              value: stats.totalOrders || 0,
+              value: stats?.totalOrders || 0,
               sub: "All time orders",
               icon: TrendingUp,
               color: "text-purple-500",
             },
             {
               label: "Low Stock",
-              value: stats.inventoryAlerts || 0,
+              value: stats?.inventoryAlerts || 0,
               sub: "Items needing restock",
               icon: AlertCircle,
               color: "text-destructive",
@@ -643,7 +643,7 @@ export default function MerchStore() {
                     <CardContent className="h-48" />
                   </Card>
                 ))
-              ) : filteredItems.length === 0 ? (
+              ) : (filteredItems?.length ?? 0) === 0 ? (
                 <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border rounded-lg bg-muted/10">
                   <Package className="h-14 w-14 text-muted-foreground mb-4 opacity-30" />
                   <h3 className="text-lg font-semibold">No products yet</h3>

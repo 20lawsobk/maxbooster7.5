@@ -467,7 +467,7 @@ function StatsBar({
             })
           : "Never",
       icon: <Clock className="h-4 w-4 text-amber-500" />,
-      sub: stats.lastRunAt
+      sub: stats?.lastRunAt
         ? new Date(stats.lastRunAt).toLocaleTimeString(undefined, {
             hour: "2-digit",
             minute: "2-digit",

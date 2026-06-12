@@ -5007,7 +5007,7 @@ export default function Marketplace() {
                         <CardContent className="h-48" />
                       </Card>
                     ))
-                  ) : merchItems.length === 0 ? (
+                  ) : (merchItems?.length ?? 0) === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/10">
                       <Package className="h-12 w-12 text-muted-foreground mb-4" />
                       <h3 className="text-lg font-semibold">
@@ -5113,7 +5113,7 @@ export default function Marketplace() {
                               <TableCell colSpan={5} className="h-12" />
                             </TableRow>
                           ))
-                        ) : merchOrders.length === 0 ? (
+                        ) : (merchOrders?.length ?? 0) === 0 ? (
                           <TableRow>
                             <TableCell
                               colSpan={5}
