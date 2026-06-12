@@ -2808,9 +2808,9 @@ export default function Analytics() {
                   <Skeleton key={i} className="h-24" />
                 ))}
               </div>
-            ) : (alertsData.data.length ?? 0) > 0 ? (
+            ) : (alertsData?.data?.length ?? 0) > 0 ? (
               <div className="space-y-4">
-                {alertsData.data.map(
+                {alertsData?.data?.map(
                   (alert) => {
                     const priorityColors: Record<string, string> = {
                       critical:

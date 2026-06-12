@@ -106,7 +106,7 @@ export function SmartNextActionWidget() {
     if (recommendation && !isDismissed) {
       trackImpressionMutation.mutate(recommendation.action);
     }
-  }, [recommendation.action]);
+  }, [recommendation?.action]);
 
   const handleDismiss = () => {
     setIsDismissed(true);

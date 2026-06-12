@@ -284,12 +284,12 @@ function WorkflowDialog({
   });
 
   const triggersByCategory: Record<string, TriggerDef[]> = {};
-  for (const t of catalog.triggers) {
+  for (const t of catalog?.triggers ?? []) {
     if (!triggersByCategory[t.category]) triggersByCategory[t.category] = [];
     triggersByCategory[t.category].push(t);
   }
 
-  const selectedTrigger = catalog.triggers.find((t) => t.id === triggerEvent);
+  const selectedTrigger = catalog?.triggers?.find((t) => t.id === triggerEvent);
 
   const canSave =
     name.trim().length > 0 &&
