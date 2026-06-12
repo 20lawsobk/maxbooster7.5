@@ -20,3 +20,5 @@
 - [Unused params can hide missing impl](unused-param-missing-impl.md) — `_`-prefixing a TS6133 param is behavior-preserving but masks intent; audit for accepted-but-not-processed + sibling-inconsistency patterns
 - [TS2339 drift vs unbuilt feature](ts2339-drift-vs-unbuilt.md) — "property X on {drizzle row}" is ambiguous: add to schema ONLY if NEON DB has the column, else it is unbuilt feature (schema-add → runtime crash); check NEON per table first
 - [tsx vs esbuild standalone scanner](tsx-vs-esbuild-scanner.md) — esbuild --bundle=false MISSES syntax errors inside generic type args (Promise<X?.Y>); use tsx's own esbuild transform API as the authoritative scanner
+- [PDIM fast-fail gap cap](pdim-fast-fail-gap-cap.md) — fast-fail estimate must cap the live gap at floor×8; raw 2000ms ceiling causes fast-fail at 3 callers (3/2×2000=3000>2500), starving recovery in production
+- [DiffBG MaxCore availability check](diffbg-maxcore-check.md) — check external MaxCore URL as second tier before local Python fallback; local Gateway (port 8008) not running in prod so always fell back and logged "not available"
