@@ -231,11 +231,11 @@ export default function ProducerProfilePage() {
     enabled: !!producerId,
     staleTime: 5 * 60 * 1000,
   });
-  const allProducers = allProducersData.producers || [];
+  const allProducers = allProducersData?.producers || [];
 
   const handlePlayBeat = (beat: Beat) => {
     if (playingBeatId === beat.id) {
-      audioRef.current.pause();
+      audioRef.current?.pause();
       setPlayingBeatId(null);
     } else {
       if (audioRef.current) {
@@ -261,10 +261,10 @@ export default function ProducerProfilePage() {
   };
 
   const getLicensePrice = (beat: Beat, licenseType: string) => {
-    const opt = beat.licenseOptions.find((o) => o.licenseType === licenseType);
+    const opt = (beat.licenseOptions || []).find((o) => o.licenseType === licenseType);
     if (opt) return opt.priceCents / 100;
     const def = DEFAULT_LICENSES.find((l) => l.licenseType === licenseType);
-    return beat.price * (def.multiplier || 1);
+    return beat.price * (def?.multiplier ?? 1);
   };
 
   if (authLoading || producerLoading) {
@@ -374,13 +374,13 @@ export default function ProducerProfilePage() {
               <div className="flex gap-2">
                 <Button
                   className={
-                    followStatus.isFollowing
+                    followStatus?.isFollowing
                       ? ""
                       : "bg-gradient-to-r from-blue-600 to-purple-600"
                   }
-                  variant={followStatus.isFollowing ? "outline" : "default"}
+                  variant={followStatus?.isFollowing ? "outline" : "default"}
                   onClick={() =>
-                    followStatus.isFollowing
+                    followStatus?.isFollowing
                       ? unfollowMutation.mutate()
                       : followMutation.mutate()
                   }
@@ -388,7 +388,7 @@ export default function ProducerProfilePage() {
                     followMutation.isPending || unfollowMutation.isPending
                   }
                 >
-                  {followStatus.isFollowing ? (
+                  {followStatus?.isFollowing ? (
                     <>
                       <UserCheck className="w-4 h-4 mr-2" /> Following
                     </>
