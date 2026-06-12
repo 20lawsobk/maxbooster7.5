@@ -3496,7 +3496,7 @@ export default function Distribution() {
                           </div>
                           <div className="text-right">
                             <p className="text-lg font-bold text-green-600">
-                              ${payout.amount.toFixed(2)}
+                              ${(payout?.amount ?? 0).toFixed(2)}
                             </p>
                             <Badge
                               variant="default"

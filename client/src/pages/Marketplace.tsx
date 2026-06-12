@@ -4742,17 +4742,17 @@ export default function Marketplace() {
                         <div className="flex items-center space-x-4">
                           <div className="flex -space-x-2">
                             <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white">
-                              {collab.fromUser.name
+                              {(collab.fromUser?.name || "??")
                                 .substring(0, 2)
                                 .toUpperCase()}
                             </div>
                             <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white">
-                              {collab.toUser.name.substring(0, 2).toUpperCase()}
+                              {(collab.toUser?.name || "??").substring(0, 2).toUpperCase()}
                             </div>
                           </div>
                           <div>
                             <p className="font-medium">
-                              {collab.fromUser.name} → {collab.toUser.name}
+                              {collab.fromUser?.name} → {collab.toUser?.name}
                             </p>
                             <p className="text-sm text-muted-foreground capitalize">
                               {collab.type.replace("_", " ")}
