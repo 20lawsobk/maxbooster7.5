@@ -1374,7 +1374,7 @@ export default function Admin() {
                     </p>
                   </div>
                 </div>
-              ) : dnsResolverStatus.ok ? (
+              ) : dnsResolverStatus?.ok ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <span>Status</span>
@@ -1746,17 +1746,17 @@ export default function Admin() {
                       </span>
                     </div>
                   )}
-                  {bypassStatus.config.reason && (
+                  {bypassStatus.config?.reason && (
                     <p className="text-sm text-amber-700">
                       Reason: {bypassStatus.config.reason}
                     </p>
                   )}
-                  {bypassStatus.config.activatedBy && (
+                  {bypassStatus.config?.activatedBy && (
                     <p className="text-xs text-amber-600">
                       Activated by: {bypassStatus.config.activatedBy}
                     </p>
                   )}
-                  {bypassStatus.config.activatedAt && (
+                  {bypassStatus.config?.activatedAt && (
                     <p className="text-xs text-amber-600">
                       Activated at:{" "}
                       {new Date(
