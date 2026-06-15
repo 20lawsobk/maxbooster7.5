@@ -1,6 +1,28 @@
 ---
 name: MaxCore video endpoint reports done but serves no file
-description: Why "MaxCore-only" video can't work from the Max Booster repo alone — the remote render endpoint fabricates "done" and never delivers bytes
+description: Why "MaxCore-only" video can't work from the Max Booster repo alone — the remote render endpoint either fabricates "done" or fails every scene; never delivers bytes
+---
+
+# UPDATE (2026-06-13): schema changed to require `idea`, still no working render
+
+Re-probed live `secure-ai-forge.replit.app` after the owner said the endpoint was "fixed & tested":
+- `/api/generate-video` is still the ONLY video route (all alternates — `/api/generate/video`,
+  `/api/social/generate-video`, `/api/render-video`, `/api/video/generate`, etc — 404 "Cannot POST").
+- The request schema CHANGED: it now REQUIRES a top-level `idea` string (FastAPI/Pydantic 422
+  `{"detail":[{"loc":["body","idea"],"type":"missing"}]}`). The repo's current payload
+  (`hook/body/cta/topic/platform/...`) has NO `idea`, so the repo's live calls now 422. Extra
+  fields are tolerated, so adding `idea` alongside the existing body is safe & additive.
+- With `idea` present it returns 200 `{job_id}` and HONESTLY attempts a render (no longer fabricates
+  "done"), but the job goes to `status:"error"` within ~5s every time:
+  `"All scenes failed: Scene 0 failed; Scene 1 failed; ..."`. Reproducible across minimal `{idea}`,
+  rich payload+idea, and 3 spaced retries.
+- Download routes still 500; `/openapi.json` also 500. So the deployment is partially broken.
+**Net:** the render+serve bug is STILL server-side on MaxCore. Wiring `idea` into the repo is the
+only legit client change, but it can't be validated end-to-end until MaxCore renders a scene.
+**How to apply:** before claiming MaxCore video works, re-probe: submit `{idea}`, poll to `done`
+(not `error`), and download real `ftyp` bytes. If scenes fail / downloads 500, escalate to the
+MaxCore deployment owner — do not "complete" video wiring against a renderer that returns zero bytes.
+
 ---
 
 # MaxCore video: fabricated "done", no retrievable file
