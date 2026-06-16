@@ -1,9 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
-import {
-  renderMaxcoreVideo,
-  type MaxcoreJobMeta,
-} from "@/lib/video/maxcoreVideoRenderer";
 import { useLocation } from "wouter";
 import {
   Card,
@@ -579,77 +575,16 @@ export function ServerVideoGenerator({
       }
       // After polling, `data.url` is guaranteed when success is true.
       if (data.success && data.url) {
-        // MaxCore returns job metadata but its /uploads/ URL is always 404
-        // (MaxCore does not persist video files). Use the client-side Canvas
-        // renderer to generate a real, playable video from the metadata.
-        setGeneratingStage("Compositing video…");
-        setRenderProgress(0);
-
-        // The 45s server timeout covered the initial fetch. Clear it now so it
-        // cannot fire mid-render, then give the render its own generous signal:
-        // video duration × 2 + 30s (accounts for the real-time paced frame loop).
+        // MaxCore returns a real H.264 MP4 (moov-first / faststart).
+        // Use the server URL directly — no client-side re-render needed.
         clearTimeout(timeoutId);
-        const renderDurationSec = Math.max(
-          10,
-          (data.duration || duration || 10) * 2 + 30,
-        );
-        const renderController = new AbortController();
-        const renderTimeoutId = setTimeout(
-          () => renderController.abort(),
-          renderDurationSec * 1000,
-        );
-
-        // Revoke any prior blob URL
-        if (blobUrlRef.current) {
-          URL.revokeObjectURL(blobUrlRef.current);
-          blobUrlRef.current = null;
-        }
-
-        const meta: MaxcoreJobMeta = {
-          hook: data.hook || hook || undefined,
-          body: data.body || body || undefined,
-          cta: data.cta || cta || undefined,
-          topic: data.topic || textTopic || topicProp || undefined,
-          template:
-            data.template ||
-            data.template_name ||
-            selectedTemplate ||
-            undefined,
-          template_name: data.template_name || undefined,
-          width: data.width || undefined,
-          height: data.height || undefined,
-          duration: data.duration || duration || 10,
-          aspect_ratio: data.aspect_ratio || aspectRatio || undefined,
-          platform: data.platform || platform || undefined,
-          artistName: customArtistName || undefined,
-          bgColor: initialBgColor || undefined,
-          accentColor: initialAccentColor || undefined,
-          hashtags: data.hashtags || undefined,
-          content_confidence: data.content_confidence ?? undefined,
-          sentiment_score: data.sentiment_score ?? undefined,
-          sentiment_label: data.sentiment_label ?? undefined,
-        };
-
-        const rendered = await renderMaxcoreVideo(meta, {
-          fps: 30,
-          onProgress: (pct) => {
-            setRenderProgress(pct);
-            setGeneratingStage(`Compositing… ${pct}%`);
-          },
-          signal: renderController.signal,
-        }).finally(() => clearTimeout(renderTimeoutId));
-
-        blobUrlRef.current = rendered.blobUrl;
-
-        applyVideoResult({
-          ...data,
-          url: rendered.blobUrl,
-          width: rendered.width,
-          height: rendered.height,
-        });
+        applyVideoResult(data);
+        const w = data.width || 1080;
+        const h = data.height || 1920;
+        const dur = data.duration || duration || 10;
         toast({
           title: "Video Ready",
-          description: `${rendered.width}×${rendered.height} · ${rendered.duration}s promotional video`,
+          description: `${w}×${h} · ${dur}s · MaxCore H.264`,
         });
       } else {
         throw new Error(data.error || "Video generation failed");
