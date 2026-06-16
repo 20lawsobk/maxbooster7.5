@@ -3,25 +3,34 @@ name: MaxCore video endpoint reports done but serves no file
 description: Why "MaxCore-only" video can't work from the Max Booster repo alone — the remote render endpoint either fabricates "done" or fails every scene; never delivers bytes
 ---
 
-# UPDATE (2026-06-13): schema changed to require `idea`, still no working render
+# UPDATE (2026-06-13): render now WORKS; the blocker moved to binary file DELIVERY
 
 Re-probed live `secure-ai-forge.replit.app` after the owner said the endpoint was "fixed & tested":
 - `/api/generate-video` is still the ONLY video route (all alternates — `/api/generate/video`,
   `/api/social/generate-video`, `/api/render-video`, `/api/video/generate`, etc — 404 "Cannot POST").
-- The request schema CHANGED: it now REQUIRES a top-level `idea` string (FastAPI/Pydantic 422
-  `{"detail":[{"loc":["body","idea"],"type":"missing"}]}`). The repo's current payload
-  (`hook/body/cta/topic/platform/...`) has NO `idea`, so the repo's live calls now 422. Extra
-  fields are tolerated, so adding `idea` alongside the existing body is safe & additive.
-- With `idea` present it returns 200 `{job_id}` and HONESTLY attempts a render (no longer fabricates
-  "done"), but the job goes to `status:"error"` within ~5s every time:
-  `"All scenes failed: Scene 0 failed; Scene 1 failed; ..."`. Reproducible across minimal `{idea}`,
-  rich payload+idea, and 3 spaced retries.
-- Download routes still 500; `/openapi.json` also 500. So the deployment is partially broken.
-**Net:** the render+serve bug is STILL server-side on MaxCore. Wiring `idea` into the repo is the
-only legit client change, but it can't be validated end-to-end until MaxCore renders a scene.
-**How to apply:** before claiming MaxCore video works, re-probe: submit `{idea}`, poll to `done`
-(not `error`), and download real `ftyp` bytes. If scenes fail / downloads 500, escalate to the
-MaxCore deployment owner — do not "complete" video wiring against a renderer that returns zero bytes.
+- Request schema CHANGED: now REQUIRES a top-level `idea` string (Pydantic 422
+  `{"loc":["body","idea"],"type":"missing"}`). Documented body: `{ idea, platform, tone, genre,
+  goal, duration, artist_name, scenes_override? }` (`scenes_override`=`[{index,text},...]`). The
+  repo's video payload (`hook/body/cta/topic/...`) has NO `idea` → live calls 422. Extra fields
+  are tolerated, so adding `idea` is safe & additive.
+- Render is GENUINELY FIXED now: jobs reach `status:"done"`, `scenes_rendered:5`, `source:"datasets"`,
+  with a clean `url:"/uploads/videos/ai_<hex>.mp4"`. (An earlier same-day probe hit transient
+  `"All scenes failed"` — that was the model/datasets not yet loaded, NOT the steady state.)
+- **The real, persistent blocker is binary DELIVERY, server-side on MaxCore (an Express front proxy):**
+  - `GET /uploads/videos/<f>.mp4` → HTTP 500 "Internal Server Error" (`x-powered-by: Express`),
+    with AND without auth, for both fresh and prior "done" jobs.
+  - `GET /api/video-job/<id>/preview/<idx>` → 200 but `application/json`:
+    `{"error":"Upstream returned non-JSON","detail":"<raw JPEG incl. 'Lavc61.19.101'>"}` — i.e. the
+    Express front does `upstream.json()` on a BINARY response and wraps it, corrupting the bytes.
+  - All other download conventions return the SPA `index.html` (200 text/html ~1.1KB) or 404.
+  So bytes are produced but never deliverable; JSON string-escaping in the error envelope corrupts
+  them, so they're not recoverable client-side either.
+**Net:** still blocked at the source. MaxCore must (a) stream `/uploads/videos/*.mp4` as a binary
+file and (b) stop JSON-parsing binary upstream responses (mp4/jpeg) in its Express proxy. Until
+then NO Max Booster wiring yields a playable video.
+**How to apply:** before claiming MaxCore video works, re-probe end-to-end: submit `{idea,...}`,
+poll to `done`, then `curl /uploads/videos/<f>.mp4` and confirm real `ftyp` bytes (not a 500 or
+`<!DOCTYPE`). status=done is necessary but NOT sufficient — the static mount must serve the file.
 
 ---
 
