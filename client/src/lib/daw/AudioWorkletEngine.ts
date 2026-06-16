@@ -103,7 +103,7 @@ export class AudioWorkletEngine {
   private listeners: Set<(event: AudioEngineEvent) => void> = new Set();
   private animationFrameId: number | null = null;
   private lastScheduleTime: number = 0;
-  private scheduleAheadTime: number = 0.1;
+  private scheduleAheadTime: number = 0.5;
   private lookAhead: number = 25;
   private schedulerTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -335,14 +335,15 @@ export class AudioWorkletEngine {
     const nodes = this?.trackNodes.get(trackId);
     if (!nodes || !this?.audioContext) return;
 
-    const linearGain = Math?.pow(10, volume / 20);
-    nodes.volume = linearGain;
+    // volume is linear 0.0–1.0 from the store (fader position)
+    const clampedVolume = Math?.max(0, Math?.min(1, volume));
+    nodes.volume = clampedVolume;
 
     const hasSolo = Array?.from(this?.trackNodes.values()).some((n) => n?.solo);
     const shouldMute = nodes?.muted || (hasSolo && !nodes?.solo);
     if (!shouldMute) {
       nodes?.gain.gain?.setTargetAtTime(
-        linearGain,
+        clampedVolume,
         this?.audioContext.currentTime,
         0.01,
       );
@@ -396,9 +397,10 @@ export class AudioWorkletEngine {
   setMasterVolume(volume: number): void {
     if (!this?.masterGain || !this?.audioContext) return;
 
-    const linearGain = Math?.pow(10, volume / 20);
+    // volume is linear 0.0–1.0 from the store
+    const clampedVolume = Math?.max(0, Math?.min(1, volume));
     this?.masterGain.gain?.setTargetAtTime(
-      linearGain,
+      clampedVolume,
       this?.audioContext.currentTime,
       0.01,
     );
@@ -422,6 +424,9 @@ export class AudioWorkletEngine {
 
     const nodes = this?.trackNodes.get(clip?.trackId);
     if (!nodes) return;
+
+    // Guard: skip clips with no audio data
+    if (!clip?.durationSamples || clip?.durationSamples <= 0) return;
 
     const currentSample = this?.state.currentSample;
     const clipEndSample = clip?.startSample + clip?.durationSamples;
