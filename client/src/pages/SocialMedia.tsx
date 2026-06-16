@@ -2417,18 +2417,12 @@ export default function SocialMedia() {
                               {item.format === "video" && item.mediaUrl && (
                                 <div className="mb-2">
                                   <video
+                                    src={item.mediaUrl}
                                     controls
                                     muted
                                     playsInline
                                     className="max-w-full h-auto rounded-lg border"
-                                  >
-                                    <source
-                                      src={item.mediaUrl}
-                                      type="video/mp4"
-                                    />
-                                    Your browser does not support the video
-                                    element.
-                                  </video>
+                                  />
                                   <div className="flex justify-between items-center mt-1">
                                     <span className="text-xs text-muted-foreground">
                                       AI-generated video clip
@@ -2872,18 +2866,12 @@ export default function SocialMedia() {
                                 ) : item.format === "video" && item.mediaUrl ? (
                                   <div className="mb-2">
                                     <video
+                                      src={item.mediaUrl}
                                       controls
                                       muted
                                       playsInline
                                       className="max-w-full h-auto rounded-lg border"
-                                    >
-                                      <source
-                                        src={item.mediaUrl}
-                                        type="video/mp4"
-                                      />
-                                      Your browser does not support the video
-                                      element.
-                                    </video>
+                                    />
                                     <div className="flex justify-between items-center mt-1">
                                       <span className="text-xs text-muted-foreground">
                                         AI-generated video clip
