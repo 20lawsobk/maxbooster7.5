@@ -11,7 +11,7 @@ class DAWAudioProcessor extends AudioWorkletProcessor {
     this.rmsLeft = 0;
     this.rmsRight = 0;
     this.meterUpdateCounter = 0;
-    this.meterUpdateInterval = 128;
+    this.meterUpdateInterval = 16;
 
     this.port.onmessage = (event) => {
       const { type, data } = event.data;
