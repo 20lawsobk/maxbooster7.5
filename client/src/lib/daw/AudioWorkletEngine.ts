@@ -117,6 +117,15 @@ export class AudioWorkletEngine {
       this.config = { ...this?.config, ...config };
     }
 
+    // Already initialized — just resume if suspended and re-emit state
+    if (this.audioContext !== null) {
+      if (this.audioContext.state === "suspended") {
+        await this.audioContext.resume().catch(() => {});
+      }
+      this?.emit({ type: "state-change", data: { initialized: true } });
+      return;
+    }
+
     try {
       this.audioContext = new AudioContext({
         sampleRate: this.config.sampleRate,
@@ -675,7 +684,14 @@ export class AudioWorkletEngine {
             !this?.scheduledSources.has(clip?.id) ||
             this?.scheduledSources.get(clip?.id)!.length === 0
           ) {
-            this?.scheduleClipPlayback(clip);
+            try {
+              this?.scheduleClipPlayback(clip);
+            } catch (e) {
+              logger?.warn(
+                `[AudioWorkletEngine] Scheduler failed for clip ${clip?.id}:`,
+                e,
+              );
+            }
           }
         }
       });
@@ -695,7 +711,14 @@ export class AudioWorkletEngine {
 
   private scheduleAllClips(): void {
     this?.clips.forEach((clip) => {
-      this?.scheduleClipPlayback(clip);
+      try {
+        this?.scheduleClipPlayback(clip);
+      } catch (e) {
+        logger?.warn(
+          `[AudioWorkletEngine] Failed to schedule clip ${clip?.id}:`,
+          e,
+        );
+      }
     });
   }
 
