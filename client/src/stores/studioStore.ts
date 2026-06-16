@@ -115,6 +115,7 @@ export interface TransportState {
   loopStart: number;
   loopEnd: number;
   tempo: number;
+  timeSignature: string;
   timeSignatureNumerator: number;
   timeSignatureDenominator: number;
   metronomeEnabled: boolean;
@@ -390,6 +391,7 @@ const initialState = {
     loopStart: 0,
     loopEnd: 16,
     tempo: 120,
+    timeSignature: "4/4",
     timeSignatureNumerator: 4,
     timeSignatureDenominator: 4,
     metronomeEnabled: false,

@@ -27,6 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useProjectSync } from "@/hooks/useProjectSync";
 import { apiRequest } from "@/lib/queryClient";
 import { FlowStatePluginBrowser } from "./FlowStatePluginBrowser";
+import { PluginRack } from "./PluginRack";
+import type { PluginInstance } from "./PluginRack";
 import { FlowStateAIPanel } from "./FlowStateAIPanel";
 import { AIMusicGenerator } from "./AIMusicGenerator";
 import { FlowStateKeyboardShortcuts } from "./FlowStateKeyboardShortcuts";
@@ -49,7 +51,14 @@ import { AudioDeviceDialog } from "./AudioDeviceDialog";
 import MobileLyricsPanel from "./MobileLyricsPanel";
 import MobileAudioDialog from "./MobileAudioDialog";
 import { usePlatform } from "@/hooks/usePlatform";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { useAudioEngine } from "@/hooks/useAudioEngine";
 
@@ -116,6 +125,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     useState(false);
   const [showProjectSettings, setShowProjectSettings] = useState(false);
   const [showVersionManagement, setShowVersionManagement] = useState(false);
+  const [showPluginRackTrackId, setShowPluginRackTrackId] = useState<string | null>(null);
   const [projectVersions, setProjectVersions] = useState<
     Array<{
       id: string;
@@ -878,7 +888,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     (seconds: number) => {
       const beatsPerSecond = transport.tempo / 60;
       const totalBeats = seconds * beatsPerSecond;
-      const timeSigParts = transport.timeSignature.split("/") || ["4", "4"];
+      const timeSigParts = ((transport.timeSignature as string) || "4/4").split("/");
       const numerator = parseInt(timeSigParts[0], 10) || 4;
       const bars = Math.floor(totalBeats / numerator) + 1;
       const beats = Math.floor(totalBeats % numerator) + 1;
@@ -1120,11 +1130,17 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     [audioEngine],
   );
 
-  const handlePlay = useCallback(() => {
+  const handlePlay = useCallback(async () => {
     store.play();
-    if (audioInitializedRef.current) {
-      audioEngine.play();
+    if (!audioInitializedRef.current) {
+      try {
+        await audioEngine.initialize();
+        audioInitializedRef.current = true;
+      } catch (_e) {
+        return;
+      }
     }
+    audioEngine.play();
   }, [store, audioEngine]);
 
   const handlePause = useCallback(() => {
@@ -1585,6 +1601,14 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onRedo={() => store.redo()}
         onSave={handleSave}
         onTempoChange={(tempo) => store.setTempo(tempo)}
+        onTimeSignatureChange={(ts) => {
+          const [n, d] = ts.split("/").map(Number);
+          store.setTransport({
+            timeSignature: ts,
+            timeSignatureNumerator: n || 4,
+            timeSignatureDenominator: d || 4,
+          });
+        }}
         onOpenPlugins={() => {
           setPluginFilter("all");
           setShowPluginBrowser(true);
@@ -2145,6 +2169,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                       handleTrackUpdate(id, updates)
                     }
                     onDeleteTrack={handleDeleteTrack}
+                    onOpenPluginRack={(trackId) => setShowPluginRackTrackId(trackId)}
                     onDuplicateTrack={(id) => {
                       store.duplicateTrack(id);
                       toast({ title: "Track Duplicated" });
@@ -2556,13 +2581,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             updates.timeSignatureNumerator !== undefined ||
             updates.timeSignatureDenominator !== undefined
           ) {
+            const newNumerator = updates.timeSignatureNumerator ?? transport.timeSignatureNumerator;
+            const newDenominator = updates.timeSignatureDenominator ?? transport.timeSignatureDenominator;
             store.setTransport({
-              timeSignatureNumerator:
-                updates.timeSignatureNumerator ??
-                transport.timeSignatureNumerator,
-              timeSignatureDenominator:
-                updates.timeSignatureDenominator ??
-                transport.timeSignatureDenominator,
+              timeSignatureNumerator: newNumerator,
+              timeSignatureDenominator: newDenominator,
+              timeSignature: `${newNumerator}/${newDenominator}`,
             });
           }
           if (updates.sampleRate)
@@ -2571,6 +2595,33 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             store.setProject({ bitDepth: updates.bitDepth });
         }}
       />
+
+      {/* ── Per-Track Plugin Rack Dialog ── */}
+      {showPluginRackTrackId !== null && (() => {
+        const pluginTrack = tracks.find((t) => t.id === showPluginRackTrackId);
+        if (!pluginTrack) return null;
+        return (
+          <Dialog open onOpenChange={(o) => { if (!o) setShowPluginRackTrackId(null); }}>
+            <DialogContent className="max-w-2xl bg-[#1a1a1e] border-[#333] text-white p-0 overflow-hidden">
+              <DialogHeader className="px-4 pt-4 pb-2 border-b border-[#333]">
+                <DialogTitle className="text-sm font-semibold flex items-center gap-2">
+                  <span style={{ color: pluginTrack.color as string }} className="w-2 h-2 rounded-full bg-current inline-block" />
+                  {pluginTrack.name as string} — FX Chain
+                </DialogTitle>
+              </DialogHeader>
+              <div className="overflow-auto max-h-[70vh]">
+                <PluginRack
+                  trackId={pluginTrack.id as string}
+                  plugins={(pluginTrack.plugins as PluginInstance[]) || []}
+                  onPluginsChange={(plugins) =>
+                    store.updateTrack(pluginTrack.id as string, { plugins })
+                  }
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
 
       <CrashRecoveryDialog
         onRecover={(data) => {
@@ -2868,6 +2919,7 @@ interface TransportBarProps {
   onRedo: () => void;
   onSave: () => void;
   onTempoChange: (tempo: number) => void;
+  onTimeSignatureChange: (ts: string) => void;
   onOpenPlugins: () => void;
   onOpenAI: () => void;
   onOpenGenerator: () => void;
@@ -2931,6 +2983,7 @@ function TransportBar({
   onToggleFullscreen,
   masterVolume = 0.8,
   onMasterVolumeChange,
+  onTimeSignatureChange,
 }: TransportBarProps) {
   return (
     <div
@@ -3234,16 +3287,26 @@ function TransportBar({
           <span className="text-[10px] text-gray-500 uppercase tracking-wider">
             SIG
           </span>
-          <span
-            className="font-mono text-sm font-semibold px-2 py-0.5 rounded"
-            style={{
-              background: "#080b0d",
-              border: "1px solid #1e2a2e",
-              color: "#94a3b8",
-            }}
+          <Select
+            value={(transport.timeSignature as string) || "4/4"}
+            onValueChange={onTimeSignatureChange}
           >
-            {transport.timeSignature || "4/4"}
-          </span>
+            <SelectTrigger
+              className="h-7 w-20 text-xs font-mono font-semibold border-0 focus:ring-0 px-2"
+              style={{
+                background: "#080b0d",
+                border: "1px solid #1e2a2e",
+                color: "#94a3b8",
+              }}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#1e1e22] border-[#444] text-white">
+              {["2/4","3/4","4/4","5/4","6/4","7/4","2/2","3/2","6/8","7/8","9/8","12/8"].map((ts) => (
+                <SelectItem key={ts} value={ts} className="text-xs font-mono hover:bg-[#333]">{ts}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="h-6 w-px bg-[#444]" />
@@ -3674,6 +3737,7 @@ interface ArrangeViewProps {
   onUpdateTrack: (id: string, updates: Record<string, unknown>) => void;
   onDeleteTrack: (id: string) => void;
   onDuplicateTrack: (id: string) => void;
+  onOpenPluginRack?: (trackId: string) => void;
   showAutomation?: boolean;
   automationLanes?: Record<string, unknown>[];
   onAutomationLanesChange?: (lanes: Record<string, unknown>[]) => void;
@@ -3697,6 +3761,7 @@ function ArrangeView({
   onUpdateTrack,
   onDeleteTrack,
   onDuplicateTrack,
+  onOpenPluginRack,
   showAutomation,
   automationLanes = [],
   onAutomationLanesChange,
@@ -3862,6 +3927,7 @@ function ArrangeView({
               onUpdate={(updates) => onUpdateTrack(track.id, updates)}
               onDelete={() => onDeleteTrack(track.id)}
               onDuplicate={() => onDuplicateTrack(track.id)}
+              onOpenPluginRack={onOpenPluginRack ? () => onOpenPluginRack(track.id as string) : undefined}
               allTracks={allTracks}
             />
             {showAutomation && (
@@ -3925,6 +3991,7 @@ interface TrackLaneProps {
   onUpdate: (updates: Record<string, unknown>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
+  onOpenPluginRack?: () => void;
   allTracks?: Record<string, unknown>[];
 }
 
@@ -3940,6 +4007,7 @@ function TrackLane({
   onUpdate,
   onDelete,
   onDuplicate,
+  onOpenPluginRack,
   allTracks = [],
 }: TrackLaneProps) {
   const height = track.collapsed ? 40 : track.height || 80;
@@ -4081,6 +4149,19 @@ function TrackLane({
               >
                 R
               </button>
+              {onOpenPluginRack && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenPluginRack();
+                  }}
+                  className="shrink-0 flex items-center justify-center rounded font-bold leading-none bg-[#333] hover:bg-purple-600/60 text-purple-400 hover:text-white transition-colors"
+                  style={{ width: 20, height: 20, fontSize: 9 }}
+                  title="Open Plugin Chain"
+                >
+                  FX
+                </button>
+              )}
             </div>
 
             {/* Row 3: volume + pan (only when not collapsed) */}
