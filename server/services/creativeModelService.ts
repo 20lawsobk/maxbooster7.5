@@ -1025,6 +1025,9 @@ async function assemblyStage(
   );
 
   const videoPayload = {
+    idea: [plan.hooks?.[0], brief?.artistName, musicMeta.genre, brief?.domain]
+      .filter(Boolean)
+      .join(" — ") || "music video",
     hook: plan.hooks?.[0] ?? `${brief?.domain ?? "music"} video`,
     body:
       plan?.beats?.[0]?.visualDescription ??
