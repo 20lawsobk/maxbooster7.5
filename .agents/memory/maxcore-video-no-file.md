@@ -1,65 +1,54 @@
 ---
-name: MaxCore video endpoint — delivery blocker resolved via scene assembly fallback
-description: MaxCore renders (status=done, scenes=[...]) but its Express proxy can't serve the binary file. Solved with a local FFmpeg scene-assembly fallback wired into pollVideoJob.
+name: MaxCore video endpoint — fully working end-to-end (2026-06-16)
+description: MaxCore renders AND delivers binary MP4. Pipeline is complete. FFmpeg fallback stays as safety net but no longer triggers in normal operation.
 ---
 
-# Current state (2026-06-16): RESOLVED via local FFmpeg fallback
+# Current state (2026-06-16): FULLY WORKING
 
-MaxCore's binary delivery is still broken at the proxy layer (HTTP 500 on
-`/uploads/videos/*.mp4`), but the full pipeline is now working end-to-end because
-`advancedVideoRendererService.ts` assembles the video locally with FFmpeg whenever
-MaxCore renders scenes but can't serve the file.
+Both render AND binary delivery are confirmed working on MaxCore (`secure-ai-forge.replit.app`).
 
-## Root cause (unchanged)
+## Confirmed live
 
-MaxCore's Node.js proxy at port 8080 (in front of the Python renderer at port 9878)
-tries to `upstream.json()` on binary responses — it 500s for mp4 files and JSON-wraps
-JPEG preview frames. The correct auth header is `X-Admin-Key: <key>` (now also sent
-alongside `X-API-Key` / `Authorization: Bearer`). Auth was NOT the cause of the 500.
+- `POST /api/generate-video` with `{idea, platform, tone, genre, goal, duration, artist_name}` → `{job_id}` ✅
+- `GET /api/video-job/<id>` → `status:"done"` with `url:"/uploads/videos/ai_<hex>.mp4"`, `width:1080`, `height:1920`, `duration:15` ✅
+- `GET /uploads/videos/ai_<hex>.mp4` with `X-Admin-Key` header → `HTTP 200 video/mp4 1.9 MB ftyp` ✅
 
-## What was fixed in this repo (2026-06-16)
+## Full pipeline (normal operation)
 
-1. **`idea` field wired everywhere** — MaxCore's `/api/generate-video` now requires a
-   top-level `idea` string (Pydantic 422 if absent). Added to:
-   - `advancedVideoRendererService.ts`: synthesised from `hook + artist_name + genre + topic`
-   - `creativeModelService.ts`: synthesised from `hooks[0] + artistName + genre + domain`
-   Both are additive; extra legacy fields are tolerated by MaxCore.
+1. Submit `POST /api/generate-video` with `idea` field (required — 422 without it)
+2. Poll `GET /api/video-job/<id>` until `status:"done"` (~10s render time)
+3. `cacheVideoLocally()` downloads the file with `maxcoreAuthHeaders()` (`X-Admin-Key` + `X-API-Key` + `Authorization: Bearer`) → saves to `uploads/videos/`
+4. Returns `/uploads/videos/<filename>` served via `express.static`
+5. FFmpeg fallback stays dormant (only triggers when `servedUrl.startsWith("/api/social/video-proxy/")`)
 
-2. **`X-Admin-Key` added to all auth headers** — `maxcoreClient.ts` `authHeaders()` and
-   `advancedVideoRendererService.ts` `maxcoreAuthHeaders()` now send `X-Admin-Key` in
-   addition to the previous `X-API-Key` / `Authorization: Bearer`.
+## Auth chain
 
-3. **`assembleVideoFromScenes()` — FFmpeg local fallback** — when `pollVideoJob` gets
-   `status:"done"` with `scenes:[{type,text},...]` but `cacheVideoLocally` falls back to
-   the proxy path (meaning no bytes were retrieved), it now calls `assembleVideoFromScenes`.
-   The function spawns sequential FFmpeg processes (one per scene) with per-type coloured
-   backgrounds + centred drawtext overlays, then concat-muxes them into a final MP4.
-   Output goes to `uploads/videos/ai_<jobId_prefix>_assembled.mp4`, served immediately
-   via the existing `express.static` mount at `/uploads/videos`.
+All endpoints require `X-Admin-Key: <key>` header.
+MaxCore architecture: `secure-ai-forge.replit.app` → Vite @ 5000 → Node.js proxy @ 8080 → Python renderer @ 9878.
+The 8080 proxy forwards `X-Admin-Key` to 9878. All three headers (`X-Admin-Key`, `X-API-Key`, `Authorization: Bearer`) are sent by this repo on every call.
 
-4. **`MaxCoreVideoStatus` interface** — typed the poll response (was `unknown`) so
-   `status.scenes`, `status.width`, `status.height`, `status.duration` are accessible
-   without casts.
+## `idea` field requirement
 
-## Verified live (2026-06-16)
+MaxCore's `/api/generate-video` requires a top-level `idea` string (Pydantic 422 if absent).
+Wired in:
+- `advancedVideoRendererService.ts`: synthesised from `hook + artist_name + genre + topic`
+- `creativeModelService.ts`: synthesised from `hooks[0] + artistName + genre + domain`
 
-- FFmpeg command syntax: exit=0, valid `ftyp` bytes for all 5 scene types (hook/build/body/drop/outro)
-- Final concat: exit=0, 179 KB MP4, `ftyp` magic confirmed
-- Running app serves assembled file: `HTTP 200 video/mp4 183375 bytes ftyp` ✅
-- MaxCore accepts new `idea`-first payload: `{"job_id":"..."}` ✅
+## FFmpeg scene-assembly fallback
 
-## How to apply
+Still in place in `advancedVideoRendererService.ts` as a safety net. Triggers only when
+`cacheVideoLocally` returns a proxy-path URL AND `status.scenes?.length > 0`. Verified
+independently: produces valid 179KB MP4 with `ftyp` magic from 5 MaxCore scenes.
 
-When diagnosing a "video didn't assemble" report, check the log for:
-- `[AdvancedVideoRenderer] Download unavailable — assembling N scenes locally with FFmpeg`
-- `[SceneAssembly] Scene X/N rendered (Ys, type)`
-- `[SceneAssembly] N scenes assembled → ai_<id>_assembled.mp4`
+## How to verify end-to-end
 
-If `assembleVideoFromScenes` silently returns `null`, check FFmpeg stderr — the last 300
-chars are captured in the error message. The most common failure modes are: text
-containing chars that weren't sanitised (add to the regex), or `LOCAL_VIDEO_DIR` not
-writable (mkdir -p guard is already present).
-
-Once MaxCore's proxy is fixed to stream binary, the `cacheVideoLocally` path will
-succeed first and `assembleVideoFromScenes` will not trigger (the condition gates on
-`servedUrl.startsWith("/api/social/video-proxy/")`, which only fires on fallback).
+```bash
+JOB=$(curl -sS -H "X-Admin-Key: $AI_SERVER_KEY" -H "Content-Type: application/json" \
+  -d '{"idea":"test","platform":"tiktok","tone":"cinematic","genre":"trap","goal":"growth","duration":15,"artist_name":"Test"}' \
+  "$AI_SERVER_URL/api/generate-video")
+JOB_ID=$(echo "$JOB" | grep -oP '"job_id"\s*:\s*"\K[^"]+')
+# poll until done, then:
+curl -sS -H "X-Admin-Key: $AI_SERVER_KEY" "$AI_SERVER_URL/uploads/videos/ai_<hex>.mp4" \
+  -o /tmp/test.mp4 -w "HTTP=%{http_code} type=%{content_type} size=%{size_download}\n"
+od -An -c -j4 -N4 /tmp/test.mp4  # must print 'ftyp'
+```
