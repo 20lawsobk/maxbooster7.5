@@ -43,6 +43,7 @@ export class MaxCoreAIClient {
 
   private static authHeaders(): Record<string, string> {
     return {
+      "X-Admin-Key": MC_AI_KEY,
       "X-API-Key": MC_AI_KEY,
       Authorization: `Bearer ${MC_AI_KEY}`,
     };

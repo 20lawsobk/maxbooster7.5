@@ -5,7 +5,9 @@
  * No local FFmpeg fallback. No Python AI fallback.
  */
 
+import { spawn } from "child_process";
 import fsPromises from "fs/promises";
+import { tmpdir } from "os";
 import path from "path";
 import { logger } from "../logger.js";
 import type {
@@ -76,6 +78,7 @@ function urlStoreSet(filename: string, url: string): void {
 
 function maxcoreAuthHeaders(): Record<string, string> {
   return {
+    "X-Admin-Key": MC_AI_KEY,
     "X-API-Key": MC_AI_KEY,
     Authorization: `Bearer ${MC_AI_KEY}`,
   };
@@ -271,6 +274,184 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
   return `/api/social/video-proxy/${filename}`;
 }
 
+// ── MaxCore video job status type ─────────────────────────────────────────────
+
+interface MaxCoreVideoStatus {
+  status: string;
+  url?: string;
+  filename?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  aspect_ratio?: string;
+  hook?: string;
+  body?: string;
+  cta?: string;
+  template?: string;
+  template_name?: string;
+  scenes_rendered?: number;
+  scenes?: Array<{ type: string; text: string }>;
+  genre_detected?: string;
+  tone_used?: string;
+  source?: string;
+  error?: string;
+}
+
+// ── Scene-based video assembly (FFmpeg fallback) ───────────────────────────────
+
+const SCENE_BG: Record<string, string> = {
+  hook:  "0x1a0a2e",
+  build: "0x0a1a30",
+  body:  "0x0a2e1a",
+  drop:  "0x2e0a0a",
+  outro: "0x1a1a08",
+};
+
+const SCENE_DURATION_S: Record<string, number> = {
+  hook:  4,
+  build: 3,
+  body:  4,
+  drop:  4,
+  outro: 3,
+};
+
+/**
+ * Assemble a real MP4 from MaxCore scene data using local FFmpeg.
+ *
+ * Called automatically when MaxCore renders successfully (status=done, scenes=[...])
+ * but its file-serving layer cannot deliver the bytes (500 on /uploads/videos/*).
+ * Each scene becomes a styled text-overlay clip; all clips are concatenated into
+ * one playable MP4 and written to LOCAL_VIDEO_DIR.
+ *
+ * Returns the served URL (/uploads/videos/<filename>) or null on failure.
+ */
+async function assembleVideoFromScenes(
+  scenes: Array<{ type: string; text: string }>,
+  opts: {
+    jobId: string;
+    width?: number;
+    height?: number;
+    duration?: number;
+  },
+): Promise<string | null> {
+  if (!scenes || scenes.length === 0) return null;
+
+  const W = opts.width ?? 1080;
+  const H = opts.height ?? 1920;
+  const totalDuration = opts.duration ?? scenes.length * 3;
+  const clipS = Math.max(2, Math.min(6, Math.floor(totalDuration / scenes.length)));
+  const fontSize = Math.floor(W / 16);
+  const labelSize = Math.floor(W / 35);
+
+  const tmpDir = await fsPromises.mkdtemp(path.join(tmpdir(), "maxcore-scenes-"));
+  const clipPaths: string[] = [];
+
+  try {
+    for (let i = 0; i < scenes.length; i++) {
+      const scene = scenes[i];
+      const clipPath = path.join(tmpDir, `scene_${i}.mp4`);
+      const bgColor = SCENE_BG[scene.type] ?? "0x111111";
+      const sceneClipS = SCENE_DURATION_S[scene.type] ?? clipS;
+
+      // Sanitize text — strip chars that confuse FFmpeg's drawtext filter parser
+      const txt = (scene.text ?? "")
+        .replace(/['":\\,[\]]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .slice(0, 55);
+      const label = (scene.type ?? "").toUpperCase().replace(/['":\\,[\]]/g, "");
+
+      await new Promise<void>((resolve, reject) => {
+        const vf = [
+          `drawtext=text='${txt}':fontcolor=white:fontsize=${fontSize}` +
+            `:x=(w-text_w)/2:y=(h-text_h)/2` +
+            `:box=1:boxcolor=black@0.35:boxborderw=20`,
+          `drawtext=text='${label}':fontcolor=#aaaaaa:fontsize=${labelSize}` +
+            `:x=60:y=60`,
+        ].join(",");
+        const args = [
+          "-y",
+          "-f", "lavfi",
+          "-i", `color=c=${bgColor}:s=${W}x${H}:r=30`,
+          "-vf", vf,
+          "-t", String(sceneClipS),
+          "-c:v", "libx264",
+          "-preset", "ultrafast",
+          "-pix_fmt", "yuv420p",
+          clipPath,
+        ];
+        const proc = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
+        const errBufs: Buffer[] = [];
+        proc.stderr?.on("data", (d: Buffer) => errBufs.push(d));
+        proc.on("close", (code) => {
+          if (code === 0) {
+            resolve();
+          } else {
+            reject(
+              new Error(
+                `FFmpeg scene ${i} exit=${code}: ` +
+                  Buffer.concat(errBufs).toString().slice(-300),
+              ),
+            );
+          }
+        });
+        proc.on("error", reject);
+      });
+
+      clipPaths.push(clipPath);
+      logger.info(
+        `[SceneAssembly] Scene ${i + 1}/${scenes.length} — type=${scene.type} duration=${sceneClipS}s`,
+      );
+    }
+
+    // Write concat list
+    const listPath = path.join(tmpDir, "list.txt");
+    await fsPromises.writeFile(
+      listPath,
+      clipPaths.map((p) => `file '${p}'`).join("\n"),
+      "utf-8",
+    );
+
+    // Concatenate → final MP4
+    await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
+    const outFilename = `ai_${opts.jobId.replace(/-/g, "").slice(0, 12)}_assembled.mp4`;
+    const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
+
+    await new Promise<void>((resolve, reject) => {
+      const args = ["-y", "-f", "concat", "-safe", "0", "-i", listPath, "-c", "copy", outPath];
+      const proc = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
+      const errBufs: Buffer[] = [];
+      proc.stderr?.on("data", (d: Buffer) => errBufs.push(d));
+      proc.on("close", (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(
+            new Error(
+              `FFmpeg concat exit=${code}: ` +
+                Buffer.concat(errBufs).toString().slice(-300),
+            ),
+          );
+        }
+      });
+      proc.on("error", reject);
+    });
+
+    logger.info(
+      `[SceneAssembly] ${scenes.length} scenes assembled → ${outFilename} (${W}x${H}, ~${totalDuration}s)`,
+    );
+    return `/uploads/videos/${outFilename}`;
+  } catch (err) {
+    logger.warn(
+      `[SceneAssembly] FFmpeg assembly failed: ${(err as Error).message}`,
+    );
+    return null;
+  } finally {
+    for (const p of clipPaths) await fsPromises.unlink(p).catch(() => {});
+    await fsPromises.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
 /**
  * Poll MaxCore until the video job finishes, errors, or times out.
  * Uses poll() (not get()) so each attempt is a real HTTP request with no suppression.
@@ -283,11 +464,38 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
     await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
 
-    const status = await MaxCoreAIClient.poll<unknown>("/video-job/" + jobId);
+    const status = await MaxCoreAIClient.poll<MaxCoreVideoStatus>(
+      "/video-job/" + jobId,
+    );
     if (!status) continue;
 
     if (status.status === "done" && status.url) {
-      const servedUrl = await cacheVideoLocally(status.url);
+      let servedUrl = await cacheVideoLocally(status.url);
+
+      // If MaxCore's file-serving layer failed (proxy fallback) AND we have
+      // scene data → assemble a real playable MP4 locally with FFmpeg.
+      if (
+        servedUrl.startsWith("/api/social/video-proxy/") &&
+        status.scenes?.length
+      ) {
+        logger.info(
+          `[AdvancedVideoRenderer] Download unavailable — assembling ` +
+            `${status.scenes.length} scenes locally with FFmpeg`,
+        );
+        const assembled = await assembleVideoFromScenes(status.scenes, {
+          jobId,
+          width: status.width,
+          height: status.height,
+          duration: status.duration,
+        });
+        if (assembled) {
+          servedUrl = assembled;
+          logger.info(
+            `[AdvancedVideoRenderer] Scene assembly complete → ${assembled}`,
+          );
+        }
+      }
+
       logger.info(
         `[AdvancedVideoRenderer] Job ${jobId} done after ${attempt + 1} poll(s) — serving: ${servedUrl}`,
       );
@@ -632,6 +840,10 @@ export async function renderVideo(
 
   // ── Step 3: Direct MaxCore fallback ─────────────────────────────────────
   const jobResp = await MaxCoreAIClient?.infer<unknown>("/generate-video", {
+    idea:
+      [hook, opts.artist_name, opts.genre, opts.topic]
+        .filter(Boolean)
+        .join(" — ") || "music video",
     hook,
     body,
     cta,
