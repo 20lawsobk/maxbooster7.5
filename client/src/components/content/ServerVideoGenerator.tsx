@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp, Camera } from "lucide-react";
 
 interface ServerVideoGeneratorProps {
   platform: string;
@@ -348,6 +348,9 @@ export function ServerVideoGenerator({
 
   // Voiceover
   const [voiceover, setVoiceover] = useState(false);
+
+  // Photorealistic mode — MaxCore AI image + Ken Burns animation as the visual base
+  const [photorealistic, setPhotorealistic] = useState(false);
 
   // Common state
   const [aspectRatio, setAspectRatio] = useState(
@@ -690,8 +693,8 @@ export function ServerVideoGenerator({
       hook: hook || undefined,
       body: body || undefined,
       cta: cta || undefined,
-      template: useTemplate ? selectedTemplate : undefined,
-      quality: useTemplate ? "cinematic" : undefined,
+      template: photorealistic ? undefined : (useTemplate ? selectedTemplate : undefined),
+      quality: photorealistic ? "photorealistic" : (useTemplate ? "cinematic" : undefined),
       bg_color: initialBgColor || undefined,
       accent_color: initialAccentColor || undefined,
       voiceover,
@@ -755,6 +758,7 @@ export function ServerVideoGenerator({
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
+      quality: photorealistic ? "photorealistic" : undefined,
       voiceover,
     });
   };
@@ -819,6 +823,7 @@ export function ServerVideoGenerator({
       tone: vc.tone || tone,
       bg_color: vc.bg,
       accent_color: vc.ac,
+      quality: photorealistic ? "photorealistic" : undefined,
       voiceover,
     });
   };
@@ -1440,20 +1445,33 @@ export function ServerVideoGenerator({
                 />
               </div>
 
-              {/* Voiceover toggle */}
-              <button
-                onClick={() => setVoiceover(!voiceover)}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                  voiceover
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/50"
-                }`}
-              >
-                <Mic className="h-3 w-3" />
-                {voiceover
-                  ? "Voiceover: ON"
-                  : "Add voiceover (AI reads your text)"}
-              </button>
+              {/* Voiceover + Photorealistic toggles */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setVoiceover(!voiceover)}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    voiceover
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  <Mic className="h-3 w-3" />
+                  {voiceover ? "Voiceover: ON" : "Add voiceover"}
+                </button>
+
+                <button
+                  onClick={() => setPhotorealistic(!photorealistic)}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                    photorealistic
+                      ? "border-violet-500 bg-violet-500/10 text-violet-500"
+                      : "border-border text-muted-foreground hover:border-violet-500/50"
+                  }`}
+                  title="Use MaxCore AI to generate a photorealistic background image animated with a cinematic zoom effect"
+                >
+                  <Camera className="h-3 w-3" />
+                  {photorealistic ? "Photorealistic: ON" : "Photorealistic (AI photo)"}
+                </button>
+              </div>
 
               {/* Generate button */}
               <Button
