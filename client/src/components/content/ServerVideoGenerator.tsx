@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp, Camera } from "lucide-react";
+import { Loader2, Download, Sparkles, Clock, Layout, Film, Zap, Layers, Mic, Image, FileText, Upload, CheckCircle, ChevronDown, ChevronUp, Camera, Music, BarChart2 } from "lucide-react";
 
 interface ServerVideoGeneratorProps {
   platform: string;
@@ -47,7 +47,7 @@ interface ServerVideoGeneratorProps {
   autoStart?: boolean;
 }
 
-type InputMode = "text" | "audio" | "image";
+type InputMode = "text" | "audio" | "image" | "studio";
 
 /**
  * Shape of a video-generation job record returned by `/api/social/generate-video`
@@ -352,6 +352,19 @@ export function ServerVideoGenerator({
   // Photorealistic mode — MaxCore AI image + Ken Burns animation as the visual base
   const [photorealistic, setPhotorealistic] = useState(false);
 
+  // Music Video Studio mode state — beat-synced full-song AI video
+  const [studioAudioFile, setStudioAudioFile] = useState<File | null>(null);
+  const [studioBeatAnalysis, setStudioBeatAnalysis] = useState<{
+    bpm: number; confidence: number; durationSeconds: number;
+    sections: Array<{ startTime: number; endTime: number; type: string; label: string; avgEnergy: number }>;
+    tier: string;
+  } | null>(null);
+  const [studioGenre, setStudioGenre] = useState("hip-hop");
+  const [studioHook, setStudioHook] = useState("");
+  const [studioArtistStyle, setStudioArtistStyle] = useState("");
+  const [isAnalyzingBeat, setIsAnalyzingBeat] = useState(false);
+  const [studioMvJobId, setStudioMvJobId] = useState<string | null>(null);
+
   // Common state
   const [aspectRatio, setAspectRatio] = useState(
     PLATFORM_DEFAULT_RATIO[platform] || "9:16",
@@ -368,6 +381,7 @@ export function ServerVideoGenerator({
 
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const studioAudioInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const userCancelledRef = useRef(false);
   const [generatingElapsed, setGeneratingElapsed] = useState(0);
@@ -828,6 +842,114 @@ export function ServerVideoGenerator({
     });
   };
 
+  // ── Music Video Studio handlers ───────────────────────────────────────────────
+
+  const handleStudioAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setStudioAudioFile(file);
+    setStudioBeatAnalysis(null);
+  };
+
+  const handleAnalyzeBeat = async () => {
+    if (!studioAudioFile) return;
+    setIsAnalyzingBeat(true);
+    try {
+      const fd = new FormData();
+      fd.append("audio", studioAudioFile);
+      const resp = await fetch("/api/social/beat-analyze", {
+        method: "POST",
+        credentials: "include",
+        headers: { "X-CSRF-Token": getCsrfTokenFromCookie() || "" },
+        body: fd,
+      });
+      const data = await resp.json();
+      if (!resp.ok || !data.success) throw new Error(data.error || "Beat analysis failed");
+      setStudioBeatAnalysis(data);
+      toast({ title: "Beat Analyzed", description: `${Math.round(data.bpm)} BPM · ${data.sections?.length ?? 0} sections detected` });
+    } catch (err) {
+      toast({ title: "Analysis Failed", description: errMessage(err), variant: "destructive" });
+    } finally {
+      setIsAnalyzingBeat(false);
+    }
+  };
+
+  const handleGenerateMusicVideo = async () => {
+    if (!studioAudioFile) return;
+    setIsGenerating(true);
+    setGeneratingStage("Analyzing beats…");
+    setRenderProgress(0);
+    try {
+      const fd = new FormData();
+      fd.append("audio", studioAudioFile);
+      fd.append("ai_generate_scenes", "true");
+      fd.append("genre", studioGenre);
+      fd.append("hook", studioHook || "");
+      fd.append("artist_style", studioArtistStyle || "");
+      fd.append("artist_name", customArtistName || "");
+      fd.append("platform", platform);
+      fd.append("aspect_ratio", aspectRatio);
+      fd.append("beat_sync", "true");
+      fd.append("color_grade", "cinematic");
+      fd.append("max_scenes", "8");
+      const csrf = getCsrfTokenFromCookie();
+      if (csrf) fd.append("_csrf", csrf);
+
+      const resp = await fetch("/api/social/generate-music-video", {
+        method: "POST",
+        credentials: "include",
+        headers: { "X-CSRF-Token": csrf || "" },
+        body: fd,
+      });
+      const initData = await resp.json();
+      if (!resp.ok || !initData.success) throw new Error(initData.error || "Job start failed");
+
+      const jobId = initData.jobId as string;
+      setStudioMvJobId(jobId);
+      activeJobIdRef.current = jobId;
+      setGeneratingStage("Generating AI scenes…");
+
+      // Poll music-video-job endpoint
+      const poll = async (): Promise<void> => {
+        const jobResp = await fetch(`/api/social/music-video-job/${jobId}`, { credentials: "include" });
+        const jobData = await jobResp.json();
+        if (jobData.status === "done") {
+          const r = jobData.result as Record<string, unknown>;
+          const url = (r?.url as string) || "";
+          applyVideoResult({
+            success: true,
+            url,
+            hook: studioHook || undefined,
+            bpm: r?.bpm as number,
+            viral_score: r?.viralScore as number,
+            viral_recommendation: r?.viralRecommendation as string,
+            duration: r?.durationSeconds as number,
+            scenes_count: (r?.scenes as unknown[])?.length,
+          });
+          setIsGenerating(false);
+          setGeneratingStage("");
+          activeJobIdRef.current = null;
+          if (r?.viralScore) {
+            toast({ title: `Viral Score: ${r.viralScore}/100`, description: (r.viralRecommendation as string) || undefined });
+          }
+          return;
+        }
+        if (jobData.status === "error") {
+          throw new Error(jobData.error || "Music video generation failed");
+        }
+        await new Promise((r) => setTimeout(r, 3000));
+        return poll();
+      };
+
+      setGeneratingStage("Rendering beat-synced video…");
+      await poll();
+    } catch (err) {
+      toast({ title: "Music Video Failed", description: errMessage(err), variant: "destructive" });
+      setIsGenerating(false);
+      setGeneratingStage("");
+    }
+  };
+
   // ── Mode can be reset ─────────────────────────────────────────────────────────
 
   const resetVideo = () => {
@@ -840,6 +962,7 @@ export function ServerVideoGenerator({
       { id: "text", label: "Text", icon: <FileText className="h-3.5 w-3.5" /> },
       { id: "audio", label: "Audio", icon: <Mic className="h-3.5 w-3.5" /> },
       { id: "image", label: "Image", icon: <Image className="h-3.5 w-3.5" /> },
+      { id: "studio", label: "MV Studio", icon: <Music className="h-3.5 w-3.5" /> },
     ];
 
   // In autoStart mode show only the progress/result view — no form
@@ -1390,6 +1513,139 @@ export function ServerVideoGenerator({
                 </div>
               )}
 
+              {/* ── MUSIC VIDEO STUDIO MODE ── */}
+              {inputMode === "studio" && (
+                <div className="space-y-3">
+                  <input
+                    ref={studioAudioInputRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={handleStudioAudioChange}
+                  />
+
+                  {/* Audio upload zone */}
+                  <button
+                    onClick={() => studioAudioInputRef.current?.click()}
+                    className={`w-full rounded-lg border-2 border-dashed p-5 flex flex-col items-center gap-2 transition-colors ${
+                      studioAudioFile
+                        ? "border-emerald-500 bg-emerald-500/5"
+                        : "border-border hover:border-emerald-500/50 hover:bg-muted/30"
+                    }`}
+                  >
+                    {studioAudioFile ? (
+                      <>
+                        <Music className="h-7 w-7 text-emerald-500" />
+                        <span className="text-sm font-medium">{studioAudioFile.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {(studioAudioFile.size / 1024 / 1024).toFixed(2)} MB — click to change
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Music className="h-7 w-7 text-muted-foreground" />
+                        <span className="text-sm font-medium">Upload your track</span>
+                        <span className="text-xs text-muted-foreground">MP3, WAV, AAC, FLAC — full song length</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Analyze beat button */}
+                  {studioAudioFile && !studioBeatAnalysis && (
+                    <Button onClick={handleAnalyzeBeat} disabled={isAnalyzingBeat} variant="outline" className="w-full">
+                      {isAnalyzingBeat ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Analyzing beats…</>
+                      ) : (
+                        <><BarChart2 className="h-4 w-4 mr-2" />Analyze Track</>
+                      )}
+                    </Button>
+                  )}
+
+                  {/* Beat analysis results */}
+                  {studioBeatAnalysis && (
+                    <div className="bg-muted/40 rounded-lg p-3 space-y-2 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-sm">Track Analyzed</span>
+                        <Badge variant="secondary" className="text-[10px]">{studioBeatAnalysis.tier}</Badge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-background rounded p-2">
+                          <div className="font-bold text-base text-emerald-500">{Math.round(studioBeatAnalysis.bpm)}</div>
+                          <div className="text-muted-foreground">BPM</div>
+                        </div>
+                        <div className="bg-background rounded p-2">
+                          <div className="font-bold text-base">{studioBeatAnalysis.sections.length}</div>
+                          <div className="text-muted-foreground">Sections</div>
+                        </div>
+                        <div className="bg-background rounded p-2">
+                          <div className="font-bold text-base">{Math.floor(studioBeatAnalysis.durationSeconds / 60)}:{String(Math.round(studioBeatAnalysis.durationSeconds % 60)).padStart(2, "0")}</div>
+                          <div className="text-muted-foreground">Length</div>
+                        </div>
+                      </div>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {studioBeatAnalysis.sections.map((s, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={`text-[9px] h-4 shrink-0 ${
+                                s.type === "chorus" ? "border-emerald-500 text-emerald-500"
+                                : s.type === "verse" ? "border-blue-400 text-blue-400"
+                                : s.type === "intro" ? "border-violet-400 text-violet-400"
+                                : "border-muted-foreground text-muted-foreground"
+                              }`}
+                            >{s.type}</Badge>
+                            <span className="text-muted-foreground">{s.label}</span>
+                            <span className="ml-auto text-muted-foreground">{s.startTime.toFixed(1)}s–{s.endTime.toFixed(1)}s</span>
+                          </div>
+                        ))}
+                      </div>
+                      <button onClick={() => { setStudioBeatAnalysis(null); setStudioAudioFile(null); }} className="text-[10px] text-muted-foreground underline pt-1">
+                        Clear and re-upload
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Genre + style */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Genre</Label>
+                      <Select value={studioGenre} onValueChange={setStudioGenre}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {["hip-hop","trap","r&b","pop","electronic","edm","dance","rock","country","jazz","latin","afrobeats","drill"].map((g) => (
+                            <SelectItem key={g} value={g} className="text-xs">{g}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-1 block">Artist Style <span className="opacity-50">(optional)</span></Label>
+                      <Input
+                        value={studioArtistStyle}
+                        onChange={(e) => setStudioArtistStyle(e.target.value)}
+                        placeholder="dark and moody…"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Hook text */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-1 block">Hook / Lyric <span className="opacity-50">(optional overlay)</span></Label>
+                    <Input
+                      value={studioHook}
+                      onChange={(e) => setStudioHook(e.target.value)}
+                      placeholder="Your hook or lyric here…"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground leading-relaxed bg-emerald-500/5 border border-emerald-500/20 rounded p-2">
+                    <strong>Music Video Studio</strong> — MaxCore AI generates one photorealistic scene per song section, beat-syncs all transitions, and renders a full-length cinematic music video. No 8-second cap. No templates.
+                  </p>
+                </div>
+              )}
+
               {/* ── Common options ── */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -1476,11 +1732,13 @@ export function ServerVideoGenerator({
               {/* Generate button */}
               <Button
                 onClick={
-                  inputMode === "text"
-                    ? handleGenerateFromText
-                    : inputMode === "audio"
-                      ? handleGenerateFromAudio
-                      : handleGenerateFromImage
+                  inputMode === "studio"
+                    ? handleGenerateMusicVideo
+                    : inputMode === "text"
+                      ? handleGenerateFromText
+                      : inputMode === "audio"
+                        ? handleGenerateFromAudio
+                        : handleGenerateFromImage
                 }
                 disabled={
                   isGenerating ||
@@ -1489,9 +1747,10 @@ export function ServerVideoGenerator({
                     !topicProp.trim() &&
                     !hook.trim()) ||
                   (inputMode === "audio" && !audioAnalysis) ||
-                  (inputMode === "image" && !imageAnalysis)
+                  (inputMode === "image" && !imageAnalysis) ||
+                  (inputMode === "studio" && !studioAudioFile)
                 }
-                className="w-full"
+                className={`w-full ${inputMode === "studio" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}`}
                 size="lg"
               >
                 {isGenerating ? (
@@ -1501,12 +1760,14 @@ export function ServerVideoGenerator({
                   </>
                 ) : (
                   <>
-                    <Film className="h-4 w-4 mr-2" />
+                    {inputMode === "studio" ? <Music className="h-4 w-4 mr-2" /> : <Film className="h-4 w-4 mr-2" />}
                     {inputMode === "text"
                       ? "Generate Video from Text"
                       : inputMode === "audio"
                         ? "Generate Video from Audio"
-                        : "Generate Video from Image"}
+                        : inputMode === "studio"
+                          ? "Generate Full Music Video"
+                          : "Generate Video from Image"}
                   </>
                 )}
               </Button>
