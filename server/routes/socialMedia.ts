@@ -4915,7 +4915,7 @@ router.post(
             colorGrade: (body.color_grade as "cinematic") || "cinematic",
             kenBurnsIntensity: (body.intensity as "moderate") || "moderate",
             transitionType: body.transition,
-            maxScenes: body.max_scenes ? Number(body.max_scenes) : 8,
+            maxScenes: body.max_scenes ? Number(body.max_scenes) : 24,
           });
 
           if (!studioResult.success) {
