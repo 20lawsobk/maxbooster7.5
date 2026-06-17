@@ -15,6 +15,7 @@ import type {
   VideoGenResult,
 } from "./videoGeneratorService.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { generateAudio } from "./audioGeneratorService.js";
 
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 min
@@ -274,11 +275,23 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
   return `/api/social/video-proxy/${filename}`;
 }
 
+interface CompositeOpts {
+  voiceover?: boolean;
+  genre?: string;
+  duration?: number;
+  artistName?: string;
+  topic?: string;
+}
+
 /**
- * Composite hook / body / CTA text onto MaxCore's rendered MP4.
+ * Composite hook / body / CTA text (and optionally AI voiceover audio) onto
+ * MaxCore's rendered MP4.
  *
  * MaxCore provides the visual base (animated background, motion graphics).
- * FFmpeg adds the content text layer so the video reflects the user's topic/URL.
+ * FFmpeg adds:
+ *   - Text overlays (hook / body / CTA) derived from the user's content URL
+ *   - When voiceover=true: AI-read script + genre music bed as the audio track
+ *
  * Returns the composited URL on success, or the original URL if anything fails.
  */
 async function compositeTextOnMaxcoreVideo(
@@ -286,6 +299,7 @@ async function compositeTextOnMaxcoreVideo(
   hook: string,
   body: string,
   cta: string,
+  opts: CompositeOpts = {},
 ): Promise<string> {
   // Only composite when there is meaningful text and the file is locally cached
   if ((!hook && !body && !cta) || !servedUrl.startsWith("/uploads/videos/")) {
@@ -362,37 +376,94 @@ async function compositeTextOnMaxcoreVideo(
 
   if (filters.length === 0) return servedUrl;
 
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn(
-        "ffmpeg",
-        [
-          "-y",
-          "-i", inPath,
-          "-vf", filters.join(","),
-          "-c:v", "libx264",
-          "-preset", "fast",
-          "-crf", "22",
-          "-movflags", "+faststart",
-          "-c:a", "copy",
-          outPath,
-        ],
-        { stdio: ["ignore", "pipe", "pipe"] },
+  // ── Optional voiceover: generate TTS + music bed and mix into the video ────
+  let audioLocalPath: string | null = null;
+  if (opts.voiceover) {
+    try {
+      const script = [hook, body, cta].filter(Boolean).join(". ");
+      const videoDuration = opts.duration ?? 10;
+      const audioResult = await generateAudio({
+        text: script,
+        topic: opts.topic,
+        artistName: opts.artistName,
+        genre: opts.genre,
+        duration: videoDuration,
+      });
+      if (audioResult.success && audioResult.filename) {
+        audioLocalPath = path.join(
+          process.cwd(), "uploads", "audio", audioResult.filename,
+        );
+        logger.info(
+          `[AdvancedVideoRenderer] Voiceover audio ready → ${audioResult.filename}`,
+        );
+      } else {
+        logger.warn(
+          `[AdvancedVideoRenderer] Voiceover audio generation failed — video will be silent`,
+        );
+      }
+    } catch (audioErr: unknown) {
+      const msg = audioErr instanceof Error ? audioErr.message : String(audioErr);
+      logger.warn(
+        `[AdvancedVideoRenderer] Voiceover audio error (${msg}) — video will be silent`,
       );
+    }
+  }
+
+  try {
+    let ffmpegArgs: string[];
+
+    if (audioLocalPath) {
+      // ── Video + Audio path ─────────────────────────────────────────────────
+      // Use filter_complex so the drawtext chain applies to the video stream
+      // while the audio track comes from the generated MP3.
+      ffmpegArgs = [
+        "-y",
+        "-i", inPath,
+        "-i", audioLocalPath,
+        "-filter_complex", `[0:v]${filters.join(",")}[vout]`,
+        "-map", "[vout]",
+        "-map", "1:a",
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-movflags", "+faststart",
+        "-c:a", "aac",
+        "-b:a", "128k",
+        "-shortest",
+        outPath,
+      ];
+    } else {
+      // ── Video-only path (no voiceover or audio gen failed) ─────────────────
+      ffmpegArgs = [
+        "-y",
+        "-i", inPath,
+        "-vf", filters.join(","),
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-movflags", "+faststart",
+        "-an",
+        outPath,
+      ];
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn("ffmpeg", ffmpegArgs, { stdio: ["ignore", "pipe", "pipe"] });
       proc.on("close", (code) =>
         code === 0 ? resolve() : reject(new Error(`FFmpeg composite exited ${code}`)),
       );
       proc.on("error", reject);
     });
 
+    const audioTag = audioLocalPath ? " + voiceover" : "";
     logger.info(
-      `[AdvancedVideoRenderer] Text composited on MaxCore video → ${outFilename}`,
+      `[AdvancedVideoRenderer] MaxCore video composited (text${audioTag}) → ${outFilename}`,
     );
     return `/uploads/videos/${outFilename}`;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn(
-      `[AdvancedVideoRenderer] Text compositing failed (${msg}) — serving original MaxCore video`,
+      `[AdvancedVideoRenderer] Compositing failed (${msg}) — serving original MaxCore video`,
     );
     return servedUrl;
   }
@@ -994,13 +1065,22 @@ export async function renderVideo(
     };
   }
 
+  // Shared composite options derived from the render request
+  const compositeOpts: CompositeOpts = {
+    voiceover: !!opts?.voiceover,
+    genre: opts.genre,
+    duration: opts.duration || 10,
+    artistName: opts.artist_name,
+    topic: opts.topic,
+  };
+
   // Synchronous response — MaxCore rendered immediately
   if (jobResp?.url) {
     const cachedUrl = await cacheVideoLocally(jobResp?.url);
     const finalHook = jobResp.hook || hook;
     const finalBody = jobResp.body || body;
     const finalCta  = jobResp.cta  || cta;
-    const servedUrl = await compositeTextOnMaxcoreVideo(cachedUrl, finalHook, finalBody, finalCta);
+    const servedUrl = await compositeTextOnMaxcoreVideo(cachedUrl, finalHook, finalBody, finalCta, compositeOpts);
     logger?.info(
       `[AdvancedVideoRenderer] Synchronous render complete in ${Date?.now() - startMs}ms`,
     );
@@ -1030,7 +1110,7 @@ export async function renderVideo(
       const finalHook = result.hook || hook;
       const finalBody = result.body || body;
       const finalCta  = result.cta  || cta;
-      const servedUrl = await compositeTextOnMaxcoreVideo(result.url as string, finalHook, finalBody, finalCta);
+      const servedUrl = await compositeTextOnMaxcoreVideo(result.url as string, finalHook, finalBody, finalCta, compositeOpts);
       return {
         ...result,
         url: servedUrl,
