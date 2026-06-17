@@ -184,7 +184,8 @@ async function generateAIScenes(opts: {
   const targetSections = sections.slice(0, maxScenes);
 
   const results: SceneResult[] = new Array(targetSections.length);
-  const CONCURRENCY = 3; // MaxCore rate-limit courtesy
+  // MaxCore supports 24 parallel scene generations — fire all scenes at once.
+  const CONCURRENCY = 24;
 
   for (let batch = 0; batch < targetSections.length; batch += CONCURRENCY) {
     const slice = targetSections.slice(batch, batch + CONCURRENCY);
@@ -306,7 +307,7 @@ export async function generateFullMusicVideo(
   const platform = opts.platform || "instagram";
   const aspectRatio = opts.aspectRatio || "9:16";
   const hook = opts.hook || "";
-  const maxScenes = Math.min(opts.maxScenes ?? 8, 12);
+  const maxScenes = opts.maxScenes ?? 24;
 
   // ── 1. Validate input ──────────────────────────────────────────────────────
   if (!existsSync(opts.audioPath)) {

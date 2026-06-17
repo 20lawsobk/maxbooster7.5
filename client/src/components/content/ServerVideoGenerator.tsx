@@ -891,7 +891,7 @@ export function ServerVideoGenerator({
       fd.append("aspect_ratio", aspectRatio);
       fd.append("beat_sync", "true");
       fd.append("color_grade", "cinematic");
-      fd.append("max_scenes", "8");
+      fd.append("max_scenes", "24");
       const csrf = getCsrfTokenFromCookie();
       if (csrf) fd.append("_csrf", csrf);
 
