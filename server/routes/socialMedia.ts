@@ -80,6 +80,13 @@ async function getImageToVideoService() {
   return imageToVideoService!;
 }
 
+let _musicVideoStudioService: typeof import("../services/musicVideoStudioService.js") | null = null;
+async function getMusicVideoStudioService() {
+  if (!_musicVideoStudioService)
+    _musicVideoStudioService = await import("../services/musicVideoStudioService.js");
+  return _musicVideoStudioService!;
+}
+
 async function getUnifiedAI() {
   if (!unifiedAIController) {
     const m = await import("../services/unifiedAIController.js");
@@ -4779,6 +4786,38 @@ router.post(
 // IMAGE-TO-VIDEO / MUSIC VIDEO GENERATION ROUTES
 // ═══════════════════════════════════════════════════════════════════════════════
 
+/**
+ * POST /beat-analyze
+ * Quick audio beat analysis — returns BPM + sections without rendering a video.
+ * Used by the Music Video Studio UI to show the song structure before committing.
+ */
+router.post(
+  "/beat-analyze",
+  requireAuthOnly,
+  (req, res, next) => {
+    mediaUpload.fields([{ name: "audio", maxCount: 1 }])(
+      req as Record<string, unknown>,
+      res as Record<string, unknown>,
+      next,
+    );
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const files = req.files as Record<string, Express.Multer.File[]> | undefined;
+      const audioFile = files?.audio?.[0];
+      if (!audioFile) {
+        return res.status(400).json({ success: false, error: "audio file required" });
+      }
+      const svc = await getMusicVideoStudioService();
+      const result = await svc.quickBeatAnalyze(audioFile.path);
+      return res.json({ success: true, ...result });
+    } catch (err) {
+      logger.warn("[BeatAnalyze]", err?.message);
+      return res.status(500).json({ success: false, error: err?.message || "Analysis failed" });
+    }
+  },
+);
+
 // Track async music video jobs in the same pattern as ffmpegJobs
 interface MusicVideoJob {
   status: "processing" | "done" | "error";
@@ -4843,9 +4882,71 @@ router.post(
           | Record<string, Express.Multer.File[]>
           | undefined;
         const imageFiles = files.images || [];
-        const audioFile = files.audio[0];
-        const voiceRef = files.reference_voice[0];
+        const audioFile = files?.audio?.[0];
+        const voiceRef = files?.reference_voice?.[0];
 
+        const body = req.body as Record<string, string>;
+
+        // ── AI Scene Generation mode (Music Video Studio) ─────────────────────
+        // When ai_generate_scenes=true, MaxCore generates one photorealistic image
+        // per detected song section — no user images needed. This is the capability
+        // that surpasses InVideo (no beat sync, no music AI) and Google Veo (8s cap).
+        if (body.ai_generate_scenes === "true") {
+          if (!audioFile) {
+            musicVideoJobs.set(jobId, {
+              status: "error",
+              error: "Audio file required for AI scene generation",
+              createdAt: Date.now(),
+            });
+            return;
+          }
+          const userId = req.user?.id?.toString() || req.user?.userId?.toString() || "anon";
+          const studioSvc = await getMusicVideoStudioService();
+          const studioResult = await studioSvc.generateFullMusicVideo({
+            audioPath: audioFile.path,
+            genre: body.genre || "hip-hop",
+            artistName: body.artist_name || body.artistName,
+            artistStyle: body.artist_style,
+            hook: body.hook,
+            bodyText: body.body,
+            cta: body.cta,
+            platform: body.platform || "instagram",
+            aspectRatio: body.aspect_ratio || "9:16",
+            colorGrade: (body.color_grade as "cinematic") || "cinematic",
+            kenBurnsIntensity: (body.intensity as "moderate") || "moderate",
+            transitionType: body.transition,
+            maxScenes: body.max_scenes ? Number(body.max_scenes) : 8,
+          });
+
+          if (!studioResult.success) {
+            musicVideoJobs.set(jobId, {
+              status: "error",
+              error: studioResult.error || "AI music video generation failed",
+              createdAt: Date.now(),
+            });
+            return;
+          }
+
+          // Persist to PDIM
+          try {
+            const { storeMusicVideo } = await import("../services/pdimMediaStorageService.js");
+            const videoFilePath = `${process.cwd()}/uploads/videos/${studioResult.filename}`;
+            const pdimMeta = await storeMusicVideo(userId, videoFilePath, studioResult as Record<string, unknown>);
+            if (pdimMeta) studioResult.pdim = { key: pdimMeta.pdimKey, tier: pdimMeta.tier };
+          } catch (e) {
+            logger.warn(`[MusicVideo/Studio] PDIM store skipped: ${e?.message?.slice(0, 80)}`);
+          }
+
+          musicVideoJobs.set(jobId, {
+            status: "done",
+            result: studioResult as unknown as Record<string, unknown>,
+            createdAt: Date.now(),
+          });
+          logger.info(`[MusicVideo/Studio] Job ${jobId} done — viral score: ${studioResult.viralScore ?? "n/a"}`);
+          return;
+        }
+
+        // ── Legacy mode: user provides their own images ────────────────────────
         if (!imageFiles.length) {
           musicVideoJobs.set(jobId, {
             status: "error",
@@ -4855,12 +4956,10 @@ router.post(
           return;
         }
 
-        const body = req.body as Record<string, string>;
-
         const imagePaths = imageFiles
           .map((f: Express.Multer.File) => f.path)
           .filter(Boolean);
-        const audioPath = audioFile.path;
+        const audioPath = audioFile?.path;
 
         // Optional: synthesize voice narration before rendering
         let voiceSynthPath: string | undefined;

@@ -772,7 +772,7 @@ const PHOTO_ASPECT_DIMS: Record<string, [number, number]> = {
  * Falls back to a vivid Sharp gradient when MaxCore is unavailable.
  * Returns an absolute local file path ready for FFmpeg input.
  */
-async function fetchPhotorealisticImage(
+export async function fetchPhotorealisticImage(
   topic: string,
   hook: string,
   genre: string,
