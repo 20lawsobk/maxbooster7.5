@@ -24,41 +24,7 @@ const MAXCORE_ORIGIN = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
 const MC_AI_KEY = process?.env.AI_SERVER_KEY || "";
 const LOCAL_VIDEO_DIR = path?.join(process?.cwd(), "uploads", "videos");
 
-// ── MaxCore Rendering Engine (middle tier) ────────────────────────────────────
-// Three-tier architecture: Max Booster → RELAY (port 8008) → MaxCore
-// The relay is the DiT-24 / api_server_v4?.py diffusion server which enriches
-// prompts with music-context metadata, forwards to MaxCore for authoritative
-// generation, and applies the full DigitalGPU post-processing chain to every frame.
-const RELAY_URL =
-  process?.env.RELAY_ENGINE_URL ||
-  `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
-const RELAY_TIMEOUT_MS = 60_000;
-
-// Style name mapping: VideoGenOptions template/genre → relay style_name
-const TEMPLATE_TO_STYLE: Record<string, string> = {
-  cinematic_promo: "neon_tunnel",
-  music_video: "concert_stage",
-  hip_hop: "city_nights",
-  trap: "city_nights",
-  electronic: "neon_tunnel",
-  edm: "plasma_fractal",
-  pop: "golden_hour",
-  rnb: "galaxy_spiral",
-  gospel: "gospel_choir",
-  lo_fi: "studio_session",
-  acoustic: "golden_hour",
-  fire: "fire_embers",
-  aurora: "aurora_curtains",
-  warp: "warp_speed",
-  default: "neon_tunnel",
-};
-
-function resolveStyleName(opts: VideoGenOptions): string {
-  const t = (opts?.template || opts?.genre || "")
-    .toLowerCase()
-    .replace(/[^a-z_]/g, "_");
-  return TEMPLATE_TO_STYLE[t] || TEMPLATE_TO_STYLE["default"];
-}
+// ── MaxCore video URL cache ───────────────────────────────────────────────────
 
 /**
  * Maps filename → absolute MaxCore URL for the video-proxy route.
@@ -376,36 +342,75 @@ async function compositeTextOnMaxcoreVideo(
 
   if (filters.length === 0) return servedUrl;
 
-  // ── Optional voiceover: generate TTS + music bed and mix into the video ────
+  // ── Optional voiceover: MaxCore AI voice + music bed mixed into the video ────
+  // Primary: MaxCore /generate/audio (authoritative AI voice synthesis)
+  // Fallback: local espeak TTS + FFmpeg music bed (only if MaxCore unavailable)
   let audioLocalPath: string | null = null;
   if (opts.voiceover) {
+    const script = [hook, body, cta].filter(Boolean).join(". ");
+    const videoDuration = opts.duration ?? 10;
+
+    // 1. MaxCore authoritative voice synthesis
     try {
-      const script = [hook, body, cta].filter(Boolean).join(". ");
-      const videoDuration = opts.duration ?? 10;
-      const audioResult = await generateAudio({
+      const mcAudio = await MaxCoreAIClient.generate<{
+        url?: string;
+        audio_url?: string;
+        filename?: string;
+      }>("/generate/audio", {
         text: script,
-        topic: opts.topic,
-        artistName: opts.artistName,
-        genre: opts.genre,
+        genre: opts.genre || "default",
         duration: videoDuration,
+        artist_name: opts.artistName,
+        topic: opts.topic,
+        platform: "video",
+        quality: "high",
       });
-      if (audioResult.success && audioResult.filename) {
-        audioLocalPath = path.join(
-          process.cwd(), "uploads", "audio", audioResult.filename,
-        );
-        logger.info(
-          `[AdvancedVideoRenderer] Voiceover audio ready → ${audioResult.filename}`,
-        );
-      } else {
-        logger.warn(
-          `[AdvancedVideoRenderer] Voiceover audio generation failed — video will be silent`,
-        );
+      const rawAudioUrl = mcAudio?.url ?? mcAudio?.audio_url;
+      if (rawAudioUrl) {
+        const fullAudioUrl = rawAudioUrl.startsWith("http")
+          ? rawAudioUrl
+          : `${MAXCORE_ORIGIN}${rawAudioUrl}`;
+        const audioFilename = `vo_mc_${Date.now()}.mp3`;
+        const audioPath = path.join(process.cwd(), "uploads", "audio", audioFilename);
+        await fsPromises.mkdir(path.join(process.cwd(), "uploads", "audio"), { recursive: true });
+        const audioResp = await fetch(fullAudioUrl, {
+          headers: { "X-Admin-Key": MC_AI_KEY, Authorization: `Bearer ${MC_AI_KEY}` },
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (audioResp.ok) {
+          await fsPromises.writeFile(audioPath, Buffer.from(await audioResp.arrayBuffer()));
+          audioLocalPath = audioPath;
+          logger.info(`[AdvancedVideoRenderer] MaxCore voiceover ready → ${audioFilename}`);
+        }
       }
-    } catch (audioErr: unknown) {
-      const msg = audioErr instanceof Error ? audioErr.message : String(audioErr);
+    } catch (mcErr: unknown) {
       logger.warn(
-        `[AdvancedVideoRenderer] Voiceover audio error (${msg}) — video will be silent`,
+        `[AdvancedVideoRenderer] MaxCore /generate/audio unavailable (${(mcErr as Error).message}) — falling back to local TTS`,
       );
+    }
+
+    // 2. Local TTS fallback — only when MaxCore audio was not obtained
+    if (!audioLocalPath) {
+      try {
+        const audioResult = await generateAudio({
+          text: script,
+          topic: opts.topic,
+          artistName: opts.artistName,
+          genre: opts.genre,
+          duration: videoDuration,
+        });
+        if (audioResult.success && audioResult.filename) {
+          audioLocalPath = path.join(
+            process.cwd(), "uploads", "audio", audioResult.filename,
+          );
+          logger.info(`[AdvancedVideoRenderer] Local TTS voiceover ready → ${audioResult.filename}`);
+        } else {
+          logger.warn("[AdvancedVideoRenderer] Local TTS also failed — video will be silent");
+        }
+      } catch (audioErr: unknown) {
+        const msg = audioErr instanceof Error ? audioErr.message : String(audioErr);
+        logger.warn(`[AdvancedVideoRenderer] Local TTS error (${msg}) — video will be silent`);
+      }
     }
   }
 
@@ -787,191 +792,17 @@ async function getSentiment(hook: string): Promise<MaxCoreSentiment | null> {
   });
 }
 
-// ── Relay-tier renderer (Three-tier architecture) ─────────────────────────────
-
 /**
- * Try to render via the MaxCore Rendering Engine relay (port 8008).
- *
- * The relay server:
- *   1. Enriches the prompt with music-context metadata
- *   2. Forwards to MaxCore for authoritative generation
- *   3. Applies the full DigitalGPU post-processing chain (bloom, chromatic
- *      aberration, vignette, temporal smoothing) to every frame
- *   4. Returns video_url (MaxCore's URL) + DigitalGPU-processed preview frames
- *
- * Returns null on any failure so callers can fall back to direct MaxCore.
- */
-async function renderVideoViaRelay(
-  opts: VideoGenOptions,
-  intelligence: {
-    hook: string;
-    body: string;
-    cta: string;
-    hashtags: string[];
-    content_confidence: number | null;
-    sentiment_score: number | null;
-    sentiment_label: string | null;
-    sentiment_confidence: number | null;
-  },
-): Promise<VideoGenResult | null> {
-  const startMs = Date?.now();
-  const styleName = resolveStyleName(opts);
-
-  const relayPayload = {
-    prompt: intelligence.hook || opts?.hook || opts?.topic || "",
-    T: 16,
-    H: opts.aspect_ratio === "16:9" ? 144 : 256,
-    W: opts.aspect_ratio === "16:9" ? 256 : 144,
-    bpm: 120.0,
-    energy: 0.75,
-    energy_peak: 0.9,
-    style_name: styleName,
-    beat_index: 0,
-    total_beats: 4,
-    is_drop: false,
-    emotional_goal: opts.tone || "curiosity",
-    platform: opts.platform || "tiktok",
-    output_format: "frames_b64",
-    use_digital_gpu: true,
-    temporal_smooth: true,
-  };
-
-  try {
-    const resp = await fetch(`${RELAY_URL}/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(relayPayload),
-      signal: AbortSignal.timeout(RELAY_TIMEOUT_MS),
-    });
-
-    if (!resp?.ok) {
-      logger?.warn(
-        `[RelayTier] /generate → HTTP ${resp?.status} — falling back to direct MaxCore`,
-      );
-      return null;
-    }
-
-    const data: Record<string, unknown> = (await resp?.json()) as Record<
-      string,
-      unknown
-    >;
-    const elapsedMs = Date?.now() - startMs;
-
-    logger?.info(
-      `[RelayTier] Generation complete in ${elapsedMs}ms — ` +
-        `style=${data.style_used} frames=${data?.num_frames} ` +
-        `gpu_applied=${data.gpu_applied} trained=${data?.trained} ` +
-        `relay_source=${data?.relay_source}`,
-    );
-
-    // Relay returned a real encoded MP4 (from UNetV5 local renderer) — write to disk
-    if (
-      data?.mp4_b64 &&
-      typeof data?.mp4_b64 === "string" &&
-      data?.mp4_b64.length > 100
-    ) {
-      try {
-        const mp4Buf = Buffer?.from(data?.mp4_b64, "base64");
-        if (looksLikeRealVideo(mp4Buf)) {
-          await fsPromises?.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
-          const filename = `relay_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}.mp4`;
-          const localPath = path?.join(LOCAL_VIDEO_DIR, filename);
-          await fsPromises?.writeFile(localPath, mp4Buf);
-          logger?.info(
-            `[RelayTier] Saved relay MP4 to disk: ${filename} ` +
-              `(${(mp4Buf.length / 1024).toFixed(0)} KB, backend=${data?.backend || "unetv5"})`,
-          );
-          return {
-            success: true,
-            url: `/uploads/videos/${filename}`,
-            source: "MaxCoreRelay_UNetV5",
-            processing_time_ms: elapsedMs,
-            relay_trained: data.trained,
-            relay_style: data.style_used,
-            relay_gpu_applied: data.gpu_applied,
-            relay_frames: data.num_frames,
-            ...intelligence,
-          } as Record<string, unknown>;
-        }
-      } catch (encErr: Record<string, unknown>) {
-        logger?.warn(
-          `[RelayTier] mp4_b64 decode/write failed: ${encErr?.message}`,
-        );
-      }
-    }
-
-    // If relay has a MaxCore authoritative video URL, cache it locally
-    if (data?.video_url) {
-      const servedUrl = await cacheVideoLocally(data?.video_url);
-      return {
-        success: true,
-        url: servedUrl,
-        source: "MaxCoreRelay_DigitalGPU",
-        processing_time_ms: elapsedMs,
-        relay_trained: data.trained,
-        relay_style: data.style_used,
-        relay_scene: data.scene_name,
-        relay_gpu_applied: data.gpu_applied,
-        relay_frames: data.num_frames,
-        ...intelligence,
-      } as Record<string, unknown>;
-    }
-
-    // Relay returned DigitalGPU-processed frames (no MaxCore URL) — still valid
-    if (
-      data?.frames_b64 &&
-      Array?.isArray(data?.frames_b64) &&
-      data?.frames_b64.length > 0
-    ) {
-      logger?.info(
-        `[RelayTier] Relay returned ${data?.frames_b64.length} DigitalGPU frames (no video URL)`,
-      );
-      return {
-        success: true,
-        url: null,
-        frames_b64: data.frames_b64,
-        source: "MaxCoreRelay_DigitalGPU_Frames",
-        processing_time_ms: elapsedMs,
-        relay_trained: data.trained,
-        relay_style: data.style_used,
-        relay_scene: data.scene_name,
-        relay_gpu_applied: data.gpu_applied,
-        relay_frames: data.num_frames,
-        ...intelligence,
-      } as Record<string, unknown>;
-    }
-
-    logger?.warn(
-      "[RelayTier] Relay returned no video_url and no frames — falling back",
-    );
-    return null;
-  } catch (err) {
-    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
-      logger?.warn(
-        `[RelayTier] Relay timed out after ${RELAY_TIMEOUT_MS / 1000}s — falling back to direct MaxCore`,
-      );
-    } else {
-      logger?.debug(
-        `[RelayTier] Relay unavailable: ${err?.message} — falling back to direct MaxCore`,
-      );
-    }
-    return null;
-  }
-}
-
-/**
- * Render a video through MaxCore — three-tier pipeline:
- *   Tier 1 (this service): content + sentiment intelligence
- *   Tier 2 (relay, port 8008): prompt enrichment + DigitalGPU post-processing
- *   Tier 3 (MaxCore): authoritative video generation
- *
- * Falls back to direct MaxCore if the relay tier is unavailable.
+ * Render a video through MaxCore — authoritative AI generation pipeline:
+ *   Step 1: MaxCore content + sentiment intelligence
+ *   Step 2: MaxCore video generation (async job with polling)
+ *   Step 3: FFmpeg compositing — text overlays + AI voiceover on the cached MP4
  */
 export async function renderVideo(
   opts: VideoGenOptions,
 ): Promise<VideoGenResult> {
   const startMs = Date?.now();
-  logger?.info("[AdvancedVideoRenderer] Starting three-tier MaxCore pipeline");
+  logger?.info("[AdvancedVideoRenderer] Starting MaxCore video pipeline");
 
   // ── Step 1: generate content + sentiment intelligence (parallel) ──────────
   const contentResult = await generateContent(opts);
@@ -1009,31 +840,7 @@ export async function renderVideo(
     sentiment_confidence: sentimentResult.confidence ?? null,
   };
 
-  // ── Step 2: Try Tier-2 relay (MaxCore Rendering Engine, port 8008) ─────────
-  // The relay adds DigitalGPU post-processing (bloom, chroma ab, vignette,
-  // temporal smoothing) to every frame before delivering to Max Booster.
-  const relayResult = await renderVideoViaRelay(opts, {
-    hook,
-    body,
-    cta,
-    ...intelligence,
-  });
-  if (relayResult) {
-    logger?.info(
-      `[AdvancedVideoRenderer] Relay tier succeeded in ${Date?.now() - startMs}ms ` +
-        `(source=${(relayResult as Record<string, unknown>).source})`,
-    );
-    return {
-      ...relayResult,
-      processing_time_ms: Date.now() - startMs,
-    } as VideoGenResult;
-  }
-
-  logger?.info(
-    "[AdvancedVideoRenderer] Relay tier unavailable — falling back to direct MaxCore",
-  );
-
-  // ── Step 3: Direct MaxCore fallback ─────────────────────────────────────
+  // ── Step 2: MaxCore video generation ────────────────────────────────────────
   const jobResp = await MaxCoreAIClient?.infer<unknown>("/generate-video", {
     idea:
       [hook, opts.artist_name, opts.genre, opts.topic]
