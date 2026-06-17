@@ -1191,28 +1191,28 @@ router.post(
 
       // Merge inline analysis fields with any client-passed values (client wins on conflicts)
       const effectiveUrlContentType =
-        urlContentType || inlineUrlAnalysis.content_type;
+        urlContentType || inlineUrlAnalysis?.content_type;
       const effectiveUrlDescription =
         urlDescription ||
-        inlineUrlAnalysis.summary ||
-        inlineUrlAnalysis.description;
-      const effectiveKeywords = (keywords as string[] | undefined).length
+        inlineUrlAnalysis?.summary ||
+        inlineUrlAnalysis?.description;
+      const effectiveKeywords = (keywords as string[] | undefined)?.length
         ? keywords
-        : inlineUrlAnalysis.keywords;
-      const effectiveTags = (tags as string[] | undefined).length
+        : inlineUrlAnalysis?.keywords;
+      const effectiveTags = (tags as string[] | undefined)?.length
         ? tags
-        : inlineUrlAnalysis.tags;
-      const effectiveArtistName = artistName || inlineUrlAnalysis.artist;
-      const effectiveTrackTitle = trackTitle || inlineUrlAnalysis.track;
-      const effectiveAlbumName = albumName || inlineUrlAnalysis.album;
-      const effectiveLabel = label || inlineUrlAnalysis.label;
+        : inlineUrlAnalysis?.tags;
+      const effectiveArtistName = artistName || inlineUrlAnalysis?.artist;
+      const effectiveTrackTitle = trackTitle || inlineUrlAnalysis?.track;
+      const effectiveAlbumName = albumName || inlineUrlAnalysis?.album;
+      const effectiveLabel = label || inlineUrlAnalysis?.label;
       const effectiveReleaseDate =
-        releaseDate || inlineUrlAnalysis.release_date;
-      const inlineTitle = inlineUrlAnalysis.title;
-      const inlineBodyPreview = inlineUrlAnalysis.body_preview;
+        releaseDate || inlineUrlAnalysis?.release_date;
+      const inlineTitle = inlineUrlAnalysis?.title;
+      const inlineBodyPreview = inlineUrlAnalysis?.body_preview;
       const inlineContentCategory =
-        inlineUrlAnalysis.content_category ||
-        inlineUrlAnalysis.platform_category;
+        inlineUrlAnalysis?.content_category ||
+        inlineUrlAnalysis?.platform_category;
 
       // Determine if URL source is a website/platform/SaaS (not a music track/artist/video page)
       const isWebsitePromo = effectiveUrlContentType === "website";
@@ -1220,8 +1220,8 @@ router.post(
       // Genre detection: skip for website content types; use rawGenre or detect from topic
       const detectedGenre =
         rawGenre ||
-        (inlineUrlAnalysis.genre && inlineUrlAnalysis.genre !== "default"
-          ? inlineUrlAnalysis.genre
+        (inlineUrlAnalysis?.genre && inlineUrlAnalysis?.genre !== "default"
+          ? inlineUrlAnalysis?.genre
           : null) ||
         (isWebsitePromo ? "pop" : detectGenre(String(topic)));
 
@@ -1283,7 +1283,7 @@ router.post(
       const eventParts: string[] = [];
       if (eventDate) eventParts.push(eventDate);
       if (eventLocation) eventParts.push(`at ${eventLocation}`);
-      if (performers.length)
+      if (Array.isArray(performers) && performers.length)
         eventParts.push(
           `featuring ${(performers as string[]).slice(0, 3).join(", ")}`,
         );
@@ -1331,11 +1331,11 @@ router.post(
           userContext.brandVoice = autopilotPrefs.brandVoice;
         if (autopilotPrefs.targetAudience)
           userContext.targetAudience = autopilotPrefs.targetAudience;
-        if (autopilotPrefs.contentThemes.length)
+        if (autopilotPrefs.contentThemes?.length)
           userContext.contentThemes = autopilotPrefs.contentThemes;
-        if (autopilotPrefs.avoidTopics.length)
+        if (autopilotPrefs.avoidTopics?.length)
           userContext.avoidTopics = autopilotPrefs.avoidTopics;
-        if (autopilotPrefs.preferredHashtags.length)
+        if (autopilotPrefs.preferredHashtags?.length)
           userContext.preferredHashtags = autopilotPrefs.preferredHashtags;
       }
       if (recentPostRows.length > 0) {
