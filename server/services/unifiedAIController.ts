@@ -441,7 +441,7 @@ export class UnifiedAIController {
       // This separation is the difference between MaxCore generating generic
       // music captions vs. actually following what the user asked for.
 
-      const artist = ctx.artistName || options.artistName;
+      const artist = ctx?.artistName || options.artistName;
 
       // Build a clean topic from metadata — no user instruction text
       const baseTopic = options.topic || options.genre || "new music";
@@ -456,7 +456,7 @@ export class UnifiedAIController {
         topicParts.push(`"${options.trackTitle}"`);
       }
       if (options.mood) topicParts.push(options.mood);
-      if (options.keywords.length)
+      if (options.keywords?.length)
         topicParts.push(options.keywords.slice(0, 4).join(", "));
       // 300-char limit is enough for full metadata context without polluting the topic signal
       const enrichedTopic = topicParts.join(" — ").slice(0, 300);
@@ -525,9 +525,9 @@ export class UnifiedAIController {
         tone: options.tone || "energetic",
         genre: options.genre || ctx?.genre,
         artist_name: artist,
-        brand_voice: ctx.brandVoice,
-        target_audience: ctx.targetAudience,
-        preferred_hashtags: ctx.preferredHashtags,
+        brand_voice: ctx?.brandVoice,
+        target_audience: ctx?.targetAudience,
+        preferred_hashtags: ctx?.preferredHashtags,
       };
       // If the caller supplied a verbatim user instruction, pass it as a
       // dedicated `instruction` field AND prepend it in extra_context so MaxCore
@@ -537,11 +537,11 @@ export class UnifiedAIController {
         mcPayload.prompt = options?.extraContext;
       }
       // Artist bio / context
-      if (ctx.artistBio) mcPayload.artist_context = ctx?.artistBio;
+      if (ctx?.artistBio) mcPayload.artist_context = ctx?.artistBio;
       // Content guidance
       if (ctx?.contentThemes?.length)
         mcPayload.content_themes = ctx?.contentThemes;
-      if (ctx.avoidTopics.length) mcPayload.avoid_topics = ctx?.avoidTopics;
+      if (ctx?.avoidTopics?.length) mcPayload.avoid_topics = ctx?.avoidTopics;
       if (ctx?.recentPostSnippets?.length)
         mcPayload.recent_post_snippets = ctx?.recentPostSnippets;
       // Effective content_type / objective — caller-pinned contentType (or the
@@ -554,7 +554,7 @@ export class UnifiedAIController {
       if (options.album) mcPayload.album = options?.album;
       if (options.releaseDate) mcPayload.release_date = options?.releaseDate;
       if (options.label) mcPayload.label = options?.label;
-      if (options.tracklist.length) mcPayload.tracklist = options?.tracklist;
+      if (options.tracklist?.length) mcPayload.tracklist = options?.tracklist;
       // extra_context: user instruction FIRST (already placed first in extraParts),
       // followed by supporting metadata. Never truncated — MaxCore needs the full text.
       if (combinedExtra) mcPayload.extra_context = combinedExtra;
