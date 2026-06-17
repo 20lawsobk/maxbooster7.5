@@ -349,11 +349,14 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req?.user!.id;
-      const events = (await storage?.getSocialCalendarEvents?.(userId)) || [];
-      res?.json(events);
+      const events = await Promise.race([
+        storage?.getSocialCalendarEvents?.(userId) ?? Promise.resolve([]),
+        new Promise<unknown[]>(resolve => setTimeout(() => resolve([]), 5_000)),
+      ]).catch(() => []) as unknown[];
+      res?.json(events || []);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get social calendar:");
-      res?.status(500).json({ error: "Failed to get social calendar:" });
+      res?.json([]);
     }
   },
 );
@@ -363,23 +366,17 @@ router?.get(
   "/calendar/stats",
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
+    const emptyStats = { totalScheduled: 0, pendingApproval: 0, published: 0, drafts: 0 };
     try {
       const userId = req?.user!.id;
-      const stats = (await storage?.getSocialCalendarStats?.(userId)) || {
-        totalScheduled: 0,
-        pendingApproval: 0,
-        published: 0,
-        drafts: 0,
-      };
-      res?.json(stats);
+      const stats = await Promise.race([
+        storage?.getSocialCalendarStats?.(userId) ?? Promise.resolve(emptyStats),
+        new Promise<typeof emptyStats>(resolve => setTimeout(() => resolve(emptyStats), 5_000)),
+      ]).catch(() => emptyStats);
+      res?.json(stats || emptyStats);
     } catch (error) {
       logger?.warn({ err: error }, "Failed to get calendar stats:");
-      res?.json({
-        totalScheduled: 0,
-        pendingApproval: 0,
-        published: 0,
-        drafts: 0,
-      });
+      res?.json(emptyStats);
     }
   },
 );
@@ -1053,20 +1050,29 @@ router?.get(
       const userId = req?.user!.id;
       const user = await storage?.getUser(userId);
 
-      const ai = await getUnifiedAI();
-      const mcResult = await ai?.generateContent({
-        topic: "trending music hashtags for social media marketing",
-        platform: "instagram",
-        tone: "energetic",
-        genre: ((user as Record<string, unknown>)?.genre as string) || "music",
-        artist_name:
-          ((user as Record<string, unknown>)?.artistName as string) || "",
-        includeHashtags: true,
-        extraContext:
-          "Return a diverse list of trending music hashtags across categories: general music, production, hip-hop, R&B, promotion, indie. Include high-reach and niche tags.",
-      });
+      const FALLBACK_HASHTAGS = [
+        "#NewMusic", "#MusicProduction", "#HipHop", "#RnB", "#IndieArtist",
+        "#BeatMaker", "#SpotifyArtist", "#NewRelease", "#MusicVideo",
+        "#StudioLife", "#UrbanMusic", "#MusicMarketing",
+      ];
 
-      const rawTags: string[] = mcResult?.hashtags ?? [];
+      const ai = await getUnifiedAI();
+      const mcResult = await Promise.race([
+        ai?.generateContent({
+          topic: "trending music hashtags for social media marketing",
+          platform: "instagram",
+          tone: "energetic",
+          genre: ((user as Record<string, unknown>)?.genre as string) || "music",
+          artist_name:
+            ((user as Record<string, unknown>)?.artistName as string) || "",
+          includeHashtags: true,
+          extraContext:
+            "Return a diverse list of trending music hashtags across categories: general music, production, hip-hop, R&B, promotion, indie. Include high-reach and niche tags.",
+        }),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000)),
+      ]).catch(() => null);
+
+      const rawTags: string[] = mcResult?.hashtags?.length ? mcResult.hashtags : FALLBACK_HASHTAGS;
 
       function hashVolume(tag: string, base: number): number {
         let h = 2166136261;
@@ -4809,7 +4815,12 @@ router.post(
         return res.status(400).json({ success: false, error: "audio file required" });
       }
       const svc = await getMusicVideoStudioService();
-      const result = await svc.quickBeatAnalyze(audioFile.path);
+      const result = await Promise.race([
+        svc.quickBeatAnalyze(audioFile.path),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Beat analysis timed out after 30s")), 30_000)
+        ),
+      ]);
       return res.json({ success: true, ...result });
     } catch (err) {
       logger.warn("[BeatAnalyze]", err?.message);
