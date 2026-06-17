@@ -274,6 +274,130 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
   return `/api/social/video-proxy/${filename}`;
 }
 
+/**
+ * Composite hook / body / CTA text onto MaxCore's rendered MP4.
+ *
+ * MaxCore provides the visual base (animated background, motion graphics).
+ * FFmpeg adds the content text layer so the video reflects the user's topic/URL.
+ * Returns the composited URL on success, or the original URL if anything fails.
+ */
+async function compositeTextOnMaxcoreVideo(
+  servedUrl: string,
+  hook: string,
+  body: string,
+  cta: string,
+): Promise<string> {
+  // Only composite when there is meaningful text and the file is locally cached
+  if ((!hook && !body && !cta) || !servedUrl.startsWith("/uploads/videos/")) {
+    return servedUrl;
+  }
+
+  const inFilename = path.basename(servedUrl);
+  const outFilename = `comp_${inFilename}`;
+  const inPath = path.join(process.cwd(), "uploads", "videos", inFilename);
+  const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
+
+  // Sanitize text: strip chars that break FFmpeg's drawtext filter parser
+  const sanitize = (t: string) =>
+    (t ?? "")
+      .replace(/['":\\,[\]%]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  // Wrap text into lines of up to maxChars characters
+  const wrap = (text: string, maxChars: number, maxLines = 3): string[] => {
+    if (!text) return [];
+    const words = text.split(/\s+/);
+    const lines: string[] = [];
+    let cur = "";
+    for (const w of words) {
+      const candidate = cur ? `${cur} ${w}` : w;
+      if (candidate.length <= maxChars) {
+        cur = candidate;
+      } else {
+        if (cur) lines.push(cur);
+        cur = w.slice(0, maxChars);
+      }
+    }
+    if (cur) lines.push(cur);
+    return lines.slice(0, maxLines);
+  };
+
+  const hookLines = wrap(sanitize(hook), 24, 3);
+  const bodyLines = wrap(sanitize(body), 38, 3);
+  const ctaText  = sanitize(cta).slice(0, 48);
+
+  const filters: string[] = [];
+
+  // ── Hook: top of frame, large bold white with black shadow ─────────────────
+  let hookY = 140;
+  for (const line of hookLines) {
+    filters.push(
+      `drawtext=text='${line}':fontsize=68:fontcolor=white` +
+      `:x=(w-text_w)/2:y=${hookY}` +
+      `:shadowx=3:shadowy=3:shadowcolor=black@0.8`,
+    );
+    hookY += 92;
+  }
+
+  // ── Body: lower-middle area, smaller white with shadow ─────────────────────
+  let bodyY = 680;
+  for (const line of bodyLines) {
+    filters.push(
+      `drawtext=text='${line}':fontsize=38:fontcolor=white@0.95` +
+      `:x=(w-text_w)/2:y=${bodyY}` +
+      `:shadowx=2:shadowy=2:shadowcolor=black@0.8`,
+    );
+    bodyY += 56;
+  }
+
+  // ── CTA: near bottom, gold / yellow ────────────────────────────────────────
+  if (ctaText) {
+    filters.push(
+      `drawtext=text='${ctaText}':fontsize=44:fontcolor=#FFD700` +
+      `:x=(w-text_w)/2:y=h-210` +
+      `:shadowx=3:shadowy=3:shadowcolor=black@0.9`,
+    );
+  }
+
+  if (filters.length === 0) return servedUrl;
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(
+        "ffmpeg",
+        [
+          "-y",
+          "-i", inPath,
+          "-vf", filters.join(","),
+          "-c:v", "libx264",
+          "-preset", "fast",
+          "-crf", "22",
+          "-movflags", "+faststart",
+          "-c:a", "copy",
+          outPath,
+        ],
+        { stdio: ["ignore", "pipe", "pipe"] },
+      );
+      proc.on("close", (code) =>
+        code === 0 ? resolve() : reject(new Error(`FFmpeg composite exited ${code}`)),
+      );
+      proc.on("error", reject);
+    });
+
+    logger.info(
+      `[AdvancedVideoRenderer] Text composited on MaxCore video → ${outFilename}`,
+    );
+    return `/uploads/videos/${outFilename}`;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.warn(
+      `[AdvancedVideoRenderer] Text compositing failed (${msg}) — serving original MaxCore video`,
+    );
+    return servedUrl;
+  }
+}
+
 // ── MaxCore video job status type ─────────────────────────────────────────────
 
 interface MaxCoreVideoStatus {
@@ -872,7 +996,11 @@ export async function renderVideo(
 
   // Synchronous response — MaxCore rendered immediately
   if (jobResp?.url) {
-    const servedUrl = await cacheVideoLocally(jobResp?.url);
+    const cachedUrl = await cacheVideoLocally(jobResp?.url);
+    const finalHook = jobResp.hook || hook;
+    const finalBody = jobResp.body || body;
+    const finalCta  = jobResp.cta  || cta;
+    const servedUrl = await compositeTextOnMaxcoreVideo(cachedUrl, finalHook, finalBody, finalCta);
     logger?.info(
       `[AdvancedVideoRenderer] Synchronous render complete in ${Date?.now() - startMs}ms`,
     );
@@ -883,9 +1011,9 @@ export async function renderVideo(
       width: jobResp.width,
       height: jobResp.height,
       duration: jobResp.duration,
-      hook: jobResp.hook || hook,
-      body: jobResp.body || body,
-      cta: jobResp.cta || cta,
+      hook: finalHook,
+      body: finalBody,
+      cta: finalCta,
       template: jobResp.template,
       template_name: jobResp.template_name,
       scenes_rendered: jobResp.scenes_rendered,
@@ -899,11 +1027,16 @@ export async function renderVideo(
   if (jobResp?.job_id) {
     const result = await pollVideoJob(jobResp?.job_id);
     if (result) {
+      const finalHook = result.hook || hook;
+      const finalBody = result.body || body;
+      const finalCta  = result.cta  || cta;
+      const servedUrl = await compositeTextOnMaxcoreVideo(result.url as string, finalHook, finalBody, finalCta);
       return {
         ...result,
-        hook: result.hook || hook,
-        body: result.body || body,
-        cta: result.cta || cta,
+        url: servedUrl,
+        hook: finalHook,
+        body: finalBody,
+        cta: finalCta,
         processing_time_ms: Date.now() - startMs,
         ...intelligence,
       } as Record<string, unknown>;
