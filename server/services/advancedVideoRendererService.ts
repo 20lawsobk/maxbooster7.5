@@ -5,6 +5,7 @@
  * No local FFmpeg fallback. No Python AI fallback.
  */
 
+import { randomUUID } from "crypto";
 import { spawn } from "child_process";
 import fsPromises from "fs/promises";
 import { tmpdir } from "os";
@@ -250,31 +251,25 @@ interface CompositeOpts {
 }
 
 /**
- * Composite hook / body / CTA text (and optionally AI voiceover audio) onto
- * MaxCore's rendered MP4.
+ * Inner compositor — shared by the MaxCore video path and the photorealistic
+ * Ken-Burns path.  Takes an absolute local video file path, composites
+ * hook/body/CTA text and optional AI voiceover onto it, and writes the result
+ * to LOCAL_VIDEO_DIR/comp_<basename>.
  *
- * MaxCore provides the visual base (animated background, motion graphics).
- * FFmpeg adds:
- *   - Text overlays (hook / body / CTA) derived from the user's content URL
- *   - When voiceover=true: AI-read script + genre music bed as the audio track
- *
- * Returns the composited URL on success, or the original URL if anything fails.
+ * Returns the served URL of the composited file.
+ * Throws on FFmpeg error so callers can apply their own fallback.
  */
-async function compositeTextOnMaxcoreVideo(
-  servedUrl: string,
+async function compositeTextOnLocalVideo(
+  inPath: string,
   hook: string,
   body: string,
   cta: string,
   opts: CompositeOpts = {},
 ): Promise<string> {
-  // Only composite when there is meaningful text and the file is locally cached
-  if ((!hook && !body && !cta) || !servedUrl.startsWith("/uploads/videos/")) {
-    return servedUrl;
-  }
+  await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
 
-  const inFilename = path.basename(servedUrl);
+  const inFilename = path.basename(inPath);
   const outFilename = `comp_${inFilename}`;
-  const inPath = path.join(process.cwd(), "uploads", "videos", inFilename);
   const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
 
   // Sanitize text: strip chars that break FFmpeg's drawtext filter parser
@@ -340,22 +335,20 @@ async function compositeTextOnMaxcoreVideo(
     );
   }
 
-  if (filters.length === 0) return servedUrl;
+  // No drawable text — return original file URL
+  if (filters.length === 0) return `/uploads/videos/${inFilename}`;
 
-  // ── Optional voiceover: MaxCore AI voice + music bed mixed into the video ────
-  // Primary: MaxCore /generate/audio (authoritative AI voice synthesis)
-  // Fallback: local espeak TTS + FFmpeg music bed (only if MaxCore unavailable)
+  // ── Optional voiceover ─────────────────────────────────────────────────────
   let audioLocalPath: string | null = null;
   if (opts.voiceover) {
     const script = [hook, body, cta].filter(Boolean).join(". ");
     const videoDuration = opts.duration ?? 10;
 
-    // 1. MaxCore authoritative voice synthesis
+    // Primary: MaxCore authoritative AI voice synthesis
     try {
       const mcAudio = await MaxCoreAIClient.generate<{
         url?: string;
         audio_url?: string;
-        filename?: string;
       }>("/generate/audio", {
         text: script,
         genre: opts.genre || "default",
@@ -371,8 +364,9 @@ async function compositeTextOnMaxcoreVideo(
           ? rawAudioUrl
           : `${MAXCORE_ORIGIN}${rawAudioUrl}`;
         const audioFilename = `vo_mc_${Date.now()}.mp3`;
-        const audioPath = path.join(process.cwd(), "uploads", "audio", audioFilename);
-        await fsPromises.mkdir(path.join(process.cwd(), "uploads", "audio"), { recursive: true });
+        const audioDir = path.join(process.cwd(), "uploads", "audio");
+        await fsPromises.mkdir(audioDir, { recursive: true });
+        const audioPath = path.join(audioDir, audioFilename);
         const audioResp = await fetch(fullAudioUrl, {
           headers: { "X-Admin-Key": MC_AI_KEY, Authorization: `Bearer ${MC_AI_KEY}` },
           signal: AbortSignal.timeout(30_000),
@@ -389,7 +383,7 @@ async function compositeTextOnMaxcoreVideo(
       );
     }
 
-    // 2. Local TTS fallback — only when MaxCore audio was not obtained
+    // Fallback: local espeak/flite TTS + genre music bed
     if (!audioLocalPath) {
       try {
         const audioResult = await generateAudio({
@@ -414,57 +408,72 @@ async function compositeTextOnMaxcoreVideo(
     }
   }
 
-  try {
-    let ffmpegArgs: string[];
+  let ffmpegArgs: string[];
+  if (audioLocalPath) {
+    ffmpegArgs = [
+      "-y",
+      "-i", inPath,
+      "-i", audioLocalPath,
+      "-filter_complex", `[0:v]${filters.join(",")}[vout]`,
+      "-map", "[vout]",
+      "-map", "1:a",
+      "-c:v", "libx264",
+      "-preset", "ultrafast",
+      "-crf", "23",
+      "-movflags", "+faststart",
+      "-c:a", "aac",
+      "-b:a", "128k",
+      "-shortest",
+      outPath,
+    ];
+  } else {
+    ffmpegArgs = [
+      "-y",
+      "-i", inPath,
+      "-vf", filters.join(","),
+      "-c:v", "libx264",
+      "-preset", "ultrafast",
+      "-crf", "23",
+      "-movflags", "+faststart",
+      "-an",
+      outPath,
+    ];
+  }
 
-    if (audioLocalPath) {
-      // ── Video + Audio path ─────────────────────────────────────────────────
-      // Use filter_complex so the drawtext chain applies to the video stream
-      // while the audio track comes from the generated MP3.
-      ffmpegArgs = [
-        "-y",
-        "-i", inPath,
-        "-i", audioLocalPath,
-        "-filter_complex", `[0:v]${filters.join(",")}[vout]`,
-        "-map", "[vout]",
-        "-map", "1:a",
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-crf", "23",
-        "-movflags", "+faststart",
-        "-c:a", "aac",
-        "-b:a", "128k",
-        "-shortest",
-        outPath,
-      ];
-    } else {
-      // ── Video-only path (no voiceover or audio gen failed) ─────────────────
-      ffmpegArgs = [
-        "-y",
-        "-i", inPath,
-        "-vf", filters.join(","),
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-crf", "23",
-        "-movflags", "+faststart",
-        "-an",
-        outPath,
-      ];
-    }
-
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn("ffmpeg", ffmpegArgs, { stdio: ["ignore", "pipe", "pipe"] });
-      proc.on("close", (code) =>
-        code === 0 ? resolve() : reject(new Error(`FFmpeg composite exited ${code}`)),
-      );
-      proc.on("error", reject);
-    });
-
-    const audioTag = audioLocalPath ? " + voiceover" : "";
-    logger.info(
-      `[AdvancedVideoRenderer] MaxCore video composited (text${audioTag}) → ${outFilename}`,
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn("ffmpeg", ffmpegArgs, { stdio: ["ignore", "pipe", "pipe"] });
+    proc.on("close", (code) =>
+      code === 0 ? resolve() : reject(new Error(`FFmpeg composite exited ${code}`)),
     );
-    return `/uploads/videos/${outFilename}`;
+    proc.on("error", reject);
+  });
+
+  const audioTag = audioLocalPath ? " + voiceover" : "";
+  logger.info(
+    `[AdvancedVideoRenderer] Composited (text${audioTag}) → ${outFilename}`,
+  );
+  return `/uploads/videos/${outFilename}`;
+}
+
+/**
+ * Thin wrapper: resolves MaxCore's served URL to a local path, then delegates
+ * to compositeTextOnLocalVideo.  Returns the original servedUrl on any failure.
+ */
+async function compositeTextOnMaxcoreVideo(
+  servedUrl: string,
+  hook: string,
+  body: string,
+  cta: string,
+  opts: CompositeOpts = {},
+): Promise<string> {
+  if ((!hook && !body && !cta) || !servedUrl.startsWith("/uploads/videos/")) {
+    return servedUrl;
+  }
+  const inPath = path.join(
+    process.cwd(), "uploads", "videos", path.basename(servedUrl),
+  );
+  try {
+    return await compositeTextOnLocalVideo(inPath, hook, body, cta, opts);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     logger.warn(
@@ -736,6 +745,338 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
   return null;
 }
 
+// ── Photorealistic video pipeline ─────────────────────────────────────────────
+//
+// MaxCore /generate/image → photorealistic frame → FFmpeg Ken Burns zoom →
+// compositeTextOnLocalVideo (text + voiceover) → comp_photo_base_*.mp4
+//
+// This is the sole photorealistic path.  MaxCore's growing image-generation
+// dataset (fine-tuned on real music photography) powers the visual base.
+// A vivid Sharp genre-palette gradient is the fallback if MaxCore is offline.
+
+const PHOTO_CACHE_DIR = path.join(process.cwd(), "uploads", "photo_cache");
+
+/** Aspect-ratio → [width, height] map, matching videoGeneratorService. */
+const PHOTO_ASPECT_DIMS: Record<string, [number, number]> = {
+  "9:16": [1080, 1920],
+  "16:9": [1920, 1080],
+  "1:1":  [1080, 1080],
+  "4:5":  [1080, 1350],
+};
+
+/**
+ * Requests a photorealistic background image from MaxCore /generate/image.
+ * The prompt is assembled from the video's hook, topic, genre, and platform so
+ * MaxCore's model can leverage its training data for music-specific scenes.
+ *
+ * Falls back to a vivid Sharp gradient when MaxCore is unavailable.
+ * Returns an absolute local file path ready for FFmpeg input.
+ */
+async function fetchPhotorealisticImage(
+  topic: string,
+  hook: string,
+  genre: string,
+  platform: string,
+  aspectRatio: string,
+): Promise<string> {
+  await fsPromises.mkdir(PHOTO_CACHE_DIR, { recursive: true });
+
+  const [W, H] = PHOTO_ASPECT_DIMS[aspectRatio] ?? PHOTO_ASPECT_DIMS["9:16"];
+
+  // Cinematic scene description — MaxCore's dataset uses music-photography
+  // keywords (venue lighting, artist silhouettes, crowd dynamics, etc.)
+  const sceneText = (hook || topic || "music artist").slice(0, 120);
+  const prompt = [
+    sceneText,
+    genre ? `${genre} music scene` : "music scene",
+    "photorealistic cinematic photography, dramatic studio lighting",
+    "ultra-high detail, 8k resolution, vivid colors, no text, no watermarks",
+  ].join(", ");
+
+  try {
+    const result = await MaxCoreAIClient.generate<{
+      url?: string;
+      image_url?: string;
+      src?: string;
+      outputs?: Array<{ url?: string; src?: string }>;
+    }>("/generate/image", {
+      prompt,
+      negative_prompt:
+        "text, watermark, blurry, pixelated, low quality, cartoon, anime, illustration, sketch",
+      width: W,
+      height: H,
+      quality: "photorealistic",
+      style: "cinematic",
+      genre: genre || "pop",
+      platform,
+      steps: 30,
+      guidance_scale: 7.5,
+      seed: Math.floor(Math.random() * 999_999),
+    });
+
+    const imageUrl =
+      result?.url ??
+      result?.image_url ??
+      result?.src ??
+      result?.outputs?.[0]?.url ??
+      result?.outputs?.[0]?.src;
+
+    if (
+      imageUrl &&
+      (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
+    ) {
+      const rawExt = imageUrl.split("?")[0].split(".").pop()?.toLowerCase() ?? "jpg";
+      const ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt) ? rawExt : "jpg";
+      const filename = `photo_${randomUUID().slice(0, 8)}.${ext}`;
+      const localPath = path.join(PHOTO_CACHE_DIR, filename);
+
+      const imgResp = await fetch(imageUrl, {
+        headers: { "X-Admin-Key": MC_AI_KEY, Authorization: `Bearer ${MC_AI_KEY}` },
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (imgResp.ok) {
+        const buf = Buffer.from(await imgResp.arrayBuffer());
+        if (buf.length > 5_000) {
+          await fsPromises.writeFile(localPath, buf);
+          logger.info(
+            `[PhotoReal] MaxCore image cached → ${filename} (${Math.round(buf.length / 1024)} KB)`,
+          );
+          return localPath;
+        }
+      }
+    }
+  } catch (err: unknown) {
+    logger.warn(
+      `[PhotoReal] MaxCore /generate/image failed (${(err as Error).message ?? String(err)}) — using gradient fallback`,
+    );
+  }
+
+  return generatePhotoGradientFallback(W, H, genre);
+}
+
+/**
+ * Sharp gradient fallback — a vivid multi-stop vertical gradient keyed to the
+ * artist's genre palette.  Used when MaxCore image generation is unavailable.
+ */
+async function generatePhotoGradientFallback(
+  W: number,
+  H: number,
+  genre: string,
+): Promise<string> {
+  await fsPromises.mkdir(PHOTO_CACHE_DIR, { recursive: true });
+
+  const filename = `gradient_${randomUUID().slice(0, 8)}.png`;
+  const localPath = path.join(PHOTO_CACHE_DIR, filename);
+
+  // [top-R, top-G, top-B, mid-R, mid-G, mid-B, bot-R, bot-G, bot-B]
+  const PALETTES: Record<string, [number,number,number, number,number,number, number,number,number]> = {
+    "hip-hop":    [20,  0, 40,  80,  0, 120, 200,   0,  60],
+    "trap":       [10,  0, 30,  60,  0,  80, 150,   0,  20],
+    "pop":        [20,  0, 60, 160,  0, 200, 255,  60, 120],
+    "r&b":        [40,  0, 60, 120, 20,  40, 180,  30,  30],
+    "electronic": [ 0, 20, 80,   0,120, 200,   0, 200, 180],
+    "dance":      [60,  0,120, 120,  0, 200, 200,   0, 255],
+    "rock":       [30,  0,  0,  80, 10,   0,  60,   0,   0],
+    "country":    [80, 50, 10, 180,120,   0, 220, 160,  20],
+    "jazz":       [20, 15, 50,  80, 60,  20, 100,  80,  30],
+    "latin":      [180,40,  0, 220,100,   0, 255, 160,   0],
+  };
+
+  const key = Object.keys(PALETTES).find((k) =>
+    (genre ?? "").toLowerCase().includes(k),
+  );
+  const [tr,tg,tb, mr,mg,mb, br,bg_,bb] = PALETTES[key ?? ""] ?? PALETTES["pop"];
+
+  try {
+    const sharp = (await import("sharp")).default;
+    const pixels = Buffer.alloc(W * H * 3);
+    for (let y = 0; y < H; y++) {
+      const t = y / (H - 1);
+      const toMid = Math.min(t * 2, 1);
+      const toBot = Math.max((t - 0.5) * 2, 0);
+      for (let x = 0; x < W; x++) {
+        const i = (y * W + x) * 3;
+        pixels[i]     = Math.round(tr + (mr - tr) * toMid + (br - mr) * toBot);
+        pixels[i + 1] = Math.round(tg + (mg - tg) * toMid + (bg_ - mg) * toBot);
+        pixels[i + 2] = Math.round(tb + (mb - tb) * toMid + (bb - mb) * toBot);
+      }
+    }
+    await sharp(pixels, { raw: { width: W, height: H, channels: 3 } })
+      .png()
+      .toFile(localPath);
+    logger.info(`[PhotoReal] Gradient fallback rendered → ${filename}`);
+    return localPath;
+  } catch {
+    // Last resort: tiny valid 1×1 black PNG that FFmpeg accepts
+    const black = path.join(PHOTO_CACHE_DIR, `black_${randomUUID().slice(0, 6)}.png`);
+    await fsPromises.writeFile(
+      black,
+      Buffer.from([
+        137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,
+        8,2,0,0,0,144,119,83,222,0,0,0,12,73,68,65,84,8,215,99,96,96,96,
+        0,0,0,4,0,1,39,246,149,36,0,0,0,0,73,69,78,68,174,66,96,130,
+      ]),
+    );
+    return black;
+  }
+}
+
+/**
+ * Applies a Ken Burns (slow zoom-in + centered pan) effect to a still image,
+ * producing a smooth cinematic base video ready for text compositing.
+ *
+ * FFmpeg zoompan needs headroom to crop into: the image is scaled to 2× first,
+ * then zoompan crops and outputs at the target WxH so no quality is lost.
+ *
+ * Returns the absolute local path of the rendered base MP4.
+ */
+async function kenBurnsAnimate(
+  imagePath: string,
+  W: number,
+  H: number,
+  durationSec: number,
+): Promise<string> {
+  await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
+
+  const outFilename = `photo_base_${randomUUID().slice(0, 8)}.mp4`;
+  const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
+
+  const fps = 24;
+  const frames = Math.round(durationSec * fps);
+
+  // Zoom slowly from 1.02 → max 1.5, panned to center (iw/zoom keeps the
+  // output crop centred regardless of zoom level).
+  const zoomFilter =
+    `scale=iw*2:ih*2,` +
+    `zoompan=` +
+      `z='min(zoom+0.0015,1.5)':` +
+      `x='iw/2-(iw/zoom/2)':` +
+      `y='ih/2-(ih/zoom/2)':` +
+      `d=${frames}:fps=${fps}:s=${W}x${H},` +
+    `format=yuv420p`;
+
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn(
+      "ffmpeg",
+      [
+        "-y",
+        "-loop", "1",
+        "-i", imagePath,
+        "-vf", zoomFilter,
+        "-t", String(durationSec),
+        "-c:v", "libx264",
+        "-preset", "ultrafast",
+        "-crf", "23",
+        "-movflags", "+faststart",
+        outPath,
+      ],
+      { stdio: ["ignore", "pipe", "pipe"] },
+    );
+    const errChunks: string[] = [];
+    proc.stderr?.on("data", (d: Buffer) => errChunks.push(d.toString()));
+    proc.on("close", (code) =>
+      code === 0
+        ? resolve()
+        : reject(
+            new Error(
+              `FFmpeg Ken Burns exited ${code}: ${errChunks.slice(-3).join("").slice(0, 300)}`,
+            ),
+          ),
+    );
+    proc.on("error", reject);
+  });
+
+  logger.info(
+    `[PhotoReal] Ken Burns video → ${outFilename} (${W}×${H}, ${durationSec}s)`,
+  );
+  return outPath;
+}
+
+/**
+ * Full photorealistic video pipeline:
+ *   1. MaxCore /generate/image  →  photorealistic background frame
+ *   2. FFmpeg Ken Burns          →  animated base video (cinematic zoom)
+ *   3. compositeTextOnLocalVideo →  hook/body/CTA text + optional AI voiceover
+ *
+ * Falls back to a genre-palette gradient when MaxCore image generation is
+ * unavailable — the Ken Burns + text composite still runs over the gradient.
+ */
+async function renderPhotorealisticVideo(
+  opts: VideoGenOptions,
+  hook: string,
+  body: string,
+  cta: string,
+  startMs: number,
+  intelligence: Record<string, unknown>,
+): Promise<VideoGenResult> {
+  const aspectRatio = opts.aspect_ratio ?? "9:16";
+  const [W, H] = PHOTO_ASPECT_DIMS[aspectRatio] ?? PHOTO_ASPECT_DIMS["9:16"];
+  const durationSec = opts.duration ?? 10;
+
+  const compositeOpts: CompositeOpts = {
+    voiceover: !!opts.voiceover,
+    genre: opts.genre,
+    duration: durationSec,
+    artistName: opts.artist_name,
+    topic: opts.topic,
+  };
+
+  try {
+    logger.info("[PhotoReal] Fetching photorealistic image from MaxCore…");
+    const imagePath = await fetchPhotorealisticImage(
+      opts.topic ?? hook ?? "music artist",
+      hook,
+      opts.genre ?? "pop",
+      opts.platform ?? "tiktok",
+      aspectRatio,
+    );
+
+    logger.info("[PhotoReal] Applying Ken Burns animation…");
+    const baseVideoPath = await kenBurnsAnimate(imagePath, W, H, durationSec);
+
+    logger.info("[PhotoReal] Compositing text overlay…");
+    const finalUrl = await compositeTextOnLocalVideo(
+      baseVideoPath, hook, body, cta, compositeOpts,
+    );
+
+    logger.info(
+      `[PhotoReal] Pipeline complete in ${Date.now() - startMs}ms → ${finalUrl}`,
+    );
+
+    return {
+      success: true,
+      url: finalUrl,
+      width: W,
+      height: H,
+      duration: durationSec,
+      hook,
+      body,
+      cta,
+      template: "photorealistic",
+      template_name: "Photorealistic (MaxCore AI)",
+      source: "MaxCoreAI-Photorealistic",
+      quality: "photorealistic",
+      capabilities: [
+        "maxcore_image_generation",
+        "ken_burns_animation",
+        "text_overlay",
+        ...(compositeOpts.voiceover ? ["ai_voiceover"] : []),
+      ],
+      processing_time_ms: Date.now() - startMs,
+      ...intelligence,
+    } as unknown as VideoGenResult;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.error(`[PhotoReal] Pipeline failed: ${msg}`);
+    return {
+      success: false,
+      error: `Photorealistic pipeline failed: ${msg}`,
+      source: "MaxCoreAI-Photorealistic",
+      processing_time_ms: Date.now() - startMs,
+    };
+  }
+}
+
 // ── MaxCore content types ─────────────────────────────────────────────────────
 
 interface MaxCoreContent {
@@ -835,10 +1176,19 @@ export async function renderVideo(
   const intelligence = {
     hashtags,
     content_confidence: contentConfidence,
-    sentiment_score: sentimentResult.sentiment ?? null,
-    sentiment_label: sentimentResult.label ?? null,
-    sentiment_confidence: sentimentResult.confidence ?? null,
+    sentiment_score: sentimentResult?.sentiment ?? null,
+    sentiment_label: sentimentResult?.label ?? null,
+    sentiment_confidence: sentimentResult?.confidence ?? null,
   };
+
+  // ── Photorealistic mode — branch before MaxCore motion-video submission ──────
+  // MaxCore /generate/image provides the visual base (photorealistic frame),
+  // FFmpeg Ken Burns animates it, compositeTextOnLocalVideo adds text+voice.
+  if (opts.quality === "photorealistic") {
+    return renderPhotorealisticVideo(
+      opts, hook, body, cta, startMs, intelligence as Record<string, unknown>,
+    );
+  }
 
   // ── Step 2: MaxCore video generation ────────────────────────────────────────
   const jobResp = await MaxCoreAIClient?.infer<unknown>("/generate-video", {
