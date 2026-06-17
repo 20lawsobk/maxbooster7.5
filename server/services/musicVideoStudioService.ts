@@ -165,7 +165,10 @@ function buildScenePrompt(opts: {
   return parts.join(", ");
 }
 
-// ── PARALLEL IMAGE GENERATOR WITH CONCURRENCY CAP ────────────────────────────
+// ── PARALLEL IMAGE GENERATOR ──────────────────────────────────────────────────
+// MaxCore auto-adjusts its concurrency to Max Booster's demand — no artificial
+// throttle needed. Fire all scenes simultaneously so wall-clock time equals a
+// single MaxCore round-trip regardless of scene count.
 
 async function generateAIScenes(opts: {
   sections: AudioSection[];
@@ -178,19 +181,10 @@ async function generateAIScenes(opts: {
   bpm: number;
   maxScenes: number;
 }): Promise<SceneResult[]> {
-  const { sections, maxScenes } = opts;
+  const targetSections = opts.sections.slice(0, opts.maxScenes);
 
-  // Cap the number of scenes to avoid extremely long renders
-  const targetSections = sections.slice(0, maxScenes);
-
-  const results: SceneResult[] = new Array(targetSections.length);
-  // MaxCore supports 24 parallel scene generations — fire all scenes at once.
-  const CONCURRENCY = 24;
-
-  for (let batch = 0; batch < targetSections.length; batch += CONCURRENCY) {
-    const slice = targetSections.slice(batch, batch + CONCURRENCY);
-    await Promise.all(slice.map(async (section, sliceIdx) => {
-      const i = batch + sliceIdx;
+  const settled = await Promise.allSettled(
+    targetSections.map(async (section, i) => {
       const prompt = buildScenePrompt({
         genre: opts.genre,
         artistName: opts.artistName,
@@ -215,21 +209,18 @@ async function generateAIScenes(opts: {
           opts.aspectRatio,
         );
         logger.info(
-          `[MusicVideoStudio] Scene ${i + 1}/${targetSections.length} — ${section.label}: ${source}`,
+          `[MusicVideoStudio] Scene ${i + 1}/${targetSections.length} — ${section.label}: maxcore`,
         );
       } catch (err) {
-        // fetchPhotorealisticImage has its own Sharp fallback — should not throw
-        // but guard defensively
         logger.warn(
           `[MusicVideoStudio] Scene ${i + 1} image failed, using gradient fallback:`,
-          err?.message?.slice(0, 80),
+          (err as Error)?.message?.slice(0, 80),
         );
-        // Return a placeholder path — imageToMusicVideo will skip missing files
         imagePath = "";
         source = "gradient";
       }
 
-      results[i] = {
+      return {
         sectionIndex: i,
         sectionType: section.type,
         sectionLabel: section.label,
@@ -238,11 +229,14 @@ async function generateAIScenes(opts: {
         imagePath,
         prompt,
         source,
-      };
-    }));
-  }
+      } satisfies SceneResult;
+    }),
+  );
 
-  return results.filter((r) => r && r.imagePath);
+  return settled
+    .filter((r): r is PromiseFulfilledResult<SceneResult> => r.status === "fulfilled")
+    .map((r) => r.value)
+    .filter((r) => r.imagePath);
 }
 
 // ── VIRAL PRE-SCORE ───────────────────────────────────────────────────────────
@@ -338,7 +332,7 @@ export async function generateFullMusicVideo(
   } catch (err) {
     return {
       success: false,
-      error: `Beat analysis failed: ${err?.message}`,
+      error: `Beat analysis failed: ${(err as Error)?.message}`,
       beatAnalysis: null,
       scenes: [],
       viralScore: null,
@@ -409,7 +403,7 @@ export async function generateFullMusicVideo(
   } catch (err) {
     return {
       success: false,
-      error: `Video render failed: ${err?.message}`,
+      error: `Video render failed: ${(err as Error)?.message}`,
       beatAnalysis,
       scenes,
       viralScore: null,
