@@ -1,54 +1,42 @@
 ---
-name: MaxCore video endpoint — fully working end-to-end (2026-06-16)
-description: MaxCore renders AND delivers binary MP4. Pipeline is complete. FFmpeg fallback stays as safety net but no longer triggers in normal operation.
+name: MaxCore video render — regressed, "All scenes failed" (2026-06-17)
+description: MaxCore /api/generate-video accepts jobs but every scene fails at render time. Server-side bug on secure-ai-forge.replit.app, NOT fixable from this repo.
 ---
 
-# Current state (2026-06-16): FULLY WORKING
+# Current state (2026-06-17): BROKEN at the MaxCore render step
 
-Both render AND binary delivery are confirmed working on MaxCore (`secure-ai-forge.replit.app`).
+The video *job* is accepted and polled correctly, but the render fails on MaxCore.
+This is a regression: the same pipeline produced a real 1.9 MB MP4 on 2026-06-16.
 
-## Confirmed live
+## Live evidence (reproducible)
 
-- `POST /api/generate-video` with `{idea, platform, tone, genre, goal, duration, artist_name}` → `{job_id}` ✅
-- `GET /api/video-job/<id>` → `status:"done"` with `url:"/uploads/videos/ai_<hex>.mp4"`, `width:1080`, `height:1920`, `duration:15` ✅
-- `GET /uploads/videos/ai_<hex>.mp4` with `X-Admin-Key` header → `HTTP 200 video/mp4 1.9 MB ftyp` ✅
+- `GET /api/health` on `secure-ai-forge.replit.app` → `{"status":"healthy","model_loaded":true,"version":"1.0.0"}` — server is UP.
+- `POST /api/generate-video` → `{"job_id":...,"status":"processing"}` ✅ (accepts the job)
+- `GET /api/video-job/<id>` → `{"status":"error","error":"All scenes failed: Scene 0 failed; Scene 1 failed; ..."}` ❌
+- Fails identically with a rich payload AND a minimal `{"idea":"music","platform":"tiktok","duration":5}` payload → **input-independent**; every scene throws.
 
-## Full pipeline (normal operation)
+## Why this is NOT a this-repo bug
 
-1. Submit `POST /api/generate-video` with `idea` field (required — 422 without it)
-2. Poll `GET /api/video-job/<id>` until `status:"done"` (~10s render time)
-3. `cacheVideoLocally()` downloads the file with `maxcoreAuthHeaders()` (`X-Admin-Key` + `X-API-Key` + `Authorization: Bearer`) → saves to `uploads/videos/`
-4. Returns `/uploads/videos/<filename>` served via `express.static`
-5. FFmpeg fallback stays dormant (only triggers when `servedUrl.startsWith("/api/social/video-proxy/")`)
+The scene rendering runs entirely on the MaxCore deployment (`secure-ai-forge.replit.app`:
+Vite@5000 → Node proxy@8080 → Python renderer@9878). This repo only submits the job,
+polls, and (when a URL is returned) downloads the file. The "Scene N failed" aggregation
+is produced by MaxCore's renderer, which swallows each scene's real exception — the actual
+stack trace is ONLY in MaxCore's own server logs, not visible from here.
 
-## Auth chain
+## Likely cause
 
-All endpoints require `X-Admin-Key: <key>` header.
-MaxCore architecture: `secure-ai-forge.replit.app` → Vite @ 5000 → Node.js proxy @ 8080 → Python renderer @ 9878.
-The 8080 proxy forwards `X-Admin-Key` to 9878. All three headers (`X-Admin-Key`, `X-API-Key`, `Authorization: Bearer`) are sent by this repo on every call.
+User integrated "enhanced files" (the diffusion render pipeline,
+`server/services/diffusion/gen_engine_v2/` family — ops/UNetV5/SchedulerV2/AudioSynthV2/
+LTXAdapter/api_server_v5) directly into the MaxCore server between 2026-06-16 (working)
+and 2026-06-17 (every scene fails). The integration most likely introduced a per-scene
+runtime exception (import error, signature mismatch, missing dep, or device/op error).
 
-## `idea` field requirement
+## How to debug (requires MaxCore-side access — not available from this repo)
 
-MaxCore's `/api/generate-video` requires a top-level `idea` string (Pydantic 422 if absent).
-Wired in:
-- `advancedVideoRendererService.ts`: synthesised from `hook + artist_name + genre + topic`
-- `creativeModelService.ts`: synthesised from `hooks[0] + artistName + genre + domain`
+1. Read MaxCore's renderer logs (Python @ 9878) for the real per-scene exception.
+2. Confirm the enhanced files were actually deployed AND the renderer process restarted.
+3. Reproduce a single scene render in isolation on MaxCore to surface the stack trace.
 
-## FFmpeg scene-assembly fallback
-
-Still in place in `advancedVideoRendererService.ts` as a safety net. Triggers only when
-`cacheVideoLocally` returns a proxy-path URL AND `status.scenes?.length > 0`. Verified
-independently: produces valid 179KB MP4 with `ftyp` magic from 5 MaxCore scenes.
-
-## How to verify end-to-end
-
-```bash
-JOB=$(curl -sS -H "X-Admin-Key: $AI_SERVER_KEY" -H "Content-Type: application/json" \
-  -d '{"idea":"test","platform":"tiktok","tone":"cinematic","genre":"trap","goal":"growth","duration":15,"artist_name":"Test"}' \
-  "$AI_SERVER_URL/api/generate-video")
-JOB_ID=$(echo "$JOB" | grep -oP '"job_id"\s*:\s*"\K[^"]+')
-# poll until done, then:
-curl -sS -H "X-Admin-Key: $AI_SERVER_KEY" "$AI_SERVER_URL/uploads/videos/ai_<hex>.mp4" \
-  -o /tmp/test.mp4 -w "HTTP=%{http_code} type=%{content_type} size=%{size_download}\n"
-od -An -c -j4 -N4 /tmp/test.mp4  # must print 'ftyp'
-```
+Until the MaxCore renderer is fixed, the app's `/api/social/generate-video` job will end
+in `status:"error"`. Everything else (text/caption/ad/hashtag/strategy content generation)
+is healthy and unaffected.
