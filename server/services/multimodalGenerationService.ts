@@ -142,8 +142,25 @@ const _userContextCache = new Map<
 >();
 const USER_CTX_TTL_MS = 60_000;
 
+function emptyUserContext(): UserContext {
+  return {
+    artistName: null,
+    artistBio: null,
+    genre: null,
+    subGenres: [],
+    brandVoice: null,
+    targetAudience: null,
+    preferredHashtags: [],
+    avoidTopics: [],
+    contentTone: null,
+    callToActionStyle: null,
+    uniqueSellingPoints: [],
+    currentReleases: [],
+  };
+}
+
 async function fetchUserContext(userId: string): Promise<UserContext> {
-  if (!userId) return {} as UserContext;
+  if (!userId) return emptyUserContext();
   const cached = _userContextCache?.get(userId);
   if (cached && cached?.expiresAt > Date?.now()) return cached?.data;
 
@@ -175,16 +192,16 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
       prefs?.targetAudience ?? voice?.targetAudience ?? null;
 
     const data: UserContext = {
-      artistName: prefs.artistName ?? null,
-      artistBio: prefs.artistBio ?? null,
-      genre: prefs.genre ?? null,
+      artistName: prefs?.artistName ?? null,
+      artistBio: prefs?.artistBio ?? null,
+      genre: prefs?.genre ?? null,
       subGenres: (prefs?.subGenres as string[] | null) ?? null,
       brandVoice: resolvedBrandVoice,
       targetAudience: resolvedTargetAudience,
       preferredHashtags: (prefs?.preferredHashtags as string[] | null) ?? null,
       avoidTopics: (prefs?.avoidTopics as string[] | null) ?? null,
-      contentTone: prefs.contentTone ?? voice?.writingStyle ?? null,
-      callToActionStyle: prefs.callToActionStyle ?? null,
+      contentTone: prefs?.contentTone ?? voice?.writingStyle ?? null,
+      callToActionStyle: prefs?.callToActionStyle ?? null,
       uniqueSellingPoints:
         (prefs?.uniqueSellingPoints as string[] | null) ?? null,
       currentReleases:
@@ -201,7 +218,7 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
       "[MultimodalGen] fetchUserContext DB error (non-fatal):",
       (err as Error)?.message ?? String(err),
     );
-    return {} as UserContext;
+    return emptyUserContext();
   }
 }
 
@@ -213,7 +230,7 @@ function matchReleaseByUrl(
   url: string,
   releases: UserContext["currentReleases"],
 ): { title: string; type: string; releaseDate: string } | undefined {
-  if (!url || !releases.length) return undefined;
+  if (!url || !releases?.length) return undefined;
   try {
     const needle = new URL(url).href.replace(/\/$/, "").toLowerCase();
     for (const rel of releases) {
@@ -2138,7 +2155,7 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
       });
     }
   } else {
-    const rawModality = (req.constraints.outputModality as string) || "text";
+    const rawModality = (req.constraints?.outputModality as string) || "text";
     const outputModality: "text" | "image" | "audio" | "video" = [
       "text",
       "image",
@@ -2301,7 +2318,7 @@ function buildLocalTextAssets(
     const rules = platform ? getRules(platform) : null;
 
     // Use per-platform differentiated copy if available (from localAnalyzeUrl)
-    const perCopy = normalized.perPlatformCopy[platform];
+    const perCopy = normalized.perPlatformCopy?.[platform] ?? {};
     const platformHook = perCopy.hook ?? hook;
     const platformBody = perCopy.body ?? body;
     const platformCta = perCopy.cta ?? cta;
@@ -2487,7 +2504,7 @@ const textWorker = {
         normalized.artistName ??
         semantic.artist_name ??
         normalized.author ??
-        (normalized.metadata as Record<string, unknown>).author ??
+        (normalized.metadata as Record<string, unknown> | undefined)?.author ??
         undefined;
       const resolvedGenre =
         userCtx.genre ?? normalized.genre ?? semantic.genre ?? undefined;
@@ -2516,11 +2533,11 @@ const textWorker = {
       const artistContextParts: string[] = [];
       if (userCtx.artistBio)
         artistContextParts.push(userCtx.artistBio.slice(0, 300));
-      if (userCtx.uniqueSellingPoints.length)
+      if (userCtx.uniqueSellingPoints?.length)
         artistContextParts.push(
           `Key strengths: ${userCtx.uniqueSellingPoints.slice(0, 5).join(", ")}`,
         );
-      if (userCtx.subGenres.length)
+      if (userCtx.subGenres?.length)
         artistContextParts.push(
           `Sub-genres: ${userCtx.subGenres.slice(0, 4).join(", ")}`,
         );
@@ -2545,7 +2562,7 @@ const textWorker = {
               ...(userCtx.callToActionStyle
                 ? { cta_style: userCtx.callToActionStyle }
                 : {}),
-              ...(userCtx.avoidTopics.length
+              ...(userCtx.avoidTopics?.length
                 ? { avoid_topics: userCtx.avoidTopics }
                 : {}),
             },
@@ -2984,7 +3001,8 @@ const imageWorker = {
           prompt: String(prompt).slice(0, 200),
           platform: plat,
           tone:
-            (req.constraints as Record<string, unknown>).tone ?? "creative",
+            (req.constraints as Record<string, unknown> | undefined)?.tone ??
+            "creative",
         });
         generated.push({
           id: randomUUID(),
@@ -3054,7 +3072,7 @@ const audioWorker = {
     // 2. Local FFmpeg audio generator fallback — produces a real .mp3 file
     try {
       const normalized = inputs.normalized ?? {};
-      const genre = normalized.genre ?? req.constraints.genre ?? "default";
+      const genre = normalized.genre ?? req.constraints?.genre ?? "default";
       const maxSec = audioRules.maxDurationSec ?? 30;
       const ttsText = [
         normalized.hook,
