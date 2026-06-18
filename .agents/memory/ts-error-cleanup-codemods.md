@@ -16,6 +16,20 @@ Two files (StudioOneLayout, StudioOneWrapper) were affected; it accounted for ~3
 **Why:** removing the nest is the only tractable fix (no clean git rev, parser would stack-overflow on 8k-deep nesting). Behavior-identical because the guard is permanently false.
 **How to apply:** find the innermost = argument of the *last* `DOMPurify.sanitize(` (deepest opened); replace the whole `__html` value with it.
 
+## Codemod corruption can be an ACTIVE CRASHER, not just benign dead code
+The DOMPurify nest above is behavior-preserving (guard always false). But the same corruption family can
+leave a **floating expression-statement whose value is discarded yet whose subexpressions still execute** —
+and one of those can throw. Real case: `renderImageWithKenBurns` (server/services/imageToVideoService.ts)
+had a dead floating template literal whose value was never assigned/returned (the real FFmpeg zoom uses
+`zBasic`/`xBasic`/`yBasic` computed just below). It still ran `motion.z(d).match(/0\.\d+/)[0]`; for pan/tilt
+Ken Burns motions `motion.z` returns `'1.04'` (no `0.\d+`), so `.match` → null and `[0]` threw. The `?? "0.08"`
+fallback sat AFTER the `[0]` so it never guarded. Motions cycle by section index → the Music Video Studio
+render path was **100% broken** for any multi-scene video. Fix: delete the dead statement (and its only-there
+`intensityScale` local). **Lesson:** when clearing codemod debris, a discarded-value statement is not
+automatically safe to ignore — if it contains a call/index/`.match()[n]`/await it can crash at runtime even
+though tsc is happy. Grep for floating template-literal/expression statements in touched files and verify
+they're side-effect-free before assuming "dead = harmless".
+
 ## Unused-family codemod methodology (TS6133/6192/6196/6198/6138)
 These errors only exist because `noUnusedLocals`/`noUnusedParameters` were enabled. Safe automated handling, by node kind:
 - **Unused imports** (specifiers / whole-import / default): drive off tsc diagnostic line:col → map to exact AST node → only edit inside `ImportDeclaration` → rebuild the import from AST (preserve `type` modifiers + quote style) → **re-parse the edited file and revert if it gains parseDiagnostics**. Verify TS2304 ("cannot find name") count stays flat before/after to prove no *used* import was removed.
