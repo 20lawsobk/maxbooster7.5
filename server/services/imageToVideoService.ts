@@ -202,7 +202,9 @@ async function renderImageWithKenBurns(
   height: number,
   durationSec: number,
   motionIndex: number,
-  intensity: "subtle" | "moderate" | "dramatic",
+  // NOTE: intensity is accepted for API compatibility but not yet wired into the
+  // zoom/pan amount — Ken Burns currently renders the same regardless of level.
+  _intensity: "subtle" | "moderate" | "dramatic",
   colorGrade: string,
   textOverlays: string[],
   fps = 30,
@@ -210,15 +212,9 @@ async function renderImageWithKenBurns(
   const motion = KEN_BURNS_MOTIONS[motionIndex % KEN_BURNS_MOTIONS.length];
   const frames = Math.ceil(durationSec * fps);
 
-  // Scale intensity: zoom range multiplier
-  const intensityScale =
-    intensity === "subtle" ? 0.5 : intensity === "dramatic" ? 1.6 : 1.0;
-
   // zoompan: zoom in/out + pan within source image
   // Output is at output resolution (width x height), source scaled from input image.
   // We render at full resolution — the zoompan filter handles the motion.
-  `pmax(${1.0},${1.0 + parseFloat(motion.z(durationSec).match(/0\.\d+/)[0] ?? "0.08") * intensityScale * 0 + 1}*(${motion.z(durationSec)}-1)+1)`;
-  // Simpler and more reliable zoompan expression:
   const zBasic = motion.z(durationSec);
   const xBasic = motion.x(width, width, durationSec);
   const yBasic = motion.y(height, height, durationSec);

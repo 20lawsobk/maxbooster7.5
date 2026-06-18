@@ -22,3 +22,11 @@ Scene count should follow the song's actual structure, not an arbitrary app ceil
 image requests in parallel (`Promise.allSettled`), so per-render MaxCore image concurrency is bounded only
 by section count + MaxCore policy. If real load pressure ever appears, add a *concurrency queue that does
 not truncate scenes* (or a MaxCore-side policy) — never a scene-count cap, which is exactly what was removed.
+
+## Verified end-to-end (retest)
+The Studio render path is confirmed working: a real WAV → local beat detection → N MaxCore scenes
+(scenes == detected sections) → valid ISO-Media MP4 served at HTTP 200. To get here, a SEPARATE, pre-existing
+crash had to be fixed first — a dead floating template literal in `imageToVideoService.ts`'s Ken Burns
+renderer threw a null-deref for pan/tilt motions and broke this path 100% of the time (see
+ts-error-cleanup-codemods.md "ACTIVE CRASHER"). The scene-cap removal alone wasn't enough; the path didn't
+actually render until that crasher was removed.
