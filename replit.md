@@ -81,6 +81,7 @@ Durable lessons and conventions only. Full per-task play-by-play is in `.local/a
 - **Publish-context recovery:** capture context after the queue `shift()`, store it durably, and do NOT delete on consume (analysis jobs retry) — bound by cap-eviction instead. Timing insights must use the real posted hour, not analysis-time.
 - **MaxCore reachability:** only suppress endpoints on 404/405 (absent); 5xx/3xx return null without suppressing, so transient training-load 503s don't log false "unreachable".
 - **MaxCore-only routing:** content/variant/advertising generation use MaxCore exclusively; the Python sidecar is retained only for audio analysis, MIDI transcription, and cinematic video templates.
+- **Generation crash chains hide on the new-user path:** an additive external-API change can unmask pre-existing null-derefs in downstream consumers when fixing the first crash removes the shield. When retesting generation, drive the brand-new-user / empty-data path until it returns real output (each fixed crash often reveals the next). Context fetchers that may be empty must return a fully-defaulted object, never `{} as T` (a type-lie that forces optional guards everywhere). See `.agents/memory/multimodal-text-null-derefs.md` (also: pino drops `logger.warn(msg, errStr)` with no `%s`, hiding error detail).
 
 ### Infrastructure & environment
 
