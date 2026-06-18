@@ -1,11 +1,36 @@
 ---
-name: MaxCore video — RESOLVED; root cause was ffmpeg spawn EIO on a hardcoded nix path
-description: "All scenes failed" was caused by ffmpeg spawn OSError [Errno 5] against a hardcoded /nix/store/<hash> path on the MaxCore deployment. Fixed MaxCore-side; durable lesson is never bake a nix-store binary path.
+name: MaxCore video — RECURRING remote scene-render failure ("All scenes failed"); app side is correct
+description: "All scenes failed: Scene N failed" is a MaxCore-remote render failure (historically ffmpeg spawn EIO on a hardcoded /nix/store path). Recurs across MaxCore redeploys. This repo's submit/poll/error-handling is correct; the photorealistic path is independent and stays healthy.
 ---
 
-# Status: RESOLVED (2026-06-17). Durable lesson below.
+# Status: RECURRING (remote MaxCore side). Latest recurrence 2026-06-18. Durable lessons below.
 
-End-to-end video generation works again. Verified twice:
+## 2026-06-18 recurrence (retest)
+Retested video generation; the same signature is back: MaxCore `/api/generate-video` returns a job_id, then
+`/api/video-job/:id` → `{"status":"error","error":"All scenes failed: Scene 0 failed; Scene 1 failed; Scene 2 failed"}`
+in ~8s (fast-fail spawn-error signature, not a real ~10s/scene render). Confirmed via a DIRECT curl to MaxCore
+(bypassing ALL app code) — identical failure — so it is unambiguously remote, not this repo. App-side pipeline
+verified correct end-to-end: content gen ✅, sentiment ✅, job submit ✅, poll loop correctly detects
+`status:"error"` and returns a structured failure. No app code change is warranted; the fix belongs on the
+`secure-ai-forge.replit.app` deployment (see durable lesson: never bake a /nix/store ffmpeg path). MaxCore still
+exposes only the aggregated error (no per-scene traceback), so confirming the exact remote cause needs the owner's
+renderer logs.
+
+Minor app-side note (NOT fixed — out of retest scope): `pollVideoJob` returns `null` for BOTH `status:"error"`
+and the 150-attempt timeout, so `renderVideo`'s RETURNED `error` reads "did not complete within the polling window"
+even when the true cause is "All scenes failed". The real reason IS logged at WARN; only the surfaced error string
+is generic. Optional future polish: propagate the real error instead of the timeout message.
+
+## Photorealistic path is INDEPENDENT of the scene renderer (stays healthy)
+`renderVideo` with `quality:"photorealistic"` branches BEFORE the MaxCore scene-video submission: it uses MaxCore
+`/generate/image` (with a Sharp genre-gradient fallback) → local FFmpeg Ken Burns → text/voice composite. During
+the 2026-06-18 outage this path produced a real MP4 (`comp_photo_base_*.mp4`, ISO Media h264 1080×1920 8s) in ~14s.
+So "video generation is broken" must be qualified by PATH: cinematic/scene + music-video paths share the blocked
+remote renderer; the photorealistic path is local-assembly and independent. Triaging future "video broken" reports:
+check which quality/path it used, and whether MaxCore `/api/video-job` returns `status:"error"`.
+
+## Prior resolution context (2026-06-17)
+End-to-end video generation worked after a MaxCore-side fix. Verified twice:
 - Direct MaxCore `/api/generate-video` → `status:done`, 5 scenes, downloaded real 3 MB MP4 (`ftyp`, ISO Media).
 - Through this app `/api/social/generate-video` → `/api/social/video-job/:id` → `status:"completed"`,
   `source:"MaxCoreAI"`, app served a real 5 MB MP4 (`ftyp`). The `comp_` filename prefix means the app's
