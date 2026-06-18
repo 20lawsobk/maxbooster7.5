@@ -4926,7 +4926,9 @@ router.post(
             colorGrade: (body.color_grade as "cinematic") || "cinematic",
             kenBurnsIntensity: (body.intensity as "moderate") || "moderate",
             transitionType: body.transition,
-            maxScenes: body.max_scenes ? Number(body.max_scenes) : 24,
+            // No app-side scene cap — MaxCore owns scene generation, so honor an
+            // explicit client max_scenes but otherwise render every detected section.
+            maxScenes: body.max_scenes ? Number(body.max_scenes) : undefined,
           });
 
           if (!studioResult.success) {
