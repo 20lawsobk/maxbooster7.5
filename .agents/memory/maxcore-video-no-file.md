@@ -1,42 +1,60 @@
 ---
-name: MaxCore video render — regressed, "All scenes failed" (2026-06-17)
-description: MaxCore /api/generate-video accepts jobs but every scene fails at render time. Server-side bug on secure-ai-forge.replit.app, NOT fixable from this repo.
+name: MaxCore video render — fails because ffmpeg can't spawn (stale nix path), NOT a code bug
+description: "All scenes failed" on MaxCore is caused by ffmpeg spawn OSError [Errno 5] against a hardcoded /nix/store/<hash> path. Environment problem on the MaxCore deployment, not this repo and not the integrated TS files.
 ---
 
-# Current state (2026-06-17): BROKEN at the MaxCore render step
+# Root cause (confirmed 2026-06-17 from MaxCore renderer logs)
 
-The video *job* is accepted and polled correctly, but the render fails on MaxCore.
-This is a regression: the same pipeline produced a real 1.9 MB MP4 on 2026-06-16.
+MaxCore's `/api/generate-video` returns `{"status":"error","error":"All scenes failed: Scene N failed; ..."}`.
+The generic "Scene N failed" hides the real cause, which is in MaxCore's Python renderer (port 9878):
 
-## Live evidence (reproducible)
+```
+[VideoRender][WARN] ffmpeg spawn OSError (attempt 1..3): [Errno 5] Input/output error:
+'/nix/store/<hash>-ffmpeg-full-7.1.1-bin/bin/ffmpeg'
+[VideoRender][ERROR] _render_pil_based exception: [Errno 5] ... ffmpeg
+[VideoRender][ERROR] _render_fallback exception: [Errno 5] ... ffmpeg
+[VideoRender][ERROR] Scene N returned no path
+```
 
-- `GET /api/health` on `secure-ai-forge.replit.app` → `{"status":"healthy","model_loaded":true,"version":"1.0.0"}` — server is UP.
-- `POST /api/generate-video` → `{"job_id":...,"status":"processing"}` ✅ (accepts the job)
-- `GET /api/video-job/<id>` → `{"status":"error","error":"All scenes failed: Scene 0 failed; Scene 1 failed; ..."}` ❌
-- Fails identically with a rich payload AND a minimal `{"idea":"music","platform":"tiktok","duration":5}` payload → **input-independent**; every scene throws.
+Every scene-render path (`_render_pil_based`, `_render_fallback`) shells out to ffmpeg; ffmpeg
+can't be exec'd, so each scene returns no path and the job aggregates to "All scenes failed".
+The ~9s whole-job failure (vs ~10s/scene for a real render) is the fast-fail signature of an
+immediate spawn error, not slow rendering.
 
-## Why this is NOT a this-repo bug
+## Why it is NOT the integrated "enhanced files" (correction)
 
-The scene rendering runs entirely on the MaxCore deployment (`secure-ai-forge.replit.app`:
-Vite@5000 → Node proxy@8080 → Python renderer@9878). This repo only submits the job,
-polls, and (when a URL is returned) downloads the file. The "Scene N failed" aggregation
-is produced by MaxCore's renderer, which swallows each scene's real exception — the actual
-stack trace is ONLY in MaxCore's own server logs, not visible from here.
+Earlier hypothesis (integration introduced a per-scene Python exception) was WRONG. The renderer
+code runs fine; it just can't invoke ffmpeg. A direct API test bypassing all of THIS repo's TS
+files reproduces it, and these TS files are caller-side only. The "AI enhancements/" folder is
+irrelevant to this failure.
 
-## Likely cause
+## Why ffmpeg spawn throws [Errno 5] against a /nix/store path
 
-User integrated "enhanced files" (the diffusion render pipeline,
-`server/services/diffusion/gen_engine_v2/` family — ops/UNetV5/SchedulerV2/AudioSynthV2/
-LTXAdapter/api_server_v5) directly into the MaxCore server between 2026-06-16 (working)
-and 2026-06-17 (every scene fails). The integration most likely introduced a per-scene
-runtime exception (import error, signature mismatch, missing dep, or device/op error).
+The renderer is invoking ffmpeg via a HARDCODED absolute nix-store path with a specific hash
+(`/nix/store/<hash>-ffmpeg-full-7.1.1-bin/bin/ffmpeg`). Nix store hashes change on every
+rebuild/redeploy and old entries get garbage-collected. After MaxCore was redeployed (which the
+file integration triggered), that baked path points at a dead/half-GC'd store entry → spawn
+fails with EIO. This is the durable lesson: **never bake a `/nix/store/<hash>` binary path into
+code or env (`FFMPEG_BINARY`/`IMAGEIO_FFMPEG_EXE`); resolve it at runtime** via PATH (`"ffmpeg"`),
+`shutil.which("ffmpeg")`, or `imageio_ffmpeg.get_ffmpeg_exe()`, and declare ffmpeg as a real env
+dependency so it's always present.
 
-## How to debug (requires MaxCore-side access — not available from this repo)
+## Fix (all on the MaxCore deployment, not this repo)
 
-1. Read MaxCore's renderer logs (Python @ 9878) for the real per-scene exception.
-2. Confirm the enhanced files were actually deployed AND the renderer process restarted.
-3. Reproduce a single scene render in isolation on MaxCore to surface the stack trace.
+1. In MaxCore's shell: `which ffmpeg` + `ffmpeg -version`. If `which` differs from the hardcoded
+   hash path, that confirms the baked path is stale.
+2. Ensure ffmpeg is a declared system/nix dependency in MaxCore so it rebuilds with the env.
+3. In the renderer, stop using the hardcoded path; resolve ffmpeg dynamically (PATH / shutil.which
+   / imageio_ffmpeg). Clear any `FFMPEG_BINARY`/`IMAGEIO_FFMPEG_EXE` env pinned to the old path.
+4. Restart MaxCore's renderer process so it picks up the valid binary.
 
-Until the MaxCore renderer is fixed, the app's `/api/social/generate-video` job will end
-in `status:"error"`. Everything else (text/caption/ad/hashtag/strategy content generation)
-is healthy and unaffected.
+## Secondary (not the blocker)
+
+MaxCore logs also show `pdim storage offline for >5000s — operating in local-only mode` — its PDIM
+link is down, separate from the ffmpeg issue but worth fixing for video persistence/delivery.
+
+## This-repo note
+
+This repo's own video fallback (`advancedVideoRendererService.ts` `assembleVideoFromScenes`) only
+triggers when MaxCore returns a `scenes` array; MaxCore returns an error with zero scenes, so the
+fallback can't engage. Nothing to change here until MaxCore's ffmpeg is fixed.
