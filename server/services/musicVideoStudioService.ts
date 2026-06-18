@@ -179,9 +179,14 @@ async function generateAIScenes(opts: {
   platform: string;
   aspectRatio: string;
   bpm: number;
-  maxScenes: number;
+  maxScenes?: number;
 }): Promise<SceneResult[]> {
-  const targetSections = opts.sections.slice(0, opts.maxScenes);
+  // MaxCore generates the scene imagery, so by default render every detected
+  // section. Only truncate when the caller explicitly requests a finite cap.
+  const targetSections =
+    opts.maxScenes && opts.maxScenes > 0
+      ? opts.sections.slice(0, opts.maxScenes)
+      : opts.sections;
 
   const settled = await Promise.allSettled(
     targetSections.map(async (section, i) => {
@@ -301,7 +306,8 @@ export async function generateFullMusicVideo(
   const platform = opts.platform || "instagram";
   const aspectRatio = opts.aspectRatio || "9:16";
   const hook = opts.hook || "";
-  const maxScenes = opts.maxScenes ?? 24;
+  // Undefined = no cap; MaxCore handles scene generation for every detected section.
+  const maxScenes = opts.maxScenes;
 
   // ── 1. Validate input ──────────────────────────────────────────────────────
   if (!existsSync(opts.audioPath)) {
@@ -347,7 +353,11 @@ export async function generateFullMusicVideo(
 
   // ── 3. Generate AI scenes for each section ─────────────────────────────────
   logger.info(
-    `[MusicVideoStudio] Generating ${Math.min(beatAnalysis.sections.length, maxScenes)} AI scenes…`,
+    `[MusicVideoStudio] Generating ${
+      maxScenes && maxScenes > 0
+        ? Math.min(beatAnalysis.sections.length, maxScenes)
+        : beatAnalysis.sections.length
+    } AI scenes…`,
   );
   const scenes = await generateAIScenes({
     sections: beatAnalysis.sections,
