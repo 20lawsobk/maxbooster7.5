@@ -1,60 +1,45 @@
 ---
-name: MaxCore video render — fails because ffmpeg can't spawn (stale nix path), NOT a code bug
-description: "All scenes failed" on MaxCore is caused by ffmpeg spawn OSError [Errno 5] against a hardcoded /nix/store/<hash> path. Environment problem on the MaxCore deployment, not this repo and not the integrated TS files.
+name: MaxCore video — RESOLVED; root cause was ffmpeg spawn EIO on a hardcoded nix path
+description: "All scenes failed" was caused by ffmpeg spawn OSError [Errno 5] against a hardcoded /nix/store/<hash> path on the MaxCore deployment. Fixed MaxCore-side; durable lesson is never bake a nix-store binary path.
 ---
 
-# Root cause (confirmed 2026-06-17 from MaxCore renderer logs)
+# Status: RESOLVED (2026-06-17). Durable lesson below.
 
-MaxCore's `/api/generate-video` returns `{"status":"error","error":"All scenes failed: Scene N failed; ..."}`.
-The generic "Scene N failed" hides the real cause, which is in MaxCore's Python renderer (port 9878):
+End-to-end video generation works again. Verified twice:
+- Direct MaxCore `/api/generate-video` → `status:done`, 5 scenes, downloaded real 3 MB MP4 (`ftyp`, ISO Media).
+- Through this app `/api/social/generate-video` → `/api/social/video-job/:id` → `status:"completed"`,
+  `source:"MaxCoreAI"`, app served a real 5 MB MP4 (`ftyp`). The `comp_` filename prefix means the app's
+  local FFmpeg scene-assembly (`assembleVideoFromScenes`) stitched MaxCore's returned scenes into the final cut.
 
+## Root cause (from MaxCore Python renderer logs, port 9878)
+
+"All scenes failed: Scene N failed" hid the real error:
 ```
 [VideoRender][WARN] ffmpeg spawn OSError (attempt 1..3): [Errno 5] Input/output error:
 '/nix/store/<hash>-ffmpeg-full-7.1.1-bin/bin/ffmpeg'
-[VideoRender][ERROR] _render_pil_based exception: [Errno 5] ... ffmpeg
-[VideoRender][ERROR] _render_fallback exception: [Errno 5] ... ffmpeg
+[VideoRender][ERROR] _render_pil_based / _render_fallback exception: [Errno 5] ... ffmpeg
 [VideoRender][ERROR] Scene N returned no path
 ```
+Every scene path (`_render_pil_based`, `_render_fallback`) shells out to ffmpeg; ffmpeg couldn't be exec'd,
+so each scene returned no path → job aggregated to "All scenes failed". ~9s whole-job failure (vs ~10s/scene
+real render) is the fast-fail signature of an immediate spawn error.
 
-Every scene-render path (`_render_pil_based`, `_render_fallback`) shells out to ffmpeg; ffmpeg
-can't be exec'd, so each scene returns no path and the job aggregates to "All scenes failed".
-The ~9s whole-job failure (vs ~10s/scene for a real render) is the fast-fail signature of an
-immediate spawn error, not slow rendering.
+## Durable lesson: never hardcode a /nix/store/<hash> binary path
 
-## Why it is NOT the integrated "enhanced files" (correction)
+Nix store hashes change on every rebuild/redeploy and old entries get GC'd. A baked
+`/nix/store/<hash>-ffmpeg.../bin/ffmpeg` path (in code OR an env var like `FFMPEG_BINARY` /
+`IMAGEIO_FFMPEG_EXE`) points at a dead/half-GC'd entry after redeploy → spawn EIO. Resolve binaries at
+runtime via PATH (`"ffmpeg"`), `shutil.which("ffmpeg")`, or `imageio_ffmpeg.get_ffmpeg_exe()`, and declare
+ffmpeg as a real env dependency so it rebuilds with the environment. The integration that triggered the
+redeploy was NOT the cause — the renderer code was fine; only ffmpeg invocation was broken.
 
-Earlier hypothesis (integration introduced a per-scene Python exception) was WRONG. The renderer
-code runs fine; it just can't invoke ffmpeg. A direct API test bypassing all of THIS repo's TS
-files reproduces it, and these TS files are caller-side only. The "AI enhancements/" folder is
-irrelevant to this failure.
+## Diagnosis note for this repo
 
-## Why ffmpeg spawn throws [Errno 5] against a /nix/store path
+MaxCore's API only exposes `{"status":"error","error":"All scenes failed: ..."}` — no log/debug endpoint,
+no traceback. The real per-scene exception lives only in the MaxCore deployment's Python process console;
+to debug MaxCore-side render failures you must get those logs from the owner (they pasted them here).
 
-The renderer is invoking ffmpeg via a HARDCODED absolute nix-store path with a specific hash
-(`/nix/store/<hash>-ffmpeg-full-7.1.1-bin/bin/ffmpeg`). Nix store hashes change on every
-rebuild/redeploy and old entries get garbage-collected. After MaxCore was redeployed (which the
-file integration triggered), that baked path points at a dead/half-GC'd store entry → spawn
-fails with EIO. This is the durable lesson: **never bake a `/nix/store/<hash>` binary path into
-code or env (`FFMPEG_BINARY`/`IMAGEIO_FFMPEG_EXE`); resolve it at runtime** via PATH (`"ffmpeg"`),
-`shutil.which("ffmpeg")`, or `imageio_ffmpeg.get_ffmpeg_exe()`, and declare ffmpeg as a real env
-dependency so it's always present.
+## Secondary (was present, separate issue)
 
-## Fix (all on the MaxCore deployment, not this repo)
-
-1. In MaxCore's shell: `which ffmpeg` + `ffmpeg -version`. If `which` differs from the hardcoded
-   hash path, that confirms the baked path is stale.
-2. Ensure ffmpeg is a declared system/nix dependency in MaxCore so it rebuilds with the env.
-3. In the renderer, stop using the hardcoded path; resolve ffmpeg dynamically (PATH / shutil.which
-   / imageio_ffmpeg). Clear any `FFMPEG_BINARY`/`IMAGEIO_FFMPEG_EXE` env pinned to the old path.
-4. Restart MaxCore's renderer process so it picks up the valid binary.
-
-## Secondary (not the blocker)
-
-MaxCore logs also show `pdim storage offline for >5000s — operating in local-only mode` — its PDIM
-link is down, separate from the ffmpeg issue but worth fixing for video persistence/delivery.
-
-## This-repo note
-
-This repo's own video fallback (`advancedVideoRendererService.ts` `assembleVideoFromScenes`) only
-triggers when MaxCore returns a `scenes` array; MaxCore returns an error with zero scenes, so the
-fallback can't engage. Nothing to change here until MaxCore's ffmpeg is fixed.
+MaxCore logs also showed `pdim storage offline for >5000s — local-only mode`. Didn't block delivery (file
+served from MaxCore's local /uploads via express.static), but worth fixing for durable persistence.
