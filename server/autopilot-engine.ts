@@ -5,6 +5,10 @@ import { logger } from "./logger.js";
 import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
 import { autopilotLearningService } from "./services/autopilotLearningService.js";
 import { evolutionRegistry } from "./services/evolutionRegistry.js";
+import {
+  advancedUrlParser,
+  type UrlContentBrief,
+} from "./services/advancedUrlParser.js";
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -62,6 +66,10 @@ interface AutopilotConfig {
   optimalTimesOnly: boolean;
   crossPostingEnabled: boolean;
   engagementThreshold: number;
+  // Optional artist-supplied links. When present, each generation cycle
+  // deterministically picks one, parses it with the advanced URL parser, and
+  // seeds generation from the link. Empty/absent ⇒ identical topic-only behavior.
+  sourceUrls?: string[];
 }
 
 export class AutopilotEngine extends EventEmitter {
@@ -499,6 +507,10 @@ export class AutopilotEngine extends EventEmitter {
 
     try {
       // This would call your actual AI service
+      // Optional advanced-URL-parser brief from configured source links.
+      // Undefined when no sourceUrls configured ⇒ unchanged topic-only behavior.
+      const urlBrief = await this.resolveUrlBrief(topic, job.platform);
+
       const generatedContent = await this.generateContentForAutopilot({
         topic,
         platform: job.platform,
@@ -506,6 +518,7 @@ export class AutopilotEngine extends EventEmitter {
         contentType,
         targetAudience: this.config.targetAudience,
         businessGoals: this.config.businessGoals,
+        urlBrief,
       });
 
       // Store generated content in-memory queue item.
@@ -520,6 +533,7 @@ export class AutopilotEngine extends EventEmitter {
         status: "draft",
         type: contentType,
         topic,
+        ...(urlBrief?.sourceUrl ? { sourceUrl: urlBrief.sourceUrl } : {}),
         createdAt: new Date(),
       };
 
@@ -645,6 +659,29 @@ export class AutopilotEngine extends EventEmitter {
     }
   }
 
+  // Resolve an optional advanced-URL-parser content brief from the configured
+  // source links. Deterministic pick per (topic, platform) so a given cycle is
+  // reproducible. Returns undefined when no links are configured or on any
+  // parse/SSRF failure, in which case generation falls back to topic-only.
+  private async resolveUrlBrief(
+    topic: string,
+    platform: string,
+  ): Promise<UrlContentBrief | undefined> {
+    const urls = this?.config.sourceUrls;
+    if (!urls || urls.length === 0) return undefined;
+    const chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
+    try {
+      const parsed = await advancedUrlParser.parseUrl(chosen);
+      return advancedUrlParser.toContentBrief(parsed);
+    } catch (err) {
+      logger?.warn(
+        { err: (err as Error)?.message },
+        `[Autopilot] Source URL parse failed for ${platform} — falling back to topic-only generation`,
+      );
+      return undefined;
+    }
+  }
+
   // AI Content Generation using Advanced Social AI (GPT-5.2 Level)
   private async generateContentForAutopilot(params: {
     topic: string;
@@ -653,6 +690,7 @@ export class AutopilotEngine extends EventEmitter {
     contentType: string;
     targetAudience: string;
     businessGoals: string[];
+    urlBrief?: UrlContentBrief;
   }): Promise<{
     text: string;
     hashtags: string[];
@@ -715,14 +753,23 @@ export class AutopilotEngine extends EventEmitter {
       const advancedResult =
         await advancedSocialAIService?.generateAdvancedContent({
           userId: this.userId,
-          topic: params.topic,
+          topic: params?.urlBrief?.topic ?? params.topic,
           platforms: [params?.platform.toLowerCase()],
           objective,
           tone: this.mapBrandVoiceToTone(params?.brandVoice),
           targetAudience: params.targetAudience
             ?.toLowerCase()
             .replace(/\s+/g, "_"),
-          contentType: this.mapContentType(params?.contentType),
+          contentType:
+            params?.urlBrief?.contentType ??
+            this.mapContentType(params?.contentType),
+          ...(params?.urlBrief?.genre ? { genre: params.urlBrief.genre } : {}),
+          ...(params?.urlBrief?.artistName
+            ? { artistName: params.urlBrief.artistName }
+            : {}),
+          ...(params?.urlBrief?.promotionContext
+            ? { promotionContext: params.urlBrief.promotionContext }
+            : {}),
           includeHashtags: true,
           includeEmojis,
           variantCount,

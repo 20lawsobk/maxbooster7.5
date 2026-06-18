@@ -12,6 +12,11 @@ import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
 import { autopilotLearningService } from "./services/autopilotLearningService.js";
 import { evolutionRegistry } from "./services/evolutionRegistry.js";
 
+import {
+  advancedUrlParser,
+  type UrlContentBrief,
+} from "./services/advancedUrlParser.js";
+
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
   if (length <= 0) return 0;
@@ -46,6 +51,11 @@ interface AutonomousConfig {
   autoOptimization: boolean;
   crossPlatformSyncing: boolean;
   adaptivePosting: boolean;
+  // Optional artist-supplied links. When present, generation deterministically
+  // picks one per (topic, platform), parses it with the advanced URL parser,
+  // and seeds generation from the link. The UCB1-selected topic is still used
+  // for learning. Empty/absent ⇒ identical topic-only behavior.
+  sourceUrls?: string[];
 }
 
 export class AutonomousAutopilot extends EventEmitter {
@@ -548,6 +558,28 @@ export class AutonomousAutopilot extends EventEmitter {
     }
   }
 
+  // Resolve an optional advanced-URL-parser content brief from configured
+  // source links. Deterministic pick per (topic, platform); undefined when no
+  // links are configured or on any parse/SSRF failure (falls back to topic-only).
+  private async resolveUrlBrief(
+    platform: string,
+    topic: string,
+  ): Promise<UrlContentBrief | undefined> {
+    const urls = this?.config.sourceUrls;
+    if (!urls || urls.length === 0) return undefined;
+    const chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
+    try {
+      const parsed = await advancedUrlParser.parseUrl(chosen);
+      return advancedUrlParser.toContentBrief(parsed);
+    } catch (err) {
+      logger?.warn(
+        { err: (err as Error)?.message },
+        `[AutonomousAutopilot] Source URL parse failed for ${platform} — falling back to topic-only generation`,
+      );
+      return undefined;
+    }
+  }
+
   // Autonomous Content Generation routed through MaxCore via Advanced Social AI.
   // Matches autopilot-engine's pipeline so both code paths produce the same
   // GPT-5.2 level, viral-scored, music-industry-tuned output and share the
@@ -630,17 +662,27 @@ export class AutonomousAutopilot extends EventEmitter {
       ctMap[this?.selectContentTypeFromObjectives(params?.objectives)] ??
       "engagement";
 
+    // Optional advanced-URL-parser brief from configured source links. The
+    // UCB1-selected params.topic is preserved for learning; the URL brief only
+    // feeds generation. Undefined ⇒ unchanged topic-only behavior.
+    const urlBrief = await this.resolveUrlBrief(params.platform, params.topic);
+
     const advancedResult =
       await advancedSocialAIService?.generateAdvancedContent({
         userId: this.userId,
-        topic: params.topic,
+        topic: urlBrief?.topic ?? params.topic,
         platforms: [params?.platform.toLowerCase()],
         objective,
         tone,
         targetAudience: params.targetAudience
           ?.toLowerCase()
           .replace(/\s+/g, "_"),
-        contentType,
+        contentType: urlBrief?.contentType ?? contentType,
+        ...(urlBrief?.genre ? { genre: urlBrief.genre } : {}),
+        ...(urlBrief?.artistName ? { artistName: urlBrief.artistName } : {}),
+        ...(urlBrief?.promotionContext
+          ? { promotionContext: urlBrief.promotionContext }
+          : {}),
         includeHashtags: true,
         includeEmojis: true,
         variantCount: 3,
