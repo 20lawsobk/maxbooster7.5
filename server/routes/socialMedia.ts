@@ -25,7 +25,6 @@ import {
   audioToContentSeed,
   imageToContentSeed,
 } from "../services/mediaAnalyzerService.js";
-import { advancedUrlParser } from "../services/advancedUrlParser.js";
 import {
   getVisualSpec,
   type SupportedPlatform as ContentSupportedPlatform,
@@ -2275,7 +2274,7 @@ router?.post(
         return res?.status(400).json({ error: "URL is required" });
       }
 
-      // SSRF guard — block private/internal targets before spawning Python subprocess
+      // SSRF guard — block private/internal targets before fetching the URL
       try {
         assertSafeExternalUrl(url?.trim());
       } catch (ssrfErr) {
@@ -2284,9 +2283,9 @@ router?.post(
           .json({ error: ssrfErr.message || "Invalid URL" });
       }
 
-      // Use the rich Python URL analyzer for full metadata extraction.
-      // If the analyzer fails (network error, SSL issue, bot-block) we fall back
-      // to a minimal stub so MaxCore can still generate relevant content from the URL.
+      // Use the in-house URL parser for metadata extraction. If it throws
+      // (e.g. an SSRF-blocked target) we fall back to a minimal URL-derived
+      // stub so MaxCore can still generate relevant content from the URL.
       let analysis: import("../services/mediaAnalyzerService.js").UrlAnalysis;
       try {
         analysis = await analyzeUrl(url?.trim());
@@ -2369,51 +2368,6 @@ router?.post(
         } as Record<string, unknown>;
       }
 
-      // Advanced in-house URL parser — overlay structured fields the Python
-      // analyzer left empty (artist/track/album/genre/title/description/image/
-      // keywords/platform). Runs only when the Python analysis is weak, and a
-      // parse/SSRF failure leaves `analysis` untouched, so the existing path
-      // stays byte-for-byte identical when the analyzer already produced data.
-      const needsUrlEnrichment =
-        !analysis.artist ||
-        !analysis.track ||
-        !analysis.title ||
-        analysis.platform === "web" ||
-        (analysis.keywords?.length ?? 0) === 0;
-      if (needsUrlEnrichment) {
-        try {
-          const parsed = await advancedUrlParser.parseUrl(url?.trim());
-          if (parsed.fetched || parsed.isMusic) {
-            const brief = advancedUrlParser.toContentBrief(parsed);
-            if (!analysis.artist && parsed.artist)
-              analysis.artist = parsed.artist;
-            if (!analysis.track && parsed.track) analysis.track = parsed.track;
-            if (!analysis.album && parsed.album) analysis.album = parsed.album;
-            if ((!analysis.genre || analysis.genre === "default") && brief.genre)
-              analysis.genre = brief.genre;
-            if (!analysis.title && parsed.title) analysis.title = parsed.title;
-            if (!analysis.description && parsed.description)
-              analysis.description = parsed.description;
-            if (!analysis.og_image && parsed.imageUrl)
-              analysis.og_image = parsed.imageUrl;
-            if (
-              (!analysis.keywords || analysis.keywords.length === 0) &&
-              parsed.keywords.length
-            )
-              analysis.keywords = parsed.keywords;
-            if (
-              (!analysis.platform || analysis.platform === "web") &&
-              parsed.platform !== "web"
-            )
-              analysis.platform = parsed.platform;
-          }
-        } catch (parseErr) {
-          logger?.warn(
-            { err: (parseErr as Error)?.message },
-            "[generate-from-url] advanced URL parser enrichment skipped",
-          );
-        }
-      }
       const seed = urlToContentSeed(analysis);
 
       // Build a clean, structured topic for the AI model — no pollution from targetAudience or format
@@ -4268,7 +4222,7 @@ router.post(
           .json({ success: false, message: "url is required" });
       }
 
-      // SSRF guard — block private/internal targets before spawning Python subprocess
+      // SSRF guard — block private/internal targets before fetching the URL
       try {
         assertSafeExternalUrl(url.trim());
       } catch (ssrfErr) {
