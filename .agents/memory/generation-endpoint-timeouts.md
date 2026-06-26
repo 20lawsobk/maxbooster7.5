@@ -74,3 +74,14 @@ tsx does NOT reliably hot-reload `server/services/*.ts` or route files — alway
 (stack-trace line numbers will not match the source). `/tmp/logs/*` are snapshots
 written by refresh_all_logs; call it again after a new test run or you'll read
 stale errors.
+
+## Optional platform-rules fields (multimodal text slots)
+
+`shared/config/platformRules.ts` makes `TextRules.hashtags` OPTIONAL and some platforms omit it
+entirely (youtube has no `hashtags`). Multimodal text-slot building read
+`rules.text.hashtags.allowed` unguarded (server/services/multimodalGenerationService.ts) — a pack
+expansion or platform list that pulls in the youtube text slot 500s with "Cannot read properties of
+undefined (reading 'allowed')". Use `rules.text.hashtags?.allowed` (and guard `rules` itself where
+nullable). Same class as section 1: an optional config field treated as always-present. Verified via
+the content-gen HTTP harness (tests/e2e/content-generation-http.ts) by sending platforms incl.
+youtube with text modality (no media pack — a pack triggers heavy/slow image+audio+video gen).

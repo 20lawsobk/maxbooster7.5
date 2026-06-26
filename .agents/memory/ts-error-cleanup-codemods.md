@@ -59,3 +59,15 @@ To fix a few mis-edited files without re-running the whole codemod (whose tc pos
 
 ## Measuring (critical)
 The split typecheck uses incremental `.cache/tsbuildinfo.{server,client}`. After editing, **always `rm -f .cache/tsbuildinfo.server .cache/tsbuildinfo.client` before re-running** or the cache serves stale error counts (a fast ~40s run with unchanged counts = stale cache). Full clean re-check ≈160s per the `tccap` capture workflow (writes /tmp/tc_server.txt + /tmp/tc_client.txt + /tmp/tc_done).
+
+## `_`-prefix rename that misses a sibling assignment → runtime ReferenceError
+A unused-var cleanup once renamed only the DECLARATION (`let foundPeak` → `let _foundPeak`) but left
+a later `foundPeak = true;` assignment untouched → `ReferenceError: foundPeak is not defined` at
+runtime (shared/ml/audio/AudioFeatureExtractor.ts, surfaced on the studio audio style-transfer
+endpoint `POST /api/studio/generation/audio`). Two compounding mistakes: (1) `_`-prefix only silences
+unused **params** (noUnusedParameters), NEVER unused **locals** (noUnusedLocals ignores nothing) — so
+prefixing a local neither fixes the lint nor stays in sync with its uses; (2) the codemod renamed the
+binding site without rewriting every reference, and an assignment-only mismatch can slip past tsc.
+**Lesson:** after any rename-style codemod, grep the OLD name across the whole file — a surviving bare
+use is a latent runtime crash. For a write-only flag the fix is to align the assignment to the
+(`_`-prefixed) declared name; behavior-preserving ONLY because the flag is never read.

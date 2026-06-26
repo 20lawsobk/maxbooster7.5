@@ -2037,8 +2037,8 @@ function buildStepParamsForPlatform(
     base.maxLength = rules.text.maxLength ?? rules.text.descriptionMax ?? 5000;
     base.recommendedLength = rules.text.recommendedLength;
     base.tone = rules.text.tone;
-    base.hashtagsAllowed = rules.text.hashtags.allowed ?? false;
-    base.maxHashtags = rules.text.hashtags.allowed
+    base.hashtagsAllowed = rules.text.hashtags?.allowed ?? false;
+    base.maxHashtags = rules.text.hashtags?.allowed
       ? (rules.text.hashtags.max ?? 5)
       : 0;
     if (platform === "youtube") {
@@ -2324,7 +2324,7 @@ function buildLocalTextAssets(
     const platformCta = perCopy.cta ?? cta;
 
     // Dynamic hashtags: respect platform rules for allowed count
-    const maxHashtags = rules.text.hashtags.allowed
+    const maxHashtags = rules?.text?.hashtags?.allowed
       ? (rules.text.hashtags.max ?? 5)
       : 0;
     const tags = getHashtagsForPlatform(

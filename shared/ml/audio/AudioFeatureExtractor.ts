@@ -437,7 +437,7 @@ export function extractTimbreFeatures(
       if (autocorr[i] > peakValue) {
         peakValue = autocorr[i];
         harmonicRatio = autocorr[0] > 0 ? peakValue / autocorr[0] : 0;
-        foundPeak = true;
+        _foundPeak = true;
         break;
       }
     }
